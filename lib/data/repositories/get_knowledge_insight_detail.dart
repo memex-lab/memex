@@ -136,12 +136,34 @@ Future<InsightDetailModel> getKnowledgeInsightDetail(String insightId) async {
       }
     }
 
+    // Determine widget type/template/data from card YAML
+    // (widget_type is NOT stored in YAML — it's computed from template_id)
+    String? widgetType;
+    String? widgetTemplate;
+    Map<String, dynamic>? mergedWidgetData;
+
+    if (isNative) {
+      widgetType = 'native';
+      widgetTemplate = cardTemplateId;
+      // Build widgetData the same way the list endpoint does:
+      // flatten card + card['data'], then replace fs:// URLs
+      final flatData = Map<String, dynamic>.from(cardData);
+      if (cardData['data'] is Map) {
+        flatData.addAll((cardData['data'] as Map).cast<String, dynamic>());
+      }
+      flatData.remove('data');
+      mergedWidgetData = await replaceFsInData(flatData, userId);
+    }
+
     // Build InsightDetailModel
     return InsightDetailModel(
       insight: insightInfo,
       content: content,
       analysis: analysisHtml,
       relatedCards: relatedCards,
+      widgetType: widgetType,
+      widgetTemplate: widgetTemplate,
+      widgetData: mergedWidgetData,
     );
   } catch (e) {
     _logger.severe('Failed to get knowledge insight detail $insightId: $e');

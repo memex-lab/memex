@@ -459,6 +459,30 @@ class AppLocalizationsZh extends AppLocalizations {
   String get nothingHereHint => '点击下方按钮创建你的第一张卡片';
 
   @override
+  String get agentProcessing => 'AI 处理中...';
+
+  @override
+  String get keepAppOpen => '请不要关闭应用';
+
+  @override
+  String get activityDetail => '活动详情';
+
+  @override
+  String get noAgentActivityYet => '暂无 Agent 活动';
+
+  @override
+  String get processingEllipsis => '处理中...';
+
+  @override
+  String get settings => '设置';
+
+  @override
+  String get languageSettings => '语言';
+
+  @override
+  String get languageSettingsDesc => '更改应用显示语言';
+
+  @override
   String get noPendingActionsToast => '当前没有待处理动作';
 
   @override

@@ -5,6 +5,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:intl/intl.dart';
 import 'package:memex/data/services/agent_activity_service.dart';
 import 'package:memex/data/services/local_task_executor.dart';
+import 'package:memex/utils/user_storage.dart';
 
 class AgentActivityWidget extends StatefulWidget {
   final GlobalKey<NavigatorState>? navigatorKey;
@@ -15,13 +16,17 @@ class AgentActivityWidget extends StatefulWidget {
   State<AgentActivityWidget> createState() => _AgentActivityWidgetState();
 }
 
-class _AgentActivityWidgetState extends State<AgentActivityWidget> {
+class _AgentActivityWidgetState extends State<AgentActivityWidget>
+    with SingleTickerProviderStateMixin {
   AgentActivityMessageModel? _latestMessage;
   AgentActivityService? _service;
   LocalTaskExecutor? _executor;
   StreamSubscription<AgentActivityMessageModel>? _subscription;
   StreamSubscription<bool>? _taskSubscription;
   bool _hasActiveTasks = false;
+
+  late AnimationController _bounceController;
+  late Animation<double> _bounceAnimation;
 
   bool get _hasRunningAgent {
     if (_latestMessage == null) return false;
@@ -36,11 +41,17 @@ class _AgentActivityWidgetState extends State<AgentActivityWidget> {
   @override
   void initState() {
     super.initState();
+    _bounceController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: true);
+    _bounceAnimation = Tween<double>(begin: 0, end: -6).animate(
+      CurvedAnimation(parent: _bounceController, curve: Curves.easeInOut),
+    );
+
     try {
       _service = AgentActivityService.instance;
       _executor = LocalTaskExecutor.instance;
-      // Test if DB is ready (accessing getter throws if not)
-      // ignore: unnecessary_null_comparison
       if (_executor?.hasActiveTasksStream != null) {
         _subscribeToService();
       }
@@ -73,9 +84,7 @@ class _AgentActivityWidgetState extends State<AgentActivityWidget> {
           });
         }
       });
-    } catch (_) {
-      // If DB fails to provide stream, ignore. _initService will retry if caught earlier.
-    }
+    } catch (_) {}
 
     Future.delayed(const Duration(seconds: 3), () {
       if (mounted) _loadLatestFromDb();
@@ -95,6 +104,7 @@ class _AgentActivityWidgetState extends State<AgentActivityWidget> {
   void dispose() {
     _subscription?.cancel();
     _taskSubscription?.cancel();
+    _bounceController.dispose();
     super.dispose();
   }
 
@@ -122,142 +132,79 @@ class _AgentActivityWidgetState extends State<AgentActivityWidget> {
 
     return GestureDetector(
       onTap: _hasRunningAgent ? () => _showDetail(context) : null,
-      child: Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
-              blurRadius: 32,
-              spreadRadius: -4,
-              offset: const Offset(0, 16),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              color: Colors.white.withValues(alpha: 0.75),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.5),
+                width: 0.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF6366F1).withValues(alpha: 0.08),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-              decoration: BoxDecoration(
-                color: Colors.white
-                    .withValues(alpha: 0.2), // Original translucent glass
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.4),
-                  width: 0.5,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Bouncing emoji
+                AnimatedBuilder(
+                  animation: _bounceAnimation,
+                  builder: (context, child) {
+                    return Transform.translate(
+                      offset: Offset(0, _bounceAnimation.value),
+                      child: child,
+                    );
+                  },
+                  child: const Text('🤔', style: TextStyle(fontSize: 20)),
                 ),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.white.withValues(alpha: 0.15),
-                    Colors.white.withValues(alpha: 0.05),
-                  ],
+                const SizedBox(width: 8),
+                // Text
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        UserStorage.l10n.agentProcessing,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Color(0xFF1E293B),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        UserStorage.l10n.keepAppOpen,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: const Color(0xFF64748B).withValues(alpha: 0.8),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+                if (_hasRunningAgent) ...[
+                  const SizedBox(width: 6),
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    size: 16,
+                    color: Color(0xFF94A3B8),
                   ),
                 ],
-              ),
-              child: Row(
-                children: [
-                  // Animated glowing icon
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF6366F1).withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF6366F1).withValues(alpha: 0.5),
-                          blurRadius: 12,
-                          spreadRadius: 2,
-                        ),
-                      ],
-                    ),
-                    child: const Center(
-                      child: SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Color(0xFF818CF8),
-                          strokeCap: StrokeCap.round,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  // Texts
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Agent is processing...',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: const Color(
-                                0xFF1E293B), // Dark text for light mode
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.2,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.auto_awesome,
-                              size: 11,
-                              color: Color(
-                                  0xFF6366F1), // Original purple/blue icon
-                            ),
-                            const SizedBox(width: 4),
-                            Flexible(
-                              child: Text(
-                                'Please keep app open.',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: const Color(0xFF1E293B).withValues(
-                                      alpha: 0.6), // Darker secondary text
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  // Right arrow (only when agent is running and detail is viewable)
-                  if (_hasRunningAgent)
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1E293B).withValues(alpha: 0.05),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.chevron_right_rounded,
-                        size: 16,
-                        color: Color(0xFF1E293B),
-                      ),
-                    ),
-                ],
-              ),
+              ],
             ),
           ),
         ),
@@ -339,9 +286,9 @@ class _DetailSheetState extends State<_DetailSheet> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Activity Detail',
-                  style: TextStyle(
+                Text(
+                  UserStorage.l10n.activityDetail,
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF0F172A),
@@ -359,9 +306,9 @@ class _DetailSheetState extends State<_DetailSheet> {
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
               child: _message == null
-                  ? const Center(
-                      child: Text('No agent activity yet',
-                          style: TextStyle(
+                  ? Center(
+                      child: Text(UserStorage.l10n.noAgentActivityYet,
+                          style: const TextStyle(
                               color: Color(0xFF64748B), fontSize: 16)),
                     )
                   : Column(
@@ -375,8 +322,8 @@ class _DetailSheetState extends State<_DetailSheet> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text('Processing...',
-                                      style: TextStyle(
+                                  Text(UserStorage.l10n.processingEllipsis,
+                                      style: const TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w600,
                                           color: Color(0xFF1E293B))),
@@ -430,20 +377,20 @@ class _DetailSheetState extends State<_DetailSheet> {
                           ),
                         if (_message!.type != AgentActivityType.agent_stop &&
                             _message!.type != AgentActivityType.error)
-                          const Padding(
-                            padding: EdgeInsets.only(top: 24),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 24),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                SizedBox(
+                                const SizedBox(
                                   width: 16,
                                   height: 16,
                                   child: CircularProgressIndicator(
                                       strokeWidth: 2, color: Color(0xFF6366F1)),
                                 ),
-                                SizedBox(width: 8),
-                                Text('Please keep app open.',
-                                    style: TextStyle(
+                                const SizedBox(width: 8),
+                                Text(UserStorage.l10n.keepAppOpen,
+                                    style: const TextStyle(
                                         fontSize: 14,
                                         color: Color(0xFF64748B),
                                         fontStyle: FontStyle.italic)),

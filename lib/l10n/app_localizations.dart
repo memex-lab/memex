@@ -932,6 +932,54 @@ abstract class AppLocalizations {
   /// **'Tap the button below to create your first card'**
   String get nothingHereHint;
 
+  /// No description provided for @agentProcessing.
+  ///
+  /// In en, this message translates to:
+  /// **'AI is processing...'**
+  String get agentProcessing;
+
+  /// No description provided for @keepAppOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t close the app'**
+  String get keepAppOpen;
+
+  /// No description provided for @activityDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity Detail'**
+  String get activityDetail;
+
+  /// No description provided for @noAgentActivityYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No agent activity yet'**
+  String get noAgentActivityYet;
+
+  /// No description provided for @processingEllipsis.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing...'**
+  String get processingEllipsis;
+
+  /// No description provided for @settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settings;
+
+  /// No description provided for @languageSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get languageSettings;
+
+  /// No description provided for @languageSettingsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Change the app display language'**
+  String get languageSettingsDesc;
+
   /// No description provided for @noPendingActionsToast.
   ///
   /// In en, this message translates to:
