@@ -277,8 +277,8 @@ class FileSystemService {
 
   /// Safely update card file (locked read-modify-write). Serializes concurrent updates per card.
   /// [updateFn] receives current card data, returns updated data. Returns null if card not found.
-  Future<CardData?> updateCardFile(String userId, String cardId,
-      CardData Function(CardData) updateFn,
+  Future<CardData?> updateCardFile(
+      String userId, String cardId, CardData Function(CardData) updateFn,
       {bool createIfNotExists = false}) async {
     final lock = await _getCardLock(userId, cardId);
 

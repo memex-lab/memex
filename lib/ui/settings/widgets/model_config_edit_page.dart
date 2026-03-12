@@ -16,7 +16,7 @@ class ModelConfigEditPage extends StatefulWidget {
 }
 
 class _ModelConfigEditPageState extends State<ModelConfigEditPage>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   final _formKey = GlobalKey<FormState>();
 
   late TextEditingController _keyController;
@@ -28,11 +28,17 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
   late TextEditingController _maxTokensController;
   late TextEditingController _topPController;
   late TextEditingController _extraController;
+  late TextEditingController _bedrockAccessKeyController;
+  late TextEditingController _bedrockSecretKeyController;
+  late TextEditingController _bedrockRegionController;
 
   String _selectedType = '';
   bool _isObscureApiKey = true;
   Map<String, dynamic>? _openAiTokens;
   bool _forceShowAllModels = false;
+  bool _isAuthDialogShowing = false;
+  bool _authFlowCompleted = false;
+  bool _appResumedDuringAuth = false;
 
   bool _hasChanges = false;
   late AnimationController _animationController;
@@ -40,6 +46,7 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     final config = widget.config;
     _keyController = TextEditingController(text: config?.key ?? '');
     _modelIdController = TextEditingController(text: config?.modelId ?? '');
@@ -52,6 +59,13 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
         TextEditingController(text: config?.maxTokens?.toString() ?? '');
     _topPController = TextEditingController(
         text: config?.topP?.toString() ?? ''); // Fixed line
+
+    _bedrockAccessKeyController = TextEditingController(
+        text: config?.extra['accessKeyId'] as String? ?? '');
+    _bedrockSecretKeyController = TextEditingController(
+        text: config?.extra['secretAccessKey'] as String? ?? '');
+    _bedrockRegionController = TextEditingController(
+        text: config?.extra['region'] as String? ?? 'us-west-2');
 
     String extraJson = '{}';
     if (config != null && config.extra.isNotEmpty) {
@@ -82,6 +96,9 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
     _maxTokensController.addListener(_checkChanges);
     _topPController.addListener(_checkChanges);
     _extraController.addListener(_checkChanges);
+    _bedrockAccessKeyController.addListener(_checkChanges);
+    _bedrockSecretKeyController.addListener(_checkChanges);
+    _bedrockRegionController.addListener(_checkChanges);
   }
 
   void _checkChanges() {
@@ -97,7 +114,11 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
           _temperatureController.text.isNotEmpty ||
           _maxTokensController.text.isNotEmpty ||
           _topPController.text.isNotEmpty ||
-          _extraController.text != '{}';
+          _extraController.text != '{}' ||
+          _bedrockAccessKeyController.text.isNotEmpty ||
+          _bedrockSecretKeyController.text.isNotEmpty ||
+          (_bedrockRegionController.text.isNotEmpty &&
+              _bedrockRegionController.text != 'us-west-2');
     } else {
       String extraJson = '{}';
       if (config.extra.isNotEmpty) {
@@ -141,13 +162,42 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
     }
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _isAuthDialogShowing) {
+      _appResumedDuringAuth = true;
+      // Start a generous timeout — if auth callbacks don't fire within 10s
+      // after resume, the user likely cancelled manually.
+      Future.delayed(const Duration(seconds: 10), () {
+        if (_isAuthDialogShowing &&
+            !_authFlowCompleted &&
+            _appResumedDuringAuth &&
+            mounted) {
+          _dismissAuthDialog();
+          ToastHelper.showError(
+              context, UserStorage.l10n.authFailed('Authorization cancelled'));
+        }
+      });
+    }
+  }
+
+  void _dismissAuthDialog() {
+    if (_isAuthDialogShowing && mounted) {
+      _isAuthDialogShowing = false;
+      Navigator.of(context, rootNavigator: true).pop();
+    }
+  }
+
   void _startOpenAiAuth() {
+    _authFlowCompleted = false;
+    _appResumedDuringAuth = false;
     OpenAiAuthService.startAuthFlow(
       onStart: () {
+        _isAuthDialogShowing = true;
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (context) => Center(
+          builder: (dialogContext) => Center(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               decoration: BoxDecoration(
@@ -169,18 +219,22 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
               ),
             ),
           ),
-        );
+        ).then((_) {
+          _isAuthDialogShowing = false;
+        });
       },
       onSuccess: (accountId) {
+        _authFlowCompleted = true;
+        _dismissAuthDialog();
         if (mounted) {
-          Navigator.of(context, rootNavigator: true).pop();
           ToastHelper.showSuccess(context, 'Authorized successfully');
           _loadOpenAiTokens();
         }
       },
       onError: (error) {
+        _authFlowCompleted = true;
+        _dismissAuthDialog();
         if (mounted) {
-          Navigator.of(context, rootNavigator: true).pop();
           ToastHelper.showError(
               context, UserStorage.l10n.authFailed(error.toString()));
         }
@@ -251,6 +305,10 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
     );
   }
 
+  static const _proOnlyModels = {'gpt-5.4', 'gpt-5.3-codex'};
+
+  bool _isProModel(String model) => _proOnlyModels.contains(model);
+
   List<String> _getRecommendedModels(String type) {
     switch (type) {
       case LLMConfig.typeGemini:
@@ -273,13 +331,13 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
         ];
       case LLMConfig.typeOpenAiOauth:
         return [
-          'gpt-5.4',
+          'gpt-5.2',
           'gpt-5.1-codex-max',
           'gpt-5.1-codex-mini',
-          'gpt-5.2',
           'gpt-5.2-codex',
           'gpt-5.3-codex',
           'gpt-5.1-codex',
+          'gpt-5.4',
         ];
       case LLMConfig.typeClaude:
         return [
@@ -303,6 +361,16 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    // Dismiss auth dialog if still showing when page is disposed
+    if (_isAuthDialogShowing) {
+      _isAuthDialogShowing = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        try {
+          Navigator.of(context, rootNavigator: true).pop();
+        } catch (_) {}
+      });
+    }
     _keyController.dispose();
     _modelIdController.dispose();
     _apiKeyController.dispose();
@@ -312,6 +380,9 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
     _maxTokensController.dispose();
     _topPController.dispose();
     _extraController.dispose();
+    _bedrockAccessKeyController.dispose();
+    _bedrockSecretKeyController.dispose();
+    _bedrockRegionController.dispose();
     _animationController.dispose();
     super.dispose();
   }
@@ -332,6 +403,15 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
       return;
     }
 
+    // For Bedrock, pack credentials into extra
+    if (_selectedType == LLMConfig.typeBedrockClaude) {
+      extraMap['accessKeyId'] = _bedrockAccessKeyController.text;
+      extraMap['secretAccessKey'] = _bedrockSecretKeyController.text;
+      extraMap['region'] = _bedrockRegionController.text.isNotEmpty
+          ? _bedrockRegionController.text
+          : 'us-west-2';
+    }
+
     // Check Key Uniqueness if new
     if (widget.config == null && await _isKeyExists(_keyController.text)) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -344,7 +424,9 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
       key: _keyController.text,
       type: _selectedType,
       modelId: _modelIdController.text,
-      apiKey: _apiKeyController.text,
+      apiKey: _selectedType == LLMConfig.typeBedrockClaude
+          ? ''
+          : _apiKeyController.text,
       baseUrl: _selectedType == LLMConfig.typeBedrockClaude
           ? ''
           : _baseUrlController.text,
@@ -438,6 +520,12 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
           defaultLLMConfig.temperature?.toString() ?? '';
       _maxTokensController.text = defaultLLMConfig.maxTokens?.toString() ?? '';
       _topPController.text = defaultLLMConfig.topP?.toString() ?? '';
+      _bedrockAccessKeyController.text =
+          defaultLLMConfig.extra['accessKeyId'] as String? ?? '';
+      _bedrockSecretKeyController.text =
+          defaultLLMConfig.extra['secretAccessKey'] as String? ?? '';
+      _bedrockRegionController.text =
+          defaultLLMConfig.extra['region'] as String? ?? 'us-west-2';
 
       String extraJson = '{}';
       if (defaultLLMConfig.extra.isNotEmpty) {
@@ -554,23 +642,110 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
                   labelText: UserStorage.l10n.clientLabel,
                   border: const OutlineInputBorder(),
                 ),
-                items: const [
+                selectedItemBuilder: (context) {
+                  return [
+                    const SizedBox.shrink(),
+                    const Text('OpenAI (API Key)'),
+                    const Text('OpenAI (API Key - Responses)'),
+                    const Text('OpenAI (Codex OAuth)'),
+                    const SizedBox.shrink(),
+                    const Text('Anthropic (API Key)'),
+                    const Text('Anthropic (Bedrock Secret)'),
+                    const SizedBox.shrink(),
+                    const Text('Gemini'),
+                  ];
+                },
+                items: [
+                  // ── OpenAI Group ──
+                  DropdownMenuItem<String>(
+                    enabled: false,
+                    value: '__openai_header__',
+                    child: Text(
+                      'OpenAI',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[500],
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
                   DropdownMenuItem(
-                      value: LLMConfig.typeChatCompletion,
-                      child: Text('OpenAI (ChatCompletion)')),
+                    value: LLMConfig.typeChatCompletion,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 12),
+                      child: Text('API Key',
+                          style: TextStyle(color: Colors.grey[800])),
+                    ),
+                  ),
                   DropdownMenuItem(
-                      value: LLMConfig.typeResponses,
-                      child: Text('OpenAI (Responses)')),
+                    value: LLMConfig.typeResponses,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 12),
+                      child: Text('API Key (Responses)',
+                          style: TextStyle(color: Colors.grey[800])),
+                    ),
+                  ),
                   DropdownMenuItem(
-                      value: LLMConfig.typeOpenAiOauth,
-                      child: Text('OpenAI (OAuth)')),
+                    value: LLMConfig.typeOpenAiOauth,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 12),
+                      child: Text('Codex OAuth',
+                          style: TextStyle(color: Colors.grey[800])),
+                    ),
+                  ),
+                  // ── Anthropic Group ──
+                  DropdownMenuItem<String>(
+                    enabled: false,
+                    value: '__anthropic_header__',
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        'Anthropic',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[500],
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ),
                   DropdownMenuItem(
-                      value: LLMConfig.typeGemini, child: Text('Gemini')),
+                    value: LLMConfig.typeClaude,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 12),
+                      child: Text('API Key',
+                          style: TextStyle(color: Colors.grey[800])),
+                    ),
+                  ),
                   DropdownMenuItem(
-                      value: LLMConfig.typeClaude, child: Text('Claude')),
+                    value: LLMConfig.typeBedrockClaude,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 12),
+                      child: Text('Bedrock Secret',
+                          style: TextStyle(color: Colors.grey[800])),
+                    ),
+                  ),
+                  // ── Others Group ──
+                  DropdownMenuItem<String>(
+                    enabled: false,
+                    value: '__others_header__',
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        'Others',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[500],
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ),
                   DropdownMenuItem(
-                      value: LLMConfig.typeBedrockClaude,
-                      child: Text('Bedrock-Claude')),
+                      value: LLMConfig.typeGemini, child: const Text('Gemini')),
                 ],
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -625,10 +800,10 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
                   });
                 },
                 onSelected: (String selection) {
-                  if (_forceShowAllModels) {
-                    setState(() => _forceShowAllModels = false);
-                  }
                   _modelIdController.text = selection;
+                  setState(() {
+                    _forceShowAllModels = false;
+                  });
                 },
                 fieldViewBuilder:
                     (context, controller, focusNode, onFieldSubmitted) {
@@ -660,10 +835,10 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
                       ),
                     ),
                     onChanged: (value) {
-                      if (_forceShowAllModels) {
-                        setState(() => _forceShowAllModels = false);
-                      }
                       _modelIdController.text = value;
+                      setState(() {
+                        _forceShowAllModels = false;
+                      });
                     },
                     onFieldSubmitted: (value) {
                       onFieldSubmitted();
@@ -677,12 +852,130 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
                   );
                 },
                 initialValue: TextEditingValue(text: _modelIdController.text),
+                optionsViewBuilder: (context, onSelected, options) {
+                  return Align(
+                    alignment: Alignment.topLeft,
+                    child: Material(
+                      elevation: 4,
+                      borderRadius: BorderRadius.circular(8),
+                      child: ConstrainedBox(
+                        constraints:
+                            const BoxConstraints(maxHeight: 240, maxWidth: 340),
+                        child: ListView.builder(
+                          padding: EdgeInsets.zero,
+                          shrinkWrap: true,
+                          itemCount: options.length,
+                          itemBuilder: (context, index) {
+                            final option = options.elementAt(index);
+                            final isPro = _isProModel(option);
+                            return ListTile(
+                              dense: true,
+                              title: Row(
+                                children: [
+                                  Expanded(child: Text(option)),
+                                  if (isPro)
+                                    Container(
+                                      margin: const EdgeInsets.only(left: 8),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFFFF7ED),
+                                        borderRadius: BorderRadius.circular(4),
+                                        border: Border.all(
+                                            color: const Color(0xFFFBBF24),
+                                            width: 0.5),
+                                      ),
+                                      child: const Text(
+                                        'Pro/Plus',
+                                        style: TextStyle(
+                                            fontSize: 10,
+                                            color: Color(0xFFD97706),
+                                            fontWeight: FontWeight.w600),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              onTap: () => onSelected(option),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
+              if (_selectedType == LLMConfig.typeOpenAiOauth &&
+                  _isProModel(_modelIdController.text))
+                Padding(
+                  padding: const EdgeInsets.only(top: 6, left: 4),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.info_outline,
+                          size: 14, color: Color(0xFFD97706)),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          UserStorage.l10n.proModelHint,
+                          style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFFD97706),
+                              height: 1.3),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               const SizedBox(height: 16),
 
-              // API Key / Auth Section
+              // API Key / Auth / Bedrock Section
               if (_selectedType == LLMConfig.typeOpenAiOauth) ...[
                 _buildOpenAiAuthSection(),
+              ] else if (_selectedType == LLMConfig.typeBedrockClaude) ...[
+                // Bedrock-specific fields
+                TextFormField(
+                  controller: _bedrockAccessKeyController,
+                  decoration: const InputDecoration(
+                    labelText: 'Access Key ID',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return UserStorage.l10n.required;
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _bedrockSecretKeyController,
+                  decoration: InputDecoration(
+                    labelText: 'Secret Access Key',
+                    border: const OutlineInputBorder(),
+                    suffixIcon: IconButton(
+                      icon: Icon(_isObscureApiKey
+                          ? Icons.visibility
+                          : Icons.visibility_off),
+                      onPressed: () =>
+                          setState(() => _isObscureApiKey = !_isObscureApiKey),
+                    ),
+                  ),
+                  obscureText: _isObscureApiKey,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return UserStorage.l10n.required;
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _bedrockRegionController,
+                  decoration: const InputDecoration(
+                    labelText: 'Region',
+                    hintText: 'us-west-2',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
               ] else ...[
                 TextFormField(
                   controller: _apiKeyController,

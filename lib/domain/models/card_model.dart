@@ -89,6 +89,7 @@ class CardData {
   final List<CardComment> comments;
   final CardInsight? insight;
   final bool? deleted;
+  final String? failureReason;
 
   const CardData({
     required this.factId,
@@ -104,6 +105,7 @@ class CardData {
     List<CardComment>? comments,
     this.insight,
     this.deleted,
+    this.failureReason,
   }) : comments = comments ?? const [];
 
   factory CardData.fromJson(Map<String, dynamic> json) {
@@ -165,6 +167,7 @@ class CardData {
       comments: commentsList,
       insight: insightData,
       deleted: json['deleted'] as bool?,
+      failureReason: json['failure_reason'] as String?,
     );
   }
 
@@ -187,6 +190,7 @@ class CardData {
       m['comments'] = comments.map((e) => e.toJson()).toList();
     if (insight != null) m['insight'] = insight!.toJson();
     if (deleted == true) m['deleted'] = deleted;
+    if (failureReason != null) m['failure_reason'] = failureReason;
     return m;
   }
 
@@ -204,6 +208,7 @@ class CardData {
     List<CardComment>? comments,
     CardInsight? insight,
     bool? deleted,
+    String? failureReason,
   }) {
     return CardData(
       factId: factId ?? this.factId,
@@ -219,6 +224,7 @@ class CardData {
       comments: comments ?? this.comments,
       insight: insight ?? this.insight,
       deleted: deleted ?? this.deleted,
+      failureReason: failureReason ?? this.failureReason,
     );
   }
 }

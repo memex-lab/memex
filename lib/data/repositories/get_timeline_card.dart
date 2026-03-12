@@ -74,6 +74,7 @@ Future<TimelineCardModel?> getTimelineCard(String cardId) async {
       uiConfigs: renderResult.uiConfigs,
       assets: assets.isNotEmpty ? assets : null,
       rawText: rawText,
+      failureReason: cardData.failureReason,
     );
   } catch (e) {
     _logger.severe('Failed to fetch timeline card $cardId: $e');

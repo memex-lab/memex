@@ -1295,4 +1295,61 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get discardButton => '放弃';
+
+  @override
+  String get chooseLanguage => '选择语言';
+
+  @override
+  String get chooseAvatar => '选择头像';
+
+  @override
+  String get coachMarkFirstPost => '点击这里，记录你的第一个想法 ✨';
+
+  @override
+  String get coachMarkInsightRefresh => '点击生成你的专属洞察 🔮';
+
+  @override
+  String get coachMarkConfigureModel => '先配置 AI 模型，解锁全部功能 🔑';
+
+  @override
+  String get configureNow => '立即配置';
+
+  @override
+  String get modelNotConfiguredBanner => 'AI 模型尚未配置，请先设置以解锁全部功能。';
+
+  @override
+  String get modelNotConfiguredSubmitHint => '请先配置 AI 模型再发布内容';
+
+  @override
+  String get processingStatus => '处理中';
+
+  @override
+  String get failedStatus => '处理失败';
+
+  @override
+  String get viewDetails => '查看详情';
+
+  @override
+  String get failureReason => '失败原因';
+
+  @override
+  String get unknownError => '发生未知错误';
+
+  @override
+  String get enableFitness => '开启健身权限';
+
+  @override
+  String get fitnessBannerMessage => '允许访问健身数据以记录你的健康和运动信息。';
+
+  @override
+  String get fitnessDismissTitle => '跳过健身权限？';
+
+  @override
+  String get fitnessDismissMessage => '如果跳过，应用将无法自动收集你的健康数据进行洞察分析和自动记录。';
+
+  @override
+  String get skipAnyway => '仍然跳过';
+
+  @override
+  String get proModelHint => '此模型需要 ChatGPT Pro/Plus 订阅才能使用。';
 }

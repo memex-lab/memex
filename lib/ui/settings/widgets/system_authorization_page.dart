@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:memex/utils/user_storage.dart';
+import 'package:memex/data/services/health_service.dart';
 import 'dart:io' show Platform;
 
 class SystemAuthorizationPage extends StatefulWidget {
@@ -87,6 +88,35 @@ class _SystemAuthorizationPageState extends State<SystemAuthorizationPage> {
     }
   }
 
+  /// Request fitness permission AND HealthKit data authorization together.
+  Future<void> _requestFitnessPermission() async {
+    try {
+      // 1. Request system-level fitness/motion permission
+      final permission =
+          Platform.isIOS ? Permission.sensors : Permission.activityRecognition;
+      final status = await permission.request();
+      if (status.isPermanentlyDenied) {
+        _showSettingsDialog();
+        return;
+      }
+
+      // 2. Also request HealthKit/Health Connect data type authorization
+      if (status.isGranted) {
+        await HealthService().requestAllPermissions();
+      }
+
+      _checkAllPermissions();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content:
+                  Text(UserStorage.l10n.permissionRequestError(e.toString()))),
+        );
+      }
+    }
+  }
+
   void _showSettingsDialog() {
     showDialog(
       context: context,
@@ -116,6 +146,7 @@ class _SystemAuthorizationPageState extends State<SystemAuthorizationPage> {
     required String subtitle,
     required PermissionStatus? status,
     required VoidCallback onTap,
+    bool showBadge = false,
   }) {
     Color statusColor;
     String statusText;
@@ -132,7 +163,25 @@ class _SystemAuthorizationPageState extends State<SystemAuthorizationPage> {
     }
 
     return ListTile(
-      leading: Icon(icon, color: const Color(0xFF6366F1), size: 28),
+      leading: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Icon(icon, color: const Color(0xFF6366F1), size: 28),
+          if (showBadge)
+            Positioned(
+              right: -2,
+              top: -2,
+              child: Container(
+                width: 10,
+                height: 10,
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+        ],
+      ),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
       subtitle: Text(subtitle,
           style: TextStyle(color: Colors.grey[600], fontSize: 13)),
@@ -233,11 +282,10 @@ class _SystemAuthorizationPageState extends State<SystemAuthorizationPage> {
                   title: UserStorage.l10n.fitnessAndMotion,
                   subtitle: UserStorage.l10n.fitnessPermissionReason,
                   status: _fitnessStatus,
-                  onTap: () => _requestPermission(
-                      Platform.isIOS
-                          ? Permission.sensors
-                          : Permission.activityRecognition,
-                      _checkAllPermissions),
+                  showBadge: _fitnessStatus != null &&
+                      !_fitnessStatus!.isGranted &&
+                      !_fitnessStatus!.isLimited,
+                  onTap: () => _requestFitnessPermission(),
                 ),
                 const Divider(height: 1, indent: 56),
                 _buildPermissionItem(

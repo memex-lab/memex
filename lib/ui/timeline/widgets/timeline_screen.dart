@@ -1,5 +1,5 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:memex/domain/models/timeline_card_model.dart';
 import 'package:memex/db/app_database.dart';
@@ -20,6 +20,10 @@ import 'package:memex/ui/insight/widgets/insight_detail_page.dart';
 import 'package:memex/ui/chat/widgets/agent_chat_dialog.dart';
 import 'package:memex/utils/toast_helper.dart';
 import 'package:memex/utils/user_storage.dart';
+import 'package:memex/utils/permission_utils.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:memex/ui/settings/widgets/model_config_list_page.dart';
+import 'package:memex/ui/settings/widgets/system_authorization_page.dart';
 
 /// Timeline screen - main memory view. Receives [viewModel] and [insightViewModel] from parent (Compass-style).
 class TimelineScreen extends StatefulWidget {
@@ -42,6 +46,10 @@ class TimelineScreen extends StatefulWidget {
 
 class TimelineScreenState extends State<TimelineScreen> {
   final ScrollController _scrollController = ScrollController();
+  bool _showPermissionBadge = false;
+  String? _userAvatar;
+  bool _showModelConfigBanner = false;
+  bool _showFitnessBanner = false;
 
   /// Show loading indicator for submission (called from main screen).
   void showLoading() {
@@ -107,6 +115,76 @@ class TimelineScreenState extends State<TimelineScreen> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    _checkPermissionBadge();
+    _loadUserAvatar();
+    _checkModelConfig();
+    _checkFitnessBanner();
+  }
+
+  Future<void> _checkModelConfig() async {
+    final configs = await UserStorage.getLLMConfigs();
+    final hasValid = configs.any((c) => c.isValid);
+    if (mounted && !hasValid != _showModelConfigBanner) {
+      setState(() => _showModelConfigBanner = !hasValid);
+    }
+  }
+
+  Future<void> _checkFitnessBanner() async {
+    final prefs = await SharedPreferences.getInstance();
+    final dismissed = prefs.getBool('fitness_banner_dismissed') ?? false;
+    if (dismissed) {
+      if (mounted && _showFitnessBanner) {
+        setState(() => _showFitnessBanner = false);
+      }
+      return;
+    }
+    final granted = await PermissionUtils.isFitnessPermissionGranted();
+    if (mounted && _showFitnessBanner != !granted) {
+      setState(() => _showFitnessBanner = !granted);
+    }
+  }
+
+  Future<void> _dismissFitnessBanner() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(UserStorage.l10n.fitnessDismissTitle),
+        content: Text(UserStorage.l10n.fitnessDismissMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(MaterialLocalizations.of(ctx).cancelButtonLabel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(
+              UserStorage.l10n.skipAnyway,
+              style: const TextStyle(color: Color(0xFFEF4444)),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('fitness_banner_dismissed', true);
+    if (mounted) {
+      setState(() => _showFitnessBanner = false);
+    }
+  }
+
+  Future<void> _checkPermissionBadge() async {
+    final granted = await PermissionUtils.isFitnessPermissionGranted();
+    if (mounted && !granted != _showPermissionBadge) {
+      setState(() => _showPermissionBadge = !granted);
+    }
+  }
+
+  Future<void> _loadUserAvatar() async {
+    final avatar = await UserStorage.getUserAvatar();
+    if (mounted && avatar != null) {
+      setState(() => _userAvatar = avatar);
+    }
   }
 
   @override
@@ -245,29 +323,37 @@ class TimelineScreenState extends State<TimelineScreen> {
                                 backgroundColor: Colors.transparent,
                                 builder: (context) =>
                                     const PersonalCenterScreen(),
-                              );
+                              ).then((_) {
+                                _checkPermissionBadge();
+                                _checkFitnessBanner();
+                              });
                             },
-                            child: Container(
-                              width: 36,
-                              height: 36,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFE2E8F0),
-                                borderRadius: BorderRadius.circular(18),
-                                border:
-                                    Border.all(color: Colors.white, width: 2),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.05),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 2),
+                            child: Badge(
+                              isLabelVisible: _showPermissionBadge,
+                              smallSize: 10,
+                              offset: const Offset(0, 0),
+                              backgroundColor: Colors.red,
+                              child: Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFEEF2FF),
+                                  borderRadius: BorderRadius.circular(18),
+                                  border:
+                                      Border.all(color: Colors.white, width: 2),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.05),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    _userAvatar ?? '👤',
+                                    style: const TextStyle(fontSize: 20),
                                   ),
-                                ],
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(16),
-                                child: SvgPicture.network(
-                                  'https://api.dicebear.com/7.x/notionists/svg?seed=Felix',
-                                  fit: BoxFit.cover,
                                 ),
                               ),
                             ),
@@ -281,6 +367,247 @@ class TimelineScreenState extends State<TimelineScreen> {
             ),
 
             // Tag Chips (All + Insight + user tags)
+            if (_showModelConfigBanner)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 12, 24, 12),
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ModelConfigListPage(),
+                      ),
+                    ).then((_) => _checkModelConfig());
+                  },
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 14),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Colors.white.withOpacity(0.72),
+                              Colors.white.withOpacity(0.48),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.6),
+                            width: 0.5,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.06),
+                              blurRadius: 16,
+                              offset: const Offset(0, 4),
+                            ),
+                            BoxShadow(
+                              color: const Color(0xFF6366F1).withOpacity(0.08),
+                              blurRadius: 24,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Color(0xFF818CF8),
+                                    Color(0xFF6366F1),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(Icons.auto_awesome,
+                                  size: 18, color: Colors.white),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    UserStorage.l10n.configureNow,
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF1E293B),
+                                      letterSpacing: -0.2,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    UserStorage.l10n.modelNotConfiguredBanner,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: const Color(0xFF64748B)
+                                          .withOpacity(0.9),
+                                      height: 1.3,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              width: 28,
+                              height: 28,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF6366F1).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(Icons.arrow_forward_ios,
+                                  size: 12, color: Color(0xFF6366F1)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            if (_showFitnessBanner)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Colors.white.withOpacity(0.72),
+                            Colors.white.withOpacity(0.48),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.6),
+                          width: 0.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.06),
+                            blurRadius: 16,
+                            offset: const Offset(0, 4),
+                          ),
+                          BoxShadow(
+                            color: const Color(0xFF10B981).withOpacity(0.08),
+                            blurRadius: 24,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const SystemAuthorizationPage(),
+                                ),
+                              ).then((_) {
+                                _checkPermissionBadge();
+                                _checkFitnessBanner();
+                              });
+                            },
+                            child: Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Color(0xFF34D399),
+                                    Color(0xFF10B981),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(Icons.favorite_rounded,
+                                  size: 18, color: Colors.white),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const SystemAuthorizationPage(),
+                                  ),
+                                ).then((_) {
+                                  _checkPermissionBadge();
+                                  _checkFitnessBanner();
+                                });
+                              },
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    UserStorage.l10n.enableFitness,
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF1E293B),
+                                      letterSpacing: -0.2,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    UserStorage.l10n.fitnessBannerMessage,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: const Color(0xFF64748B)
+                                          .withOpacity(0.9),
+                                      height: 1.3,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          GestureDetector(
+                            onTap: _dismissFitnessBanner,
+                            child: Container(
+                              width: 28,
+                              height: 28,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF94A3B8).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(Icons.close_rounded,
+                                  size: 14, color: Color(0xFF94A3B8)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             if (vm.tags.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 0, 0, 12),
@@ -673,6 +1000,7 @@ class _TimelineEntryItemState extends State<_TimelineEntryItem> {
               onTap: onTap,
               cardId: card.id,
               configIndex: 0,
+              failureReason: card.failureReason,
               onUpdate: (cardId, configIndex, data) {
                 MemexRouter().updateCardUiConfig(cardId, configIndex, data);
               },
@@ -767,6 +1095,7 @@ class _TimelineEntryItemState extends State<_TimelineEntryItem> {
                     onTap: onTap,
                     cardId: card.id,
                     configIndex: index,
+                    failureReason: card.failureReason,
                     onUpdate: (cardId, configIndex, data) {
                       MemexRouter()
                           .updateCardUiConfig(cardId, configIndex, data);

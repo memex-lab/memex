@@ -98,6 +98,7 @@ Future<List<TimelineCardModel>> getTimelineCards({
           assets: assets.isNotEmpty ? assets : null,
           rawText: rawText,
           address: cardData.address,
+          failureReason: cardData.failureReason,
         );
         timelineCards.add(timelineCard);
       } catch (e) {

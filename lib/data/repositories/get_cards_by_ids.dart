@@ -78,6 +78,7 @@ Future<List<TimelineCardModel>> getCardsByIds(List<String> ids) async {
           uiConfigs: renderResult.uiConfigs,
           assets: assets.isNotEmpty ? assets : null,
           rawText: rawText,
+          failureReason: cardData.failureReason,
         );
 
         cards.add(cardModel);

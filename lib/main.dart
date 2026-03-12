@@ -40,6 +40,8 @@ import 'package:memex/db/app_database.dart';
 import 'package:memex/data/services/local_server_service.dart';
 import 'package:go_router/go_router.dart';
 import 'package:memex/routing/router.dart';
+import 'package:memex/data/services/onboarding_service.dart';
+import 'package:memex/ui/core/widgets/coach_mark_overlay.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -91,6 +93,7 @@ class RootShell extends StatefulWidget {
 
 class _RootShellState extends State<RootShell> {
   bool _hasUser = false;
+  bool _onboardingComplete = false;
   bool _isChecking = true;
 
   @override
@@ -101,16 +104,34 @@ class _RootShellState extends State<RootShell> {
 
   Future<void> _checkUser() async {
     final hasUser = await UserStorage.hasUser();
+    var onboardingDone = await OnboardingService.isOnboardingComplete();
+
+    // Migration: existing users who set up before the onboarding flag was added
+    // should be treated as onboarding-complete.
+    if (hasUser && !onboardingDone) {
+      final configs = await UserStorage.getLLMConfigs();
+      final hasValidConfig = configs.any((c) => c.isValid);
+      if (hasValidConfig) {
+        await OnboardingService.markOnboardingComplete();
+        onboardingDone = true;
+      }
+    }
+
     if (mounted) {
       setState(() {
         _hasUser = hasUser;
+        _onboardingComplete = onboardingDone;
         _isChecking = false;
       });
     }
   }
 
   void _onUserCreated() {
-    setState(() => _hasUser = true);
+    OnboardingService.markOnboardingComplete();
+    setState(() {
+      _hasUser = true;
+      _onboardingComplete = true;
+    });
   }
 
   @override
@@ -120,7 +141,7 @@ class _RootShellState extends State<RootShell> {
         body: Center(child: CircularProgressIndicator()),
       );
     }
-    if (!_hasUser) {
+    if (!_hasUser || !_onboardingComplete) {
       return UserSetupScreen(onUserCreated: _onUserCreated);
     }
     return MultiProvider(
@@ -317,6 +338,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   final GlobalKey _aiButtonKey = GlobalKey();
   final GlobalKey _mainStackKey = GlobalKey();
   bool _isInvalidConfigDialogShowing = false;
+  bool _showFirstPostCoachMark = false;
 
   // Agent Button Position - REMOVED (Moved to Main App)
 
@@ -345,6 +367,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
     _eventBus.addHandler(
         EventBusMessageType.invalidModelConfig, _handleInvalidModelConfig);
+
+    // Check onboarding state for first post coach mark
+    _checkFirstPostOnboarding();
   }
 
   void _handleInvalidModelConfig(EventBusMessage message) {
@@ -397,12 +422,39 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _handleAICoreButtonTap() async {
+    // Check if model is configured before opening input
+    final configs = await UserStorage.getLLMConfigs();
+    final hasValidConfig = configs.any((c) => c.isValid);
+    if (!hasValidConfig && mounted) {
+      ToastHelper.showError(
+          context, UserStorage.l10n.modelNotConfiguredSubmitHint);
+      return;
+    }
+
     // Skip auto-publish, go directly to input_sheet
     if (mounted) {
       setState(() {
         _isInputOpen = true;
       });
     }
+    // Dismiss coach mark if showing
+    if (_showFirstPostCoachMark) {
+      _dismissFirstPostCoachMark();
+    }
+  }
+
+  Future<void> _checkFirstPostOnboarding() async {
+    // Check first post onboarding
+    final done = await OnboardingService.isFirstPostDone();
+    if (!done && mounted) {
+      await Future.delayed(const Duration(milliseconds: 800));
+      if (mounted) setState(() => _showFirstPostCoachMark = true);
+    }
+  }
+
+  void _dismissFirstPostCoachMark() {
+    setState(() => _showFirstPostCoachMark = false);
+    OnboardingService.markFirstPostDone();
   }
 
   void _handleAICoreButtonLongPressStart() {
@@ -476,9 +528,16 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         HealthDataType.WORKOUT,
       ];
 
-      // Request all permissions in a single batch first
-      _logger.info('Pre-requesting all health permissions in batch...');
-      await healthService.requestAllPermissions();
+      // Skip health data collection if fitness permission is not granted
+      // (permissions are now requested via System Authorization page)
+      final fitnessStatus = Platform.isIOS
+          ? await Permission.sensors.status
+          : await Permission.activityRecognition.status;
+      if (!fitnessStatus.isGranted && !fitnessStatus.isLimited) {
+        _logger.info(
+            'Fitness permission not granted, skipping health data collection');
+        return;
+      }
 
       Map<HealthDataType, dynamic> newlyFetchedData = {};
 
@@ -768,6 +827,14 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                   visible: _isRadialMenuOpen,
                   onItemSelected: _handleShortcutSelect,
                   onCancel: _handleRadialCancel,
+                ),
+
+              // First post onboarding coach mark
+              if (_showFirstPostCoachMark)
+                CoachMarkOverlay(
+                  targetKey: _aiButtonKey,
+                  message: UserStorage.l10n.coachMarkFirstPost,
+                  onDismiss: _dismissFirstPostCoachMark,
                 ),
             ],
           ),

@@ -206,7 +206,10 @@ Future<void> handleCardAgentFailureImpl(
     final cardData = await fs.updateCardFile(
       userId,
       factId,
-      (card) => card.copyWith(status: 'failed'),
+      (card) => card.copyWith(
+        status: 'failed',
+        failureReason: error.toString(),
+      ),
     );
 
     if (cardData == null) {
@@ -247,6 +250,7 @@ Future<void> handleCardAgentFailureImpl(
         assets: assets.isNotEmpty ? assets : null,
         rawText: rawText,
         address: cardData.address,
+        failureReason: error.toString(),
       ));
     } catch (e) {
       _logger.warning('Failed to send EventBus update for failed card: $e');

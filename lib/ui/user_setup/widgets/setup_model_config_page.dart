@@ -18,26 +18,40 @@ class SetupModelConfigPage extends StatefulWidget {
   State<SetupModelConfigPage> createState() => _SetupModelConfigPageState();
 }
 
-class _SetupModelConfigPageState extends State<SetupModelConfigPage> {
+class _SetupModelConfigPageState extends State<SetupModelConfigPage>
+    with WidgetsBindingObserver {
   final _formKey = GlobalKey<FormState>();
 
   late TextEditingController _modelIdController;
   late TextEditingController _apiKeyController;
   late TextEditingController _baseUrlController;
+  late TextEditingController _bedrockAccessKeyController;
+  late TextEditingController _bedrockSecretKeyController;
+  late TextEditingController _bedrockRegionController;
 
   String _selectedType = '';
   bool _isObscureApiKey = true;
   bool _isSubmitting = false;
   Map<String, dynamic>? _openAiTokens;
   bool _forceShowAllModels = false;
+  bool _isAuthDialogShowing = false;
+  bool _authFlowCompleted = false;
+  bool _appResumedDuringAuth = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     final config = widget.config;
     _modelIdController = TextEditingController(text: config.modelId);
     _apiKeyController = TextEditingController(text: config.apiKey);
     _baseUrlController = TextEditingController(text: config.baseUrl);
+    _bedrockAccessKeyController = TextEditingController(
+        text: config.extra['accessKeyId'] as String? ?? '');
+    _bedrockSecretKeyController = TextEditingController(
+        text: config.extra['secretAccessKey'] as String? ?? '');
+    _bedrockRegionController = TextEditingController(
+        text: config.extra['region'] as String? ?? 'us-west-2');
     _selectedType = config.type;
     if (_selectedType == LLMConfig.typeOpenAiOauth) {
       _loadOpenAiTokens();
@@ -53,13 +67,43 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage> {
     }
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _isAuthDialogShowing) {
+      _appResumedDuringAuth = true;
+      Future.delayed(const Duration(seconds: 10), () {
+        if (_isAuthDialogShowing &&
+            !_authFlowCompleted &&
+            _appResumedDuringAuth &&
+            mounted) {
+          _dismissAuthDialog();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text(
+                    UserStorage.l10n.authFailed('Authorization cancelled'))),
+          );
+        }
+      });
+    }
+  }
+
+  void _dismissAuthDialog() {
+    if (_isAuthDialogShowing && mounted) {
+      _isAuthDialogShowing = false;
+      Navigator.of(context, rootNavigator: true).pop();
+    }
+  }
+
   void _startOpenAiAuth() {
+    _authFlowCompleted = false;
+    _appResumedDuringAuth = false;
     OpenAiAuthService.startAuthFlow(
       onStart: () {
+        _isAuthDialogShowing = true;
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (context) => Center(
+          builder: (dialogContext) => Center(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               decoration: BoxDecoration(
@@ -84,11 +128,15 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage> {
               ),
             ),
           ),
-        );
+        ).then((_) {
+          // Dialog was dismissed (e.g. by back button or programmatically)
+          _isAuthDialogShowing = false;
+        });
       },
       onSuccess: (accountId) {
+        _authFlowCompleted = true;
+        _dismissAuthDialog();
         if (mounted) {
-          Navigator.of(context, rootNavigator: true).pop();
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Authorized successfully')),
           );
@@ -96,8 +144,9 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage> {
         }
       },
       onError: (error) {
+        _authFlowCompleted = true;
+        _dismissAuthDialog();
         if (mounted) {
-          Navigator.of(context, rootNavigator: true).pop();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
                 content: Text(UserStorage.l10n.authFailed(error.toString()))),
@@ -181,6 +230,10 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage> {
     );
   }
 
+  static const _proOnlyModels = {'gpt-5.4', 'gpt-5.3-codex'};
+
+  bool _isProModel(String model) => _proOnlyModels.contains(model);
+
   List<String> _getRecommendedModels(String type) {
     switch (type) {
       case LLMConfig.typeGemini:
@@ -203,13 +256,13 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage> {
         ];
       case LLMConfig.typeOpenAiOauth:
         return [
-          'gpt-5.4',
+          'gpt-5.2',
           'gpt-5.1-codex-max',
           'gpt-5.1-codex-mini',
-          'gpt-5.2',
           'gpt-5.2-codex',
           'gpt-5.3-codex',
           'gpt-5.1-codex',
+          'gpt-5.4',
         ];
       case LLMConfig.typeClaude:
         return [
@@ -233,9 +286,22 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    // Dismiss auth dialog if still showing when page is disposed
+    if (_isAuthDialogShowing) {
+      _isAuthDialogShowing = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        try {
+          Navigator.of(context, rootNavigator: true).pop();
+        } catch (_) {}
+      });
+    }
     _modelIdController.dispose();
     _apiKeyController.dispose();
     _baseUrlController.dispose();
+    _bedrockAccessKeyController.dispose();
+    _bedrockSecretKeyController.dispose();
+    _bedrockRegionController.dispose();
     super.dispose();
   }
 
@@ -246,14 +312,28 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage> {
       _isSubmitting = true;
     });
 
+    final Map<String, dynamic> extra =
+        _selectedType == LLMConfig.typeBedrockClaude
+            ? {
+                'accessKeyId': _bedrockAccessKeyController.text,
+                'secretAccessKey': _bedrockSecretKeyController.text,
+                'region': _bedrockRegionController.text.isNotEmpty
+                    ? _bedrockRegionController.text
+                    : 'us-west-2',
+              }
+            : widget.config.extra;
+
     final newConfig = widget.config.copyWith(
       type: _selectedType,
       modelId: _modelIdController.text,
-      apiKey: _apiKeyController.text,
+      apiKey: _selectedType == LLMConfig.typeBedrockClaude
+          ? ''
+          : _apiKeyController.text,
       baseUrl: (_selectedType == LLMConfig.typeBedrockClaude ||
               _selectedType == LLMConfig.typeOpenAiOauth)
           ? ''
           : _baseUrlController.text,
+      extra: extra,
     );
 
     if (!newConfig.isValid) {
@@ -405,10 +485,10 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage> {
                     });
                   },
                   onSelected: (String selection) {
-                    if (_forceShowAllModels) {
-                      setState(() => _forceShowAllModels = false);
-                    }
                     _modelIdController.text = selection;
+                    setState(() {
+                      _forceShowAllModels = false;
+                    });
                   },
                   fieldViewBuilder:
                       (context, controller, focusNode, onFieldSubmitted) {
@@ -455,10 +535,10 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage> {
                         fillColor: Colors.grey[50],
                       ),
                       onChanged: (value) {
-                        if (_forceShowAllModels) {
-                          setState(() => _forceShowAllModels = false);
-                        }
                         _modelIdController.text = value;
+                        setState(() {
+                          _forceShowAllModels = false;
+                        });
                       },
                       onFieldSubmitted: (value) {
                         onFieldSubmitted();
@@ -472,12 +552,87 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage> {
                     );
                   },
                   initialValue: TextEditingValue(text: _modelIdController.text),
+                  optionsViewBuilder: (context, onSelected, options) {
+                    return Align(
+                      alignment: Alignment.topLeft,
+                      child: Material(
+                        elevation: 4,
+                        borderRadius: BorderRadius.circular(12),
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(
+                              maxHeight: 240, maxWidth: 340),
+                          child: ListView.builder(
+                            padding: EdgeInsets.zero,
+                            shrinkWrap: true,
+                            itemCount: options.length,
+                            itemBuilder: (context, index) {
+                              final option = options.elementAt(index);
+                              final isPro = _isProModel(option);
+                              return ListTile(
+                                dense: true,
+                                title: Row(
+                                  children: [
+                                    Expanded(child: Text(option)),
+                                    if (isPro)
+                                      Container(
+                                        margin: const EdgeInsets.only(left: 8),
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFFFF7ED),
+                                          borderRadius:
+                                              BorderRadius.circular(4),
+                                          border: Border.all(
+                                              color: const Color(0xFFFBBF24),
+                                              width: 0.5),
+                                        ),
+                                        child: const Text(
+                                          'Pro/Plus',
+                                          style: TextStyle(
+                                              fontSize: 10,
+                                              color: Color(0xFFD97706),
+                                              fontWeight: FontWeight.w600),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                                onTap: () => onSelected(option),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
+                if (_selectedType == LLMConfig.typeOpenAiOauth &&
+                    _isProModel(_modelIdController.text))
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6, left: 4),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.info_outline,
+                            size: 14, color: Color(0xFFD97706)),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            UserStorage.l10n.proModelHint,
+                            style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFFD97706),
+                                height: 1.3),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 const SizedBox(height: 20),
 
-                // API Key / Auth Section
+                // API Key / Auth / Bedrock Section
                 if (_selectedType == LLMConfig.typeOpenAiOauth) ...[
                   _buildOpenAiAuthSection(),
+                ] else if (_selectedType == LLMConfig.typeBedrockClaude) ...[
+                  _buildBedrockFields(),
                 ] else ...[
                   _buildApiKeyField(),
                 ],
@@ -534,7 +689,7 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage> {
   Widget _buildProviderDropdown() {
     return DropdownButtonFormField<String>(
       isExpanded: true,
-      initialValue: _selectedType.isEmpty ? null : _selectedType,
+      value: _selectedType.isEmpty ? null : _selectedType,
       hint: Text(UserStorage.l10n.select),
       decoration: InputDecoration(
         labelText: UserStorage.l10n.clientLabel,
@@ -554,18 +709,111 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage> {
         filled: true,
         fillColor: Colors.grey[50],
       ),
-      items: const [
+      selectedItemBuilder: (context) {
+        return [
+          // OpenAI group header
+          const SizedBox.shrink(),
+          const Text('OpenAI (API Key)'),
+          const Text('OpenAI (API Key - Responses)'),
+          const Text('OpenAI (Codex OAuth)'),
+          // Anthropic group header
+          const SizedBox.shrink(),
+          const Text('Anthropic (API Key)'),
+          const Text('Anthropic (Bedrock Secret)'),
+          // Others group header
+          const SizedBox.shrink(),
+          const Text('Gemini'),
+        ];
+      },
+      items: [
+        // ── OpenAI Group ──
+        DropdownMenuItem<String>(
+          enabled: false,
+          value: '__openai_header__',
+          child: Text(
+            'OpenAI',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[500],
+              letterSpacing: 0.5,
+            ),
+          ),
+        ),
         DropdownMenuItem(
-            value: LLMConfig.typeChatCompletion,
-            child: Text('OpenAI (ChatCompletion)')),
+          value: LLMConfig.typeChatCompletion,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 12),
+            child: Text('API Key', style: TextStyle(color: Colors.grey[800])),
+          ),
+        ),
         DropdownMenuItem(
-            value: LLMConfig.typeResponses, child: Text('OpenAI (Responses)')),
+          value: LLMConfig.typeResponses,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 12),
+            child: Text('API Key (Responses)',
+                style: TextStyle(color: Colors.grey[800])),
+          ),
+        ),
         DropdownMenuItem(
-            value: LLMConfig.typeOpenAiOauth, child: Text('OpenAI (OAuth)')),
-        DropdownMenuItem(value: LLMConfig.typeGemini, child: Text('Gemini')),
-        DropdownMenuItem(value: LLMConfig.typeClaude, child: Text('Claude')),
+          value: LLMConfig.typeOpenAiOauth,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 12),
+            child:
+                Text('Codex OAuth', style: TextStyle(color: Colors.grey[800])),
+          ),
+        ),
+        // ── Anthropic Group ──
+        DropdownMenuItem<String>(
+          enabled: false,
+          value: '__anthropic_header__',
+          child: Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              'Anthropic',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[500],
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+        ),
         DropdownMenuItem(
-            value: LLMConfig.typeBedrockClaude, child: Text('Bedrock-Claude')),
+          value: LLMConfig.typeClaude,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 12),
+            child: Text('API Key', style: TextStyle(color: Colors.grey[800])),
+          ),
+        ),
+        DropdownMenuItem(
+          value: LLMConfig.typeBedrockClaude,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 12),
+            child: Text('Bedrock Secret',
+                style: TextStyle(color: Colors.grey[800])),
+          ),
+        ),
+        // ── Others Group ──
+        DropdownMenuItem<String>(
+          enabled: false,
+          value: '__others_header__',
+          child: Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              'Others',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[500],
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+        ),
+        DropdownMenuItem(
+            value: LLMConfig.typeGemini, child: const Text('Gemini')),
       ],
       validator: (value) {
         if (value == null || value.isEmpty) {
@@ -631,6 +879,100 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage> {
         if (value == null || value.isEmpty) return UserStorage.l10n.required;
         return null;
       },
+    );
+  }
+
+  Widget _buildBedrockFields() {
+    return Column(
+      children: [
+        TextFormField(
+          controller: _bedrockAccessKeyController,
+          decoration: InputDecoration(
+            labelText: 'Access Key ID',
+            prefixIcon: const Icon(Icons.vpn_key),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFF6366F1), width: 2),
+            ),
+            filled: true,
+            fillColor: Colors.grey[50],
+          ),
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return UserStorage.l10n.required;
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 20),
+        TextFormField(
+          controller: _bedrockSecretKeyController,
+          decoration: InputDecoration(
+            labelText: 'Secret Access Key',
+            prefixIcon: const Icon(Icons.key),
+            suffixIcon: IconButton(
+              icon: Icon(
+                _isObscureApiKey ? Icons.visibility : Icons.visibility_off,
+                color: Colors.grey[600],
+              ),
+              onPressed: () =>
+                  setState(() => _isObscureApiKey = !_isObscureApiKey),
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFF6366F1), width: 2),
+            ),
+            filled: true,
+            fillColor: Colors.grey[50],
+          ),
+          obscureText: _isObscureApiKey,
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return UserStorage.l10n.required;
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 20),
+        TextFormField(
+          controller: _bedrockRegionController,
+          decoration: InputDecoration(
+            labelText: 'Region',
+            hintText: 'us-west-2',
+            prefixIcon: const Icon(Icons.public),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFF6366F1), width: 2),
+            ),
+            filled: true,
+            fillColor: Colors.grey[50],
+          ),
+        ),
+      ],
     );
   }
 

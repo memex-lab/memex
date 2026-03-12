@@ -34,17 +34,12 @@ class HealthKitFetcher implements HealthDataFetcher {
   Future<bool> requestPermissions(HealthDataType type) async {
     try {
       final types = [type];
-      // Check if we have permissions
+      // Only check if we have permissions — do NOT request.
+      // Permissions are now requested via System Authorization page.
       bool? hasPermissions = await _health.hasPermissions(types);
-
-      // If not determined or false, request them
-      if (hasPermissions != true) {
-        hasPermissions = await _health.requestAuthorization(types);
-      }
-
       return hasPermissions == true;
     } catch (e) {
-      _logger.warning('Permission request error for $type: $e');
+      _logger.warning('Permission check error for $type: $e');
       return false;
     }
   }
@@ -458,7 +453,8 @@ class PedometerFetcher implements HealthDataFetcher {
       return false;
     }
 
-    // Use the correct permission for Pedometer based on platform
+    // Only check permission status — do NOT request.
+    // Permissions are now requested via System Authorization page.
     Permission permission;
     if (Platform.isIOS) {
       permission = Permission.sensors; // Motion & Fitness on iOS
@@ -468,10 +464,6 @@ class PedometerFetcher implements HealthDataFetcher {
     }
 
     final status = await permission.status;
-    if (status.isDenied || status.isLimited) {
-      final result = await permission.request();
-      return result.isGranted;
-    }
     return status.isGranted;
   }
 
