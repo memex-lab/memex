@@ -18,8 +18,7 @@
 </p>
 
 <div align="center">
-  <video src="https://github.com/sparkleMing/file/releases/download/demo/demo.mp4" width="350" controls autoplay muted loop>
-  </video>
+  <img src="https://github.com/user-attachments/assets/450eb6e5-8adf-4c1f-bc46-a63c9836f22c" width="300" />
 </div>
 
 ## What is Memex?
