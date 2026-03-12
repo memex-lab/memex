@@ -129,7 +129,7 @@ class UserStorage {
       // Ensure default Gpt config exists
       bool changed = false;
       if (!configs.any((c) => c.key == LLMConfig.defaultClientKey)) {
-        configs.add(LLMConfig.createDefaultClient());
+        configs.add(LLMConfig.createDefaultClientConfig());
         changed = true;
       }
 

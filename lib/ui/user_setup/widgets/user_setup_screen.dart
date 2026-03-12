@@ -4,6 +4,7 @@ import 'package:memex/utils/user_storage.dart';
 import 'package:memex/utils/toast_helper.dart';
 import 'package:memex/domain/models/llm_config.dart';
 import 'package:memex/ui/user_setup/widgets/setup_model_config_page.dart';
+import 'package:memex/ui/core/widgets/avatar_picker.dart';
 
 /// User setup screen. Shown when user opens app for the first time or no local userId.
 class UserSetupScreen extends StatefulWidget {
@@ -82,12 +83,11 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
       final configs = await UserStorage.getLLMConfigs();
       final defaultConfig = configs.firstWhere(
         (c) => c.key == LLMConfig.defaultClientKey,
-        orElse: () => LLMConfig.createDefaultClient(),
+        orElse: () => LLMConfig.createDefaultClientConfig(),
       );
 
       if (mounted) {
         if (defaultConfig.isValid) {
-          ToastHelper.showSuccess(context, UserStorage.l10n.userCreatedSuccess);
           widget.onUserCreated();
         } else {
           setState(() => _isSubmitting = false);
@@ -99,8 +99,6 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
                 onComplete: () {
                   if (mounted) {
                     Navigator.pop(context);
-                    ToastHelper.showSuccess(
-                        context, UserStorage.l10n.userCreatedSuccess);
                     widget.onUserCreated();
                   }
                 },
@@ -332,80 +330,11 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
     );
   }
 
-  void _showAvatarPicker() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Handle bar
-              Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                UserStorage.l10n.chooseAvatar,
-                style: const TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF0F172A),
-                ),
-              ),
-              const SizedBox(height: 20),
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 6,
-                  mainAxisSpacing: 10,
-                  crossAxisSpacing: 10,
-                ),
-                itemCount: UserStorage.avatarOptions.length,
-                itemBuilder: (context, index) {
-                  final emoji = UserStorage.avatarOptions[index];
-                  final isSelected = emoji == _selectedAvatar;
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() => _selectedAvatar = emoji);
-                      Navigator.pop(context);
-                    },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? const Color(0xFFEEF2FF)
-                            : Colors.grey[50],
-                        borderRadius: BorderRadius.circular(14),
-                        border: isSelected
-                            ? Border.all(
-                                color: const Color(0xFF6366F1), width: 2)
-                            : Border.all(color: Colors.grey[200]!),
-                      ),
-                      child: Center(
-                        child:
-                            Text(emoji, style: const TextStyle(fontSize: 26)),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
+  void _showAvatarPicker() async {
+    final picked = await showAvatarPicker(context, _selectedAvatar);
+    if (picked != null && mounted) {
+      setState(() => _selectedAvatar = picked);
+    }
   }
 
   Widget _buildLanguageSelector() {

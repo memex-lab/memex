@@ -923,8 +923,14 @@ abstract class AppLocalizations {
   /// No description provided for @nothingHere.
   ///
   /// In en, this message translates to:
-  /// **'Nothing here'**
+  /// **'Nothing here yet'**
   String get nothingHere;
+
+  /// No description provided for @nothingHereHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the button below to create your first card'**
+  String get nothingHereHint;
 
   /// No description provided for @noPendingActionsToast.
   ///

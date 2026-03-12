@@ -5,6 +5,7 @@ import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/data/services/openai_auth_service.dart';
 import 'package:memex/utils/toast_helper.dart';
+import 'package:memex/ui/core/widgets/searchable_dropdown.dart';
 
 class ModelConfigEditPage extends StatefulWidget {
   final LLMConfig? config;
@@ -18,6 +19,7 @@ class ModelConfigEditPage extends StatefulWidget {
 class _ModelConfigEditPageState extends State<ModelConfigEditPage>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   final _formKey = GlobalKey<FormState>();
+  final _modelDropdownKey = GlobalKey<SearchableDropdownState>();
 
   late TextEditingController _keyController;
   late TextEditingController _modelIdController;
@@ -35,7 +37,6 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
   String _selectedType = '';
   bool _isObscureApiKey = true;
   Map<String, dynamic>? _openAiTokens;
-  bool _forceShowAllModels = false;
   bool _isAuthDialogShowing = false;
   bool _authFlowCompleted = false;
   bool _appResumedDuringAuth = false;
@@ -305,59 +306,10 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
     );
   }
 
-  static const _proOnlyModels = {'gpt-5.4', 'gpt-5.3-codex'};
+  bool _isProModel(String model) => LLMConfig.isChatgptProModel(model);
 
-  bool _isProModel(String model) => _proOnlyModels.contains(model);
-
-  List<String> _getRecommendedModels(String type) {
-    switch (type) {
-      case LLMConfig.typeGemini:
-        return [
-          'gemini-2.0-flash',
-          'gemini-2.0-pro-exp-02-05',
-          'gemini-1.5-pro',
-          'gemini-1.5-flash',
-          'gemini-3.1-pro-preview',
-        ];
-      case LLMConfig.typeChatCompletion:
-      case LLMConfig.typeResponses:
-        return [
-          'gpt-4o',
-          'gpt-4o-mini',
-          'o1',
-          'o1-mini',
-          'o3-mini',
-          'gpt-3.5-turbo',
-        ];
-      case LLMConfig.typeOpenAiOauth:
-        return [
-          'gpt-5.2',
-          'gpt-5.1-codex-max',
-          'gpt-5.1-codex-mini',
-          'gpt-5.2-codex',
-          'gpt-5.3-codex',
-          'gpt-5.1-codex',
-          'gpt-5.4',
-        ];
-      case LLMConfig.typeClaude:
-        return [
-          'claude-opus-4-6',
-          'claude-sonet-4-6',
-          'claude-haiku-4-5-20251001',
-        ];
-      case LLMConfig.typeBedrockClaude:
-        return [
-          'us.anthropic.claude-opus-4-6-v1',
-          'global.anthropic.claude-opus-4-6-v1',
-          'us.anthropic.claude-sonnet-4-6',
-          'global.anthropic.claude-sonnet-4-6',
-          'us.anthropic.claude-haiku-4-5-20251001-v1:0',
-          'global.anthropic.claude-haiku-4-5-20251001-v1:0',
-        ];
-      default:
-        return [];
-    }
-  }
+  List<String> _getRecommendedModels(String type) =>
+      LLMConfig.recommendedModels(type);
 
   @override
   void dispose() {
@@ -509,10 +461,12 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
 
     final defaultKey = widget.config!.key;
     final defaultType = widget.config!.type;
-    final defaultLLMConfig = LLMConfig.createDefault(defaultKey, defaultType);
+    final defaultLLMConfig =
+        LLMConfig.createDefaultConfig(defaultKey, defaultType);
 
     setState(() {
       _modelIdController.text = defaultLLMConfig.modelId;
+      _modelDropdownKey.currentState?.setText(defaultLLMConfig.modelId);
       _apiKeyController.text = defaultLLMConfig.apiKey;
       _baseUrlController.text = defaultLLMConfig.baseUrl;
       _proxyUrlController.text = defaultLLMConfig.proxyUrl ?? '';
@@ -761,24 +715,14 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
                     final recommended = _getRecommendedModels(value);
                     _modelIdController.text =
                         recommended.isNotEmpty ? recommended.first : '';
+                    _modelDropdownKey.currentState
+                        ?.setText(_modelIdController.text);
                     // Reset API Key
                     _apiKeyController.text = '';
 
-                    // Auto-fill default Base URL (Bedrock does not use baseUrl)
-                    if (value == LLMConfig.typeGemini) {
-                      _baseUrlController.text =
-                          'https://generativelanguage.googleapis.com/v1beta';
-                    } else if (value == LLMConfig.typeClaude) {
-                      _baseUrlController.text = 'https://api.anthropic.com';
-                    } else if (value == LLMConfig.typeChatCompletion ||
-                        value == LLMConfig.typeResponses) {
-                      _baseUrlController.text = 'https://api.openai.com/v1';
-                    } else if (value == LLMConfig.typeOpenAiOauth) {
-                      _baseUrlController.text =
-                          'https://chatgpt.com/backend-api/codex';
+                    _baseUrlController.text = LLMConfig.defaultBaseUrl(value);
+                    if (value == LLMConfig.typeOpenAiOauth) {
                       _loadOpenAiTokens();
-                    } else if (value == LLMConfig.typeBedrockClaude) {
-                      _baseUrlController.text = '';
                     }
                   }
                 },
@@ -786,120 +730,55 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
               const SizedBox(height: 16),
 
               // Model ID
-              Autocomplete<String>(
-                key: ValueKey(_selectedType),
-                optionsBuilder: (TextEditingValue textEditingValue) {
-                  final options = _getRecommendedModels(_selectedType);
-                  if (textEditingValue.text.isEmpty || _forceShowAllModels) {
-                    return options;
+              SearchableDropdown(
+                key: _modelDropdownKey,
+                options: _getRecommendedModels(_selectedType),
+                initialValue: _modelIdController.text,
+                onChanged: (value) {
+                  _modelIdController.text = value;
+                  _checkChanges();
+                  setState(() {});
+                },
+                decoration: InputDecoration(
+                  labelText: UserStorage.l10n.modelIdLabel,
+                  helperText: UserStorage.l10n.modelIdHelper,
+                  border: const OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return UserStorage.l10n.required;
                   }
-                  return options.where((String option) {
-                    return option
-                        .toLowerCase()
-                        .contains(textEditingValue.text.toLowerCase());
-                  });
+                  return null;
                 },
-                onSelected: (String selection) {
-                  _modelIdController.text = selection;
-                  setState(() {
-                    _forceShowAllModels = false;
-                  });
-                },
-                fieldViewBuilder:
-                    (context, controller, focusNode, onFieldSubmitted) {
-                  // Ensure initial value is set correctly in the internal controller
-                  if (controller.text != _modelIdController.text &&
-                      _modelIdController.text.isNotEmpty &&
-                      controller.text.isEmpty) {
-                    controller.text = _modelIdController.text;
-                  }
-
-                  return TextFormField(
-                    controller: controller,
-                    focusNode: focusNode,
-                    decoration: InputDecoration(
-                      labelText: UserStorage.l10n.modelIdLabel,
-                      helperText: UserStorage.l10n.modelIdHelper,
-                      border: const OutlineInputBorder(),
-                      suffixIcon: IconButton(
-                        icon: const Icon(Icons.arrow_drop_down),
-                        onPressed: () {
-                          setState(() {
-                            _forceShowAllModels = true;
-                          });
-                          focusNode.unfocus();
-                          Future.delayed(const Duration(milliseconds: 50), () {
-                            if (mounted) focusNode.requestFocus();
-                          });
-                        },
-                      ),
-                    ),
-                    onChanged: (value) {
-                      _modelIdController.text = value;
-                      setState(() {
-                        _forceShowAllModels = false;
-                      });
-                    },
-                    onFieldSubmitted: (value) {
-                      onFieldSubmitted();
-                    },
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return UserStorage.l10n.required;
-                      }
-                      return null;
-                    },
-                  );
-                },
-                initialValue: TextEditingValue(text: _modelIdController.text),
-                optionsViewBuilder: (context, onSelected, options) {
-                  return Align(
-                    alignment: Alignment.topLeft,
-                    child: Material(
-                      elevation: 4,
-                      borderRadius: BorderRadius.circular(8),
-                      child: ConstrainedBox(
-                        constraints:
-                            const BoxConstraints(maxHeight: 240, maxWidth: 340),
-                        child: ListView.builder(
-                          padding: EdgeInsets.zero,
-                          shrinkWrap: true,
-                          itemCount: options.length,
-                          itemBuilder: (context, index) {
-                            final option = options.elementAt(index);
-                            final isPro = _isProModel(option);
-                            return ListTile(
-                              dense: true,
-                              title: Row(
-                                children: [
-                                  Expanded(child: Text(option)),
-                                  if (isPro)
-                                    Container(
-                                      margin: const EdgeInsets.only(left: 8),
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 6, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFFFF7ED),
-                                        borderRadius: BorderRadius.circular(4),
-                                        border: Border.all(
-                                            color: const Color(0xFFFBBF24),
-                                            width: 0.5),
-                                      ),
-                                      child: const Text(
-                                        'Pro/Plus',
-                                        style: TextStyle(
-                                            fontSize: 10,
-                                            color: Color(0xFFD97706),
-                                            fontWeight: FontWeight.w600),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                              onTap: () => onSelected(option),
-                            );
-                          },
-                        ),
-                      ),
+                optionBuilder: (option, _) {
+                  final isPro = _selectedType == LLMConfig.typeOpenAiOauth &&
+                      _isProModel(option);
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    child: Row(
+                      children: [
+                        Expanded(child: Text(option)),
+                        if (isPro)
+                          Container(
+                            margin: const EdgeInsets.only(left: 8),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFF7ED),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                  color: const Color(0xFFFBBF24), width: 0.5),
+                            ),
+                            child: const Text(
+                              'Pro/Plus',
+                              style: TextStyle(
+                                  fontSize: 10,
+                                  color: Color(0xFFD97706),
+                                  fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                      ],
                     ),
                   );
                 },

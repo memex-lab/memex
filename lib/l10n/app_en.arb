@@ -217,7 +217,8 @@
   "insightInputHint": "What would you like to know about your knowledge...",
   "aiInputHint": "Whether it's memories or the present, I'm here...",
   "noContentInPeriod": "No content in this period",
-  "nothingHere": "Nothing here",
+  "nothingHere": "Nothing here yet",
+  "nothingHereHint": "Tap the button below to create your first card",
   "noPendingActionsToast": "No pending actions",
   "knowledgeNewDiscovery": "Knowledge new discovery",
   "@discoveredNewInsightsCount": {

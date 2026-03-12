@@ -8,6 +8,90 @@ class LLMConfig {
   static const String typeClaude = 'claude';
   static const String typeOpenAiOauth = 'openai_oauth';
 
+  /// Models that require a ChatGPT Pro/Plus subscription (OpenAI OAuth only).
+  static const Set<String> chatgptProOnlyModels = {'gpt-5.4', 'gpt-5.3-codex'};
+
+  /// Whether [modelId] requires a ChatGPT Pro/Plus subscription.
+  static bool isChatgptProModel(String modelId) =>
+      chatgptProOnlyModels.contains(modelId);
+
+  /// Recommended model IDs per provider type.
+  static List<String> recommendedModels(String type) {
+    switch (type) {
+      case typeGemini:
+        return const [
+          'gemini-3.1-pro-preview',
+          'gemini-2.0-flash',
+          'gemini-2.0-pro-exp-02-05',
+          'gemini-1.5-pro',
+          'gemini-1.5-flash',
+        ];
+      case typeChatCompletion:
+      case typeResponses:
+        return const [
+          'gpt-5.4',
+          'gpt-5.4-pro',
+          'gpt-5-mini',
+          'o1',
+          'o1-mini',
+          'o3',
+          'o3-pro',
+          'o3-mini',
+          'gpt-5.2',
+          'gpt-5.2-codex',
+          'gpt-5.1-codex-max',
+          'gpt-5.1-codex-mini',
+          'gpt-5.3-codex',
+          'gpt-5.1-codex',
+          'gpt-4.1',
+        ];
+      case typeOpenAiOauth:
+        return const [
+          'gpt-5.2',
+          'gpt-5.1-codex-max',
+          'gpt-5.1-codex-mini',
+          'gpt-5.2-codex',
+          'gpt-5.3-codex',
+          'gpt-5.1-codex',
+          'gpt-5.4',
+        ];
+      case typeClaude:
+        return const [
+          'claude-opus-4-6',
+          'claude-sonet-4-6',
+          'claude-haiku-4-5-20251001',
+        ];
+      case typeBedrockClaude:
+        return const [
+          'us.anthropic.claude-opus-4-6-v1',
+          'global.anthropic.claude-opus-4-6-v1',
+          'us.anthropic.claude-sonnet-4-6',
+          'global.anthropic.claude-sonnet-4-6',
+          'us.anthropic.claude-haiku-4-5-20251001-v1:0',
+          'global.anthropic.claude-haiku-4-5-20251001-v1:0',
+        ];
+      default:
+        return const [];
+    }
+  }
+
+  /// Default base URL for a given provider type.
+  static String defaultBaseUrl(String type) {
+    switch (type) {
+      case typeGemini:
+        return 'https://generativelanguage.googleapis.com/v1beta';
+      case typeClaude:
+        return 'https://api.anthropic.com';
+      case typeChatCompletion:
+      case typeResponses:
+        return 'https://api.openai.com/v1';
+      case typeOpenAiOauth:
+        return 'https://chatgpt.com/backend-api/codex';
+      default:
+        return '';
+    }
+  }
+
   /// Get valid API Key (return default if empty)
   String getEffectiveApiKey() {
     if (apiKey.isNotEmpty) {
@@ -118,21 +202,21 @@ class LLMConfig {
     );
   }
 
-  static LLMConfig createDefaultClient() {
+  static LLMConfig createDefaultClientConfig() {
     return const LLMConfig(
       key: defaultClientKey,
       baseUrl: "https://api.openai.com/v1",
       type: typeChatCompletion,
-      modelId: 'o1',
+      modelId: 'gpt-5.4',
       maxTokens: 65536,
       apiKey: '',
       extra: {"reasoning_effort": "medium"},
     );
   }
 
-  static LLMConfig createDefault(String key, String type) {
+  static LLMConfig createDefaultConfig(String key, String type) {
     if (key == defaultClientKey) {
-      return createDefaultClient();
+      return createDefaultClientConfig();
     }
     throw Exception('Unknown LLM config key: $key');
   }

@@ -453,7 +453,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noContentInPeriod => '该时间段无内容';
 
   @override
-  String get nothingHere => '这里什么都没有';
+  String get nothingHere => '还没有任何内容';
+
+  @override
+  String get nothingHereHint => '点击下方按钮创建你的第一张卡片';
 
   @override
   String get noPendingActionsToast => '当前没有待处理动作';

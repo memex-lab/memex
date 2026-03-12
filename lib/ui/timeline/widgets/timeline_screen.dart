@@ -326,6 +326,7 @@ class TimelineScreenState extends State<TimelineScreen> {
                               ).then((_) {
                                 _checkPermissionBadge();
                                 _checkFitnessBanner();
+                                _loadUserAvatar();
                               });
                             },
                             child: Badge(
@@ -850,21 +851,33 @@ class TimelineScreenState extends State<TimelineScreen> {
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           child: SizedBox(
-            height: MediaQuery.of(context).size.height * 0.7,
+            height: MediaQuery.of(context).size.height * 0.6,
             child: Center(
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   const Text(
-                    '🤔',
+                    '📝',
                     style: TextStyle(fontSize: 48),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     UserStorage.l10n.nothingHere,
                     style: const TextStyle(
-                      fontSize: 16,
-                      color: Color(0xFF94A3B8),
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF64748B),
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    UserStorage.l10n.nothingHereHint,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFFADB5BD),
+                      height: 1.4,
                     ),
                   ),
                 ],

@@ -466,7 +466,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noContentInPeriod => 'No content in this period';
 
   @override
-  String get nothingHere => 'Nothing here';
+  String get nothingHere => 'Nothing here yet';
+
+  @override
+  String get nothingHereHint =>
+      'Tap the button below to create your first card';
 
   @override
   String get noPendingActionsToast => 'No pending actions';

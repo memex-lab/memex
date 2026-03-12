@@ -217,7 +217,8 @@
   "insightInputHint": "关于知识洞察，你想了解什么...",
   "aiInputHint": "无论是回忆还是当下，我都准备好了...",
   "noContentInPeriod": "该时间段无内容",
-  "nothingHere": "这里什么都没有",
+  "nothingHere": "还没有任何内容",
+  "nothingHereHint": "点击下方按钮创建你的第一张卡片",
   "noPendingActionsToast": "当前没有待处理动作",
   "knowledgeNewDiscovery": "知识库新发现",
   "@discoveredNewInsightsCount": {

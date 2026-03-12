@@ -11,6 +11,7 @@ import 'package:memex/ui/settings/widgets/model_config_list_page.dart';
 import 'package:memex/ui/settings/widgets/system_authorization_page.dart';
 import 'package:memex/ui/settings/widgets/debug_settings_page.dart';
 import 'package:memex/utils/permission_utils.dart';
+import 'package:memex/ui/core/widgets/avatar_picker.dart';
 
 /// Personal center screen
 class PersonalCenterScreen extends StatefulWidget {
@@ -54,6 +55,14 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
         _userEmail = userId != null ? '$userId@memex.local' : null;
         _userAvatar = avatar;
       });
+    }
+  }
+
+  Future<void> _changeAvatar() async {
+    final picked = await showAvatarPicker(context, _userAvatar ?? '👤');
+    if (picked != null && mounted) {
+      await UserStorage.saveUserAvatar(picked);
+      setState(() => _userAvatar = picked);
     }
   }
 
@@ -523,19 +532,43 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
                     // User Profile Section
                     Column(
                       children: [
-                        // Avatar
-                        Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFEEF2FF),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Center(
-                            child: Text(
-                              _userAvatar ?? '👤',
-                              style: const TextStyle(fontSize: 44),
-                            ),
+                        // Avatar (tappable to change)
+                        GestureDetector(
+                          onTap: _changeAvatar,
+                          child: Stack(
+                            children: [
+                              Container(
+                                width: 80,
+                                height: 80,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFEEF2FF),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    _userAvatar ?? '👤',
+                                    style: const TextStyle(fontSize: 44),
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                right: 0,
+                                bottom: 0,
+                                child: Container(
+                                  width: 26,
+                                  height: 26,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF6366F1),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                        color: const Color(0xFFF8FAFC),
+                                        width: 2),
+                                  ),
+                                  child: const Icon(Icons.edit,
+                                      size: 13, color: Colors.white),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
 
