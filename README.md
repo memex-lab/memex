@@ -1,9 +1,8 @@
 <p align="center">
-  <img src="assets/icon.png" width="120" alt="Memex Logo" />
+    <picture>
+      <img src="https://github.com/user-attachments/assets/c603127f-98a5-4bf1-8946-778fec2b76f6">
+    </picture>
 </p>
-
-<h1 align="center">Memex</h1>
-
 <p align="center">
   An AI-powered personal knowledge management app that runs entirely on your device.
 </p>
