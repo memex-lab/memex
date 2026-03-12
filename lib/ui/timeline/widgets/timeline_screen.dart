@@ -323,7 +323,10 @@ class TimelineScreenState extends State<TimelineScreen> {
                                 backgroundColor: Colors.transparent,
                                 builder: (context) =>
                                     const PersonalCenterScreen(),
-                              ).then((_) => _checkPermissionBadge());
+                              ).then((_) {
+                                _checkPermissionBadge();
+                                _checkFitnessBanner();
+                              });
                             },
                             child: Badge(
                               isLabelVisible: _showPermissionBadge,
