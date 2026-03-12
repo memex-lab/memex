@@ -65,6 +65,7 @@ class CardUpdatedMessage extends EventBusMessage {
   final List<Map<String, dynamic>>? assets; // Extracted assets
   final String? rawText; // Original user input text
   final String? address;
+  final String? failureReason;
 
   CardUpdatedMessage({
     required this.id,
@@ -77,6 +78,7 @@ class CardUpdatedMessage extends EventBusMessage {
     this.assets,
     this.rawText,
     this.address,
+    this.failureReason,
   }) : super(
           type: EventBusMessageType.cardUpdated,
           data: {
@@ -90,6 +92,7 @@ class CardUpdatedMessage extends EventBusMessage {
             if (assets != null && assets.isNotEmpty) 'assets': assets,
             if (rawText != null) 'raw_text': rawText,
             if (address != null) 'address': address,
+            if (failureReason != null) 'failure_reason': failureReason,
           },
         );
 
@@ -118,6 +121,7 @@ class CardUpdatedMessage extends EventBusMessage {
           .toList(),
       rawText: data['raw_text'] as String?,
       address: data['address'] as String?,
+      failureReason: data['failure_reason'] as String?,
     );
   }
 }

@@ -63,10 +63,7 @@ class OpenAiAuthService {
         'state': state,
       });
 
-      // 3. Ensure local server is running for OAuth callback
-      await LocalServerService.start();
-
-      // 4. Setup Local Server Listener for Callback
+      // 3. Setup Local Server Listener for Callback
       final completer = Completer<Map<String, String>?>();
       LocalServerService.setAuthCallback((Uri uri) {
         if (uri.path == '/cancel') {
@@ -317,13 +314,13 @@ class OpenAiAuthService {
 
     // Allowed models whitelist (from opencode codex.ts)
     const allowedModels = {
-      'gpt-5.4',
+      'gpt-5.2',
       'gpt-5.1-codex-max',
       'gpt-5.1-codex-mini',
-      'gpt-5.2',
       'gpt-5.2-codex',
       'gpt-5.3-codex',
       'gpt-5.1-codex',
+      'gpt-5.4',
     };
 
     List<Map<String, dynamic>> finalModels = [];

@@ -16,7 +16,7 @@ class ModelConfigEditPage extends StatefulWidget {
 }
 
 class _ModelConfigEditPageState extends State<ModelConfigEditPage>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   final _formKey = GlobalKey<FormState>();
 
   late TextEditingController _keyController;
@@ -36,6 +36,9 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
   bool _isObscureApiKey = true;
   Map<String, dynamic>? _openAiTokens;
   bool _forceShowAllModels = false;
+  bool _isAuthDialogShowing = false;
+  bool _authFlowCompleted = false;
+  bool _appResumedDuringAuth = false;
 
   bool _hasChanges = false;
   late AnimationController _animationController;
@@ -43,6 +46,7 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     final config = widget.config;
     _keyController = TextEditingController(text: config?.key ?? '');
     _modelIdController = TextEditingController(text: config?.modelId ?? '');
@@ -158,13 +162,42 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
     }
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _isAuthDialogShowing) {
+      _appResumedDuringAuth = true;
+      // Start a generous timeout — if auth callbacks don't fire within 10s
+      // after resume, the user likely cancelled manually.
+      Future.delayed(const Duration(seconds: 10), () {
+        if (_isAuthDialogShowing &&
+            !_authFlowCompleted &&
+            _appResumedDuringAuth &&
+            mounted) {
+          _dismissAuthDialog();
+          ToastHelper.showError(
+              context, UserStorage.l10n.authFailed('Authorization cancelled'));
+        }
+      });
+    }
+  }
+
+  void _dismissAuthDialog() {
+    if (_isAuthDialogShowing && mounted) {
+      _isAuthDialogShowing = false;
+      Navigator.of(context, rootNavigator: true).pop();
+    }
+  }
+
   void _startOpenAiAuth() {
+    _authFlowCompleted = false;
+    _appResumedDuringAuth = false;
     OpenAiAuthService.startAuthFlow(
       onStart: () {
+        _isAuthDialogShowing = true;
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (context) => Center(
+          builder: (dialogContext) => Center(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               decoration: BoxDecoration(
@@ -186,18 +219,22 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
               ),
             ),
           ),
-        );
+        ).then((_) {
+          _isAuthDialogShowing = false;
+        });
       },
       onSuccess: (accountId) {
+        _authFlowCompleted = true;
+        _dismissAuthDialog();
         if (mounted) {
-          Navigator.of(context, rootNavigator: true).pop();
           ToastHelper.showSuccess(context, 'Authorized successfully');
           _loadOpenAiTokens();
         }
       },
       onError: (error) {
+        _authFlowCompleted = true;
+        _dismissAuthDialog();
         if (mounted) {
-          Navigator.of(context, rootNavigator: true).pop();
           ToastHelper.showError(
               context, UserStorage.l10n.authFailed(error.toString()));
         }
@@ -290,13 +327,13 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
         ];
       case LLMConfig.typeOpenAiOauth:
         return [
-          'gpt-5.4',
+          'gpt-5.2',
           'gpt-5.1-codex-max',
           'gpt-5.1-codex-mini',
-          'gpt-5.2',
           'gpt-5.2-codex',
           'gpt-5.3-codex',
           'gpt-5.1-codex',
+          'gpt-5.4',
         ];
       case LLMConfig.typeClaude:
         return [
@@ -320,6 +357,16 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    // Dismiss auth dialog if still showing when page is disposed
+    if (_isAuthDialogShowing) {
+      _isAuthDialogShowing = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        try {
+          Navigator.of(context, rootNavigator: true).pop();
+        } catch (_) {}
+      });
+    }
     _keyController.dispose();
     _modelIdController.dispose();
     _apiKeyController.dispose();

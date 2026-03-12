@@ -29,6 +29,7 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
   bool _isReprocessingCards = false;
   bool _isReprocessingComments = false;
   bool _showAuthBadge = false;
+  String? _userAvatar;
 
   @override
   void initState() {
@@ -46,10 +47,12 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
 
   Future<void> _loadUserInfo() async {
     final userId = await UserStorage.getUserId();
+    final avatar = await UserStorage.getUserAvatar();
     if (mounted) {
       setState(() {
         _userId = userId ?? UserStorage.l10n.notSet;
         _userEmail = userId != null ? '$userId@memex.local' : null;
+        _userAvatar = avatar;
       });
     }
   }
@@ -525,13 +528,14 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
                           width: 80,
                           height: 80,
                           decoration: BoxDecoration(
-                            color: Colors.grey[200],
+                            color: const Color(0xFFEEF2FF),
                             shape: BoxShape.circle,
                           ),
-                          child: Icon(
-                            Icons.person,
-                            size: 40,
-                            color: Colors.grey[600],
+                          child: Center(
+                            child: Text(
+                              _userAvatar ?? '👤',
+                              style: const TextStyle(fontSize: 44),
+                            ),
                           ),
                         ),
 

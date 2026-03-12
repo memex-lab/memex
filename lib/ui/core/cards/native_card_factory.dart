@@ -39,6 +39,7 @@ class NativeCardFactory {
     List<String> tags = const [],
     String? cardId,
     int? configIndex,
+    String? failureReason,
     Function(String cardId, int configIndex, Map<String, dynamic> data)?
         onUpdate,
   }) {
@@ -46,6 +47,7 @@ class NativeCardFactory {
     final Map<String, dynamic> mergedData = {
       'tags': tags,
       'status': status,
+      if (failureReason != null) 'failure_reason': failureReason,
       ...data,
       'title': title,
     };

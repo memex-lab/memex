@@ -42,6 +42,7 @@ class UserStorage {
   static AppLocalizationsExt? _l10n;
   static const String _keyUserId = 'user_id';
   static const String _keyPhotoSuggestionCache = 'photo_suggestion_cache';
+  static const String _keyUserAvatar = 'user_avatar';
 
   /// Get the global l10n instance
   /// Throws an exception if not initialized (should be initialized in main())
@@ -485,6 +486,54 @@ class UserStorage {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_keyPhotoSuggestionCache, jsonEncode(cache));
+    } catch (e) {
+      // ignore error
+    }
+  }
+
+  /// Predefined avatar options (people & character faces).
+  static const List<String> avatarOptions = [
+    '👤',
+    '👨',
+    '👩',
+    '🧑',
+    '👦',
+    '👧',
+    '🧔',
+    '👱',
+    '👨\u200D🦰',
+    '👩\u200D🦰',
+    '👨\u200D🦱',
+    '👩\u200D🦱',
+    '👨\u200D🦳',
+    '👩\u200D🦳',
+    '👴',
+    '👵',
+    '🧑\u200D💻',
+    '👨\u200D💻',
+    '👩\u200D💻',
+    '🧑\u200D🚀',
+    '🧑\u200D🎨',
+    '🧑\u200D🔬',
+    '🥷',
+    '🧙',
+  ];
+
+  /// Get stored user avatar. Returns null if not set.
+  static Future<String?> getUserAvatar() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString(_keyUserAvatar);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Save user avatar selection.
+  static Future<void> saveUserAvatar(String avatar) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_keyUserAvatar, avatar);
     } catch (e) {
       // ignore error
     }

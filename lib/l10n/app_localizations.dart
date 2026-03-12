@@ -2474,6 +2474,12 @@ abstract class AppLocalizations {
   /// **'Choose Language'**
   String get chooseLanguage;
 
+  /// No description provided for @chooseAvatar.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Avatar'**
+  String get chooseAvatar;
+
   /// No description provided for @coachMarkFirstPost.
   ///
   /// In en, this message translates to:
@@ -2497,6 +2503,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Configure Now'**
   String get configureNow;
+
+  /// No description provided for @modelNotConfiguredBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'AI model not configured yet. Set it up to unlock all features.'**
+  String get modelNotConfiguredBanner;
+
+  /// No description provided for @modelNotConfiguredSubmitHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Please configure an AI model before publishing'**
+  String get modelNotConfiguredSubmitHint;
+
+  /// No description provided for @processingStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing'**
+  String get processingStatus;
+
+  /// No description provided for @failedStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get failedStatus;
+
+  /// No description provided for @viewDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'View Details'**
+  String get viewDetails;
+
+  /// No description provided for @failureReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Failure Reason'**
+  String get failureReason;
+
+  /// No description provided for @unknownError.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown error occurred'**
+  String get unknownError;
+
+  /// No description provided for @enableFitness.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable Fitness'**
+  String get enableFitness;
+
+  /// No description provided for @fitnessBannerMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow fitness access to track your health and activity data.'**
+  String get fitnessBannerMessage;
+
+  /// No description provided for @fitnessDismissTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip Fitness Access?'**
+  String get fitnessDismissTitle;
+
+  /// No description provided for @fitnessDismissMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Without fitness permission, the app won\'t be able to automatically collect your health data for insights and auto-recording.'**
+  String get fitnessDismissMessage;
+
+  /// No description provided for @skipAnyway.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip Anyway'**
+  String get skipAnyway;
 }
 
 class _AppLocalizationsDelegate

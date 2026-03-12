@@ -37,6 +37,7 @@ import 'package:memex/utils/toast_helper.dart';
 import 'package:memex/ui/agent_activity/widgets/agent_activity_widget.dart';
 import 'package:memex/ui/main_screen/widgets/ai_core_button.dart';
 import 'package:memex/db/app_database.dart';
+import 'package:memex/data/services/local_server_service.dart';
 import 'package:go_router/go_router.dart';
 import 'package:memex/routing/router.dart';
 import 'package:memex/data/services/onboarding_service.dart';
@@ -59,8 +60,8 @@ void main() async {
 
   // MemexRouter is provided via config/dependencies.dart and created on first read
 
-  // Local HTTP server is now started lazily when OAuth is needed
-  // (see OpenAiAuthService)
+  // Start local HTTP server
+  await LocalServerService.start();
 
   // Set status bar style & enable edge-to-edge
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
@@ -338,7 +339,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   final GlobalKey _mainStackKey = GlobalKey();
   bool _isInvalidConfigDialogShowing = false;
   bool _showFirstPostCoachMark = false;
-  bool _showConfigModelPrompt = false;
 
   // Agent Button Position - REMOVED (Moved to Main App)
 
@@ -422,6 +422,15 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _handleAICoreButtonTap() async {
+    // Check if model is configured before opening input
+    final configs = await UserStorage.getLLMConfigs();
+    final hasValidConfig = configs.any((c) => c.isValid);
+    if (!hasValidConfig && mounted) {
+      ToastHelper.showError(
+          context, UserStorage.l10n.modelNotConfiguredSubmitHint);
+      return;
+    }
+
     // Skip auto-publish, go directly to input_sheet
     if (mounted) {
       setState(() {
@@ -435,18 +444,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _checkFirstPostOnboarding() async {
-    // First check if any valid LLM config exists
-    final configs = await UserStorage.getLLMConfigs();
-    final hasValidConfig = configs.any((c) => c.isValid);
-
-    if (!hasValidConfig && mounted) {
-      // No valid model config — prioritize model setup guidance
-      await Future.delayed(const Duration(milliseconds: 800));
-      if (mounted) setState(() => _showConfigModelPrompt = true);
-      return;
-    }
-
-    // Model is configured — check first post onboarding
+    // Check first post onboarding
     final done = await OnboardingService.isFirstPostDone();
     if (!done && mounted) {
       await Future.delayed(const Duration(milliseconds: 800));
@@ -457,102 +455,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   void _dismissFirstPostCoachMark() {
     setState(() => _showFirstPostCoachMark = false);
     OnboardingService.markFirstPostDone();
-  }
-
-  void _dismissConfigModelPrompt() {
-    setState(() => _showConfigModelPrompt = false);
-  }
-
-  void _navigateToModelConfig() {
-    _dismissConfigModelPrompt();
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const ModelConfigListPage(),
-      ),
-    ).then((_) {
-      // After returning from config, re-check onboarding
-      _checkFirstPostOnboarding();
-    });
-  }
-
-  Widget _buildConfigModelPrompt() {
-    return GestureDetector(
-      onTap: _dismissConfigModelPrompt,
-      child: Material(
-        color: Colors.black.withValues(alpha: 0.6),
-        child: Center(
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 32),
-            padding: const EdgeInsets.all(28),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.15),
-                  blurRadius: 24,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const Icon(
-                    Icons.key,
-                    size: 28,
-                    color: Color(0xFF6366F1),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  UserStorage.l10n.coachMarkConfigureModel,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Color(0xFF334155),
-                    height: 1.5,
-                    decoration: TextDecoration.none,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _navigateToModelConfig,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF6366F1),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: Text(
-                      UserStorage.l10n.configureNow,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
   }
 
   void _handleAICoreButtonLongPressStart() {
@@ -934,9 +836,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                   message: UserStorage.l10n.coachMarkFirstPost,
                   onDismiss: _dismissFirstPostCoachMark,
                 ),
-
-              // Model config prompt overlay
-              if (_showConfigModelPrompt) _buildConfigModelPrompt(),
             ],
           ),
         ));

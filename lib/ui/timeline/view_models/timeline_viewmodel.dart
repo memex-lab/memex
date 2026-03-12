@@ -128,6 +128,7 @@ class TimelineViewModel extends ChangeNotifier {
         assets: assets,
         rawText: message.rawText,
         address: message.address,
+        failureReason: message.failureReason,
       );
       updateCard(updatedCard);
       fetchTags();

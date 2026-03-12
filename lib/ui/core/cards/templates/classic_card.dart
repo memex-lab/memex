@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:memex/ui/core/cards/style/timeline_theme.dart';
@@ -6,6 +7,7 @@ import 'package:memex/ui/core/cards/ui/timeline_card_container.dart';
 import 'package:memex/ui/core/cards/ui/timeline_common.dart';
 import 'package:memex/ui/core/widgets/local_image.dart';
 import 'package:memex/ui/core/widgets/local_audio_source.dart';
+import 'package:memex/utils/user_storage.dart';
 
 /// Classic Card Template
 ///
@@ -41,6 +43,7 @@ class _ClassicCardState extends State<ClassicCard> {
   String? get audioUrl => widget.data['audioUrl'] as String?;
   String get status => widget.data['status'] as String? ?? 'completed';
   String? get transcript => widget.data['transcript'] as String?;
+  String? get failureReason => widget.data['failure_reason'] as String?;
 
   Duration _duration = Duration.zero;
   Duration _position = Duration.zero;
@@ -184,40 +187,254 @@ class _ClassicCardState extends State<ClassicCard> {
 
   Widget _buildStatusHeader() {
     final isProcessing = status == 'processing';
-    final statusTitle = isProcessing ? 'Processing' : 'Failed';
-    final statusColor = isProcessing
-        ? const Color(0xFF8B5CF6) // Purple
-        : TimelineTheme.colors.danger;
-    final bgIconColor = isProcessing
-        ? const Color(0xFFF3E8FF) // Purple-100
-        : TimelineTheme.colors.danger.withOpacity(0.1);
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: bgIconColor.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: bgIconColor),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            width: 14,
-            height: 14,
-            child: isProcessing
-                ? CircularProgressIndicator(strokeWidth: 2, color: statusColor)
-                : Icon(Icons.error_outline, size: 14, color: statusColor),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            statusTitle,
-            style: TimelineTheme.typography.label.copyWith(
-              color: statusColor,
+    if (isProcessing) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFF8B5CF6).withValues(alpha: 0.08),
+                  const Color(0xFF8B5CF6).withValues(alpha: 0.04),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: const Color(0xFF8B5CF6).withValues(alpha: 0.15),
+                width: 0.5,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: const Color(0xFF8B5CF6).withValues(alpha: 0.7),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  UserStorage.l10n.processingStatus,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF8B5CF6).withValues(alpha: 0.8),
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
+        ),
+      );
+    }
+
+    // Failed state
+    return GestureDetector(
+      onTap: () => _showFailureSheet(context),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFFEF4444).withValues(alpha: 0.06),
+                  const Color(0xFFEF4444).withValues(alpha: 0.03),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: const Color(0xFFEF4444).withValues(alpha: 0.12),
+                width: 0.5,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(width: 2),
+                Text(
+                  UserStorage.l10n.failedStatus,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFFEF4444).withValues(alpha: 0.8),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Icon(Icons.chevron_right,
+                    size: 14,
+                    color: const Color(0xFFEF4444).withValues(alpha: 0.5)),
+              ],
+            ),
+          ),
+        ),
       ),
+    );
+  }
+
+  void _showFailureSheet(BuildContext context) {
+    final reason = failureReason ?? UserStorage.l10n.unknownError;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) {
+        final bottomPadding = MediaQuery.of(ctx).viewPadding.bottom;
+        return ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+            child: Container(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(ctx).size.height * 0.55,
+              ),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.white.withValues(alpha: 0.85),
+                    Colors.white.withValues(alpha: 0.92),
+                  ],
+                ),
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(24)),
+                border: Border(
+                  top: BorderSide(
+                    color: Colors.white.withValues(alpha: 0.6),
+                    width: 0.5,
+                  ),
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Drag handle
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12, bottom: 20),
+                    child: Container(
+                      width: 36,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF94A3B8).withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                const Color(0xFFEF4444).withValues(alpha: 0.15),
+                                const Color(0xFFEF4444).withValues(alpha: 0.08),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: const Color(0xFFEF4444)
+                                  .withValues(alpha: 0.1),
+                              width: 0.5,
+                            ),
+                          ),
+                          child: const Icon(Icons.warning_amber_rounded,
+                              size: 20, color: Color(0xFFEF4444)),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Text(
+                            UserStorage.l10n.failureReason,
+                            style: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF1E293B),
+                              letterSpacing: -0.3,
+                            ),
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () => Navigator.pop(ctx),
+                          child: Container(
+                            width: 30,
+                            height: 30,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF94A3B8)
+                                  .withValues(alpha: 0.12),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(Icons.close_rounded,
+                                size: 16,
+                                color: const Color(0xFF64748B)
+                                    .withValues(alpha: 0.8)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  // Error content
+                  Flexible(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(14),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0F172A)
+                                  .withValues(alpha: 0.03),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: const Color(0xFF94A3B8)
+                                    .withValues(alpha: 0.12),
+                                width: 0.5,
+                              ),
+                            ),
+                            child: SingleChildScrollView(
+                              physics: const BouncingScrollPhysics(),
+                              child: SelectableText(
+                                reason,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF64748B),
+                                  height: 1.6,
+                                  fontFamily: 'monospace',
+                                  letterSpacing: -0.2,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 20 + bottomPadding),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 

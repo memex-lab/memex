@@ -18,6 +18,7 @@ class TimelineCardModel {
   final String?
       rawText; // Original user input text (with asset markers removed)
   final String? address; // Location name
+  final String? failureReason;
 
   TimelineCardModel({
     required this.id,
@@ -30,6 +31,7 @@ class TimelineCardModel {
     this.assets,
     this.rawText,
     this.address,
+    this.failureReason,
   });
 
   factory TimelineCardModel.fromJson(Map<String, dynamic> json) {
@@ -62,6 +64,7 @@ class TimelineCardModel {
           .toList(),
       rawText: json['raw_text'] as String?,
       address: json['address'] as String?,
+      failureReason: json['failure_reason'] as String?,
     );
   }
 
@@ -78,6 +81,7 @@ class TimelineCardModel {
         'assets': assets!.map((a) => a.toJson()).toList(),
       if (rawText != null) 'raw_text': rawText,
       if (address != null) 'address': address,
+      if (failureReason != null) 'failure_reason': failureReason,
     };
   }
 

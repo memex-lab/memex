@@ -18,7 +18,8 @@ class SetupModelConfigPage extends StatefulWidget {
   State<SetupModelConfigPage> createState() => _SetupModelConfigPageState();
 }
 
-class _SetupModelConfigPageState extends State<SetupModelConfigPage> {
+class _SetupModelConfigPageState extends State<SetupModelConfigPage>
+    with WidgetsBindingObserver {
   final _formKey = GlobalKey<FormState>();
 
   late TextEditingController _modelIdController;
@@ -33,10 +34,14 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage> {
   bool _isSubmitting = false;
   Map<String, dynamic>? _openAiTokens;
   bool _forceShowAllModels = false;
+  bool _isAuthDialogShowing = false;
+  bool _authFlowCompleted = false;
+  bool _appResumedDuringAuth = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     final config = widget.config;
     _modelIdController = TextEditingController(text: config.modelId);
     _apiKeyController = TextEditingController(text: config.apiKey);
@@ -62,13 +67,43 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage> {
     }
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _isAuthDialogShowing) {
+      _appResumedDuringAuth = true;
+      Future.delayed(const Duration(seconds: 10), () {
+        if (_isAuthDialogShowing &&
+            !_authFlowCompleted &&
+            _appResumedDuringAuth &&
+            mounted) {
+          _dismissAuthDialog();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text(
+                    UserStorage.l10n.authFailed('Authorization cancelled'))),
+          );
+        }
+      });
+    }
+  }
+
+  void _dismissAuthDialog() {
+    if (_isAuthDialogShowing && mounted) {
+      _isAuthDialogShowing = false;
+      Navigator.of(context, rootNavigator: true).pop();
+    }
+  }
+
   void _startOpenAiAuth() {
+    _authFlowCompleted = false;
+    _appResumedDuringAuth = false;
     OpenAiAuthService.startAuthFlow(
       onStart: () {
+        _isAuthDialogShowing = true;
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (context) => Center(
+          builder: (dialogContext) => Center(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               decoration: BoxDecoration(
@@ -93,11 +128,15 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage> {
               ),
             ),
           ),
-        );
+        ).then((_) {
+          // Dialog was dismissed (e.g. by back button or programmatically)
+          _isAuthDialogShowing = false;
+        });
       },
       onSuccess: (accountId) {
+        _authFlowCompleted = true;
+        _dismissAuthDialog();
         if (mounted) {
-          Navigator.of(context, rootNavigator: true).pop();
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Authorized successfully')),
           );
@@ -105,8 +144,9 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage> {
         }
       },
       onError: (error) {
+        _authFlowCompleted = true;
+        _dismissAuthDialog();
         if (mounted) {
-          Navigator.of(context, rootNavigator: true).pop();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
                 content: Text(UserStorage.l10n.authFailed(error.toString()))),
@@ -212,13 +252,13 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage> {
         ];
       case LLMConfig.typeOpenAiOauth:
         return [
-          'gpt-5.4',
+          'gpt-5.2',
           'gpt-5.1-codex-max',
           'gpt-5.1-codex-mini',
-          'gpt-5.2',
           'gpt-5.2-codex',
           'gpt-5.3-codex',
           'gpt-5.1-codex',
+          'gpt-5.4',
         ];
       case LLMConfig.typeClaude:
         return [
@@ -242,6 +282,16 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    // Dismiss auth dialog if still showing when page is disposed
+    if (_isAuthDialogShowing) {
+      _isAuthDialogShowing = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        try {
+          Navigator.of(context, rootNavigator: true).pop();
+        } catch (_) {}
+      });
+    }
     _modelIdController.dispose();
     _apiKeyController.dispose();
     _baseUrlController.dispose();

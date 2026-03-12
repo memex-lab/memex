@@ -627,8 +627,21 @@
   "discardChangesMessage": "You have unsaved changes. Are you sure you want to leave without saving?",
   "discardButton": "Discard",
   "chooseLanguage": "Choose Language",
+  "chooseAvatar": "Choose Avatar",
   "coachMarkFirstPost": "Tap here to capture your first thought ✨",
   "coachMarkInsightRefresh": "Tap to generate insights from your records 🔮",
   "coachMarkConfigureModel": "Set up your AI model first to unlock all features 🔑",
-  "configureNow": "Configure Now"
+  "configureNow": "Configure Now",
+  "modelNotConfiguredBanner": "AI model not configured yet. Set it up to unlock all features.",
+  "modelNotConfiguredSubmitHint": "Please configure an AI model before publishing",
+  "processingStatus": "Processing",
+  "failedStatus": "Failed",
+  "viewDetails": "View Details",
+  "failureReason": "Failure Reason",
+  "unknownError": "Unknown error occurred",
+  "enableFitness": "Enable Fitness",
+  "fitnessBannerMessage": "Allow fitness access to track your health and activity data.",
+  "fitnessDismissTitle": "Skip Fitness Access?",
+  "fitnessDismissMessage": "Without fitness permission, the app won't be able to automatically collect your health data for insights and auto-recording.",
+  "skipAnyway": "Skip Anyway"
 }

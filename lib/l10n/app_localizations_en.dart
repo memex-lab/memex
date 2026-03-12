@@ -1338,6 +1338,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chooseLanguage => 'Choose Language';
 
   @override
+  String get chooseAvatar => 'Choose Avatar';
+
+  @override
   String get coachMarkFirstPost => 'Tap here to capture your first thought ✨';
 
   @override
@@ -1350,4 +1353,44 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get configureNow => 'Configure Now';
+
+  @override
+  String get modelNotConfiguredBanner =>
+      'AI model not configured yet. Set it up to unlock all features.';
+
+  @override
+  String get modelNotConfiguredSubmitHint =>
+      'Please configure an AI model before publishing';
+
+  @override
+  String get processingStatus => 'Processing';
+
+  @override
+  String get failedStatus => 'Failed';
+
+  @override
+  String get viewDetails => 'View Details';
+
+  @override
+  String get failureReason => 'Failure Reason';
+
+  @override
+  String get unknownError => 'Unknown error occurred';
+
+  @override
+  String get enableFitness => 'Enable Fitness';
+
+  @override
+  String get fitnessBannerMessage =>
+      'Allow fitness access to track your health and activity data.';
+
+  @override
+  String get fitnessDismissTitle => 'Skip Fitness Access?';
+
+  @override
+  String get fitnessDismissMessage =>
+      'Without fitness permission, the app won\'t be able to automatically collect your health data for insights and auto-recording.';
+
+  @override
+  String get skipAnyway => 'Skip Anyway';
 }
