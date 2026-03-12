@@ -17,13 +17,16 @@
   <a href="#license">License</a>
 </p>
 
----
+
+<p align="center">
+  <video src="https://github.com/user-attachments/assets/ad3a05b9-6f02-4c90-be3f-51eca80946cb" controls width="100%"></video>
+</p>
 
 ## What is Memex?
 
 Memex is a local-first, AI-native personal knowledge management app built with Flutter. Capture text, photos, and voice — a multi-agent system automatically organizes your records into structured timeline cards, extracts knowledge, and generates insights across your entries.
 
-All data stays on your device. You bring your own LLM API key.
+All data stays on your device. You just need to pick your preferred LLM provider.
 
 ## Features
 
@@ -157,14 +160,14 @@ Local Storage (filesystem + SQLite)
 
 ## Roadmap
 
-- [ ] OAuth login for Claude and Gemini (use LLM without managing API keys)
+- [ ] OAuth login for Claude and Gemini (no API key management)
 - [ ] Cloud sync & backup (iCloud, Google Drive, etc.)
 - [ ] Video and file attachments
-- [ ] Editable Memory — manually curate and refine your memory entries
+- [ ] Editable Memory — manually curate and refine memory entries
 - [ ] Scheduled insight refresh — periodically re-analyze records for new patterns
-- [ ] Customizable tags, UI card templates, and knowledge base organization
 - [ ] Agent Soul — personalize agent behavior and personality
-- [ ] Extensible data sources (fitness trackers, wearables, and more)
+- [ ] Event Bus & Hook System — a global event bus that decouples data sources from agent execution. Any input source (Share Extension, URL Scheme, Directory Watcher, Cron Scheduler) emits typed events onto the bus; a multi-dimensional Hook Registry intercepts them at key lifecycle points to trigger the right agent at the right moment — making both data source integration and agent scheduling fully extensible without touching core logic.
+- [ ] Extension Market & Plugin Architecture — a cloud registry serves as a marketplace for agents, UI card templates, and persona configs. Users can browse and install extensions with one tap, and changes hot-reload instantly without restarting the app.
 
 ## Contributing
 
