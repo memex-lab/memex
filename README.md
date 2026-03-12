@@ -18,9 +18,7 @@
 </p>
 
 
-<p align="center">
-  <video src="https://github.com/user-attachments/assets/ad3a05b9-6f02-4c90-be3f-51eca80946cb" controls width="100%"></video>
-</p>
+https://github.com/user-attachments/assets/f1eef9bb-8908-422e-98bb-4628f4b4904c
 
 ## What is Memex?
 
