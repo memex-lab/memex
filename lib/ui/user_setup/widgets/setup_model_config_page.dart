@@ -600,7 +600,7 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
           const SizedBox.shrink(),
           const Text('OpenAI (API Key)'),
           const Text('OpenAI (API Key - Responses)'),
-          const Text('OpenAI (Codex OAuth)'),
+          const Text('OpenAI (ChatGPT Pro/Plus)'),
           // Anthropic group header
           const SizedBox.shrink(),
           const Text('Anthropic (API Key)'),
@@ -644,8 +644,8 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
           value: LLMConfig.typeOpenAiOauth,
           child: Padding(
             padding: const EdgeInsets.only(left: 12),
-            child:
-                Text('Codex OAuth', style: TextStyle(color: Colors.grey[800])),
+            child: Text('ChatGPT Pro/Plus',
+                style: TextStyle(color: Colors.grey[800])),
           ),
         ),
         // ── Anthropic Group ──

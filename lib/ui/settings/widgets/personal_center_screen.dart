@@ -10,6 +10,7 @@ import 'package:memex/ui/settings/widgets/agent_config_list_page.dart';
 import 'package:memex/ui/settings/widgets/model_config_list_page.dart';
 import 'package:memex/ui/settings/widgets/system_authorization_page.dart';
 import 'package:memex/ui/settings/widgets/debug_settings_page.dart';
+import 'package:memex/ui/settings/widgets/settings_page.dart';
 import 'package:memex/utils/permission_utils.dart';
 import 'package:memex/ui/core/widgets/avatar_picker.dart';
 
@@ -662,6 +663,21 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
                             onTap: () =>
                                 context.push(AppRoutes.characterConfig),
                             isLoading: false,
+                          ),
+                          const SizedBox(height: 12),
+                          _buildFunctionTab(
+                            icon: Icons.settings_outlined,
+                            title: UserStorage.l10n.settings,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const SettingsPage(),
+                                ),
+                              ).then((_) {
+                                if (mounted) setState(() {});
+                              });
+                            },
                           ),
                           const SizedBox(height: 12),
                           _buildFunctionTab(

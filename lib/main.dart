@@ -802,10 +802,12 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
               _buildBottomBar(),
 
               Positioned(
-                bottom: 134, // Lifted higher to avoid the publish button
-                left: 24,
-                right: 24,
-                child: AgentActivityWidget(navigatorKey: null),
+                bottom: 134,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: AgentActivityWidget(navigatorKey: null),
+                ),
               ),
 
               // Input sheet

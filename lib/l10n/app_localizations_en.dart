@@ -473,6 +473,30 @@ class AppLocalizationsEn extends AppLocalizations {
       'Tap the button below to create your first card';
 
   @override
+  String get agentProcessing => 'AI is processing...';
+
+  @override
+  String get keepAppOpen => 'Don\'t close the app';
+
+  @override
+  String get activityDetail => 'Activity Detail';
+
+  @override
+  String get noAgentActivityYet => 'No agent activity yet';
+
+  @override
+  String get processingEllipsis => 'Processing...';
+
+  @override
+  String get settings => 'Settings';
+
+  @override
+  String get languageSettings => 'Language';
+
+  @override
+  String get languageSettingsDesc => 'Change the app display language';
+
+  @override
   String get noPendingActionsToast => 'No pending actions';
 
   @override

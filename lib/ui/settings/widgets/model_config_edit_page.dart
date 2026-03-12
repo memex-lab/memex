@@ -601,7 +601,7 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
                     const SizedBox.shrink(),
                     const Text('OpenAI (API Key)'),
                     const Text('OpenAI (API Key - Responses)'),
-                    const Text('OpenAI (Codex OAuth)'),
+                    const Text('OpenAI (ChatGPT Pro/Plus)'),
                     const SizedBox.shrink(),
                     const Text('Anthropic (API Key)'),
                     const Text('Anthropic (Bedrock Secret)'),
@@ -644,7 +644,7 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
                     value: LLMConfig.typeOpenAiOauth,
                     child: Padding(
                       padding: const EdgeInsets.only(left: 12),
-                      child: Text('Codex OAuth',
+                      child: Text('ChatGPT Pro/Plus',
                           style: TextStyle(color: Colors.grey[800])),
                     ),
                   ),
