@@ -643,5 +643,6 @@
   "fitnessBannerMessage": "允许访问健身数据以记录你的健康和运动信息。",
   "fitnessDismissTitle": "跳过健身权限？",
   "fitnessDismissMessage": "如果跳过，应用将无法自动收集你的健康数据进行洞察分析和自动记录。",
-  "skipAnyway": "仍然跳过"
+  "skipAnyway": "仍然跳过",
+  "proModelHint": "此模型需要 ChatGPT Pro/Plus 订阅才能使用。"
 }

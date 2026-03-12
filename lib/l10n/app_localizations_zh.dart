@@ -1349,4 +1349,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get skipAnyway => '仍然跳过';
+
+  @override
+  String get proModelHint => '此模型需要 ChatGPT Pro/Plus 订阅才能使用。';
 }

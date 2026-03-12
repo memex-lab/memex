@@ -643,5 +643,6 @@
   "fitnessBannerMessage": "Allow fitness access to track your health and activity data.",
   "fitnessDismissTitle": "Skip Fitness Access?",
   "fitnessDismissMessage": "Without fitness permission, the app won't be able to automatically collect your health data for insights and auto-recording.",
-  "skipAnyway": "Skip Anyway"
+  "skipAnyway": "Skip Anyway",
+  "proModelHint": "This model requires a ChatGPT Pro/Plus subscription."
 }

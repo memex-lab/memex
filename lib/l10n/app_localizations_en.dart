@@ -1393,4 +1393,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get skipAnyway => 'Skip Anyway';
+
+  @override
+  String get proModelHint =>
+      'This model requires a ChatGPT Pro/Plus subscription.';
 }

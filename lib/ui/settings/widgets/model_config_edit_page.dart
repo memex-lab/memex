@@ -305,6 +305,10 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
     );
   }
 
+  static const _proOnlyModels = {'gpt-5.4', 'gpt-5.3-codex'};
+
+  bool _isProModel(String model) => _proOnlyModels.contains(model);
+
   List<String> _getRecommendedModels(String type) {
     switch (type) {
       case LLMConfig.typeGemini:
@@ -796,10 +800,10 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
                   });
                 },
                 onSelected: (String selection) {
-                  if (_forceShowAllModels) {
-                    setState(() => _forceShowAllModels = false);
-                  }
                   _modelIdController.text = selection;
+                  setState(() {
+                    _forceShowAllModels = false;
+                  });
                 },
                 fieldViewBuilder:
                     (context, controller, focusNode, onFieldSubmitted) {
@@ -831,10 +835,10 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
                       ),
                     ),
                     onChanged: (value) {
-                      if (_forceShowAllModels) {
-                        setState(() => _forceShowAllModels = false);
-                      }
                       _modelIdController.text = value;
+                      setState(() {
+                        _forceShowAllModels = false;
+                      });
                     },
                     onFieldSubmitted: (value) {
                       onFieldSubmitted();
@@ -848,7 +852,79 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
                   );
                 },
                 initialValue: TextEditingValue(text: _modelIdController.text),
+                optionsViewBuilder: (context, onSelected, options) {
+                  return Align(
+                    alignment: Alignment.topLeft,
+                    child: Material(
+                      elevation: 4,
+                      borderRadius: BorderRadius.circular(8),
+                      child: ConstrainedBox(
+                        constraints:
+                            const BoxConstraints(maxHeight: 240, maxWidth: 340),
+                        child: ListView.builder(
+                          padding: EdgeInsets.zero,
+                          shrinkWrap: true,
+                          itemCount: options.length,
+                          itemBuilder: (context, index) {
+                            final option = options.elementAt(index);
+                            final isPro = _isProModel(option);
+                            return ListTile(
+                              dense: true,
+                              title: Row(
+                                children: [
+                                  Expanded(child: Text(option)),
+                                  if (isPro)
+                                    Container(
+                                      margin: const EdgeInsets.only(left: 8),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFFFF7ED),
+                                        borderRadius: BorderRadius.circular(4),
+                                        border: Border.all(
+                                            color: const Color(0xFFFBBF24),
+                                            width: 0.5),
+                                      ),
+                                      child: const Text(
+                                        'Pro/Plus',
+                                        style: TextStyle(
+                                            fontSize: 10,
+                                            color: Color(0xFFD97706),
+                                            fontWeight: FontWeight.w600),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              onTap: () => onSelected(option),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
+              if (_selectedType == LLMConfig.typeOpenAiOauth &&
+                  _isProModel(_modelIdController.text))
+                Padding(
+                  padding: const EdgeInsets.only(top: 6, left: 4),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.info_outline,
+                          size: 14, color: Color(0xFFD97706)),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          UserStorage.l10n.proModelHint,
+                          style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFFD97706),
+                              height: 1.3),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               const SizedBox(height: 16),
 
               // API Key / Auth / Bedrock Section

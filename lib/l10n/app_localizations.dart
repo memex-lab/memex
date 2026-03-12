@@ -2575,6 +2575,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Skip Anyway'**
   String get skipAnyway;
+
+  /// No description provided for @proModelHint.
+  ///
+  /// In en, this message translates to:
+  /// **'This model requires a ChatGPT Pro/Plus subscription.'**
+  String get proModelHint;
 }
 
 class _AppLocalizationsDelegate
