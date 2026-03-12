@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui' show PlatformDispatcher;
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/utils/toast_helper.dart';
 import 'package:memex/domain/models/llm_config.dart';
@@ -21,6 +22,37 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
   final _formKey = GlobalKey<FormState>();
   final _userIdController = TextEditingController();
   bool _isSubmitting = false;
+  String _selectedLang = 'en';
+
+  @override
+  void initState() {
+    super.initState();
+    _detectSystemLanguage();
+    _loadExistingUserId();
+  }
+
+  void _detectSystemLanguage() {
+    final systemLocale = PlatformDispatcher.instance.locale;
+    final langCode = systemLocale.languageCode;
+    setState(() {
+      _selectedLang = (langCode == 'zh') ? 'zh' : 'en';
+    });
+    _applyLanguage(_selectedLang);
+  }
+
+  Future<void> _loadExistingUserId() async {
+    final existingId = await UserStorage.getUserId();
+    if (existingId != null && existingId.isNotEmpty && mounted) {
+      _userIdController.text = existingId;
+    }
+  }
+
+  Future<void> _applyLanguage(String langCode) async {
+    final locale = Locale(langCode);
+    await UserStorage.setLocale(locale);
+    await UserStorage.initL10n();
+    if (mounted) setState(() {});
+  }
 
   @override
   void dispose() {
@@ -29,37 +61,26 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
   }
 
   Future<void> _handleSubmit() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
     final userId = _userIdController.text.trim();
-
-    setState(() {
-      _isSubmitting = true;
-    });
+    setState(() => _isSubmitting = true);
 
     try {
-      // save userId
       await UserStorage.saveUser(userId);
 
-      // check LLM config
       final configs = await UserStorage.getLLMConfigs();
       final defaultConfig = configs.firstWhere(
         (c) => c.key == LLMConfig.defaultClientKey,
         orElse: () => LLMConfig.createDefaultClient(),
       );
 
-      final isValid = defaultConfig.isValid;
-
       if (mounted) {
-        if (isValid) {
+        if (defaultConfig.isValid) {
           ToastHelper.showSuccess(context, UserStorage.l10n.userCreatedSuccess);
           widget.onUserCreated();
         } else {
-          setState(() {
-            _isSubmitting = false;
-          });
+          setState(() => _isSubmitting = false);
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -80,9 +101,7 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
       }
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _isSubmitting = false;
-        });
+        setState(() => _isSubmitting = false);
         ToastHelper.showError(context, e);
       }
     }
@@ -102,19 +121,32 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Logo/Icon
-                  Container(
-                    width: 80,
-                    height: 80,
-                    margin: const EdgeInsets.only(bottom: 32),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF6366F1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Icon(
-                      Icons.auto_awesome,
-                      size: 40,
-                      color: Colors.white,
+                  // App Icon
+                  Center(
+                    child: Container(
+                      width: 96,
+                      height: 96,
+                      margin: const EdgeInsets.only(bottom: 24),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color:
+                                const Color(0xFF6366F1).withValues(alpha: 0.2),
+                            blurRadius: 24,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(24),
+                        child: Image.asset(
+                          'assets/icon.png',
+                          width: 96,
+                          height: 96,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
                     ),
                   ),
 
@@ -142,7 +174,12 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
                     textAlign: TextAlign.center,
                   ),
 
-                  const SizedBox(height: 48),
+                  const SizedBox(height: 32),
+
+                  // Language Selector
+                  _buildLanguageSelector(),
+
+                  const SizedBox(height: 32),
 
                   // User ID Input
                   TextFormField(
@@ -230,6 +267,61 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
                 ],
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLanguageSelector() {
+    return Column(
+      children: [
+        Text(
+          UserStorage.l10n.chooseLanguage,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Colors.grey[600],
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildLangChip('English', 'en'),
+            const SizedBox(width: 12),
+            _buildLangChip('中文', 'zh'),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLangChip(String label, String langCode) {
+    final isSelected = _selectedLang == langCode;
+    return GestureDetector(
+      onTap: () {
+        if (_selectedLang != langCode) {
+          setState(() => _selectedLang = langCode);
+          _applyLanguage(langCode);
+        }
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF6366F1) : Colors.grey[100],
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF6366F1) : Colors.grey[300]!,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: isSelected ? Colors.white : Colors.grey[700],
           ),
         ),
       ),

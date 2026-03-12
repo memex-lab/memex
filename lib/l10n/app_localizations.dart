@@ -2467,6 +2467,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Discard'**
   String get discardButton;
+
+  /// No description provided for @chooseLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Language'**
+  String get chooseLanguage;
+
+  /// No description provided for @coachMarkFirstPost.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap here to capture your first thought ✨'**
+  String get coachMarkFirstPost;
+
+  /// No description provided for @coachMarkInsightRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to generate insights from your records 🔮'**
+  String get coachMarkInsightRefresh;
+
+  /// No description provided for @coachMarkConfigureModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up your AI model first to unlock all features 🔑'**
+  String get coachMarkConfigureModel;
+
+  /// No description provided for @configureNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Configure Now'**
+  String get configureNow;
 }
 
 class _AppLocalizationsDelegate

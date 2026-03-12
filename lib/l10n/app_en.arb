@@ -625,5 +625,10 @@
   "invalidModelConfigDetailed": "AI Agent \"{agentId}\" needs a valid model configuration (key: \"{configKey}\") to operate. Please check the model settings.",
   "discardChangesTitle": "Discard unsaved changes?",
   "discardChangesMessage": "You have unsaved changes. Are you sure you want to leave without saving?",
-  "discardButton": "Discard"
+  "discardButton": "Discard",
+  "chooseLanguage": "Choose Language",
+  "coachMarkFirstPost": "Tap here to capture your first thought ✨",
+  "coachMarkInsightRefresh": "Tap to generate insights from your records 🔮",
+  "coachMarkConfigureModel": "Set up your AI model first to unlock all features 🔑",
+  "configureNow": "Configure Now"
 }

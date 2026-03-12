@@ -63,7 +63,10 @@ class OpenAiAuthService {
         'state': state,
       });
 
-      // 3. Setup Local Server Listener for Callback
+      // 3. Ensure local server is running for OAuth callback
+      await LocalServerService.start();
+
+      // 4. Setup Local Server Listener for Callback
       final completer = Completer<Map<String, String>?>();
       LocalServerService.setAuthCallback((Uri uri) {
         if (uri.path == '/cancel') {

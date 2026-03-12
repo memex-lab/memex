@@ -1333,4 +1333,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get discardButton => 'Discard';
+
+  @override
+  String get chooseLanguage => 'Choose Language';
+
+  @override
+  String get coachMarkFirstPost => 'Tap here to capture your first thought ✨';
+
+  @override
+  String get coachMarkInsightRefresh =>
+      'Tap to generate insights from your records 🔮';
+
+  @override
+  String get coachMarkConfigureModel =>
+      'Set up your AI model first to unlock all features 🔑';
+
+  @override
+  String get configureNow => 'Configure Now';
 }

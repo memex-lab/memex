@@ -625,5 +625,10 @@
   "invalidModelConfigDetailed": "智能体“{agentId}”需要有效的模型配置 (Key: “{configKey}”) 才能运行。请在设置中更新并补全对应的参数。",
   "discardChangesTitle": "放弃未保存的修改？",
   "discardChangesMessage": "您有未保存的修改。确定要放弃修改并离开吗？",
-  "discardButton": "放弃"
+  "discardButton": "放弃",
+  "chooseLanguage": "选择语言",
+  "coachMarkFirstPost": "点击这里，记录你的第一个想法 ✨",
+  "coachMarkInsightRefresh": "点击生成你的专属洞察 🔮",
+  "coachMarkConfigureModel": "先配置 AI 模型，解锁全部功能 🔑",
+  "configureNow": "立即配置"
 }

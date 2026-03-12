@@ -1295,4 +1295,19 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get discardButton => '放弃';
+
+  @override
+  String get chooseLanguage => '选择语言';
+
+  @override
+  String get coachMarkFirstPost => '点击这里，记录你的第一个想法 ✨';
+
+  @override
+  String get coachMarkInsightRefresh => '点击生成你的专属洞察 🔮';
+
+  @override
+  String get coachMarkConfigureModel => '先配置 AI 模型，解锁全部功能 🔑';
+
+  @override
+  String get configureNow => '立即配置';
 }

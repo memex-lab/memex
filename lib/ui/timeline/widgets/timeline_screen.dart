@@ -20,6 +20,7 @@ import 'package:memex/ui/insight/widgets/insight_detail_page.dart';
 import 'package:memex/ui/chat/widgets/agent_chat_dialog.dart';
 import 'package:memex/utils/toast_helper.dart';
 import 'package:memex/utils/user_storage.dart';
+import 'package:memex/utils/permission_utils.dart';
 
 /// Timeline screen - main memory view. Receives [viewModel] and [insightViewModel] from parent (Compass-style).
 class TimelineScreen extends StatefulWidget {
@@ -42,6 +43,7 @@ class TimelineScreen extends StatefulWidget {
 
 class TimelineScreenState extends State<TimelineScreen> {
   final ScrollController _scrollController = ScrollController();
+  bool _showPermissionBadge = false;
 
   /// Show loading indicator for submission (called from main screen).
   void showLoading() {
@@ -107,6 +109,14 @@ class TimelineScreenState extends State<TimelineScreen> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    _checkPermissionBadge();
+  }
+
+  Future<void> _checkPermissionBadge() async {
+    final granted = await PermissionUtils.isFitnessPermissionGranted();
+    if (mounted && !granted != _showPermissionBadge) {
+      setState(() => _showPermissionBadge = !granted);
+    }
   }
 
   @override
@@ -245,29 +255,35 @@ class TimelineScreenState extends State<TimelineScreen> {
                                 backgroundColor: Colors.transparent,
                                 builder: (context) =>
                                     const PersonalCenterScreen(),
-                              );
+                              ).then((_) => _checkPermissionBadge());
                             },
-                            child: Container(
-                              width: 36,
-                              height: 36,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFE2E8F0),
-                                borderRadius: BorderRadius.circular(18),
-                                border:
-                                    Border.all(color: Colors.white, width: 2),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.05),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 2),
+                            child: Badge(
+                              isLabelVisible: _showPermissionBadge,
+                              smallSize: 10,
+                              offset: const Offset(0, 0),
+                              backgroundColor: Colors.red,
+                              child: Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFE2E8F0),
+                                  borderRadius: BorderRadius.circular(18),
+                                  border:
+                                      Border.all(color: Colors.white, width: 2),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.05),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: SvgPicture.network(
+                                    'https://api.dicebear.com/7.x/notionists/svg?seed=Felix',
+                                    fit: BoxFit.cover,
                                   ),
-                                ],
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(16),
-                                child: SvgPicture.network(
-                                  'https://api.dicebear.com/7.x/notionists/svg?seed=Felix',
-                                  fit: BoxFit.cover,
                                 ),
                               ),
                             ),

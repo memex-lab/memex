@@ -28,6 +28,9 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
   late TextEditingController _maxTokensController;
   late TextEditingController _topPController;
   late TextEditingController _extraController;
+  late TextEditingController _bedrockAccessKeyController;
+  late TextEditingController _bedrockSecretKeyController;
+  late TextEditingController _bedrockRegionController;
 
   String _selectedType = '';
   bool _isObscureApiKey = true;
@@ -52,6 +55,13 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
         TextEditingController(text: config?.maxTokens?.toString() ?? '');
     _topPController = TextEditingController(
         text: config?.topP?.toString() ?? ''); // Fixed line
+
+    _bedrockAccessKeyController = TextEditingController(
+        text: config?.extra['accessKeyId'] as String? ?? '');
+    _bedrockSecretKeyController = TextEditingController(
+        text: config?.extra['secretAccessKey'] as String? ?? '');
+    _bedrockRegionController = TextEditingController(
+        text: config?.extra['region'] as String? ?? 'us-west-2');
 
     String extraJson = '{}';
     if (config != null && config.extra.isNotEmpty) {
@@ -82,6 +92,9 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
     _maxTokensController.addListener(_checkChanges);
     _topPController.addListener(_checkChanges);
     _extraController.addListener(_checkChanges);
+    _bedrockAccessKeyController.addListener(_checkChanges);
+    _bedrockSecretKeyController.addListener(_checkChanges);
+    _bedrockRegionController.addListener(_checkChanges);
   }
 
   void _checkChanges() {
@@ -97,7 +110,11 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
           _temperatureController.text.isNotEmpty ||
           _maxTokensController.text.isNotEmpty ||
           _topPController.text.isNotEmpty ||
-          _extraController.text != '{}';
+          _extraController.text != '{}' ||
+          _bedrockAccessKeyController.text.isNotEmpty ||
+          _bedrockSecretKeyController.text.isNotEmpty ||
+          (_bedrockRegionController.text.isNotEmpty &&
+              _bedrockRegionController.text != 'us-west-2');
     } else {
       String extraJson = '{}';
       if (config.extra.isNotEmpty) {
@@ -312,6 +329,9 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
     _maxTokensController.dispose();
     _topPController.dispose();
     _extraController.dispose();
+    _bedrockAccessKeyController.dispose();
+    _bedrockSecretKeyController.dispose();
+    _bedrockRegionController.dispose();
     _animationController.dispose();
     super.dispose();
   }
@@ -332,6 +352,15 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
       return;
     }
 
+    // For Bedrock, pack credentials into extra
+    if (_selectedType == LLMConfig.typeBedrockClaude) {
+      extraMap['accessKeyId'] = _bedrockAccessKeyController.text;
+      extraMap['secretAccessKey'] = _bedrockSecretKeyController.text;
+      extraMap['region'] = _bedrockRegionController.text.isNotEmpty
+          ? _bedrockRegionController.text
+          : 'us-west-2';
+    }
+
     // Check Key Uniqueness if new
     if (widget.config == null && await _isKeyExists(_keyController.text)) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -344,7 +373,9 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
       key: _keyController.text,
       type: _selectedType,
       modelId: _modelIdController.text,
-      apiKey: _apiKeyController.text,
+      apiKey: _selectedType == LLMConfig.typeBedrockClaude
+          ? ''
+          : _apiKeyController.text,
       baseUrl: _selectedType == LLMConfig.typeBedrockClaude
           ? ''
           : _baseUrlController.text,
@@ -438,6 +469,12 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
           defaultLLMConfig.temperature?.toString() ?? '';
       _maxTokensController.text = defaultLLMConfig.maxTokens?.toString() ?? '';
       _topPController.text = defaultLLMConfig.topP?.toString() ?? '';
+      _bedrockAccessKeyController.text =
+          defaultLLMConfig.extra['accessKeyId'] as String? ?? '';
+      _bedrockSecretKeyController.text =
+          defaultLLMConfig.extra['secretAccessKey'] as String? ?? '';
+      _bedrockRegionController.text =
+          defaultLLMConfig.extra['region'] as String? ?? 'us-west-2';
 
       String extraJson = '{}';
       if (defaultLLMConfig.extra.isNotEmpty) {
@@ -554,23 +591,110 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
                   labelText: UserStorage.l10n.clientLabel,
                   border: const OutlineInputBorder(),
                 ),
-                items: const [
+                selectedItemBuilder: (context) {
+                  return [
+                    const SizedBox.shrink(),
+                    const Text('OpenAI (API Key)'),
+                    const Text('OpenAI (API Key - Responses)'),
+                    const Text('OpenAI (Codex OAuth)'),
+                    const SizedBox.shrink(),
+                    const Text('Anthropic (API Key)'),
+                    const Text('Anthropic (Bedrock Secret)'),
+                    const SizedBox.shrink(),
+                    const Text('Gemini'),
+                  ];
+                },
+                items: [
+                  // ── OpenAI Group ──
+                  DropdownMenuItem<String>(
+                    enabled: false,
+                    value: '__openai_header__',
+                    child: Text(
+                      'OpenAI',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[500],
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
                   DropdownMenuItem(
-                      value: LLMConfig.typeChatCompletion,
-                      child: Text('OpenAI (ChatCompletion)')),
+                    value: LLMConfig.typeChatCompletion,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 12),
+                      child: Text('API Key',
+                          style: TextStyle(color: Colors.grey[800])),
+                    ),
+                  ),
                   DropdownMenuItem(
-                      value: LLMConfig.typeResponses,
-                      child: Text('OpenAI (Responses)')),
+                    value: LLMConfig.typeResponses,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 12),
+                      child: Text('API Key (Responses)',
+                          style: TextStyle(color: Colors.grey[800])),
+                    ),
+                  ),
                   DropdownMenuItem(
-                      value: LLMConfig.typeOpenAiOauth,
-                      child: Text('OpenAI (OAuth)')),
+                    value: LLMConfig.typeOpenAiOauth,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 12),
+                      child: Text('Codex OAuth',
+                          style: TextStyle(color: Colors.grey[800])),
+                    ),
+                  ),
+                  // ── Anthropic Group ──
+                  DropdownMenuItem<String>(
+                    enabled: false,
+                    value: '__anthropic_header__',
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        'Anthropic',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[500],
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ),
                   DropdownMenuItem(
-                      value: LLMConfig.typeGemini, child: Text('Gemini')),
+                    value: LLMConfig.typeClaude,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 12),
+                      child: Text('API Key',
+                          style: TextStyle(color: Colors.grey[800])),
+                    ),
+                  ),
                   DropdownMenuItem(
-                      value: LLMConfig.typeClaude, child: Text('Claude')),
+                    value: LLMConfig.typeBedrockClaude,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 12),
+                      child: Text('Bedrock Secret',
+                          style: TextStyle(color: Colors.grey[800])),
+                    ),
+                  ),
+                  // ── Others Group ──
+                  DropdownMenuItem<String>(
+                    enabled: false,
+                    value: '__others_header__',
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        'Others',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[500],
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ),
                   DropdownMenuItem(
-                      value: LLMConfig.typeBedrockClaude,
-                      child: Text('Bedrock-Claude')),
+                      value: LLMConfig.typeGemini, child: const Text('Gemini')),
                 ],
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -680,9 +804,55 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
               ),
               const SizedBox(height: 16),
 
-              // API Key / Auth Section
+              // API Key / Auth / Bedrock Section
               if (_selectedType == LLMConfig.typeOpenAiOauth) ...[
                 _buildOpenAiAuthSection(),
+              ] else if (_selectedType == LLMConfig.typeBedrockClaude) ...[
+                // Bedrock-specific fields
+                TextFormField(
+                  controller: _bedrockAccessKeyController,
+                  decoration: const InputDecoration(
+                    labelText: 'Access Key ID',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return UserStorage.l10n.required;
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _bedrockSecretKeyController,
+                  decoration: InputDecoration(
+                    labelText: 'Secret Access Key',
+                    border: const OutlineInputBorder(),
+                    suffixIcon: IconButton(
+                      icon: Icon(_isObscureApiKey
+                          ? Icons.visibility
+                          : Icons.visibility_off),
+                      onPressed: () =>
+                          setState(() => _isObscureApiKey = !_isObscureApiKey),
+                    ),
+                  ),
+                  obscureText: _isObscureApiKey,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return UserStorage.l10n.required;
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _bedrockRegionController,
+                  decoration: const InputDecoration(
+                    labelText: 'Region',
+                    hintText: 'us-west-2',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
               ] else ...[
                 TextFormField(
                   controller: _apiKeyController,

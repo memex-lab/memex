@@ -10,6 +10,7 @@ import 'package:memex/ui/settings/widgets/agent_config_list_page.dart';
 import 'package:memex/ui/settings/widgets/model_config_list_page.dart';
 import 'package:memex/ui/settings/widgets/system_authorization_page.dart';
 import 'package:memex/ui/settings/widgets/debug_settings_page.dart';
+import 'package:memex/utils/permission_utils.dart';
 
 /// Personal center screen
 class PersonalCenterScreen extends StatefulWidget {
@@ -27,11 +28,20 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
 
   bool _isReprocessingCards = false;
   bool _isReprocessingComments = false;
+  bool _showAuthBadge = false;
 
   @override
   void initState() {
     super.initState();
     _loadUserInfo();
+    _checkPermissionBadge();
+  }
+
+  Future<void> _checkPermissionBadge() async {
+    final granted = await PermissionUtils.isFitnessPermissionGranted();
+    if (mounted) {
+      setState(() => _showAuthBadge = !granted);
+    }
   }
 
   Future<void> _loadUserInfo() async {
@@ -562,6 +572,7 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
                           _buildFunctionTab(
                             icon: Icons.security_outlined,
                             title: UserStorage.l10n.systemAuthorization,
+                            showBadge: _showAuthBadge,
                             onTap: () {
                               Navigator.push(
                                 context,
@@ -569,7 +580,7 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
                                   builder: (context) =>
                                       const SystemAuthorizationPage(),
                                 ),
-                              );
+                              ).then((_) => _checkPermissionBadge());
                             },
                           ),
                           const SizedBox(height: 12),
@@ -659,6 +670,7 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
     required String title,
     required VoidCallback onTap,
     bool isLoading = false,
+    bool showBadge = false,
   }) {
     return Material(
       color: Colors.transparent,
@@ -681,10 +693,28 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
           ),
           child: Row(
             children: [
-              Icon(
-                icon,
-                color: const Color(0xFF6366F1),
-                size: 24,
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(
+                    icon,
+                    color: const Color(0xFF6366F1),
+                    size: 24,
+                  ),
+                  if (showBadge)
+                    Positioned(
+                      right: -2,
+                      top: -2,
+                      child: Container(
+                        width: 10,
+                        height: 10,
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
               ),
               const SizedBox(width: 16),
               Expanded(

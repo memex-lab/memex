@@ -8,6 +8,8 @@ import 'package:memex/utils/toast_helper.dart';
 import 'package:memex/ui/core/cards/native_widget_factory.dart';
 import 'package:memex/ui/chat/widgets/agent_chat_dialog.dart';
 import 'package:memex/utils/user_storage.dart';
+import 'package:memex/data/services/onboarding_service.dart';
+import 'package:memex/ui/core/widgets/coach_mark_overlay.dart';
 
 /// Insight screen - global knowledge analytics. Receives [viewModel] from parent (Compass-style).
 class InsightScreen extends StatefulWidget {
@@ -26,6 +28,27 @@ class InsightScreen extends StatefulWidget {
 
 class _InsightScreenState extends State<InsightScreen> {
   Offset? _fabPosition;
+  bool _showInsightCoachMark = false;
+  final GlobalKey _updateFabKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    _checkInsightOnboarding();
+  }
+
+  Future<void> _checkInsightOnboarding() async {
+    final done = await OnboardingService.isInsightRefreshDone();
+    if (!done && mounted) {
+      await Future.delayed(const Duration(milliseconds: 800));
+      if (mounted) setState(() => _showInsightCoachMark = true);
+    }
+  }
+
+  void _dismissInsightCoachMark() {
+    setState(() => _showInsightCoachMark = false);
+    OnboardingService.markInsightRefreshDone();
+  }
 
   Future<void> _onTogglePin(
       InsightViewModel vm, KnowledgeInsightCard item) async {
@@ -46,6 +69,8 @@ class _InsightScreenState extends State<InsightScreen> {
   }
 
   Future<void> _onRefreshInsights(InsightViewModel vm) async {
+    // Dismiss coach mark if showing
+    if (_showInsightCoachMark) _dismissInsightCoachMark();
     try {
       ToastHelper.showInfo(context, UserStorage.l10n.refreshingInsightData);
       await vm.refreshInsights();
@@ -559,22 +584,37 @@ class _InsightScreenState extends State<InsightScreen> {
                           _fabPosition = Offset(left, top);
                         });
                       },
-                      child: _buildPremiumUpdateFab(vm),
+                      child: KeyedSubtree(
+                        key: _updateFabKey,
+                        child: _buildPremiumUpdateFab(vm),
+                      ),
                     ),
                   ),
               ],
             );
 
-            if (widget.isEmbedded) {
-              return content;
-            }
-
-            return Scaffold(
-              backgroundColor: const Color(0xFFF1F5F9),
-              body: SafeArea(
-                child: content,
-              ),
+            // Wrap content with coach mark overlay if needed
+            final wrappedContent = Stack(
+              children: [
+                if (widget.isEmbedded)
+                  content
+                else
+                  Scaffold(
+                    backgroundColor: const Color(0xFFF1F5F9),
+                    body: SafeArea(
+                      child: content,
+                    ),
+                  ),
+                if (_showInsightCoachMark)
+                  CoachMarkOverlay(
+                    targetKey: _updateFabKey,
+                    message: UserStorage.l10n.coachMarkInsightRefresh,
+                    onDismiss: _dismissInsightCoachMark,
+                  ),
+              ],
             );
+
+            return wrappedContent;
           },
         );
       },
