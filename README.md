@@ -18,7 +18,7 @@
 </p>
 
 <div align="center">
-  <video src="https://github.com/user-attachments/assets/f1eef9bb-8908-422e-98bb-4628f4b4904c" width="350" controls autoplay muted loop>
+  <video src="https://github.com/sparkleMing/file/releases/download/demo/demo.mp4" width="350" controls autoplay muted loop>
   </video>
 </div>
 
