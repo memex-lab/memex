@@ -17,8 +17,10 @@
   <a href="#license">License</a>
 </p>
 
-
-https://github.com/user-attachments/assets/f1eef9bb-8908-422e-98bb-4628f4b4904c
+<div align="center">
+  <video src="https://github.com/user-attachments/assets/f1eef9bb-8908-422e-98bb-4628f4b4904c" width="350" controls autoplay muted loop>
+  </video>
+</div>
 
 ## What is Memex?
 
