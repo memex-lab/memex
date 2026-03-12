@@ -8,12 +8,9 @@
 </p>
 
 <p align="center">
-  <a href="README_CN.md">中文文档</a> •
-  <a href="#features">Features</a> •
-  <a href="#getting-started">Getting Started</a> •
-  <a href="#architecture">Architecture</a> •
-  <a href="#contributing">Contributing</a> •
-  <a href="#license">License</a>
+  <a href="https://github.com/memex-lab/memex/releases/tag/v1.0.1"><img src="https://img.shields.io/github/v/release/memex-lab/memex?style=flat-square&label=release" alt="Release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/memex-lab/memex?style=flat-square" alt="License"></a>
+  <a href="README_CN.md"><img src="https://img.shields.io/badge/文档-中文-blue?style=flat-square" alt="中文文档"></a>
 </p>
 
 <div align="center">
@@ -25,6 +22,14 @@
 Memex is a local-first, AI-native personal knowledge management app built with Flutter. Capture text, photos, and voice — a multi-agent system automatically organizes your records into structured timeline cards, extracts knowledge, and generates insights across your entries.
 
 All data stays on your device. You just need to pick your preferred LLM provider.
+
+<p align="center">
+  <a href="#features">Features</a> •
+  <a href="#getting-started">Getting Started</a> •
+  <a href="#architecture">Architecture</a> •
+  <a href="#contributing">Contributing</a> •
+  <a href="#license">License</a>
+</p>
 
 ## Features
 
