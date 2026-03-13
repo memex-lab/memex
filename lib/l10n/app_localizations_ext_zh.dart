@@ -154,4 +154,19 @@ class AppLocalizationsExtZh extends AppLocalizationsZh
   @override
   String get memorySummarizeFocusHeader => '# 当前关注 (Focus)';
 
+  @override
+  String get oauthHintTitle => '授权提示';
+
+  @override
+  String get oauthHintMessage =>
+      '接下来会在浏览器中打开授权页面。\n\n'
+      '如果在授权确认页面点击同意后长时间没有反应，可以按下面步骤操作：'
+      '先保留当前页面不关，然后回到手机主屏或打开应用切换界面，'
+      '再点一下 Memex 将它重新切到前台。';
+
+  @override
+  String get oauthSuccessTitle => '授权成功';
+
+  @override
+  String get oauthSuccessMessage => '现在可以关闭浏览器并返回 Memex 了。';
 }

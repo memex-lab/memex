@@ -60,8 +60,10 @@ All data stays on your device. You just need to pick your preferred LLM provider
 
 | Provider | API Type | Notes |
 |----------|----------|-------|
-| Google Gemini | Gemini API | gemini-3.1-pro-preview, gemini-3.1-flash-preview, etc. |
+| Google Gemini | Gemini API | gemini-3.1-pro-preview, gemini-3-flash-preview, etc. |
+| Google Gemini | OAuth (no API key required) | Sign in with Google account. Unofficial — use at your own risk |
 | OpenAI | Chat Completions / Responses API | GPT-5.4, etc. |
+| OpenAI | OAuth (no API key required) | Sign in with OpenAI account. Unofficial — use at your own risk |
 | Anthropic Claude | Claude API | Direct API access |
 | AWS Bedrock | Bedrock Claude | For AWS users |
 
@@ -86,7 +88,6 @@ Memex requires an LLM API key to power its AI features. On first launch:
 
 ## Roadmap
 
-- [ ] OAuth login for Claude and Gemini (no API key management)
 - [ ] Cloud sync & backup (iCloud, Google Drive, etc.)
 - [ ] Video and file attachments
 - [ ] Editable Memory — manually curate and refine memory entries
