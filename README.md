@@ -60,7 +60,7 @@ All data stays on your device. You just need to pick your preferred LLM provider
 
 | Provider | API Type | Notes |
 |----------|----------|-------|
-| Google Gemini | Gemini API | gemini-3.1-pro-preview, gemini-3.1-flash-preview, etc. |
+| Google Gemini | Gemini API | gemini-3.1-pro-preview, gemini-3-flash-preview, etc. |
 | OpenAI | Chat Completions / Responses API | GPT-5.4, etc. |
 | Anthropic Claude | Claude API | Direct API access |
 | AWS Bedrock | Bedrock Claude | For AWS users |
