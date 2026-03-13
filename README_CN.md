@@ -24,14 +24,6 @@ Memex 是一个本地优先、AI 原生的个人知识管理应用，基于 Flut
 
 所有数据存储在你的设备上。你只需要选择你偏好的模型提供商。
 
-<p align="center">
-  <a href="#功能">功能</a> •
-  <a href="#快速开始">快速开始</a> •
-  <a href="#架构">架构</a> •
-  <a href="#参与贡献">参与贡献</a> •
-  <a href="#许可证">许可证</a>
-</p>
-
 ## 功能
 
 ### 多模态输入
@@ -47,30 +39,27 @@ Memex 是一个本地优先、AI 原生的个人知识管理应用，基于 Flut
 - AI 对话助手，可针对任意卡片或主题展开讨论
 
 ### 知识与洞察
-- 时间线视图，支持按标签筛选
-- 知识库自动归纳主题
-- 洞察卡片，跨记录发现关联模式
-- 地图视图展示足迹（OpenStreetMap）
+- 基于 P.A.R.A 方法论的知识组织（项目、领域、资源、归档）
+- 洞察卡片，跨记录发现关联模式：
+  - 图表类（趋势、柱状、雷达、气泡、构成比例、进度环）— 可视化数据规律、分布与目标进展
+  - 叙事类（高亮、对比、总结）— 提炼关键结论、呈现前后变化、生成周期性回顾
+  - 时空类（地图、路线、时间线）— 还原事件发生的地点与时间脉络
+  - 图集 — 以照片形式唤起视觉记忆
 
 ### 隐私与本地优先
 - 所有数据存储在本地（文件系统 + SQLite）
 - 内置本地 HTTP 服务器提供资源访问
 - 应用锁（生物识别认证）
-- 健康数据集成（HealthKit）
 - 无云端依赖，数据不会离开你的设备
 
-## 技术栈
+### 支持多种 LLM 提供商
 
-| 层级 | 技术 |
-|------|------|
-| 框架 | Flutter (Dart ≥ 3.6) |
-| 平台 | iOS、Android |
-| 数据库 | Drift (SQLite) |
-| 状态管理 | Provider + MVVM |
-| LLM | Gemini、OpenAI、Claude、Bedrock Claude |
-| 地图 | flutter_map + OpenStreetMap |
-| 端侧 ML | Google ML Kit（文字识别、图像标签） |
-| Agent 框架 | dart_agent_core |
+| 提供商 | API 类型 | 备注 |
+|--------|----------|------|
+| Google Gemini | Gemini API | 性价比推荐 |
+| OpenAI | Chat Completions / Responses API | GPT-4o、o1 等 |
+| Anthropic Claude | Claude API | 直接 API 访问 |
+| AWS Bedrock | Bedrock Claude | 适合 AWS 用户 |
 
 ## 快速开始
 
@@ -110,6 +99,19 @@ Memex 需要 LLM API Key 来驱动 AI 功能。首次启动后：
 4. 不同 Agent 可以独立配置不同的模型
 
 ## 架构
+
+### 技术栈
+
+| 层级 | 技术 |
+|------|------|
+| 框架 | Flutter (Dart ≥ 3.6) |
+| 平台 | iOS、Android |
+| 数据库 | Drift (SQLite) |
+| 状态管理 | Provider + MVVM |
+| LLM | Gemini、OpenAI、Claude、Bedrock Claude |
+| Agent 框架 | dart_agent_core |
+
+### 项目结构
 
 ```
 lib/
@@ -152,15 +154,6 @@ Insight Agent → 跨记录模式发现
     ↓
 本地存储（文件系统 + SQLite）
 ```
-
-## 支持的 LLM 提供商
-
-| 提供商 | API 类型 | 备注 |
-|--------|----------|------|
-| Google Gemini | Gemini API | 性价比推荐 |
-| OpenAI | Chat Completions / Responses API | GPT-4o、o1 等 |
-| Anthropic Claude | Claude API | 直接 API 访问 |
-| AWS Bedrock | Bedrock Claude | 适合 AWS 用户 |
 
 ## 路线图
 

@@ -24,14 +24,6 @@ Memex is a local-first, AI-native personal knowledge management app built with F
 
 All data stays on your device. You just need to pick your preferred LLM provider.
 
-<p align="center">
-  <a href="#features">Features</a> •
-  <a href="#getting-started">Getting Started</a> •
-  <a href="#architecture">Architecture</a> •
-  <a href="#contributing">Contributing</a> •
-  <a href="#license">License</a>
-</p>
-
 ## Features
 
 ### Multi-Modal Input
@@ -47,30 +39,27 @@ All data stays on your device. You just need to pick your preferred LLM provider
 - Conversational AI assistant for discussing any card or topic
 
 ### Knowledge & Insights
-- Timeline view with tag-based filtering
-- Knowledge Base with auto-organized topics
-- Insight cards that surface connections across records
-- Map view for location-based entries (OpenStreetMap)
+- P.A.R.A-based knowledge organization (Projects, Areas, Resources, Archives)
+- Insight cards that surface connections across records:
+  - Charts (trend, bar, radar, bubble, composition, progress ring) — visualize patterns, distributions and goal progress over time
+  - Narrative (highlight, contrast, summary) — surface key conclusions, before/after comparisons, and periodic reviews
+  - Spatial & temporal (map, route, timeline) — reconstruct where and when things happened
+  - Gallery — visual memory from your photos
 
 ### Privacy & Local-First
 - All data stored locally (filesystem + SQLite)
 - Built-in local HTTP server for asset serving
 - App lock with biometric authentication
-- HealthKit integration for health data tracking
 - No cloud dependency — your data never leaves your device
 
-## Tech Stack
+### Multi-LLM Provider Support
 
-| Layer | Technology |
-|-------|-----------|
-| Framework | Flutter (Dart ≥ 3.6) |
-| Platforms | iOS, Android |
-| Database | Drift (SQLite) |
-| State Management | Provider + MVVM |
-| LLM Providers | Gemini, OpenAI, Claude, Bedrock Claude |
-| Maps | flutter_map + OpenStreetMap |
-| On-Device ML | Google ML Kit (text recognition, image labeling) |
-| Agent Framework | dart_agent_core |
+| Provider | API Type | Notes |
+|----------|----------|-------|
+| Google Gemini | Gemini API | Recommended for cost efficiency |
+| OpenAI | Chat Completions / Responses API | GPT-4o, o1, etc. |
+| Anthropic Claude | Claude API | Direct API access |
+| AWS Bedrock | Bedrock Claude | For AWS users |
 
 ## Getting Started
 
@@ -110,6 +99,19 @@ Memex requires an LLM API key to power its AI features. On first launch:
 4. Each agent can be configured with a different model independently
 
 ## Architecture
+
+### Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Framework | Flutter (Dart ≥ 3.6) |
+| Platforms | iOS, Android |
+| Database | Drift (SQLite) |
+| State Management | Provider + MVVM |
+| LLM Providers | Gemini, OpenAI, Claude, Bedrock Claude |
+| Agent Framework | dart_agent_core |
+
+### Project Structure
 
 ```
 lib/
@@ -152,15 +154,6 @@ Insight Agent → Cross-record pattern discovery
     ↓
 Local Storage (filesystem + SQLite)
 ```
-
-## Supported LLM Providers
-
-| Provider | API Type | Notes |
-|----------|----------|-------|
-| Google Gemini | Gemini API | Recommended for cost efficiency |
-| OpenAI | Chat Completions / Responses API | GPT-4o, o1, etc. |
-| Anthropic Claude | Claude API | Direct API access |
-| AWS Bedrock | Bedrock Claude | For AWS users |
 
 ## Roadmap
 
