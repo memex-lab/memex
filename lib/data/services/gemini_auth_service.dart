@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'local_server_service.dart';
+import 'package:memex/utils/user_storage.dart';
 
 /// Google OAuth constants (from Gemini CLI)
 const _clientId =
@@ -88,13 +89,57 @@ class GeminiAuthService {
         final code = uri.queryParameters['code'];
         if (code != null && !completer.isCompleted) {
           completer.complete({'code': code});
+          final l10n = UserStorage.l10n;
+          final title = l10n.oauthSuccessTitle;
+          final msg = l10n.oauthSuccessMessage;
           return '''
             <html>
-              <body style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0">
-                <div style="text-align:center">
-                  <h2>Authorization successful!</h2>
-                  <p>You can close this window and return to Memex.</p>
-                  <script>setTimeout(() => window.close(), 500);</script>
+              <head>
+                <meta charset="utf-8" />
+                <meta name="viewport" content="width=device-width, initial-scale=1" />
+                <title>$title</title>
+                <style>
+                  body {
+                    margin: 0;
+                    height: 100vh;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+                    background: #f9fafb;
+                    color: #0f172a;
+                  }
+                  .card {
+                    background: #ffffff;
+                    border-radius: 16px;
+                    padding: 24px 20px;
+                    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+                    max-width: 320px;
+                    text-align: center;
+                  }
+                  .icon {
+                    font-size: 32px;
+                    margin-bottom: 12px;
+                  }
+                  h2 {
+                    margin: 0 0 8px;
+                    font-size: 20px;
+                  }
+                  p {
+                    margin: 4px 0;
+                    font-size: 14px;
+                    color: #4b5563;
+                  }
+                </style>
+              </head>
+              <body>
+                <div class="card">
+                  <div class="icon">✅</div>
+                  <h2>$title</h2>
+                  <p>$msg</p>
+                  <script>
+                    setTimeout(function() { window.close(); }, 800);
+                  </script>
                 </div>
               </body>
             </html>

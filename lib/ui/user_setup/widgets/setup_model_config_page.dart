@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:memex/domain/models/llm_config.dart';
 import 'package:memex/data/repositories/memex_router.dart';
@@ -108,7 +109,31 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
     }
   }
 
-  void _startOpenAiAuth() {
+  Future<bool> _confirmAndroidOAuthHint() async {
+    if (!Platform.isAndroid) return true;
+    final l10n = UserStorage.l10n;
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.oauthHintTitle),
+        content: Text(l10n.oauthHintMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(l10n.startUsing),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
+  }
+
+  void _startOpenAiAuth() async {
+    if (!await _confirmAndroidOAuthHint()) return;
     _authFlowCompleted = false;
     _appResumedDuringAuth = false;
     OpenAiAuthService.startAuthFlow(
@@ -170,7 +195,8 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
     );
   }
 
-  void _startGeminiAuth() {
+  void _startGeminiAuth() async {
+    if (!await _confirmAndroidOAuthHint()) return;
     _authFlowCompleted = false;
     _appResumedDuringAuth = false;
     GeminiAuthService.startAuthFlow(

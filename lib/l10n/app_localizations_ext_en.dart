@@ -153,4 +153,20 @@ class AppLocalizationsExtEn extends AppLocalizationsEn
 
   @override
   String get memorySummarizeFocusHeader => '# Current Focus';
+
+  @override
+  String get oauthHintTitle => 'Authorization tip';
+
+  @override
+  String get oauthHintMessage =>
+      'The authorization page will open in the browser.\n\n'
+      'If the page does not respond after you tap Allow on the confirmation screen, '
+      'try this: keep the page open, go to the home screen or app switcher, '
+      'then tap Memex again to bring it to the foreground.';
+
+  @override
+  String get oauthSuccessTitle => 'Authorization successful';
+
+  @override
+  String get oauthSuccessMessage => 'You can now close this browser and return to Memex.';
 }
