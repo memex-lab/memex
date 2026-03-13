@@ -705,7 +705,7 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                                         style: const TextStyle(
                                           fontSize: 20,
                                           fontWeight: FontWeight.w600,
-                                          color: Color(0xFF333333),
+                                          color: Color(0xFF334155),
                                           height: 1.4,
                                         ),
                                       ),
@@ -720,7 +720,7 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                                             text: detail.rawContent,
                                             style: const TextStyle(
                                               fontSize: 16,
-                                              color: Color(0xFF333333),
+                                              color: Color(0xFF334155),
                                               height: 1.6,
                                             ),
                                           ),
@@ -732,7 +732,7 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                                               text: '#$tag',
                                               style: const TextStyle(
                                                 fontSize: 15,
-                                                color: Color(0xFF1E80FF),
+                                                color: Color(0xFF6366F1),
                                                 fontWeight: FontWeight.w500,
                                                 height: 1.6,
                                               ),
@@ -767,7 +767,7 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                                             '#$tag',
                                             style: const TextStyle(
                                               fontSize: 15,
-                                              color: Color(0xFF1E80FF),
+                                              color: Color(0xFF6366F1),
                                               fontWeight: FontWeight.w500,
                                             ),
                                           ),
@@ -790,7 +790,7 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                                               .format(detail.timestamp),
                                           style: const TextStyle(
                                             fontSize: 13,
-                                            color: Color(0xFF999999),
+                                            color: Color(0xFF94A3B8),
                                           ),
                                         ),
                                       ),
@@ -802,7 +802,7 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                                             detail.address,
                                             style: const TextStyle(
                                               fontSize: 13,
-                                              color: Color(0xFF999999),
+                                              color: Color(0xFF94A3B8),
                                             ),
                                             maxLines: null,
                                             softWrap: true,
@@ -814,7 +814,7 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
 
                                   const SizedBox(height: 24),
                                   const Divider(
-                                      height: 1, color: Color(0xFFEEEEEE)),
+                                      height: 1, color: Color(0xFFE2E8F0)),
                                   const SizedBox(height: 16),
 
                                   // Related Records
@@ -1039,7 +1039,7 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                     name,
                     style: const TextStyle(
                       fontSize: 13,
-                      color: Color(0xFF999999),
+                      color: Color(0xFF94A3B8),
                     ),
                   ),
                 ],
@@ -1049,7 +1049,7 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                 content,
                 style: const TextStyle(
                   fontSize: 14,
-                  color: Color(0xFF333333),
+                  color: Color(0xFF334155),
                   height: 1.5,
                 ),
               ),
@@ -1060,7 +1060,7 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                     time,
                     style: const TextStyle(
                       fontSize: 12,
-                      color: Color(0xFF999999),
+                      color: Color(0xFF94A3B8),
                     ),
                   ),
                 ],
@@ -1083,7 +1083,7 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
             16, 8, 16, 32), // Safe area handled by bottom padding
         decoration: const BoxDecoration(
           color: Colors.white,
-          border: Border(top: BorderSide(color: Color(0xFFF0F0F0))),
+          border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
         ),
         child: Row(
           children: [
@@ -1094,18 +1094,18 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                   height: 36,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F5),
+                    color: const Color(0xFFF1F5F9),
                     borderRadius: BorderRadius.circular(18),
                   ),
                   child: Row(
                     children: [
                       const Icon(Icons.edit_outlined,
-                          size: 16, color: Color(0xFF999999)),
+                          size: 16, color: Color(0xFF94A3B8)),
                       const SizedBox(width: 8),
                       Text(
                         UserStorage.l10n.saySomething,
                         style:
-                            const TextStyle(fontSize: 14, color: Color(0xFF999999)),
+                            const TextStyle(fontSize: 14, color: Color(0xFF94A3B8)),
                       ),
                     ],
                   ),
@@ -1327,7 +1327,7 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: const BoxDecoration(
-                border: Border(bottom: BorderSide(color: Color(0xFFEEEEEE))),
+                border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
               ),
               child: Center(
                 child: Text(
@@ -1368,7 +1368,7 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                                   style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w500,
-                                    color: Color(0xFF333333),
+                                    color: Color(0xFF334155),
                                   ),
                                 ),
                                 const SizedBox(height: 4),
@@ -1376,14 +1376,14 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                                   card.date,
                                   style: const TextStyle(
                                     fontSize: 12,
-                                    color: Color(0xFF999999),
+                                    color: Color(0xFF94A3B8),
                                   ),
                                 ),
                               ],
                             ),
                           ),
                           const Icon(Icons.arrow_forward_ios,
-                              size: 14, color: Color(0xFFCCCCCC)),
+                              size: 14, color: Color(0xFFCBD5E1)),
                         ],
                       ),
                     ),
@@ -1428,7 +1428,7 @@ class _RoundIconButton extends StatelessWidget {
         child: Icon(
           icon,
           size: 18,
-          color: const Color(0xFF333333),
+          color: const Color(0xFF334155),
         ),
       ),
     );
@@ -1602,7 +1602,7 @@ class _CommentInputWidgetState extends State<_CommentInputWidget> {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F5),
+        color: const Color(0xFFF1F5F9),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(

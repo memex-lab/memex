@@ -138,12 +138,12 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.chat_bubble_outline,
-                          size: 48, color: Colors.grey[300]),
+                      const Icon(Icons.chat_bubble_outline,
+                          size: 48, color: Color(0xFFCBD5E1)),
                       const SizedBox(height: 16),
                       Text(
                         UserStorage.l10n.noConversations,
-                        style: TextStyle(color: Colors.grey[400]),
+                        style: const TextStyle(color: Color(0xFF94A3B8)),
                       ),
                     ],
                   ),

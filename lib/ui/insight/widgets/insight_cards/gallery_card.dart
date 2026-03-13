@@ -43,7 +43,7 @@ class GalleryCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(32),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha:0.04),
               blurRadius: 20,
               offset: const Offset(0, 4),
             ),
@@ -57,7 +57,7 @@ class GalleryCard extends StatelessWidget {
             Text(
               title,
               style: const TextStyle(
-                fontSize: 16,
+                fontSize: 17,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFFEA580C), // Orange-600
               ),
@@ -67,7 +67,7 @@ class GalleryCard extends StatelessWidget {
               Text(
                 insight!,
                 style: const TextStyle(
-                  fontSize: 14,
+                  fontSize: 13,
                   fontWeight: FontWeight.w500,
                   color: Color(0xFF64748B), // Slate-500
                   fontStyle: FontStyle.italic,
@@ -149,7 +149,7 @@ class GalleryCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       error.toString(),
-                      style: const TextStyle(fontSize: 8, color: Colors.grey),
+                      style: const TextStyle(fontSize: 8, color: Color(0xFF94A3B8)),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -167,7 +167,7 @@ class GalleryCard extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.6),
+                color: Colors.black.withValues(alpha:0.6),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(

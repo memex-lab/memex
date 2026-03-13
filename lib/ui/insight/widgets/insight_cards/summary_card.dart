@@ -260,19 +260,23 @@ class SummaryCard extends StatelessWidget {
             if (highlights.isNotEmpty) ...[
               Row(
                 children: [
-                  Text(
-                    highlightsTitle,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF0F172A),
+                  Flexible(
+                    child: Text(
+                      highlightsTitle,
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0F172A),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    '(Selected ${highlights.length})',
+                    '(${highlights.length})',
                     style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: 13,
                       color: Color(0xFF94A3B8),
                     ),
                   ),

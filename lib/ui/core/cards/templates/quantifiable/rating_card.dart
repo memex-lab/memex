@@ -26,7 +26,7 @@ class RatingCard extends StatelessWidget {
                 child: Text(
                   subject,
                   style: const TextStyle(
-                    fontSize: 16,
+                    fontSize: 17,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF1E293B),
                   ),
@@ -36,7 +36,7 @@ class RatingCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.amber.withOpacity(0.1),
+                  color: Colors.amber.withValues(alpha:0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -73,7 +73,7 @@ class RatingCard extends StatelessWidget {
             Text(
               comment,
               style: const TextStyle(
-                fontSize: 14,
+                fontSize: 15,
                 color: Color(0xFF64748B),
                 fontStyle: FontStyle.italic,
               ),

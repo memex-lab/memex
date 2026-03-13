@@ -47,12 +47,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
         title: Text(
           DateFormat.yMMM(UserStorage.l10n.localeName).format(vm.focusedMonth),
           style:
-              const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+              const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back_ios_new, size: 20, color: Color(0xFF64748B)),
           onPressed: () => Navigator.pop(context),
         ),
         centerTitle: true,
@@ -109,7 +109,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         children: days
             .map((e) => Text(
                   e,
-                  style: const TextStyle(color: Colors.grey, fontSize: 13),
+                  style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
                 ))
             .toList(),
       ),
@@ -181,7 +181,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         ? Colors.white
                         : (hasData
                             ? const Color(0xFF4338CA)
-                            : (date.weekday >= 6 ? Colors.grey : Colors.black)),
+                            : (date.weekday >= 6 ? const Color(0xFF94A3B8) : const Color(0xFF0F172A))),
                     fontWeight:
                         isSelected || isToday || hasData
                             ? FontWeight.bold
@@ -238,14 +238,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.calendar_today_outlined,
-                size: 48, color: Colors.grey[300]),
+            const Icon(Icons.calendar_today_outlined,
+                size: 48, color: Color(0xFFCBD5E1)),
             const SizedBox(height: 16),
             Text(
               UserStorage.l10n.noRecordsOnDate(
                 DateFormat.MMMd(UserStorage.l10n.localeName).format(vm.selectedDate),
               ),
-              style: TextStyle(color: Colors.grey[400]),
+              style: const TextStyle(color: Color(0xFF94A3B8)),
             ),
           ],
         ),
@@ -263,7 +263,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           margin: const EdgeInsets.only(bottom: 12),
           elevation: 0,
           shape: RoundedRectangleBorder(
-            side: BorderSide(color: Colors.grey.withOpacity(0.2)),
+            side: const BorderSide(color: Color(0xFFE2E8F0)),
             borderRadius: BorderRadius.circular(12),
           ),
           child: InkWell(
@@ -286,7 +286,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       Text(
                         DateFormat('HH:mm').format(time),
                         style: const TextStyle(
-                          color: Colors.grey,
+                          color: Color(0xFF94A3B8),
                           fontWeight: FontWeight.bold,
                           fontSize: 12,
                         ),
@@ -323,13 +323,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     Row(
                       children: [
                         const Icon(Icons.location_on_outlined,
-                            size: 14, color: Colors.grey),
+                            size: 14, color: Color(0xFF94A3B8)),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
                             card.location,
                             style: const TextStyle(
-                                fontSize: 12, color: Colors.grey),
+                                fontSize: 12, color: Color(0xFF94A3B8)),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),

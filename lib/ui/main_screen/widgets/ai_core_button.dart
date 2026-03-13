@@ -84,6 +84,12 @@ class _AICoreButtonState extends State<AICoreButton>
                 ? []
                 : [
                     BoxShadow(
+                      color: const Color(0xFF6366F1).withOpacity(0.30),
+                      blurRadius: 18,
+                      spreadRadius: 0,
+                      offset: Offset.zero,
+                    ),
+                    BoxShadow(
                       color: Colors.black.withOpacity(0.2),
                       blurRadius: 8,
                       offset: const Offset(0, 4),

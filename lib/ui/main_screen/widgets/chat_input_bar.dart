@@ -105,13 +105,13 @@ class _ChatInputBarState extends State<ChatInputBar> {
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
+                color: const Color(0xFF6366F1),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: const Icon(
                 Icons.arrow_upward,
                 size: 18,
-                color: Color(0xFF94A3B8),
+                color: Colors.white,
               ),
             ),
           ],

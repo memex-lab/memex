@@ -41,7 +41,7 @@ class EventCard extends StatelessWidget {
           Container(
             width: 50,
             decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.1),
+              color: const Color(0xFF6366F1).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             padding: const EdgeInsets.symmetric(vertical: 8),
@@ -55,7 +55,7 @@ class EventCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
-                    color: Colors.blue,
+                    color: Color(0xFF6366F1),
                   ),
                 ),
                 Text(
@@ -63,7 +63,7 @@ class EventCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.blue,
+                    color: Color(0xFF6366F1),
                   ),
                 ),
               ],
@@ -78,7 +78,7 @@ class EventCard extends StatelessWidget {
                 Text(
                   title,
                   style: const TextStyle(
-                    fontSize: 16,
+                    fontSize: 17,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF1E293B),
                   ),
@@ -86,13 +86,13 @@ class EventCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    Icon(Icons.access_time, size: 14, color: Colors.grey[500]),
+                    Icon(Icons.access_time, size: 14, color: const Color(0xFF64748B)),
                     const SizedBox(width: 4),
                     Text(
                       startTime != null
                           ? '${timeFormat.format(startTime)} - ${endTime != null ? timeFormat.format(endTime) : '?'}'
                           : 'TBD',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      style: const TextStyle(fontSize: 12, color: Color(0xFF475569)),
                     ),
                   ],
                 ),
@@ -102,7 +102,7 @@ class EventCard extends StatelessWidget {
                     child: Row(
                       children: [
                         Icon(Icons.location_on,
-                            size: 14, color: Colors.grey[500]),
+                            size: 14, color: const Color(0xFF64748B)),
                         const SizedBox(width: 4),
                         Expanded(
                           child: SizedBox(
@@ -129,9 +129,9 @@ class EventCard extends StatelessWidget {
                                   children: [
                                     Text(
                                       location,
-                                      style: TextStyle(
+                                      style: const TextStyle(
                                           fontSize: 12,
-                                          color: Colors.grey[600]),
+                                          color: Color(0xFF475569)),
                                     ),
                                     const SizedBox(width: 16),
                                   ],

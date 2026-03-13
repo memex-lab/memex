@@ -236,7 +236,6 @@ class MetricCard extends StatelessWidget {
                       child: Text(
                         valueStr,
                         style: const TextStyle(
-                          fontFamily: 'Roboto',
                           fontSize: 24,
                           fontWeight: FontWeight.w700,
                           color: Color(0xFF0F172A), // Slate 900
@@ -399,8 +398,6 @@ class MetricCard extends StatelessWidget {
                   TextSpan(
                     text: valueStr,
                     style: const TextStyle(
-                      fontFamily:
-                          'Roboto', // Modern system font usually handles numbers well
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
                       color: Color(0xFF0F172A), // Slate 900

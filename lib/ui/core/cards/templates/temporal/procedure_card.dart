@@ -44,9 +44,9 @@ class ProcedureCard extends StatelessWidget {
                           width: 24,
                           height: 24,
                           decoration: BoxDecoration(
-                            color: Colors.blue[50],
+                            color: const Color(0xFFEEF2FF),
                             shape: BoxShape.circle,
-                            border: Border.all(color: Colors.blue[200]!),
+                            border: Border.all(color: const Color(0xFFC7D2FE)),
                           ),
                           child: Center(
                             child: Text(
@@ -54,7 +54,7 @@ class ProcedureCard extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.blue[800],
+                                color: const Color(0xFF3730A3),
                               ),
                             ),
                           ),
@@ -63,7 +63,7 @@ class ProcedureCard extends StatelessWidget {
                           Expanded(
                             child: Container(
                               width: 2,
-                              color: Colors.blue[50], // vertical line
+                              color: const Color(0xFFEEF2FF), // vertical line
                             ),
                           ),
                       ],

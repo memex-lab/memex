@@ -62,7 +62,7 @@ class RoutineCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
-                          color: Colors.grey[500],
+                          color: const Color(0xFF64748B),
                         ),
                       ),
                     ],
@@ -105,7 +105,7 @@ class RoutineCard extends StatelessWidget {
             child: Text(
               habitName,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 15,
                 fontWeight: FontWeight.bold,
                 color: Colors.orange[900],
               ),

@@ -107,7 +107,7 @@ class _ProgressCardState extends State<ProgressCard> {
                         Text(
                           label,
                           style: const TextStyle(
-                            fontSize: 16,
+                            fontSize: 17,
                             fontWeight: FontWeight.bold,
                             color: Color(0xFF1E293B),
                           ),
@@ -167,7 +167,7 @@ class _ProgressCardState extends State<ProgressCard> {
             height: 16,
             child: SliderTheme(
               data: SliderTheme.of(context).copyWith(
-                activeTrackColor: Colors.blue,
+                activeTrackColor: const Color(0xFF6366F1),
                 inactiveTrackColor: const Color(0xFFF1F5F9),
                 thumbColor: Colors.white,
                 trackHeight: 12,

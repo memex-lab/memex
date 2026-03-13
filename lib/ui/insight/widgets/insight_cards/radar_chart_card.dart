@@ -56,7 +56,7 @@ class RadarChartCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(32),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
+              color: Colors.black.withValues(alpha:0.2),
               blurRadius: 20,
               offset: const Offset(0, 4),
             ),
@@ -114,8 +114,8 @@ class RadarChartCard extends StatelessWidget {
                       RadarChartData(
                         dataSets: [
                           RadarDataSet(
-                            fillColor: themeColor.withOpacity(0.4),
-                            borderColor: themeColor.withOpacity(0.8),
+                            fillColor: themeColor.withValues(alpha:0.4),
+                            borderColor: themeColor.withValues(alpha:0.8),
                             entryRadius: 0, // No dots on corners
                             borderWidth: 2, // Thicker border
                             dataEntries: dimensions
@@ -165,7 +165,7 @@ class RadarChartCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 32,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha:0.9),
                             height: 1,
                           ),
                         ),
@@ -174,7 +174,7 @@ class RadarChartCard extends StatelessWidget {
                           centerLabel,
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.white.withOpacity(0.5),
+                            color: Colors.white.withValues(alpha:0.5),
                           ),
                         ),
                       ],
@@ -189,10 +189,10 @@ class RadarChartCard extends StatelessWidget {
               Text(
                 insight!,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 13,
                   fontWeight: FontWeight.w500,
                   color:
-                      Colors.white.withOpacity(0.7), // Keeping dark mode style
+                      Colors.white.withValues(alpha:0.7), // Keeping dark mode style
                   fontStyle: FontStyle.italic,
                   height: 1.5,
                 ),

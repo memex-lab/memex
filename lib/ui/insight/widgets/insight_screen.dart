@@ -218,11 +218,11 @@ class _InsightScreenState extends State<InsightScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.blue,
+                          color: const Color(0xFF6366F1),
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.blue.withOpacity(0.3),
+                              color: const Color(0xFF6366F1).withOpacity(0.3),
                               blurRadius: 12,
                               spreadRadius: 2,
                             ),
@@ -245,11 +245,11 @@ class _InsightScreenState extends State<InsightScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.orange,
+                          color: const Color(0xFFF59E0B),
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.orange.withOpacity(0.3),
+                              color: const Color(0xFFF59E0B).withOpacity(0.3),
                               blurRadius: 12,
                               spreadRadius: 2,
                             ),
@@ -269,11 +269,11 @@ class _InsightScreenState extends State<InsightScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.red,
+                          color: const Color(0xFFEF4444),
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.red.withOpacity(0.3),
+                              color: const Color(0xFFEF4444).withOpacity(0.3),
                               blurRadius: 12,
                               spreadRadius: 2,
                             ),
@@ -458,7 +458,7 @@ class _InsightScreenState extends State<InsightScreen> {
                                                 shape: BoxShape.circle,
                                                 border: Border.all(
                                                     color:
-                                                        Colors.grey.shade200),
+                                                        const Color(0xFFE2E8F0)),
                                               ),
                                               child: const Icon(
                                                 Icons.chat_bubble_outline,

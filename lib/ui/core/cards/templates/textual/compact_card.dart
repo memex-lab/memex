@@ -49,7 +49,7 @@ class CompactCard extends StatelessWidget {
               height: 24,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: themeColor.withOpacity(0.1),
+                color: themeColor.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: icon != null
@@ -74,8 +74,8 @@ class CompactCard extends StatelessWidget {
                     TextSpan(
                       text: title,
                       style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
                         color: Color(0xFF1E293B), // Slate-800
                         height: 1.2,
                       ),
@@ -89,7 +89,7 @@ class CompactCard extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 13,
                           color: Color(0xFF64748B), // Slate-500
-                          fontWeight: FontWeight.w400,
+                          fontWeight: FontWeight.w500,
                           height: 1.2,
                         ),
                       ),

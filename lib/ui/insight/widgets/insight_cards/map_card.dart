@@ -70,7 +70,7 @@ class MapCard extends StatelessWidget {
         border: Border.all(color: const Color(0xFFF1F5F9)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha:0.02),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
@@ -123,11 +123,11 @@ class MapCard extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.9),
+                color: Colors.white.withValues(alpha:0.9),
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha:0.1),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),
@@ -167,7 +167,7 @@ class MapCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
+                      color: Colors.black.withValues(alpha:0.08),
                       blurRadius: 16,
                       offset: const Offset(0, 4),
                     ),
@@ -212,7 +212,7 @@ class MapCard extends StatelessWidget {
                             Text(
                               infoDetail!,
                               style: const TextStyle(
-                                fontSize: 14,
+                                fontSize: 15,
                                 color: Color(0xFF0F172A),
                                 fontWeight: FontWeight.bold,
                               ),
@@ -356,7 +356,7 @@ class MapCard extends StatelessWidget {
             border: Border.all(color: const Color(0xFFF1F5F9)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha:0.05),
                 blurRadius: 20,
                 offset: const Offset(0, 4),
               ),
@@ -406,7 +406,7 @@ class MapCard extends StatelessWidget {
           Text(
             UserStorage.l10n.waypointPlaces,
             style: const TextStyle(
-              fontSize: 16,
+              fontSize: 17,
               fontWeight: FontWeight.bold,
               color: Color(0xFF1E293B),
             ),
@@ -449,7 +449,7 @@ class MapCard extends StatelessWidget {
                     child: Text(
                       name,
                       style: const TextStyle(
-                        fontSize: 14,
+                        fontSize: 15,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF334155),
                       ),

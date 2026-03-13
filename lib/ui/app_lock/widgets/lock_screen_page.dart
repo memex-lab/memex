@@ -274,7 +274,6 @@ class _LockScreenState extends State<LockScreen> {
             fontSize: 28,
             fontWeight: FontWeight.w400,
             color: Color(0xFF1E293B),
-            fontFamily: 'Inter',
           ),
         ),
       ),

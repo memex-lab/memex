@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// Centralized theme for Timeline Cards.
 /// Defines colors, typography, and shadows to ensure consistency.
@@ -36,16 +37,15 @@ class AppTextStyles {
   const AppTextStyles();
 
   // 32px Serif / Elegant
-  TextStyle get display => const TextStyle(
+  TextStyle get display => GoogleFonts.sourceSerif4(
         fontSize: 32,
         fontWeight: FontWeight.w400,
-        fontFamily: 'Serif', // Fallback, consider Google Fonts if available
         height: 1.2,
         letterSpacing: -0.5,
       );
 
   // 24px Bold / Data
-  TextStyle get data => const TextStyle(
+  TextStyle get data => GoogleFonts.inter(
         fontSize: 24,
         fontWeight: FontWeight.w800,
         height: 1.0,
@@ -53,7 +53,7 @@ class AppTextStyles {
       );
 
   // 17px Bold / Header
-  TextStyle get title => const TextStyle(
+  TextStyle get title => GoogleFonts.inter(
         fontSize: 17,
         fontWeight: FontWeight.w700,
         height: 1.3,
@@ -61,31 +61,30 @@ class AppTextStyles {
       );
 
   // 15px Regular / Body
-  TextStyle get body => const TextStyle(
+  TextStyle get body => GoogleFonts.inter(
         fontSize: 15,
         fontWeight: FontWeight.w400,
-        height: 1.6, // Readable line height
+        height: 1.6,
       );
 
   // 13px Medium / Subheaders or Metadata
-  TextStyle get small => const TextStyle(
+  TextStyle get small => GoogleFonts.inter(
         fontSize: 13,
         fontWeight: FontWeight.w500,
         height: 1.4,
       );
 
   // 12px Bold / Label (Caps)
-  TextStyle get label => const TextStyle(
+  TextStyle get label => GoogleFonts.inter(
         fontSize: 12,
         fontWeight: FontWeight.w700,
-        letterSpacing: 0.5, // Reduced from 1.0 for better readability
+        letterSpacing: 0.5,
         height: 1.4,
       );
 
   // 14px Mono / Technical
-  TextStyle get mono => const TextStyle(
+  TextStyle get mono => GoogleFonts.jetBrainsMono(
         fontSize: 14,
-        fontFamily: 'Courier', // Fallback
         fontWeight: FontWeight.w500,
         height: 1.4,
       );

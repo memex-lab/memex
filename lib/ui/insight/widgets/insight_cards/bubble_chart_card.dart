@@ -60,7 +60,7 @@ class BubbleChartCard extends StatelessWidget {
           // Gradient border or shadow if needed, but design looks clean flat/soft
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha:0.04),
               blurRadius: 20,
               offset: const Offset(0, 4),
             ),
@@ -102,7 +102,7 @@ class BubbleChartCard extends StatelessWidget {
               Text(
                 insight!,
                 style: const TextStyle(
-                  fontSize: 14,
+                  fontSize: 13,
                   fontWeight: FontWeight.w500,
                   color: Color(0xFF64748B), // Slate-500
                   fontStyle: FontStyle.italic,
@@ -118,7 +118,7 @@ class BubbleChartCard extends StatelessWidget {
               Text(
                 footer!,
                 style: const TextStyle(
-                  fontSize: 14,
+                  fontSize: 15,
                   color: Color(0xFF94A3B8), // Slate-400
                 ),
                 textAlign: TextAlign.center,
@@ -145,7 +145,7 @@ class BubbleChartCard extends StatelessWidget {
 
     final color = _parseColor(bubble.color);
     // Lighter background for the bubble
-    final bgColor = color.withOpacity(0.15);
+    final bgColor = color.withValues(alpha:0.15);
     final textColor = color;
 
     // Highlight bubble style might be different (Solid bg?)
@@ -162,7 +162,7 @@ class BubbleChartCard extends StatelessWidget {
         boxShadow: isSolid
             ? [
                 BoxShadow(
-                  color: color.withOpacity(0.3),
+                  color: color.withValues(alpha:0.3),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 )
@@ -199,8 +199,8 @@ class BubbleChartCard extends StatelessWidget {
                 bubble.subLabel!,
                 style: TextStyle(
                   color: isSolid
-                      ? Colors.white.withOpacity(0.8)
-                      : textColor.withOpacity(0.8),
+                      ? Colors.white.withValues(alpha:0.8)
+                      : textColor.withValues(alpha:0.8),
                   fontSize: 10,
                 ),
                 maxLines: 1,
