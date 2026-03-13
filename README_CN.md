@@ -1,20 +1,17 @@
 <p align="center">
-  <img src="assets/icon.png" width="120" alt="Memex Logo" />
+    <picture>
+      <img src="https://github.com/user-attachments/assets/c603127f-98a5-4bf1-8946-778fec2b76f6" width="400">
+    </picture>
 </p>
-
-<h1 align="center">Memex</h1>
-
 <p align="center">
   一个完全运行在本地的 AI 驱动个人知识管理应用。
 </p>
 
 <p align="center">
-  <a href="README.md">English</a> •
-  <a href="#功能">功能</a> •
-  <a href="#快速开始">快速开始</a> •
-  <a href="#架构">架构</a> •
-  <a href="#参与贡献">参与贡献</a> •
-  <a href="#许可证">许可证</a>
+  <a href="https://github.com/memex-lab/memex/releases"><img src="https://img.shields.io/github/v/release/memex-lab/memex?style=flat-square&label=release" alt="Release"></a>
+  <a href="https://discord.gg/ftae8GeubK"><img src="https://img.shields.io/badge/discord-join-5865F2?style=flat-square&logo=discord&logoColor=white" alt="Discord"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/memex-lab/memex?style=flat-square" alt="License"></a>
+  <a href="README.md"><img src="https://img.shields.io/badge/docs-English-blue?style=flat-square" alt="English"></a>
 </p>
 
 <div align="center">
@@ -26,6 +23,14 @@
 Memex 是一个本地优先、AI 原生的个人知识管理应用，基于 Flutter 构建。支持文字、图片、语音多模态输入，通过多 Agent 协作自动将你的记录整理为结构化的时间线卡片，提取知识，并生成跨记录的洞察。
 
 所有数据存储在你的设备上。你只需要选择你偏好的模型提供商。
+
+<p align="center">
+  <a href="#功能">功能</a> •
+  <a href="#快速开始">快速开始</a> •
+  <a href="#架构">架构</a> •
+  <a href="#参与贡献">参与贡献</a> •
+  <a href="#许可证">许可证</a>
+</p>
 
 ## 功能
 

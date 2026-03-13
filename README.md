@@ -1,20 +1,17 @@
 <p align="center">
-  <img src="assets/icon.png" width="120" alt="Memex Logo" />
+    <picture>
+      <img src="https://github.com/user-attachments/assets/c603127f-98a5-4bf1-8946-778fec2b76f6" width="400">
+    </picture>
 </p>
-
-<h1 align="center">Memex</h1>
-
 <p align="center">
   An AI-powered personal knowledge management app that runs entirely on your device.
 </p>
 
 <p align="center">
-  <a href="README_CN.md">中文文档</a> •
-  <a href="#features">Features</a> •
-  <a href="#getting-started">Getting Started</a> •
-  <a href="#architecture">Architecture</a> •
-  <a href="#contributing">Contributing</a> •
-  <a href="#license">License</a>
+  <a href="https://github.com/memex-lab/memex/releases"><img src="https://img.shields.io/github/v/release/memex-lab/memex?style=flat-square&label=release" alt="Release"></a>
+  <a href="https://discord.gg/ftae8GeubK"><img src="https://img.shields.io/badge/discord-join-5865F2?style=flat-square&logo=discord&logoColor=white" alt="Discord"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/memex-lab/memex?style=flat-square" alt="License"></a>
+  <a href="README_CN.md"><img src="https://img.shields.io/badge/文档-中文-blue?style=flat-square" alt="中文文档"></a>
 </p>
 
 <div align="center">
@@ -26,6 +23,14 @@
 Memex is a local-first, AI-native personal knowledge management app built with Flutter. Capture text, photos, and voice — a multi-agent system automatically organizes your records into structured timeline cards, extracts knowledge, and generates insights across your entries.
 
 All data stays on your device. You just need to pick your preferred LLM provider.
+
+<p align="center">
+  <a href="#features">Features</a> •
+  <a href="#getting-started">Getting Started</a> •
+  <a href="#architecture">Architecture</a> •
+  <a href="#contributing">Contributing</a> •
+  <a href="#license">License</a>
+</p>
 
 ## Features
 
