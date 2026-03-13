@@ -3,6 +3,7 @@ import 'package:memex/domain/models/llm_config.dart';
 import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/data/services/openai_auth_service.dart';
+import 'package:memex/data/services/gemini_auth_service.dart';
 import 'package:memex/ui/core/widgets/searchable_dropdown.dart';
 
 class SetupModelConfigPage extends StatefulWidget {
@@ -35,6 +36,7 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
   bool _isObscureApiKey = true;
   bool _isSubmitting = false;
   Map<String, dynamic>? _openAiTokens;
+  Map<String, dynamic>? _geminiTokens;
   bool _isAuthDialogShowing = false;
   bool _authFlowCompleted = false;
   bool _appResumedDuringAuth = false;
@@ -56,6 +58,8 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
     _selectedType = config.type;
     if (_selectedType == LLMConfig.typeOpenAiOauth) {
       _loadOpenAiTokens();
+    } else if (_selectedType == LLMConfig.typeGeminiOauth) {
+      _loadGeminiTokens();
     }
   }
 
@@ -64,6 +68,15 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
     if (mounted) {
       setState(() {
         _openAiTokens = tokens;
+      });
+    }
+  }
+
+  Future<void> _loadGeminiTokens() async {
+    final tokens = await GeminiAuthService.getSavedTokens();
+    if (mounted) {
+      setState(() {
+        _geminiTokens = tokens;
       });
     }
   }
@@ -157,6 +170,67 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
     );
   }
 
+  void _startGeminiAuth() {
+    _authFlowCompleted = false;
+    _appResumedDuringAuth = false;
+    GeminiAuthService.startAuthFlow(
+      onStart: () {
+        _isAuthDialogShowing = true;
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (dialogContext) => Center(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(UserStorage.l10n.authorizing,
+                      style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.black87,
+                          decoration: TextDecoration.none,
+                          fontWeight: FontWeight.normal)),
+                ],
+              ),
+            ),
+          ),
+        ).then((_) {
+          _isAuthDialogShowing = false;
+        });
+      },
+      onSuccess: (email) {
+        _authFlowCompleted = true;
+        _dismissAuthDialog();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Authorized as $email')),
+          );
+          _loadGeminiTokens();
+        }
+      },
+      onError: (error) {
+        _authFlowCompleted = true;
+        _dismissAuthDialog();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text(UserStorage.l10n.authFailed(error.toString()))),
+          );
+        }
+      },
+    );
+  }
+
   Widget _buildOpenAiAuthSection() {
     final bool isAuthorized = _openAiTokens != null;
 
@@ -217,6 +291,79 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
                   onPressed: () async {
                     await OpenAiAuthService.clearTokens();
                     _loadOpenAiTokens();
+                  },
+                  icon: const Icon(Icons.logout, color: Colors.red, size: 18),
+                  label: Text(
+                    UserStorage.l10n.clearAuth,
+                    style: const TextStyle(color: Colors.red, fontSize: 13),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGeminiAuthSection() {
+    final bool isAuthorized = _geminiTokens != null;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                isAuthorized ? Icons.check_circle : Icons.info_outline,
+                color: isAuthorized ? Colors.green : Colors.orange,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                isAuthorized ? 'Authorized' : 'Not authorized',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: isAuthorized ? Colors.green : Colors.orange,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _startGeminiAuth,
+              icon: const Icon(Icons.login),
+              label:
+                  Text(isAuthorized ? 'Re-authorize' : 'Authorize with Google'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    isAuthorized ? Colors.white : const Color(0xFF6366F1),
+                foregroundColor: isAuthorized ? Colors.black87 : Colors.white,
+                elevation: 0,
+                side: isAuthorized ? BorderSide(color: Colors.grey[300]!) : null,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ),
+          if (isAuthorized)
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: SizedBox(
+                width: double.infinity,
+                child: TextButton.icon(
+                  onPressed: () async {
+                    await GeminiAuthService.clearTokens();
+                    _loadGeminiTokens();
                   },
                   icon: const Icon(Icons.logout, color: Colors.red, size: 18),
                   label: Text(
@@ -516,13 +663,16 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
                 // API Key / Auth / Bedrock Section
                 if (_selectedType == LLMConfig.typeOpenAiOauth) ...[
                   _buildOpenAiAuthSection(),
+                ] else if (_selectedType == LLMConfig.typeGeminiOauth) ...[
+                  _buildGeminiAuthSection(),
                 ] else if (_selectedType == LLMConfig.typeBedrockClaude) ...[
                   _buildBedrockFields(),
                 ] else ...[
                   _buildApiKeyField(),
                 ],
                 if (_selectedType != LLMConfig.typeBedrockClaude &&
-                    _selectedType != LLMConfig.typeOpenAiOauth) ...[
+                    _selectedType != LLMConfig.typeOpenAiOauth &&
+                    _selectedType != LLMConfig.typeGeminiOauth) ...[
                   const SizedBox(height: 20),
                   _buildTextField(
                     controller: _baseUrlController,
@@ -608,6 +758,7 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
           // Others group header
           const SizedBox.shrink(),
           const Text('Gemini'),
+          const Text('Gemini (Google OAuth)'),
         ];
       },
       items: [
@@ -699,6 +850,9 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
         ),
         DropdownMenuItem(
             value: LLMConfig.typeGemini, child: const Text('Gemini')),
+        DropdownMenuItem(
+            value: LLMConfig.typeGeminiOauth,
+            child: const Text('Gemini (Google OAuth)')),
       ],
       validator: (value) {
         if (value == null || value.isEmpty) {
@@ -717,6 +871,8 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
           _baseUrlController.text = LLMConfig.defaultBaseUrl(value);
           if (value == LLMConfig.typeOpenAiOauth) {
             _loadOpenAiTokens();
+          } else if (value == LLMConfig.typeGeminiOauth) {
+            _loadGeminiTokens();
           }
         }
       },

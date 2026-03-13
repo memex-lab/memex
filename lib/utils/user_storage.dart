@@ -9,8 +9,10 @@ import 'package:memex/domain/models/agent_definitions.dart';
 import '../l10n/app_localizations_ext.dart';
 import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/data/services/openai_auth_service.dart';
+import 'package:memex/data/services/gemini_auth_service.dart';
 import 'package:memex/domain/models/task_exceptions.dart';
 import 'package:memex/llm_client/codex_responses_client.dart';
+import 'package:memex/llm_client/gemini_oauth_client.dart';
 
 /// Agent cache data structure
 class AgentCacheData {
@@ -377,6 +379,15 @@ class UserStorage {
         }
         client = GeminiClient(
           apiKey: effectiveApiKey,
+          proxyUrl: proxyUrl,
+        );
+        break;
+      case LLMConfig.typeGeminiOauth:
+        final accessToken = await GeminiAuthService.getValidAccessToken();
+        if (accessToken == null) {
+          throw InvalidModelConfigException('Gemini OAuth not authorized.');
+        }
+        client = GeminiOAuthClient(
           proxyUrl: proxyUrl,
         );
         break;

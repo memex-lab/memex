@@ -2,6 +2,7 @@ class LLMConfig {
   static const String defaultClientKey = 'default';
 
   static const String typeGemini = 'gemini';
+  static const String typeGeminiOauth = 'gemini_oauth';
   static const String typeChatCompletion = 'chat_completion';
   static const String typeResponses = 'responses';
   static const String typeBedrockClaude = 'bedrock_claude';
@@ -19,6 +20,7 @@ class LLMConfig {
   static List<String> recommendedModels(String type) {
     switch (type) {
       case typeGemini:
+      case typeGeminiOauth:
         return const [
           'gemini-3.1-pro-preview',
           'gemini-3-flash-preview',
