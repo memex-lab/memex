@@ -1379,4 +1379,18 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get proModelHint => '此模型需要 ChatGPT Pro/Plus 订阅才能使用。';
+
+  @override
+  String get searchKnowledgeBase => '搜索知识库...';
+
+  @override
+  String get searchKnowledgeHint => '输入关键词搜索文件名或内容';
+
+  @override
+  String noSearchResults(Object query) {
+    return '未找到 \"$query\" 相关结果';
+  }
+
+  @override
+  String get onlyMarkdownPreview => '仅支持 Markdown 文件预览';
 }

@@ -2635,6 +2635,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This model requires a ChatGPT Pro/Plus subscription.'**
   String get proModelHint;
+
+  /// No description provided for @searchKnowledgeBase.
+  ///
+  /// In en, this message translates to:
+  /// **'Search knowledge base...'**
+  String get searchKnowledgeBase;
+
+  /// No description provided for @searchKnowledgeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter keyword to search file names or content'**
+  String get searchKnowledgeHint;
+
+  /// No description provided for @noSearchResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No results found for \"{query}\"'**
+  String noSearchResults(Object query);
+
+  /// No description provided for @onlyMarkdownPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Only Markdown preview supported'**
+  String get onlyMarkdownPreview;
 }
 
 class _AppLocalizationsDelegate

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:memex/ui/knowledge/view_models/knowledge_base_viewmodel.dart';
 import 'package:memex/ui/knowledge/widgets/knowledge/knowledge_file_card.dart';
-import 'knowledge_file_page.dart';
+import 'package:memex/ui/knowledge/widgets/knowledge_search_delegate.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'knowledge_directory_page.dart';
 
@@ -47,23 +47,14 @@ class KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
           backgroundColor: const Color(
               0xFFF1F5F9), // Match Timeline, Insights and bottom nav background
           appBar: AppBar(
-            title: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('MEMEX OS',
-                    style: GoogleFonts.orbitron(
-                        fontSize: 10,
-                        color: const Color(0xFF94A3B8),
-                        letterSpacing: 1.2,
-                        fontWeight: FontWeight.bold)),
-                Text(UserStorage.l10n.organize,
-                    style: GoogleFonts.inter(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w900,
-                        color: const Color(0xFF0F172A),
-                        height: 1.2)),
-              ],
+            title: Text(
+              'Memex',
+              style: GoogleFonts.orbitron(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 2,
+                color: const Color(0xFF0F172A),
+              ),
             ),
             backgroundColor: Colors.transparent,
             elevation: 0,
@@ -73,7 +64,10 @@ class KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
                 icon: const Icon(Icons.search,
                     color: Color(0xFF64748B), size: 28),
                 onPressed: () {
-                  // Search TODO
+                  showSearch(
+                    context: context,
+                    delegate: KnowledgeSearchDelegate(),
+                  );
                 },
               ),
               const SizedBox(width: 8),

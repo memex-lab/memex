@@ -900,6 +900,16 @@ class MemexRouter {
     });
   }
 
+  Future<Result<List<Map<String, dynamic>>>> searchPkmFiles(
+      String query) async {
+    return runResult(() async {
+      await _ensureInitialized();
+      final userId = await UserStorage.getUserId();
+      if (userId == null) return <Map<String, dynamic>>[];
+      return await fileSystemService.searchPkmFiles(userId, query);
+    });
+  }
+
   Future<Map<String, dynamic>> readPkmFile(String filePath) async {
     await _ensureInitialized();
     _logger.info('LocalMode: readPkmFile called: path=$filePath');
