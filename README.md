@@ -55,6 +55,11 @@ All data stays on your device. You just need to pick your preferred LLM provider
   - Spatial & temporal (map, route, timeline) — reconstruct where and when things happened
   - Gallery — visual memory from your photos
 
+### 📝 Pure Text & Data Freedom
+- **Effortless Archiving**: After AI organization, all your inputs naturally settle into a series of interconnected Markdown files, automatically making one-click diary and document archiving a breeze.
+- **Evolve Alongside AI**: Why stick to Markdown? Because as AI capabilities rapidly advance, only the purest Markdown texts can bridge the gap of time and truly keep pace with its evolution. As LLM models strengthen, these simple text records will reliably unlock entirely new interactive experiences and profound insights for you in the future.
+- **Absolute Freedom to Leave**: Zero vendor lock-in; we completely return the freedom of choice to you. If you ever feel our product no longer meets your expectations, you can simply one-click export all your notes as standard Markdown files and migrate seamlessly to any basic note-taking app in the world at zero cost.
+
 ### 🔒 Privacy & Local-First
 - All data stored locally (filesystem + SQLite)
 - App lock with biometric authentication
