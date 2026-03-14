@@ -77,14 +77,9 @@ All data stays on your device. You just need to pick your preferred LLM provider
 | AWS Bedrock | Bedrock Claude | For AWS users |
 
 ## Install
-
-### iOS
-
-Search **MemexAI** on the App Store, or [click here](https://apps.apple.com/app/memexai) to download.
-
-### Android
-
-Download the latest APK from [GitHub Releases](https://github.com/memex-lab/memex/releases).
+- **App Store & Google Play**: ⏳ **Coming Soon**. Both iOS and Android versions are currently under review in the major app stores.
+- **Early Access (Android)**: You can download the latest Android APK from [GitHub Releases](https://github.com/memex-lab/memex/releases) to start experiencing it right now.
+- **Build from Source**: If you can't wait for store approval, you can also [compile and install from the source code locally](#development).
 
 ### Configure LLM
 
