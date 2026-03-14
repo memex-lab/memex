@@ -97,17 +97,20 @@ class NativeWidgetFactory {
       children.add(_buildSnippet(extHtml));
     }
 
-    // 2. Related Facts
-    final relatedFacts = data['related_fact_ids'] ?? data['related_facts'];
-    if (relatedFacts is List && relatedFacts.isNotEmpty) {
-      final factIds = relatedFacts
-          .map((e) => e is Map ? e['id'] as String? : e.toString())
-          .where((e) => e != null && e.isNotEmpty)
-          .cast<String>()
-          .toList();
+    // 2. Related Facts — skip in detail mode since InsightDetailPage
+    //    already renders related_cards, avoiding duplicate display.
+    if (!isDetail) {
+      final relatedFacts = data['related_fact_ids'] ?? data['related_facts'];
+      if (relatedFacts is List && relatedFacts.isNotEmpty) {
+        final factIds = relatedFacts
+            .map((e) => e is Map ? e['id'] as String? : e.toString())
+            .where((e) => e != null && e.isNotEmpty)
+            .cast<String>()
+            .toList();
 
-      if (factIds.isNotEmpty) {
-        children.add(RelatedFactsList(factIds: factIds));
+        if (factIds.isNotEmpty) {
+          children.add(RelatedFactsList(factIds: factIds));
+        }
       }
     }
 

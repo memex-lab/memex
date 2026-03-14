@@ -30,7 +30,7 @@ class LinkCard extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 16,
+                      fontSize: 17,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF1E293B),
                       height: 1.3,
@@ -42,11 +42,11 @@ class LinkCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: Colors.grey[100],
+                        color: const Color(0xFFF1F5F9),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child:
-                          const Icon(Icons.link, size: 12, color: Colors.grey),
+                          const Icon(Icons.link, size: 12, color: Color(0xFF94A3B8)),
                     ),
                     const SizedBox(width: 8),
                     Expanded(

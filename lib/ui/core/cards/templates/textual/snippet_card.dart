@@ -32,7 +32,7 @@ class SnippetCard extends StatelessWidget {
                 height: 120,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFF6366F1).withOpacity(0.1),
+                  color: const Color(0xFF6366F1).withValues(alpha: 0.1),
                 ),
               ),
             ),
@@ -50,7 +50,7 @@ class SnippetCard extends StatelessWidget {
                     code: const TextStyle(
                       backgroundColor: Color(0xFFF1F5F9),
                       color: Color(0xFF0F172A),
-                      fontFamily: 'RobotoMono',
+                      fontFamily: 'monospace',
                     ),
                     codeblockDecoration: BoxDecoration(
                       color: const Color(0xFFF1F5F9),
@@ -74,7 +74,7 @@ class SnippetCard extends StatelessWidget {
                                 '#$tag',
                                 style: const TextStyle(
                                   fontSize: 10,
-                                  fontWeight: FontWeight.bold,
+                                  fontWeight: FontWeight.w700,
                                   color: Color(0xFF64748B), // Slate-500
                                 ),
                               ),
@@ -94,22 +94,22 @@ class SnippetCard extends StatelessWidget {
     switch (style) {
       case 'mono':
         return const TextStyle(
-          fontFamily: 'Monospace',
-          fontSize: 16,
+          fontFamily: 'monospace',
+          fontSize: 15,
           height: 1.5,
           color: Color(0xFF334155), // Slate-700
         );
       case 'handwritten':
         return const TextStyle(
           fontStyle: FontStyle.italic,
-          fontSize: 20,
+          fontSize: 18,
           height: 1.4,
           color: Color(0xFF1E293B), // Slate-800
         );
       default:
         return const TextStyle(
           fontSize: 18,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w400,
           height: 1.5,
           color: Color(0xFF1E293B), // Slate-800
         );

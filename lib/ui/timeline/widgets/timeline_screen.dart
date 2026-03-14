@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'package:memex/domain/models/timeline_card_model.dart';
 import 'package:memex/db/app_database.dart';
@@ -222,14 +223,13 @@ class TimelineScreenState extends State<TimelineScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const Text(
+                      Text(
                         'Memex',
-                        style: TextStyle(
-                          fontFamily: 'Orbitron',
+                        style: GoogleFonts.orbitron(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 2,
-                          color: Color(0xFF0F172A),
+                          color: const Color(0xFF0F172A),
                         ),
                       ),
                       Row(

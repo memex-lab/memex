@@ -23,13 +23,13 @@ class PersonCard extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 28,
-                backgroundColor: Colors.grey[200],
+                backgroundColor: const Color(0xFFE2E8F0),
                 backgroundImage:
                     avatarUrl != null ? NetworkImage(avatarUrl) : null,
                 child: avatarUrl == null
                     ? Text(name.substring(0, 1).toUpperCase(),
                         style:
-                            const TextStyle(fontSize: 24, color: Colors.grey))
+                            const TextStyle(fontSize: 24, color: Color(0xFF94A3B8)))
                     : null,
               ),
               if (status != null)
@@ -68,14 +68,14 @@ class PersonCard extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: Colors.blue[50],
+                        color: const Color(0xFF6366F1).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         relation,
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.blue[700],
+                          color: const Color(0xFF6366F1),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -84,7 +84,7 @@ class PersonCard extends StatelessWidget {
               ],
             ),
           ),
-          const Icon(Icons.chevron_right, color: Colors.grey),
+          const Icon(Icons.chevron_right, color: Color(0xFF94A3B8)),
         ],
       ),
     );
@@ -93,13 +93,13 @@ class PersonCard extends StatelessWidget {
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'online':
-        return Colors.green;
+        return const Color(0xFF10B981);
       case 'busy':
-        return Colors.red;
+        return const Color(0xFFEF4444);
       case 'away':
         return Colors.amber;
       default:
-        return Colors.grey;
+        return const Color(0xFF94A3B8);
     }
   }
 }

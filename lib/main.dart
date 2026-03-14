@@ -844,9 +844,10 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   }
 
   Widget _buildBottomBar() {
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    final barBottom = bottomPadding > 0 ? bottomPadding + 8.0 : 24.0;
     return Positioned(
-      bottom:
-          24, // Use actual physical bottom spacing to lift off edge slightly
+      bottom: barBottom,
       left: 24,
       right: 24,
       child: Stack(
@@ -859,7 +860,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.9),
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: const Color(0xFFF1F5F9)),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.06),
@@ -905,6 +906,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   }
 
   Widget _buildMemoryTabButton() {
+    final isActive = _currentTab == 0;
+    final activeColor = const Color(0xFF6366F1);
+    final inactiveColor = const Color(0xFF94A3B8);
     return GestureDetector(
       onTap: () {
         _memoryButtonTapCount++;
@@ -929,17 +933,34 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         height: 60,
         color: Colors.transparent,
         alignment: Alignment.center,
-        child: Icon(
-          Icons.calendar_today,
-          size: 24,
-          color: _currentTab == 0 ? Colors.black : const Color(0xFF94A3B8),
-          weight: _currentTab == 0 ? 2.5 : 2.0,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.calendar_today,
+              size: 22,
+              color: isActive ? activeColor : inactiveColor,
+            ),
+            const SizedBox(height: 3),
+            Text(
+              'Timeline',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight:
+                    isActive ? FontWeight.w600 : FontWeight.w400,
+                color: isActive ? activeColor : inactiveColor,
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildKnowledgeTabButton() {
+    final isActive = _currentTab == 1;
+    final activeColor = const Color(0xFF6366F1);
+    final inactiveColor = const Color(0xFF94A3B8);
     return GestureDetector(
       onTap: () {
         _knowledgeBaseButtonTapCount++;
@@ -965,11 +986,25 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         height: 60,
         color: Colors.transparent,
         alignment: Alignment.center,
-        child: Icon(
-          Icons.auto_stories_outlined,
-          size: 24,
-          color: _currentTab == 1 ? Colors.black : const Color(0xFF94A3B8),
-          weight: _currentTab == 1 ? 2.5 : 2.0,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.auto_stories_outlined,
+              size: 22,
+              color: isActive ? activeColor : inactiveColor,
+            ),
+            const SizedBox(height: 3),
+            Text(
+              'Library',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight:
+                    isActive ? FontWeight.w600 : FontWeight.w400,
+                color: isActive ? activeColor : inactiveColor,
+              ),
+            ),
+          ],
         ),
       ),
     );

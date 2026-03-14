@@ -69,8 +69,8 @@ class InsightSummaryCard extends StatelessWidget {
                         Text(
                           title,
                           style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
                             color: Color(0xFF1E293B),
                           ),
                         ),
@@ -146,7 +146,7 @@ class InsightSummaryCard extends StatelessWidget {
                       child: Text(
                         itemTitle,
                         style: const TextStyle(
-                          fontSize: 14,
+                          fontSize: 15,
                           color: Color(0xFF334155),
                         ),
                         maxLines: 1,

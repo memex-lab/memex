@@ -30,7 +30,7 @@ class TimelineHeader extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: TimelineTheme.colors.primary.withOpacity(0.1),
+                color: TimelineTheme.colors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon,
@@ -129,7 +129,7 @@ class TimelineTag extends StatelessWidget {
         color: TimelineTheme.colors.background,
         borderRadius: BorderRadius.circular(6),
         border: Border.all(
-            color: TimelineTheme.colors.textTertiary.withOpacity(0.1)),
+            color: TimelineTheme.colors.textTertiary.withValues(alpha: 0.1)),
       ),
       child: Text(
         '#$label'.toUpperCase(),
@@ -167,7 +167,7 @@ class TimelineDivider extends StatelessWidget {
                   child: DecoratedBox(
                     decoration: BoxDecoration(
                         color:
-                            TimelineTheme.colors.textTertiary.withOpacity(0.3)),
+                            TimelineTheme.colors.textTertiary.withValues(alpha: 0.3)),
                   ),
                 );
               }),
@@ -179,7 +179,7 @@ class TimelineDivider extends StatelessWidget {
     return Divider(
       height: 32,
       thickness: 1,
-      color: TimelineTheme.colors.textTertiary.withOpacity(0.1),
+      color: TimelineTheme.colors.textTertiary.withValues(alpha: 0.1),
     );
   }
 }

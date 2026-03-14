@@ -366,7 +366,7 @@ class _DetailSheetState extends State<_DetailSheet> {
                                       fontSize: 13,
                                       color: Color(0xFF475569),
                                       backgroundColor: Color(0xFFE2E8F0),
-                                      fontFamily: 'Menlo'),
+                                      fontFamily: 'monospace'),
                                   codeblockDecoration: BoxDecoration(
                                     color: const Color(0xFF1E293B),
                                     borderRadius: BorderRadius.circular(8),

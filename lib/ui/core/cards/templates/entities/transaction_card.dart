@@ -90,7 +90,7 @@ class TransactionCard extends StatelessWidget {
                               style: const TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.w900,
-                                fontFamily: 'Monospace',
+                                fontFamily: 'monospace',
                                 color: Color(0xFF0F172A),
                               ),
                             ),
@@ -149,7 +149,7 @@ class TransactionCard extends StatelessWidget {
         Text(
           price,
           style: const TextStyle(
-              fontSize: 13, fontFamily: 'Monospace', color: Color(0xFF334155)),
+              fontSize: 13, fontFamily: 'monospace', color: Color(0xFF334155)),
         ),
       ],
     );

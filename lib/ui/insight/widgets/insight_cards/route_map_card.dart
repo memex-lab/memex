@@ -82,7 +82,7 @@ class RouteMapCard extends StatelessWidget {
         border: Border.all(color: const Color(0xFFF1F5F9)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha:0.02),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
@@ -254,7 +254,7 @@ class _RoutePainter extends CustomPainter {
 
     final bgPaint = Paint()..color = Colors.white;
     final shadowPaint = Paint()
-      ..color = Colors.black.withOpacity(0.05)
+      ..color = Colors.black.withValues(alpha:0.05)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
 
     canvas.drawRRect(bgRect.shift(const Offset(0, 2)), shadowPaint);

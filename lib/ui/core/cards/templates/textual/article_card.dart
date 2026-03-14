@@ -29,7 +29,7 @@ class ArticleCard extends StatelessWidget {
               child: LocalImage(
                 url: imageUrl,
                 fit: BoxFit.cover,
-                errorBuilder: (c, e, s) => Container(color: Colors.grey[200]),
+                errorBuilder: (c, e, s) => Container(color: const Color(0xFFE2E8F0)),
               ),
             ),
 
@@ -42,8 +42,8 @@ class ArticleCard extends StatelessWidget {
                 Text(
                   title,
                   style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800, // Extra bold
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
                     height: 1.3,
                     color: Color(0xFF1E293B),
                     letterSpacing: -0.5,
@@ -79,7 +79,7 @@ class ArticleCard extends StatelessWidget {
                     code: const TextStyle(
                       backgroundColor: Color(0xFFF1F5F9),
                       color: Color(0xFF0F172A),
-                      fontFamily: 'RobotoMono',
+                      fontFamily: 'monospace',
                     ),
                     codeblockDecoration: BoxDecoration(
                       color: const Color(0xFFF1F5F9),

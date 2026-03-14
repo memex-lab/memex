@@ -54,9 +54,9 @@ class CanvasCard extends StatelessWidget {
                     Row(
                       // Fake tools
                       children: [
-                        _buildTool(Colors.black),
-                        _buildTool(Colors.red),
-                        _buildTool(Colors.blue),
+                        _buildTool(const Color(0xFF0F172A)),
+                        _buildTool(const Color(0xFFEF4444)),
+                        _buildTool(const Color(0xFF6366F1)),
                       ],
                     )
                   ],
@@ -67,7 +67,7 @@ class CanvasCard extends StatelessWidget {
                 height: 180,
                 width: double.infinity,
                 color:
-                    Colors.white.withOpacity(0.5), // Translucent to show grid
+                    Colors.white.withValues(alpha: 0.5), // Translucent to show grid
                 child: imageUrl != null
                     ? LocalImage(url: imageUrl, fit: BoxFit.contain)
                     : Center(
@@ -75,12 +75,12 @@ class CanvasCard extends StatelessWidget {
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
                               border: Border.all(
-                                  color: Colors.blue.withOpacity(0.2),
+                                  color: const Color(0xFF6366F1).withValues(alpha: 0.2),
                                   width: 2),
                               borderRadius: BorderRadius.circular(12)),
                           child: const Text("Sketch Content",
                               style: TextStyle(
-                                  color: Colors.blueGrey, fontSize: 12)),
+                                  color: Color(0xFF64748B), fontSize: 12)),
                         ),
                       ),
               )
@@ -104,7 +104,7 @@ class CanvasCard extends StatelessWidget {
 class DotGridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.grey.withOpacity(0.2);
+    final paint = Paint()..color = const Color(0xFF94A3B8).withValues(alpha: 0.2);
     const spacing = 20.0;
     for (var x = 0.0; x < size.width; x += spacing) {
       for (var y = 0.0; y < size.height; y += spacing) {

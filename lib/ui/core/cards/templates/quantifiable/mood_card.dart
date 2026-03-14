@@ -20,7 +20,7 @@ class MoodCard extends StatelessWidget {
       onTap: onTap,
       padding: const EdgeInsets.all(16),
       borderRadius: 24,
-      backgroundColor: moodColor.withOpacity(0.1),
+      backgroundColor: moodColor.withValues(alpha: 0.1),
       child: Row(
         children: [
           Container(
@@ -30,7 +30,7 @@ class MoodCard extends StatelessWidget {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: moodColor.withOpacity(0.2),
+                  color: moodColor.withValues(alpha: 0.2),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -56,7 +56,7 @@ class MoodCard extends StatelessWidget {
                     data['trigger'],
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.black.withOpacity(0.6),
+                      color: const Color(0xFF0F172A).withValues(alpha: 0.6),
                     ),
                   ),
               ],
@@ -69,7 +69,7 @@ class MoodCard extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black45,
+                  color: Color(0xFF94A3B8),
                   height: 1.0,
                 ),
               ),
@@ -78,7 +78,7 @@ class MoodCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black26,
+                  color: Color(0xFFCBD5E1),
                 ),
               ),
             ],
@@ -102,7 +102,7 @@ class MoodCard extends StatelessWidget {
     if (['angry', 'stressed'].contains(lower)) return Colors.red;
     if (['creative', 'curious'].contains(lower)) return Colors.purple;
     if (['relaxed', 'calm'].contains(lower)) return Colors.teal;
-    return Colors.blueGrey;
+    return const Color(0xFF64748B);
   }
 
   IconData _getMoodIcon(String mood) {

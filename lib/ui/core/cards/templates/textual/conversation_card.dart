@@ -31,7 +31,7 @@ class ConversationCard extends StatelessWidget {
               title,
               style: const TextStyle(
                   fontSize: 12,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w700,
                   color: Color(0xFF94A3B8)),
             ),
           ),
@@ -39,7 +39,7 @@ class ConversationCard extends StatelessWidget {
           if (messages.isEmpty)
             const Center(
                 child:
-                    Text("No messages", style: TextStyle(color: Colors.grey))),
+                    Text("No messages", style: TextStyle(color: const Color(0xFF94A3B8)))),
 
           // Chat Bubbles
           ...messages.map((m) {
@@ -77,7 +77,7 @@ class ConversationCard extends StatelessWidget {
                         child: Text(sender,
                             style: const TextStyle(
                                 fontSize: 10,
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w600,
                                 color: Color(0xFF64748B))),
                       ),
                     Text(

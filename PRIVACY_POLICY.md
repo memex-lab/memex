@@ -28,6 +28,16 @@ When you use these services, your input content is sent to the provider you sele
 - [Anthropic Privacy Policy](https://www.anthropic.com/privacy)
 - [AWS Privacy Policy](https://aws.amazon.com/privacy/)
 
+## Device Permissions
+
+Memex may request the following device permissions. All data obtained through these permissions is stored locally on your device and is never uploaded to our servers.
+
+- **Camera** — Used to take photos for your records
+- **Microphone** — Used for voice recording input
+- **Photo Library** — Used to select existing photos from your device
+- **Health / Fitness** — Used to read fitness data (steps, etc.) when you enable this feature
+- **Biometrics (Face ID / Touch ID)** — Used for App Lock authentication
+
 ## On-Device Processing
 
 The following features run entirely on your device and do not send data externally:

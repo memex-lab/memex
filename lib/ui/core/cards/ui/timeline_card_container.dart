@@ -51,7 +51,7 @@ class TimelineCard extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-              color: TimelineTheme.colors.textTertiary.withOpacity(0.2)),
+              color: TimelineTheme.colors.textTertiary.withValues(alpha: 0.2)),
           boxShadow: [TimelineTheme.shadows.card],
         );
       case TimelineCardVariant.immersive:
@@ -72,14 +72,14 @@ class TimelineCard extends StatelessWidget {
           color: Colors.transparent,
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-              color: TimelineTheme.colors.textTertiary.withOpacity(0.3)),
+              color: TimelineTheme.colors.textTertiary.withValues(alpha: 0.3)),
         );
       case TimelineCardVariant.canvas:
         return BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-              color: TimelineTheme.colors.glassBorder.withOpacity(0.5)),
+              color: TimelineTheme.colors.glassBorder.withValues(alpha: 0.5)),
           boxShadow: [TimelineTheme.shadows.card],
         );
       case TimelineCardVariant.glass:
@@ -104,10 +104,10 @@ class TimelineCard extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               color: customBackgroundColor ??
-                  TimelineTheme.colors.background.withOpacity(0.85),
+                  TimelineTheme.colors.background.withValues(alpha: 0.85),
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: TimelineTheme.colors.glassBorder.withOpacity(0.5),
+                color: TimelineTheme.colors.glassBorder.withValues(alpha: 0.5),
                 width: 1,
               ),
             ),
@@ -134,7 +134,7 @@ class _DotGridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = TimelineTheme.colors.textTertiary.withOpacity(0.15);
+      ..color = TimelineTheme.colors.textTertiary.withValues(alpha: 0.15);
     const spacing = 20.0;
     for (var x = 0.0; x < size.width; x += spacing) {
       for (var y = 0.0; y < size.height; y += spacing) {

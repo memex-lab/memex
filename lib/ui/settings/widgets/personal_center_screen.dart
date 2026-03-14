@@ -676,7 +676,7 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
                           IconButton(
                             icon: const Icon(Icons.close),
                             onPressed: () => Navigator.of(context).pop(),
-                            color: Colors.grey[600],
+                            color: const Color(0xFF64748B),
                           ),
                         ],
                       ),
@@ -745,9 +745,9 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
                         if (_userEmail != null)
                           Text(
                             _userEmail!,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 14,
-                              color: Colors.grey[600],
+                              color: Color(0xFF64748B),
                             ),
                           ),
                       ],
@@ -934,7 +934,7 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
                   style: TextStyle(
                     fontSize: 16,
                     color:
-                        isLoading ? Colors.grey[400] : const Color(0xFF0F172A),
+                        isLoading ? const Color(0xFF94A3B8) : const Color(0xFF0F172A),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -948,9 +948,9 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
                   ),
                 )
               else
-                Icon(
+                const Icon(
                   Icons.chevron_right,
-                  color: Colors.grey[400],
+                  color: Color(0xFFCBD5E1),
                 ),
             ],
           ),

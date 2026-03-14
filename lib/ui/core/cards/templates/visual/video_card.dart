@@ -120,7 +120,7 @@ class _VideoCardState extends State<VideoCard> {
                 ),
                 if (duration.isNotEmpty)
                   Text(duration,
-                      style: const TextStyle(fontSize: 12, color: Colors.grey))
+                      style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)))
               ],
             ),
           ),

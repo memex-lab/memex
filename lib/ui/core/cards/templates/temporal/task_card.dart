@@ -114,15 +114,15 @@ class _TaskCardState extends State<TaskCard> {
               Expanded(
                 child: Text(title,
                     style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 17,
                         fontWeight: FontWeight.bold,
                         color: const Color(0xFF1E293B),
                         decoration:
                             _isCompleted ? TextDecoration.lineThrough : null,
-                        decorationColor: Colors.grey)),
+                        decorationColor: const Color(0xFF94A3B8))),
               ),
               if (widget.data['priority'] == 'high')
-                const Icon(Icons.priority_high, size: 16, color: Colors.pink)
+                const Icon(Icons.priority_high, size: 16, color: Color(0xFFF43F5E))
             ],
           ),
           if (hasSubtasks) ...[
@@ -148,7 +148,7 @@ class _TaskCardState extends State<TaskCard> {
                                 : Icons.check_box_outline_blank,
                             size: 18,
                             color:
-                                done ? Colors.grey : const Color(0xFF64748B)),
+                                done ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
                       ),
                     ),
                     Expanded(
@@ -156,7 +156,7 @@ class _TaskCardState extends State<TaskCard> {
                           style: TextStyle(
                               fontSize: 13,
                               color:
-                                  done ? Colors.grey : const Color(0xFF334155),
+                                  done ? const Color(0xFF94A3B8) : const Color(0xFF334155),
                               decoration:
                                   done ? TextDecoration.lineThrough : null)),
                     ),
@@ -169,7 +169,7 @@ class _TaskCardState extends State<TaskCard> {
               Padding(
                 padding: const EdgeInsets.only(top: 8, left: 32),
                 child: Text("${widget.data['due_date']}",
-                    style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
               )
           ]
         ],

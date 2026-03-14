@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:memex/ui/knowledge/view_models/knowledge_base_viewmodel.dart';
 import 'package:memex/ui/knowledge/widgets/knowledge/knowledge_file_card.dart';
 import 'knowledge_file_page.dart';
@@ -50,17 +51,17 @@ class KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text('MEMEX OS',
-                    style: TextStyle(
+                Text('MEMEX OS',
+                    style: GoogleFonts.orbitron(
                         fontSize: 10,
-                        color: Color(0xFF94A3B8),
+                        color: const Color(0xFF94A3B8),
                         letterSpacing: 1.2,
                         fontWeight: FontWeight.bold)),
                 Text(UserStorage.l10n.organize,
-                    style: const TextStyle(
+                    style: GoogleFonts.inter(
                         fontSize: 24,
                         fontWeight: FontWeight.w900,
-                        color: Color(0xFF0F172A),
+                        color: const Color(0xFF0F172A),
                         height: 1.2)),
               ],
             ),

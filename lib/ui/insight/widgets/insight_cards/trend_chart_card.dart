@@ -71,7 +71,7 @@ class TrendChartCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(32),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha:0.04),
               blurRadius: 20,
               offset: const Offset(0, 4),
             ),
@@ -221,7 +221,7 @@ class TrendChartCard extends StatelessWidget {
                               }),
                           belowBarData: BarAreaData(
                             show: true,
-                            color: themeColor.withOpacity(0.1),
+                            color: themeColor.withValues(alpha:0.1),
                           ),
                         ),
                       ],
@@ -297,7 +297,7 @@ class TrendChartCard extends StatelessWidget {
               Text(
                 insight!,
                 style: const TextStyle(
-                  fontSize: 14,
+                  fontSize: 13,
                   fontWeight: FontWeight.w500,
                   color: Color(0xFF64748B), // Slate-500
                   fontStyle: FontStyle.italic,

@@ -195,7 +195,7 @@ class _DurationCardState extends State<DurationCard>
                 width: 120,
                 height: 120,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF6366F1).withOpacity(0.3),
+                  color: const Color(0xFF6366F1).withValues(alpha:0.3),
                   shape: BoxShape.circle,
                 ),
               ),
@@ -216,12 +216,12 @@ class _DurationCardState extends State<DurationCard>
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
+                            color: Colors.white.withValues(alpha:0.1),
                             shape: BoxShape.circle,
                             border: Border.all(
                                 color: _isRunning
                                     ? const Color(0xFF34D399) // Emerald
-                                    : Colors.white.withOpacity(0.05)),
+                                    : Colors.white.withValues(alpha:0.05)),
                           ),
                           child: Icon(
                               _isRunning ? Icons.timer : Icons.timer_outlined,
@@ -257,7 +257,7 @@ class _DurationCardState extends State<DurationCard>
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
-                                color: Colors.white.withOpacity(0.5),
+                                color: Colors.white.withValues(alpha:0.5),
                               ),
                             ),
                           ],
@@ -289,7 +289,7 @@ class _DurationCardState extends State<DurationCard>
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
                             letterSpacing: 0.5,
-                            color: Colors.white.withOpacity(0.5),
+                            color: Colors.white.withValues(alpha:0.5),
                           ),
                         ),
                       ],

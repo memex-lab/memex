@@ -67,7 +67,7 @@ class _SystemTaskCardState extends State<SystemTaskCard>
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFA855F7).withOpacity(0.1),
+            color: const Color(0xFFA855F7).withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -80,18 +80,18 @@ class _SystemTaskCardState extends State<SystemTaskCard>
           child: Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withValues(alpha: 0.8),
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: Colors.white.withOpacity(0.5),
+                color: Colors.white.withValues(alpha: 0.5),
                 width: 1,
               ),
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Colors.white.withOpacity(0.6),
-                  const Color(0xFFF5F3FF).withOpacity(0.4),
+                  Colors.white.withValues(alpha: 0.6),
+                  const Color(0xFFF5F3FF).withValues(alpha: 0.4),
                 ],
               ),
             ),
@@ -140,7 +140,7 @@ class _SystemTaskCardState extends State<SystemTaskCard>
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 4,
                             offset: const Offset(0, 2),
                           ),
@@ -174,7 +174,7 @@ class _SystemTaskCardState extends State<SystemTaskCard>
                           Text(
                             widget.title,
                             style: const TextStyle(
-                              fontSize: 16,
+                              fontSize: 17,
                               fontWeight: FontWeight.w600,
                               color: Color(0xFF1E293B),
                             ),
@@ -221,7 +221,7 @@ class _SystemTaskCardState extends State<SystemTaskCard>
                           widget.message,
                           style: TextStyle(
                             fontSize: 13,
-                            color: Colors.blueGrey.shade500,
+                            color: const Color(0xFF64748B),
                           ),
                         ),
                     ],

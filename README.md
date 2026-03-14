@@ -8,21 +8,25 @@
 </p>
 
 <p align="center">
+  <a href="README.md">English</a> | <a href="README_CN.md">简体中文</a>
+</p>
+
+<p align="center">
   <a href="https://github.com/memex-lab/memex/releases"><img src="https://img.shields.io/github/v/release/memex-lab/memex?style=flat-square&label=release" alt="Release"></a>
   <a href="https://discord.gg/ftae8GeubK"><img src="https://img.shields.io/badge/discord-join-5865F2?style=flat-square&logo=discord&logoColor=white" alt="Discord"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue?style=flat-square" alt="License"></a>
-  <a href="README_CN.md"><img src="https://img.shields.io/badge/文档-中文-blue?style=flat-square" alt="中文文档"></a>
 </p>
 
-<div align="center">
-  <img src="https://github.com/user-attachments/assets/450eb6e5-8adf-4c1f-bc46-a63c9836f22c" width="300" />
-</div>
 
 ## What is Memex?
 
 Memex is a local-first, AI-native personal knowledge management app. Capture text, photos, and voice — a multi-agent system automatically organizes your records into structured timeline cards, extracts knowledge, and generates insights across your entries.
 
 All data stays on your device. You just need to pick your preferred LLM provider.
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/450eb6e5-8adf-4c1f-bc46-a63c9836f22c" width="300" />
+</div>
 
 ## Features
 
@@ -51,6 +55,11 @@ All data stays on your device. You just need to pick your preferred LLM provider
   - Spatial & temporal (map, route, timeline) — reconstruct where and when things happened
   - Gallery — visual memory from your photos
 
+### 📝 Pure Text & Data Freedom
+- **Effortless Archiving**: After AI organization, all your inputs naturally settle into a series of interconnected Markdown files, automatically making one-click diary and document archiving a breeze.
+- **Evolve Alongside AI**: Why stick to Markdown? Because as AI capabilities rapidly advance, only the purest Markdown texts can bridge the gap of time and truly keep pace with its evolution. As LLM models strengthen, these simple text records will reliably unlock entirely new interactive experiences and profound insights for you in the future.
+- **Absolute Freedom to Leave**: Zero vendor lock-in; we completely return the freedom of choice to you. If you ever feel our product no longer meets your expectations, you can simply one-click export all your notes as standard Markdown files and migrate seamlessly to any basic note-taking app in the world at zero cost.
+
 ### 🔒 Privacy & Local-First
 - All data stored locally (filesystem + SQLite)
 - App lock with biometric authentication
@@ -68,14 +77,9 @@ All data stays on your device. You just need to pick your preferred LLM provider
 | AWS Bedrock | Bedrock Claude | For AWS users |
 
 ## Install
-
-### iOS
-
-Search **MemexAI** on the App Store, or [click here](https://apps.apple.com/app/memexai) to download.
-
-### Android
-
-Download the latest APK from [GitHub Releases](https://github.com/memex-lab/memex/releases).
+- **App Store & Google Play**: ⏳ **Coming Soon**. Both iOS and Android versions are currently under review in the major app stores.
+- **Early Access (Android)**: You can download the latest Android APK from [GitHub Releases](https://github.com/memex-lab/memex/releases) to start experiencing it right now.
+- **Build from Source**: If you can't wait for store approval, you can also [compile and install from the source code locally](#development).
 
 ### Configure LLM
 

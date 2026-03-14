@@ -54,7 +54,7 @@ class TimelineCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(32),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha:0.04),
               blurRadius: 20,
               offset: const Offset(0, 4),
             ),
@@ -79,7 +79,7 @@ class TimelineCard extends StatelessWidget {
               Text(
                 insight!,
                 style: const TextStyle(
-                  fontSize: 14,
+                  fontSize: 13,
                   fontWeight: FontWeight.w500,
                   color: Color(0xFF64748B), // Slate-500
                   fontStyle: FontStyle.italic,
@@ -148,7 +148,7 @@ class TimelineCard extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: item.isFilledDot
                                 ? Colors.transparent
-                                : color.withOpacity(0.04),
+                                : color.withValues(alpha:0.04),
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: Column(
@@ -181,7 +181,7 @@ class TimelineCard extends StatelessWidget {
                                 Text(
                                   item.title!,
                                   style: TextStyle(
-                                    fontSize: 16,
+                                    fontSize: 17,
                                     fontWeight: FontWeight.bold,
                                     color: item.isFilledDot
                                         ? const Color(0xFF94A3B8)
@@ -196,7 +196,7 @@ class TimelineCard extends StatelessWidget {
                                 Text(
                                   item.content!,
                                   style: TextStyle(
-                                    fontSize: 14,
+                                    fontSize: 15,
                                     height: 1.5,
                                     color: item.isFilledDot
                                         ? const Color(0xFF94A3B8)

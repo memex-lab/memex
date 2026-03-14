@@ -48,7 +48,7 @@ class PlaceCard extends StatelessWidget {
                       Text(
                         name,
                         style: const TextStyle(
-                          fontSize: 16,
+                          fontSize: 17,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF1E293B),
                         ),
@@ -62,7 +62,7 @@ class PlaceCard extends StatelessWidget {
                                   Icons
                                       .location_on_outlined, // Changed to outlined
                                   size: 14,
-                                  color: Colors.grey[500]),
+                                  color: const Color(0xFF64748B)),
                               const SizedBox(width: 4),
                               Expanded(
                                 child: SizedBox(
@@ -91,7 +91,7 @@ class PlaceCard extends StatelessWidget {
                                             address,
                                             style: TextStyle(
                                               fontSize: 13,
-                                              color: Colors.grey[500],
+                                              color: const Color(0xFF64748B),
                                               fontWeight: FontWeight.w500,
                                             ),
                                           ),
@@ -130,7 +130,7 @@ class PlaceCard extends StatelessWidget {
       return Container(
         color: const Color(0xFFF1F5F9),
         child: const Center(
-            child: Icon(Icons.map, color: Colors.black12, size: 48)),
+            child: Icon(Icons.map, color: Color(0xFFE2E8F0), size: 48)),
       );
     }
 

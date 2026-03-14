@@ -28,12 +28,12 @@ class SpecSheetCard extends StatelessWidget {
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: Colors.grey[100],
+                  color: const Color(0xFFF1F5F9),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white.withOpacity(0.5)),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -44,7 +44,7 @@ class SpecSheetCard extends StatelessWidget {
                     ? LocalImage(url: imageUrl, fit: BoxFit.cover)
                     : const Center(
                         child: Icon(Icons.inventory_2_outlined,
-                            color: Colors.grey, size: 32)),
+                            color: Color(0xFF94A3B8), size: 32)),
               ),
               const SizedBox(width: 16),
 
@@ -68,9 +68,9 @@ class SpecSheetCard extends StatelessWidget {
                         padding: const EdgeInsets.only(top: 4),
                         child: Text(
                           data['subtitle'],
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF475569),
                           ),
                         ),
                       ),
@@ -81,7 +81,7 @@ class SpecSheetCard extends StatelessWidget {
           ),
           if (specs.isNotEmpty) ...[
             const SizedBox(height: 16),
-            const Divider(height: 1, thickness: 0.5, color: Colors.black12),
+            const Divider(height: 1, thickness: 0.5, color: Color(0xFFE2E8F0)),
             const SizedBox(height: 16),
 
             // Spec Grid using Wrap for flexibility or GridView
@@ -112,7 +112,7 @@ class SpecSheetCard extends StatelessWidget {
                           Text(
                             entry.value.toString(),
                             style: const TextStyle(
-                              fontSize: 14,
+                              fontSize: 15,
                               fontWeight: FontWeight.w500,
                               color: Color(0xFF334155),
                             ),

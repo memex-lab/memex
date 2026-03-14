@@ -36,7 +36,7 @@ class ContrastCard extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha:0.05),
               blurRadius: 20,
               offset: const Offset(0, 4),
             ),
@@ -62,7 +62,7 @@ class ContrastCard extends StatelessWidget {
                     Text(
                       title,
                       style: const TextStyle(
-                        fontSize: 16,
+                        fontSize: 17,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFFE11D48), // Rose-600
                       ),
@@ -74,7 +74,7 @@ class ContrastCard extends StatelessWidget {
                   Text(
                     insight!,
                     style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: 13,
                       color: Color(0xFF64748B), // Slate-500
                       fontStyle: FontStyle.italic,
                     ),
@@ -153,10 +153,9 @@ class ContrastCard extends StatelessWidget {
                       RichText(
                         text: TextSpan(
                           style: const TextStyle(
-                            fontSize: 16,
+                            fontSize: 17,
                             color: Color(0xFF1E293B), // Slate-800
                             height: 1.6,
-                            fontFamily: 'system-ui',
                           ),
                           children: [
                             TextSpan(
