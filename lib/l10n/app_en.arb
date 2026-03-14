@@ -653,5 +653,14 @@
   "fitnessDismissTitle": "Skip Fitness Access?",
   "fitnessDismissMessage": "Without fitness permission, the app won't be able to automatically collect your health data for insights and auto-recording.",
   "skipAnyway": "Skip Anyway",
-  "proModelHint": "This model requires a ChatGPT Pro/Plus subscription."
+  "proModelHint": "This model requires a ChatGPT Pro/Plus subscription.",
+  "searchKnowledgeBase": "Search knowledge base...",
+  "searchKnowledgeHint": "Enter keyword to search file names or content",
+  "@noSearchResults": {
+    "placeholders": {
+      "query": {}
+    }
+  },
+  "noSearchResults": "No results found for \"{query}\"",
+  "onlyMarkdownPreview": "Only Markdown preview supported"
 }

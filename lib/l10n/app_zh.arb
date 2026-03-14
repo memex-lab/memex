@@ -653,5 +653,14 @@
   "fitnessDismissTitle": "跳过健身权限？",
   "fitnessDismissMessage": "如果跳过，应用将无法自动收集你的健康数据进行洞察分析和自动记录。",
   "skipAnyway": "仍然跳过",
-  "proModelHint": "此模型需要 ChatGPT Pro/Plus 订阅才能使用。"
+  "proModelHint": "此模型需要 ChatGPT Pro/Plus 订阅才能使用。",
+  "searchKnowledgeBase": "搜索知识库...",
+  "searchKnowledgeHint": "输入关键词搜索文件名或内容",
+  "@noSearchResults": {
+    "placeholders": {
+      "query": {}
+    }
+  },
+  "noSearchResults": "未找到 \"{query}\" 相关结果",
+  "onlyMarkdownPreview": "仅支持 Markdown 文件预览"
 }

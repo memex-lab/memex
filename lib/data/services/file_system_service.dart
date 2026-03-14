@@ -2082,6 +2082,78 @@ class FileSystemService {
     return fileList.take(limit).toList();
   }
 
+  /// Search PKM files by keyword (grep file name and content).
+  ///
+  /// Returns list of matching files with name, path, and optional snippet.
+  Future<List<Map<String, dynamic>>> searchPkmFiles(String userId, String query,
+      {int limit = 50}) async {
+    final pkmPath = getPkmPath(userId);
+    final dir = Directory(pkmPath);
+
+    if (!await dir.exists() || query.trim().isEmpty) {
+      return [];
+    }
+
+    final lowerQuery = query.trim().toLowerCase();
+    final results = <Map<String, dynamic>>[];
+
+    List<FileSystemEntity> entities = [];
+    try {
+      entities = await dir.list(recursive: true, followLinks: false).toList();
+    } catch (e) {
+      _logger.warning('Error listing PKM directory for search: $e');
+      return [];
+    }
+
+    final files = entities.whereType<File>().where((f) {
+      final name = path.basename(f.path);
+      return !name.startsWith('.');
+    }).toList();
+
+    for (final file in files) {
+      if (results.length >= limit) break;
+      final name = path.basename(file.path);
+      final relativePath = path.relative(file.path, from: pkmPath);
+      final nameMatch = name.toLowerCase().contains(lowerQuery);
+
+      String? snippet;
+      bool contentMatch = false;
+
+      // Only grep content for text files (md/txt/json)
+      final ext = path.extension(file.path).toLowerCase();
+      if (['.md', '.txt', '.json', '.yaml', '.yml'].contains(ext)) {
+        try {
+          final content = await file.readAsString();
+          final lowerContent = content.toLowerCase();
+          final idx = lowerContent.indexOf(lowerQuery);
+          if (idx >= 0) {
+            contentMatch = true;
+            // Extract snippet around match
+            final start = (idx - 40).clamp(0, content.length);
+            final end = (idx + query.length + 60).clamp(0, content.length);
+            snippet = (start > 0 ? '...' : '') +
+                content.substring(start, end).replaceAll('\n', ' ') +
+                (end < content.length ? '...' : '');
+          }
+        } catch (_) {
+          // Skip unreadable files
+        }
+      }
+
+      if (nameMatch || contentMatch) {
+        results.add({
+          'name': name,
+          'path': relativePath,
+          'is_directory': false,
+          'snippet': snippet,
+          'name_match': nameMatch,
+        });
+      }
+    }
+
+    return results;
+  }
+
   /// Get count of child items under given PKM paths (batch).
   Future<Map<String, int>> countPkmItems(
       String userId, List<String> paths) async {

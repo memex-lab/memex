@@ -1425,4 +1425,19 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get proModelHint =>
       'This model requires a ChatGPT Pro/Plus subscription.';
+
+  @override
+  String get searchKnowledgeBase => 'Search knowledge base...';
+
+  @override
+  String get searchKnowledgeHint =>
+      'Enter keyword to search file names or content';
+
+  @override
+  String noSearchResults(Object query) {
+    return 'No results found for \"$query\"';
+  }
+
+  @override
+  String get onlyMarkdownPreview => 'Only Markdown preview supported';
 }
