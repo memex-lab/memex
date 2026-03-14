@@ -1,13 +1,19 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import 'package:memex/domain/models/knowledge_insight_card.dart';
 import 'package:memex/data/repositories/memex_router.dart';
+import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/utils/result.dart';
 import 'package:memex/utils/user_storage.dart';
 
 /// ViewModel for the Insight page. Holds insight list, pin/delete/reorder state.
 class InsightViewModel extends ChangeNotifier {
-  InsightViewModel({required MemexRouter router}) : _router = router;
+  InsightViewModel({required MemexRouter router}) : _router = router {
+    EventBusService.instance
+        .addHandler(EventBusMessageType.newInsight, _handleNewInsightEvent);
+  }
 
   final MemexRouter _router;
 
@@ -19,6 +25,19 @@ class InsightViewModel extends ChangeNotifier {
   bool isRefreshing = false;
   bool isReordering = false;
   final Set<String> pinningIds = {};
+
+  void _handleNewInsightEvent(EventBusMessage message) {
+    if (message is! NewInsightMessage) return;
+    unawaited(_reloadAfterInsightUpdated());
+  }
+
+  Future<void> _reloadAfterInsightUpdated() async {
+    await loadData();
+    if (isRefreshing) {
+      isRefreshing = false;
+      notifyListeners();
+    }
+  }
 
   Future<void> loadData() async {
     isLoading = true;
@@ -64,10 +83,14 @@ class InsightViewModel extends ChangeNotifier {
     if (isRefreshing) return;
     isRefreshing = true;
     notifyListeners();
-    (await _router.updateKnowledgeInsights()).when(onOk: (_) {}, onError: (_, __) {});
-    await loadData();
-    isRefreshing = false;
-    notifyListeners();
+    (await _router.updateKnowledgeInsights()).when(
+      onOk: (_) {},
+      onError: (_, __) {
+        errorMessage = UserStorage.l10n.dataLoadFailedRetry;
+        isRefreshing = false;
+        notifyListeners();
+      },
+    );
   }
 
   void setActiveCardId(String? id) {
@@ -122,5 +145,12 @@ class InsightViewModel extends ChangeNotifier {
     }
     isDeleting = false;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    EventBusService.instance
+        .removeHandler(EventBusMessageType.newInsight, _handleNewInsightEvent);
+    super.dispose();
   }
 }

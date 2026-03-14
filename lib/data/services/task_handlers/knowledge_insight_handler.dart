@@ -3,6 +3,7 @@ import 'package:logging/logging.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/data/services/local_task_executor.dart';
 import 'package:memex/agent/insight_agent/knowledge_insight_agent.dart';
+import 'package:memex/data/services/event_bus_service.dart';
 
 final Logger _logger = getLogger('LocalTaskHandlers');
 
@@ -19,4 +20,10 @@ Future<void> handleKnowledgeInsight(
   // final period = payload['period'] as String?;
 
   await KnowledgeInsightAgent.updateKnowledgeInsight();
+
+  // Notify UI layer that insight data should be reloaded.
+  EventBusService.instance.emitEvent(NewInsightMessage(
+    insightId: context.bizId ?? context.taskId,
+    html: '',
+  ));
 }
