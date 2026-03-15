@@ -2659,6 +2659,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Only Markdown preview supported'**
   String get onlyMarkdownPreview;
+
+  /// No description provided for @backupAndRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup & Restore'**
+  String get backupAndRestore;
+
+  /// No description provided for @createBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Backup'**
+  String get createBackup;
+
+  /// No description provided for @restoreBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore Backup'**
+  String get restoreBackup;
+
+  /// No description provided for @backupDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Pack all your data (cards, knowledge base, insights, settings) into a .memex file. Save it to iCloud Drive, Google Drive, or any location via the share sheet.'**
+  String get backupDescription;
+
+  /// No description provided for @restoreDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a .memex backup file to restore all data. This will overwrite current data.'**
+  String get restoreDescription;
+
+  /// No description provided for @selectBackupFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Backup File'**
+  String get selectBackupFile;
+
+  /// No description provided for @estimatedSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated size'**
+  String get estimatedSize;
+
+  /// No description provided for @backupComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup created'**
+  String get backupComplete;
+
+  /// No description provided for @backupFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup failed: {error}'**
+  String backupFailed(Object error);
+
+  /// No description provided for @confirmRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Restore'**
+  String get confirmRestore;
+
+  /// No description provided for @confirmRestoreMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Restoring will overwrite all current data including cards, knowledge base, insights, and settings. This cannot be undone. Continue?'**
+  String get confirmRestoreMessage;
+
+  /// No description provided for @restoreComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore complete'**
+  String get restoreComplete;
+
+  /// No description provided for @restoreRestartHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Data has been restored. Please restart the app for all changes to take effect.'**
+  String get restoreRestartHint;
+
+  /// No description provided for @restoreFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore failed: {error}'**
+  String restoreFailed(Object error);
+
+  /// No description provided for @invalidBackupFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid backup file. Please select a .memex file.'**
+  String get invalidBackupFile;
 }
 
 class _AppLocalizationsDelegate

@@ -1440,4 +1440,58 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onlyMarkdownPreview => 'Only Markdown preview supported';
+
+  @override
+  String get backupAndRestore => 'Backup & Restore';
+
+  @override
+  String get createBackup => 'Create Backup';
+
+  @override
+  String get restoreBackup => 'Restore Backup';
+
+  @override
+  String get backupDescription =>
+      'Pack all your data (cards, knowledge base, insights, settings) into a .memex file. Save it to iCloud Drive, Google Drive, or any location via the share sheet.';
+
+  @override
+  String get restoreDescription =>
+      'Select a .memex backup file to restore all data. This will overwrite current data.';
+
+  @override
+  String get selectBackupFile => 'Select Backup File';
+
+  @override
+  String get estimatedSize => 'Estimated size';
+
+  @override
+  String get backupComplete => 'Backup created';
+
+  @override
+  String backupFailed(Object error) {
+    return 'Backup failed: $error';
+  }
+
+  @override
+  String get confirmRestore => 'Confirm Restore';
+
+  @override
+  String get confirmRestoreMessage =>
+      'Restoring will overwrite all current data including cards, knowledge base, insights, and settings. This cannot be undone. Continue?';
+
+  @override
+  String get restoreComplete => 'Restore complete';
+
+  @override
+  String get restoreRestartHint =>
+      'Data has been restored. Please restart the app for all changes to take effect.';
+
+  @override
+  String restoreFailed(Object error) {
+    return 'Restore failed: $error';
+  }
+
+  @override
+  String get invalidBackupFile =>
+      'Invalid backup file. Please select a .memex file.';
 }

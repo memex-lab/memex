@@ -1393,4 +1393,55 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get onlyMarkdownPreview => '仅支持 Markdown 文件预览';
+
+  @override
+  String get backupAndRestore => '备份与恢复';
+
+  @override
+  String get createBackup => '创建备份';
+
+  @override
+  String get restoreBackup => '恢复备份';
+
+  @override
+  String get backupDescription =>
+      '将所有数据（卡片、知识库、洞察、设置）打包为 .memex 文件。可通过分享保存到 iCloud Drive、Google Drive 或任意位置。';
+
+  @override
+  String get restoreDescription => '选择 .memex 备份文件恢复所有数据。这将覆盖当前数据。';
+
+  @override
+  String get selectBackupFile => '选择备份文件';
+
+  @override
+  String get estimatedSize => '预估大小';
+
+  @override
+  String get backupComplete => '备份已创建';
+
+  @override
+  String backupFailed(Object error) {
+    return '备份失败: $error';
+  }
+
+  @override
+  String get confirmRestore => '确认恢复';
+
+  @override
+  String get confirmRestoreMessage =>
+      '恢复将覆盖当前所有数据，包括卡片、知识库、洞察和设置。此操作不可撤销，确定继续？';
+
+  @override
+  String get restoreComplete => '恢复完成';
+
+  @override
+  String get restoreRestartHint => '数据已恢复，请重启应用以使所有更改生效。';
+
+  @override
+  String restoreFailed(Object error) {
+    return '恢复失败: $error';
+  }
+
+  @override
+  String get invalidBackupFile => '无效的备份文件，请选择 .memex 文件。';
 }

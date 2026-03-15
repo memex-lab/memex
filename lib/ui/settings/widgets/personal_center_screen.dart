@@ -933,8 +933,9 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
                   title,
                   style: TextStyle(
                     fontSize: 16,
-                    color:
-                        isLoading ? const Color(0xFF94A3B8) : const Color(0xFF0F172A),
+                    color: isLoading
+                        ? const Color(0xFF94A3B8)
+                        : const Color(0xFF0F172A),
                     fontWeight: FontWeight.w500,
                   ),
                 ),

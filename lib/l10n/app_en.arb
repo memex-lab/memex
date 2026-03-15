@@ -662,5 +662,30 @@
     }
   },
   "noSearchResults": "No results found for \"{query}\"",
-  "onlyMarkdownPreview": "Only Markdown preview supported"
+  "onlyMarkdownPreview": "Only Markdown preview supported",
+  "backupAndRestore": "Backup & Restore",
+  "createBackup": "Create Backup",
+  "restoreBackup": "Restore Backup",
+  "backupDescription": "Pack all your data (cards, knowledge base, insights, settings) into a .memex file. Save it to iCloud Drive, Google Drive, or any location via the share sheet.",
+  "restoreDescription": "Select a .memex backup file to restore all data. This will overwrite current data.",
+  "selectBackupFile": "Select Backup File",
+  "estimatedSize": "Estimated size",
+  "backupComplete": "Backup created",
+  "@backupFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "backupFailed": "Backup failed: {error}",
+  "confirmRestore": "Confirm Restore",
+  "confirmRestoreMessage": "Restoring will overwrite all current data including cards, knowledge base, insights, and settings. This cannot be undone. Continue?",
+  "restoreComplete": "Restore complete",
+  "restoreRestartHint": "Data has been restored. Please restart the app for all changes to take effect.",
+  "@restoreFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "restoreFailed": "Restore failed: {error}",
+  "invalidBackupFile": "Invalid backup file. Please select a .memex file."
 }

@@ -662,5 +662,30 @@
     }
   },
   "noSearchResults": "未找到 \"{query}\" 相关结果",
-  "onlyMarkdownPreview": "仅支持 Markdown 文件预览"
+  "onlyMarkdownPreview": "仅支持 Markdown 文件预览",
+  "backupAndRestore": "备份与恢复",
+  "createBackup": "创建备份",
+  "restoreBackup": "恢复备份",
+  "backupDescription": "将所有数据（卡片、知识库、洞察、设置）打包为 .memex 文件。可通过分享保存到 iCloud Drive、Google Drive 或任意位置。",
+  "restoreDescription": "选择 .memex 备份文件恢复所有数据。这将覆盖当前数据。",
+  "selectBackupFile": "选择备份文件",
+  "estimatedSize": "预估大小",
+  "backupComplete": "备份已创建",
+  "@backupFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "backupFailed": "备份失败: {error}",
+  "confirmRestore": "确认恢复",
+  "confirmRestoreMessage": "恢复将覆盖当前所有数据，包括卡片、知识库、洞察和设置。此操作不可撤销，确定继续？",
+  "restoreComplete": "恢复完成",
+  "restoreRestartHint": "数据已恢复，请重启应用以使所有更改生效。",
+  "@restoreFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "restoreFailed": "恢复失败: {error}",
+  "invalidBackupFile": "无效的备份文件，请选择 .memex 文件。"
 }
