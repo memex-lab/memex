@@ -3,12 +3,12 @@ import 'package:synchronized/synchronized.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/domain/models/card_model.dart';
 import 'package:memex/data/services/file_system_service.dart';
-import 'package:memex/data/services/local_task_executor.dart';
 import 'package:memex/data/services/card_renderer.dart';
+import 'package:memex/data/services/global_event_bus.dart';
+import 'package:memex/domain/models/system_event.dart';
 
 final _logger = getLogger('SubmitInputEndpoint');
 final _fileSystem = FileSystemService.instance;
-final _taskExecutor = LocalTaskExecutor.instance;
 final _lock = Lock();
 
 /// Submit input locally
@@ -211,73 +211,25 @@ Future<Map<String, dynamic>> submitInput(
 
     final publishTimestamp = now.millisecondsSinceEpoch ~/ 1000;
 
-    // 5. Enqueue Async Tasks (Chain)
-    // All 5 stages enqueued simultaneously with soft dependencies handled by workers/logic
-    // Using factId as bizId
-
-    // Stage 1: Analyze Assets (No dependencies)
-    final analyzeTaskId = await _taskExecutor.enqueueTask(
+    // 5. Publish domain event.
+    // Event subscriptions convert this event into persistent tasks and dependency chains.
+    await GlobalEventBus.instance.publish(
       userId: userId,
-      taskType: 'handle_analyze_assets',
-      payload: {
-        'fact_id': factId,
-        'asset_paths': assetPaths,
-      },
-      bizId: factId,
+      event: SystemEvent(
+        type: SystemEventTypes.userInputSubmitted,
+        source: 'submit_input.submitInput',
+        payload: {
+          'fact_id': factId,
+          'asset_paths': assetPaths,
+          'combined_text': combinedText,
+          'markdown_entry': markdownEntry,
+          'created_at_ts': publishTimestamp,
+          'pkm_created_at_ts': now.millisecondsSinceEpoch / 1000.0,
+        },
+      ),
     );
 
-    // Stage 2: Card Agent (Depends on Analyze Assets)
-    await _taskExecutor.enqueueTask(
-      userId: userId,
-      taskType: 'card_agent_task',
-      payload: {
-        'fact_id': factId,
-        'combined_text': combinedText,
-        'markdown_entry': markdownEntry,
-        'created_at_ts': publishTimestamp,
-      },
-      bizId: factId,
-      dependencies: [analyzeTaskId],
-    );
-
-    // Stage 3: PKM Agent (Depends on Analyze Assets AND Previous PKM Agent)
-    // We perform a check for lastPkmTaskId.
-    // If it exists, we add it to dependencies.
-    // If it's null (e.g. app restart), we try to fetch the last pkm_agent_task from DB.
-    final lastPkmTaskId =
-        await _taskExecutor.getLastTaskByType('pkm_agent_task');
-
-    final pkmDependencies = [analyzeTaskId];
-    if (lastPkmTaskId != null) {
-      pkmDependencies.add(lastPkmTaskId);
-    }
-
-    final pkmTaskId = await _taskExecutor.enqueueTask(
-      userId: userId,
-      taskType: 'pkm_agent_task',
-      payload: {
-        'fact_id': factId,
-        'combined_text': combinedText,
-        'created_at_ts': now.millisecondsSinceEpoch / 1000.0,
-      },
-      bizId: factId,
-      dependencies: pkmDependencies,
-    );
-
-    // Stage 4: Comment Agent (Depends on PKM Agent)
-    await _taskExecutor.enqueueTask(
-      userId: userId,
-      taskType: 'comment_agent_task',
-      payload: {
-        'fact_id': factId,
-        'combined_text': combinedText,
-        'created_at_ts': publishTimestamp,
-      },
-      bizId: factId,
-      dependencies: [pkmTaskId],
-    );
-
-    _logger.info('Enqueued task chain for fact $factId');
+    _logger.info('Published user input submitted event for fact $factId');
 
     // Use unified renderCard method to process placeholder card
     // This will replace fs:// URLs with http URLs

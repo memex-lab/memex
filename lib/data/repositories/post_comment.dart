@@ -3,12 +3,13 @@ import 'package:memex/agent/comment_agent/comment_agent.dart';
 import 'package:memex/domain/models/llm_config.dart';
 import 'package:memex/domain/models/card_model.dart';
 import 'package:memex/data/services/file_system_service.dart';
-import 'package:memex/data/services/local_task_executor.dart';
 import 'package:memex/agent/agent_utils.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:uuid/uuid.dart';
 import 'package:memex/domain/models/agent_definitions.dart';
 import 'package:memex/data/services/event_bus_service.dart';
+import 'package:memex/data/services/global_event_bus.dart';
+import 'package:memex/domain/models/system_event.dart';
 
 final _logger = Logger('PostCommentEndpoint');
 final _fileSystemService = FileSystemService.instance;
@@ -71,15 +72,18 @@ Future<Map<String, dynamic>> postCommentEndpoint(
       // Event logging failure should not break comment posting
     }
 
-    // Enqueue AI reply task (Persistent Task)
-    await LocalTaskExecutor.instance.enqueueTask(
+    // Publish domain event and let event subscribers enqueue persistent tasks.
+    await GlobalEventBus.instance.publish(
       userId: userId,
-      taskType: 'process_ai_reply',
-      payload: {
-        'card_id': cardId,
-        'content': content,
-        'comment_id': commentId,
-      },
+      event: SystemEvent(
+        type: SystemEventTypes.cardCommentPosted,
+        source: 'post_comment.postCommentEndpoint',
+        payload: {
+          'card_id': cardId,
+          'content': content,
+          'comment_id': commentId,
+        },
+      ),
     );
 
     // Return user comment info immediately

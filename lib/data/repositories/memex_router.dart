@@ -20,10 +20,10 @@ import 'package:memex/domain/models/agent_config.dart';
 import 'package:memex/db/app_database.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/user_storage.dart';
-import 'package:memex/agent/insight_agent/knowledge_insight_agent.dart';
 import 'package:memex/data/services/chat_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/local_task_executor.dart';
+import 'package:memex/data/services/global_event_bus.dart';
 import 'package:memex/data/repositories/submit_input.dart'
     as submit_input_endpoint;
 import 'package:memex/data/services/task_handlers/analyze_assets_handler.dart';
@@ -51,6 +51,7 @@ import 'package:memex/data/services/llm_call_record_service.dart';
 import 'package:memex/data/services/agent_activity_service.dart';
 import 'package:memex/agent/skills/knowledge_insight/native_widgets.dart';
 import 'package:memex/utils/result.dart';
+import 'package:memex/domain/models/system_event.dart';
 
 /// Local data service for Memex. Handles all data operations via local storage (FileSystemService, DB).
 class MemexRouter {
@@ -112,6 +113,9 @@ class MemexRouter {
       // Register Failure Handlers
       LocalTaskExecutor.instance.registerFailureHandler(
           'card_agent_task', handleCardAgentFailureImpl);
+
+      // Register event subscriptions after task handlers are ready.
+      _registerEventSubscriptions();
     } catch (e) {
       _logger.severe('Failed to initialize MemexRouter: $e');
       // Reset future to allow retry if needed, or keep failed state
@@ -122,6 +126,102 @@ class MemexRouter {
 
   String?
       _targetUserIdForInit; // Track the user ID we are currently initializing for
+
+  void _registerEventSubscriptions() {
+    final eventBus = GlobalEventBus.instance;
+
+    eventBus.subscribe(
+      eventType: SystemEventTypes.userInputSubmitted,
+      subscription: EventTaskSubscription(
+        subscriptionId: 'analyze_assets',
+        taskType: 'handle_analyze_assets',
+        payloadBuilder: (_, event) {
+          return Future.value({
+            'fact_id': event.payload['fact_id'],
+            'asset_paths': event.payload['asset_paths'] ?? const [],
+          });
+        },
+      ),
+    );
+
+    eventBus.subscribe(
+      eventType: SystemEventTypes.userInputSubmitted,
+      subscription: EventTaskSubscription(
+        subscriptionId: 'card_agent',
+        taskType: 'card_agent_task',
+        dependsOn: const ['analyze_assets'],
+        payloadBuilder: (_, event) {
+          return Future.value({
+            'fact_id': event.payload['fact_id'],
+            'combined_text': event.payload['combined_text'],
+            'markdown_entry': event.payload['markdown_entry'],
+            'created_at_ts': event.payload['created_at_ts'],
+          });
+        },
+      ),
+    );
+
+    eventBus.subscribe(
+      eventType: SystemEventTypes.userInputSubmitted,
+      subscription: EventTaskSubscription(
+        subscriptionId: 'pkm_agent',
+        taskType: 'pkm_agent_task',
+        dependsOn: const ['analyze_assets'],
+        payloadBuilder: (_, event) {
+          return Future.value({
+            'fact_id': event.payload['fact_id'],
+            'combined_text': event.payload['combined_text'],
+            'created_at_ts': event.payload['pkm_created_at_ts'],
+          });
+        },
+        dependenciesBuilder: (_, __) async {
+          final lastPkmTaskId =
+              await LocalTaskExecutor.instance.getLastTaskByType('pkm_agent_task');
+          return lastPkmTaskId == null ? const [] : [lastPkmTaskId];
+        },
+      ),
+    );
+
+    eventBus.subscribe(
+      eventType: SystemEventTypes.userInputSubmitted,
+      subscription: EventTaskSubscription(
+        subscriptionId: 'comment_agent',
+        taskType: 'comment_agent_task',
+        dependsOn: const ['pkm_agent'],
+        payloadBuilder: (_, event) {
+          return Future.value({
+            'fact_id': event.payload['fact_id'],
+            'combined_text': event.payload['combined_text'],
+            'created_at_ts': event.payload['created_at_ts'],
+          });
+        },
+      ),
+    );
+
+    eventBus.subscribe(
+      eventType: SystemEventTypes.cardCommentPosted,
+      subscription: EventTaskSubscription(
+        subscriptionId: 'ai_reply',
+        taskType: 'process_ai_reply',
+        payloadBuilder: (_, event) {
+          return Future.value({
+            'card_id': event.payload['card_id'],
+            'content': event.payload['content'],
+            'comment_id': event.payload['comment_id'],
+          });
+        },
+      ),
+    );
+
+    eventBus.subscribe(
+      eventType: SystemEventTypes.knowledgeInsightRefreshRequested,
+      subscription: EventTaskSubscription(
+        subscriptionId: 'knowledge_insight_refresh',
+        taskType: 'knowledge_insight_task',
+        payloadBuilder: (_, event) => Future.value(event.payload),
+      ),
+    );
+  }
 
   Future<void> _ensureInitialized() async {
     // We double check if a user is logged in now, and if we need to re-init.
@@ -1016,8 +1116,22 @@ class MemexRouter {
 
   Future<void> resetAllAgentConfigs() => UserStorage.resetAllAgentConfigs();
 
-  Future<Result<void>> updateKnowledgeInsights() =>
-      runResultVoid(() => KnowledgeInsightAgent.updateKnowledgeInsight());
+  Future<Result<void>> updateKnowledgeInsights() => runResultVoid(() async {
+        await _ensureInitialized();
+        final userId = await UserStorage.getUserId();
+        if (userId == null) {
+          throw Exception('User not logged in');
+        }
+
+        await GlobalEventBus.instance.publish(
+          userId: userId,
+          event: SystemEvent(
+            type: SystemEventTypes.knowledgeInsightRefreshRequested,
+            source: 'memex_router.updateKnowledgeInsights',
+            payload: const {},
+          ),
+        );
+      });
 
   Future<List<Task>> getTasks({int limit = 10, int offset = 0}) =>
       LocalTaskExecutor.instance.getTasks(limit: limit, offset: offset);
