@@ -58,7 +58,8 @@ dependencies:
   health: ^13.2.1
   pedometer: ^4.0.0
   workmanager: ^0.9.0
-  dart_agent_core: ^1.0.3
+  dart_agent_core: ^1.0.4
+  flutter_js: ^0.8.7
   drift: ^2.30.0
   sqlite3_flutter_libs: ^0.5.41
   drift_flutter: ^0.2.8

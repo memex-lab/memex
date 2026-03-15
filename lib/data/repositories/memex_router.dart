@@ -175,8 +175,8 @@ class MemexRouter {
           });
         },
         dependenciesBuilder: (_, __) async {
-          final lastPkmTaskId =
-              await LocalTaskExecutor.instance.getLastTaskByType('pkm_agent_task');
+          final lastPkmTaskId = await LocalTaskExecutor.instance
+              .getLastTaskByType('pkm_agent_task');
           return lastPkmTaskId == null ? const [] : [lastPkmTaskId];
         },
       ),

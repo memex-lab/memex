@@ -357,10 +357,10 @@ packages:
     dependency: "direct main"
     description:
       name: dart_agent_core
-      sha256: "445a9dcd3bd0154a8ffe5a70182d8b2728c16c4e8998446d1615f57430167a14"
+      sha256: ac4d45000dacd318f68fbfc936989d184b87f431d977c1f7bc0806d15b816963
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.3"
+    version: "1.0.4"
   dart_jsonwebtoken:
     dependency: "direct main"
     description:
@@ -614,6 +614,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.1.5"
+  flutter_js:
+    dependency: "direct main"
+    description:
+      name: flutter_js
+      sha256: "046428059ac7bef71e305dc35fc24be933b684684a43e83eab7ebd0dc407ad85"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.8.7"
   flutter_launcher_icons:
     dependency: "direct dev"
     description:
@@ -1634,6 +1642,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.1"
+  sync_http:
+    dependency: transitive
+    description:
+      name: sync_http
+      sha256: "7f0cd72eca000d2e026bcd6f990b81d0ca06022ef4e32fb257b30d3d1014a961"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.1"
   synchronized:
     dependency: "direct main"
     description:
