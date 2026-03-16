@@ -2749,6 +2749,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Invalid backup file. Please select a .memex file.'**
   String get invalidBackupFile;
+
+  /// No description provided for @dataStorage.
+  ///
+  /// In en, this message translates to:
+  /// **'Data Storage'**
+  String get dataStorage;
+
+  /// No description provided for @dataStorageDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose where Memex stores your data. Custom folder or iCloud keeps data when you reinstall the app.'**
+  String get dataStorageDescription;
+
+  /// No description provided for @dataStorageDescriptionAndroid.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a custom folder to store your workspace. Data is kept when you reinstall the app.'**
+  String get dataStorageDescriptionAndroid;
+
+  /// No description provided for @dataStorageDescriptionIOS.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on iCloud to sync your workspace across devices and keep data when you reinstall the app.'**
+  String get dataStorageDescriptionIOS;
+
+  /// No description provided for @storageLocationApp.
+  ///
+  /// In en, this message translates to:
+  /// **'App storage'**
+  String get storageLocationApp;
+
+  /// No description provided for @storageLocationAppDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Data is stored inside the app. May be removed when you uninstall.'**
+  String get storageLocationAppDesc;
+
+  /// No description provided for @storageLocationCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Device storage (custom folder)'**
+  String get storageLocationCustom;
+
+  /// No description provided for @storageLocationCustomDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Store data in a folder you choose. Data persists across reinstall if the folder remains.'**
+  String get storageLocationCustomDesc;
+
+  /// No description provided for @storageLocationICloud.
+  ///
+  /// In en, this message translates to:
+  /// **'Store in iCloud'**
+  String get storageLocationICloud;
+
+  /// No description provided for @storageLocationICloudDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync across your Apple devices. Cannot be changed later.'**
+  String get storageLocationICloudDesc;
+
+  /// No description provided for @chooseFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose folder'**
+  String get chooseFolder;
+
+  /// No description provided for @storageLocationCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current: {location}'**
+  String storageLocationCurrent(Object location);
+
+  /// No description provided for @icloudNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'iCloud not available'**
+  String get icloudNotAvailable;
+
+  /// No description provided for @icloudRequiresCapability.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable iCloud capability in Xcode for this app to use iCloud storage.'**
+  String get icloudRequiresCapability;
+
+  /// No description provided for @customPathInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected folder is no longer accessible. Using app storage.'**
+  String get customPathInvalid;
+
+  /// No description provided for @restartRequiredAfterStorageChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Restart the app for the new storage location to take effect.'**
+  String get restartRequiredAfterStorageChange;
+
+  /// No description provided for @storagePermissionRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage permission is needed to use a custom folder. Please allow it.'**
+  String get storagePermissionRequired;
+
+  /// No description provided for @customFolderAccessDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot read or write this folder. Please grant storage permission or choose another location.'**
+  String get customFolderAccessDenied;
 }
 
 class _AppLocalizationsDelegate

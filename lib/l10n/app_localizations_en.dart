@@ -1494,4 +1494,71 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get invalidBackupFile =>
       'Invalid backup file. Please select a .memex file.';
+
+  @override
+  String get dataStorage => 'Data Storage';
+
+  @override
+  String get dataStorageDescription =>
+      'Choose where Memex stores your data. Custom folder or iCloud keeps data when you reinstall the app.';
+
+  @override
+  String get dataStorageDescriptionAndroid =>
+      'Choose a custom folder to store your workspace. Data is kept when you reinstall the app.';
+
+  @override
+  String get dataStorageDescriptionIOS =>
+      'Turn on iCloud to sync your workspace across devices and keep data when you reinstall the app.';
+
+  @override
+  String get storageLocationApp => 'App storage';
+
+  @override
+  String get storageLocationAppDesc =>
+      'Data is stored inside the app and will be removed when you uninstall.';
+
+  @override
+  String get storageLocationCustom => 'Device storage (custom folder)';
+
+  @override
+  String get storageLocationCustomDesc =>
+      'Store data in a folder you choose. Data persists across reinstall if the folder remains.';
+
+  @override
+  String get storageLocationICloud => 'Store in iCloud';
+
+  @override
+  String get storageLocationICloudDesc =>
+      'Sync your workspace across Apple devices. Data stays after reinstall.';
+
+  @override
+  String get chooseFolder => 'Choose folder';
+
+  @override
+  String storageLocationCurrent(Object location) {
+    return 'Current: $location';
+  }
+
+  @override
+  String get icloudNotAvailable => 'iCloud not available';
+
+  @override
+  String get icloudRequiresCapability =>
+      'Sign in to iCloud and turn on iCloud Drive to use iCloud storage.';
+
+  @override
+  String get customPathInvalid =>
+      'Selected folder is no longer accessible. Using app storage.';
+
+  @override
+  String get restartRequiredAfterStorageChange =>
+      'Restart the app for the new storage location to take effect.';
+
+  @override
+  String get storagePermissionRequired =>
+      'Storage permission is needed to use a custom folder. Please allow it.';
+
+  @override
+  String get customFolderAccessDenied =>
+      'Cannot read or write this folder. Please grant storage permission or choose another location.';
 }

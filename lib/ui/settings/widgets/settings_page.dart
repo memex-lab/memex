@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/ui/settings/widgets/backup_restore_page.dart';
+import 'package:memex/ui/settings/widgets/data_storage_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -102,6 +104,71 @@ class _SettingsPageState extends State<SettingsPage> {
                   ],
                 ),
               ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Data Storage
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const DataStoragePage(),
+                  ),
+                );
+              },
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF64748B).withValues(alpha: 0.08),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.folder_outlined,
+                        color: Color(0xFF6366F1), size: 22),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            UserStorage.l10n.dataStorage,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF0F172A),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            Platform.isIOS
+                                ? UserStorage.l10n.dataStorageDescriptionIOS
+                                : UserStorage.l10n.dataStorageDescriptionAndroid,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[500],
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right, color: Color(0xFFCBD5E1)),
+                  ],
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 16),

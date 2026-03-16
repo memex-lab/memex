@@ -5,7 +5,6 @@ import 'package:memex/data/repositories/update_card_ui_config.dart'
     as update_config_endpoint;
 import 'package:memex/data/services/task_handlers/knowledge_insight_handler.dart';
 import 'package:path/path.dart' as path;
-import 'package:path_provider/path_provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:memex/data/repositories/get_timeline_card.dart'; // Import for fetchTimelineCard
 import 'package:logging/logging.dart';
@@ -71,13 +70,11 @@ class MemexRouter {
 
   Future<void> _init() async {
     try {
-      // 1. Initialize FileSystemService if needed
-      // 1. Initialize FileSystemService if needed
-      final dir = await getApplicationDocumentsDirectory();
-      FileSystemService.init(dir.path);
-
-      // Initialize Local DB for current user
+      // 1. Resolve data root for current user (per-user workspace storage; logs/DB stay in app dir)
       final userId = await UserStorage.getUserId();
+      final dataRoot = await UserStorage.resolveDataRoot(userId);
+      FileSystemService.init(dataRoot);
+
       if (userId == null) {
         _logger.warning(
             'No user ID found during initialization. Local DB will NOT be initialized until login.');

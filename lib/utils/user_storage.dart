@@ -1,7 +1,12 @@
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter/material.dart';
+import 'dart:io';
 import 'dart:convert';
 import 'dart:ui' show PlatformDispatcher;
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:logging/logging.dart';
+import 'package:memex/utils/logger.dart';
 import 'package:memex/domain/models/llm_config.dart';
 import 'package:memex/domain/models/agent_config.dart';
 import 'package:dart_agent_core/dart_agent_core.dart';
@@ -39,12 +44,35 @@ class AgentCacheData {
       );
 }
 
-/// User storage: userId persistence
+/// Storage location for a user's workspace.
+/// Like Obsidian: app storage (default), custom device folder, or iCloud (iOS).
+/// Only affects this user's workspace; logs and DB stay in app storage.
+enum StorageLocation {
+  /// Default: app documents directory. Workspace may be removed on uninstall.
+  app,
+
+  /// User-chosen folder on device. Workspace persists across reinstall if path is still valid.
+  custom,
+
+  /// iCloud container (iOS only). Workspace syncs across devices; persists across reinstall.
+  icloud,
+}
+
+/// User storage: userId persistence and per-user workspace storage preference.
 class UserStorage {
   static AppLocalizationsExt? _l10n;
   static const String _keyUserId = 'user_id';
   static const String _keyPhotoSuggestionCache = 'photo_suggestion_cache';
   static const String _keyUserAvatar = 'user_avatar';
+
+  /// Per-user workspace storage preference keys.
+  static const String _keyStorageLocationPrefix = 'memex_storage_location_';
+  static const String _keyCustomDataRootPathPrefix =
+      'memex_custom_data_root_path_';
+
+  static final Logger _logger = getLogger('UserStorage');
+  static const MethodChannel _storageChannel =
+      MethodChannel('com.memexlab.memex/storage');
 
   /// Get the global l10n instance
   /// Throws an exception if not initialized (should be initialized in main())
@@ -547,6 +575,127 @@ class UserStorage {
       await prefs.setString(_keyUserAvatar, avatar);
     } catch (e) {
       // ignore error
+    }
+  }
+
+  // ----- Per-user workspace data root (app / custom folder / iCloud) -----
+
+  /// Resolve data root for [userId]. Used at init so this user's workspace lives under this path.
+  /// When [userId] is null, returns app dir (e.g. before login). Logs/DB are always in app dir.
+  static Future<String> resolveDataRoot(String? userId) async {
+    if (userId == null || userId.isEmpty) {
+      final dir = await getApplicationDocumentsDirectory();
+      return dir.path;
+    }
+    final prefs = await SharedPreferences.getInstance();
+    final locationIndex = prefs.getInt(_keyStorageLocationPrefix + userId);
+    final location = locationIndex != null
+        ? StorageLocation
+            .values[locationIndex.clamp(0, StorageLocation.values.length - 1)]
+        : StorageLocation.app;
+
+    switch (location) {
+      case StorageLocation.app:
+        final dir = await getApplicationDocumentsDirectory();
+        return dir.path;
+
+      case StorageLocation.custom:
+        final path = prefs.getString(_keyCustomDataRootPathPrefix + userId);
+        if (path != null && path.isNotEmpty) {
+          final dir = Directory(path);
+          if (await dir.exists()) {
+            return path;
+          }
+          _logger.warning(
+              'Custom data root no longer exists for user $userId: $path, falling back to app dir');
+        }
+        final appDir = await getApplicationDocumentsDirectory();
+        return appDir.path;
+
+      case StorageLocation.icloud:
+        if (!Platform.isIOS) {
+          _logger.warning(
+              'iCloud is only supported on iOS, falling back to app dir');
+          final dir = await getApplicationDocumentsDirectory();
+          return dir.path;
+        }
+        try {
+          final path = await _getICloudContainerPath();
+          if (path != null && path.isNotEmpty) {
+            final dir = Directory(path);
+            if (!await dir.exists()) {
+              await dir.create(recursive: true);
+            }
+            return path;
+          }
+        } catch (e, st) {
+          _logger.warning('Failed to get iCloud path: $e', e, st);
+        }
+        final appDir = await getApplicationDocumentsDirectory();
+        return appDir.path;
+    }
+  }
+
+  /// Get storage location preference for [userId].
+  static Future<StorageLocation> getWorkspaceStorageLocation(
+      String userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final index = prefs.getInt(_keyStorageLocationPrefix + userId);
+    if (index == null) return StorageLocation.app;
+    return StorageLocation
+        .values[index.clamp(0, StorageLocation.values.length - 1)];
+  }
+
+  /// Get custom data root path for [userId] if set; otherwise null.
+  static Future<String?> getCustomDataRootPath(String userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_keyCustomDataRootPathPrefix + userId);
+  }
+
+  /// Set workspace storage to app (default) for [userId].
+  static Future<void> setWorkspaceStorageToApp(String userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(
+        _keyStorageLocationPrefix + userId, StorageLocation.app.index);
+  }
+
+  /// Set workspace storage to custom directory for [userId]. [absolutePath] must be an existing directory path.
+  static Future<void> setWorkspaceStorageToCustom(
+      String userId, String absolutePath) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyCustomDataRootPathPrefix + userId, absolutePath);
+    await prefs.setInt(
+        _keyStorageLocationPrefix + userId, StorageLocation.custom.index);
+  }
+
+  /// Set workspace storage to iCloud for [userId] (iOS only). No-op on other platforms.
+  static Future<void> setWorkspaceStorageToICloud(String userId) async {
+    if (!Platform.isIOS) return;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(
+        _keyStorageLocationPrefix + userId, StorageLocation.icloud.index);
+  }
+
+  /// Whether iCloud storage is available (iOS with iCloud capability).
+  static Future<bool> isICloudAvailable() async {
+    if (!Platform.isIOS) return false;
+    try {
+      final path = await _getICloudContainerPath();
+      return path != null && path.isNotEmpty;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static Future<String?> _getICloudContainerPath() async {
+    try {
+      final String? path =
+          await _storageChannel.invokeMethod<String>('getICloudContainerPath');
+      return path;
+    } on PlatformException catch (e) {
+      _logger.warning(
+          'Platform error getting iCloud path: ${e.code} ${e.message}');
+      return null;
     }
   }
 }

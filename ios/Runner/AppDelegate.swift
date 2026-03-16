@@ -34,6 +34,36 @@ import EventKit
       }
 }
     
+    let storageChannel = FlutterMethodChannel(
+      name: "com.memexlab.memex/storage",
+      binaryMessenger: controller.binaryMessenger
+    )
+    storageChannel.setMethodCallHandler { (call: FlutterMethodCall, result: @escaping FlutterResult) in
+      if call.method == "getICloudContainerPath" {
+        DispatchQueue.global(qos: .userInitiated).async {
+          // Prefer explicit container ID to avoid ambiguity.
+          let explicitContainer = "iCloud.com.memexlab.memex"
+          var url = FileManager.default.url(forUbiquityContainerIdentifier: explicitContainer)
+          if url == nil {
+            // Fallback to default container if explicit lookup failed.
+            url = FileManager.default.url(forUbiquityContainerIdentifier: nil)
+          }
+          DispatchQueue.main.async {
+            if let url = url {
+              NSLog("[iCloud] container path resolved: \(url.path)")
+              result(url.path)
+            } else {
+              let hasIdentity = FileManager.default.ubiquityIdentityToken != nil
+              NSLog("[iCloud] container path is nil. ubiquityIdentityToken exists: \(hasIdentity)")
+              result(nil)
+            }
+          }
+        }
+      } else {
+        result(FlutterMethodNotImplemented)
+      }
+    }
+
     let systemActionsChannel = FlutterMethodChannel(
       name: "com.memexlab.memex/system_actions",
       binaryMessenger: controller.binaryMessenger

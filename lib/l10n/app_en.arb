@@ -687,5 +687,28 @@
     }
   },
   "restoreFailed": "Restore failed: {error}",
-  "invalidBackupFile": "Invalid backup file. Please select a .memex file."
+  "invalidBackupFile": "Invalid backup file. Please select a .memex file.",
+  "dataStorage": "Data Storage",
+  "dataStorageDescription": "Choose where Memex stores your data. Custom folder or iCloud keeps data when you reinstall the app.",
+  "dataStorageDescriptionAndroid": "Choose a custom folder to store your workspace. Data is kept when you reinstall the app.",
+  "dataStorageDescriptionIOS": "Turn on iCloud to sync your workspace across devices and keep data when you reinstall the app.",
+  "storageLocationApp": "App storage",
+  "storageLocationAppDesc": "Data is stored inside the app and will be removed when you uninstall.",
+  "storageLocationCustom": "Device storage (custom folder)",
+  "storageLocationCustomDesc": "Store data in a folder you choose. Data persists across reinstall if the folder remains.",
+  "storageLocationICloud": "Store in iCloud",
+  "storageLocationICloudDesc": "Sync your workspace across Apple devices. Data stays after reinstall.",
+  "chooseFolder": "Choose folder",
+  "storageLocationCurrent": "Current: {location}",
+  "icloudNotAvailable": "iCloud not available",
+  "icloudRequiresCapability": "Sign in to iCloud and turn on iCloud Drive to use iCloud storage.",
+  "customPathInvalid": "Selected folder is no longer accessible. Using app storage.",
+  "restartRequiredAfterStorageChange": "Restart the app for the new storage location to take effect.",
+  "storagePermissionRequired": "Storage permission is needed to use a custom folder. Please allow it.",
+  "customFolderAccessDenied": "Cannot read or write this folder. Please grant storage permission or choose another location.",
+  "@storageLocationCurrent": {
+    "placeholders": {
+      "location": {}
+    }
+  }
 }

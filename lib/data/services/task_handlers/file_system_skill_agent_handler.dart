@@ -2,10 +2,10 @@ import 'dart:io';
 
 import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:logging/logging.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 
 import 'package:memex/agent/agent_controller.util.dart';
+import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/agent/built_in_tools/file_tools.dart';
 import 'package:memex/agent/flutter_js_runtime.dart';
 import 'package:memex/agent/security/file_permission_manager.dart';
@@ -82,8 +82,8 @@ Future<void> handleFileSystemSkillAgentImpl(
 
   _logger.info('FileSystemSkillAgent task started for fact $factId');
 
-  final appDir = await getApplicationDocumentsDirectory();
-  final skillsRoot = path.join(appDir.path, 'skills');
+  final dataRoot = FileSystemService.instance.dataRoot;
+  final skillsRoot = path.join(dataRoot, 'skills');
   final skillRootAbsolute = await ensureSubmitSummarySkillDirectory(skillsRoot);
 
   final resources = await UserStorage.getAgentLLMResources(

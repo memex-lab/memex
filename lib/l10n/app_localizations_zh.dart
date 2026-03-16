@@ -1444,4 +1444,62 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get invalidBackupFile => '无效的备份文件，请选择 .memex 文件。';
+
+  @override
+  String get dataStorage => '数据存储';
+
+  @override
+  String get dataStorageDescription =>
+      '选择 Memex 存储数据的位置。自定义文件夹或 iCloud 可在卸载重装后保留数据。';
+
+  @override
+  String get dataStorageDescriptionAndroid => '选择自定义文件夹存放工作区数据，卸载重装后仍可保留。';
+
+  @override
+  String get dataStorageDescriptionIOS => '开启 iCloud 可在设备间同步工作区，并在卸载重装后保留数据。';
+
+  @override
+  String get storageLocationApp => '应用存储';
+
+  @override
+  String get storageLocationAppDesc => '数据存储在应用内部，卸载时会被清除。';
+
+  @override
+  String get storageLocationCustom => '设备存储（自定义文件夹）';
+
+  @override
+  String get storageLocationCustomDesc => '将数据存储在你选择的文件夹中，卸载重装后若该文件夹仍在则可保留数据。';
+
+  @override
+  String get storageLocationICloud => '存储到 iCloud';
+
+  @override
+  String get storageLocationICloudDesc => '在 Apple 设备间同步工作区，卸载重装后数据可保留。';
+
+  @override
+  String get chooseFolder => '选择文件夹';
+
+  @override
+  String storageLocationCurrent(Object location) {
+    return '当前：$location';
+  }
+
+  @override
+  String get icloudNotAvailable => 'iCloud 不可用';
+
+  @override
+  String get icloudRequiresCapability =>
+      '请先登录 iCloud 账号并开启 iCloud Drive 同步功能。';
+
+  @override
+  String get customPathInvalid => '所选文件夹无法访问，已改用应用存储。';
+
+  @override
+  String get restartRequiredAfterStorageChange => '请重启应用以使新存储位置生效。';
+
+  @override
+  String get storagePermissionRequired => '使用自定义文件夹需要存储权限，请允许访问。';
+
+  @override
+  String get customFolderAccessDenied => '无法读写该文件夹，请授予存储权限或选择其他位置。';
 }
