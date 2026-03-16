@@ -65,6 +65,10 @@ All data stays on your device. You just need to pick your preferred LLM provider
 - App lock with biometric authentication
 - No cloud dependency — your data never leaves your device
 
+### 📂 Storage & Backup
+- Supports iCloud Drive, Device storage (custom folder) and App storage
+- One-tap full backup / restore
+
 ### 🔗 Multi-LLM Provider Support
 
 | Provider | API Type | Notes |
@@ -92,7 +96,6 @@ Memex requires an LLM API key to power its AI features. On first launch:
 
 ## Roadmap
 
-- [ ] Cloud sync & backup (iCloud, Google Drive, etc.)
 - [ ] Video and file attachments
 - [ ] Editable Memory — manually curate and refine memory entries
 - [ ] Scheduled insight refresh — periodically re-analyze records for new patterns
