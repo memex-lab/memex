@@ -2977,6 +2977,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cannot read or write this folder. Please grant storage permission or choose another location.'**
   String get customFolderAccessDenied;
+
+  /// No description provided for @configured.
+  ///
+  /// In en, this message translates to:
+  /// **'Configured'**
+  String get configured;
+
+  /// No description provided for @apiKeyNotSet.
+  ///
+  /// In en, this message translates to:
+  /// **'API Key not set — tap to configure'**
+  String get apiKeyNotSet;
 }
 
 class _AppLocalizationsDelegate

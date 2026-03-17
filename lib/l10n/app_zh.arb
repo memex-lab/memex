@@ -725,5 +725,7 @@
   "icloudRequiresCapability": "请先登录 iCloud 账号并开启 iCloud Drive 同步功能。",
   "customPathInvalid": "所选文件夹无法访问，已改用应用存储。",
   "storagePermissionRequired": "使用自定义文件夹需要存储权限，请允许访问。",
-  "customFolderAccessDenied": "无法读写该文件夹，请授予存储权限或选择其他位置。"
+  "customFolderAccessDenied": "无法读写该文件夹，请授予存储权限或选择其他位置。",
+  "configured": "已配置",
+  "apiKeyNotSet": "API Key 未设置 — 点击配置"
 }

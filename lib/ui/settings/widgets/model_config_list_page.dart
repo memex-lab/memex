@@ -327,6 +327,32 @@ class _ModelConfigListPageState extends State<ModelConfigListPage> {
                                   maxLines: 1,
                                 ),
                               ),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Icon(
+                                    config.isValid
+                                        ? Icons.check_circle_outline
+                                        : Icons.warning_amber_rounded,
+                                    size: 14,
+                                    color: config.isValid
+                                        ? Colors.green
+                                        : Colors.orange,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    config.isValid
+                                        ? UserStorage.l10n.configured
+                                        : UserStorage.l10n.apiKeyNotSet,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: config.isValid
+                                          ? Colors.green
+                                          : Colors.orange,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ],
                           ),
                           trailing: Row(
