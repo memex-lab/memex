@@ -1561,4 +1561,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get customFolderAccessDenied => '无法读写该文件夹，请授予存储权限或选择其他位置。';
+
+  @override
+  String get configured => '已配置';
+
+  @override
+  String get apiKeyNotSet => 'API Key 未设置 — 点击配置';
 }

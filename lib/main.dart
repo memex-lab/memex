@@ -443,8 +443,31 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     final configs = await UserStorage.getLLMConfigs();
     final hasValidConfig = configs.any((c) => c.isValid);
     if (!hasValidConfig && mounted) {
-      ToastHelper.showError(
-          context, UserStorage.l10n.modelNotConfiguredSubmitHint);
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(UserStorage.l10n.configureNow),
+          content: Text(UserStorage.l10n.modelNotConfiguredBanner),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(UserStorage.l10n.cancel),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ModelConfigListPage(),
+                  ),
+                );
+              },
+              child: Text(UserStorage.l10n.modelConfig),
+            ),
+          ],
+        ),
+      );
       return;
     }
 
@@ -966,8 +989,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
               'Timeline',
               style: TextStyle(
                 fontSize: 10,
-                fontWeight:
-                    isActive ? FontWeight.w600 : FontWeight.w400,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
                 color: isActive ? activeColor : inactiveColor,
               ),
             ),
@@ -1019,8 +1041,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
               'Library',
               style: TextStyle(
                 fontSize: 10,
-                fontWeight:
-                    isActive ? FontWeight.w600 : FontWeight.w400,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
                 color: isActive ? activeColor : inactiveColor,
               ),
             ),

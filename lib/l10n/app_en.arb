@@ -730,5 +730,7 @@
     "placeholders": {
       "location": {}
     }
-  }
+  },
+  "configured": "Configured",
+  "apiKeyNotSet": "API Key not set — tap to configure"
 }

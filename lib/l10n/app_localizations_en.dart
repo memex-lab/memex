@@ -1620,4 +1620,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get customFolderAccessDenied =>
       'Cannot read or write this folder. Please grant storage permission or choose another location.';
+
+  @override
+  String get configured => 'Configured';
+
+  @override
+  String get apiKeyNotSet => 'API Key not set — tap to configure';
 }

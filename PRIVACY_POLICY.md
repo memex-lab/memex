@@ -1,6 +1,6 @@
 # Privacy Policy
 
-Last updated: 2025-07-13
+Last updated: 2026-03-17
 
 ## Overview
 
@@ -8,9 +8,9 @@ Memex ("the App") is a local-first personal knowledge management application. We
 
 ## Data Collection
 
-**Memex does not collect, store, or transmit any personal data to external servers.**
+Memex is designed as a local-first application. All data you create in the App — including text, photos, voice recordings, and AI-generated content — is stored on your device by default.
 
-All data you create in the App — including text, photos, voice recordings, and AI-generated content — is stored exclusively on your device.
+Memex does not operate its own servers and does not collect or store your personal data on any server controlled by us. The only circumstance in which your data leaves your device is when you explicitly configure and use a third-party LLM provider (see "Third-Party Services" below).
 
 ## Third-Party Services
 
@@ -21,7 +21,7 @@ Memex connects to third-party LLM (Large Language Model) providers only when you
 - Anthropic Claude
 - AWS Bedrock
 
-When you use these services, your input content is sent to the provider you selected to generate AI responses. Please refer to each provider's own privacy policy for details on how they handle your data:
+When you use these services, your input content is sent to the provider you selected to generate AI responses. This is the only scenario in which data leaves your device. Please refer to each provider's own privacy policy for details on how they handle your data:
 
 - [Google Privacy Policy](https://policies.google.com/privacy)
 - [OpenAI Privacy Policy](https://openai.com/privacy)
@@ -30,13 +30,20 @@ When you use these services, your input content is sent to the provider you sele
 
 ## Device Permissions
 
-Memex may request the following device permissions. All data obtained through these permissions is stored locally on your device and is never uploaded to our servers.
+Memex may request the following device permissions. All data obtained through these permissions is processed and stored locally on your device and is never uploaded to our servers.
 
-- **Camera** — Used to take photos for your records
-- **Microphone** — Used for voice recording input
-- **Photo Library** — Used to select existing photos from your device
-- **Health / Fitness** — Used to read fitness data (steps, etc.) when you enable this feature
-- **Biometrics (Face ID / Touch ID)** — Used for App Lock authentication
+- **Camera** — Used to take photos for your records.
+- **Microphone** — Used for voice recording input.
+- **Photo Library / Media** — Used to select existing photos from your device for your records.
+- **Location** — Used to read GPS metadata embedded in photos for place-based records, and to allow you to pick a location on the map when editing a record. Memex does not track your location in the background. Location data is stored locally and is not transmitted externally.
+- **Calendar** — Used to write calendar events to your device's system calendar when the AI agent identifies scheduling intent from your input. Memex does not read from your system calendar.
+- **Reminders (iOS)** — Used to create reminders on your device when the AI agent identifies reminder intent from your input. Memex does not read your existing reminders.
+- **Health / Fitness (Health Connect on Android, HealthKit on iOS)** — Used to read health and fitness data when you enable this feature. The specific data types include: steps, heart rate, resting heart rate, blood pressure (systolic and diastolic), blood oxygen, blood glucose, sleep, active energy burned, weight, and workout/exercise records. All health data is stored locally and is not transmitted externally.
+- **Activity Recognition** — Used for step counting via the device pedometer as a fallback when Health Connect / HealthKit data is unavailable.
+- **Biometrics (Face ID / Touch ID / Fingerprint)** — Used for App Lock authentication. Biometric data is handled entirely by the operating system; Memex does not access or store your biometric data.
+- **Notifications** — Used to deliver local reminders and background task status updates. No push notification service or external server is involved.
+- **Storage / Files** — Used to store your local database, media files, and exported data on your device.
+- **Internet / Network** — Used solely to communicate with the third-party LLM provider you configure. No data is sent to any server operated by us.
 
 ## On-Device Processing
 
@@ -44,16 +51,22 @@ The following features run entirely on your device and do not send data external
 
 - OCR text recognition (Google ML Kit, on-device)
 - Image labeling and scene detection (Google ML Kit, on-device)
-- EXIF metadata extraction from photos
-- Local database storage (SQLite)
+- EXIF metadata extraction from photos (including GPS location)
+- Local database storage (SQLite via Drift)
+- Step counting via device pedometer
 
 ## Analytics & Tracking
 
 Memex does not include any analytics, tracking, or advertising SDKs.
 
-## Biometric Data
+## Data Retention and Deletion
 
-If you enable App Lock, biometric authentication (Face ID / Touch ID) is handled by the operating system. Memex does not access or store your biometric data.
+All your data is stored locally on your device. Memex does not retain any data on external servers.
+
+- **Retention**: Your data remains on your device for as long as you keep the App installed and choose to retain it. There is no server-side retention period because no data is transmitted to or stored on our servers.
+- **Deleting individual records**: You can delete any record (text, photo, voice recording, card, knowledge entry, etc.) directly within the App at any time. Deleted records are permanently removed from the local database and cannot be recovered.
+- **Deleting all data**: You can remove all App data at any time by uninstalling Memex from your device, or by clearing the App's data through your device's system settings. This permanently deletes all locally stored data, including the database, files, and cached content.
+- **Third-party LLM providers**: Any data previously sent to a third-party LLM provider during AI interactions is subject to that provider's own data retention and deletion policies. Please refer to the provider's privacy policy (linked above) for instructions on how to request deletion of data they may have processed.
 
 ## Children's Privacy
 
@@ -65,6 +78,7 @@ We may update this Privacy Policy from time to time. Changes will be posted in t
 
 ## Contact
 
-If you have questions about this Privacy Policy, please open an issue at:
+If you have questions about this Privacy Policy, please contact us at:
 
-https://github.com/memex-lab/memex/issues
+- Email: support@memexlab.ai
+- GitHub: https://github.com/memex-lab/memex/issues
