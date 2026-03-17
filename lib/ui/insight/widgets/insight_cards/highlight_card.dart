@@ -48,7 +48,7 @@ class HighlightCard extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: _gradientColors.first.withValues(alpha:0.3),
+              color: _gradientColors.first.withValues(alpha: 0.3),
               blurRadius: 20,
               offset: const Offset(0, 8),
             ),
@@ -64,7 +64,7 @@ class HighlightCard extends StatelessWidget {
               child: Icon(
                 Icons.format_quote_rounded,
                 size: 180,
-                color: Colors.white.withValues(alpha:0.1),
+                color: Colors.white.withValues(alpha: 0.1),
               ),
             ),
 
@@ -82,7 +82,8 @@ class HighlightCard extends StatelessWidget {
                             horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           border: Border.all(
-                              color: Colors.white.withValues(alpha:0.5), width: 1),
+                              color: Colors.white.withValues(alpha: 0.5),
+                              width: 1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -100,7 +101,7 @@ class HighlightCard extends StatelessWidget {
                         Text(
                           date!,
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha:0.8),
+                            color: Colors.white.withValues(alpha: 0.8),
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
                             fontFamily:
@@ -122,7 +123,7 @@ class HighlightCard extends StatelessWidget {
                     Text(
                       insight!,
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha:0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                         fontSize: 13,
                         fontStyle: FontStyle.italic,
                       ),
@@ -135,7 +136,7 @@ class HighlightCard extends StatelessWidget {
                     Text(
                       footer!,
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha:0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                         fontSize: 15,
                         height: 1.5,
                         fontWeight: FontWeight.w400,

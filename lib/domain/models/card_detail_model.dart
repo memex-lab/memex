@@ -1,3 +1,5 @@
+import 'timeline_card_model.dart';
+
 /// Card detail model for detail page
 class CardDetailModel {
   final String id;
@@ -11,6 +13,7 @@ class CardDetailModel {
   final InsightData insight;
   final List<AssetData> assets;
   final LLMStats? llmStats;
+  final List<UiConfig> uiConfigs;
 
   CardDetailModel({
     required this.id,
@@ -24,10 +27,18 @@ class CardDetailModel {
     required this.insight,
     required this.assets,
     this.llmStats,
+    this.uiConfigs = const [],
   });
 
   factory CardDetailModel.fromJson(Map<String, dynamic> json) {
     final location = json['location'] as Map<String, dynamic>?;
+    
+    List<UiConfig> configs = [];
+    if (json['ui_configs'] != null) {
+      configs = (json['ui_configs'] as List)
+          .map((e) => UiConfig.fromJson(e as Map<String, dynamic>))
+          .toList();
+    }
 
     return CardDetailModel(
       id: json['id'] as String? ?? '',
@@ -64,6 +75,7 @@ class CardDetailModel {
       llmStats: json['llm_stats'] != null
           ? LLMStats.fromJson(json['llm_stats'] as Map<String, dynamic>)
           : null,
+      uiConfigs: configs,
     );
   }
 
@@ -79,6 +91,7 @@ class CardDetailModel {
     InsightData? insight,
     List<AssetData>? assets,
     LLMStats? llmStats,
+    List<UiConfig>? uiConfigs,
   }) {
     return CardDetailModel(
       id: id ?? this.id,
@@ -92,6 +105,7 @@ class CardDetailModel {
       insight: insight ?? this.insight,
       assets: assets ?? this.assets,
       llmStats: llmStats ?? this.llmStats,
+      uiConfigs: uiConfigs ?? this.uiConfigs,
     );
   }
 }

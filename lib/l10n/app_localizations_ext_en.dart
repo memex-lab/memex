@@ -169,4 +169,16 @@ class AppLocalizationsExtEn extends AppLocalizationsEn
 
   @override
   String get oauthSuccessMessage => 'You can now close this browser and return to Memex.';
+
+  @override
+  String get sharePreviewTitle => 'Share Preview';
+
+  @override
+  String get shareNow => 'Share Now';
+
+  @override
+  String get sharedFromMemex => 'Shared from Memex';
+
+  @override
+  String get appTagline => 'Record the Spark, Architect the Soul';
 }

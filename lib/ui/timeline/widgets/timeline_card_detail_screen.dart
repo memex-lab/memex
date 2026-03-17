@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:memex/domain/models/card_model.dart';
 import 'package:memex/routing/routes.dart';
 import 'package:intl/intl.dart';
 import 'package:memex/ui/timeline/widgets/location_picker_page.dart';
@@ -22,6 +23,8 @@ import 'package:memex/ui/chat/widgets/agent_chat_dialog.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import 'package:memex/ui/core/cards/style/timeline_theme.dart';
+import 'package:memex/utils/share_service.dart';
+import 'package:memex/ui/core/cards/native_card_factory.dart';
 
 /// Timeline card detail screen - plays full card detail
 class TimelineCardDetailScreen extends StatefulWidget {
@@ -569,6 +572,111 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
     );
   }
 
+  Future<void> _shareCard() async {
+    if (_detail == null) return;
+    ToastHelper.showInfo(context, UserStorage.l10n.processingEllipsis);
+
+    List<UiConfig> displayConfigs;
+    if (_detail!.uiConfigs.isNotEmpty) {
+      displayConfigs = _detail!.uiConfigs;
+    } else {
+      final audioAssets = _detail!.assets.where((a) => a.isAudio).toList();
+      displayConfigs = [
+        UiConfig(
+          templateId: 'classic_card',
+          data: <String, dynamic>{
+            'content': _detail!.rawContent,
+            'images': _detail!.assets.where((a) => a.isImage).map((a) => a.url).toList(),
+            'audioUrl': audioAssets.isNotEmpty ? audioAssets.first.url : null,
+            'tags': _detail!.tags,
+          },
+        )
+      ];
+    }
+
+    final shareWidget = Container(
+      width: 400,
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
+      color: Colors.transparent,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Timestamp Header mimicking list view
+          Padding(
+            padding: const EdgeInsets.only(left: 8, bottom: 12),
+            child: Row(
+              children: [
+                Text(
+                  DateFormat('MM/dd HH:mm').format(_detail!.timestamp),
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFCBD5E1),
+                    letterSpacing: 1.5,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (_detail!.address.isNotEmpty && _detail!.address != 'Unknown') ...[
+                        const Icon(
+                          Icons.location_on_outlined,
+                          size: 14,
+                          color: Color(0xFF94A3B8),
+                        ),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            _detail!.address.toUpperCase(),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF94A3B8),
+                              letterSpacing: 0.5,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Card content scaled to fit
+          Center(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: SizedBox(
+                width: 390,
+                child: Column(
+                  children: displayConfigs.map((config) {
+                    return NativeCardFactory.build(
+                      templateId: config.templateId,
+                      data: config.data,
+                      title: _detail!.title,
+                      status: 'completed',
+                      tags: _detail!.tags,
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    await ShareService.shareWidgetAsPoster(context, shareWidget);
+  }
+
   void _showInputModal(String cardId) {
     showModalBottomSheet(
       context: context,
@@ -651,6 +759,11 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                     ),
                     Row(
                       children: [
+                        _RoundIconButton(
+                          icon: Icons.ios_share,
+                          onTap: _shareCard,
+                        ),
+                        const SizedBox(width: 8),
                         _RoundIconButton(
                           icon: Icons.chat_bubble_outline,
                           onTap: _showChatDialog,
