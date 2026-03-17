@@ -42,7 +42,7 @@ Memex may request the following device permissions. All data obtained through th
 - **Activity Recognition** — Used for step counting via the device pedometer as a fallback when Health Connect / HealthKit data is unavailable.
 - **Biometrics (Face ID / Touch ID / Fingerprint)** — Used for App Lock authentication. Biometric data is handled entirely by the operating system; Memex does not access or store your biometric data.
 - **Notifications** — Used to deliver local reminders and background task status updates. No push notification service or external server is involved.
-- **Storage / Files** — Used to store your local database, media files, and exported data on your device.
+- **Storage / Files** — Used to store your local database, media files, and exported data on your device. On Android 11+, if you choose a custom workspace folder in Settings > Data Storage, the App requests All Files Access (MANAGE_EXTERNAL_STORAGE) to read and write your workspace files (timeline cards, knowledge base, media assets) in the folder you selected. This permission is only requested when you explicitly choose a custom storage location. If you use the default app storage, this permission is not required.
 - **Internet / Network** — Used solely to communicate with the third-party LLM provider you configure. No data is sent to any server operated by us.
 
 ## On-Device Processing
