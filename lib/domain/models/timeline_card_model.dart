@@ -1,4 +1,6 @@
 import 'package:intl/intl.dart';
+import 'package:memex/l10n/app_localizations.dart';
+
 import 'card_detail_model.dart';
 import 'card_model.dart';
 
@@ -85,31 +87,43 @@ class TimelineCardModel {
     };
   }
 
-  String get displayTime {
+  String displayTime(AppLocalizations l10n) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final cardDate = DateTime(timestamp.year, timestamp.month, timestamp.day);
+    final locale = l10n.localeName;
 
     if (cardDate == today) {
       // Same day: show time only
-      return DateFormat('HH:mm').format(timestamp);
+      return DateFormat.Hm(locale).format(timestamp);
     } else {
       // Other days: show date and time
       final daysDiff = today.difference(cardDate).inDays;
       if (daysDiff == 1) {
         // yesterday
-        return 'Yesterday ${DateFormat('HH:mm').format(timestamp)}';
+        return l10n.yesterdayAt(DateFormat.Hm(locale).format(timestamp));
       } else if (daysDiff < 7) {
         // Within a week: show weekday
-        final weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-        final weekdayIndex = timestamp.weekday - 1;
-        return '${weekdays[weekdayIndex]} ${DateFormat('HH:mm').format(timestamp)}';
+        var weekdayText = switch (timestamp.weekday) {
+          DateTime.monday => l10n.calendarShortMon,
+          DateTime.tuesday => l10n.calendarShortTue,
+          DateTime.wednesday => l10n.calendarShortWed,
+          DateTime.thursday => l10n.calendarShortThu,
+          DateTime.friday => l10n.calendarShortFri,
+          DateTime.saturday => l10n.calendarShortSat,
+          DateTime.sunday => l10n.calendarShortSun,
+          _ => DateFormat.E(locale).format(timestamp),
+        };
+        if (locale.startsWith('zh')) {
+          weekdayText = '周$weekdayText';
+        }
+        return '$weekdayText ${DateFormat.Hm(locale).format(timestamp)}';
       } else if (cardDate.year == today.year) {
         // Same year: show month/day
-        return DateFormat('MM/dd HH:mm').format(timestamp);
+        return DateFormat.Md(locale).add_Hm().format(timestamp);
       } else {
         // Different year: show full date
-        return DateFormat('yyyy/MM/dd HH:mm').format(timestamp);
+        return DateFormat.yMd(locale).add_Hm().format(timestamp);
       }
     }
   }

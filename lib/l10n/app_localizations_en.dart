@@ -1626,4 +1626,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get apiKeyNotSet => 'API Key not set — tap to configure';
+
+  @override
+  String get bottomNavTimeline => 'Timeline';
+
+  @override
+  String get bottomNavLibrary => 'Library';
+
+  @override
+  String get aiGeneratedLabel => 'AI Generated';
+
+  @override
+  String sourceTraceWithCount(Object count) {
+    return 'SOURCE TRACE ($count)';
+  }
 }

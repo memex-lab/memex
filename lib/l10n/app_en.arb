@@ -732,5 +732,14 @@
     }
   },
   "configured": "Configured",
-  "apiKeyNotSet": "API Key not set — tap to configure"
+  "apiKeyNotSet": "API Key not set — tap to configure",
+  "bottomNavTimeline": "Timeline",
+  "bottomNavLibrary": "Library",
+  "aiGeneratedLabel": "AI Generated",
+  "@sourceTraceWithCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "sourceTraceWithCount": "SOURCE TRACE ({count})"
 }

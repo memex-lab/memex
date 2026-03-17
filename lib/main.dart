@@ -986,7 +986,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
             ),
             const SizedBox(height: 3),
             Text(
-              'Timeline',
+              UserStorage.l10n.bottomNavTimeline,
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
@@ -1038,7 +1038,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
             ),
             const SizedBox(height: 3),
             Text(
-              'Library',
+              UserStorage.l10n.bottomNavLibrary,
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,

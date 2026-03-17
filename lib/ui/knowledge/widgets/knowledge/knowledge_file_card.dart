@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:memex/ui/knowledge/widgets/knowledge_file_page.dart';
+import 'package:memex/utils/user_storage.dart';
 import 'package:path/path.dart' as path;
 
 class KnowledgeFileCard extends StatelessWidget {
@@ -28,7 +29,8 @@ class KnowledgeFileCard extends StatelessWidget {
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Only Markdown preview supported')));
+            SnackBar(content: Text(UserStorage.l10n.onlyMarkdownPreview)),
+          );
         }
       },
       child: Container(
@@ -86,8 +88,8 @@ class KnowledgeFileCard extends StatelessWidget {
                         const Icon(Icons.auto_awesome,
                             size: 12, color: Color(0xFF818CF8)),
                         const SizedBox(width: 4),
-                        const Text('AI Generated',
-                            style: TextStyle(
+                        Text(UserStorage.l10n.aiGeneratedLabel,
+                            style: const TextStyle(
                                 fontSize: 11,
                                 color: Color(0xFF818CF8),
                                 fontWeight: FontWeight.w500)),
