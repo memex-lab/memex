@@ -45,11 +45,13 @@ class InputSheet extends StatefulWidget {
   final bool isOpen;
   final VoidCallback onClose;
   final Function(InputData data) onSubmit;
+  final InputData? initialData;
   const InputSheet({
     super.key,
     required this.isOpen,
     required this.onClose,
     required this.onSubmit,
+    this.initialData,
   });
 
   @override
@@ -127,11 +129,42 @@ class _InputSheetState extends State<InputSheet>
         _logger.info('Opening InputSheet');
         _controller.forward();
         _resetForm();
+        _applyInitialData(widget.initialData);
         _fetchAutoClusters();
       } else {
         _controller.reverse();
       }
+    } else if (widget.isOpen &&
+        widget.initialData != null &&
+        widget.initialData != oldWidget.initialData) {
+      // Sheet already open but new share arrived: reload with shared data
+      _logger.info('InputSheet already open, reloading with new shared data');
+      _applyInitialData(widget.initialData);
     }
+  }
+
+  void _applyInitialData(InputData? data) {
+    if (data == null) return;
+
+    final text = data.text ?? '';
+    _textController.text = text;
+    _audioPlayer.stop();
+
+    final regex = RegExp(r'#([^\s#]+)');
+    final tags =
+        regex.allMatches(text).map((m) => m.group(1)!).toSet().toList();
+
+    setState(() {
+      _selectedImages = List<XFile>.from(data.images);
+      _originalFilenames.clear();
+      _audioPath = data.audioPath;
+      _isRecording = false;
+      _isPlaying = false;
+      _recordingDuration = Duration.zero;
+      _detectedTags = tags;
+      _autoClusters = null;
+      _isLoadingAuto = false;
+    });
   }
 
   void _resetForm() {

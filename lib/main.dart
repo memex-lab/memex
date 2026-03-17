@@ -42,8 +42,11 @@ import 'package:go_router/go_router.dart';
 import 'package:memex/routing/router.dart';
 import 'package:memex/data/services/onboarding_service.dart';
 import 'package:memex/ui/core/widgets/coach_mark_overlay.dart';
+import 'package:memex/ui/main_screen/widgets/share_intent_handler.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
+final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey =
+    GlobalKey<ScaffoldMessengerState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -272,6 +275,7 @@ class _MemexAppState extends State<MemexApp> with WidgetsBindingObserver {
     return MaterialApp.router(
       title: 'Memex',
       debugShowCheckedModeBanner: false,
+      scaffoldMessengerKey: rootScaffoldMessengerKey,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode:
@@ -339,6 +343,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   final GlobalKey _mainStackKey = GlobalKey();
   bool _isInvalidConfigDialogShowing = false;
   bool _showFirstPostCoachMark = false;
+  late final ShareIntentHandler _shareIntentHandler;
+  InputData? _sharedDraft;
 
   // Agent Button Position - REMOVED (Moved to Main App)
 
@@ -370,6 +376,17 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
     // Check onboarding state for first post coach mark
     _checkFirstPostOnboarding();
+    _shareIntentHandler = ShareIntentHandler(
+      logger: _logger,
+      scaffoldMessengerKey: rootScaffoldMessengerKey,
+      onSharedDraft: (data) {
+        if (!mounted) return;
+        setState(() {
+          _sharedDraft = data;
+          _isInputOpen = true;
+        });
+      },
+    )..init();
   }
 
   void _handleInvalidModelConfig(EventBusMessage message) {
@@ -627,6 +644,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     _memoryButtonTapTimer?.cancel();
     _knowledgeBaseButtonTapTimer?.cancel();
+    _shareIntentHandler.dispose();
     _eventBus.removeHandler(
         EventBusMessageType.invalidModelConfig, _handleInvalidModelConfig);
     // Note: do not disconnect event bus here; other screens may still use it
@@ -813,9 +831,11 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
               // Input sheet
               InputSheet(
                 isOpen: _isInputOpen,
+                initialData: _sharedDraft,
                 onClose: () {
                   setState(() {
                     _isInputOpen = false;
+                    _sharedDraft = null;
                   });
                 },
                 onSubmit: _handleInputSubmit,
