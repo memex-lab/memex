@@ -7,6 +7,7 @@ import 'package:memex/domain/models/card_model.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/llm_call_record_service.dart';
 import 'package:memex/data/services/character_service.dart';
+import 'package:memex/data/services/card_renderer.dart';
 
 final _logger = getLogger('CardDetailEndpoint');
 final _fileSystemService = FileSystemService.instance;
@@ -66,6 +67,7 @@ Future<CardDetailModel> getCardDetail(String cardId) async {
     final factInfo =
         await _fileSystemService.extractFactContentFromFile(userId, factId);
     var rawContent = factInfo?.content ?? '';
+    final originalRawContent = rawContent;
 
     // Build asset analysis result map (kept but unused)
     if (factInfo?.assetAnalyses != null && factInfo!.assetAnalyses.isNotEmpty) {
@@ -348,6 +350,13 @@ Future<CardDetailModel> getCardDetail(String cardId) async {
 
     // rawContent already cleaned in _parseAssetsAndCleanContent
 
+    // Render card to get uiConfigs
+    final renderResult = await renderCard(
+      userId: userId,
+      cardData: cardData,
+      factContent: originalRawContent,
+    );
+
     // Build CardDetailModel
     // timestamp is local seconds, parse to local time
     return CardDetailModel(
@@ -375,6 +384,7 @@ Future<CardDetailModel> getCardDetail(String cardId) async {
       ),
       assets: assets,
       llmStats: llmStats,
+      uiConfigs: renderResult.uiConfigs,
     );
   } catch (e) {
     _logger.severe('Failed to get card detail $cardId: $e');

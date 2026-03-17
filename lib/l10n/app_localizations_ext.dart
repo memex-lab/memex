@@ -39,8 +39,13 @@ mixin AppLocalizationsExt on AppLocalizations {
   String get oauthSuccessTitle;
   String get oauthSuccessMessage;
 
+  /// Share poster localization.
+  String get sharePreviewTitle;
+  String get shareNow;
+  String get sharedFromMemex;
+  String get appTagline;
+
   /// Default built-in characters (used to seed `Characters/*.yaml`).
-  /// Keep this out of arb to avoid bloating/uglifying generated l10n.
   List<Map<String, dynamic>> get defaultCharacters;
 }
 

@@ -7,6 +7,8 @@ import 'package:memex/ui/timeline/widgets/timeline_card_detail_screen.dart';
 import 'package:memex/utils/toast_helper.dart';
 import 'package:memex/ui/core/widgets/detail_page_layout.dart';
 import 'package:memex/utils/user_storage.dart';
+import 'package:memex/utils/share_service.dart';
+import 'package:memex/ui/core/widgets/icon_helper.dart';
 
 /// Unified AI Insight detail page
 class InsightDetailPage extends StatefulWidget {
@@ -83,6 +85,36 @@ class _InsightDetailPageState extends State<InsightDetailPage> {
     return _insightDetail?.relatedCards ?? [];
   }
 
+  Future<void> _shareInsight() async {
+    if (_metadata == null) return;
+    ToastHelper.showInfo(context, UserStorage.l10n.processingEllipsis);
+
+    final shareWidget = Container(
+      width: 400,
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
+      child: Center(
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: SizedBox(
+            width: 390, // Standard mobile width to ensure matching layout
+            child: _insightDetail?.widgetType == 'native' && _insightDetail?.widgetTemplate != null
+                ? NativeWidgetFactory.build(
+                    _insightDetail!.widgetTemplate!,
+                    Map<String, dynamic>.from(_insightDetail!.widgetData ?? {})..addAll({
+                      'title': _metadata?.title,
+                      'insight': _content,
+                      if (_relatedCards.isNotEmpty) 'related_fact_ids': _relatedCards.map((c) => c.id).toList(),
+                    }),
+                  )
+                : const SizedBox.shrink(),
+          ),
+        ),
+      ),
+    );
+
+    await ShareService.shareWidgetAsPoster(context, shareWidget);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -135,6 +167,27 @@ class _InsightDetailPageState extends State<InsightDetailPage> {
       icon: metadata.icon,
       type: metadata.type,
       subTitle: UserStorage.l10n.aiInsightDetail,
+      actions: [
+        GestureDetector(
+          onTap: _shareInsight,
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.3),
+              ),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Icon(
+              Icons.ios_share,
+              size: 20,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ],
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

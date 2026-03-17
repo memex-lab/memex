@@ -8,6 +8,7 @@ class DetailPageLayout extends StatelessWidget {
   final String? type;
   final Widget child;
   final String subTitle;
+  final List<Widget>? actions;
 
   const DetailPageLayout({
     super.key,
@@ -15,7 +16,8 @@ class DetailPageLayout extends StatelessWidget {
     required this.icon,
     this.type,
     required this.child,
-    this.subTitle = '',  // default set in build from l10n
+    this.subTitle = '',
+    this.actions,
   });
 
   Color _getHeaderColor(String? type) {
@@ -149,28 +151,35 @@ class DetailPageLayout extends StatelessWidget {
             ],
           ),
 
-          // Top close button
+          // Top actions and close button
           Positioned(
             top: MediaQuery.of(context).padding.top + 8,
             right: 16,
-            child: GestureDetector(
-              onTap: () => Navigator.pop(context),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (actions != null) ...actions!,
+                if (actions != null) const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.3),
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Icon(
+                      Icons.close,
+                      size: 20,
+                      color: Colors.white,
+                    ),
                   ),
-                  borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Icon(
-                  Icons.close,
-                  size: 20,
-                  color: Colors.white,
-                ),
-              ),
+              ],
             ),
           ),
         ],

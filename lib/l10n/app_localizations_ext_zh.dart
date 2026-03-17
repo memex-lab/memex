@@ -169,4 +169,16 @@ class AppLocalizationsExtZh extends AppLocalizationsZh
 
   @override
   String get oauthSuccessMessage => '现在可以关闭浏览器并返回 Memex 了。';
+
+  @override
+  String get sharePreviewTitle => '分享预览';
+
+  @override
+  String get shareNow => '立即分享';
+
+  @override
+  String get sharedFromMemex => '分享自 Memex';
+
+  @override
+  String get appTagline => '记录微光，构筑灵魂';
 }
