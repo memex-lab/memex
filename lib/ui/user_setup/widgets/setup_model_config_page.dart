@@ -5,6 +5,7 @@ import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/data/services/openai_auth_service.dart';
 import 'package:memex/data/services/gemini_auth_service.dart';
+import 'package:memex/data/services/model_list_service.dart';
 import 'package:memex/ui/core/widgets/searchable_dropdown.dart';
 
 class SetupModelConfigPage extends StatefulWidget {
@@ -42,6 +43,9 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
   bool _authFlowCompleted = false;
   bool _appResumedDuringAuth = false;
 
+  List<String> _fetchedModels = [];
+  bool _isFetchingModels = false;
+
   @override
   void initState() {
     super.initState();
@@ -61,6 +65,12 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
       _loadOpenAiTokens();
     } else if (_selectedType == LLMConfig.typeGeminiOauth) {
       _loadGeminiTokens();
+    }
+    if (LLMConfig.supportsModelListing(_selectedType) &&
+        _baseUrlController.text.isNotEmpty &&
+        (!LLMConfig.requiresApiKey(_selectedType) ||
+            _apiKeyController.text.isNotEmpty)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _fetchModels());
     }
   }
 
@@ -374,7 +384,8 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
                     isAuthorized ? Colors.white : const Color(0xFF6366F1),
                 foregroundColor: isAuthorized ? Colors.black87 : Colors.white,
                 elevation: 0,
-                side: isAuthorized ? BorderSide(color: Colors.grey[300]!) : null,
+                side:
+                    isAuthorized ? BorderSide(color: Colors.grey[300]!) : null,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -408,6 +419,44 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
 
   List<String> _getRecommendedModels(String type) =>
       LLMConfig.recommendedModels(type);
+
+  List<String> _modelOptions() {
+    if (_fetchedModels.isNotEmpty) return _fetchedModels;
+    return _getRecommendedModels(_selectedType);
+  }
+
+  bool get _modelSelectorDisabled {
+    if (!LLMConfig.requiresApiKey(_selectedType)) return false;
+    return _apiKeyController.text.trim().isEmpty;
+  }
+
+  Future<void> _fetchModels() async {
+    if (_isFetchingModels) return;
+    final baseUrl = _baseUrlController.text.trim();
+    final apiKey = _apiKeyController.text.trim();
+    if (baseUrl.isEmpty) return;
+
+    setState(() => _isFetchingModels = true);
+    try {
+      final models = await ModelListService.fetchModels(
+        type: _selectedType,
+        baseUrl: baseUrl,
+        apiKey: apiKey,
+      );
+      if (mounted) {
+        setState(() {
+          _fetchedModels = models;
+          _isFetchingModels = false;
+        });
+        if (models.isNotEmpty && _modelIdController.text.isEmpty) {
+          _modelIdController.text = models.first;
+          _modelDropdownKey.currentState?.setText(models.first);
+        }
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isFetchingModels = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -595,73 +644,147 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
                 // Form Fields
                 _buildProviderDropdown(),
                 const SizedBox(height: 20),
-                // Model ID
-                SearchableDropdown(
-                  key: _modelDropdownKey,
-                  options: _getRecommendedModels(_selectedType),
-                  initialValue: _modelIdController.text,
-                  onChanged: (value) {
-                    _modelIdController.text = value;
-                    setState(() {});
-                  },
-                  decoration: InputDecoration(
-                    labelText: UserStorage.l10n.modelIdLabel,
-                    hintText: UserStorage.l10n.modelIdHelper,
-                    prefixIcon: const Icon(Icons.api),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide:
-                          const BorderSide(color: Color(0xFF6366F1), width: 2),
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey[50],
+
+                // Base URL (before API key — needed for model fetching)
+                if (_selectedType != LLMConfig.typeBedrockClaude &&
+                    _selectedType != LLMConfig.typeOpenAiOauth &&
+                    _selectedType != LLMConfig.typeGeminiOauth) ...[
+                  _buildTextField(
+                    controller: _baseUrlController,
+                    label: UserStorage.l10n.baseUrlLabel,
+                    icon: Icons.link,
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return UserStorage.l10n.required;
-                    }
-                    return null;
-                  },
-                  optionBuilder: (option, _) {
-                    final isPro = _selectedType == LLMConfig.typeOpenAiOauth &&
-                        _isProModel(option);
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
-                      child: Row(
-                        children: [
-                          Expanded(child: Text(option)),
-                          if (isPro)
-                            Container(
-                              margin: const EdgeInsets.only(left: 8),
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFFF7ED),
-                                borderRadius: BorderRadius.circular(4),
-                                border: Border.all(
-                                    color: const Color(0xFFFBBF24), width: 0.5),
+                  const SizedBox(height: 20),
+                ],
+
+                // API Key / Auth / Bedrock Section
+                if (_selectedType == LLMConfig.typeOpenAiOauth) ...[
+                  _buildOpenAiAuthSection(),
+                  const SizedBox(height: 20),
+                ] else if (_selectedType == LLMConfig.typeGeminiOauth) ...[
+                  _buildGeminiAuthSection(),
+                  const SizedBox(height: 20),
+                ] else if (_selectedType == LLMConfig.typeBedrockClaude) ...[
+                  _buildBedrockFields(),
+                  const SizedBox(height: 20),
+                ] else ...[
+                  _buildApiKeyField(),
+                  const SizedBox(height: 20),
+                ],
+
+                // Model ID
+                if (_modelSelectorDisabled)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Text(
+                      UserStorage.l10n.enterApiKeyFirst,
+                      style: TextStyle(
+                          fontSize: 12, color: Colors.orange[700], height: 1.3),
+                    ),
+                  ),
+                AbsorbPointer(
+                  absorbing: _modelSelectorDisabled,
+                  child: Opacity(
+                    opacity: _modelSelectorDisabled ? 0.5 : 1.0,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: SearchableDropdown(
+                            key: _modelDropdownKey,
+                            options: _modelOptions(),
+                            initialValue: _modelIdController.text,
+                            onChanged: (value) {
+                              _modelIdController.text = value;
+                              setState(() {});
+                            },
+                            decoration: InputDecoration(
+                              labelText: UserStorage.l10n.modelIdLabel,
+                              hintText: _isFetchingModels
+                                  ? UserStorage.l10n.fetchingModels
+                                  : UserStorage.l10n.modelIdHelper,
+                              prefixIcon: const Icon(Icons.api),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide:
+                                    BorderSide(color: Colors.grey[300]!),
                               ),
-                              child: const Text(
-                                'Pro/Plus',
-                                style: TextStyle(
-                                    fontSize: 10,
-                                    color: Color(0xFFD97706),
-                                    fontWeight: FontWeight.w600),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide:
+                                    BorderSide(color: Colors.grey[300]!),
                               ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                    color: Color(0xFF6366F1), width: 2),
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey[50],
                             ),
-                        ],
-                      ),
-                    );
-                  },
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return UserStorage.l10n.required;
+                              }
+                              return null;
+                            },
+                            optionBuilder: (option, _) {
+                              final isPro =
+                                  _selectedType == LLMConfig.typeOpenAiOauth &&
+                                      _isProModel(option);
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 12),
+                                child: Row(
+                                  children: [
+                                    Expanded(child: Text(option)),
+                                    if (isPro)
+                                      Container(
+                                        margin: const EdgeInsets.only(left: 8),
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFFFF7ED),
+                                          borderRadius:
+                                              BorderRadius.circular(4),
+                                          border: Border.all(
+                                              color: const Color(0xFFFBBF24),
+                                              width: 0.5),
+                                        ),
+                                        child: const Text(
+                                          'Pro/Plus',
+                                          style: TextStyle(
+                                              fontSize: 10,
+                                              color: Color(0xFFD97706),
+                                              fontWeight: FontWeight.w600),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        if (LLMConfig.supportsModelListing(_selectedType) &&
+                            !_modelSelectorDisabled)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: IconButton(
+                              icon: _isFetchingModels
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2))
+                                  : const Icon(Icons.refresh),
+                              tooltip: UserStorage.l10n.fetchModelsButton,
+                              onPressed:
+                                  _isFetchingModels ? null : _fetchModels,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
                 ),
                 if (_selectedType == LLMConfig.typeOpenAiOauth &&
                     _isProModel(_modelIdController.text))
@@ -684,28 +807,6 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
                       ],
                     ),
                   ),
-                const SizedBox(height: 20),
-
-                // API Key / Auth / Bedrock Section
-                if (_selectedType == LLMConfig.typeOpenAiOauth) ...[
-                  _buildOpenAiAuthSection(),
-                ] else if (_selectedType == LLMConfig.typeGeminiOauth) ...[
-                  _buildGeminiAuthSection(),
-                ] else if (_selectedType == LLMConfig.typeBedrockClaude) ...[
-                  _buildBedrockFields(),
-                ] else ...[
-                  _buildApiKeyField(),
-                ],
-                if (_selectedType != LLMConfig.typeBedrockClaude &&
-                    _selectedType != LLMConfig.typeOpenAiOauth &&
-                    _selectedType != LLMConfig.typeGeminiOauth) ...[
-                  const SizedBox(height: 20),
-                  _buildTextField(
-                    controller: _baseUrlController,
-                    label: UserStorage.l10n.baseUrlLabel,
-                    icon: Icons.link,
-                  ),
-                ],
                 const SizedBox(height: 48),
 
                 // Complete Button
@@ -771,20 +872,30 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
         fillColor: Colors.grey[50],
       ),
       selectedItemBuilder: (context) {
+        final l10n = UserStorage.l10n;
         return [
           // OpenAI group header
           const SizedBox.shrink(),
-          const Text('OpenAI (API Key)'),
-          const Text('OpenAI (API Key - Responses)'),
-          const Text('OpenAI (ChatGPT Pro/Plus)'),
+          Text(l10n.providerOpenAiApiKey),
+          Text(l10n.providerOpenAiResponses),
+          Text(l10n.providerChatGptOauth),
           // Anthropic group header
           const SizedBox.shrink(),
-          const Text('Anthropic (API Key)'),
-          const Text('Anthropic (Bedrock Secret)'),
-          // Others group header
+          Text(l10n.providerClaudeApiKey),
+          Text(l10n.providerBedrockSecret),
+          // Google group header
           const SizedBox.shrink(),
-          const Text('Gemini'),
-          const Text('Gemini (Google OAuth)'),
+          Text(l10n.providerGemini),
+          Text(l10n.providerGeminiOauth),
+          // Chinese LLM group header
+          const SizedBox.shrink(),
+          Text(l10n.providerKimi),
+          Text(l10n.providerQwen),
+          Text(l10n.providerSeed),
+          Text(l10n.providerZhipu),
+          Text(l10n.providerMinimax),
+          Text(l10n.providerOpenRouter),
+          Text(l10n.providerOllama),
         ];
       },
       items: [
@@ -793,7 +904,7 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
           enabled: false,
           value: '__openai_header__',
           child: Text(
-            'OpenAI',
+            UserStorage.l10n.providerGroupOpenAi,
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -806,14 +917,15 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
           value: LLMConfig.typeChatCompletion,
           child: Padding(
             padding: const EdgeInsets.only(left: 12),
-            child: Text('API Key', style: TextStyle(color: Colors.grey[800])),
+            child: Text(UserStorage.l10n.providerOpenAiApiKey,
+                style: TextStyle(color: Colors.grey[800])),
           ),
         ),
         DropdownMenuItem(
           value: LLMConfig.typeResponses,
           child: Padding(
             padding: const EdgeInsets.only(left: 12),
-            child: Text('API Key (Responses)',
+            child: Text(UserStorage.l10n.providerOpenAiResponses,
                 style: TextStyle(color: Colors.grey[800])),
           ),
         ),
@@ -821,7 +933,7 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
           value: LLMConfig.typeOpenAiOauth,
           child: Padding(
             padding: const EdgeInsets.only(left: 12),
-            child: Text('ChatGPT Pro/Plus',
+            child: Text(UserStorage.l10n.providerChatGptOauth,
                 style: TextStyle(color: Colors.grey[800])),
           ),
         ),
@@ -832,7 +944,7 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
           child: Padding(
             padding: const EdgeInsets.only(top: 4),
             child: Text(
-              'Anthropic',
+              UserStorage.l10n.providerGroupAnthropic,
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
@@ -846,25 +958,26 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
           value: LLMConfig.typeClaude,
           child: Padding(
             padding: const EdgeInsets.only(left: 12),
-            child: Text('API Key', style: TextStyle(color: Colors.grey[800])),
+            child: Text(UserStorage.l10n.providerClaudeApiKey,
+                style: TextStyle(color: Colors.grey[800])),
           ),
         ),
         DropdownMenuItem(
           value: LLMConfig.typeBedrockClaude,
           child: Padding(
             padding: const EdgeInsets.only(left: 12),
-            child: Text('Bedrock Secret',
+            child: Text(UserStorage.l10n.providerBedrockSecret,
                 style: TextStyle(color: Colors.grey[800])),
           ),
         ),
-        // ── Others Group ──
+        // ── Google Group ──
         DropdownMenuItem<String>(
           enabled: false,
-          value: '__others_header__',
+          value: '__google_header__',
           child: Padding(
             padding: const EdgeInsets.only(top: 4),
             child: Text(
-              'Others',
+              UserStorage.l10n.providerGroupGoogle,
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
@@ -875,10 +988,84 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
           ),
         ),
         DropdownMenuItem(
-            value: LLMConfig.typeGemini, child: const Text('Gemini')),
+            value: LLMConfig.typeGemini,
+            child: Text(UserStorage.l10n.providerGemini)),
         DropdownMenuItem(
             value: LLMConfig.typeGeminiOauth,
-            child: const Text('Gemini (Google OAuth)')),
+            child: Text(UserStorage.l10n.providerGeminiOauth)),
+        // ── Others ──
+        DropdownMenuItem<String>(
+          enabled: false,
+          value: '__others_header__',
+          child: Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              UserStorage.l10n.providerGroupOthers,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[500],
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+        ),
+        DropdownMenuItem(
+          value: LLMConfig.typeKimi,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 12),
+            child: Text(UserStorage.l10n.providerKimi,
+                style: TextStyle(color: Colors.grey[800])),
+          ),
+        ),
+        DropdownMenuItem(
+          value: LLMConfig.typeQwen,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 12),
+            child: Text(UserStorage.l10n.providerQwen,
+                style: TextStyle(color: Colors.grey[800])),
+          ),
+        ),
+        DropdownMenuItem(
+          value: LLMConfig.typeSeed,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 12),
+            child: Text(UserStorage.l10n.providerSeed,
+                style: TextStyle(color: Colors.grey[800])),
+          ),
+        ),
+        DropdownMenuItem(
+          value: LLMConfig.typeZhipu,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 12),
+            child: Text(UserStorage.l10n.providerZhipu,
+                style: TextStyle(color: Colors.grey[800])),
+          ),
+        ),
+        DropdownMenuItem(
+          value: LLMConfig.typeMinimax,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 12),
+            child: Text(UserStorage.l10n.providerMinimax,
+                style: TextStyle(color: Colors.grey[800])),
+          ),
+        ),
+        DropdownMenuItem(
+          value: LLMConfig.typeOpenRouter,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 12),
+            child: Text(UserStorage.l10n.providerOpenRouter,
+                style: TextStyle(color: Colors.grey[800])),
+          ),
+        ),
+        DropdownMenuItem(
+          value: LLMConfig.typeOllama,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 12),
+            child: Text(UserStorage.l10n.providerOllama,
+                style: TextStyle(color: Colors.grey[800])),
+          ),
+        ),
       ],
       validator: (value) {
         if (value == null || value.isEmpty) {
@@ -888,6 +1075,7 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
       },
       onChanged: (value) {
         setState(() => _selectedType = value ?? '');
+        _fetchedModels = [];
         if (value != null && value.isNotEmpty) {
           final recommended = _getRecommendedModels(value);
           _modelIdController.text =
@@ -899,6 +1087,9 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
             _loadOpenAiTokens();
           } else if (value == LLMConfig.typeGeminiOauth) {
             _loadGeminiTokens();
+          }
+          if (!LLMConfig.requiresApiKey(value)) {
+            _fetchModels();
           }
         }
       },
@@ -1062,7 +1253,7 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
         fillColor: Colors.grey[50],
       ),
       obscureText: _isObscureApiKey,
-      // API Key can be optional depending on provider
+      onChanged: (_) => setState(() {}),
     );
   }
 }

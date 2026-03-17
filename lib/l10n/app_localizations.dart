@@ -2414,6 +2414,114 @@ abstract class AppLocalizations {
   /// **'Bedrock'**
   String get bedrockClient;
 
+  /// No description provided for @providerGroupOpenAi.
+  ///
+  /// In en, this message translates to:
+  /// **'OpenAI'**
+  String get providerGroupOpenAi;
+
+  /// No description provided for @providerGroupAnthropic.
+  ///
+  /// In en, this message translates to:
+  /// **'Anthropic'**
+  String get providerGroupAnthropic;
+
+  /// No description provided for @providerGroupGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Google'**
+  String get providerGroupGoogle;
+
+  /// No description provided for @providerGroupOthers.
+  ///
+  /// In en, this message translates to:
+  /// **'Popular'**
+  String get providerGroupOthers;
+
+  /// No description provided for @providerOpenAiApiKey.
+  ///
+  /// In en, this message translates to:
+  /// **'API Key'**
+  String get providerOpenAiApiKey;
+
+  /// No description provided for @providerOpenAiResponses.
+  ///
+  /// In en, this message translates to:
+  /// **'API Key (Responses)'**
+  String get providerOpenAiResponses;
+
+  /// No description provided for @providerChatGptOauth.
+  ///
+  /// In en, this message translates to:
+  /// **'ChatGPT Pro/Plus'**
+  String get providerChatGptOauth;
+
+  /// No description provided for @providerClaudeApiKey.
+  ///
+  /// In en, this message translates to:
+  /// **'API Key'**
+  String get providerClaudeApiKey;
+
+  /// No description provided for @providerBedrockSecret.
+  ///
+  /// In en, this message translates to:
+  /// **'Bedrock Secret'**
+  String get providerBedrockSecret;
+
+  /// No description provided for @providerGemini.
+  ///
+  /// In en, this message translates to:
+  /// **'Gemini'**
+  String get providerGemini;
+
+  /// No description provided for @providerGeminiOauth.
+  ///
+  /// In en, this message translates to:
+  /// **'Gemini (Google OAuth)'**
+  String get providerGeminiOauth;
+
+  /// No description provided for @providerKimi.
+  ///
+  /// In en, this message translates to:
+  /// **'Kimi (Moonshot)'**
+  String get providerKimi;
+
+  /// No description provided for @providerQwen.
+  ///
+  /// In en, this message translates to:
+  /// **'Aliyun'**
+  String get providerQwen;
+
+  /// No description provided for @providerSeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Volcengine'**
+  String get providerSeed;
+
+  /// No description provided for @providerZhipu.
+  ///
+  /// In en, this message translates to:
+  /// **'Zhipu GLM'**
+  String get providerZhipu;
+
+  /// No description provided for @providerMinimax.
+  ///
+  /// In en, this message translates to:
+  /// **'MiniMax'**
+  String get providerMinimax;
+
+  /// No description provided for @providerOpenRouter.
+  ///
+  /// In en, this message translates to:
+  /// **'OpenRouter'**
+  String get providerOpenRouter;
+
+  /// No description provided for @providerOllama.
+  ///
+  /// In en, this message translates to:
+  /// **'Ollama (Local)'**
+  String get providerOllama;
+
   /// No description provided for @modelIdLabel.
   ///
   /// In en, this message translates to:
@@ -2425,6 +2533,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'e.g. gemini-3.1-pro-preview, gpt-4o'**
   String get modelIdHelper;
+
+  /// No description provided for @fetchingModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Fetching models...'**
+  String get fetchingModels;
+
+  /// No description provided for @fetchModelsButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Fetch Models'**
+  String get fetchModelsButton;
+
+  /// No description provided for @enterApiKeyFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter API Key first to fetch models'**
+  String get enterApiKeyFirst;
 
   /// No description provided for @apiKeyLabel.
   ///

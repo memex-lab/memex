@@ -1305,10 +1305,73 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bedrockClient => 'Bedrock';
 
   @override
+  String get providerGroupOpenAi => 'OpenAI';
+
+  @override
+  String get providerGroupAnthropic => 'Anthropic';
+
+  @override
+  String get providerGroupGoogle => 'Google';
+
+  @override
+  String get providerGroupOthers => 'Popular';
+
+  @override
+  String get providerOpenAiApiKey => 'API Key';
+
+  @override
+  String get providerOpenAiResponses => 'API Key (Responses)';
+
+  @override
+  String get providerChatGptOauth => 'ChatGPT Pro/Plus';
+
+  @override
+  String get providerClaudeApiKey => 'API Key';
+
+  @override
+  String get providerBedrockSecret => 'Bedrock Secret';
+
+  @override
+  String get providerGemini => 'Gemini';
+
+  @override
+  String get providerGeminiOauth => 'Gemini (Google OAuth)';
+
+  @override
+  String get providerKimi => 'Kimi (Moonshot)';
+
+  @override
+  String get providerQwen => 'Aliyun';
+
+  @override
+  String get providerSeed => 'Volcengine';
+
+  @override
+  String get providerZhipu => 'Zhipu GLM';
+
+  @override
+  String get providerMinimax => 'MiniMax';
+
+  @override
+  String get providerOpenRouter => 'OpenRouter';
+
+  @override
+  String get providerOllama => 'Ollama (Local)';
+
+  @override
   String get modelIdLabel => 'Model ID';
 
   @override
   String get modelIdHelper => 'e.g. gemini-3.1-pro-preview, gpt-4o';
+
+  @override
+  String get fetchingModels => 'Fetching models...';
+
+  @override
+  String get fetchModelsButton => 'Fetch Models';
+
+  @override
+  String get enterApiKeyFirst => 'Enter API Key first to fetch models';
 
   @override
   String get apiKeyLabel => 'API Key';

@@ -9,6 +9,70 @@ class LLMConfig {
   static const String typeClaude = 'claude';
   static const String typeOpenAiOauth = 'openai_oauth';
 
+  // Chinese LLM providers & aggregators
+  static const String typeKimi = 'kimi';
+  static const String typeQwen = 'qwen';
+  static const String typeSeed = 'seed';
+  static const String typeZhipu = 'zhipu';
+  static const String typeMinimax = 'minimax';
+  static const String typeOpenRouter = 'openrouter';
+  static const String typeOllama = 'ollama';
+
+  /// Maps provider types that are compatible with existing client protocols.
+  /// Returns the underlying client type to use, or null if the type is native.
+  static String? underlyingClientType(String type) {
+    switch (type) {
+      case typeKimi:
+      case typeQwen:
+      case typeZhipu:
+      case typeOpenRouter:
+      case typeOllama:
+        return typeChatCompletion;
+      case typeSeed:
+        return typeResponses;
+      case typeMinimax:
+        return typeClaude;
+      default:
+        return null; // native type, no mapping needed
+    }
+  }
+
+  /// Human-readable display name for a provider type.
+  static String displayName(String type) {
+    switch (type) {
+      case typeChatCompletion:
+        return 'OpenAI';
+      case typeResponses:
+        return 'OpenAI (Responses)';
+      case typeOpenAiOauth:
+        return 'ChatGPT Pro/Plus';
+      case typeClaude:
+        return 'Anthropic';
+      case typeBedrockClaude:
+        return 'Bedrock Claude';
+      case typeGemini:
+        return 'Gemini';
+      case typeGeminiOauth:
+        return 'Gemini (OAuth)';
+      case typeKimi:
+        return 'Kimi';
+      case typeQwen:
+        return 'Aliyun';
+      case typeSeed:
+        return 'Volcengine';
+      case typeZhipu:
+        return 'Zhipu GLM';
+      case typeMinimax:
+        return 'MiniMax';
+      case typeOpenRouter:
+        return 'OpenRouter';
+      case typeOllama:
+        return 'Ollama';
+      default:
+        return type;
+    }
+  }
+
   /// Models that require a ChatGPT Pro/Plus subscription (OpenAI OAuth only).
   static const Set<String> chatgptProOnlyModels = {'gpt-5.4', 'gpt-5.3-codex'};
 
@@ -72,9 +136,86 @@ class LLMConfig {
           'us.anthropic.claude-haiku-4-5-20251001-v1:0',
           'global.anthropic.claude-haiku-4-5-20251001-v1:0',
         ];
+      case typeKimi:
+        return const [
+          'kimi-k2.5',
+          'kimi-k2',
+          'kimi-k2-thinking',
+          'kimi-k2-thinking-turbo',
+          'kimi-k2-turbo-preview'
+        ];
+      case typeQwen:
+        return const [
+          'qwen3.5-plus',
+          'qwen3-coder',
+          'qwen3-235b-a22b',
+          'qwen-max'
+        ];
+      case typeSeed:
+        return const ['doubao-seed-1-8-251228', 'doubao-1.5-pro-256k'];
+      case typeZhipu:
+        return const ['GLM-4.7', 'GLM-4-Plus'];
+      case typeMinimax:
+        return const ['MiniMax-M2.5', 'MiniMax-M1'];
+      case typeOpenRouter:
+        return const [
+          'anthropic/claude-opus-4.6',
+          'anthropic/claude-sonnet-4.6',
+          'openai/gpt-5.4',
+          'google/gemini-2.5-flash',
+        ];
+      case typeOllama:
+        return const ['qwen2.5:7b', 'llama3.1:8b', 'gemma3:12b'];
       default:
         return const [];
     }
+  }
+
+  /// Whether this provider type requires an API key.
+  /// Bedrock uses AWS credentials (access key / secret key) instead of apiKey.
+  /// OAuth providers and Ollama don't need an API key either.
+  static bool requiresApiKey(String type) {
+    switch (type) {
+      case typeOpenAiOauth:
+      case typeGeminiOauth:
+      case typeBedrockClaude:
+      case typeOllama:
+        return false;
+      default:
+        return true;
+    }
+  }
+
+  /// Whether this provider type supports the OpenAI-compatible /v1/models endpoint.
+  static bool supportsModelListing(String type) {
+    switch (type) {
+      case typeChatCompletion:
+      case typeResponses:
+      case typeClaude:
+      case typeKimi:
+      case typeQwen:
+      case typeSeed:
+      case typeZhipu:
+      case typeMinimax:
+      case typeOpenRouter:
+      case typeOllama:
+      case typeGemini:
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  /// Returns the models endpoint URL for a given provider type and base URL.
+  static String? modelsEndpoint(String type, String baseUrl) {
+    if (!supportsModelListing(type) || baseUrl.isEmpty) return null;
+    if (type == typeGemini) {
+      return '$baseUrl/models';
+    }
+    final base = baseUrl.endsWith('/')
+        ? baseUrl.substring(0, baseUrl.length - 1)
+        : baseUrl;
+    return '$base/models';
   }
 
   /// Default base URL for a given provider type.
@@ -89,6 +230,20 @@ class LLMConfig {
         return 'https://api.openai.com/v1';
       case typeOpenAiOauth:
         return 'https://chatgpt.com/backend-api/codex';
+      case typeKimi:
+        return 'https://api.moonshot.cn/v1';
+      case typeQwen:
+        return 'https://dashscope.aliyuncs.com/compatible-mode/v1';
+      case typeSeed:
+        return 'https://ark.cn-beijing.volces.com/api/v3';
+      case typeZhipu:
+        return 'https://open.bigmodel.cn/api/coding/paas/v4';
+      case typeMinimax:
+        return 'https://api.minimaxi.com/anthropic';
+      case typeOpenRouter:
+        return 'https://openrouter.ai/api/v1';
+      case typeOllama:
+        return 'http://localhost:11434/v1';
       default:
         return '';
     }
@@ -134,15 +289,35 @@ class LLMConfig {
       return false;
     }
     // OpenAI OAuth uses its own internal token, so apiKey is allowed to be empty
+    // Ollama does not require an API key
     if ((type == typeResponses ||
             type == typeChatCompletion ||
             type == typeClaude ||
-            type == typeGemini) &&
+            type == typeGemini ||
+            type == typeKimi ||
+            type == typeQwen ||
+            type == typeSeed ||
+            type == typeZhipu ||
+            type == typeMinimax ||
+            type == typeOpenRouter) &&
         getEffectiveApiKey().isEmpty) {
       return false;
     }
-    if ([typeGemini, typeChatCompletion, typeResponses, typeClaude]
-        .contains(type)) {
+    // Types that require a non-empty baseUrl
+    final typesRequiringBaseUrl = [
+      typeGemini,
+      typeChatCompletion,
+      typeResponses,
+      typeClaude,
+      typeKimi,
+      typeQwen,
+      typeSeed,
+      typeZhipu,
+      typeMinimax,
+      typeOpenRouter,
+      typeOllama,
+    ];
+    if (typesRequiringBaseUrl.contains(type)) {
       return baseUrl.isNotEmpty;
     }
     return true;

@@ -1267,10 +1267,73 @@ class AppLocalizationsZh extends AppLocalizations {
   String get bedrockClient => 'Bedrock';
 
   @override
+  String get providerGroupOpenAi => 'OpenAI';
+
+  @override
+  String get providerGroupAnthropic => 'Anthropic';
+
+  @override
+  String get providerGroupGoogle => 'Google';
+
+  @override
+  String get providerGroupOthers => '热门';
+
+  @override
+  String get providerOpenAiApiKey => 'API Key';
+
+  @override
+  String get providerOpenAiResponses => 'API Key (Responses)';
+
+  @override
+  String get providerChatGptOauth => 'ChatGPT Pro/Plus';
+
+  @override
+  String get providerClaudeApiKey => 'API Key';
+
+  @override
+  String get providerBedrockSecret => 'Bedrock Secret';
+
+  @override
+  String get providerGemini => 'Gemini';
+
+  @override
+  String get providerGeminiOauth => 'Gemini (Google OAuth)';
+
+  @override
+  String get providerKimi => 'Kimi (月之暗面)';
+
+  @override
+  String get providerQwen => 'Aliyun (阿里云)';
+
+  @override
+  String get providerSeed => 'Volcengine (火山引擎)';
+
+  @override
+  String get providerZhipu => 'Zhipu GLM (智谱)';
+
+  @override
+  String get providerMinimax => 'MiniMax';
+
+  @override
+  String get providerOpenRouter => 'OpenRouter';
+
+  @override
+  String get providerOllama => 'Ollama (本地)';
+
+  @override
   String get modelIdLabel => 'Model ID';
 
   @override
   String get modelIdHelper => '例如 gemini-3.1-pro-preview、gpt-4o';
+
+  @override
+  String get fetchingModels => '正在获取模型列表...';
+
+  @override
+  String get fetchModelsButton => '获取模型列表';
+
+  @override
+  String get enterApiKeyFirst => '请先填写 API Key 以获取模型列表';
 
   @override
   String get apiKeyLabel => 'API Key';

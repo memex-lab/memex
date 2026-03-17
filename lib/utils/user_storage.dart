@@ -490,6 +490,34 @@ class UserStorage {
           proxyUrl: proxyUrl,
         );
         break;
+      // Providers compatible with OpenAI Chat Completions
+      case LLMConfig.typeKimi:
+      case LLMConfig.typeQwen:
+      case LLMConfig.typeZhipu:
+      case LLMConfig.typeOpenRouter:
+      case LLMConfig.typeOllama:
+        client = OpenAIClient(
+          apiKey: llmConfig.getEffectiveApiKey(),
+          baseUrl: llmConfig.baseUrl,
+          proxyUrl: proxyUrl,
+        );
+        break;
+      // Seed (Doubao) is compatible with OpenAI Responses API
+      case LLMConfig.typeSeed:
+        client = ResponsesClient(
+          apiKey: llmConfig.getEffectiveApiKey(),
+          baseUrl: llmConfig.baseUrl,
+          proxyUrl: proxyUrl,
+        );
+        break;
+      // MiniMax is compatible with Anthropic API
+      case LLMConfig.typeMinimax:
+        client = ClaudeClient(
+          apiKey: llmConfig.getEffectiveApiKey(),
+          baseUrl: llmConfig.baseUrl,
+          proxyUrl: proxyUrl,
+        );
+        break;
       default:
         throw InvalidModelConfigException(
             'Unknown LLM type: ${llmConfig.type}');

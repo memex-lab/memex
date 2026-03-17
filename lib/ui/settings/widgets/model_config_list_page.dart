@@ -17,6 +17,42 @@ class _ModelConfigListPageState extends State<ModelConfigListPage> {
   List<LLMConfig> _configs = [];
   bool _isLoading = true;
 
+  String _providerDisplayName(String type) {
+    final l10n = UserStorage.l10n;
+    switch (type) {
+      case LLMConfig.typeChatCompletion:
+        return l10n.providerOpenAiApiKey;
+      case LLMConfig.typeResponses:
+        return l10n.providerOpenAiResponses;
+      case LLMConfig.typeOpenAiOauth:
+        return l10n.providerChatGptOauth;
+      case LLMConfig.typeClaude:
+        return l10n.providerClaudeApiKey;
+      case LLMConfig.typeBedrockClaude:
+        return l10n.providerBedrockSecret;
+      case LLMConfig.typeGemini:
+        return l10n.providerGemini;
+      case LLMConfig.typeGeminiOauth:
+        return l10n.providerGeminiOauth;
+      case LLMConfig.typeKimi:
+        return l10n.providerKimi;
+      case LLMConfig.typeQwen:
+        return l10n.providerQwen;
+      case LLMConfig.typeSeed:
+        return l10n.providerSeed;
+      case LLMConfig.typeZhipu:
+        return l10n.providerZhipu;
+      case LLMConfig.typeMinimax:
+        return l10n.providerMinimax;
+      case LLMConfig.typeOpenRouter:
+        return l10n.providerOpenRouter;
+      case LLMConfig.typeOllama:
+        return l10n.providerOllama;
+      default:
+        return type;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -286,7 +322,7 @@ class _ModelConfigListPageState extends State<ModelConfigListPage> {
                               SizedBox(
                                 width: double.infinity,
                                 child: Text(
-                                  '${config.type} / ${config.modelId}',
+                                  '${_providerDisplayName(config.type)} / ${config.modelId}',
                                   overflow: TextOverflow.ellipsis,
                                   maxLines: 1,
                                 ),

@@ -34,6 +34,9 @@ class SearchableDropdownState extends State<SearchableDropdown> {
   List<String> _filtered = [];
   bool _showAll = false;
 
+  /// True when overlay was opened via dropdown arrow (no keyboard).
+  bool _dropdownMode = false;
+
   @override
   void initState() {
     super.initState();
@@ -52,10 +55,15 @@ class SearchableDropdownState extends State<SearchableDropdown> {
 
   void _onFocusChange() {
     if (_focusNode.hasFocus) {
-      _updateFiltered();
-      _showOverlay();
+      // Only show overlay on real focus (typing), not dropdown-arrow tap
+      if (!_dropdownMode) {
+        _updateFiltered();
+        _showOverlay();
+      }
     } else {
-      _removeOverlay();
+      if (!_dropdownMode) {
+        _removeOverlay();
+      }
     }
   }
 
@@ -80,40 +88,52 @@ class SearchableDropdownState extends State<SearchableDropdown> {
     final size = renderBox.size;
 
     _overlayEntry = OverlayEntry(
-      builder: (ctx) => Positioned(
-        width: size.width,
-        child: CompositedTransformFollower(
-          link: _layerLink,
-          showWhenUnlinked: false,
-          offset: Offset(0, size.height + 4),
-          child: Material(
-            elevation: 4,
-            borderRadius: BorderRadius.circular(8),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 240),
-              child: _filtered.isEmpty
-                  ? const SizedBox.shrink()
-                  : ListView.builder(
-                      padding: EdgeInsets.zero,
-                      shrinkWrap: true,
-                      itemCount: _filtered.length,
-                      itemBuilder: (_, i) {
-                        final option = _filtered[i];
-                        return InkWell(
-                          onTap: () => _selectOption(option),
-                          child: widget.optionBuilder != null
-                              ? widget.optionBuilder!(option, false)
-                              : Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 16, vertical: 12),
-                                  child: Text(option),
-                                ),
-                        );
-                      },
-                    ),
+      builder: (ctx) => Stack(
+        children: [
+          // Tap-away barrier to dismiss overlay
+          if (_dropdownMode)
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: _dismissDropdown,
+              ),
+            ),
+          Positioned(
+            width: size.width,
+            child: CompositedTransformFollower(
+              link: _layerLink,
+              showWhenUnlinked: false,
+              offset: Offset(0, size.height + 4),
+              child: Material(
+                elevation: 4,
+                borderRadius: BorderRadius.circular(8),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 240),
+                  child: _filtered.isEmpty
+                      ? const SizedBox.shrink()
+                      : ListView.builder(
+                          padding: EdgeInsets.zero,
+                          shrinkWrap: true,
+                          itemCount: _filtered.length,
+                          itemBuilder: (_, i) {
+                            final option = _filtered[i];
+                            return InkWell(
+                              onTap: () => _selectOption(option),
+                              child: widget.optionBuilder != null
+                                  ? widget.optionBuilder!(option, false)
+                                  : Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 16, vertical: 12),
+                                      child: Text(option),
+                                    ),
+                            );
+                          },
+                        ),
+                ),
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
     Overlay.of(context).insert(_overlayEntry!);
@@ -123,8 +143,16 @@ class SearchableDropdownState extends State<SearchableDropdown> {
     _controller.text = option;
     _controller.selection = TextSelection.collapsed(offset: option.length);
     _showAll = false;
+    _dropdownMode = false;
     widget.onChanged(option);
     _focusNode.unfocus();
+    _removeOverlay();
+  }
+
+  void _dismissDropdown() {
+    _dropdownMode = false;
+    _showAll = false;
+    _removeOverlay();
   }
 
   void _removeOverlay() {
@@ -133,13 +161,18 @@ class SearchableDropdownState extends State<SearchableDropdown> {
   }
 
   void _onDropdownTap() {
+    if (_overlayEntry != null) {
+      // Already showing — dismiss
+      _dismissDropdown();
+      _focusNode.unfocus();
+      return;
+    }
+    // Show list without keyboard
+    _dropdownMode = true;
     _showAll = true;
     _filtered = widget.options;
-    if (_focusNode.hasFocus) {
-      _overlayEntry?.markNeedsBuild();
-    } else {
-      _focusNode.requestFocus();
-    }
+    _focusNode.unfocus(); // ensure keyboard is hidden
+    _showOverlay();
   }
 
   /// Allow parent to update the text programmatically.
