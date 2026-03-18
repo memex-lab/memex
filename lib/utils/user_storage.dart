@@ -736,4 +736,34 @@ class UserStorage {
       return null;
     }
   }
+
+  /// Clear all SharedPreferences data (used for account deletion).
+  static Future<void> clearAllData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+    } catch (e) {
+      _logger.warning('Failed to clear SharedPreferences: $e');
+    }
+  }
+
+  /// Check if user has given consent for LLM data sharing.
+  static Future<bool> hasLLMConsent() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getBool('llm_data_sharing_consent') ?? false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Save LLM data sharing consent.
+  static Future<void> saveLLMConsent(bool consent) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('llm_data_sharing_consent', consent);
+    } catch (e) {
+      _logger.warning('Failed to save LLM consent: $e');
+    }
+  }
 }

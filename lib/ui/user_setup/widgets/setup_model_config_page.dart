@@ -540,6 +540,43 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
 
     try {
       final configs = await MemexRouter().getLLMConfigs();
+
+      // Check LLM data sharing consent before saving a valid config
+      if (newConfig.isValid) {
+        final hasConsent = await UserStorage.hasLLMConsent();
+        if (!hasConsent && mounted) {
+          final l10n = UserStorage.l10n;
+          final providerName = _selectedType.isNotEmpty
+              ? LLMConfig.providerDisplayName(_selectedType)
+              : 'AI Provider';
+          final consentGiven = await showDialog<bool>(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => AlertDialog(
+              title: Text(l10n.llmConsentTitle),
+              content: SingleChildScrollView(
+                child: Text(l10n.llmConsentMessage(providerName)),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: Text(l10n.llmConsentDecline),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: Text(l10n.llmConsentAgree),
+                ),
+              ],
+            ),
+          );
+          if (consentGiven != true) {
+            setState(() => _isSubmitting = false);
+            return;
+          }
+          await UserStorage.saveLLMConsent(true);
+        }
+      }
+
       final index = configs.indexWhere((c) => c.key == widget.config.key);
       if (index != -1) {
         configs[index] = newConfig;
@@ -876,13 +913,13 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
         return [
           // OpenAI group header
           const SizedBox.shrink(),
-          Text(l10n.providerOpenAiApiKey),
-          Text(l10n.providerOpenAiResponses),
-          Text(l10n.providerChatGptOauth),
+          Text(LLMConfig.providerDisplayName(LLMConfig.typeChatCompletion)),
+          Text(LLMConfig.providerDisplayName(LLMConfig.typeResponses)),
+          Text(LLMConfig.providerDisplayName(LLMConfig.typeOpenAiOauth)),
           // Anthropic group header
           const SizedBox.shrink(),
-          Text(l10n.providerClaudeApiKey),
-          Text(l10n.providerBedrockSecret),
+          Text(LLMConfig.providerDisplayName(LLMConfig.typeClaude)),
+          Text(LLMConfig.providerDisplayName(LLMConfig.typeBedrockClaude)),
           // Google group header
           const SizedBox.shrink(),
           Text(l10n.providerGemini),

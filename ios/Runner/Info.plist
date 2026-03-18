@@ -52,17 +52,17 @@
 			<string>UIInterfaceOrientationLandscapeRight</string>
 		</array>
 		<key>NSCameraUsageDescription</key>
-		<string>Need camera access to take photos</string>
+		<string>Memex uses your camera to capture photos that are automatically organized into timeline cards. For example, take a photo of a receipt or whiteboard, and Memex extracts the text using on-device OCR and creates a structured record.</string>
 		<key>NSPhotoLibraryUsageDescription</key>
-		<string>Need photo library access to select photos</string>
+		<string>Memex accesses your photo library to let you select photos for your records. When you tap publish, the app scans your recent photos using on-device ML to extract text, labels, and GPS metadata, then organizes them into timeline cards. For example, select a photo of a business card to automatically extract the contact information.</string>
 		<key>NSMicrophoneUsageDescription</key>
-		<string>Need microphone access to record audio</string>
+		<string>Memex uses your microphone to record voice notes that become timeline entries. For example, record a quick voice memo about your day, and Memex creates a searchable timeline card from the recording.</string>
 		<key>NSFaceIDUsageDescription</key>
 		<string>Need Face ID to unlock the app</string>
 		<key>NSLocationWhenInUseUsageDescription</key>
-		<string>Need location to record where you are</string>
+		<string>Memex reads location data from your photos to create place-based timeline cards, and lets you pick a location on the map when editing a record. For example, a photo taken at a restaurant automatically gets tagged with the venue so you can browse records by place.</string>
 		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-		<string>Need location to record where you are</string>
+		<string>Memex reads location data from your photos to create place-based timeline cards, and lets you pick a location on the map when editing a record. For example, a photo taken at a restaurant automatically gets tagged with the venue so you can browse records by place.</string>
 		<key>NSCalendarsUsageDescription</key>
 		<string>Need calendar access to read and add your schedule</string>
 		<key>NSCalendarsFullAccessUsageDescription</key>

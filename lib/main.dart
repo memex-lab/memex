@@ -47,6 +47,7 @@ import 'package:memex/ui/main_screen/widgets/share_intent_handler.dart';
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey =
     GlobalKey<ScaffoldMessengerState>();
+final GlobalKey<RootShellState> rootShellKey = GlobalKey<RootShellState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -79,7 +80,8 @@ void main() async {
     ),
   );
 
-  final appRouter = createAppRouter(rootNavigatorKey, () => const RootShell());
+  final appRouter =
+      createAppRouter(rootNavigatorKey, () => RootShell(key: rootShellKey));
   runApp(MultiProvider(
     providers: dependencyProviders,
     child: MemexApp(router: appRouter),
@@ -91,10 +93,10 @@ class RootShell extends StatefulWidget {
   const RootShell({super.key});
 
   @override
-  State<RootShell> createState() => _RootShellState();
+  State<RootShell> createState() => RootShellState();
 }
 
-class _RootShellState extends State<RootShell> {
+class RootShellState extends State<RootShell> {
   bool _hasUser = false;
   bool _onboardingComplete = false;
   bool _isChecking = true;
@@ -135,6 +137,16 @@ class _RootShellState extends State<RootShell> {
       _hasUser = true;
       _onboardingComplete = true;
     });
+  }
+
+  /// Reset state and re-check user. Called after account deletion.
+  void resetAndRecheck() {
+    setState(() {
+      _hasUser = false;
+      _onboardingComplete = false;
+      _isChecking = true;
+    });
+    _checkUser();
   }
 
   @override

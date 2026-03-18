@@ -1626,4 +1626,43 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get apiKeyNotSet => 'API Key not set — tap to configure';
+
+  @override
+  String get deleteAccount => 'Delete Account';
+
+  @override
+  String get deleteAccountDesc =>
+      'Permanently delete all local data and reset the app.';
+
+  @override
+  String get deleteAccountConfirmTitle => 'Delete Account?';
+
+  @override
+  String get deleteAccountConfirmMessage =>
+      'This will permanently delete all your data including timeline cards, knowledge base, recordings, and settings. This action cannot be undone.';
+
+  @override
+  String get deleteAccountSuccess => 'All data has been deleted.';
+
+  @override
+  String deleteAccountTypeName(Object name) {
+    return 'Type \"$name\" to confirm';
+  }
+
+  @override
+  String get deleteAccountTypeHint => 'Enter your username to confirm';
+
+  @override
+  String get llmConsentTitle => 'Data Sharing Consent';
+
+  @override
+  String llmConsentMessage(Object provider) {
+    return 'To enable AI features, Memex needs to send your data to $provider for processing. This includes:\n\n• Text you enter (notes, voice transcriptions)\n• Photo metadata and extracted text (OCR)\n• Health and fitness summaries\n• Timeline card content\n\nYour data is sent directly from your device to $provider. Memex does not store or relay your data through any other server.\n\nPlease review $provider\'s privacy policy for how they handle your data.\n\nDo you agree to send your data to $provider for AI processing?';
+  }
+
+  @override
+  String get llmConsentAgree => 'I Agree';
+
+  @override
+  String get llmConsentDecline => 'Decline';
 }

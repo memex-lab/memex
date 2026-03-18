@@ -103,7 +103,8 @@ class _DataStoragePageState extends State<DataStoragePage> {
     if (uid == null) return;
     if (Platform.isIOS) {
       if (mounted) {
-        ToastHelper.showInfo(context, UserStorage.l10n.customFolderAccessDenied);
+        ToastHelper.showInfo(
+            context, UserStorage.l10n.customFolderAccessDenied);
       }
       return;
     }
@@ -121,6 +122,7 @@ class _DataStoragePageState extends State<DataStoragePage> {
     if (!mounted) return;
     await UserStorage.setWorkspaceStorageToCustom(uid, path);
     await MemexRouter().applyWorkspaceStorageChange();
+    if (!mounted) return;
     setState(() {
       _location = StorageLocation.custom;
       _customPath = path;
@@ -134,13 +136,12 @@ class _DataStoragePageState extends State<DataStoragePage> {
     if (uid == null) return;
     await UserStorage.setWorkspaceStorageToApp(uid);
     await MemexRouter().applyWorkspaceStorageChange();
+    if (!mounted) return;
     setState(() {
       _location = StorageLocation.app;
       _customPath = null;
     });
-    if (mounted) {
-      ToastHelper.showSuccess(context, UserStorage.l10n.updateSuccess);
-    }
+    ToastHelper.showSuccess(context, UserStorage.l10n.updateSuccess);
   }
 
   Future<void> _selectICloud() async {
@@ -152,10 +153,9 @@ class _DataStoragePageState extends State<DataStoragePage> {
     }
     await UserStorage.setWorkspaceStorageToICloud(uid);
     await MemexRouter().applyWorkspaceStorageChange();
+    if (!mounted) return;
     setState(() => _location = StorageLocation.icloud);
-    if (mounted) {
-      ToastHelper.showSuccess(context, UserStorage.l10n.updateSuccess);
-    }
+    ToastHelper.showSuccess(context, UserStorage.l10n.updateSuccess);
   }
 
   String _locationLabel(StorageLocation loc) {
