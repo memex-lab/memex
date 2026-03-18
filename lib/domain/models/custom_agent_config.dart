@@ -40,7 +40,10 @@ class CustomAgentConfig {
   /// `<workspace>/_UserSettings/skills/my-agent`.
   final String skillDirectoryPath;
 
-  final String? workingDirectory;
+  /// Relative path under workspace for the agent's working directory.
+  /// e.g. empty string means workspace root, `my-data` means `<workspace>/my-data`.
+  /// Always resolved relative to the user's workspace root.
+  final String workingDirectory;
   final String? llmConfigKey;
   final String eventType;
   final ExecutionMode executionMode;
@@ -61,7 +64,7 @@ class CustomAgentConfig {
     required this.agentName,
     this.hostAgentType = HostAgentType.pure,
     required this.skillDirectoryPath,
-    this.workingDirectory,
+    this.workingDirectory = '',
     this.llmConfigKey,
     required this.eventType,
     this.executionMode = ExecutionMode.async_,
@@ -90,7 +93,7 @@ class CustomAgentConfig {
         'agentName': agentName,
         'hostAgentType': hostAgentType.toJson(),
         'skillDirectoryPath': skillDirectoryPath,
-        if (workingDirectory != null) 'workingDirectory': workingDirectory,
+        'workingDirectory': workingDirectory,
         if (llmConfigKey != null) 'llmConfigKey': llmConfigKey,
         'eventType': eventType,
         'executionMode': executionMode.toJson(),
@@ -110,7 +113,7 @@ class CustomAgentConfig {
       hostAgentType:
           HostAgentType.fromJson(json['hostAgentType'] as String? ?? 'pure'),
       skillDirectoryPath: json['skillDirectoryPath'] as String,
-      workingDirectory: json['workingDirectory'] as String?,
+      workingDirectory: json['workingDirectory'] as String? ?? '',
       llmConfigKey: json['llmConfigKey'] as String?,
       eventType: json['eventType'] as String,
       executionMode:

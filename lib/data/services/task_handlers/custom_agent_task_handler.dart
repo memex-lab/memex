@@ -156,6 +156,16 @@ Future<void> _handleCustomAgentTask(
   final skillAbsPath = FileSystemService.instance
       .resolveSkillPath(userId, config.skillDirectoryPath);
 
+  final workingDirAbsPath = await FileSystemService.instance
+      .resolveWorkingDirectory(userId, config.workingDirectory);
+
+  // Sync skill directory into workingDirectory if it's outside,
+  // so file tools (Read, LS, etc.) can access skill files.
+  final skillSync = await FileSystemService.instance.syncSkillsIfNeeded(
+    skillAbsPath: skillAbsPath,
+    workingDirAbsPath: workingDirAbsPath,
+  );
+
   final eventXml = payload['event_xml'] as String? ?? '';
   final textContent =
       'A system event has occurred. Process it according to your skills.\n\n$eventXml';
@@ -176,8 +186,8 @@ Future<void> _handleCustomAgentTask(
         userId: userId,
         name: agentName,
         state: state,
-        skillDirectoryPath: skillAbsPath,
-        workingDirectory: config.workingDirectory,
+        skillDirectoryPath: skillSync.effectivePath,
+        workingDirectory: workingDirAbsPath,
         additionalSystemPrompt: config.systemPrompt,
       );
       break;
@@ -188,43 +198,48 @@ Future<void> _handleCustomAgentTask(
         userId: userId,
         name: agentName,
         state: state,
-        skillDirectoryPath: skillAbsPath,
-        workingDirectory: config.workingDirectory,
+        skillDirectoryPath: skillSync.effectivePath,
+        workingDirectory: workingDirAbsPath,
         additionalSystemPrompt: config.systemPrompt,
       );
       break;
   }
 
-  final responses = await agent.run([userMessage]);
+  try {
+    final responses = await agent.run([userMessage]);
 
-  // Extract text result from agent output.
-  String? resultText;
-  final last = responses.isNotEmpty ? responses.last : null;
-  if (last is ModelMessage && last.textOutput != null) {
-    resultText = last.textOutput;
-    _logger.info('Custom agent "$agentName" result: $resultText');
-  } else {
-    _logger.info('Custom agent "$agentName" completed, last: $last');
+    // Extract text result from agent output.
+    String? resultText;
+    final last = responses.isNotEmpty ? responses.last : null;
+    if (last is ModelMessage && last.textOutput != null) {
+      resultText = last.textOutput;
+      _logger.info('Custom agent "$agentName" result: $resultText');
+    } else {
+      _logger.info('Custom agent "$agentName" completed, last: $last');
+    }
+
+    // Persist a chat session file so AgentChatDialog can load history and
+    // continue the conversation in the same session context.
+    await _createChatSession(
+      userId: userId,
+      sessionId: sessionId,
+      agentName: agentName,
+      userText: textContent,
+      aiResponse: resultText,
+    );
+
+    // Create a system_task card to show the result on the timeline.
+    await _createResultCard(
+      userId: userId,
+      agentName: agentName,
+      status: 'completed',
+      message: resultText,
+      sessionId: sessionId,
+    );
+  } finally {
+    // Sync skill changes back to the original directory if we made a copy.
+    await FileSystemService.instance.syncSkillsBack(skillSync);
   }
-
-  // Persist a chat session file so AgentChatDialog can load history and
-  // continue the conversation in the same session context.
-  await _createChatSession(
-    userId: userId,
-    sessionId: sessionId,
-    agentName: agentName,
-    userText: textContent,
-    aiResponse: resultText,
-  );
-
-  // Create a system_task card to show the result on the timeline.
-  await _createResultCard(
-    userId: userId,
-    agentName: agentName,
-    status: 'completed',
-    message: resultText,
-    sessionId: sessionId,
-  );
 }
 
 /// Create a chat session YAML file compatible with ChatService / chat.dart so

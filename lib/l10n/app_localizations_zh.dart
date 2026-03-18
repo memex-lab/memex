@@ -1671,7 +1671,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get skillDirInvalid => '必须是相对路径（不能以 / 开头或包含 ..）';
 
   @override
-  String get workingDirectory => '工作目录（可选）';
+  String get workingDirectory => '工作目录';
 
   @override
   String get workingDirectoryHint => '留空使用工作区默认路径';

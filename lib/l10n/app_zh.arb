@@ -783,7 +783,7 @@
   "hostAgentType": "宿主 Agent 类型",
   "skillDirectory": "Skill 目录",
   "skillDirInvalid": "必须是相对路径（不能以 / 开头或包含 ..）",
-  "workingDirectory": "工作目录（可选）",
+  "workingDirectory": "工作目录",
   "workingDirectoryHint": "留空使用工作区默认路径",
   "llmConfig": "LLM 配置",
   "eventType": "事件类型",

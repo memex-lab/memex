@@ -154,7 +154,8 @@ class _CustomAgentConfigPageState extends State<CustomAgentConfigPage> {
 // Edit / Create form
 // ---------------------------------------------------------------------------
 
-const String _defaultSkillDirPrefix = '_UserSettings/skills/';
+const String _defaultSkillDirPrefix = '~/_UserSettings/skills/';
+const String _defaultWorkDirPrefix = '~/';
 
 /// A TextEditingController that renders a fixed prefix in a different color.
 class _PrefixStyledController extends TextEditingController {
@@ -206,7 +207,7 @@ class _CustomAgentEditPageState extends State<_CustomAgentEditPage> {
 
   late TextEditingController _nameCtrl;
   late _PrefixStyledController _skillDirCtrl;
-  late TextEditingController _workDirCtrl;
+  late _PrefixStyledController _workDirCtrl;
   late TextEditingController _priorityCtrl;
   late TextEditingController _maxRetriesCtrl;
   late TextEditingController _systemPromptCtrl;
@@ -232,17 +233,23 @@ class _CustomAgentEditPageState extends State<_CustomAgentEditPage> {
     _nameCtrl = TextEditingController(text: e?.agentName ?? '');
 
     // Skill dir controller holds the full path; prefix is protected from deletion.
-    final existingPath = e?.skillDirectoryPath ?? _defaultSkillDirPrefix;
-    final initialSkillDir = existingPath.startsWith(_defaultSkillDirPrefix)
-        ? existingPath
-        : '$_defaultSkillDirPrefix$existingPath';
+    final existingPath = e?.skillDirectoryPath ?? '_UserSettings/skills/';
+    final initialSkillDir = '~/$existingPath';
     _skillDirCtrl = _PrefixStyledController(
       prefix: _defaultSkillDirPrefix,
       text: initialSkillDir,
     );
     _skillDirCtrl.addListener(_protectSkillDirPrefix);
 
-    _workDirCtrl = TextEditingController(text: e?.workingDirectory ?? '');
+    // Working dir controller: prefix '~/' represents user workspace root.
+    final existingWorkDir = e?.workingDirectory ?? '';
+    final initialWorkDir = '$_defaultWorkDirPrefix$existingWorkDir';
+    _workDirCtrl = _PrefixStyledController(
+      prefix: _defaultWorkDirPrefix,
+      text: initialWorkDir,
+    );
+    _workDirCtrl.addListener(_protectWorkDirPrefix);
+
     _priorityCtrl = TextEditingController(text: (e?.priority ?? 0).toString());
     _maxRetriesCtrl =
         TextEditingController(text: (e?.maxRetries ?? 10).toString());
@@ -300,6 +307,23 @@ class _CustomAgentEditPageState extends State<_CustomAgentEditPage> {
     }
   }
 
+  /// Prevent user from deleting the fixed prefix in the working dir field.
+  void _protectWorkDirPrefix() {
+    final text = _workDirCtrl.text;
+    if (!text.startsWith(_defaultWorkDirPrefix)) {
+      _workDirCtrl.removeListener(_protectWorkDirPrefix);
+      _workDirCtrl.text = _defaultWorkDirPrefix;
+      _workDirCtrl.selection = TextSelection.collapsed(
+        offset: _defaultWorkDirPrefix.length,
+      );
+      _workDirCtrl.addListener(_protectWorkDirPrefix);
+    } else if (_workDirCtrl.selection.start < _defaultWorkDirPrefix.length) {
+      _workDirCtrl.selection = TextSelection.collapsed(
+        offset: _defaultWorkDirPrefix.length,
+      );
+    }
+  }
+
   @override
   void dispose() {
     _nameCtrl.dispose();
@@ -315,20 +339,23 @@ class _CustomAgentEditPageState extends State<_CustomAgentEditPage> {
     if (!_formKey.currentState!.validate()) return;
 
     final name = _nameCtrl.text.trim();
+    // Strip the visual '~/' prefix to get the relative path for storage.
     final fullSkillDir = _skillDirCtrl.text.trim();
-    final suffix = fullSkillDir.startsWith(_defaultSkillDirPrefix)
-        ? fullSkillDir.substring(_defaultSkillDirPrefix.length)
+    final skillRelative = fullSkillDir.startsWith('~/')
+        ? fullSkillDir.substring(2)
         : fullSkillDir;
-    final skillPath = suffix.isEmpty
-        ? _defaultSkillDirPrefix
-        : '$_defaultSkillDirPrefix$suffix';
+    final skillPath =
+        skillRelative.isEmpty ? '_UserSettings/skills/' : skillRelative;
+
+    final fullWorkDir = _workDirCtrl.text.trim();
+    final workDirRelative =
+        fullWorkDir.startsWith('~/') ? fullWorkDir.substring(2) : fullWorkDir;
 
     final config = CustomAgentConfig(
       agentName: name,
       hostAgentType: _hostType,
       skillDirectoryPath: skillPath,
-      workingDirectory:
-          _workDirCtrl.text.trim().isEmpty ? null : _workDirCtrl.text.trim(),
+      workingDirectory: workDirRelative,
       llmConfigKey: _llmConfigKey,
       eventType: _eventType,
       executionMode: _execMode,
@@ -439,7 +466,7 @@ class _CustomAgentEditPageState extends State<_CustomAgentEditPage> {
             ),
             const SizedBox(height: 16),
 
-            // Working Directory
+            // Working Directory (prefix-protected, relative to workspace root)
             TextFormField(
               controller: _workDirCtrl,
               decoration: InputDecoration(
@@ -447,6 +474,26 @@ class _CustomAgentEditPageState extends State<_CustomAgentEditPage> {
                 hintText: l10n.workingDirectoryHint,
                 border: const OutlineInputBorder(),
               ),
+              validator: (v) {
+                final text = v?.trim() ?? '';
+                if (!text.startsWith(_defaultWorkDirPrefix)) {
+                  return l10n.workingDirectoryHint;
+                }
+                final suffix =
+                    text.substring(_defaultWorkDirPrefix.length).trim();
+                if (suffix.isNotEmpty && suffix.contains('..')) {
+                  return l10n.workingDirectoryHint;
+                }
+                return null;
+              },
+              onTap: () {
+                if (_workDirCtrl.selection.start <
+                    _defaultWorkDirPrefix.length) {
+                  _workDirCtrl.selection = TextSelection.collapsed(
+                    offset: _defaultWorkDirPrefix.length,
+                  );
+                }
+              },
             ),
             const SizedBox(height: 16),
 

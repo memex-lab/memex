@@ -17,6 +17,25 @@ import 'package:memex/db/app_database.dart';
 import 'package:memex/domain/models/card_model.dart';
 import 'package:drift/drift.dart' as drift;
 
+/// Result of [FileSystemService.syncSkillsIfNeeded].
+class SkillSyncResult {
+  /// The path to use as skillDirectoryPath for the agent.
+  final String effectivePath;
+
+  /// The original skill directory path (source of truth).
+  final String originalPath;
+
+  /// Whether a sync was performed (skill was outside workingDirectory).
+  /// When true, [syncSkillsBack] should be called after agent execution.
+  final bool didSync;
+
+  const SkillSyncResult({
+    required this.effectivePath,
+    required this.originalPath,
+    required this.didSync,
+  });
+}
+
 /// File system manager. Maps to backend FileSystemManager; manages user workspace dirs and file ops.
 class FileSystemService {
   final BaseFileService _baseService = BaseFileService();
@@ -733,6 +752,170 @@ class FileSystemService {
   String resolveSkillPath(String userId, String skillDirectoryPath) {
     return path
         .normalize(path.join(getWorkspacePath(userId), skillDirectoryPath));
+  }
+
+  /// Ensure the skill directory is accessible from within [workingDirectory].
+  ///
+  /// If [skillAbsPath] is already under [workingDirAbsPath], returns it as-is
+  /// with [SkillSyncResult.didSync] = false.
+  /// Otherwise, performs an rsync-like sync of the skill directory into
+  /// `<workingDir>/<dirName>/` so that file tools (Read, LS, etc.)
+  /// can access skill files. Only changed files are copied (by mtime + size),
+  /// and stale files in the destination are removed.
+  ///
+  /// After agent execution, call [syncSkillsBack] with the returned result
+  /// to propagate any changes back to the original skill directory.
+  Future<SkillSyncResult> syncSkillsIfNeeded({
+    required String skillAbsPath,
+    required String workingDirAbsPath,
+  }) async {
+    final normalizedSkill = path.normalize(skillAbsPath);
+    final normalizedWork = path.normalize(workingDirAbsPath);
+
+    // Already inside workingDirectory — nothing to do.
+    if (normalizedSkill.startsWith('$normalizedWork/') ||
+        normalizedSkill == normalizedWork) {
+      return SkillSyncResult(
+        effectivePath: normalizedSkill,
+        originalPath: normalizedSkill,
+        didSync: false,
+      );
+    }
+
+    final skillDir = Directory(normalizedSkill);
+    if (!await skillDir.exists()) {
+      _logger.warning(
+          'Skill directory does not exist, skipping sync: $normalizedSkill');
+      return SkillSyncResult(
+        effectivePath: normalizedSkill,
+        originalPath: normalizedSkill,
+        didSync: false,
+      );
+    }
+
+    final dirName = path.basename(normalizedSkill);
+    final destRoot = path.join(normalizedWork, dirName);
+    final destDir = Directory(destRoot);
+    if (!await destDir.exists()) {
+      await destDir.create(recursive: true);
+    }
+
+    await _rsyncDirectory(normalizedSkill, destRoot);
+
+    _logger.info('Synced skill directory: $normalizedSkill -> $destRoot');
+    return SkillSyncResult(
+      effectivePath: destRoot,
+      originalPath: normalizedSkill,
+      didSync: true,
+    );
+  }
+
+  /// Sync changes from the working copy back to the original skill directory.
+  ///
+  /// Should be called after agent execution when [SkillSyncResult.didSync]
+  /// is true, to propagate any modifications the agent made to skill files.
+  Future<void> syncSkillsBack(SkillSyncResult syncResult) async {
+    if (!syncResult.didSync) return;
+
+    final copyDir = Directory(syncResult.effectivePath);
+    if (!await copyDir.exists()) {
+      _logger
+          .warning('Skill working copy no longer exists, skipping sync-back: '
+              '${syncResult.effectivePath}');
+      return;
+    }
+
+    await _rsyncDirectory(syncResult.effectivePath, syncResult.originalPath);
+    _logger.info('Synced skill changes back: '
+        '${syncResult.effectivePath} -> ${syncResult.originalPath}');
+  }
+
+  /// Recursively sync [srcRoot] to [destRoot] (rsync-like).
+  /// - Copies files whose mtime or size differ.
+  /// - Creates missing directories.
+  /// - Removes files/dirs in dest that no longer exist in source.
+  Future<void> _rsyncDirectory(String srcRoot, String destRoot) async {
+    final srcDir = Directory(srcRoot);
+    final destDir = Directory(destRoot);
+
+    // Collect all source relative paths for stale-file cleanup.
+    final sourceRelPaths = <String>{};
+
+    await for (final entity
+        in srcDir.list(recursive: true, followLinks: false)) {
+      final relPath = path.relative(entity.path, from: srcRoot);
+      sourceRelPaths.add(relPath);
+
+      final destPath = path.join(destRoot, relPath);
+
+      if (entity is Directory) {
+        final d = Directory(destPath);
+        if (!await d.exists()) {
+          await d.create(recursive: true);
+        }
+      } else if (entity is File) {
+        final destFile = File(destPath);
+        bool needsCopy = true;
+
+        if (await destFile.exists()) {
+          final srcStat = await entity.stat();
+          final destStat = await destFile.stat();
+          // Skip if same size and dest is not older than source.
+          if (srcStat.size == destStat.size &&
+              !srcStat.modified.isAfter(destStat.modified)) {
+            needsCopy = false;
+          }
+        }
+
+        if (needsCopy) {
+          final parentDir = Directory(path.dirname(destPath));
+          if (!await parentDir.exists()) {
+            await parentDir.create(recursive: true);
+          }
+          await entity.copy(destPath);
+        }
+      }
+    }
+
+    // Remove stale files/dirs in dest that no longer exist in source.
+    if (await destDir.exists()) {
+      final destEntities = <FileSystemEntity>[];
+      await for (final entity
+          in destDir.list(recursive: true, followLinks: false)) {
+        destEntities.add(entity);
+      }
+      // Process in reverse order (deepest first) so dirs are empty before removal.
+      destEntities.sort((a, b) => b.path.length.compareTo(a.path.length));
+      for (final entity in destEntities) {
+        final relPath = path.relative(entity.path, from: destRoot);
+        if (!sourceRelPaths.contains(relPath)) {
+          try {
+            if (entity is File) {
+              await entity.delete();
+            } else if (entity is Directory) {
+              await entity.delete(recursive: true);
+            }
+          } catch (e) {
+            _logger.warning('Failed to remove stale path: ${entity.path}: $e');
+          }
+        }
+      }
+    }
+  }
+
+  /// Resolve a working directory path (relative to workspace) to an absolute path.
+  /// [workingDirectory] is stored as e.g. '' (workspace root) or 'my-data'.
+  /// Creates the directory recursively if it does not exist.
+  Future<String> resolveWorkingDirectory(
+      String userId, String workingDirectory) async {
+    final absPath = workingDirectory.isEmpty
+        ? getWorkspacePath(userId)
+        : path.normalize(path.join(getWorkspacePath(userId), workingDirectory));
+    final dir = Directory(absPath);
+    if (!await dir.exists()) {
+      await dir.create(recursive: true);
+    }
+    return absPath;
   }
 
   String getProfilePath(String userId) {

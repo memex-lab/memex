@@ -102,6 +102,7 @@ class ChatService {
     // 2. Initialize Agent
     StatefulAgent? agent;
     AgentController? controller;
+    SkillSyncResult? skillSync;
 
     try {
       // Check if this session belongs to a custom agent by reading session metadata,
@@ -143,6 +144,15 @@ class ChatService {
         // Recreate the same agent type used by custom_agent_task_handler.
         final skillDir = _fileService.resolveSkillPath(
             userId, customAgentCfg.skillDirectoryPath);
+        final workingDirAbs = await _fileService.resolveWorkingDirectory(
+            userId, customAgentCfg.workingDirectory);
+
+        // Sync skill directory into workingDirectory if it's outside,
+        // so file tools (Read, LS, etc.) can access skill files.
+        skillSync = await _fileService.syncSkillsIfNeeded(
+          skillAbsPath: skillDir,
+          workingDirAbsPath: workingDirAbs,
+        );
 
         switch (customAgentCfg.hostAgentType) {
           case HostAgentType.pure:
@@ -152,8 +162,8 @@ class ChatService {
               userId: userId,
               name: agentName ?? 'custom_agent',
               state: state,
-              skillDirectoryPath: skillDir,
-              workingDirectory: customAgentCfg.workingDirectory,
+              skillDirectoryPath: skillSync.effectivePath,
+              workingDirectory: workingDirAbs,
               controller: controller,
               additionalSystemPrompt: customAgentCfg.systemPrompt,
             );
@@ -165,8 +175,8 @@ class ChatService {
               userId: userId,
               name: agentName ?? 'custom_agent',
               state: state,
-              skillDirectoryPath: skillDir,
-              workingDirectory: customAgentCfg.workingDirectory,
+              skillDirectoryPath: skillSync.effectivePath,
+              workingDirectory: workingDirAbs,
               controller: controller,
               additionalSystemPrompt: customAgentCfg.systemPrompt,
             );
@@ -283,7 +293,16 @@ When the user disputes content you generated (such as Cards, PKM entries, or Ass
     ]));
 
     // We don't await the result here, we rely on AgentStoppedEvent to handle completion
-    agent.run(userMessages).catchError((e) {
+    agent.run(userMessages).whenComplete(() async {
+      // Sync skill changes back to the original directory if we made a copy.
+      if (skillSync != null) {
+        try {
+          await _fileService.syncSkillsBack(skillSync);
+        } catch (e) {
+          _logger.warning('Failed to sync skills back: $e');
+        }
+      }
+    }).catchError((e) {
       // This catchError is for synchronous errors during startup or unhandled async errors
       // causing the run future to fail before AgentStoppedEvent might be emitted (though AgentStoppedEvent is in finally block)
       _logger.severe('Agent run failed (catchError)', e);

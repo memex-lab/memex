@@ -7,7 +7,6 @@ import 'package:memex/agent/common_tools.dart';
 import 'package:memex/agent/flutter_js_runtime.dart';
 import 'package:memex/agent/security/file_permission_manager.dart';
 import 'package:memex/agent/state_util.dart';
-import 'package:memex/data/services/file_system_service.dart';
 import 'package:logging/logging.dart';
 import 'package:memex/utils/logger.dart';
 
@@ -29,18 +28,14 @@ class PureSkillHostAgent {
     required String name,
     required AgentState state,
     required String skillDirectoryPath,
-    String? workingDirectory,
+    required String workingDirectory,
     AgentController? controller,
     bool disableSubAgents = true,
     String? additionalSystemPrompt,
   }) async {
-    final fileService = FileSystemService.instance;
-
     controller = controller ?? AgentController();
     addAgentLogger(controller);
     addAgentActivityCollector(controller);
-
-    workingDirectory ??= fileService.getWorkspacePath(userId);
 
     final permissionManager = FilePermissionManager(userId, [
       PermissionRule(rootPath: workingDirectory, access: FileAccessType.write),
