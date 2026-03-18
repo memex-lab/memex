@@ -6,6 +6,7 @@ import 'package:memex/ui/timeline/widgets/timeline_template_gallery_page.dart';
 import 'package:memex/ui/settings/widgets/log_viewer_page.dart';
 import 'package:memex/ui/settings/widgets/async_task_list_page.dart';
 import 'package:memex/ui/settings/widgets/custom_agent_config_page.dart';
+import 'package:memex/ui/settings/widgets/skills_management_page.dart';
 
 class DebugSettingsPage extends StatelessWidget {
   final Future<void> Function() onClearToken;
@@ -81,6 +82,20 @@ class DebugSettingsPage extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (context) => const CustomAgentConfigPage(),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+          _buildFunctionTab(
+            context: context,
+            icon: Icons.folder_special_outlined,
+            title: UserStorage.l10n.skillsManagement,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const SkillsManagementPage(),
                 ),
               );
             },

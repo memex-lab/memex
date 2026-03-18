@@ -803,5 +803,48 @@
   "systemPromptHint": "Additional instructions appended to host agent prompt",
   "eventSerializer": "Event Serializer",
   "eventSerializerDefault": "Default (XML)",
-  "enabledLabel": "Enabled"
+  "enabledLabel": "Enabled",
+
+  "skillsManagement": "Skills Management",
+  "skillsManagementEmpty": "No skills yet",
+  "downloadSkill": "Download Skill",
+  "downloadSkillHint": "Enter skill zip URL",
+  "downloading": "Downloading...",
+  "downloadSuccess": "Skill downloaded successfully",
+  "downloadFailed": "Download failed: {error}",
+  "@downloadFailed": {
+    "placeholders": {
+      "error": { "type": "Object" }
+    }
+  },
+  "deleteConfirm": "Confirm Delete",
+  "deleteConfirmMessage": "Are you sure you want to delete \"{name}\"?",
+  "@deleteConfirmMessage": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "emptyDirectory": "Empty directory",
+  "invalidUrl": "Please enter a valid URL",
+  "urlHint": "https://example.com/skill.zip",
+  "newFolder": "New Folder",
+  "newFile": "New File",
+  "folderName": "Folder Name",
+  "fileName": "File Name",
+  "nameRequired": "Name is required",
+  "nameInvalid": "Name cannot contain / or ..",
+  "createFailed": "Create failed: {error}",
+  "@createFailed": {
+    "placeholders": {
+      "error": { "type": "Object" }
+    }
+  },
+  "fileContent": "File Content",
+  "saveSuccess": "Saved successfully",
+  "downloadToCurrentDir": "The zip will be extracted to current directory: {dir}",
+  "@downloadToCurrentDir": {
+    "placeholders": {
+      "dir": { "type": "String" }
+    }
+  }
 }

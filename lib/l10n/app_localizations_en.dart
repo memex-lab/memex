@@ -1778,4 +1778,78 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get enabledLabel => 'Enabled';
+
+  @override
+  String get skillsManagement => 'Skills Management';
+
+  @override
+  String get skillsManagementEmpty => 'No skills yet';
+
+  @override
+  String get downloadSkill => 'Download Skill';
+
+  @override
+  String get downloadSkillHint => 'Enter skill zip URL';
+
+  @override
+  String get downloading => 'Downloading...';
+
+  @override
+  String get downloadSuccess => 'Skill downloaded successfully';
+
+  @override
+  String downloadFailed(Object error) {
+    return 'Download failed: $error';
+  }
+
+  @override
+  String get deleteConfirm => 'Confirm Delete';
+
+  @override
+  String deleteConfirmMessage(String name) {
+    return 'Are you sure you want to delete \"$name\"?';
+  }
+
+  @override
+  String get emptyDirectory => 'Empty directory';
+
+  @override
+  String get invalidUrl => 'Please enter a valid URL';
+
+  @override
+  String get urlHint => 'https://example.com/skill.zip';
+
+  @override
+  String get newFolder => 'New Folder';
+
+  @override
+  String get newFile => 'New File';
+
+  @override
+  String get folderName => 'Folder Name';
+
+  @override
+  String get fileName => 'File Name';
+
+  @override
+  String get nameRequired => 'Name is required';
+
+  @override
+  String get nameInvalid => 'Name cannot contain / or ..';
+
+  @override
+  String createFailed(Object error) {
+    return 'Create failed: $error';
+  }
+
+  @override
+  String get fileContent => 'File Content';
+
+  @override
+  String get saveSuccess => 'Saved successfully';
+
+  @override
+  String downloadToCurrentDir(String dir) {
+    return 'The zip will be extracted to current directory: $dir';
+  }
 }

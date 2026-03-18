@@ -1717,4 +1717,78 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get enabledLabel => '启用';
+
+  @override
+  String get skillsManagement => 'Skills 管理';
+
+  @override
+  String get skillsManagementEmpty => '暂无 Skill';
+
+  @override
+  String get downloadSkill => '下载 Skill';
+
+  @override
+  String get downloadSkillHint => '输入 Skill zip 文件 URL';
+
+  @override
+  String get downloading => '下载中...';
+
+  @override
+  String get downloadSuccess => 'Skill 下载成功';
+
+  @override
+  String downloadFailed(Object error) {
+    return '下载失败：$error';
+  }
+
+  @override
+  String get deleteConfirm => '确认删除';
+
+  @override
+  String deleteConfirmMessage(String name) {
+    return '确定要删除「$name」吗？';
+  }
+
+  @override
+  String get emptyDirectory => '空目录';
+
+  @override
+  String get invalidUrl => '请输入有效的 URL';
+
+  @override
+  String get urlHint => 'https://example.com/skill.zip';
+
+  @override
+  String get newFolder => '新建文件夹';
+
+  @override
+  String get newFile => '新建文件';
+
+  @override
+  String get folderName => '文件夹名称';
+
+  @override
+  String get fileName => '文件名';
+
+  @override
+  String get nameRequired => '名称不能为空';
+
+  @override
+  String get nameInvalid => '名称不能包含 / 或 ..';
+
+  @override
+  String createFailed(Object error) {
+    return '创建失败：$error';
+  }
+
+  @override
+  String get fileContent => '文件内容';
+
+  @override
+  String get saveSuccess => '保存成功';
+
+  @override
+  String downloadToCurrentDir(String dir) {
+    return 'zip 将解压到当前目录：$dir';
+  }
 }

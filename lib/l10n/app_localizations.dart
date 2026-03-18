@@ -3271,6 +3271,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enabled'**
   String get enabledLabel;
+
+  /// No description provided for @skillsManagement.
+  ///
+  /// In en, this message translates to:
+  /// **'Skills Management'**
+  String get skillsManagement;
+
+  /// No description provided for @skillsManagementEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No skills yet'**
+  String get skillsManagementEmpty;
+
+  /// No description provided for @downloadSkill.
+  ///
+  /// In en, this message translates to:
+  /// **'Download Skill'**
+  String get downloadSkill;
+
+  /// No description provided for @downloadSkillHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter skill zip URL'**
+  String get downloadSkillHint;
+
+  /// No description provided for @downloading.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading...'**
+  String get downloading;
+
+  /// No description provided for @downloadSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Skill downloaded successfully'**
+  String get downloadSuccess;
+
+  /// No description provided for @downloadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Download failed: {error}'**
+  String downloadFailed(Object error);
+
+  /// No description provided for @deleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Delete'**
+  String get deleteConfirm;
+
+  /// No description provided for @deleteConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete \"{name}\"?'**
+  String deleteConfirmMessage(String name);
+
+  /// No description provided for @emptyDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Empty directory'**
+  String get emptyDirectory;
+
+  /// No description provided for @invalidUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid URL'**
+  String get invalidUrl;
+
+  /// No description provided for @urlHint.
+  ///
+  /// In en, this message translates to:
+  /// **'https://example.com/skill.zip'**
+  String get urlHint;
+
+  /// No description provided for @newFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'New Folder'**
+  String get newFolder;
+
+  /// No description provided for @newFile.
+  ///
+  /// In en, this message translates to:
+  /// **'New File'**
+  String get newFile;
+
+  /// No description provided for @folderName.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder Name'**
+  String get folderName;
+
+  /// No description provided for @fileName.
+  ///
+  /// In en, this message translates to:
+  /// **'File Name'**
+  String get fileName;
+
+  /// No description provided for @nameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Name is required'**
+  String get nameRequired;
+
+  /// No description provided for @nameInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Name cannot contain / or ..'**
+  String get nameInvalid;
+
+  /// No description provided for @createFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Create failed: {error}'**
+  String createFailed(Object error);
+
+  /// No description provided for @fileContent.
+  ///
+  /// In en, this message translates to:
+  /// **'File Content'**
+  String get fileContent;
+
+  /// No description provided for @saveSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved successfully'**
+  String get saveSuccess;
+
+  /// No description provided for @downloadToCurrentDir.
+  ///
+  /// In en, this message translates to:
+  /// **'The zip will be extracted to current directory: {dir}'**
+  String downloadToCurrentDir(String dir);
 }
 
 class _AppLocalizationsDelegate
