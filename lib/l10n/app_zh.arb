@@ -728,6 +728,15 @@
   "customFolderAccessDenied": "无法读写该文件夹，请授予存储权限或选择其他位置。",
   "configured": "已配置",
   "apiKeyNotSet": "API Key 未设置 — 点击配置",
+  "bottomNavTimeline": "记录",
+  "bottomNavLibrary": "知识库",
+  "aiGeneratedLabel": "AI 生成",
+  "@sourceTraceWithCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "sourceTraceWithCount": "追溯（{count}）",
 
   "deleteAccount": "删除账户",
   "deleteAccountDesc": "永久删除所有本地数据并重置应用。",

@@ -4,6 +4,7 @@ import 'package:memex/domain/models/timeline_card_model.dart';
 import 'package:memex/ui/core/cards/native_card_factory.dart';
 import 'package:memex/ui/core/widgets/html_webview_card.dart';
 import 'package:memex/ui/timeline/widgets/timeline_card_detail_screen.dart';
+import 'package:memex/utils/user_storage.dart';
 
 class RelatedFactsList extends StatefulWidget {
   final List<String> factIds;
@@ -114,7 +115,7 @@ class _RelatedFactsListState extends State<RelatedFactsList> {
           children: [
             // Date Header
             Text(
-              card.displayTime,
+              card.displayTime(UserStorage.l10n),
               style: const TextStyle(
                 fontSize: 12,
                 color: Color(0xFF64748B),

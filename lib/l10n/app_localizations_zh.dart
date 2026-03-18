@@ -1569,6 +1569,20 @@ class AppLocalizationsZh extends AppLocalizations {
   String get apiKeyNotSet => 'API Key 未设置 — 点击配置';
 
   @override
+  String get bottomNavTimeline => '记录';
+
+  @override
+  String get bottomNavLibrary => '知识库';
+
+  @override
+  String get aiGeneratedLabel => 'AI 生成';
+
+  @override
+  String sourceTraceWithCount(Object count) {
+    return '追溯（$count）';
+  }
+
+  @override
   String get deleteAccount => '删除账户';
 
   @override

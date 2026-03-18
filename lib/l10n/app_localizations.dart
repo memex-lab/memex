@@ -2990,6 +2990,30 @@ abstract class AppLocalizations {
   /// **'API Key not set — tap to configure'**
   String get apiKeyNotSet;
 
+  /// No description provided for @bottomNavTimeline.
+  ///
+  /// In en, this message translates to:
+  /// **'Timeline'**
+  String get bottomNavTimeline;
+
+  /// No description provided for @bottomNavLibrary.
+  ///
+  /// In en, this message translates to:
+  /// **'Library'**
+  String get bottomNavLibrary;
+
+  /// No description provided for @aiGeneratedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'AI Generated'**
+  String get aiGeneratedLabel;
+
+  /// No description provided for @sourceTraceWithCount.
+  ///
+  /// In en, this message translates to:
+  /// **'SOURCE TRACE ({count})'**
+  String sourceTraceWithCount(Object count);
+
   /// No description provided for @deleteAccount.
   ///
   /// In en, this message translates to:

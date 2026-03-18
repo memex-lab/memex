@@ -733,6 +733,15 @@
   },
   "configured": "Configured",
   "apiKeyNotSet": "API Key not set — tap to configure",
+  "bottomNavTimeline": "Timeline",
+  "bottomNavLibrary": "Library",
+  "aiGeneratedLabel": "AI Generated",
+  "@sourceTraceWithCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "sourceTraceWithCount": "SOURCE TRACE ({count})",
 
   "deleteAccount": "Delete Account",
   "deleteAccountDesc": "Permanently delete all local data and reset the app.",

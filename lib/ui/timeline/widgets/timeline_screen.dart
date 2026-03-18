@@ -1167,7 +1167,7 @@ class _TimelineEntryItemState extends State<_TimelineEntryItem> {
       child: Row(
         children: [
           Text(
-            card.displayTime,
+            card.displayTime(UserStorage.l10n),
             style: const TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.bold,

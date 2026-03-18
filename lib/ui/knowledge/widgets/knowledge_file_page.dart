@@ -188,7 +188,9 @@ class _KnowledgeFilePageState extends State<KnowledgeFilePage> {
                                       const Icon(Icons.link,
                                           size: 12, color: Color(0xFF94A3B8)),
                                       const SizedBox(width: 4),
-                                      Text('SOURCE TRACE (${_factIds.length})',
+                                      Text(
+                                          UserStorage.l10n.sourceTraceWithCount(
+                                              _factIds.length),
                                           style: const TextStyle(
                                               fontSize: 10,
                                               fontWeight: FontWeight.bold,
@@ -274,7 +276,7 @@ class _KnowledgeFilePageState extends State<KnowledgeFilePage> {
                       0xFFE2E8F0)), // Slate 200, slightly lighter separator
               const SizedBox(width: 8),
               Text(
-                card.displayTime,
+                card.displayTime(UserStorage.l10n),
                 style: const TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
