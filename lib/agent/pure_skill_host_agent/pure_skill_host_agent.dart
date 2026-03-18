@@ -87,7 +87,8 @@ class PureSkillHostAgent {
       autoSaveStateFunc: (state) async {
         await saveAgentState(state);
       },
-      systemCallback: createSystemCallback(userId),
+      systemCallback:
+          createSystemCallbackWithWorkingDirectory(userId, workingDirectory),
     );
 
     _logger.info(
