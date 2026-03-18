@@ -13,9 +13,14 @@ typedef EventTaskDependencyBuilder = Future<List<String>> Function(
   SystemEvent event,
 );
 
-typedef EventSyncHandler = Future<void> Function(
+typedef EventSyncHandler<T> = Future<void> Function(
   String userId,
-  SystemEvent event,
+  SystemEvent<T> event,
+);
+
+typedef EventSyncDependencyBuilder<T> = Future<List<String>> Function(
+  String userId,
+  SystemEvent<T> event,
 );
 
 class EventTaskSubscription {
@@ -39,7 +44,7 @@ class EventTaskSubscription {
 }
 
 /// 同步订阅：publish 时直接 await 执行 handler，而非入队任务。
-class EventSyncSubscription {
+class EventSyncSubscription<T> {
   EventSyncSubscription({
     required this.subscriptionId,
     required this.handler,
@@ -48,13 +53,25 @@ class EventSyncSubscription {
   });
 
   final String subscriptionId;
-  final EventSyncHandler handler;
+  final EventSyncHandler<T> handler;
 
   /// 静态依赖：依赖的其他同步订阅 ID，会在这些订阅执行完毕后再执行。
   final List<String> dependsOn;
 
   /// 动态依赖：运行时根据事件内容决定额外依赖哪些同步订阅 ID。
-  final EventTaskDependencyBuilder? dependenciesBuilder;
+  final EventSyncDependencyBuilder<T>? dependenciesBuilder;
+
+  /// 内部调用：类型擦除后通过 dynamic cast 执行 handler。
+  Future<void> _invokeHandler(String userId, SystemEvent event) async {
+    await handler(userId, event as SystemEvent<T>);
+  }
+
+  /// 内部调用：类型擦除后通过 dynamic cast 执行 dependenciesBuilder。
+  Future<List<String>> _invokeDependenciesBuilder(
+      String userId, SystemEvent event) async {
+    if (dependenciesBuilder == null) return const [];
+    return dependenciesBuilder!(userId, event as SystemEvent<T>);
+  }
 }
 
 class GlobalEventBus {
@@ -95,9 +112,9 @@ class GlobalEventBus {
 
   // ---- 同步订阅 ----
 
-  void subscribeSync({
+  void subscribeSync<T>({
     required String eventType,
-    required EventSyncSubscription subscription,
+    required EventSyncSubscription<T> subscription,
   }) {
     final list = _syncSubscriptions.putIfAbsent(eventType, () => []);
     list.removeWhere((s) => s.subscriptionId == subscription.subscriptionId);
@@ -115,9 +132,9 @@ class GlobalEventBus {
     list.removeWhere((s) => s.subscriptionId == subscriptionId);
   }
 
-  Future<List<String>> publish({
+  Future<List<String>> publish<T>({
     required String userId,
-    required SystemEvent event,
+    required SystemEvent<T> event,
     List<String>? baseDependencies,
   }) async {
     // 先执行同步订阅者（拓扑排序，支持依赖关系）
@@ -130,7 +147,7 @@ class GlobalEventBus {
           await _resolveSyncExecutionOrder(syncSubs, userId, event);
       for (final sub in orderedSyncSubs) {
         try {
-          await sub.handler(userId, event);
+          await sub._invokeHandler(userId, event);
         } catch (e, st) {
           _logger.severe(
               'Sync subscriber ${sub.subscriptionId} failed for event ${event.type}',
@@ -171,10 +188,7 @@ class GlobalEventBus {
       final taskId = await _taskExecutor.enqueueTask(
         userId: userId,
         taskType: subscription.taskType,
-        payload: {
-          ...payload,
-          ...event.toMap(),
-        },
+        payload: payload,
         priority: subscription.priority,
         maxRetries: subscription.maxRetries,
         // Use a shared bizId for all tasks spawned by the same event.
@@ -258,9 +272,7 @@ class GlobalEventBus {
     final allDependencies = <String, List<String>>{};
     for (final sub in subscriptions) {
       final deps = <String>[...sub.dependsOn];
-      if (sub.dependenciesBuilder != null) {
-        deps.addAll(await sub.dependenciesBuilder!(userId, event));
-      }
+      deps.addAll(await sub._invokeDependenciesBuilder(userId, event));
       allDependencies[sub.subscriptionId] = deps;
     }
 

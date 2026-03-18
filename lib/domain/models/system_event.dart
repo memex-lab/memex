@@ -1,4 +1,4 @@
-class SystemEvent {
+class SystemEvent<T> {
   SystemEvent({
     required this.type,
     required this.payload,
@@ -10,19 +10,9 @@ class SystemEvent {
 
   final String eventId;
   final String type;
-  final Map<String, dynamic> payload;
+  final T payload;
   final String source;
   final DateTime createdAt;
-
-  Map<String, dynamic> toMap() {
-    return {
-      'event_id': eventId,
-      'event_type': type,
-      'event_source': source,
-      'event_created_at': createdAt.toIso8601String(),
-      'event_payload': payload,
-    };
-  }
 }
 
 class SystemEventTypes {
@@ -30,4 +20,36 @@ class SystemEventTypes {
   static const String cardCommentPosted = 'card_comment_posted';
   static const String knowledgeInsightRefreshRequested =
       'knowledge_insight_refresh_requested';
+}
+
+// ---- Payload 类型 ----
+
+class UserInputSubmittedPayload {
+  UserInputSubmittedPayload({
+    required this.factId,
+    required this.assetPaths,
+    required this.combinedText,
+    required this.markdownEntry,
+    required this.createdAtTs,
+    required this.pkmCreatedAtTs,
+  });
+
+  final String factId;
+  final List<String> assetPaths;
+  final String combinedText;
+  final String markdownEntry;
+  final int createdAtTs;
+  final double pkmCreatedAtTs;
+}
+
+class CardCommentPostedPayload {
+  CardCommentPostedPayload({
+    required this.cardId,
+    required this.content,
+    required this.commentId,
+  });
+
+  final String cardId;
+  final String content;
+  final String commentId;
 }

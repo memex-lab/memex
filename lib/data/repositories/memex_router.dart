@@ -133,9 +133,10 @@ class MemexRouter {
         subscriptionId: 'analyze_assets',
         taskType: 'handle_analyze_assets',
         payloadBuilder: (_, event) {
+          final p = event.payload as UserInputSubmittedPayload;
           return Future.value({
-            'fact_id': event.payload['fact_id'],
-            'asset_paths': event.payload['asset_paths'] ?? const [],
+            'fact_id': p.factId,
+            'asset_paths': p.assetPaths,
           });
         },
       ),
@@ -148,11 +149,12 @@ class MemexRouter {
         taskType: 'card_agent_task',
         dependsOn: const ['analyze_assets'],
         payloadBuilder: (_, event) {
+          final p = event.payload as UserInputSubmittedPayload;
           return Future.value({
-            'fact_id': event.payload['fact_id'],
-            'combined_text': event.payload['combined_text'],
-            'markdown_entry': event.payload['markdown_entry'],
-            'created_at_ts': event.payload['created_at_ts'],
+            'fact_id': p.factId,
+            'combined_text': p.combinedText,
+            'markdown_entry': p.markdownEntry,
+            'created_at_ts': p.createdAtTs,
           });
         },
       ),
@@ -165,10 +167,11 @@ class MemexRouter {
         taskType: 'pkm_agent_task',
         dependsOn: const ['analyze_assets'],
         payloadBuilder: (_, event) {
+          final p = event.payload as UserInputSubmittedPayload;
           return Future.value({
-            'fact_id': event.payload['fact_id'],
-            'combined_text': event.payload['combined_text'],
-            'created_at_ts': event.payload['pkm_created_at_ts'],
+            'fact_id': p.factId,
+            'combined_text': p.combinedText,
+            'created_at_ts': p.pkmCreatedAtTs,
           });
         },
         dependenciesBuilder: (_, __) async {
@@ -186,10 +189,11 @@ class MemexRouter {
         taskType: 'comment_agent_task',
         dependsOn: const ['pkm_agent'],
         payloadBuilder: (_, event) {
+          final p = event.payload as UserInputSubmittedPayload;
           return Future.value({
-            'fact_id': event.payload['fact_id'],
-            'combined_text': event.payload['combined_text'],
-            'created_at_ts': event.payload['created_at_ts'],
+            'fact_id': p.factId,
+            'combined_text': p.combinedText,
+            'created_at_ts': p.createdAtTs,
           });
         },
       ),
@@ -201,10 +205,11 @@ class MemexRouter {
         subscriptionId: 'ai_reply',
         taskType: 'process_ai_reply',
         payloadBuilder: (_, event) {
+          final p = event.payload as CardCommentPostedPayload;
           return Future.value({
-            'card_id': event.payload['card_id'],
-            'content': event.payload['content'],
-            'comment_id': event.payload['comment_id'],
+            'card_id': p.cardId,
+            'content': p.content,
+            'comment_id': p.commentId,
           });
         },
       ),
@@ -215,7 +220,7 @@ class MemexRouter {
       subscription: EventTaskSubscription(
         subscriptionId: 'knowledge_insight_refresh',
         taskType: 'knowledge_insight_task',
-        payloadBuilder: (_, event) => Future.value(event.payload),
+        payloadBuilder: (_, event) => Future.value(const {}),
       ),
     );
   }

@@ -218,14 +218,14 @@ Future<Map<String, dynamic>> submitInput(
       event: SystemEvent(
         type: SystemEventTypes.userInputSubmitted,
         source: 'submit_input.submitInput',
-        payload: {
-          'fact_id': factId,
-          'asset_paths': assetPaths,
-          'combined_text': combinedText,
-          'markdown_entry': markdownEntry,
-          'created_at_ts': publishTimestamp,
-          'pkm_created_at_ts': now.millisecondsSinceEpoch / 1000.0,
-        },
+        payload: UserInputSubmittedPayload(
+          factId: factId,
+          assetPaths: assetPaths,
+          combinedText: combinedText,
+          markdownEntry: markdownEntry,
+          createdAtTs: publishTimestamp,
+          pkmCreatedAtTs: now.millisecondsSinceEpoch / 1000.0,
+        ),
       ),
     );
 

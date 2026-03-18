@@ -78,11 +78,11 @@ Future<Map<String, dynamic>> postCommentEndpoint(
       event: SystemEvent(
         type: SystemEventTypes.cardCommentPosted,
         source: 'post_comment.postCommentEndpoint',
-        payload: {
-          'card_id': cardId,
-          'content': content,
-          'comment_id': commentId,
-        },
+        payload: CardCommentPostedPayload(
+          cardId: cardId,
+          content: content,
+          commentId: commentId,
+        ),
       ),
     );
 
