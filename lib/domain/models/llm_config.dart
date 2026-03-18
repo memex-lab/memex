@@ -18,6 +18,44 @@ class LLMConfig {
   static const String typeOpenRouter = 'openrouter';
   static const String typeOllama = 'ollama';
 
+  /// User-friendly display name for a provider type.
+  /// Only OpenAI and Anthropic types need special handling since their
+  /// dropdown sub-items show generic labels like "API Key".
+  static String providerDisplayName(String type) {
+    switch (type) {
+      case typeChatCompletion:
+        return 'OpenAI (API Key)';
+      case typeResponses:
+        return 'OpenAI (Responses API)';
+      case typeOpenAiOauth:
+        return 'ChatGPT (OAuth)';
+      case typeClaude:
+        return 'Anthropic Claude (API Key)';
+      case typeBedrockClaude:
+        return 'AWS Bedrock Claude';
+      case typeGemini:
+        return 'Google Gemini';
+      case typeGeminiOauth:
+        return 'Google Gemini (OAuth)';
+      case typeKimi:
+        return 'Kimi';
+      case typeQwen:
+        return 'Aliyun';
+      case typeSeed:
+        return 'Volcengine';
+      case typeZhipu:
+        return 'Zhipu';
+      case typeMinimax:
+        return 'MiniMax';
+      case typeOpenRouter:
+        return 'OpenRouter';
+      case typeOllama:
+        return 'Ollama';
+      default:
+        return type;
+    }
+  }
+
   /// Maps provider types that are compatible with existing client protocols.
   /// Returns the underlying client type to use, or null if the type is native.
   static String? underlyingClientType(String type) {

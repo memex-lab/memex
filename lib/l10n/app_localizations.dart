@@ -3013,6 +3013,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'SOURCE TRACE ({count})'**
   String sourceTraceWithCount(Object count);
+
+  /// No description provided for @deleteAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Account'**
+  String get deleteAccount;
+
+  /// No description provided for @deleteAccountDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Permanently delete all local data and reset the app.'**
+  String get deleteAccountDesc;
+
+  /// No description provided for @deleteAccountConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Account?'**
+  String get deleteAccountConfirmTitle;
+
+  /// No description provided for @deleteAccountConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This will permanently delete all your data including timeline cards, knowledge base, recordings, and settings. This action cannot be undone.'**
+  String get deleteAccountConfirmMessage;
+
+  /// No description provided for @deleteAccountSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'All data has been deleted.'**
+  String get deleteAccountSuccess;
+
+  /// No description provided for @deleteAccountTypeName.
+  ///
+  /// In en, this message translates to:
+  /// **'Type \"{name}\" to confirm'**
+  String deleteAccountTypeName(Object name);
+
+  /// No description provided for @deleteAccountTypeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your username to confirm'**
+  String get deleteAccountTypeHint;
+
+  /// No description provided for @llmConsentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Data Sharing Consent'**
+  String get llmConsentTitle;
+
+  /// No description provided for @llmConsentMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'To enable AI features, Memex needs to send your data to {provider} for processing. This includes:\n\n• Text you enter (notes, voice transcriptions)\n• Photo metadata and extracted text (OCR)\n• Health and fitness summaries\n• Timeline card content\n\nYour data is sent directly from your device to {provider}. Memex does not store or relay your data through any other server.\n\nPlease review {provider}\'s privacy policy for how they handle your data.\n\nDo you agree to send your data to {provider} for AI processing?'**
+  String llmConsentMessage(Object provider);
+
+  /// No description provided for @llmConsentAgree.
+  ///
+  /// In en, this message translates to:
+  /// **'I Agree'**
+  String get llmConsentAgree;
+
+  /// No description provided for @llmConsentDecline.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline'**
+  String get llmConsentDecline;
 }
 
 class _AppLocalizationsDelegate

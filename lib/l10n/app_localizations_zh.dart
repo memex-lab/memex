@@ -1581,4 +1581,42 @@ class AppLocalizationsZh extends AppLocalizations {
   String sourceTraceWithCount(Object count) {
     return '追溯（$count）';
   }
+
+  @override
+  String get deleteAccount => '删除账户';
+
+  @override
+  String get deleteAccountDesc => '永久删除所有本地数据并重置应用。';
+
+  @override
+  String get deleteAccountConfirmTitle => '确认删除账户？';
+
+  @override
+  String get deleteAccountConfirmMessage =>
+      '此操作将永久删除您的所有数据，包括时间线卡片、知识库、录音和设置。此操作不可撤销。';
+
+  @override
+  String get deleteAccountSuccess => '所有数据已删除。';
+
+  @override
+  String deleteAccountTypeName(Object name) {
+    return '输入 \"$name\" 以确认';
+  }
+
+  @override
+  String get deleteAccountTypeHint => '输入用户名以确认';
+
+  @override
+  String get llmConsentTitle => '数据共享同意';
+
+  @override
+  String llmConsentMessage(Object provider) {
+    return '为了启用 AI 功能，Memex 需要将您的数据发送至 $provider 进行处理，包括：\n\n• 您输入的文字（笔记、语音转录）\n• 照片元数据和提取的文字（OCR）\n• 健康与健身摘要\n• 时间线卡片内容\n\n数据将直接从您的设备发送至 $provider，Memex 不会通过任何其他服务器存储或中转您的数据。\n\n请查阅 $provider 的隐私政策了解其数据处理方式。\n\n您是否同意将数据发送至 $provider 进行 AI 处理？';
+  }
+
+  @override
+  String get llmConsentAgree => '我同意';
+
+  @override
+  String get llmConsentDecline => '拒绝';
 }

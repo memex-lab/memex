@@ -21,7 +21,14 @@ Memex connects to third-party LLM (Large Language Model) providers only when you
 - Anthropic Claude
 - AWS Bedrock
 
-When you use these services, your input content is sent to the provider you selected to generate AI responses. This is the only scenario in which data leaves your device. Please refer to each provider's own privacy policy for details on how they handle your data:
+When you use these services, the following types of data may be sent to the provider you selected:
+
+- Text you enter (notes, voice transcriptions)
+- Photo metadata and text extracted by on-device OCR
+- Health and fitness summaries (if you have enabled health data collection)
+- Timeline card content used for AI analysis and insight generation
+
+This data is sent directly from your device to the provider. Memex does not relay, store, or process your data through any intermediary server. This is the only scenario in which data leaves your device. Please refer to each provider's own privacy policy for details on how they handle your data:
 
 - [Google Privacy Policy](https://policies.google.com/privacy)
 - [OpenAI Privacy Policy](https://openai.com/privacy)
@@ -65,7 +72,7 @@ All your data is stored locally on your device. Memex does not retain any data o
 
 - **Retention**: Your data remains on your device for as long as you keep the App installed and choose to retain it. There is no server-side retention period because no data is transmitted to or stored on our servers.
 - **Deleting individual records**: You can delete any record (text, photo, voice recording, card, knowledge entry, etc.) directly within the App at any time. Deleted records are permanently removed from the local database and cannot be recovered.
-- **Deleting all data**: You can remove all App data at any time by uninstalling Memex from your device, or by clearing the App's data through your device's system settings. This permanently deletes all locally stored data, including the database, files, and cached content.
+- **Deleting all data**: You can delete all your data by using the "Delete Account" option in Settings, which permanently erases the local database, workspace files, and all preferences, and resets the app to its initial state. Alternatively, you can uninstall Memex or clear the app's data through your device's system settings.
 - **Third-party LLM providers**: Any data previously sent to a third-party LLM provider during AI interactions is subject to that provider's own data retention and deletion policies. Please refer to the provider's privacy policy (linked above) for instructions on how to request deletion of data they may have processed.
 
 ## Children's Privacy
