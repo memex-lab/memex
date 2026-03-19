@@ -22,6 +22,8 @@
 
 Memex is a local-first, AI-native personal knowledge management app. Capture text, photos, and voice — a multi-agent system automatically organizes your records into structured timeline cards, extracts knowledge, and generates insights across your entries.
 
+Under the hood, Memex's multi-agent intelligence is powered by a fully open Custom Agent System — you can use the same engine to orchestrate and run your own agents. If you're curious about building autonomous workflows on your phone, [jump straight to the details](#-custom-agent-system).
+
 All data stays on your device. You just need to pick your preferred LLM provider.
 
 <div align="center">
@@ -94,6 +96,50 @@ Memex requires an LLM API key to power its AI features. On first launch:
 3. Enter your API key and base URL
 4. Each agent can be configured with a different model independently
 
+## 🧩 Custom Agent System
+
+Memex isn't just a note-taking app — it's a platform that lets you build your own AI agents on your phone.
+
+Every built-in agent in Memex (knowledge extraction, card generation, insight discovery…) runs on the same custom agent infrastructure, and that infrastructure is fully open to you. That means you can create agents with the same capabilities as the built-in ones.
+
+### What You Can Build
+
+- 🎯 **Create agents freely** — Give it a name, pick a host type (Pure mode), and a new agent is ready to go.
+- ⚡ **Event-driven triggers** — Choose when your agent activates: on user input, after knowledge extraction, on card creation, on insight generation, or any system event.
+- 🧠 **Per-agent LLM configuration** — Each agent can use a different model.
+- 📝 **Custom system prompts** — Shape your agent's personality, expertise, and output format with a custom system prompt.
+- 📂 **Skill** — Memex adopts the open [Agent Skills](https://agentskills.io) standard. Each agent reads its behavior from a `SKILL.md` file — a folder of instructions, scripts, and resources that agents discover and use on demand.
+- 🗂️ **Working directory** — Each agent can be configured with its own workspace. File reads, writes, and listings are scoped to that directory.
+- 🚀 **JavaScript execution** — Skills can run JavaScript code, including `fetch()` for HTTP requests. Call external APIs, transform data, scrape web content — all running locally on your device.
+- 🔗 **Inter-agent dependency chains** — Define execution order with `dependsOn` to build complex workflows. Agent B waits for Agent A to finish before it starts.
+- 🔄 **Sync & async execution modes** — Run agents synchronously (inline, blocking) or asynchronously (queued as background tasks) depending on your workflow needs.
+- 🔁 **Auto-retry with configurable limits** — Async agents automatically retry on failure, with a configurable max retry count.
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/66fc612f-dfd9-472c-b447-8eef4bcebfb8" width="300" />
+  <p><em>Agent configuration UI</em></p>
+</div>
+
+### How It Works
+
+```
+System Event (user input, card created, insight generated, ...)
+    ↓
+Event Bus dispatches to subscribed agents
+    ↓
+Agent loads SKILL.md + system prompt
+    ↓
+LLM processes the event with available tools
+    ↓
+Agent executes actions (file I/O, JavaScript, fetch, ...)
+    ↓
+Continues to downstream dependent agents and presents results to the user
+```
+
+Every agent you create is a first-class citizen — it plugs into the same event bus, uses the same tool system, and has the same capabilities as the built-in agents. The only limit is your imagination.
+
+> 💡 **Learn more about the Skill format**: [Agent Skills](https://agentskills.io) is an open standard originally developed by Anthropic for packaging agent capabilities. Visit the site to understand how to write SKILL.md files and design agent behaviors.
+
 ## Roadmap
 
 - [ ] Video and file attachments
@@ -101,7 +147,7 @@ Memex requires an LLM API key to power its AI features. On first launch:
 - [ ] Scheduled insight refresh — periodically re-analyze records for new patterns
 - [ ] Agent Soul — personalize agent behavior and personality
 - [ ] Customization — choose your own knowledge methodology, tagging rules, chat personas, and card styles
-- [ ] Event Bus & Hook System — a global event bus that decouples data sources from agent execution, making both data source integration and agent scheduling fully extensible
+- [ ] Extensible data sources & triggers — freely extend input sources and trigger conditions
 - [ ] Extension Market & Plugin Architecture — a cloud registry for agents, UI card templates, and persona configs with one-tap install and hot-reload
 
 ## Development
