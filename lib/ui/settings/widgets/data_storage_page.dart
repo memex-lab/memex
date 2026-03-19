@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/utils/user_storage.dart';
+import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:memex/utils/toast_helper.dart';
 
 /// Page to choose data storage.
@@ -272,7 +273,7 @@ class _DataStoragePageState extends State<DataStoragePage> {
             )
           : null,
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: AgentLogoLoading())
           : _userId == null
               ? Center(
                   child: Padding(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:memex/utils/result.dart';
 import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/ui/knowledge/widgets/knowledge/knowledge_file_card.dart';
+import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 
 class KnowledgeDirectoryPage extends StatefulWidget {
   final String path;
@@ -30,7 +31,8 @@ class _KnowledgeDirectoryPageState extends State<KnowledgeDirectoryPage> {
   Future<void> _fetchResult() async {
     setState(() => _isLoading = true);
     final dataResult = await _memexRouter.listPkmDirectory(path: widget.path);
-    final data = dataResult.when(onOk: (d) => d, onError: (_, __) => <String, dynamic>{});
+    final data = dataResult.when(
+        onOk: (d) => d, onError: (_, __) => <String, dynamic>{});
     if (data.isEmpty && dataResult.isError) {
       if (mounted) setState(() => _isLoading = false);
       return;
@@ -69,7 +71,8 @@ class _KnowledgeDirectoryPageState extends State<KnowledgeDirectoryPage> {
       if (folders.isNotEmpty) {
         final folderPaths = folders.map((f) => f['path'] as String).toList();
         final countResult = await _memexRouter.countPkmItems(folderPaths);
-        final counts = countResult.when(onOk: (c) => c, onError: (_, __) => <String, int>{});
+        final counts = countResult.when(
+            onOk: (c) => c, onError: (_, __) => <String, int>{});
         for (var f in folders) {
           f['item_count'] = counts[f['path']] ?? 0;
         }
@@ -117,7 +120,7 @@ class _KnowledgeDirectoryPageState extends State<KnowledgeDirectoryPage> {
         ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: AgentLogoLoading())
           : ListView(
               padding: const EdgeInsets.all(20),
               children: [

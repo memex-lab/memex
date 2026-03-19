@@ -25,6 +25,7 @@ import 'package:memex/utils/permission_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:memex/ui/settings/widgets/model_config_list_page.dart';
 import 'package:memex/ui/settings/widgets/system_authorization_page.dart';
+import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 
 /// Timeline screen - main memory view. Receives [viewModel] and [insightViewModel] from parent (Compass-style).
 class TimelineScreen extends StatefulWidget {
@@ -813,20 +814,20 @@ class TimelineScreenState extends State<TimelineScreen> {
 
   Widget _buildTimelineBody(TimelineViewModel vm) {
     if ((vm.isLoading || vm.load.running) && vm.cards.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return Center(child: AgentLogoLoading());
     }
 
     if (vm.isSubmitting) {
       if (vm.cards.isEmpty) {
-        return const Center(child: CircularProgressIndicator());
+        return Center(child: AgentLogoLoading());
       } else {
         return Stack(
           children: [
             _buildTimelineContent(vm),
             Container(
               color: Colors.white.withOpacity(0.7),
-              child: const Center(
-                child: CircularProgressIndicator(),
+              child: Center(
+                child: AgentLogoLoading(),
               ),
             ),
           ],

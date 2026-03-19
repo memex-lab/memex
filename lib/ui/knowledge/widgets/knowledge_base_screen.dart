@@ -5,6 +5,7 @@ import 'package:memex/ui/knowledge/widgets/knowledge/knowledge_file_card.dart';
 import 'package:memex/ui/knowledge/widgets/knowledge_search_delegate.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'knowledge_directory_page.dart';
+import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 
 /// Knowledge base page. Receives [viewModel] from parent (Compass-style).
 class KnowledgeBaseScreen extends StatefulWidget {
@@ -80,7 +81,7 @@ class KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
                     physics: const AlwaysScrollableScrollPhysics(),
                     child: SizedBox(
                       height: MediaQuery.of(context).size.height * 0.6,
-                      child: const Center(child: CircularProgressIndicator()),
+                      child: Center(child: AgentLogoLoading()),
                     ),
                   )
                 : SingleChildScrollView(

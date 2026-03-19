@@ -6,6 +6,7 @@ import 'package:logging/logging.dart';
 import 'package:memex/utils/toast_helper.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/user_storage.dart';
+import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 
 class AppLockSettingsPage extends StatefulWidget {
   const AppLockSettingsPage({super.key});
@@ -36,11 +37,12 @@ class _AppLockSettingsPageState extends State<AppLockSettingsPage> {
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    
+
     // Check if device supports biometrics
     bool canCheckBio = false;
     try {
-      canCheckBio = await auth.canCheckBiometrics && await auth.isDeviceSupported();
+      canCheckBio =
+          await auth.canCheckBiometrics && await auth.isDeviceSupported();
     } catch (e) {
       _logger.warning('Error checking biometrics: $e', e);
     }
@@ -64,13 +66,14 @@ class _AppLockSettingsPageState extends State<AppLockSettingsPage> {
     setState(() => _isLoading = true);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_prefKeyLockEnabled, value);
-    
+
     if (mounted) {
       setState(() {
         _isLockEnabled = value;
         _isLoading = false;
       });
-      ToastHelper.showSuccess(context, value ? UserStorage.l10n.appLockOn : UserStorage.l10n.appLockOff);
+      ToastHelper.showSuccess(context,
+          value ? UserStorage.l10n.appLockOn : UserStorage.l10n.appLockOff);
     }
   }
 
@@ -148,7 +151,7 @@ class _AppLockSettingsPageState extends State<AppLockSettingsPage> {
         iconTheme: const IconThemeData(color: Color(0xFF0F172A)),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: AgentLogoLoading())
           : ListView(
               padding: const EdgeInsets.all(20),
               children: [
@@ -290,14 +293,14 @@ class _SetPasswordSheetState extends State<_SetPasswordSheet> {
             });
           } else {
             // Mismatch
-             HapticFeedback.heavyImpact();
-             setState(() {
-               _errorMessage = UserStorage.l10n.passwordMismatch;
-               _input = '';
-               _firstInput = '';
-               _isConfirming = false; // Reset to start
-               _title = UserStorage.l10n.setFourDigitPassword;
-             });
+            HapticFeedback.heavyImpact();
+            setState(() {
+              _errorMessage = UserStorage.l10n.passwordMismatch;
+              _input = '';
+              _firstInput = '';
+              _isConfirming = false; // Reset to start
+              _title = UserStorage.l10n.setFourDigitPassword;
+            });
           }
         }
       }
@@ -373,14 +376,14 @@ class _SetPasswordSheetState extends State<_SetPasswordSheet> {
           ),
           const Spacer(),
           // Numpad
-           Expanded(
-             flex: 4,
-             child: Padding(
+          Expanded(
+            flex: 4,
+            child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                   _buildKeyRow(['1', '2', '3']),
+                  _buildKeyRow(['1', '2', '3']),
                   const SizedBox(height: 16),
                   _buildKeyRow(['4', '5', '6']),
                   const SizedBox(height: 16),
@@ -402,9 +405,9 @@ class _SetPasswordSheetState extends State<_SetPasswordSheet> {
                   ),
                 ],
               ),
-                     ),
-           ),
-           const Spacer(),
+            ),
+          ),
+          const Spacer(),
         ],
       ),
     );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/utils/user_storage.dart';
+import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 
 class ModelStatsPage extends StatefulWidget {
   const ModelStatsPage({super.key});
@@ -286,7 +287,7 @@ class _ModelStatsPageState extends State<ModelStatsPage>
         ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: AgentLogoLoading())
           : TabBarView(
               controller: _tabController,
               children: [

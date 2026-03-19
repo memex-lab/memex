@@ -4,6 +4,7 @@ import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/ui/knowledge/widgets/knowledge_file_page.dart';
 import 'package:memex/utils/result.dart';
 import 'package:memex/utils/user_storage.dart';
+import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:path/path.dart' as p;
 
 /// Search delegate for knowledge base files.
@@ -123,7 +124,7 @@ class _SearchResultsWidgetState extends State<_SearchResultsWidget> {
   @override
   Widget build(BuildContext context) {
     if (_isSearching && _results.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return Center(child: AgentLogoLoading());
     }
 
     if (!_isSearching && _results.isEmpty && _lastQuery.isNotEmpty) {

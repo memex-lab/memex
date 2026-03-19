@@ -5,6 +5,7 @@ import 'package:memex/domain/models/llm_config.dart';
 import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/utils/toast_helper.dart';
 import 'package:memex/utils/user_storage.dart';
+import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 
 class AgentConfigListPage extends StatefulWidget {
   const AgentConfigListPage({super.key});
@@ -53,7 +54,8 @@ class _AgentConfigListPageState extends State<AgentConfigListPage> {
       }
     } catch (e) {
       if (mounted) {
-        ToastHelper.showError(context, UserStorage.l10n.loadDataFailed(e.toString()));
+        ToastHelper.showError(
+            context, UserStorage.l10n.loadDataFailed(e.toString()));
         setState(() => _isLoading = false);
       }
     }
@@ -75,7 +77,8 @@ class _AgentConfigListPageState extends State<AgentConfigListPage> {
       }
     } catch (e) {
       if (mounted) {
-        ToastHelper.showError(context, UserStorage.l10n.saveConfigFailed(e.toString()));
+        ToastHelper.showError(
+            context, UserStorage.l10n.saveConfigFailed(e.toString()));
       }
     }
   }
@@ -118,14 +121,17 @@ class _AgentConfigListPageState extends State<AgentConfigListPage> {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                          content: Text(UserStorage.l10n.agentConfigurationsReset)),
+                          content:
+                              Text(UserStorage.l10n.agentConfigurationsReset)),
                     );
                   }
                 } catch (e) {
                   setState(() => _isLoading = false);
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(UserStorage.l10n.resetFailed(e.toString()))),
+                      SnackBar(
+                          content:
+                              Text(UserStorage.l10n.resetFailed(e.toString()))),
                     );
                   }
                 }
@@ -135,7 +141,7 @@ class _AgentConfigListPageState extends State<AgentConfigListPage> {
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: AgentLogoLoading())
           : ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: _agentIds.length,
@@ -164,7 +170,8 @@ class _AgentConfigListPageState extends State<AgentConfigListPage> {
                         const SizedBox(height: 8),
                         Text(
                           UserStorage.l10n.selectLlmClient,
-                          style: const TextStyle(fontSize: 14, color: Colors.grey),
+                          style:
+                              const TextStyle(fontSize: 14, color: Colors.grey),
                         ),
                         const SizedBox(height: 8),
                         DropdownButtonFormField<String>(

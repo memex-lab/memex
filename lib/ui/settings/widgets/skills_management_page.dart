@@ -8,6 +8,7 @@ import 'package:path/path.dart' as path;
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/utils/toast_helper.dart';
 import 'package:memex/utils/user_storage.dart';
+import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 
 /// Skills directory browser & downloader.
 /// Root is `_UserSettings/skills/` under the user workspace.
@@ -466,7 +467,7 @@ class _SkillsManagementPageState extends State<SkillsManagementPage> {
           ),
           Expanded(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? Center(child: AgentLogoLoading())
                 : _entries.isEmpty
                     ? Center(child: Text(l10n.skillsManagementEmpty))
                     : ListView.builder(
@@ -567,7 +568,7 @@ class _FileEditorPageState extends State<_FileEditorPage> {
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: AgentLogoLoading())
           : Padding(
               padding: const EdgeInsets.all(12),
               child: TextField(

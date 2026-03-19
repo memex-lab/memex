@@ -7,6 +7,7 @@ import 'package:memex/ui/timeline/widgets/timeline_card_detail_screen.dart';
 import 'package:memex/utils/toast_helper.dart';
 import 'package:memex/ui/core/widgets/detail_page_layout.dart';
 import 'package:memex/utils/user_storage.dart';
+import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:memex/utils/share_service.dart';
 import 'package:memex/ui/core/widgets/icon_helper.dart';
 
@@ -97,14 +98,18 @@ class _InsightDetailPageState extends State<InsightDetailPage> {
           fit: BoxFit.scaleDown,
           child: SizedBox(
             width: 390, // Standard mobile width to ensure matching layout
-            child: _insightDetail?.widgetType == 'native' && _insightDetail?.widgetTemplate != null
+            child: _insightDetail?.widgetType == 'native' &&
+                    _insightDetail?.widgetTemplate != null
                 ? NativeWidgetFactory.build(
                     _insightDetail!.widgetTemplate!,
-                    Map<String, dynamic>.from(_insightDetail!.widgetData ?? {})..addAll({
-                      'title': _metadata?.title,
-                      'insight': _content,
-                      if (_relatedCards.isNotEmpty) 'related_fact_ids': _relatedCards.map((c) => c.id).toList(),
-                    }),
+                    Map<String, dynamic>.from(_insightDetail!.widgetData ?? {})
+                      ..addAll({
+                        'title': _metadata?.title,
+                        'insight': _content,
+                        if (_relatedCards.isNotEmpty)
+                          'related_fact_ids':
+                              _relatedCards.map((c) => c.id).toList(),
+                      }),
                   )
                 : const SizedBox.shrink(),
           ),
@@ -118,9 +123,9 @@ class _InsightDetailPageState extends State<InsightDetailPage> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
+      return Scaffold(
         backgroundColor: Colors.white,
-        body: Center(child: CircularProgressIndicator()),
+        body: Center(child: AgentLogoLoading()),
       );
     }
 

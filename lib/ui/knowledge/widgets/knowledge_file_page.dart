@@ -6,6 +6,7 @@ import 'package:memex/ui/timeline/widgets/timeline_card_detail_screen.dart';
 import 'package:memex/ui/core/cards/templates/classic_card.dart';
 import 'package:path/path.dart' as path;
 import 'package:memex/utils/user_storage.dart';
+import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 
 class KnowledgeFilePage extends StatefulWidget {
   final String filePath;
@@ -110,7 +111,7 @@ class _KnowledgeFilePageState extends State<KnowledgeFilePage> {
         iconTheme: const IconThemeData(color: Color(0xFF64748B)),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: AgentLogoLoading())
           : SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,

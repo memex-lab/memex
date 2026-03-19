@@ -14,6 +14,7 @@ import 'package:memex/ui/timeline/widgets/timeline_screen.dart';
 import 'package:memex/ui/knowledge/widgets/knowledge_base_screen.dart';
 import 'package:memex/ui/user_setup/widgets/user_setup_screen.dart';
 import 'package:memex/ui/app_lock/widgets/lock_screen_page.dart';
+import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:memex/ui/core/themes/app_theme.dart';
 import 'dart:io';
 import 'package:memex/ui/main_screen/widgets/radial_menu.dart';
@@ -153,7 +154,7 @@ class RootShellState extends State<RootShell> {
   Widget build(BuildContext context) {
     if (_isChecking) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        body: Center(child: AgentLogoLoading()),
       );
     }
     if (!_hasUser || !_onboardingComplete) {

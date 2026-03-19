@@ -8,6 +8,7 @@ import 'package:memex/utils/toast_helper.dart';
 import 'package:provider/provider.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/user_storage.dart';
+import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:go_router/go_router.dart';
 import 'package:memex/routing/routes.dart';
 
@@ -386,7 +387,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                       child: Container(
                         color: const Color(0xFFFAFAFA).withOpacity(0.5),
                         child: _isLoading
-                            ? const Center(child: CircularProgressIndicator())
+                            ? Center(child: AgentLogoLoading())
                             : _items.isEmpty
                                 ? Center(
                                     child: Text(
@@ -458,7 +459,8 @@ class _AgentChatDialogState extends State<AgentChatDialog>
         _contextSent) {
       return const SizedBox.shrink();
     }
-    final title = widget.initialRefs!.first['title'] ?? UserStorage.l10n.referenceContent;
+    final title =
+        widget.initialRefs!.first['title'] ?? UserStorage.l10n.referenceContent;
 
     return Container(
       width: double.infinity,
@@ -507,15 +509,13 @@ class _AgentChatDialogState extends State<AgentChatDialog>
           IconButton(
             icon: const Icon(Icons.history, size: 18, color: Color(0xFF94A3B8)),
             onPressed: () {
-              context
-                  .push(
+              context.push(
                 AppRoutes.chatHistory,
                 extra: {
                   'agentName': widget.agentName,
                   'title': widget.title,
                 },
-              )
-                  .then((_) {
+              ).then((_) {
                 if (mounted) {
                   setState(() {});
                   _loadSessionHistory();

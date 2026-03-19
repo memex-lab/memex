@@ -23,6 +23,7 @@ import 'package:memex/ui/chat/widgets/agent_chat_dialog.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import 'package:memex/ui/core/cards/style/timeline_theme.dart';
+import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:memex/utils/share_service.dart';
 import 'package:memex/ui/core/cards/native_card_factory.dart';
 
@@ -36,7 +37,8 @@ class TimelineCardDetailScreen extends StatefulWidget {
   });
 
   @override
-  State<TimelineCardDetailScreen> createState() => _TimelineCardDetailScreenState();
+  State<TimelineCardDetailScreen> createState() =>
+      _TimelineCardDetailScreenState();
 }
 
 class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
@@ -45,7 +47,8 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
   String? _errorMessage;
   late final MemexRouter _memexRouter;
   Timer? _pollingTimer;
-  static const Duration _pollingInterval = Duration(seconds: 5); // poll every 5s
+  static const Duration _pollingInterval =
+      Duration(seconds: 5); // poll every 5s
 
   @override
   void initState() {
@@ -286,7 +289,8 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
       setState(() {
         _detail = oldDetail;
       });
-      ToastHelper.showError(context, UserStorage.l10n.updateFailed(e.toString()));
+      ToastHelper.showError(
+          context, UserStorage.l10n.updateFailed(e.toString()));
     }
   }
 
@@ -330,7 +334,8 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
         setState(() {
           _detail = oldDetail;
         });
-        ToastHelper.showError(context, UserStorage.l10n.updateFailed(e.toString()));
+        ToastHelper.showError(
+            context, UserStorage.l10n.updateFailed(e.toString()));
       }
     }
   }
@@ -407,7 +412,8 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                         'Cached Tokens': agentStat.cachedTokens,
                         'Thought Tokens': agentStat.thoughtTokens,
                         'Total Tokens': agentStat.totalTokens,
-                        UserStorage.l10n.estimatedCost: -2, // Special flag for cost
+                        UserStorage.l10n.estimatedCost:
+                            -2, // Special flag for cost
                       },
                       cost: agentStat.totalCost,
                     ),
@@ -551,7 +557,8 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ToastHelper.showError(context, UserStorage.l10n.deleteFailed(e.toString()));
+        ToastHelper.showError(
+            context, UserStorage.l10n.deleteFailed(e.toString()));
       }
     }
   }
@@ -586,7 +593,10 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
           templateId: 'classic_card',
           data: <String, dynamic>{
             'content': _detail!.rawContent,
-            'images': _detail!.assets.where((a) => a.isImage).map((a) => a.url).toList(),
+            'images': _detail!.assets
+                .where((a) => a.isImage)
+                .map((a) => a.url)
+                .toList(),
             'audioUrl': audioAssets.isNotEmpty ? audioAssets.first.url : null,
             'tags': _detail!.tags,
           },
@@ -622,7 +632,8 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                     mainAxisAlignment: MainAxisAlignment.end,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (_detail!.address.isNotEmpty && _detail!.address != 'Unknown') ...[
+                      if (_detail!.address.isNotEmpty &&
+                          _detail!.address != 'Unknown') ...[
                         const Icon(
                           Icons.location_on_outlined,
                           size: 14,
@@ -649,7 +660,7 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
               ],
             ),
           ),
-          
+
           // Card content scaled to fit
           Center(
             child: FittedBox(
@@ -705,8 +716,8 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        body: Center(child: AgentLogoLoading()),
       );
     }
 
@@ -1217,8 +1228,8 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                       const SizedBox(width: 8),
                       Text(
                         UserStorage.l10n.saySomething,
-                        style:
-                            const TextStyle(fontSize: 14, color: Color(0xFF94A3B8)),
+                        style: const TextStyle(
+                            fontSize: 14, color: Color(0xFF94A3B8)),
                       ),
                     ],
                   ),
@@ -1766,4 +1777,3 @@ class _CommentInputWidgetState extends State<_CommentInputWidget> {
     );
   }
 }
-
