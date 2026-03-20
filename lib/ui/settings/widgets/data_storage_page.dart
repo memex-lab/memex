@@ -6,6 +6,7 @@ import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:memex/utils/toast_helper.dart';
+import 'package:memex/main.dart' show rootShellKey;
 
 /// Page to choose data storage.
 /// Android: app storage or custom folder.
@@ -28,6 +29,7 @@ class _DataStoragePageState extends State<DataStoragePage> {
   bool _icloudAvailable = false;
   bool _loading = true;
   bool _isSwitching = false;
+  StorageLocation? _switchingTarget;
   String? _userId;
 
   @override
@@ -122,29 +124,47 @@ class _DataStoragePageState extends State<DataStoragePage> {
       return;
     }
     if (!mounted) return;
-    setState(() => _isSwitching = true);
+    setState(() {
+      _isSwitching = true;
+      _switchingTarget = StorageLocation.custom;
+    });
     await UserStorage.setWorkspaceStorageToCustom(uid, path);
-    await MemexRouter().applyWorkspaceStorageChange();
+    if (!widget.onboardingMode) {
+      await MemexRouter().applyWorkspaceStorageChange();
+    }
     if (!mounted) return;
     setState(() {
       _location = StorageLocation.custom;
       _customPath = path;
       _isSwitching = false;
+      _switchingTarget = null;
     });
+    if (!widget.onboardingMode) {
+      rootShellKey.currentState?.resetAndRecheck();
+    }
   }
 
   Future<void> _selectApp() async {
     final uid = _userId;
     if (uid == null) return;
-    setState(() => _isSwitching = true);
+    setState(() {
+      _isSwitching = true;
+      _switchingTarget = StorageLocation.app;
+    });
     await UserStorage.setWorkspaceStorageToApp(uid);
-    await MemexRouter().applyWorkspaceStorageChange();
+    if (!widget.onboardingMode) {
+      await MemexRouter().applyWorkspaceStorageChange();
+    }
     if (!mounted) return;
     setState(() {
       _location = StorageLocation.app;
       _customPath = null;
       _isSwitching = false;
+      _switchingTarget = null;
     });
+    if (!widget.onboardingMode) {
+      rootShellKey.currentState?.resetAndRecheck();
+    }
   }
 
   Future<void> _selectICloud() async {
@@ -154,14 +174,23 @@ class _DataStoragePageState extends State<DataStoragePage> {
       ToastHelper.showInfo(context, UserStorage.l10n.icloudRequiresCapability);
       return;
     }
-    setState(() => _isSwitching = true);
+    setState(() {
+      _isSwitching = true;
+      _switchingTarget = StorageLocation.icloud;
+    });
     await UserStorage.setWorkspaceStorageToICloud(uid);
-    await MemexRouter().applyWorkspaceStorageChange();
+    if (!widget.onboardingMode) {
+      await MemexRouter().applyWorkspaceStorageChange();
+    }
     if (!mounted) return;
     setState(() {
       _location = StorageLocation.icloud;
       _isSwitching = false;
+      _switchingTarget = null;
     });
+    if (!widget.onboardingMode) {
+      rootShellKey.currentState?.resetAndRecheck();
+    }
   }
 
   String _locationLabel(StorageLocation loc) {
@@ -331,10 +360,28 @@ class _DataStoragePageState extends State<DataStoragePage> {
                       ],
                     ),
                     if (_isSwitching)
-                      const Positioned.fill(
+                      Positioned.fill(
                         child: ColoredBox(
-                          color: Color(0x55FFFFFF),
-                          child: Center(child: AgentLogoLoading()),
+                          color: const Color(0x88FFFFFF),
+                          child: Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const AgentLogoLoading(),
+                                const SizedBox(height: 16),
+                                Text(
+                                  _switchingTarget == StorageLocation.icloud
+                                      ? UserStorage.l10n.switchingToICloud
+                                      : UserStorage.l10n.switchingStorage,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Color(0xFF6366F1),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                   ],

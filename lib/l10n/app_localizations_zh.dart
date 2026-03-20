@@ -1560,6 +1560,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get loadingFromICloud => '正在从 iCloud 加载数据…';
 
   @override
+  String get switchingToICloud => '正在切换到 iCloud 存储…';
+
+  @override
+  String get switchingStorage => '正在切换存储…';
+
+  @override
   String get customPathInvalid => '所选文件夹无法访问，已改用应用存储。';
 
   @override

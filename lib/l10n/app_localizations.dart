@@ -2972,6 +2972,18 @@ abstract class AppLocalizations {
   /// **'Loading data from iCloud…'**
   String get loadingFromICloud;
 
+  /// No description provided for @switchingToICloud.
+  ///
+  /// In en, this message translates to:
+  /// **'Switching to iCloud storage…'**
+  String get switchingToICloud;
+
+  /// No description provided for @switchingStorage.
+  ///
+  /// In en, this message translates to:
+  /// **'Switching storage…'**
+  String get switchingStorage;
+
   /// No description provided for @customPathInvalid.
   ///
   /// In en, this message translates to:

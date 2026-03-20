@@ -725,6 +725,8 @@
   "icloudNotAvailable": "iCloud not available",
   "icloudRequiresCapability": "Sign in to iCloud and turn on iCloud Drive to use iCloud storage.",
   "loadingFromICloud": "Loading data from iCloud…",
+  "switchingToICloud": "Switching to iCloud storage…",
+  "switchingStorage": "Switching storage…",
   "customPathInvalid": "Selected folder is no longer accessible. Using app storage.",
   "storagePermissionRequired": "Storage permission is needed to use a custom folder. Please allow it.",
   "customFolderAccessDenied": "Cannot read or write this folder. Please grant storage permission or choose another location.",

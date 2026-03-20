@@ -102,6 +102,8 @@ class RootShellState extends State<RootShell> {
   bool _onboardingComplete = false;
   bool _isChecking = true;
   bool _isLoadingFromICloud = false;
+  int _mainScreenEpoch =
+      0; // incremented to force full rebuild on storage switch
 
   @override
   void initState() {
@@ -134,9 +136,7 @@ class RootShellState extends State<RootShell> {
   }
 
   void _onUserCreated() async {
-    await OnboardingService.markOnboardingComplete();
-
-    // Check if user selected iCloud during onboarding
+    // Check iCloud BEFORE any other awaits to avoid timing issues
     final userId = await UserStorage.getUserId();
     bool isICloud = false;
     if (userId != null) {
@@ -144,11 +144,12 @@ class RootShellState extends State<RootShell> {
       isICloud = loc == StorageLocation.icloud;
     }
 
+    await OnboardingService.markOnboardingComplete();
+
     if (isICloud && mounted) {
-      setState(() {
-        _isLoadingFromICloud = true;
-      });
-      // Trigger MemexRouter to re-resolve data root to iCloud path
+      setState(() => _isLoadingFromICloud = true);
+      // Give the frame a chance to render the loading UI before heavy work
+      await Future.microtask(() {});
       await MemexRouter().applyWorkspaceStorageChange();
       if (mounted) {
         setState(() {
@@ -165,12 +166,13 @@ class RootShellState extends State<RootShell> {
     }
   }
 
-  /// Reset state and re-check user. Called after account deletion.
+  /// Reset state and re-check user. Called after account deletion or storage switch.
   void resetAndRecheck() {
     setState(() {
       _hasUser = false;
       _onboardingComplete = false;
       _isChecking = true;
+      _mainScreenEpoch++;
     });
     _checkUser();
   }
@@ -194,7 +196,8 @@ class RootShellState extends State<RootShell> {
                 UserStorage.l10n.loadingFromICloud,
                 style: const TextStyle(
                   fontSize: 14,
-                  color: Colors.grey,
+                  color: Color(0xFF6366F1),
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],
@@ -206,6 +209,7 @@ class RootShellState extends State<RootShell> {
       return UserSetupScreen(onUserCreated: _onUserCreated);
     }
     return MultiProvider(
+      key: ValueKey(_mainScreenEpoch),
       providers: [
         ChangeNotifierProvider<TimelineViewModel>(
           create: (c) =>
