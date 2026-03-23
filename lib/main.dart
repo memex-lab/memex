@@ -148,8 +148,8 @@ class RootShellState extends State<RootShell> {
 
     if (isICloud && mounted) {
       setState(() => _isLoadingFromICloud = true);
-      // Give the frame a chance to render the loading UI before heavy work
-      await Future.microtask(() {});
+      // Wait for the loading UI to actually render before starting heavy work
+      await Future.delayed(const Duration(milliseconds: 100));
       await MemexRouter().applyWorkspaceStorageChange();
       if (mounted) {
         setState(() {

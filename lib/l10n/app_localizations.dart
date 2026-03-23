@@ -2969,7 +2969,7 @@ abstract class AppLocalizations {
   /// No description provided for @loadingFromICloud.
   ///
   /// In en, this message translates to:
-  /// **'Loading data from iCloud…'**
+  /// **'Restoring data from iCloud…'**
   String get loadingFromICloud;
 
   /// No description provided for @switchingToICloud.

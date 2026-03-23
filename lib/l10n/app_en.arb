@@ -724,7 +724,7 @@
   "storageLocationCurrent": "Current: {location}",
   "icloudNotAvailable": "iCloud not available",
   "icloudRequiresCapability": "Sign in to iCloud and turn on iCloud Drive to use iCloud storage.",
-  "loadingFromICloud": "Loading data from iCloud…",
+  "loadingFromICloud": "Restoring data from iCloud…",
   "switchingToICloud": "Switching to iCloud storage…",
   "switchingStorage": "Switching storage…",
   "customPathInvalid": "Selected folder is no longer accessible. Using app storage.",
