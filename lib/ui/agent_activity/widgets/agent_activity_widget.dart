@@ -156,45 +156,16 @@ class _AgentActivityWidgetState extends State<AgentActivityWidget>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Bouncing logo with glow
+                // Bouncing thinking emoji
                 AnimatedBuilder(
                   animation: _bounceAnimation,
                   builder: (context, child) {
-                    final glowOpacity =
-                        0.15 + 0.3 * ((_bounceAnimation.value + 6) / 6);
-                    final scale =
-                        0.9 + 0.2 * ((_bounceAnimation.value + 6) / 6);
                     return Transform.translate(
                       offset: Offset(0, _bounceAnimation.value),
-                      child: Container(
-                        width: 28,
-                        height: 28,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF6366F1)
-                                  .withValues(alpha: glowOpacity),
-                              blurRadius: 14,
-                              spreadRadius: 3,
-                            ),
-                          ],
-                        ),
-                        child: Transform.scale(
-                          scale: scale,
-                          child: child,
-                        ),
-                      ),
+                      child: child,
                     );
                   },
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
-                    child: Image.asset(
-                      'assets/agent_logo.png',
-                      width: 24,
-                      height: 24,
-                    ),
-                  ),
+                  child: const Text('🤔', style: TextStyle(fontSize: 22)),
                 ),
                 const SizedBox(width: 8),
                 // Text
@@ -325,41 +296,7 @@ class _DetailSheetState extends State<_DetailSheet>
               children: [
                 Row(
                   children: [
-                    AnimatedBuilder(
-                      animation: _pulseController,
-                      builder: (context, child) {
-                        final scale = 0.9 + 0.2 * _pulseController.value;
-                        final glowOpacity = 0.15 + 0.3 * _pulseController.value;
-                        final rotation = 0.05 * _pulseController.value;
-                        return Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF6366F1)
-                                    .withValues(alpha: glowOpacity),
-                                blurRadius: 14,
-                                spreadRadius: 3,
-                              ),
-                            ],
-                          ),
-                          child: Transform.scale(
-                            scale: scale,
-                            child: Transform.rotate(
-                              angle: rotation,
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(6),
-                                child: Image.asset(
-                                  'assets/agent_logo.png',
-                                  width: 28,
-                                  height: 28,
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+                    const Text('🤔', style: TextStyle(fontSize: 24)),
                     const SizedBox(width: 10),
                     Text(
                       UserStorage.l10n.activityDetail,

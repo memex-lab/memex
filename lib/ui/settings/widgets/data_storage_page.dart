@@ -260,8 +260,7 @@ class _DataStoragePageState extends State<DataStoragePage> {
       add(iCloudCard);
       add(appCard);
     } else {
-      // Android priority: custom folder -> app storage
-      add(customCard);
+      // Android: only app storage (custom folder removed for Google Play policy compliance)
       add(appCard);
     }
 
