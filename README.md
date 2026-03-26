@@ -91,9 +91,10 @@ All data stays on your device. You just need to pick your preferred LLM provider
 | Ollama | OpenAI-compatible (local) | Run models locally on your device |
 
 ## Install
-- **App Store & Google Play**: ⏳ **Coming Soon**. Both iOS and Android versions are currently under review in the major app stores.
-- **Early Access (Android)**: You can download the latest Android APK from [GitHub Releases](https://github.com/memex-lab/memex/releases) to start experiencing it right now.
-- **Build from Source**: If you can't wait for store approval, you can also [compile and install from the source code locally](#development).
+- **iOS**: ⏳ Coming Soon — currently under App Store review
+- **Android**: Download on [Google Play](https://play.google.com/store/apps/details?id=com.memexlab.memex)
+- **Early Access (Android APK)**: You can also download the latest APK directly from [GitHub Releases](https://github.com/memex-lab/memex/releases).
+- **Build from Source**: [Compile and install from source](#development).
 
 ### Configure LLM
 

@@ -74,21 +74,9 @@ class _AICoreButtonState extends State<AICoreButton>
       behavior: HitTestBehavior.opaque,
       child: ScaleTransition(
         scale: _scaleController,
-        child: Container(
-          width: 64,
-          height: 64,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-          ),
-          alignment: Alignment.center,
-          child: SizedBox(
-            width: 60,
-            height: 60,
-            child: const _AnimatedStarIcon(
-              isPulse: false,
-              hasGlow: false,
-            ),
-          ),
+        child: const _AnimatedStarIcon(
+          isPulse: false,
+          hasGlow: false,
         ),
       ),
     );
@@ -156,37 +144,17 @@ class _AnimatedStarIconState extends State<_AnimatedStarIcon>
         return Opacity(
           opacity: opacity,
           child: Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [
-                  Color(0xFF818CF8),
-                  Color(0xFF6366F1),
-                  Color(0xFF4F46E5)
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: Colors.white,
-                width: 3,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF6366F1).withOpacity(0.35),
-                  blurRadius: 14,
-                  offset: const Offset(0, 5),
-                ),
-              ],
+            width: 68,
+            height: 68,
+            decoration: const BoxDecoration(
+              color: Color(0xFF5B6CFF),
+              shape: BoxShape.circle,
             ),
             alignment: Alignment.center,
             child: const Icon(
               Icons.add_rounded,
-              size: 36,
+              size: 32,
               color: Colors.white,
-              weight: 700,
             ),
           ),
         );
