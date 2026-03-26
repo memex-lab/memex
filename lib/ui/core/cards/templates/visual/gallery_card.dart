@@ -36,7 +36,7 @@ class GalleryCard extends StatelessWidget {
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 17,
-                  color: Color(0xFF1E293B),
+                  color: Color(0xFF0A0A0A),
                 ),
               ),
             ),
@@ -141,14 +141,14 @@ class GalleryCard extends StatelessWidget {
 
   Widget _buildImage(String url) {
     return Container(
-      color: const Color(0xFFF1F5F9),
+      color: const Color(0xFFF7F8FA),
       child: LocalImage(
         url: url,
         fit: BoxFit.cover,
         width: double.infinity,
         height: double.infinity,
         errorBuilder: (_, __, ___) =>
-            const Center(child: Icon(Icons.broken_image, color: Color(0xFF94A3B8))),
+            const Center(child: Icon(Icons.broken_image, color: Color(0xFF99A1AF))),
       ),
     );
   }

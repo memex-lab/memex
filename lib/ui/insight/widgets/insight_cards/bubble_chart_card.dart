@@ -55,14 +55,14 @@ class BubbleChartCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: const Color(0xFFF8FAFC), // Slate-50
-          borderRadius: BorderRadius.circular(32),
+          color: const Color(0xFFF7F8FA), // Slate-50
+          borderRadius: BorderRadius.circular(20),
           // Gradient border or shadow if needed, but design looks clean flat/soft
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha:0.04),
-              blurRadius: 20,
-              offset: const Offset(0, 4),
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 16,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
@@ -76,7 +76,7 @@ class BubbleChartCard extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF94A3B8), // Slate-400
+                color: Color(0xFF99A1AF), // Slate-400
                 letterSpacing: 1.2,
               ),
             ),
@@ -104,7 +104,7 @@ class BubbleChartCard extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
-                  color: Color(0xFF64748B), // Slate-500
+                  color: Color(0xFF4A5565), // Slate-500
                   fontStyle: FontStyle.italic,
                   height: 1.5,
                 ),
@@ -119,7 +119,7 @@ class BubbleChartCard extends StatelessWidget {
                 footer!,
                 style: const TextStyle(
                   fontSize: 15,
-                  color: Color(0xFF94A3B8), // Slate-400
+                  color: Color(0xFF99A1AF), // Slate-400
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -164,7 +164,7 @@ class BubbleChartCard extends StatelessWidget {
                 BoxShadow(
                   color: color.withValues(alpha:0.3),
                   blurRadius: 12,
-                  offset: const Offset(0, 4),
+                  offset: const Offset(0, 2),
                 )
               ]
             : null,
@@ -233,7 +233,7 @@ class BubbleChartCard extends StatelessWidget {
       case 'white':
         return Colors.white;
       default:
-        return const Color(0xFF6366F1);
+        return const Color(0xFF5B6CFF);
     }
   }
 }

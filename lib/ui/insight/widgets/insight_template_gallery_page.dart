@@ -15,18 +15,18 @@ class InsightTemplateGalleryPage extends StatelessWidget {
         title: Text(
           UserStorage.l10n.insightTemplateGalleryTitle,
           style: const TextStyle(
-            color: Color(0xFF0F172A),
+            color: Color(0xFF0A0A0A),
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: const Color(0xFFF8FAFC),
+        backgroundColor: const Color(0xFFF7F8FA),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF0F172A)),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF0A0A0A)),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: const Color(0xFFF7F8FA),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
@@ -529,7 +529,7 @@ class InsightTemplateGalleryPage extends StatelessWidget {
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF64748B),
+              color: Color(0xFF4A5565),
             ),
           ),
         ),

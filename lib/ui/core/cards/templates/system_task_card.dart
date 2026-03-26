@@ -176,7 +176,7 @@ class _SystemTaskCardState extends State<SystemTaskCard>
                             style: const TextStyle(
                               fontSize: 17,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF1E293B),
+                              color: Color(0xFF0A0A0A),
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -221,7 +221,7 @@ class _SystemTaskCardState extends State<SystemTaskCard>
                           widget.message,
                           style: TextStyle(
                             fontSize: 13,
-                            color: const Color(0xFF64748B),
+                            color: const Color(0xFF4A5565),
                           ),
                         ),
                     ],
@@ -247,9 +247,9 @@ class _SystemTaskCardState extends State<SystemTaskCard>
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
               colors: const [
-                Color(0xFFF1F5F9),
+                Color(0xFFF7F8FA),
                 Color(0xFFE2E8F0),
-                Color(0xFFF1F5F9),
+                Color(0xFFF7F8FA),
               ],
               stops: [
                 0.0,

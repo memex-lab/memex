@@ -37,8 +37,8 @@ class ContrastCard extends StatelessWidget {
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha:0.05),
-              blurRadius: 20,
-              offset: const Offset(0, 4),
+              blurRadius: 16,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
@@ -46,7 +46,7 @@ class ContrastCard extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(21),
+            borderRadius: BorderRadius.circular(17),
           ),
           child: Padding(
             padding: const EdgeInsets.all(20),
@@ -75,7 +75,7 @@ class ContrastCard extends StatelessWidget {
                     insight!,
                     style: const TextStyle(
                       fontSize: 13,
-                      color: Color(0xFF64748B), // Slate-500
+                      color: Color(0xFF4A5565), // Slate-500
                       fontStyle: FontStyle.italic,
                     ),
                   ),
@@ -100,7 +100,7 @@ class ContrastCard extends StatelessWidget {
                         '"${oldPerspective['content'] ?? ''}"',
                         style: const TextStyle(
                           fontSize: 15,
-                          color: Color(0xFF64748B), // Slate-500
+                          color: Color(0xFF4A5565), // Slate-500
                           fontStyle: FontStyle.italic,
                           height: 1.5,
                         ),
@@ -111,7 +111,7 @@ class ContrastCard extends StatelessWidget {
                           '—— ${oldPerspective['source']}',
                           style: const TextStyle(
                             fontSize: 12,
-                            color: Color(0xFF94A3B8), // Slate-400
+                            color: Color(0xFF99A1AF), // Slate-400
                           ),
                         ),
                       ]
@@ -136,7 +136,7 @@ class ContrastCard extends StatelessWidget {
                           const Icon(
                             Icons.edit_outlined, // Or auto_fix_high
                             size: 16,
-                            color: Color(0xFF6366F1), // Indigo-500
+                            color: Color(0xFF5B6CFF), // Indigo-500
                           ),
                           const SizedBox(width: 8),
                           Text(
@@ -154,7 +154,7 @@ class ContrastCard extends StatelessWidget {
                         text: TextSpan(
                           style: const TextStyle(
                             fontSize: 17,
-                            color: Color(0xFF1E293B), // Slate-800
+                            color: Color(0xFF0A0A0A), // Slate-800
                             height: 1.6,
                           ),
                           children: [
@@ -169,7 +169,7 @@ class ContrastCard extends StatelessWidget {
                                 text: newPerspective['highlight'],
                                 style: const TextStyle(
                                   fontSize: 18,
-                                  color: Color(0xFF6366F1), // Indigo-500
+                                  color: Color(0xFF5B6CFF), // Indigo-500
                                   fontWeight: FontWeight.bold,
                                   height: 1.5,
                                 ),
@@ -199,7 +199,7 @@ class ContrastCard extends StatelessWidget {
         break;
       case 'neutral':
         icon = Icons.sentiment_neutral_rounded;
-        color = const Color(0xFF64748B);
+        color = const Color(0xFF4A5565);
         break;
       case 'negative':
       default:

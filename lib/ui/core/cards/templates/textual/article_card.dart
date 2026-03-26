@@ -45,7 +45,7 @@ class ArticleCard extends StatelessWidget {
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                     height: 1.3,
-                    color: Color(0xFF1E293B),
+                    color: Color(0xFF0A0A0A),
                     letterSpacing: -0.5,
                   ),
                 ),
@@ -59,30 +59,30 @@ class ArticleCard extends StatelessWidget {
                     p: const TextStyle(
                       fontSize: 15,
                       height: 1.6,
-                      color: Color(0xFF475569), // Slate-600
+                      color: Color(0xFF4A5565), // Slate-600
                     ),
                     // Add other styles as needed to match the app's theme
                     h1: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E293B)),
+                        color: Color(0xFF0A0A0A)),
                     h2: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E293B)),
+                        color: Color(0xFF0A0A0A)),
                     h3: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E293B)),
+                        color: Color(0xFF0A0A0A)),
                     blockquote: const TextStyle(
-                        color: Color(0xFF64748B), fontStyle: FontStyle.italic),
+                        color: Color(0xFF4A5565), fontStyle: FontStyle.italic),
                     code: const TextStyle(
-                      backgroundColor: Color(0xFFF1F5F9),
-                      color: Color(0xFF0F172A),
+                      backgroundColor: Color(0xFFF7F8FA),
+                      color: Color(0xFF0A0A0A),
                       fontFamily: 'monospace',
                     ),
                     codeblockDecoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
+                      color: const Color(0xFFF7F8FA),
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),

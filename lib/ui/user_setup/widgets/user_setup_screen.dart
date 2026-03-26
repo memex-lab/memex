@@ -135,7 +135,7 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: const Color(0xFFF7F8FA),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -271,7 +271,7 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
                               ),
                             ),
                             filled: true,
-                            fillColor: const Color(0xFFF8FAFC),
+                            fillColor: const Color(0xFFF7F8FA),
                             contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16, vertical: 14),
                           ),

@@ -21,20 +21,20 @@ class TimelineTemplateGalleryPage extends StatelessWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: const Color(0xFFF8FAFC),
+        backgroundColor: const Color(0xFFF7F8FA),
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Color(0xFF0F172A)),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: const Color(0xFFF7F8FA),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
           // ─── 通用 ───
           _buildCategoryHeader(isZh ? '通用 (General)' : 'General'),
-          _buildSection(
+          _buildSection(context, 
             isZh ? '1. Classic Card (文字笔记)' : '1. Classic Card (Text note)',
             'classic_card',
             isZh
@@ -52,7 +52,7 @@ class TimelineTemplateGalleryPage extends StatelessWidget {
           ),
           // ─── 文字 ───
           _buildCategoryHeader(UserStorage.l10n.categoryTextual),
-          _buildSection(
+          _buildSection(context, 
             isZh ? '2. Snippet Card (文字片段)' : '2. Snippet Card (Text snippet)',
             'snippet',
             isZh
@@ -69,7 +69,7 @@ class TimelineTemplateGalleryPage extends StatelessWidget {
                   },
             title: isZh ? '科技名言' : 'Tech quote',
           ),
-          _buildSection(
+          _buildSection(context, 
             isZh ? '3. Article Card (长文章)' : '3. Article Card (Long article)',
             'article',
             isZh
@@ -83,7 +83,7 @@ class TimelineTemplateGalleryPage extends StatelessWidget {
                   },
             title: isZh ? '什么是心流体验' : 'What is flow experience',
           ),
-          _buildSection(
+          _buildSection(context, 
             isZh
                 ? '4. Conversation Card (对话)'
                 : '4. Conversation Card (Conversation)',
@@ -132,7 +132,7 @@ class TimelineTemplateGalleryPage extends StatelessWidget {
                   },
             title: isZh ? '与 AI 的对话' : 'Conversation with AI',
           ),
-          _buildSection(
+          _buildSection(context, 
             isZh ? '5. Quote Card (引言)' : '5. Quote Card (Quote)',
             'quote',
             isZh
@@ -149,7 +149,7 @@ class TimelineTemplateGalleryPage extends StatelessWidget {
                   },
             title: isZh ? '每日金句' : 'Quote of the day',
           ),
-          _buildWrappedSection(
+          _buildWrappedSection(context, 
             isZh ? '6. Compact Card (紧凑行)' : '6. Compact Card (Compact row)',
             'compact_card',
             isZh
@@ -166,7 +166,7 @@ class TimelineTemplateGalleryPage extends StatelessWidget {
 
           // ─── 视觉 ───
           _buildCategoryHeader(isZh ? '视觉 (Visual)' : 'Visual'),
-          _buildSection(
+          _buildSection(context, 
             isZh ? '7. Snapshot Card (照片)' : '7. Snapshot Card (Photo)',
             'snapshot',
             isZh
@@ -180,7 +180,7 @@ class TimelineTemplateGalleryPage extends StatelessWidget {
                   },
             title: isZh ? '黄昏时刻' : 'Dusk moment',
           ),
-          _buildSection(
+          _buildSection(context, 
             isZh ? '8. Gallery Card (相册)' : '8. Gallery Card (Album)',
             'gallery',
             {
@@ -192,7 +192,7 @@ class TimelineTemplateGalleryPage extends StatelessWidget {
             },
             title: isZh ? '周末露营' : 'Weekend camping',
           ),
-          _buildSection(
+          _buildSection(context, 
             isZh ? '9. Video Card (视频)' : '9. Video Card (Video)',
             'video',
             {
@@ -202,7 +202,7 @@ class TimelineTemplateGalleryPage extends StatelessWidget {
             },
             title: isZh ? '视频记录' : 'Video log',
           ),
-          _buildSection(
+          _buildSection(context, 
             isZh ? '10. Canvas Card (画布)' : '10. Canvas Card (Canvas)',
             'canvas',
             {},
@@ -211,7 +211,7 @@ class TimelineTemplateGalleryPage extends StatelessWidget {
 
           // ─── 数值 ───
           _buildCategoryHeader(isZh ? '数值 (Quantifiable)' : 'Quantifiable'),
-          _buildSection(
+          _buildSection(context, 
             isZh ? '11. Metric Card (多指标)' : '11. Metric Card (Metrics)',
             'metric',
             isZh
@@ -273,7 +273,7 @@ class TimelineTemplateGalleryPage extends StatelessWidget {
                   },
             title: isZh ? '健康指标' : 'Health metrics',
           ),
-          _buildSection(
+          _buildSection(context, 
             isZh ? '12. Rating Card (评分)' : '12. Rating Card (Rating)',
             'rating',
             isZh
@@ -292,7 +292,7 @@ class TimelineTemplateGalleryPage extends StatelessWidget {
                   },
             title: isZh ? '电影评分' : 'Movie rating',
           ),
-          _buildSection(
+          _buildSection(context, 
             isZh ? '13. Mood Card (心情)' : '13. Mood Card (Mood)',
             'mood',
             isZh
@@ -309,7 +309,7 @@ class TimelineTemplateGalleryPage extends StatelessWidget {
                   },
             title: isZh ? '今日心情' : 'Today’s mood',
           ),
-          _buildSection(
+          _buildSection(context, 
             isZh ? '14. Progress Card (进度条)' : '14. Progress Card (Progress)',
             'progress',
             isZh
@@ -330,7 +330,7 @@ class TimelineTemplateGalleryPage extends StatelessWidget {
 
           // ─── 时间 ───
           _buildCategoryHeader(isZh ? '时间 (Temporal)' : 'Temporal'),
-          _buildSection(
+          _buildSection(context, 
             isZh ? '15. Event Card (日程事件)' : '15. Event Card (Event)',
             'event',
             isZh
@@ -347,7 +347,7 @@ class TimelineTemplateGalleryPage extends StatelessWidget {
                   },
             title: isZh ? 'AI 产品评审会议' : 'AI product review meeting',
           ),
-          _buildSection(
+          _buildSection(context, 
             isZh ? '16. Duration Card (计时器)' : '16. Duration Card (Timer)',
             'duration',
             {
@@ -357,7 +357,7 @@ class TimelineTemplateGalleryPage extends StatelessWidget {
             },
             title: isZh ? '番茄钟' : 'Pomodoro timer',
           ),
-          _buildSection(
+          _buildSection(context, 
             isZh ? '17. Task Card (任务)' : '17. Task Card (Task)',
             'task',
             isZh
@@ -389,7 +389,7 @@ class TimelineTemplateGalleryPage extends StatelessWidget {
                   },
             title: isZh ? '完成产品需求分析' : 'Complete product requirements analysis',
           ),
-          _buildSection(
+          _buildSection(context, 
             isZh
                 ? '18. Routine Card (习惯打卡)'
                 : '18. Routine Card (Habit tracker)',
@@ -407,7 +407,7 @@ class TimelineTemplateGalleryPage extends StatelessWidget {
                   },
             title: isZh ? '每日冥想' : 'Daily meditation',
           ),
-          _buildSection(
+          _buildSection(context, 
             isZh ? '19. Procedure Card (操作步骤)' : '19. Procedure Card (Steps)',
             'procedure',
             isZh
@@ -436,7 +436,7 @@ class TimelineTemplateGalleryPage extends StatelessWidget {
 
           // ─── 实体 ───
           _buildCategoryHeader(isZh ? '实体 (Entities)' : 'Entities'),
-          _buildSection(
+          _buildSection(context, 
             isZh ? '20. Person Card (人物)' : '20. Person Card (Person)',
             'person',
             isZh
@@ -452,7 +452,7 @@ class TimelineTemplateGalleryPage extends StatelessWidget {
                   },
             title: isZh ? '联系人' : 'Contact',
           ),
-          _buildSection(
+          _buildSection(context, 
             isZh ? '21. Place Card (地点)' : '21. Place Card (Place)',
             'place',
             isZh
@@ -470,7 +470,7 @@ class TimelineTemplateGalleryPage extends StatelessWidget {
                   },
             title: isZh ? '常去书店' : 'Favorite bookstore',
           ),
-          _buildSection(
+          _buildSection(context, 
             isZh ? '22. Spec Sheet (产品规格)' : '22. Spec Sheet (Product specs)',
             'spec_sheet',
             isZh
@@ -498,7 +498,7 @@ class TimelineTemplateGalleryPage extends StatelessWidget {
                   },
             title: 'Apple Watch Series 9',
           ),
-          _buildSection(
+          _buildSection(context, 
             isZh
                 ? '23. Transaction Card (消费)'
                 : '23. Transaction Card (Spending)',
@@ -529,7 +529,7 @@ class TimelineTemplateGalleryPage extends StatelessWidget {
                   },
             title: isZh ? '午餐消费' : 'Lunch spending',
           ),
-          _buildSection(
+          _buildSection(context, 
             isZh ? '24. Link Card (链接)' : '24. Link Card (Link)',
             'link',
             {
@@ -575,6 +575,7 @@ class TimelineTemplateGalleryPage extends StatelessWidget {
 
   /// 普通卡片区块
   Widget _buildSection(
+    BuildContext context,
     String label,
     String templateId,
     Map<String, dynamic> data, {
@@ -590,7 +591,7 @@ class TimelineTemplateGalleryPage extends StatelessWidget {
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF64748B),
+              color: Color(0xFF4A5565),
             ),
           ),
         ),
@@ -599,6 +600,7 @@ class TimelineTemplateGalleryPage extends StatelessWidget {
           data: data,
           title: title,
           status: 'completed',
+          onTap: () => _openPreview(context, templateId, data, title),
         ),
       ],
     );
@@ -606,6 +608,7 @@ class TimelineTemplateGalleryPage extends StatelessWidget {
 
   /// 带背景包装的卡片区块（用于自身没有背景的 compact_card 等）
   Widget _buildWrappedSection(
+    BuildContext context,
     String label,
     String templateId,
     Map<String, dynamic> data, {
@@ -621,32 +624,156 @@ class TimelineTemplateGalleryPage extends StatelessWidget {
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF64748B),
+              color: Color(0xFF4A5565),
             ),
           ),
         ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: const Color(0xFFF1F5F9)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.02),
-                blurRadius: 20,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: NativeCardFactory.build(
-            templateId: templateId,
-            data: data,
-            title: title,
-            status: 'completed',
+        GestureDetector(
+          onTap: () => _openPreview(context, templateId, data, title),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 16,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: NativeCardFactory.build(
+              templateId: templateId,
+              data: data,
+              title: title,
+              status: 'completed',
+            ),
           ),
         ),
       ],
+    );
+  }
+
+  void _openPreview(BuildContext context, String templateId,
+      Map<String, dynamic> data, String title) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => _TemplatePreviewPage(
+          templateId: templateId,
+          data: data,
+          title: title,
+        ),
+      ),
+    );
+  }
+}
+
+/// 卡片模板预览详情页 — 模拟详情页布局
+class _TemplatePreviewPage extends StatelessWidget {
+  final String templateId;
+  final Map<String, dynamic> data;
+  final String title;
+
+  const _TemplatePreviewPage({
+    required this.templateId,
+    required this.data,
+    required this.title,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final tags = (data['tags'] as List<dynamic>?)?.cast<String>() ?? [];
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF7F8FA),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Top bar
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: const SizedBox(
+                      width: 32,
+                      height: 32,
+                      child: Icon(Icons.arrow_back,
+                          size: 20, color: Color(0xFF4A5565)),
+                    ),
+                  ),
+                  Text(
+                    templateId,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF99A1AF),
+                    ),
+                  ),
+                  const SizedBox(width: 32),
+                ],
+              ),
+            ),
+            // Content
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Title
+                    if (title.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: Text(
+                          title,
+                          style: const TextStyle(
+                            fontFamily: 'PingFang SC',
+                            fontSize: 24,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF0A0A0A),
+                            height: 1.375,
+                            letterSpacing: -0.45,
+                          ),
+                        ),
+                      ),
+                    // Tags
+                    if (tags.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: Wrap(
+                          spacing: 8,
+                          children: tags
+                              .map((t) => Text(
+                                    '#$t',
+                                    style: const TextStyle(
+                                      fontFamily: 'PingFang SC',
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w400,
+                                      color: Color(0xFF5B6CFF),
+                                    ),
+                                  ))
+                              .toList(),
+                        ),
+                      ),
+                    // Card
+                    NativeCardFactory.build(
+                      templateId: templateId,
+                      data: data,
+                      title: title,
+                      status: 'completed',
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

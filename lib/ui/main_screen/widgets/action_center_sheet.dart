@@ -19,7 +19,7 @@ class ActionCenterSheet extends StatelessWidget {
 
     return Container(
       decoration: const BoxDecoration(
-        color: Color(0xFFF8FAFC), // matches standard app background
+        color: Color(0xFFF7F8FA), // matches standard app background
         borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
       ),
       constraints: BoxConstraints(

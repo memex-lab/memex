@@ -52,13 +52,13 @@ class RadarChartCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: const Color(0xFF0F172A), // Dark Navy/Slate-900 per design
-          borderRadius: BorderRadius.circular(32),
+          color: const Color(0xFF0A0A0A), // Dark Navy/Slate-900 per design
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha:0.2),
-              blurRadius: 20,
-              offset: const Offset(0, 4),
+              blurRadius: 16,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
@@ -74,7 +74,7 @@ class RadarChartCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF94A3B8), // Slate-400
+                    color: Color(0xFF99A1AF), // Slate-400
                     letterSpacing: 1.5,
                   ),
                 ),
@@ -131,7 +131,7 @@ class RadarChartCard extends StatelessWidget {
                         ),
                         titlePositionPercentageOffset: 0.1,
                         titleTextStyle: const TextStyle(
-                          color: Color(0xFF94A3B8), // Slate-400
+                          color: Color(0xFF99A1AF), // Slate-400
                           fontSize: 12,
                         ),
                         tickCount: 1, // Minimize grid lines

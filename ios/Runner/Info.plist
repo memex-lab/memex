@@ -6,6 +6,18 @@
 		<true/>
 		<key>LSSupportsOpeningDocumentsInPlace</key>
 		<true/>
+		<key>NSUbiquitousContainers</key>
+		<dict>
+			<key>iCloud.com.memexlab.memex</key>
+			<dict>
+				<key>NSUbiquitousContainerIsDocumentScopePublic</key>
+				<true/>
+				<key>NSUbiquitousContainerSupportedFolderLevels</key>
+				<string>Any</string>
+				<key>NSUbiquitousContainerName</key>
+				<string>Memex</string>
+			</dict>
+		</dict>
 		<key>ITSAppUsesNonExemptEncryption</key>
 		<false/>
 		<key>CADisableMinimumFrameDurationOnPhone</key>

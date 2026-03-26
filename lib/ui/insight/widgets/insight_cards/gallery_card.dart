@@ -40,12 +40,12 @@ class GalleryCard extends StatelessWidget {
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(32),
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha:0.04),
-              blurRadius: 20,
-              offset: const Offset(0, 4),
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 16,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
@@ -69,7 +69,7 @@ class GalleryCard extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
-                  color: Color(0xFF64748B), // Slate-500
+                  color: Color(0xFF4A5565), // Slate-500
                   fontStyle: FontStyle.italic,
                 ),
               ),
@@ -82,7 +82,7 @@ class GalleryCard extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF0F172A), // Slate-900
+                color: Color(0xFF0A0A0A), // Slate-900
                 height: 1.3,
               ),
             ),
@@ -115,7 +115,7 @@ class GalleryCard extends StatelessWidget {
                 content!,
                 style: const TextStyle(
                   fontSize: 15,
-                  color: Color(0xFF64748B), // Slate-500
+                  color: Color(0xFF4A5565), // Slate-500
                   height: 1.6,
                 ),
               ),
@@ -137,7 +137,7 @@ class GalleryCard extends StatelessWidget {
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) {
               return Container(
-                color: const Color(0xFFF1F5F9),
+                color: const Color(0xFFF7F8FA),
                 padding: const EdgeInsets.all(4),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -149,7 +149,7 @@ class GalleryCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       error.toString(),
-                      style: const TextStyle(fontSize: 8, color: Color(0xFF94A3B8)),
+                      style: const TextStyle(fontSize: 8, color: Color(0xFF99A1AF)),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),

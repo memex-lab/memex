@@ -99,7 +99,7 @@ class _TimelineConfig extends HtmlWebViewConfig {
           showContainerDecoration: true,
           borderRadius: 24,
           backgroundColor: null, // Transparent to allow HTML background to show
-          borderColor: const Color(0xFFF1F5F9),
+          borderColor: const Color(0xFFF7F8FA),
         );
 }
 
@@ -115,7 +115,7 @@ class _InsightConfig extends HtmlWebViewConfig {
           showContainerDecoration: true,
           borderRadius: 24,
           backgroundColor: Colors.white,
-          borderColor: const Color(0xFFF1F5F9),
+          borderColor: const Color(0xFFF7F8FA),
         );
 }
 

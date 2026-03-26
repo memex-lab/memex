@@ -120,7 +120,7 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
       builder: (context, _) {
         final vm = widget.viewModel;
         return Scaffold(
-          backgroundColor: const Color(0xFFF8FAFC),
+          backgroundColor: const Color(0xFFF7F8FA),
           appBar: AppBar(
             title: Text(
               widget.title ?? UserStorage.l10n.chatHistory,
@@ -130,7 +130,7 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
                 color: Color(0xFF0F172A),
               ),
             ),
-            backgroundColor: const Color(0xFFF8FAFC),
+            backgroundColor: const Color(0xFFF7F8FA),
             elevation: 0,
             centerTitle: true,
             leading: IconButton(
@@ -179,7 +179,7 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(16),
                               border:
-                                  Border.all(color: const Color(0xFFF1F5F9)),
+                                  Border.all(color: const Color(0xFFF7F8FA)),
                               boxShadow: [
                                 BoxShadow(
                                   color:

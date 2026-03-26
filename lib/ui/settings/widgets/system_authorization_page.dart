@@ -216,7 +216,7 @@ class _SystemAuthorizationPageState extends State<SystemAuthorizationPage> {
         foregroundColor: Colors.black,
         elevation: 0.5,
       ),
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: const Color(0xFFF7F8FA),
       body: ListView(
         children: [
           Container(

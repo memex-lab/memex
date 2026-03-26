@@ -1,7 +1,7 @@
 name: memex
 description: A personal knowledge management and insights app
 publish_to: "none"
-version: 1.0.12+86
+version: 1.0.13+88
 
 environment:
   sdk: ">=3.6.0 <4.0.0"

@@ -362,7 +362,7 @@ class _DetailSheetState extends State<_DetailSheet>
                             height: 300,
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF8FAFC),
+                              color: const Color(0xFFF7F8FA),
                               borderRadius: BorderRadius.circular(12),
                               border:
                                   Border.all(color: const Color(0xFFE2E8F0)),

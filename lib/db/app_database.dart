@@ -109,8 +109,8 @@ class AppDatabase extends _$AppDatabase {
               await customStatement(
                   'ALTER TABLE card_cache DROP COLUMN is_draft');
             } catch (e) {
-              _logger.info(
-                  'is_draft column may not exist or already dropped: $e');
+              _logger
+                  .info('is_draft column may not exist or already dropped: $e');
             }
           }
         },
@@ -119,11 +119,7 @@ class AppDatabase extends _$AppDatabase {
 
 /// Opens the connection using drift_flutter
 QueryExecutor _openConnection(String userId) {
-  // Use user-specific database name
   final dbName = 'memex_local_$userId';
 
-  return driftDatabase(
-    name: dbName,
-    // Native options can be configured here if needed, but defaults are usually fine for mobile
-  );
+  return driftDatabase(name: dbName);
 }

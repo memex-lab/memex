@@ -107,7 +107,7 @@ class _CharacterConfigScreenState extends State<CharacterConfigScreen> {
       builder: (context, _) {
         final vm = widget.viewModel;
         return Scaffold(
-          backgroundColor: const Color(0xFFF8FAFC),
+          backgroundColor: const Color(0xFFF7F8FA),
           appBar: AppBar(
             title: Text(
               UserStorage.l10n.configureAiCharacter,
@@ -117,7 +117,7 @@ class _CharacterConfigScreenState extends State<CharacterConfigScreen> {
                 color: Color(0xFF0F172A),
               ),
             ),
-            backgroundColor: const Color(0xFFF8FAFC),
+            backgroundColor: const Color(0xFFF7F8FA),
             elevation: 0,
             centerTitle: true,
             leading: IconButton(
@@ -207,7 +207,7 @@ class _CharacterConfigScreenState extends State<CharacterConfigScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
+        border: Border.all(color: const Color(0xFFF7F8FA)),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF64748B).withOpacity(0.04),
@@ -234,7 +234,7 @@ class _CharacterConfigScreenState extends State<CharacterConfigScreen> {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        const Color(0xFFF1F5F9),
+                        const Color(0xFFF7F8FA),
                         const Color(0xFFE2E8F0),
                       ],
                     ),
@@ -522,7 +522,7 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
             const SizedBox(height: 8),
             Container(
               decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
+                color: const Color(0xFFF7F8FA),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: const Color(0xFFE2E8F0)),
               ),
@@ -578,7 +578,7 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
       hintText: hint,
       hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
       filled: true,
-      fillColor: const Color(0xFFF8FAFC),
+      fillColor: const Color(0xFFF7F8FA),
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),

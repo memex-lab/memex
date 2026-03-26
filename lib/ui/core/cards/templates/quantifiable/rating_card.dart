@@ -28,7 +28,7 @@ class RatingCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF1E293B),
+                    color: Color(0xFF0A0A0A),
                   ),
                 ),
               ),
@@ -74,7 +74,7 @@ class RatingCard extends StatelessWidget {
               comment,
               style: const TextStyle(
                 fontSize: 15,
-                color: Color(0xFF64748B),
+                color: Color(0xFF4A5565),
                 fontStyle: FontStyle.italic,
               ),
             ),

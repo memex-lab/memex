@@ -656,16 +656,24 @@ class UserStorage {
         }
         try {
           final path = await _getICloudContainerPath();
+          _logger.info('iCloud container path: $path');
           if (path != null && path.isNotEmpty) {
-            final dir = Directory(path);
+            // One-time migration: move data from container root to Documents/
+            await migrateICloudToDocumentsIfNeeded(path);
+            // iOS Files app only shows files inside the Documents/ subfolder
+            // of the iCloud container. Root-level files are hidden.
+            final documentsPath = '$path/Documents';
+            final dir = Directory(documentsPath);
             if (!await dir.exists()) {
               await dir.create(recursive: true);
             }
-            return path;
+            return documentsPath;
           }
         } catch (e, st) {
           _logger.warning('Failed to get iCloud path: $e', e, st);
         }
+        _logger
+            .warning('iCloud path resolution failed, falling back to app dir');
         final appDir = await getApplicationDocumentsDirectory();
         return appDir.path;
     }
@@ -736,6 +744,63 @@ class UserStorage {
           'Platform error getting iCloud path: ${e.code} ${e.message}');
       return null;
     }
+  }
+
+  /// Migrate iCloud workspace from container root to Documents/ subfolder.
+  ///
+  /// Before this fix, data was stored at the iCloud container root, which is
+  /// invisible in the iOS Files app. The correct location is container/Documents/.
+  /// This runs once per user and is a no-op if already migrated or no old data exists.
+  static Future<void> migrateICloudToDocumentsIfNeeded(
+      String containerPath) async {
+    const migrationFlag = 'icloud_documents_migration_done';
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool(migrationFlag) == true) return;
+
+    final documentsPath = '$containerPath/Documents';
+    final oldDir = Directory(containerPath);
+    final newDir = Directory(documentsPath);
+
+    // Check if there's anything worth migrating at the root level
+    // (skip system dirs like .Trash, tmp, etc.)
+    final List<FileSystemEntity> rootEntities;
+    try {
+      rootEntities = await oldDir.list().where((e) {
+        final name = e.path.split('/').last;
+        return !name.startsWith('.') && name != 'Documents';
+      }).toList();
+    } catch (e) {
+      _logger.warning('iCloud migration: failed to list root dir: $e');
+      await prefs.setBool(migrationFlag, true);
+      return;
+    }
+
+    if (rootEntities.isEmpty) {
+      // Nothing to migrate
+      await prefs.setBool(migrationFlag, true);
+      return;
+    }
+
+    _logger.info(
+        'iCloud migration: moving ${rootEntities.length} items to Documents/');
+
+    if (!await newDir.exists()) {
+      await newDir.create(recursive: true);
+    }
+
+    for (final entity in rootEntities) {
+      final name = entity.path.split('/').last;
+      final destination = '${documentsPath}/$name';
+      try {
+        await entity.rename(destination);
+        _logger.info('iCloud migration: moved $name');
+      } catch (e) {
+        _logger.warning('iCloud migration: failed to move $name: $e');
+      }
+    }
+
+    await prefs.setBool(migrationFlag, true);
+    _logger.info('iCloud migration: complete');
   }
 
   /// Clear all SharedPreferences data (used for account deletion).

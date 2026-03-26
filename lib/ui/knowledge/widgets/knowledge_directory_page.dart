@@ -94,7 +94,7 @@ class _KnowledgeDirectoryPageState extends State<KnowledgeDirectoryPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: const Color(0xFFF7F8FA),
       appBar: AppBar(
         title: Text(widget.path,
             style: const TextStyle(
@@ -102,7 +102,7 @@ class _KnowledgeDirectoryPageState extends State<KnowledgeDirectoryPage> {
                 fontSize: 20,
                 fontWeight: FontWeight.w700)),
         centerTitle: false,
-        backgroundColor: const Color(0xFFF8FAFC),
+        backgroundColor: const Color(0xFFF7F8FA),
         elevation: 0,
         leading: Container(
           margin: const EdgeInsets.only(left: 16, top: 8, bottom: 8),

@@ -51,12 +51,12 @@ class ProgressChartCard extends StatelessWidget {
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(32),
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha:0.04),
-              blurRadius: 20,
-              offset: const Offset(0, 4),
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 16,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
@@ -85,7 +85,7 @@ class ProgressChartCard extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF0F172A), // Slate-900
+                          color: Color(0xFF0A0A0A), // Slate-900
                         ),
                       ),
                     ),
@@ -106,7 +106,7 @@ class ProgressChartCard extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF0F172A), // Slate-900
+                      color: Color(0xFF0A0A0A), // Slate-900
                     ),
                   ),
                   if (subtitle != null) ...[
@@ -115,7 +115,7 @@ class ProgressChartCard extends StatelessWidget {
                       subtitle!,
                       style: const TextStyle(
                         fontSize: 15,
-                        color: Color(0xFF64748B), // Slate-500
+                        color: Color(0xFF4A5565), // Slate-500
                       ),
                     ),
                   ],
@@ -140,7 +140,7 @@ class ProgressChartCard extends StatelessWidget {
                                   item.label,
                                   style: const TextStyle(
                                     fontSize: 12,
-                                    color: Color(0xFF64748B), // Slate-500
+                                    color: Color(0xFF4A5565), // Slate-500
                                   ),
                                 ),
                                 const SizedBox(width: 4),
@@ -148,7 +148,7 @@ class ProgressChartCard extends StatelessWidget {
                                   '(${item.value.toInt()})',
                                   style: const TextStyle(
                                     fontSize: 12,
-                                    color: Color(0xFF94A3B8), // Slate-400
+                                    color: Color(0xFF99A1AF), // Slate-400
                                   ),
                                 ),
                               ],
@@ -164,7 +164,7 @@ class ProgressChartCard extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
-                        color: Color(0xFF64748B), // Slate-500
+                        color: Color(0xFF4A5565), // Slate-500
                         fontStyle: FontStyle.italic,
                         height: 1.5,
                       ),
@@ -207,7 +207,7 @@ class ProgressChartCard extends StatelessWidget {
       ),
       if (remainder > 0)
         PieChartSectionData(
-          color: const Color(0xFFF1F5F9), // Slate-100/200 like
+          color: const Color(0xFFF7F8FA), // Slate-100/200 like
           value: remainder,
           title: '',
           radius: 12,
@@ -236,7 +236,7 @@ class ProgressChartCard extends StatelessWidget {
         return Colors.pink;
       case 'grey':
       case 'gray':
-        return const Color(0xFF94A3B8);
+        return const Color(0xFF99A1AF);
       default:
         return const Color(0xFFE2E8F0);
     }

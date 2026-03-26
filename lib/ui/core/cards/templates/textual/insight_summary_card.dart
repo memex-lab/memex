@@ -71,7 +71,7 @@ class InsightSummaryCard extends StatelessWidget {
                           style: const TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF1E293B),
+                            color: Color(0xFF0A0A0A),
                           ),
                         ),
                         if (content.isNotEmpty) ...[
@@ -80,7 +80,7 @@ class InsightSummaryCard extends StatelessWidget {
                             content,
                             style: const TextStyle(
                               fontSize: 13,
-                              color: Color(0xFF64748B),
+                              color: Color(0xFF4A5565),
                             ),
                           ),
                         ],
@@ -118,7 +118,7 @@ class InsightSummaryCard extends StatelessWidget {
             style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF94A3B8),
+              color: Color(0xFF99A1AF),
               letterSpacing: 0.5,
             ),
           ),

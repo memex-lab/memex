@@ -34,7 +34,7 @@ class CanvasCard extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: const BoxDecoration(
                   border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
-                  color: Color(0xFFF8FAFC),
+                  color: Color(0xFFF7F8FA),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -42,7 +42,7 @@ class CanvasCard extends StatelessWidget {
                     Row(
                       children: [
                         const Icon(Icons.gesture,
-                            size: 14, color: Color(0xFF64748B)),
+                            size: 14, color: Color(0xFF4A5565)),
                         const SizedBox(width: 8),
                         Text(title,
                             style: const TextStyle(
@@ -54,9 +54,9 @@ class CanvasCard extends StatelessWidget {
                     Row(
                       // Fake tools
                       children: [
-                        _buildTool(const Color(0xFF0F172A)),
+                        _buildTool(const Color(0xFF0A0A0A)),
                         _buildTool(const Color(0xFFEF4444)),
-                        _buildTool(const Color(0xFF6366F1)),
+                        _buildTool(const Color(0xFF5B6CFF)),
                       ],
                     )
                   ],
@@ -75,12 +75,12 @@ class CanvasCard extends StatelessWidget {
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
                               border: Border.all(
-                                  color: const Color(0xFF6366F1).withValues(alpha: 0.2),
+                                  color: const Color(0xFF5B6CFF).withValues(alpha: 0.2),
                                   width: 2),
                               borderRadius: BorderRadius.circular(12)),
                           child: const Text("Sketch Content",
                               style: TextStyle(
-                                  color: Color(0xFF64748B), fontSize: 12)),
+                                  color: Color(0xFF4A5565), fontSize: 12)),
                         ),
                       ),
               )
@@ -104,7 +104,7 @@ class CanvasCard extends StatelessWidget {
 class DotGridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = const Color(0xFF94A3B8).withValues(alpha: 0.2);
+    final paint = Paint()..color = const Color(0xFF99A1AF).withValues(alpha: 0.2);
     const spacing = 20.0;
     for (var x = 0.0; x < size.width; x += spacing) {
       for (var y = 0.0; y < size.height; y += spacing) {

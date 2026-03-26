@@ -48,7 +48,7 @@ class MoodCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w900,
-                    color: Color(0xFF1E293B),
+                    color: Color(0xFF0A0A0A),
                   ),
                 ),
                 if (data.containsKey('trigger'))
@@ -56,7 +56,7 @@ class MoodCard extends StatelessWidget {
                     data['trigger'],
                     style: TextStyle(
                       fontSize: 12,
-                      color: const Color(0xFF0F172A).withValues(alpha: 0.6),
+                      color: const Color(0xFF0A0A0A).withValues(alpha: 0.6),
                     ),
                   ),
               ],
@@ -69,7 +69,7 @@ class MoodCard extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF94A3B8),
+                  color: Color(0xFF99A1AF),
                   height: 1.0,
                 ),
               ),
@@ -102,7 +102,7 @@ class MoodCard extends StatelessWidget {
     if (['angry', 'stressed'].contains(lower)) return Colors.red;
     if (['creative', 'curious'].contains(lower)) return Colors.purple;
     if (['relaxed', 'calm'].contains(lower)) return Colors.teal;
-    return const Color(0xFF64748B);
+    return const Color(0xFF4A5565);
   }
 
   IconData _getMoodIcon(String mood) {

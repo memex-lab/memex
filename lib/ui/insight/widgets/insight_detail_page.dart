@@ -7,9 +7,8 @@ import 'package:memex/ui/timeline/widgets/timeline_card_detail_screen.dart';
 import 'package:memex/utils/toast_helper.dart';
 import 'package:memex/ui/core/widgets/detail_page_layout.dart';
 import 'package:memex/utils/user_storage.dart';
-import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:memex/utils/share_service.dart';
-import 'package:memex/ui/core/widgets/icon_helper.dart';
+import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 
 /// Unified AI Insight detail page
 class InsightDetailPage extends StatefulWidget {
@@ -145,13 +144,13 @@ class _InsightDetailPageState extends State<InsightDetailPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Icon(Icons.error_outline,
-                  size: 48, color: Color(0xFF94A3B8)),
+                  size: 48, color: Color(0xFF99A1AF)),
               const SizedBox(height: 12),
               Text(
                 _errorMessage ?? UserStorage.l10n.loadFailed,
                 style: const TextStyle(
                   fontSize: 14,
-                  color: Color(0xFF94A3B8),
+                  color: Color(0xFF99A1AF),
                 ),
               ),
               const SizedBox(height: 16),
@@ -175,21 +174,10 @@ class _InsightDetailPageState extends State<InsightDetailPage> {
       actions: [
         GestureDetector(
           onTap: _shareInsight,
-          child: Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.3),
-              ),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Icon(
-              Icons.ios_share,
-              size: 20,
-              color: Colors.white,
-            ),
+          child: const SizedBox(
+            width: 32,
+            height: 32,
+            child: Icon(Icons.ios_share, size: 20, color: Color(0xFF4A5565)),
           ),
         ),
       ],
@@ -226,7 +214,7 @@ class _InsightDetailPageState extends State<InsightDetailPage> {
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF1E293B),
+                color: Color(0xFF0A0A0A),
               ),
             ),
             const SizedBox(height: 16),
@@ -255,7 +243,7 @@ class _InsightDetailPageState extends State<InsightDetailPage> {
                   UserStorage.l10n.noRelatedRecords,
                   style: TextStyle(
                     fontSize: 14,
-                    color: Color(0xFF94A3B8),
+                    color: Color(0xFF99A1AF),
                   ),
                 ),
               ),

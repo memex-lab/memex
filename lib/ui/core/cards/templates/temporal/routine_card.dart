@@ -53,7 +53,7 @@ class RoutineCard extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.w900,
-                          color: Color(0xFF1E293B),
+                          color: Color(0xFF0A0A0A),
                         ),
                       ),
                       const SizedBox(width: 4),
@@ -62,7 +62,7 @@ class RoutineCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
-                          color: const Color(0xFF64748B),
+                          color: const Color(0xFF4A5565),
                         ),
                       ),
                     ],

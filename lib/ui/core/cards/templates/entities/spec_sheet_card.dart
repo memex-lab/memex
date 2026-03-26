@@ -28,7 +28,7 @@ class SpecSheetCard extends StatelessWidget {
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
+                  color: const Color(0xFFF7F8FA),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
                   boxShadow: [
@@ -44,7 +44,7 @@ class SpecSheetCard extends StatelessWidget {
                     ? LocalImage(url: imageUrl, fit: BoxFit.cover)
                     : const Center(
                         child: Icon(Icons.inventory_2_outlined,
-                            color: Color(0xFF94A3B8), size: 32)),
+                            color: Color(0xFF99A1AF), size: 32)),
               ),
               const SizedBox(width: 16),
 
@@ -58,7 +58,7 @@ class SpecSheetCard extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E293B),
+                        color: Color(0xFF0A0A0A),
                         height: 1.2,
                       ),
                     ),
@@ -70,7 +70,7 @@ class SpecSheetCard extends StatelessWidget {
                           data['subtitle'],
                           style: const TextStyle(
                             fontSize: 13,
-                            color: Color(0xFF475569),
+                            color: Color(0xFF4A5565),
                           ),
                         ),
                       ),
@@ -104,7 +104,7 @@ class SpecSheetCard extends StatelessWidget {
                             style: const TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF94A3B8),
+                              color: Color(0xFF99A1AF),
                               letterSpacing: 0.5,
                             ),
                           ),

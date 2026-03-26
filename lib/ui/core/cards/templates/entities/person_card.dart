@@ -29,7 +29,7 @@ class PersonCard extends StatelessWidget {
                 child: avatarUrl == null
                     ? Text(name.substring(0, 1).toUpperCase(),
                         style:
-                            const TextStyle(fontSize: 24, color: Color(0xFF94A3B8)))
+                            const TextStyle(fontSize: 24, color: Color(0xFF99A1AF)))
                     : null,
               ),
               if (status != null)
@@ -58,7 +58,7 @@ class PersonCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF1E293B),
+                    color: Color(0xFF0A0A0A),
                   ),
                 ),
                 if (relation != null)
@@ -68,14 +68,14 @@ class PersonCard extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+                        color: const Color(0xFF5B6CFF).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         relation,
                         style: TextStyle(
                           fontSize: 12,
-                          color: const Color(0xFF6366F1),
+                          color: const Color(0xFF5B6CFF),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -84,7 +84,7 @@ class PersonCard extends StatelessWidget {
               ],
             ),
           ),
-          const Icon(Icons.chevron_right, color: Color(0xFF94A3B8)),
+          const Icon(Icons.chevron_right, color: Color(0xFF99A1AF)),
         ],
       ),
     );
@@ -99,7 +99,7 @@ class PersonCard extends StatelessWidget {
       case 'away':
         return Colors.amber;
       default:
-        return const Color(0xFF94A3B8);
+        return const Color(0xFF99A1AF);
     }
   }
 }

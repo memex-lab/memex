@@ -79,12 +79,12 @@ class RouteMapCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
+        border: Border.all(color: const Color(0xFFF7F8FA)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha:0.02),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
+            blurRadius: 16,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -113,7 +113,7 @@ class RouteMapCard extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1E293B),
+                  color: Color(0xFF0A0A0A),
                 ),
               ),
               const Spacer(),
@@ -131,7 +131,7 @@ class RouteMapCard extends StatelessWidget {
                 color: const Color(
                     0xFFFAFAFA), // Light grey inner bg like dotted paper
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFF1F5F9)),
+                border: Border.all(color: const Color(0xFFF7F8FA)),
               ),
               child: CustomPaint(
                 painter: _RoutePainter(locations),
@@ -231,7 +231,7 @@ class _RoutePainter extends CustomPainter {
     final textSpan = TextSpan(
       text: text,
       style: const TextStyle(
-        color: Color(0xFF64748B),
+        color: Color(0xFF4A5565),
         fontSize: 12,
         fontWeight: FontWeight.bold,
       ),
@@ -289,7 +289,7 @@ class _RoutePainter extends CustomPainter {
       const Radius.circular(8),
     );
 
-    final bgPaint = Paint()..color = const Color(0xFF6366F1); // Indigo bubble
+    final bgPaint = Paint()..color = const Color(0xFF5B6CFF); // Indigo bubble
 
     canvas.drawRRect(bgRect, bgPaint);
 

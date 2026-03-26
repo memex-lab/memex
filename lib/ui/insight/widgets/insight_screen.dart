@@ -186,15 +186,15 @@ class _InsightScreenState extends State<InsightScreen> {
                 height: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF5B6CFF)),
                 ),
               )
             : Icon(
                 item.isPinned ? Icons.push_pin : Icons.push_pin_outlined,
                 size: 20,
                 color: item.isPinned
-                    ? const Color(0xFF6366F1)
-                    : const Color(0xFF94A3B8),
+                    ? const Color(0xFF5B6CFF)
+                    : const Color(0xFF99A1AF),
               ),
       ),
     );
@@ -218,11 +218,11 @@ class _InsightScreenState extends State<InsightScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF6366F1),
+                          color: const Color(0xFF5B6CFF),
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF6366F1).withOpacity(0.3),
+                              color: const Color(0xFF5B6CFF).withOpacity(0.3),
                               blurRadius: 12,
                               spreadRadius: 2,
                             ),
@@ -313,7 +313,7 @@ class _InsightScreenState extends State<InsightScreen> {
                     ),
                     child: const Icon(
                       Icons.close,
-                      color: Color(0xFF64748B),
+                      color: Color(0xFF4A5565),
                       size: 20,
                     ),
                   ),
@@ -379,7 +379,7 @@ class _InsightScreenState extends State<InsightScreen> {
                                         style: const TextStyle(
                                           fontSize: 24,
                                           fontWeight: FontWeight.bold,
-                                          color: Color(0xFF0F172A),
+                                          color: Color(0xFF0A0A0A),
                                         ),
                                       )
                                     else
@@ -431,7 +431,7 @@ class _InsightScreenState extends State<InsightScreen> {
                                       style: const TextStyle(
                                         fontSize: 24,
                                         fontWeight: FontWeight.bold,
-                                        color: Color(0xFF0F172A),
+                                        color: Color(0xFF0A0A0A),
                                       ),
                                     )
                                   else if (vm.isReordering)
@@ -463,7 +463,7 @@ class _InsightScreenState extends State<InsightScreen> {
                                               child: const Icon(
                                                 Icons.chat_bubble_outline,
                                                 size: 20,
-                                                color: Color(0xFF6366F1),
+                                                color: Color(0xFF5B6CFF),
                                               ),
                                             ),
                                           ),
@@ -497,7 +497,7 @@ class _InsightScreenState extends State<InsightScreen> {
                                         vm.errorMessage!,
                                         style: const TextStyle(
                                           fontSize: 14,
-                                          color: Color(0xFF94A3B8),
+                                          color: Color(0xFF99A1AF),
                                         ),
                                       ),
                                       const SizedBox(height: 16),
@@ -600,7 +600,7 @@ class _InsightScreenState extends State<InsightScreen> {
                   content
                 else
                   Scaffold(
-                    backgroundColor: const Color(0xFFF1F5F9),
+                    backgroundColor: const Color(0xFFF7F8FA),
                     body: SafeArea(
                       child: content,
                     ),
@@ -632,7 +632,7 @@ class _InsightScreenState extends State<InsightScreen> {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                const Color(0xFF6366F1).withOpacity(0.9),
+                const Color(0xFF5B6CFF).withOpacity(0.9),
                 const Color(0xFF8B5CF6).withOpacity(0.9),
               ],
               begin: Alignment.topLeft,
@@ -645,7 +645,7 @@ class _InsightScreenState extends State<InsightScreen> {
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF6366F1).withOpacity(0.3),
+                color: const Color(0xFF5B6CFF).withOpacity(0.3),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),

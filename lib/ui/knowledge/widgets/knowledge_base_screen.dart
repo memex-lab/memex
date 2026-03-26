@@ -46,7 +46,7 @@ class KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
         final vm = widget.viewModel;
         return Scaffold(
           backgroundColor: const Color(
-              0xFFF1F5F9), // Match Timeline, Insights and bottom nav background
+              0xFFF7F8FA), // Match Timeline, Insights and bottom nav background
           appBar: AppBar(
             title: RichText(
               text: TextSpan(

@@ -650,7 +650,7 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
           builder: (context, scrollController) {
             return Container(
               decoration: const BoxDecoration(
-                color: Color(0xFFF8FAFC),
+                color: Color(0xFFF7F8FA),
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
@@ -716,7 +716,7 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
                                     color: const Color(0xFF6366F1),
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                        color: const Color(0xFFF8FAFC),
+                                        color: const Color(0xFFF7F8FA),
                                         width: 2),
                                   ),
                                   child: const Icon(Icons.edit,

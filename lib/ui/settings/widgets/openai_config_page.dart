@@ -150,7 +150,7 @@ class _OpenAiConfigPageState extends State<OpenAiConfigPage> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
       ),
-      backgroundColor: const Color(0xFFF1F5F9),
+      backgroundColor: const Color(0xFFF7F8FA),
       body: _buildContent(),
     );
   }

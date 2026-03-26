@@ -76,7 +76,7 @@ class CompactCard extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF1E293B), // Slate-800
+                        color: Color(0xFF0A0A0A), // Slate-800
                         height: 1.2,
                       ),
                     ),
@@ -88,7 +88,7 @@ class CompactCard extends StatelessWidget {
                         text: details.join(' · '),
                         style: const TextStyle(
                           fontSize: 13,
-                          color: Color(0xFF64748B), // Slate-500
+                          color: Color(0xFF4A5565), // Slate-500
                           fontWeight: FontWeight.w500,
                           height: 1.2,
                         ),

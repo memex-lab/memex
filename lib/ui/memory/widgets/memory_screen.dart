@@ -41,7 +41,7 @@ class _MemoryScreenState extends State<MemoryScreen> {
             elevation: 0,
             iconTheme: const IconThemeData(color: Color(0xFF0F172A)),
           ),
-          backgroundColor: const Color(0xFFF8FAFC),
+          backgroundColor: const Color(0xFFF7F8FA),
           body: _buildBody(vm),
         );
       },

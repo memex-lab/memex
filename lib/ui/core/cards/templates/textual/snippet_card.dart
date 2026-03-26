@@ -32,7 +32,7 @@ class SnippetCard extends StatelessWidget {
                 height: 120,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+                  color: const Color(0xFF5B6CFF).withValues(alpha: 0.1),
                 ),
               ),
             ),
@@ -48,12 +48,12 @@ class SnippetCard extends StatelessWidget {
                     p: _getTextStyle(style),
                     // Map other styles if needed or use defaults
                     code: const TextStyle(
-                      backgroundColor: Color(0xFFF1F5F9),
-                      color: Color(0xFF0F172A),
+                      backgroundColor: Color(0xFFF7F8FA),
+                      color: Color(0xFF0A0A0A),
                       fontFamily: 'monospace',
                     ),
                     codeblockDecoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
+                      color: const Color(0xFFF7F8FA),
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
@@ -67,7 +67,7 @@ class SnippetCard extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF1F5F9), // Slate-100
+                                color: const Color(0xFFF7F8FA), // Slate-100
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
@@ -75,7 +75,7 @@ class SnippetCard extends StatelessWidget {
                                 style: const TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w700,
-                                  color: Color(0xFF64748B), // Slate-500
+                                  color: Color(0xFF4A5565), // Slate-500
                                 ),
                               ),
                             ))
@@ -104,14 +104,14 @@ class SnippetCard extends StatelessWidget {
           fontStyle: FontStyle.italic,
           fontSize: 18,
           height: 1.4,
-          color: Color(0xFF1E293B), // Slate-800
+          color: Color(0xFF0A0A0A), // Slate-800
         );
       default:
         return const TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.w400,
           height: 1.5,
-          color: Color(0xFF1E293B), // Slate-800
+          color: Color(0xFF0A0A0A), // Slate-800
         );
     }
   }

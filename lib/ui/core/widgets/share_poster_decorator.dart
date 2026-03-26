@@ -14,7 +14,7 @@ class SharePosterDecorator extends StatelessWidget {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Color(0xFFF8FAFC),
+            Color(0xFFF7F8FA),
             Color(0xFFE2E8F0),
           ],
         ),

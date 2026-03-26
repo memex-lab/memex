@@ -173,7 +173,7 @@ class _SearchResultsWidgetState extends State<_SearchResultsWidget> {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: const Color(0xFFF1F5F9),
+            color: const Color(0xFFF7F8FA),
             borderRadius: BorderRadius.circular(10),
           ),
           child: const Icon(Icons.description_outlined,

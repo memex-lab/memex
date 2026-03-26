@@ -895,7 +895,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
               _buildBottomBar(),
 
               Positioned(
-                bottom: 134,
+                bottom: 164,
                 left: 0,
                 right: 0,
                 child: Center(

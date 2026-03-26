@@ -109,7 +109,7 @@ class _ProgressCardState extends State<ProgressCard> {
                           style: const TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF1E293B),
+                            color: Color(0xFF0A0A0A),
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -150,7 +150,7 @@ class _ProgressCardState extends State<ProgressCard> {
                             style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF64748B),
+                              color: Color(0xFF4A5565),
                             ),
                           ),
                         ],
@@ -167,8 +167,8 @@ class _ProgressCardState extends State<ProgressCard> {
             height: 16,
             child: SliderTheme(
               data: SliderTheme.of(context).copyWith(
-                activeTrackColor: const Color(0xFF6366F1),
-                inactiveTrackColor: const Color(0xFFF1F5F9),
+                activeTrackColor: const Color(0xFF5B6CFF),
+                inactiveTrackColor: const Color(0xFFF7F8FA),
                 thumbColor: Colors.white,
                 trackHeight: 12,
                 thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
