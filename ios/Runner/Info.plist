@@ -92,7 +92,7 @@
 		<key>NSFamilyControlsUsageDescription</key>
 		<string>Need Screen Time access to analyze your attention distribution</string>
 		<key>NSMotionUsageDescription</key>
-		<string>Need motion data to track your steps</string>
+		<string>Memex uses motion data to track your daily step count and create activity-based timeline cards.</string>
 		<key>UIBackgroundModes</key>
 		<array>
 			<string>processing</string>

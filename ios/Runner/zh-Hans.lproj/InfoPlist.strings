@@ -13,4 +13,4 @@
 "NSHealthShareUsageDescription" = "Memex 读取您的健康与健身数据（步数、心率、血压、睡眠、体重、运动记录等）以生成 AI 驱动的洞察卡片，帮助您了解健康趋势。例如，查看每周摘要卡片展示您的活动模式和睡眠质量。";
 "NSHealthUpdateUsageDescription" = "当从您的输入中识别出相关信息时，Memex 会将健康指标记录到健康数据中。例如，记录一条运动笔记，Memex 会将锻炼数据同步到「健康」应用。";
 "NSFamilyControlsUsageDescription" = "Memex 读取您的屏幕使用时间数据以分析注意力分布模式并生成洞察卡片。例如，查看您的应用使用情况与生产力记录之间的关联。";
-"NSMotionUsageDescription" = "Memex 使用运动数据在 HealthKit 步数数据不可用时作为备选方案统计步数。例如，即使没有「健康」应用访问权限也能追踪每日步数。";
+"NSMotionUsageDescription" = "Memex 使用运动数据追踪每日步数并生成活动相关的时间线卡片。";
