@@ -50,7 +50,7 @@ class PlaceCard extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 17,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF1E293B),
+                          color: Color(0xFF0A0A0A),
                         ),
                       ),
                       if (address.isNotEmpty)
@@ -62,7 +62,7 @@ class PlaceCard extends StatelessWidget {
                                   Icons
                                       .location_on_outlined, // Changed to outlined
                                   size: 14,
-                                  color: const Color(0xFF64748B)),
+                                  color: const Color(0xFF4A5565)),
                               const SizedBox(width: 4),
                               Expanded(
                                 child: SizedBox(
@@ -91,7 +91,7 @@ class PlaceCard extends StatelessWidget {
                                             address,
                                             style: TextStyle(
                                               fontSize: 13,
-                                              color: const Color(0xFF64748B),
+                                              color: const Color(0xFF4A5565),
                                               fontWeight: FontWeight.w500,
                                             ),
                                           ),
@@ -111,7 +111,7 @@ class PlaceCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
+                    color: const Color(0xFFF7F8FA),
                     shape: BoxShape.circle,
                     border: Border.all(color: const Color(0xFFE2E8F0)),
                   ),
@@ -128,7 +128,7 @@ class PlaceCard extends StatelessWidget {
   Widget _buildMap(double? lat, double? lng) {
     if (lat == null || lng == null) {
       return Container(
-        color: const Color(0xFFF1F5F9),
+        color: const Color(0xFFF7F8FA),
         child: const Center(
             child: Icon(Icons.map, color: Color(0xFFE2E8F0), size: 48)),
       );

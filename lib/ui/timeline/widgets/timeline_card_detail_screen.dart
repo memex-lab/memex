@@ -23,6 +23,7 @@ import 'package:memex/ui/chat/widgets/agent_chat_dialog.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import 'package:memex/ui/core/cards/style/timeline_theme.dart';
+import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:memex/utils/share_service.dart';
 import 'package:memex/ui/core/cards/native_card_factory.dart';
 
@@ -36,7 +37,8 @@ class TimelineCardDetailScreen extends StatefulWidget {
   });
 
   @override
-  State<TimelineCardDetailScreen> createState() => _TimelineCardDetailScreenState();
+  State<TimelineCardDetailScreen> createState() =>
+      _TimelineCardDetailScreenState();
 }
 
 class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
@@ -45,7 +47,8 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
   String? _errorMessage;
   late final MemexRouter _memexRouter;
   Timer? _pollingTimer;
-  static const Duration _pollingInterval = Duration(seconds: 5); // poll every 5s
+  static const Duration _pollingInterval =
+      Duration(seconds: 5); // poll every 5s
 
   @override
   void initState() {
@@ -286,7 +289,8 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
       setState(() {
         _detail = oldDetail;
       });
-      ToastHelper.showError(context, UserStorage.l10n.updateFailed(e.toString()));
+      ToastHelper.showError(
+          context, UserStorage.l10n.updateFailed(e.toString()));
     }
   }
 
@@ -330,7 +334,8 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
         setState(() {
           _detail = oldDetail;
         });
-        ToastHelper.showError(context, UserStorage.l10n.updateFailed(e.toString()));
+        ToastHelper.showError(
+            context, UserStorage.l10n.updateFailed(e.toString()));
       }
     }
   }
@@ -407,7 +412,8 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                         'Cached Tokens': agentStat.cachedTokens,
                         'Thought Tokens': agentStat.thoughtTokens,
                         'Total Tokens': agentStat.totalTokens,
-                        UserStorage.l10n.estimatedCost: -2, // Special flag for cost
+                        UserStorage.l10n.estimatedCost:
+                            -2, // Special flag for cost
                       },
                       cost: agentStat.totalCost,
                     ),
@@ -551,7 +557,8 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ToastHelper.showError(context, UserStorage.l10n.deleteFailed(e.toString()));
+        ToastHelper.showError(
+            context, UserStorage.l10n.deleteFailed(e.toString()));
       }
     }
   }
@@ -586,7 +593,10 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
           templateId: 'classic_card',
           data: <String, dynamic>{
             'content': _detail!.rawContent,
-            'images': _detail!.assets.where((a) => a.isImage).map((a) => a.url).toList(),
+            'images': _detail!.assets
+                .where((a) => a.isImage)
+                .map((a) => a.url)
+                .toList(),
             'audioUrl': audioAssets.isNotEmpty ? audioAssets.first.url : null,
             'tags': _detail!.tags,
           },
@@ -622,7 +632,8 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                     mainAxisAlignment: MainAxisAlignment.end,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (_detail!.address.isNotEmpty && _detail!.address != 'Unknown') ...[
+                      if (_detail!.address.isNotEmpty &&
+                          _detail!.address != 'Unknown') ...[
                         const Icon(
                           Icons.location_on_outlined,
                           size: 14,
@@ -649,7 +660,7 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
               ],
             ),
           ),
-          
+
           // Card content scaled to fit
           Center(
             child: FittedBox(
@@ -705,8 +716,8 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        body: Center(child: AgentLogoLoading()),
       );
     }
 
@@ -736,7 +747,6 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
     }
 
     final detail = _detail!;
-    final hasAssets = detail.assets.isNotEmpty;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -767,11 +777,6 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                         _RoundIconButton(
                           icon: Icons.chat_bubble_outline,
                           onTap: _showChatDialog,
-                        ),
-                        const SizedBox(width: 8),
-                        _RoundIconButton(
-                          icon: Icons.analytics_outlined,
-                          onTap: _showLLMStats,
                         ),
                         const SizedBox(width: 8),
                         _RoundIconButton(
@@ -816,16 +821,19 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                                       child: Text(
                                         detail.title,
                                         style: const TextStyle(
-                                          fontSize: 20,
+                                          fontFamily: 'PingFang SC',
+                                          fontSize: 24,
                                           fontWeight: FontWeight.w600,
                                           color: Color(0xFF334155),
-                                          height: 1.4,
+                                          height: 1.375, // 33/24
+                                          letterSpacing: -0.45,
                                         ),
                                       ),
                                     ),
 
-                                  // Content (with tags appended when has assets, or only tags when no assets)
-                                  if (hasAssets)
+                                  // Content with tags
+                                  if (detail.rawContent.isNotEmpty ||
+                                      detail.tags.isNotEmpty)
                                     Text.rich(
                                       TextSpan(
                                         children: [
@@ -844,10 +852,11 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                                             return TextSpan(
                                               text: '#$tag',
                                               style: const TextStyle(
-                                                fontSize: 15,
+                                                fontSize: 16,
                                                 color: Color(0xFF6366F1),
-                                                fontWeight: FontWeight.w500,
-                                                height: 1.6,
+                                                fontWeight: FontWeight.w400,
+                                                height: 1.25,
+                                                letterSpacing: 0,
                                               ),
                                               recognizer: TapGestureRecognizer()
                                                 ..onTap = () {
@@ -879,9 +888,10 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                                           child: Text(
                                             '#$tag',
                                             style: const TextStyle(
-                                              fontSize: 15,
+                                              fontSize: 16,
                                               color: Color(0xFF6366F1),
-                                              fontWeight: FontWeight.w500,
+                                              fontWeight: FontWeight.w400,
+                                              letterSpacing: 0,
                                             ),
                                           ),
                                         );
@@ -971,40 +981,43 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
   Widget _buildHeaderMedia(BuildContext context, CardDetailModel detail) {
     if (detail.assets.isNotEmpty) {
       // Asset Gallery
-      return Container(
-        height: MediaQuery.of(context).size.height * 0.66,
-        color: Colors.white,
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Column(
           children: [
-            Expanded(
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.55,
               child: GestureDetector(
                 onTap: _showFullScreenGallery,
-                child: PageView.builder(
-                  itemCount: detail.assets.length,
-                  onPageChanged: (index) {
-                    setState(() => _currentAssetIndex = index);
-                  },
-                  itemBuilder: (context, index) {
-                    final asset = detail.assets[index];
-                    if (asset.isImage) {
-                      return Container(
-                        color: Colors.white,
-                        child: LocalImage(
-                          url: asset.url,
-                          fit: BoxFit.contain,
-                        ),
-                      );
-                    } else if (asset.isAudio) {
-                      return Container(
-                        color: const Color(0xFF1E293B),
-                        child: Center(
-                          child: AudioPlayerWidget(url: asset.url),
-                        ),
-                      );
-                    } else {
-                      return const SizedBox.shrink();
-                    }
-                  },
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: PageView.builder(
+                    itemCount: detail.assets.length,
+                    onPageChanged: (index) {
+                      setState(() => _currentAssetIndex = index);
+                    },
+                    itemBuilder: (context, index) {
+                      final asset = detail.assets[index];
+                      if (asset.isImage) {
+                        return Container(
+                          color: const Color(0xFFF7F8FA),
+                          child: LocalImage(
+                            url: asset.url,
+                            fit: BoxFit.cover,
+                          ),
+                        );
+                      } else if (asset.isAudio) {
+                        return Container(
+                          color: const Color(0xFF0A0A0A),
+                          child: Center(
+                            child: AudioPlayerWidget(url: asset.url),
+                          ),
+                        );
+                      } else {
+                        return const SizedBox.shrink();
+                      }
+                    },
+                  ),
                 ),
               ),
             ),
@@ -1022,8 +1035,8 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: isSelected
-                            ? const Color(0xFF6366F1) // Indigo Primary
-                            : const Color(0xFFCBD5E1), // Slate 300
+                            ? const Color(0xFF5B6CFF)
+                            : const Color(0xFF99A1AF),
                       ),
                     );
                   }),
@@ -1033,45 +1046,8 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
         ),
       );
     } else {
-      // Text as Image style
-      return AspectRatio(
-        aspectRatio: 0.8,
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(32),
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xFFFCE7F3), // Pink 100
-                Color(0xFFFBCFE8), // Pink 200
-              ],
-            ),
-          ),
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Title removed from image area when no assets
-                // Only show rawContent in image area, tags will be shown in content area
-                Text(
-                  detail.rawContent,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF831843), // Pink 900
-                    height: 1.4,
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 8,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
+      // No assets — skip the large header, content area handles everything
+      return const SizedBox.shrink();
     }
   }
 
@@ -1151,8 +1127,11 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                   Text(
                     name,
                     style: const TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF94A3B8),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF0A0A0A),
+                      letterSpacing: -0.15,
+                      height: 1.25,
                     ),
                   ),
                 ],
@@ -1162,8 +1141,10 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                 content,
                 style: const TextStyle(
                   fontSize: 14,
+                  fontWeight: FontWeight.w400,
                   color: Color(0xFF334155),
-                  height: 1.5,
+                  height: 1.43,
+                  letterSpacing: 0,
                 ),
               ),
               const SizedBox(height: 4),
@@ -1172,8 +1153,11 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                   Text(
                     time,
                     style: const TextStyle(
-                      fontSize: 12,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
                       color: Color(0xFF94A3B8),
+                      height: 1.43,
+                      letterSpacing: -0.15,
                     ),
                   ),
                 ],
@@ -1207,7 +1191,7 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                   height: 36,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
+                    color: const Color(0xFFF7F8FA),
                     borderRadius: BorderRadius.circular(18),
                   ),
                   child: Row(
@@ -1217,8 +1201,8 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                       const SizedBox(width: 8),
                       Text(
                         UserStorage.l10n.saySomething,
-                        style:
-                            const TextStyle(fontSize: 14, color: Color(0xFF94A3B8)),
+                        style: const TextStyle(
+                            fontSize: 14, color: Color(0xFF94A3B8)),
                       ),
                     ],
                   ),
@@ -1259,9 +1243,12 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                 const SizedBox(width: 8),
                 Text(
                   UserStorage.l10n.relatedMemories, // Semantic and soft
-                  style: TimelineTheme.typography.title.copyWith(
-                    fontSize: 18,
-                    color: TimelineTheme.colors.textPrimary,
+                  style: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF4A5565),
+                    letterSpacing: -0.15,
                   ),
                 ),
                 const Spacer(),
@@ -1524,24 +1511,13 @@ class _RoundIconButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
+      child: SizedBox(
         width: 32,
         height: 32,
-        decoration: BoxDecoration(
-          color: Colors.white.withAlpha(230), // 0.9 * 255
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(26), // 0.1 * 255
-              blurRadius: 4,
-              offset: const Offset(0, 1),
-            ),
-          ],
-        ),
         child: Icon(
           icon,
-          size: 18,
-          color: const Color(0xFF334155),
+          size: 20,
+          color: const Color(0xFF4A5565),
         ),
       ),
     );
@@ -1715,7 +1691,7 @@ class _CommentInputWidgetState extends State<_CommentInputWidget> {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9),
+        color: const Color(0xFFF7F8FA),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -1766,4 +1742,3 @@ class _CommentInputWidgetState extends State<_CommentInputWidget> {
     );
   }
 }
-

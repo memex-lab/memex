@@ -101,9 +101,9 @@ class _TaskCardState extends State<TaskCard> {
                   decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border:
-                          Border.all(color: const Color(0xFF6366F1), width: 2),
+                          Border.all(color: const Color(0xFF5B6CFF), width: 2),
                       color: _isCompleted
-                          ? const Color(0xFF6366F1)
+                          ? const Color(0xFF5B6CFF)
                           : Colors.transparent),
                   child: _isCompleted
                       ? const Icon(Icons.check, size: 12, color: Colors.white)
@@ -116,10 +116,10 @@ class _TaskCardState extends State<TaskCard> {
                     style: TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.bold,
-                        color: const Color(0xFF1E293B),
+                        color: const Color(0xFF0A0A0A),
                         decoration:
                             _isCompleted ? TextDecoration.lineThrough : null,
-                        decorationColor: const Color(0xFF94A3B8))),
+                        decorationColor: const Color(0xFF99A1AF))),
               ),
               if (widget.data['priority'] == 'high')
                 const Icon(Icons.priority_high, size: 16, color: Color(0xFFF43F5E))
@@ -148,7 +148,7 @@ class _TaskCardState extends State<TaskCard> {
                                 : Icons.check_box_outline_blank,
                             size: 18,
                             color:
-                                done ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                                done ? const Color(0xFF99A1AF) : const Color(0xFF4A5565)),
                       ),
                     ),
                     Expanded(
@@ -156,7 +156,7 @@ class _TaskCardState extends State<TaskCard> {
                           style: TextStyle(
                               fontSize: 13,
                               color:
-                                  done ? const Color(0xFF94A3B8) : const Color(0xFF334155),
+                                  done ? const Color(0xFF99A1AF) : const Color(0xFF334155),
                               decoration:
                                   done ? TextDecoration.lineThrough : null)),
                     ),
@@ -169,7 +169,7 @@ class _TaskCardState extends State<TaskCard> {
               Padding(
                 padding: const EdgeInsets.only(top: 8, left: 32),
                 child: Text("${widget.data['due_date']}",
-                    style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF99A1AF))),
               )
           ]
         ],

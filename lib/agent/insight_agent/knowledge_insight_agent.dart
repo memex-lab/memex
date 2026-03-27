@@ -15,6 +15,7 @@ import 'package:memex/agent/state_util.dart';
 import 'package:memex/domain/models/llm_config.dart';
 import 'package:memex/domain/models/agent_definitions.dart';
 import 'package:memex/data/services/file_system_service.dart';
+import 'package:memex/domain/models/card_model.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/user_storage.dart';
 
@@ -205,6 +206,57 @@ class KnowledgeInsightAgent {
         }
 
         result = await agent.run(messages);
+
+        // After agent run, check for insight updates and create summary timeline card
+        final updatesTracker =
+            agent.state.metadata['insight_updates'] as Map<String, dynamic>?;
+        if (updatesTracker != null) {
+          final addedCards =
+              List<Map<String, dynamic>>.from(updatesTracker['added'] ?? []);
+          final updatedCards =
+              List<Map<String, dynamic>>.from(updatesTracker['updated'] ?? []);
+
+          if (addedCards.isNotEmpty || updatedCards.isNotEmpty) {
+            try {
+              final timestampSec =
+                  DateTime.now().millisecondsSinceEpoch ~/ 1000;
+              final dateStr = DateFormat('yyyy/MM/dd').format(DateTime.now());
+              final factId =
+                  '$dateStr.md#ts_${DateTime.now().millisecondsSinceEpoch}';
+
+              final cardData = CardData(
+                factId: factId,
+                title: UserStorage.l10n.knowledgeNewDiscovery,
+                timestamp: timestampSec,
+                status: 'completed',
+                tags: ['insight'],
+                uiConfigs: [
+                  UiConfig(
+                    templateId: 'insight_summary',
+                    data: {
+                      'added_insight_cards': addedCards,
+                      'updated_insight_cards': updatedCards,
+                    },
+                  ),
+                ],
+              );
+
+              final fileService = FileSystemService.instance;
+              await fileService.safeWriteCardFile(userId, factId, cardData);
+              _logger.info(
+                  'Created insight summary card: ${addedCards.length} added, ${updatedCards.length} updated');
+            } catch (e) {
+              _logger.warning('Failed to create insight summary card: $e');
+            }
+
+            // Clear tracker to avoid regenerating on resume
+            agent.state.metadata['insight_updates'] = {
+              'added': [],
+              'updated': []
+            };
+            await saveAgentState(agent.state);
+          }
+        }
       }
     } on AgentException catch (e) {
       if (e.code == AgentExceptionCode.loopDetection) {

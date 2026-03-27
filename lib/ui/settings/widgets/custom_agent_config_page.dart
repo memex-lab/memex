@@ -6,6 +6,7 @@ import 'package:memex/domain/models/llm_config.dart';
 import 'package:memex/domain/models/system_event.dart';
 import 'package:memex/utils/toast_helper.dart';
 import 'package:memex/utils/user_storage.dart';
+import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 
 class CustomAgentConfigPage extends StatefulWidget {
   const CustomAgentConfigPage({super.key});
@@ -108,7 +109,7 @@ class _CustomAgentConfigPageState extends State<CustomAgentConfigPage> {
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: AgentLogoLoading())
           : _configs.isEmpty
               ? Center(child: Text(l10n.noCustomAgents))
               : ListView.builder(

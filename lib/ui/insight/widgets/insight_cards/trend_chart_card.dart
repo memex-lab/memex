@@ -68,12 +68,12 @@ class TrendChartCard extends StatelessWidget {
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(32),
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha:0.04),
-              blurRadius: 20,
-              offset: const Offset(0, 4),
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 16,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
@@ -91,7 +91,7 @@ class TrendChartCard extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF0F172A),
+                      color: Color(0xFF0A0A0A),
                     ),
                   ),
                 ),
@@ -101,7 +101,7 @@ class TrendChartCard extends StatelessWidget {
                     topRightText!,
                     style: const TextStyle(
                       fontSize: 13,
-                      color: Color(0xFF94A3B8),
+                      color: Color(0xFF99A1AF),
                     ),
                   ),
                 ],
@@ -122,7 +122,7 @@ class TrendChartCard extends StatelessWidget {
                         horizontalInterval: (maxY - minY) / 4,
                         getDrawingHorizontalLine: (value) {
                           return const FlLine(
-                            color: Color(0xFFF1F5F9), // Slate-100
+                            color: Color(0xFFF7F8FA), // Slate-100
                             strokeWidth: 1,
                           );
                         },
@@ -152,7 +152,7 @@ class TrendChartCard extends StatelessWidget {
                                     style: TextStyle(
                                       color: p.isHighlight
                                           ? themeColor
-                                          : const Color(0xFF94A3B8),
+                                          : const Color(0xFF99A1AF),
                                       fontWeight: p.isHighlight
                                           ? FontWeight.bold
                                           : FontWeight.normal,
@@ -259,7 +259,7 @@ class TrendChartCard extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 12, vertical: 8),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF1E293B), // Slate-800
+                              color: const Color(0xFF0A0A0A), // Slate-800
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Column(
@@ -299,7 +299,7 @@ class TrendChartCard extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
-                  color: Color(0xFF64748B), // Slate-500
+                  color: Color(0xFF4A5565), // Slate-500
                   fontStyle: FontStyle.italic,
                   height: 1.5,
                 ),
@@ -315,6 +315,6 @@ class TrendChartCard extends StatelessWidget {
     if (colorStr.startsWith('#')) {
       return Color(int.parse(colorStr.substring(1), radix: 16) + 0xFF000000);
     }
-    return const Color(0xFF6366F1);
+    return const Color(0xFF5B6CFF);
   }
 }

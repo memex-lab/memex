@@ -213,4 +213,3 @@ class FileLoggerService {
     return _logDirectory?.path;
   }
 }
-

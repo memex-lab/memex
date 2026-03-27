@@ -2522,6 +2522,12 @@ abstract class AppLocalizations {
   /// **'Ollama (Local)'**
   String get providerOllama;
 
+  /// No description provided for @providerMimo.
+  ///
+  /// In en, this message translates to:
+  /// **'Xiaomi MIMO'**
+  String get providerMimo;
+
   /// No description provided for @modelIdLabel.
   ///
   /// In en, this message translates to:
@@ -2615,13 +2621,13 @@ abstract class AppLocalizations {
   /// No description provided for @warning.
   ///
   /// In en, this message translates to:
-  /// **'Warning'**
+  /// **'Incomplete Setup'**
   String get warning;
 
   /// No description provided for @invalidConfigurationWarning.
   ///
   /// In en, this message translates to:
-  /// **'The current configuration is invalid (e.g., missing API Key, Model ID, or Base URL). It may not work properly. Do you want to save anyway?'**
+  /// **'The configuration is not complete yet (e.g., API Key or Model ID is missing). You can still save and configure it later. Continue?'**
   String get invalidConfigurationWarning;
 
   /// No description provided for @invalidModelConfigDetailed.
@@ -2959,6 +2965,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sign in to iCloud and turn on iCloud Drive to use iCloud storage.'**
   String get icloudRequiresCapability;
+
+  /// No description provided for @loadingFromICloud.
+  ///
+  /// In en, this message translates to:
+  /// **'Restoring data from iCloud…'**
+  String get loadingFromICloud;
+
+  /// No description provided for @switchingToICloud.
+  ///
+  /// In en, this message translates to:
+  /// **'Switching to iCloud storage…'**
+  String get switchingToICloud;
+
+  /// No description provided for @switchingStorage.
+  ///
+  /// In en, this message translates to:
+  /// **'Switching storage…'**
+  String get switchingStorage;
 
   /// No description provided for @customPathInvalid.
   ///

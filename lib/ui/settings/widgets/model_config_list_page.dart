@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:memex/domain/models/llm_config.dart';
 import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/utils/user_storage.dart';
+import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'model_config_edit_page.dart';
 
 import 'package:memex/domain/models/agent_definitions.dart';
@@ -209,7 +210,7 @@ class _ModelConfigListPageState extends State<ModelConfigListPage> {
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: AgentLogoLoading())
           : Column(
               children: [
                 Expanded(

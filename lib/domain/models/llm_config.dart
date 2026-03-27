@@ -17,6 +17,7 @@ class LLMConfig {
   static const String typeMinimax = 'minimax';
   static const String typeOpenRouter = 'openrouter';
   static const String typeOllama = 'ollama';
+  static const String typeMimo = 'mimo';
 
   /// User-friendly display name for a provider type.
   /// Only OpenAI and Anthropic types need special handling since their
@@ -47,6 +48,8 @@ class LLMConfig {
         return 'Zhipu';
       case typeMinimax:
         return 'MiniMax';
+      case typeMimo:
+        return 'Xiaomi MIMO';
       case typeOpenRouter:
         return 'OpenRouter';
       case typeOllama:
@@ -69,6 +72,7 @@ class LLMConfig {
       case typeSeed:
         return typeResponses;
       case typeMinimax:
+      case typeMimo:
         return typeClaude;
       default:
         return null; // native type, no mapping needed
@@ -106,6 +110,8 @@ class LLMConfig {
         return 'OpenRouter';
       case typeOllama:
         return 'Ollama';
+      case typeMimo:
+        return 'Xiaomi MIMO';
       default:
         return type;
     }
@@ -204,6 +210,13 @@ class LLMConfig {
         ];
       case typeOllama:
         return const ['qwen2.5:7b', 'llama3.1:8b', 'gemma3:12b'];
+      case typeMimo:
+        return const [
+          'mimo-v2-pro',
+          'mimo-v2-omni',
+          'mimo-v2-flash',
+          'MiMo-7B-RL',
+        ];
       default:
         return const [];
     }
@@ -282,6 +295,8 @@ class LLMConfig {
         return 'https://openrouter.ai/api/v1';
       case typeOllama:
         return 'http://localhost:11434/v1';
+      case typeMimo:
+        return 'https://api.xiaomimimo.com/anthropic';
       default:
         return '';
     }
@@ -337,6 +352,7 @@ class LLMConfig {
             type == typeSeed ||
             type == typeZhipu ||
             type == typeMinimax ||
+            type == typeMimo ||
             type == typeOpenRouter) &&
         getEffectiveApiKey().isEmpty) {
       return false;
@@ -354,6 +370,7 @@ class LLMConfig {
       typeMinimax,
       typeOpenRouter,
       typeOllama,
+      typeMimo,
     ];
     if (typesRequiringBaseUrl.contains(type)) {
       return baseUrl.isNotEmpty;

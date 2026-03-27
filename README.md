@@ -1,6 +1,6 @@
 <p align="center">
     <picture>
-      <img src="https://github.com/user-attachments/assets/c603127f-98a5-4bf1-8946-778fec2b76f6" width="400">
+          <img src="https://github.com/user-attachments/assets/c603127f-98a5-4bf1-8946-778fec2b76f6" width="400">
     </picture>
 </p>
 <p align="center">
@@ -13,7 +13,7 @@
 
 <p align="center">
   <a href="https://github.com/memex-lab/memex/releases"><img src="https://img.shields.io/github/v/release/memex-lab/memex?style=flat-square&label=release" alt="Release"></a>
-  <a href="https://discord.gg/ftae8GeubK"><img src="https://img.shields.io/badge/discord-join-5865F2?style=flat-square&logo=discord&logoColor=white" alt="Discord"></a>
+  <a href="https://discord.gg/TJGpXwn85F"><img src="https://img.shields.io/badge/discord-join-5865F2?style=flat-square&logo=discord&logoColor=white" alt="Discord"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue?style=flat-square" alt="License"></a>
 </p>
 
@@ -81,11 +81,20 @@ All data stays on your device. You just need to pick your preferred LLM provider
 | OpenAI | OAuth (no API key required) | Sign in with OpenAI account. Unofficial — use at your own risk |
 | Anthropic Claude | Claude API | Direct API access |
 | AWS Bedrock | Bedrock Claude | For AWS users |
+| Kimi (Moonshot) | OpenAI-compatible | kimi-k2.5, kimi-k2, etc. |
+| Aliyun (Qwen) | OpenAI-compatible | qwen3.5-plus, qwen-max, etc. |
+| Volcengine (Doubao) | OpenAI-compatible | doubao-seed-1-8, doubao-1.5-pro, etc. |
+| Zhipu GLM | OpenAI-compatible | GLM-4.7, GLM-4-Plus |
+| MiniMax | Anthropic-compatible | MiniMax-M2.5, MiniMax-M1 |
+| Xiaomi MIMO | Anthropic-compatible | MiMo-7B-RL |
+| OpenRouter | OpenAI-compatible | Access multiple providers via one API |
+| Ollama | OpenAI-compatible (local) | Run models locally on your device |
 
 ## Install
-- **App Store & Google Play**: ⏳ **Coming Soon**. Both iOS and Android versions are currently under review in the major app stores.
-- **Early Access (Android)**: You can download the latest Android APK from [GitHub Releases](https://github.com/memex-lab/memex/releases) to start experiencing it right now.
-- **Build from Source**: If you can't wait for store approval, you can also [compile and install from the source code locally](#development).
+- **iOS**: Download on the [App Store](https://apps.apple.com/app/memexai/id6760325170)
+- **Android**: Download on [Google Play](https://play.google.com/store/apps/details?id=com.memexlab.memex)
+- **Early Access (Android APK)**: You can also download the latest APK directly from [GitHub Releases](https://github.com/memex-lab/memex/releases).
+- **Build from Source**: [Compile and install from source](#development).
 
 ### Configure LLM
 
@@ -194,7 +203,7 @@ flutter run
 | Platforms | iOS, Android |
 | Database | Drift (SQLite) |
 | State Management | Provider + MVVM |
-| LLM Providers | Gemini, OpenAI, Claude, Bedrock Claude |
+| LLM Providers | Gemini, OpenAI, Claude, Bedrock, Kimi, Qwen, Doubao, GLM, MiniMax, MIMO, OpenRouter, Ollama |
 | Agent Framework | dart_agent_core |
 
 ### Project Structure

@@ -24,7 +24,7 @@ class ProcedureCard extends StatelessWidget {
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF1E293B),
+              color: Color(0xFF0A0A0A),
             ),
           ),
           const SizedBox(height: 16),

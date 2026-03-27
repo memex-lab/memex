@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:memex/data/services/file_logger_service.dart';
 import 'package:memex/utils/user_storage.dart';
+import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 
 class LogViewerPage extends StatefulWidget {
   const LogViewerPage({super.key});
@@ -245,7 +246,7 @@ class _LogViewerPageState extends State<LogViewerPage> {
           _buildControlBar(filteredLines.length),
           Expanded(
             child: _isLoading && _logLines.isEmpty
-                ? const Center(child: CircularProgressIndicator())
+                ? Center(child: AgentLogoLoading())
                 : SelectionArea(
                     child: Scrollbar(
                       controller: _scrollController,
@@ -356,7 +357,8 @@ class _LogViewerPageState extends State<LogViewerPage> {
             // Auto Refresh
             Row(
               children: [
-                Text(UserStorage.l10n.autoRefresh, style: const TextStyle(fontSize: 12)),
+                Text(UserStorage.l10n.autoRefresh,
+                    style: const TextStyle(fontSize: 12)),
                 Switch(
                   value: _autoRefresh,
                   onChanged: (val) => setState(() => _autoRefresh = val),
@@ -369,7 +371,8 @@ class _LogViewerPageState extends State<LogViewerPage> {
             // Line Count
             Row(
               children: [
-                Text(UserStorage.l10n.lineCount, style: const TextStyle(fontSize: 12)),
+                Text(UserStorage.l10n.lineCount,
+                    style: const TextStyle(fontSize: 12)),
                 DropdownButton<int>(
                   value: _lineCount,
                   isDense: true,

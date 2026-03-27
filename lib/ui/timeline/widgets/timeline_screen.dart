@@ -25,6 +25,7 @@ import 'package:memex/utils/permission_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:memex/ui/settings/widgets/model_config_list_page.dart';
 import 'package:memex/ui/settings/widgets/system_authorization_page.dart';
+import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 
 /// Timeline screen - main memory view. Receives [viewModel] and [insightViewModel] from parent (Compass-style).
 class TimelineScreen extends StatefulWidget {
@@ -82,6 +83,20 @@ class TimelineScreenState extends State<TimelineScreen> {
     if (mounted) {
       widget.viewModel.refresh();
     }
+  }
+
+  Widget _buildHeaderIconButton({
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: SizedBox(
+        width: 36,
+        height: 36,
+        child: Icon(icon, size: 20, color: const Color(0xFF4A5565)),
+      ),
+    );
   }
 
   void _showChatDialog(TimelineViewModel vm) {
@@ -256,43 +271,40 @@ class TimelineScreenState extends State<TimelineScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Text(
-                        'Memex',
-                        style: GoogleFonts.orbitron(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 2,
-                          color: const Color(0xFF0F172A),
+                      RichText(
+                        text: TextSpan(
+                          children: [
+                            TextSpan(
+                              text: 'Meme',
+                              style: GoogleFonts.bricolageGrotesque(
+                                fontSize: 32,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.4,
+                                color: const Color(0xFF0A0A0A),
+                              ),
+                            ),
+                            TextSpan(
+                              text: 'x',
+                              style: GoogleFonts.bricolageGrotesque(
+                                fontSize: 32,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.4,
+                                color: const Color(0xFF5B6CFF),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          GestureDetector(
+                          // Search icon
+                          _buildHeaderIconButton(
+                            icon: Icons.chat_bubble_outline,
                             onTap: () => _showChatDialog(vm),
-                            child: Container(
-                              width: 36,
-                              height: 36,
-                              margin: const EdgeInsets.only(right: 8),
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.05),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: const Icon(
-                                Icons.chat_bubble_outline,
-                                size: 18,
-                                color: Color(0xFF64748B),
-                              ),
-                            ),
                           ),
+                          const SizedBox(width: 8),
+                          // Notification / action center icon
                           if (AppDatabase.isInitialized)
                             StreamBuilder<List<SystemAction>>(
                               stream: (AppDatabase.instance.select(
@@ -318,36 +330,39 @@ class TimelineScreenState extends State<TimelineScreen> {
                                               .l10n.noPendingActionsToast);
                                     }
                                   },
-                                  child: Container(
+                                  child: SizedBox(
                                     width: 36,
                                     height: 36,
-                                    margin: const EdgeInsets.only(right: 8),
-                                    alignment: Alignment.center,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      shape: BoxShape.circle,
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.05),
-                                          blurRadius: 4,
-                                          offset: const Offset(0, 2),
+                                    child: Stack(
+                                      children: [
+                                        const Center(
+                                          child: Icon(
+                                            Icons.notifications_outlined,
+                                            size: 20,
+                                            color: Color(0xFF4A5565),
+                                          ),
                                         ),
+                                        if (pendingCount > 0)
+                                          Positioned(
+                                            top: 6,
+                                            right: 6,
+                                            child: Container(
+                                              width: 7,
+                                              height: 7,
+                                              decoration: const BoxDecoration(
+                                                color: Color(0xFF5B6CFF),
+                                                shape: BoxShape.circle,
+                                              ),
+                                            ),
+                                          ),
                                       ],
-                                    ),
-                                    child: Badge(
-                                      isLabelVisible: pendingCount > 0,
-                                      label: Text(pendingCount.toString()),
-                                      offset: const Offset(6, -6),
-                                      child: const Icon(
-                                        Icons.assignment_turned_in_outlined,
-                                        size: 18,
-                                        color: Color(0xFF64748B),
-                                      ),
                                     ),
                                   ),
                                 );
                               },
                             ),
+                          const SizedBox(width: 8),
+                          // Avatar button
                           GestureDetector(
                             onTap: () {
                               showModalBottomSheet(
@@ -365,28 +380,29 @@ class TimelineScreenState extends State<TimelineScreen> {
                             child: Badge(
                               isLabelVisible: _showPermissionBadge,
                               smallSize: 10,
-                              offset: const Offset(0, 0),
                               backgroundColor: Colors.red,
                               child: Container(
                                 width: 36,
                                 height: 36,
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFEEF2FF),
+                                  gradient: const LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      Color(0xFF5B6CFF),
+                                      Color(0xFF7B8CFF),
+                                    ],
+                                  ),
                                   borderRadius: BorderRadius.circular(18),
-                                  border:
-                                      Border.all(color: Colors.white, width: 2),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.05),
-                                      blurRadius: 4,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
                                 ),
                                 child: Center(
                                   child: Text(
-                                    _userAvatar ?? '👤',
-                                    style: const TextStyle(fontSize: 20),
+                                    _userAvatar ?? 'M',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -814,20 +830,20 @@ class TimelineScreenState extends State<TimelineScreen> {
 
   Widget _buildTimelineBody(TimelineViewModel vm) {
     if ((vm.isLoading || vm.load.running) && vm.cards.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return Center(child: AgentLogoLoading());
     }
 
     if (vm.isSubmitting) {
       if (vm.cards.isEmpty) {
-        return const Center(child: CircularProgressIndicator());
+        return Center(child: AgentLogoLoading());
       } else {
         return Stack(
           children: [
             _buildTimelineContent(vm),
             Container(
               color: Colors.white.withOpacity(0.7),
-              child: const Center(
-                child: CircularProgressIndicator(),
+              child: Center(
+                child: AgentLogoLoading(),
               ),
             ),
           ],
@@ -1208,10 +1224,10 @@ class _TimelineEntryItemState extends State<_TimelineEntryItem> {
           Text(
             card.displayTime(UserStorage.l10n),
             style: const TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFFCBD5E1),
-              letterSpacing: 1.5,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF99A1AF),
+              letterSpacing: -0.15,
             ),
           ),
           const SizedBox(width: 16),

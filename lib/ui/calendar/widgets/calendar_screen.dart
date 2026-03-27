@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import 'package:memex/ui/calendar/view_models/calendar_viewmodel.dart';
 import 'package:memex/utils/user_storage.dart';
+import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:memex/ui/timeline/widgets/timeline_card_detail_screen.dart';
 
 /// Calendar screen. Receives [viewModel] from parent (Compass-style).
@@ -42,52 +43,54 @@ class _CalendarScreenState extends State<CalendarScreen> {
       builder: (context, _) {
         final vm = widget.viewModel;
         return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: Text(
-          DateFormat.yMMM(UserStorage.l10n.localeName).format(vm.focusedMonth),
-          style:
-              const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 20, color: Color(0xFF64748B)),
-          onPressed: () => Navigator.pop(context),
-        ),
-        centerTitle: true,
-      ),
-      body: Column(
-        children: [
-          _buildCalendarHeader(),
-          SizedBox(
-            height: 300,
-            child: PageView.builder(
-              controller: _pageController,
-              onPageChanged: (int pageIndex) {
-                const initialPage = 1000;
-                final monthDiff = pageIndex - initialPage;
-                final newMonth = DateTime(
-                    widget.initialDate.year, widget.initialDate.month + monthDiff);
-                vm.setFocusedMonth(newMonth);
-                vm.fetchMonthData(newMonth);
-              },
-              itemBuilder: (context, index) {
-                const initialPage = 1000;
-                final monthDiff = index - initialPage;
-                final month = DateTime(
-                    widget.initialDate.year, widget.initialDate.month + monthDiff);
-                return _buildMonthGrid(context, vm, month);
-              },
+          backgroundColor: Colors.white,
+          appBar: AppBar(
+            title: Text(
+              DateFormat.yMMM(UserStorage.l10n.localeName)
+                  .format(vm.focusedMonth),
+              style: const TextStyle(
+                  color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
             ),
+            backgroundColor: Colors.white,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new,
+                  size: 20, color: Color(0xFF64748B)),
+              onPressed: () => Navigator.pop(context),
+            ),
+            centerTitle: true,
           ),
-          const Divider(height: 1),
-          Expanded(
-            child: _buildDayList(context, vm),
+          body: Column(
+            children: [
+              _buildCalendarHeader(),
+              SizedBox(
+                height: 300,
+                child: PageView.builder(
+                  controller: _pageController,
+                  onPageChanged: (int pageIndex) {
+                    const initialPage = 1000;
+                    final monthDiff = pageIndex - initialPage;
+                    final newMonth = DateTime(widget.initialDate.year,
+                        widget.initialDate.month + monthDiff);
+                    vm.setFocusedMonth(newMonth);
+                    vm.fetchMonthData(newMonth);
+                  },
+                  itemBuilder: (context, index) {
+                    const initialPage = 1000;
+                    final monthDiff = index - initialPage;
+                    final month = DateTime(widget.initialDate.year,
+                        widget.initialDate.month + monthDiff);
+                    return _buildMonthGrid(context, vm, month);
+                  },
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: _buildDayList(context, vm),
+              ),
+            ],
           ),
-        ],
-      ),
-    );
+        );
       },
     );
   }
@@ -109,7 +112,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
         children: days
             .map((e) => Text(
                   e,
-                  style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+                  style:
+                      const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
                 ))
             .toList(),
       ),
@@ -181,11 +185,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         ? Colors.white
                         : (hasData
                             ? const Color(0xFF4338CA)
-                            : (date.weekday >= 6 ? const Color(0xFF94A3B8) : const Color(0xFF0F172A))),
-                    fontWeight:
-                        isSelected || isToday || hasData
-                            ? FontWeight.bold
-                            : FontWeight.normal,
+                            : (date.weekday >= 6
+                                ? const Color(0xFF94A3B8)
+                                : const Color(0xFF0F172A))),
+                    fontWeight: isSelected || isToday || hasData
+                        ? FontWeight.bold
+                        : FontWeight.normal,
                   ),
                 ),
               ),
@@ -230,7 +235,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final cards = vm.getSelectedDayCards();
 
     if (vm.isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return Center(child: AgentLogoLoading());
     }
 
     if (cards.isEmpty) {
@@ -243,7 +248,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
             const SizedBox(height: 16),
             Text(
               UserStorage.l10n.noRecordsOnDate(
-                DateFormat.MMMd(UserStorage.l10n.localeName).format(vm.selectedDate),
+                DateFormat.MMMd(UserStorage.l10n.localeName)
+                    .format(vm.selectedDate),
               ),
               style: const TextStyle(color: Color(0xFF94A3B8)),
             ),
@@ -271,7 +277,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => TimelineCardDetailScreen(cardId: card.id),
+                  builder: (context) =>
+                      TimelineCardDetailScreen(cardId: card.id),
                 ),
               );
             },
@@ -297,7 +304,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF1F5F9),
+                              color: const Color(0xFFF7F8FA),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(

@@ -51,7 +51,7 @@ class HealthKitFetcher implements HealthDataFetcher {
       List<HealthDataType> types = [type];
 
       // If we are asked for sleep, fetch all possible sleep stages and sessions
-      // to ensure we get data from both Apple Health and Health Connect
+      // to ensure we get data from Apple Health (iOS only — Health Connect removed on Android)
       if (type == HealthDataType.SLEEP_ASLEEP) {
         types = [
           HealthDataType.SLEEP_ASLEEP,
@@ -62,13 +62,6 @@ class HealthKitFetcher implements HealthDataFetcher {
         ];
         if (Platform.isIOS) {
           types.add(HealthDataType.SLEEP_IN_BED);
-        } else if (Platform.isAndroid) {
-          types.addAll([
-            HealthDataType.SLEEP_AWAKE_IN_BED,
-            HealthDataType.SLEEP_OUT_OF_BED,
-            HealthDataType.SLEEP_UNKNOWN,
-            HealthDataType.SLEEP_SESSION,
-          ]);
         }
       }
 

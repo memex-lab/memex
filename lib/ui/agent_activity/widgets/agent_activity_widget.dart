@@ -156,7 +156,7 @@ class _AgentActivityWidgetState extends State<AgentActivityWidget>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Bouncing emoji
+                // Bouncing thinking emoji
                 AnimatedBuilder(
                   animation: _bounceAnimation,
                   builder: (context, child) {
@@ -165,7 +165,7 @@ class _AgentActivityWidgetState extends State<AgentActivityWidget>
                       child: child,
                     );
                   },
-                  child: const Text('🤔', style: TextStyle(fontSize: 20)),
+                  child: const Text('🤔', style: TextStyle(fontSize: 22)),
                 ),
                 const SizedBox(width: 8),
                 // Text
@@ -221,14 +221,21 @@ class _DetailSheet extends StatefulWidget {
   State<_DetailSheet> createState() => _DetailSheetState();
 }
 
-class _DetailSheetState extends State<_DetailSheet> {
+class _DetailSheetState extends State<_DetailSheet>
+    with SingleTickerProviderStateMixin {
   AgentActivityMessageModel? _message;
   StreamSubscription? _subscription;
   AgentActivityService? _service;
 
+  late AnimationController _pulseController;
+
   @override
   void initState() {
     super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: true);
     _message = widget.initialMessage;
     try {
       _service = AgentActivityService.instance;
@@ -254,6 +261,7 @@ class _DetailSheetState extends State<_DetailSheet> {
   @override
   void dispose() {
     _subscription?.cancel();
+    _pulseController.dispose();
     super.dispose();
   }
 
@@ -286,13 +294,19 @@ class _DetailSheetState extends State<_DetailSheet> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  UserStorage.l10n.activityDetail,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF0F172A),
-                  ),
+                Row(
+                  children: [
+                    const Text('🤔', style: TextStyle(fontSize: 24)),
+                    const SizedBox(width: 10),
+                    Text(
+                      UserStorage.l10n.activityDetail,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                  ],
                 ),
                 IconButton(
                   icon: const Icon(Icons.close, color: Color(0xFF94A3B8)),
@@ -348,7 +362,7 @@ class _DetailSheetState extends State<_DetailSheet> {
                             height: 300,
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF8FAFC),
+                              color: const Color(0xFFF7F8FA),
                               borderRadius: BorderRadius.circular(12),
                               border:
                                   Border.all(color: const Color(0xFFE2E8F0)),

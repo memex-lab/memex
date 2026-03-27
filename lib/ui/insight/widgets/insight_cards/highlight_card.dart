@@ -30,7 +30,7 @@ class HighlightCard extends StatelessWidget {
         return [const Color(0xFF3B82F6), const Color(0xFF60A5FA)];
       case 'primary':
       default:
-        return [const Color(0xFF6366F1), const Color(0xFFA855F7)];
+        return [const Color(0xFF5B6CFF), const Color(0xFFA855F7)];
     }
   }
 
@@ -49,7 +49,7 @@ class HighlightCard extends StatelessWidget {
           boxShadow: [
             BoxShadow(
               color: _gradientColors.first.withValues(alpha: 0.3),
-              blurRadius: 20,
+              blurRadius: 16,
               offset: const Offset(0, 8),
             ),
           ],

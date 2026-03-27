@@ -4,6 +4,7 @@ import 'package:memex/db/app_database.dart';
 import 'package:memex/ui/agent_activity/widgets/system_action_card.dart';
 import 'package:memex/data/services/system_action_service.dart';
 import 'package:drift/drift.dart' hide Column;
+import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 
 class ActionCenterSheet extends StatelessWidget {
   const ActionCenterSheet({super.key});
@@ -18,7 +19,7 @@ class ActionCenterSheet extends StatelessWidget {
 
     return Container(
       decoration: const BoxDecoration(
-        color: Color(0xFFF8FAFC), // matches standard app background
+        color: Color(0xFFF7F8FA), // matches standard app background
         borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
       ),
       constraints: BoxConstraints(
@@ -83,7 +84,7 @@ class ActionCenterSheet extends StatelessWidget {
                   .watch(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return Center(child: AgentLogoLoading());
                 }
 
                 final actions = snapshot.data ?? [];

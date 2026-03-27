@@ -43,7 +43,7 @@ class TransactionCard extends StatelessWidget {
                           border: Border.all(color: const Color(0xFFE2E8F0)),
                         ),
                         child: const Icon(Icons.shopping_bag_outlined,
-                            color: Color(0xFF64748B), size: 20),
+                            color: Color(0xFF4A5565), size: 20),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -55,7 +55,7 @@ class TransactionCard extends StatelessWidget {
                               style: const TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFF1E293B),
+                                color: Color(0xFF0A0A0A),
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -63,7 +63,7 @@ class TransactionCard extends StatelessWidget {
                               location,
                               style: const TextStyle(
                                 fontSize: 11,
-                                color: Color(0xFF94A3B8),
+                                color: Color(0xFF99A1AF),
                               ),
                             ),
                           ],
@@ -80,7 +80,7 @@ class TransactionCard extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFF94A3B8),
+                                color: Color(0xFF99A1AF),
                                 letterSpacing: 1.0,
                               ),
                             ),
@@ -91,7 +91,7 @@ class TransactionCard extends StatelessWidget {
                                 fontSize: 20,
                                 fontWeight: FontWeight.w900,
                                 fontFamily: 'monospace',
-                                color: Color(0xFF0F172A),
+                                color: Color(0xFF0A0A0A),
                               ),
                             ),
                           ],
@@ -106,7 +106,7 @@ class TransactionCard extends StatelessWidget {
                 if (items.isNotEmpty)
                   Container(
                     width: double.infinity,
-                    color: const Color(0xFFF8FAFC), // Slight offset color
+                    color: const Color(0xFFF7F8FA), // Slight offset color
                     padding: const EdgeInsets.all(20),
                     child: Column(
                       children: [
@@ -123,7 +123,7 @@ class TransactionCard extends StatelessWidget {
                 // Bottom
                 Container(
                   height: 12,
-                  color: const Color(0xFFF8FAFC),
+                  color: const Color(0xFFF7F8FA),
                 ),
               ],
             ),
@@ -140,7 +140,7 @@ class TransactionCard extends StatelessWidget {
         Expanded(
           child: Text(
             name,
-            style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+            style: const TextStyle(fontSize: 13, color: Color(0xFF4A5565)),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),

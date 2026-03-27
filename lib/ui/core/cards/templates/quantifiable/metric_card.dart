@@ -73,7 +73,7 @@ class MetricCard extends StatelessWidget {
                   width: 4,
                   height: 18,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF6366F1), // Indigo 500
+                    color: const Color(0xFF5B6CFF), // Indigo 500
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -84,7 +84,7 @@ class MetricCard extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF0F172A), // Slate 900
+                      color: Color(0xFF0A0A0A), // Slate 900
                       letterSpacing: 0.2,
                     ),
                     maxLines: 1,
@@ -105,10 +105,10 @@ class MetricCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC).withValues(alpha: 0.5), // Slate 50
+        color: const Color(0xFFF7F8FA).withValues(alpha: 0.5), // Slate 50
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFFF1F5F9), // Slate 100
+          color: const Color(0xFFF7F8FA), // Slate 100
           width: 1,
         ),
       ),
@@ -152,7 +152,7 @@ class MetricCard extends StatelessWidget {
       hasTrend = true;
     } else {
       trendIcon = Icons.horizontal_rule_rounded;
-      trendColor = const Color(0xFF94A3B8); // Slate 400
+      trendColor = const Color(0xFF99A1AF); // Slate 400
       hasTrend = false;
     }
 
@@ -165,10 +165,10 @@ class MetricCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC).withValues(alpha: 0.5), // Slate 50
+        color: const Color(0xFFF7F8FA).withValues(alpha: 0.5), // Slate 50
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFFF1F5F9), // Slate 100
+          color: const Color(0xFFF7F8FA), // Slate 100
           width: 1,
         ),
       ),
@@ -210,7 +210,7 @@ class MetricCard extends StatelessWidget {
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         height: 1.25,
-                        color: Color(0xFF475569), // Slate 600
+                        color: Color(0xFF4A5565), // Slate 600
                         letterSpacing: -0.2,
                       ),
                       maxLines: 3,
@@ -238,7 +238,7 @@ class MetricCard extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF0F172A), // Slate 900
+                          color: Color(0xFF0A0A0A), // Slate 900
                           letterSpacing: -0.5,
                         ),
                       ),
@@ -251,7 +251,7 @@ class MetricCard extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF94A3B8), // Slate 400
+                        color: Color(0xFF99A1AF), // Slate 400
                       ),
                     ),
                   ],
@@ -264,7 +264,7 @@ class MetricCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w400,
-                    color: Color(0xFF64748B), // Slate 500
+                    color: Color(0xFF4A5565), // Slate 500
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -316,7 +316,7 @@ class MetricCard extends StatelessWidget {
       hasTrend = true;
     } else {
       trendIcon = Icons.horizontal_rule_rounded;
-      trendColor = const Color(0xFF94A3B8); // Slate 400
+      trendColor = const Color(0xFF99A1AF); // Slate 400
       hasTrend = false;
     }
 
@@ -362,7 +362,7 @@ class MetricCard extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF1E293B), // Slate 800
+                  color: Color(0xFF0A0A0A), // Slate 800
                   letterSpacing: -0.2,
                 ),
                 maxLines: 1,
@@ -375,7 +375,7 @@ class MetricCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w400,
-                    color: Color(0xFF64748B), // Slate 500
+                    color: Color(0xFF4A5565), // Slate 500
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -400,7 +400,7 @@ class MetricCard extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF0F172A), // Slate 900
+                      color: Color(0xFF0A0A0A), // Slate 900
                       letterSpacing: -0.5,
                     ),
                   ),
@@ -410,7 +410,7 @@ class MetricCard extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF94A3B8), // Slate 400
+                        color: Color(0xFF99A1AF), // Slate 400
                       ),
                     ),
                   ],
@@ -448,7 +448,7 @@ class MetricCard extends StatelessWidget {
       default: // Indigo as default
         return {
           'bg': const Color(0xFFEEF2FF),
-          'primary': const Color(0xFF6366F1),
+          'primary': const Color(0xFF5B6CFF),
         };
     }
   }

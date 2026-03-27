@@ -379,6 +379,33 @@ Tool buildSaveKnowledgeInsightCardsTool() {
           await fileSystem.saveInsightTags(userId, allTags.toList());
         }
 
+        // Track added/updated cards in state metadata for summary card generation
+        try {
+          final state = AgentCallToolContext.current!.state;
+          final tracker =
+              state.metadata['insight_updates'] as Map<String, dynamic>? ??
+                  {'added': [], 'updated': []};
+          final addedList =
+              List<Map<String, dynamic>>.from(tracker['added'] ?? []);
+          final updatedList =
+              List<Map<String, dynamic>>.from(tracker['updated'] ?? []);
+
+          for (final chart in chartObjects) {
+            final info = {'id': chart.id, 'title': chart.title ?? ''};
+            if (chart.type == 'add') {
+              addedList.add(info);
+            } else if (chart.type == 'update') {
+              updatedList.add(info);
+            }
+          }
+          state.metadata['insight_updates'] = {
+            'added': addedList,
+            'updated': updatedList
+          };
+        } catch (e) {
+          // Tracking failure should not break the tool
+        }
+
         return Prompts.knowledgeInsightToolSuccessUpdate(
             createdIds.length, createdIds, updatedIds.length, updatedIds);
       } catch (e) {

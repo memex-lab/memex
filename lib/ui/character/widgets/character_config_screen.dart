@@ -6,6 +6,7 @@ import 'package:memex/ui/character/view_models/character_viewmodel.dart';
 import 'package:memex/utils/toast_helper.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/user_storage.dart';
+import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:memex/ui/main_screen/widgets/chat_input_bar.dart';
 
 /// AI character config screen. Receives [viewModel] from parent (Compass-style).
@@ -25,7 +26,9 @@ class _CharacterConfigScreenState extends State<CharacterConfigScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       widget.viewModel.loadCharacters().catchError((e) {
-        if (mounted) ToastHelper.showError(context, UserStorage.l10n.loadCharacterFailed(e.toString()));
+        if (mounted)
+          ToastHelper.showError(
+              context, UserStorage.l10n.loadCharacterFailed(e.toString()));
       });
     });
   }
@@ -34,9 +37,13 @@ class _CharacterConfigScreenState extends State<CharacterConfigScreen> {
       CharacterViewModel vm, CharacterModel character, bool enabled) async {
     try {
       await vm.setCharacterEnabled(character, enabled);
-      if (mounted) ToastHelper.showSuccess(context, enabled ? UserStorage.l10n.enabled : UserStorage.l10n.disabled);
+      if (mounted)
+        ToastHelper.showSuccess(context,
+            enabled ? UserStorage.l10n.enabled : UserStorage.l10n.disabled);
     } catch (e) {
-      if (mounted) ToastHelper.showError(context, UserStorage.l10n.operationFailed(e.toString()));
+      if (mounted)
+        ToastHelper.showError(
+            context, UserStorage.l10n.operationFailed(e.toString()));
     }
   }
 
@@ -64,9 +71,12 @@ class _CharacterConfigScreenState extends State<CharacterConfigScreen> {
     if (confirmed == true) {
       try {
         await vm.deleteCharacter(character);
-        if (mounted) ToastHelper.showSuccess(context, UserStorage.l10n.deleteSuccess);
+        if (mounted)
+          ToastHelper.showSuccess(context, UserStorage.l10n.deleteSuccess);
       } catch (e) {
-        if (mounted) ToastHelper.showError(context, UserStorage.l10n.deleteFailed(e.toString()));
+        if (mounted)
+          ToastHelper.showError(
+              context, UserStorage.l10n.deleteFailed(e.toString()));
       }
     }
   }
@@ -97,95 +107,96 @@ class _CharacterConfigScreenState extends State<CharacterConfigScreen> {
       builder: (context, _) {
         final vm = widget.viewModel;
         return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        title: Text(
-          UserStorage.l10n.configureAiCharacter,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF0F172A),
+          backgroundColor: const Color(0xFFF7F8FA),
+          appBar: AppBar(
+            title: Text(
+              UserStorage.l10n.configureAiCharacter,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF0F172A),
+              ),
+            ),
+            backgroundColor: const Color(0xFFF7F8FA),
+            elevation: 0,
+            centerTitle: true,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+              onPressed: () => Navigator.of(context).pop(),
+              color: const Color(0xFF64748B),
+            ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.add, size: 24),
+                onPressed: () => _showAddCharacterDialog(vm),
+                color: const Color(0xFF6366F1),
+                tooltip: UserStorage.l10n.addCharacter,
+              ),
+              const SizedBox(width: 8),
+            ],
           ),
-        ),
-        backgroundColor: const Color(0xFFF8FAFC),
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-          onPressed: () => Navigator.of(context).pop(),
-          color: const Color(0xFF64748B),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add, size: 24),
-            onPressed: () => _showAddCharacterDialog(vm),
-            color: const Color(0xFF6366F1),
-            tooltip: UserStorage.l10n.addCharacter,
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: Stack(
-        children: [
-          Column(
+          body: Stack(
             children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-                child: Text(
-                  UserStorage.l10n.addCharacterSubtitle,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: const Color(0xFF64748B),
-                    height: 1.5,
+              Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                    child: Text(
+                      UserStorage.l10n.addCharacterSubtitle,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: const Color(0xFF64748B),
+                        height: 1.5,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: vm.isLoading
+                        ? Center(child: AgentLogoLoading())
+                        : vm.characters.isEmpty
+                            ? Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.person_off_outlined,
+                                        size: 48, color: Colors.grey[300]),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      UserStorage.l10n.noCharacters,
+                                      style: TextStyle(color: Colors.grey[400]),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : ListView.builder(
+                                padding:
+                                    const EdgeInsets.fromLTRB(20, 0, 20, 100),
+                                itemCount: vm.characters.length,
+                                itemBuilder: (context, index) {
+                                  final character = vm.characters[index];
+                                  return _buildCharacterItem(vm, character);
+                                },
+                              ),
+                  ),
+                ],
+              ),
+
+              // bottom input bar
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: SafeArea(
+                  child: ChatInputBar(
+                    hintText: UserStorage.l10n.characterDesignerHint,
+                    agentName: 'persona_agent',
+                    dialogTitle: UserStorage.l10n.characterDesigner,
                   ),
                 ),
               ),
-              Expanded(
-                child: vm.isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : vm.characters.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.person_off_outlined,
-                                    size: 48, color: Colors.grey[300]),
-                                const SizedBox(height: 16),
-                                Text(
-                                  UserStorage.l10n.noCharacters,
-                                  style: TextStyle(color: Colors.grey[400]),
-                                ),
-                              ],
-                            ),
-                          )
-                        : ListView.builder(
-                            padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-                            itemCount: vm.characters.length,
-                            itemBuilder: (context, index) {
-                              final character = vm.characters[index];
-                              return _buildCharacterItem(vm, character);
-                            },
-                          ),
-              ),
             ],
           ),
-
-          // bottom input bar
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: SafeArea(
-              child: ChatInputBar(
-                hintText: UserStorage.l10n.characterDesignerHint,
-                agentName: 'persona_agent',
-                dialogTitle: UserStorage.l10n.characterDesigner,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+        );
       },
     );
   }
@@ -196,7 +207,7 @@ class _CharacterConfigScreenState extends State<CharacterConfigScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
+        border: Border.all(color: const Color(0xFFF7F8FA)),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF64748B).withOpacity(0.04),
@@ -223,7 +234,7 @@ class _CharacterConfigScreenState extends State<CharacterConfigScreen> {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        const Color(0xFFF1F5F9),
+                        const Color(0xFFF7F8FA),
                         const Color(0xFFE2E8F0),
                       ],
                     ),
@@ -416,7 +427,8 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
         setState(() {
           _isSaving = false;
         });
-        ToastHelper.showError(context, UserStorage.l10n.saveFailed(e.toString()));
+        ToastHelper.showError(
+            context, UserStorage.l10n.saveFailed(e.toString()));
       }
     }
   }
@@ -427,7 +439,9 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: Text(
-          widget.character == null ? UserStorage.l10n.newCharacter : UserStorage.l10n.editCharacter,
+          widget.character == null
+              ? UserStorage.l10n.newCharacter
+              : UserStorage.l10n.editCharacter,
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -486,7 +500,8 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
               ),
-              decoration: _buildInputDecoration(UserStorage.l10n.characterNameHint),
+              decoration:
+                  _buildInputDecoration(UserStorage.l10n.characterNameHint),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
                   return UserStorage.l10n.pleaseEnterCharacterName;
@@ -507,7 +522,7 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
             const SizedBox(height: 8),
             Container(
               decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
+                color: const Color(0xFFF7F8FA),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: const Color(0xFFE2E8F0)),
               ),
@@ -563,7 +578,7 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
       hintText: hint,
       hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
       filled: true,
-      fillColor: const Color(0xFFF8FAFC),
+      fillColor: const Color(0xFFF7F8FA),
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
@@ -584,4 +599,3 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
     );
   }
 }
-

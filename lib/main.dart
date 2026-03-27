@@ -14,6 +14,7 @@ import 'package:memex/ui/timeline/widgets/timeline_screen.dart';
 import 'package:memex/ui/knowledge/widgets/knowledge_base_screen.dart';
 import 'package:memex/ui/user_setup/widgets/user_setup_screen.dart';
 import 'package:memex/ui/app_lock/widgets/lock_screen_page.dart';
+import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:memex/ui/core/themes/app_theme.dart';
 import 'dart:io';
 import 'package:memex/ui/main_screen/widgets/radial_menu.dart';
@@ -100,6 +101,9 @@ class RootShellState extends State<RootShell> {
   bool _hasUser = false;
   bool _onboardingComplete = false;
   bool _isChecking = true;
+  bool _isLoadingFromICloud = false;
+  int _mainScreenEpoch =
+      0; // incremented to force full rebuild on storage switch
 
   @override
   void initState() {
@@ -131,20 +135,44 @@ class RootShellState extends State<RootShell> {
     }
   }
 
-  void _onUserCreated() {
-    OnboardingService.markOnboardingComplete();
-    setState(() {
-      _hasUser = true;
-      _onboardingComplete = true;
-    });
+  void _onUserCreated() async {
+    // Check iCloud BEFORE any other awaits to avoid timing issues
+    final userId = await UserStorage.getUserId();
+    bool isICloud = false;
+    if (userId != null) {
+      final loc = await UserStorage.getWorkspaceStorageLocation(userId);
+      isICloud = loc == StorageLocation.icloud;
+    }
+
+    await OnboardingService.markOnboardingComplete();
+
+    if (isICloud && mounted) {
+      setState(() => _isLoadingFromICloud = true);
+      // Wait for the loading UI to actually render before starting heavy work
+      await Future.delayed(const Duration(milliseconds: 100));
+      await MemexRouter().applyWorkspaceStorageChange();
+      if (mounted) {
+        setState(() {
+          _isLoadingFromICloud = false;
+          _hasUser = true;
+          _onboardingComplete = true;
+        });
+      }
+    } else if (mounted) {
+      setState(() {
+        _hasUser = true;
+        _onboardingComplete = true;
+      });
+    }
   }
 
-  /// Reset state and re-check user. Called after account deletion.
+  /// Reset state and re-check user. Called after account deletion or storage switch.
   void resetAndRecheck() {
     setState(() {
       _hasUser = false;
       _onboardingComplete = false;
       _isChecking = true;
+      _mainScreenEpoch++;
     });
     _checkUser();
   }
@@ -153,13 +181,35 @@ class RootShellState extends State<RootShell> {
   Widget build(BuildContext context) {
     if (_isChecking) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        body: Center(child: AgentLogoLoading()),
+      );
+    }
+    if (_isLoadingFromICloud) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const AgentLogoLoading(),
+              const SizedBox(height: 16),
+              Text(
+                UserStorage.l10n.loadingFromICloud,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF6366F1),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
       );
     }
     if (!_hasUser || !_onboardingComplete) {
       return UserSetupScreen(onUserCreated: _onUserCreated);
     }
     return MultiProvider(
+      key: ValueKey(_mainScreenEpoch),
       providers: [
         ChangeNotifierProvider<TimelineViewModel>(
           create: (c) =>
@@ -566,19 +616,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       final healthService = HealthService();
       Map<String, Map<String, dynamic>> dailySummary = {};
 
-      final typesToCheck = [
-        HealthDataType.STEPS,
-        HealthDataType.HEART_RATE,
-        HealthDataType.RESTING_HEART_RATE,
-        HealthDataType.BLOOD_PRESSURE_SYSTOLIC,
-        HealthDataType.BLOOD_PRESSURE_DIASTOLIC,
-        HealthDataType.BLOOD_OXYGEN,
-        HealthDataType.BLOOD_GLUCOSE,
-        HealthDataType.SLEEP_ASLEEP,
-        HealthDataType.ACTIVE_ENERGY_BURNED,
-        HealthDataType.WEIGHT,
-        HealthDataType.WORKOUT,
-      ];
+      // Use only the types registered in HealthService (Android: STEPS only,
+      // iOS: all types). This respects the platform-specific strategy config.
+      final typesToCheck = healthService.registeredTypes;
 
       // Skip health data collection if fitness permission is not granted
       // (permissions are now requested via System Authorization page)
@@ -855,7 +895,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
               _buildBottomBar(),
 
               Positioned(
-                bottom: 134,
+                bottom: 164,
                 left: 0,
                 right: 0,
                 child: Center(
@@ -900,70 +940,77 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
   Widget _buildBottomBar() {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
-    final barBottom = bottomPadding > 0 ? bottomPadding + 8.0 : 24.0;
+    // Figma exact values (393w × 852h screen):
+    // Background bar: top=738, h=92, full width (no rounded corners)
+    // + button: top=707, size=68 → protrudes 31px above bar top
+    // button center y=741, bar top y=738 → center is 3px below bar top
+    // Home indicator area: 34px at very bottom
+    const double barHeight = 92;
+    const double buttonProtrude = 31; // button top is 31px above bar top
+    // notch: button half = 34, add 8px margin = 42
+    const double notchRadius = 42;
+
     return Positioned(
-      bottom: barBottom,
-      left: 24,
-      right: 24,
-      child: Stack(
-        clipBehavior: Clip.none,
-        alignment: Alignment.center,
-        children: [
-          // background layer (frosted glass and side icons)
-          Container(
-            height: 64,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.9),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
-                  blurRadius: 30,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _buildMemoryTabButton(),
-                      // space for raised center button
-                      const SizedBox(width: 64),
-                      _buildKnowledgeTabButton(),
-                    ],
-                  ),
+      bottom: 0,
+      left: 0,
+      right: 0,
+      child: SizedBox(
+        height: barHeight + buttonProtrude + bottomPadding,
+        child: Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.bottomCenter,
+          children: [
+            // Full-width white bar with notch, no rounded corners
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: CustomPaint(
+                size: Size(double.infinity, barHeight + bottomPadding),
+                painter: _NotchedBarPainter(
+                  notchRadius: notchRadius,
+                  bottomPadding: bottomPadding,
                 ),
               ),
             ),
-          ),
-          // floating AI button on top (allow glow overflow and raise)
-          Positioned(
-            top: -24, // float above
-            child: AICoreButton(
-              key: _aiButtonKey,
-              onTap: _handleAICoreButtonTap,
-              onLongPress: _handleAICoreButtonLongPressStart,
-              onLongPressMoveUpdate: _handleAICoreButtonLongPressMoveUpdate,
-              onLongPressEnd: _handleAICoreButtonLongPressEnd,
+            // Tab buttons — vertically centered in bar area
+            Positioned(
+              bottom: bottomPadding,
+              left: 0,
+              right: 0,
+              child: SizedBox(
+                height: barHeight,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(child: _buildMemoryTabButton()),
+                    SizedBox(width: notchRadius * 2 + 4),
+                    Expanded(child: _buildKnowledgeTabButton()),
+                  ],
+                ),
+              ),
             ),
-          ),
-        ],
+            // + button: top of button = bar top + bottomPadding - buttonProtrude
+            Positioned(
+              bottom: bottomPadding + barHeight - buttonProtrude,
+              child: AICoreButton(
+                key: _aiButtonKey,
+                onTap: _handleAICoreButtonTap,
+                onLongPress: _handleAICoreButtonLongPressStart,
+                onLongPressMoveUpdate: _handleAICoreButtonLongPressMoveUpdate,
+                onLongPressEnd: _handleAICoreButtonLongPressEnd,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildMemoryTabButton() {
     final isActive = _currentTab == 0;
-    final activeColor = const Color(0xFF6366F1);
-    final inactiveColor = const Color(0xFF94A3B8);
+    final activeColor = const Color(0xFF1F1F1F);
+    final inactiveColor = const Color(0xFF888888);
     return GestureDetector(
       onTap: () {
         _memoryButtonTapCount++;
@@ -992,7 +1039,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              Icons.calendar_today,
+              Icons.event_available_outlined,
               size: 22,
               color: isActive ? activeColor : inactiveColor,
             ),
@@ -1000,9 +1047,10 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
             Text(
               UserStorage.l10n.bottomNavTimeline,
               style: TextStyle(
-                fontSize: 10,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                fontSize: 14,
+                fontWeight: isActive ? FontWeight.w500 : FontWeight.w400,
                 color: isActive ? activeColor : inactiveColor,
+                letterSpacing: 0.14,
               ),
             ),
           ],
@@ -1013,8 +1061,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
   Widget _buildKnowledgeTabButton() {
     final isActive = _currentTab == 1;
-    final activeColor = const Color(0xFF6366F1);
-    final inactiveColor = const Color(0xFF94A3B8);
+    final activeColor = const Color(0xFF1F1F1F);
+    final inactiveColor = const Color(0xFF888888);
     return GestureDetector(
       onTap: () {
         _knowledgeBaseButtonTapCount++;
@@ -1044,7 +1092,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              Icons.auto_stories_outlined,
+              Icons.school_outlined,
               size: 22,
               color: isActive ? activeColor : inactiveColor,
             ),
@@ -1052,9 +1100,10 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
             Text(
               UserStorage.l10n.bottomNavLibrary,
               style: TextStyle(
-                fontSize: 10,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                fontSize: 14,
+                fontWeight: isActive ? FontWeight.w500 : FontWeight.w400,
                 color: isActive ? activeColor : inactiveColor,
+                letterSpacing: 0.14,
               ),
             ),
           ],
@@ -1062,4 +1111,67 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       ),
     );
   }
+}
+
+class _NotchedBarPainter extends CustomPainter {
+  final double notchRadius;
+  final double bottomPadding;
+
+  const _NotchedBarPainter({
+    required this.notchRadius,
+    required this.bottomPadding,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double cx = size.width / 2;
+    // notch center is at the very top of the bar
+    const double notchCenterY = 0;
+
+    final path = Path();
+    path.moveTo(0, 0);
+    path.lineTo(cx - notchRadius, notchCenterY);
+    // concave arc for the notch
+    path.arcToPoint(
+      Offset(cx + notchRadius, notchCenterY),
+      radius: Radius.circular(notchRadius),
+      clockwise: false,
+    );
+    path.lineTo(size.width, 0);
+    path.lineTo(size.width, size.height);
+    path.lineTo(0, size.height);
+    path.close();
+
+    // shadow
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = Colors.black.withOpacity(0.06)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
+    );
+    // fill
+    canvas.drawPath(path, Paint()..color = Colors.white);
+    // top border
+    final borderPath = Path()
+      ..moveTo(0, 0)
+      ..lineTo(cx - notchRadius, notchCenterY)
+      ..arcToPoint(
+        Offset(cx + notchRadius, notchCenterY),
+        radius: Radius.circular(notchRadius),
+        clockwise: false,
+      )
+      ..lineTo(size.width, 0);
+    canvas.drawPath(
+      borderPath,
+      Paint()
+        ..color = const Color(0xFFE2E8F0)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _NotchedBarPainter oldDelegate) =>
+      oldDelegate.notchRadius != notchRadius ||
+      oldDelegate.bottomPadding != bottomPadding;
 }

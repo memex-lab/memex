@@ -1321,6 +1321,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get providerOllama => 'Ollama (本地)';
 
   @override
+  String get providerMimo => 'Xiaomi MIMO (小米)';
+
+  @override
   String get modelIdLabel => 'Model ID';
 
   @override
@@ -1366,11 +1369,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get invalidJson => 'JSON 格式无效';
 
   @override
-  String get warning => '警告';
+  String get warning => '配置未完成';
 
   @override
   String get invalidConfigurationWarning =>
-      '当前配置不完整（例如：缺少 API Key、Model ID，或 Base URL），可能无法正常工作。确定要保存吗？';
+      '当前配置尚未完成（例如：缺少 API Key 或 Model ID）。你可以先保存，稍后再补全配置。是否继续？';
 
   @override
   String invalidModelConfigDetailed(Object agentId, Object configKey) {
@@ -1552,6 +1555,15 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get icloudRequiresCapability => '请先登录 iCloud 账号并开启 iCloud Drive 同步功能。';
+
+  @override
+  String get loadingFromICloud => '正在从 iCloud 恢复数据…';
+
+  @override
+  String get switchingToICloud => '正在切换到 iCloud 存储…';
+
+  @override
+  String get switchingStorage => '正在切换存储…';
 
   @override
   String get customPathInvalid => '所选文件夹无法访问，已改用应用存储。';

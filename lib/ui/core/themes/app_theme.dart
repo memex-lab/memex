@@ -8,8 +8,8 @@ import 'package:google_fonts/google_fonts.dart';
 abstract final class AppTheme {
   AppTheme._();
 
-  /// Slate-100
-  static const Color scaffoldBackgroundLight = Color(0xFFF1F5F9);
+  /// App background
+  static const Color scaffoldBackgroundLight = Color(0xFFF7F8FA);
 
   /// Indigo seed
   static const Color seedColor = Color(0xFF6366F1);
@@ -121,7 +121,7 @@ abstract final class AppTheme {
       useMaterial3: true,
       textTheme: textTheme,
       appBarTheme: AppBarTheme(
-        backgroundColor: const Color(0xFFF8FAFC),
+        backgroundColor: const Color(0xFFF7F8FA),
         elevation: 0,
         centerTitle: true,
         titleTextStyle: textTheme.titleLarge?.copyWith(
@@ -150,7 +150,7 @@ abstract final class AppTheme {
         elevation: 0,
         centerTitle: true,
         titleTextStyle: textTheme.titleLarge?.copyWith(
-          color: const Color(0xFFF8FAFC),
+          color: const Color(0xFFF7F8FA),
         ),
         iconTheme: const IconThemeData(
           color: Color(0xFF94A3B8),

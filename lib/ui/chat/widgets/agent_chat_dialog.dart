@@ -8,6 +8,7 @@ import 'package:memex/utils/toast_helper.dart';
 import 'package:provider/provider.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/user_storage.dart';
+import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:go_router/go_router.dart';
 import 'package:memex/routing/routes.dart';
 
@@ -386,7 +387,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                       child: Container(
                         color: const Color(0xFFFAFAFA).withOpacity(0.5),
                         child: _isLoading
-                            ? const Center(child: CircularProgressIndicator())
+                            ? Center(child: AgentLogoLoading())
                             : _items.isEmpty
                                 ? Center(
                                     child: Text(
@@ -458,11 +459,12 @@ class _AgentChatDialogState extends State<AgentChatDialog>
         _contextSent) {
       return const SizedBox.shrink();
     }
-    final title = widget.initialRefs!.first['title'] ?? UserStorage.l10n.referenceContent;
+    final title =
+        widget.initialRefs!.first['title'] ?? UserStorage.l10n.referenceContent;
 
     return Container(
       width: double.infinity,
-      color: const Color(0xFFF1F5F9),
+      color: const Color(0xFFF7F8FA),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
@@ -490,7 +492,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.8),
-        border: const Border(bottom: BorderSide(color: Color(0xFFF1F5F9))),
+        border: const Border(bottom: BorderSide(color: Color(0xFFF7F8FA))),
       ),
       child: Row(
         children: [
@@ -507,15 +509,13 @@ class _AgentChatDialogState extends State<AgentChatDialog>
           IconButton(
             icon: const Icon(Icons.history, size: 18, color: Color(0xFF94A3B8)),
             onPressed: () {
-              context
-                  .push(
+              context.push(
                 AppRoutes.chatHistory,
                 extra: {
                   'agentName': widget.agentName,
                   'title': widget.title,
                 },
-              )
-                  .then((_) {
+              ).then((_) {
                 if (mounted) {
                   setState(() {});
                   _loadSessionHistory();
@@ -538,7 +538,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
           16, 16, 16, MediaQuery.of(context).viewInsets.bottom + 16),
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFF1F5F9))),
+        border: Border(top: BorderSide(color: Color(0xFFF7F8FA))),
       ),
       child: Row(
         children: [
@@ -546,7 +546,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
+                color: const Color(0xFFF7F8FA),
                 borderRadius: BorderRadius.circular(24),
               ),
               child: Row(
@@ -680,7 +680,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16)
                     .copyWith(topLeft: const Radius.circular(4)),
-                border: Border.all(color: const Color(0xFFF1F5F9)),
+                border: Border.all(color: const Color(0xFFF7F8FA)),
               ),
               child: Text(
                 item.text,
@@ -700,7 +700,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
+                  color: const Color(0xFFF7F8FA),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: const Color(0xFFE2E8F0)),
                 ),
@@ -792,7 +792,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: const Color(0xFFF1F5F9),
+            color: const Color(0xFFF7F8FA),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
@@ -900,8 +900,8 @@ class _AgentChatDialogState extends State<AgentChatDialog>
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: const BoxDecoration(
-                border: Border(top: BorderSide(color: Color(0xFFF1F5F9))),
-                color: Color(0xFFF8FAFC),
+                border: Border(top: BorderSide(color: Color(0xFFF7F8FA))),
+                color: Color(0xFFF7F8FA),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

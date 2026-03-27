@@ -1359,6 +1359,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get providerOllama => 'Ollama (Local)';
 
   @override
+  String get providerMimo => 'Xiaomi MIMO';
+
+  @override
   String get modelIdLabel => 'Model ID';
 
   @override
@@ -1404,11 +1407,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get invalidJson => 'Invalid JSON';
 
   @override
-  String get warning => 'Warning';
+  String get warning => 'Incomplete Setup';
 
   @override
   String get invalidConfigurationWarning =>
-      'The current configuration is invalid (e.g., missing API Key, Model ID, or Base URL). It may not work properly. Do you want to save anyway?';
+      'The configuration is not complete yet (e.g., API Key or Model ID is missing). You can still save and configure it later. Continue?';
 
   @override
   String invalidModelConfigDetailed(Object agentId, Object configKey) {
@@ -1608,6 +1611,15 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get icloudRequiresCapability =>
       'Sign in to iCloud and turn on iCloud Drive to use iCloud storage.';
+
+  @override
+  String get loadingFromICloud => 'Restoring data from iCloud…';
+
+  @override
+  String get switchingToICloud => 'Switching to iCloud storage…';
+
+  @override
+  String get switchingStorage => 'Switching storage…';
 
   @override
   String get customPathInvalid =>

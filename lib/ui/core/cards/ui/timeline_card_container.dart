@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:memex/ui/core/cards/style/timeline_theme.dart';
 
@@ -60,8 +59,8 @@ class TimelineCard extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              const Color(0xFF1E293B), // Slate-800
-              const Color(0xFF0F172A), // Slate-900
+              const Color(0xFF0A0A0A), // Slate-800
+              const Color(0xFF0A0A0A), // Slate-900
             ],
           ),
           borderRadius: BorderRadius.circular(24),
@@ -83,12 +82,10 @@ class TimelineCard extends StatelessWidget {
           boxShadow: [TimelineTheme.shadows.card],
         );
       case TimelineCardVariant.glass:
-      default:
-        // Glassmorphism handled in content stack, but here we set outer shadow/radius
         return BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [TimelineTheme.shadows.card],
-          // actual color/blur is in _buildContent for Glass
         );
     }
   }
@@ -97,24 +94,8 @@ class TimelineCard extends StatelessWidget {
     Widget content = Padding(padding: padding, child: child);
 
     if (variant == TimelineCardVariant.glass) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-          child: Container(
-            decoration: BoxDecoration(
-              color: customBackgroundColor ??
-                  TimelineTheme.colors.background.withValues(alpha: 0.85),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: TimelineTheme.colors.glassBorder.withValues(alpha: 0.5),
-                width: 1,
-              ),
-            ),
-            child: content,
-          ),
-        ),
-      );
+      // Simple white card — no backdrop blur
+      return content;
     }
 
     if (variant == TimelineCardVariant.canvas) {

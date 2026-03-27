@@ -28,7 +28,7 @@ class CompositionItem {
       // Simple named color fallback (extend as needed if agent uses names)
       switch (colorStr.toLowerCase()) {
         case 'purple':
-          return const Color(0xFF6366F1);
+          return const Color(0xFF5B6CFF);
         case 'blue':
           return const Color(0xFF3B82F6);
         case 'green':
@@ -39,12 +39,12 @@ class CompositionItem {
           return const Color(0xFFEF4444);
         case 'grey':
         case 'gray':
-          return const Color(0xFF94A3B8);
+          return const Color(0xFF99A1AF);
         case 'black':
           return Colors.black;
       }
     }
-    return const Color(0xFF94A3B8); // Default slate-400
+    return const Color(0xFF99A1AF); // Default slate-400
   }
 }
 
@@ -92,12 +92,12 @@ class CompositionCard extends StatelessWidget {
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(32), // Extra rounded per design
+          borderRadius: BorderRadius.circular(20), // Extra rounded per design
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha:0.04), // subtle shadow
-              blurRadius: 20,
-              offset: const Offset(0, 4),
+              color: Colors.black.withValues(alpha: 0.05), // subtle shadow
+              blurRadius: 16,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
@@ -115,7 +115,7 @@ class CompositionCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: const Color(0xFF94A3B8), // Muted header
+                      color: const Color(0xFF99A1AF), // Muted header
                       letterSpacing: 1.0,
                     ),
                   ),
@@ -125,7 +125,7 @@ class CompositionCard extends StatelessWidget {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9), // Slate-100
+                      color: const Color(0xFFF7F8FA), // Slate-100
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -133,7 +133,7 @@ class CompositionCard extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF64748B),
+                        color: Color(0xFF4A5565),
                       ),
                     ),
                   ),
@@ -150,7 +150,7 @@ class CompositionCard extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
-                  color: Color(0xFF64748B), // Slate-500
+                  color: Color(0xFF4A5565), // Slate-500
                   fontStyle: FontStyle.italic,
                   height: 1.5,
                 ),
@@ -165,14 +165,14 @@ class CompositionCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF1E293B), // Slate-800
+                    color: Color(0xFF0A0A0A), // Slate-800
                     height: 1.4,
                   ),
                   children: headlineItems.map((item) {
                     return TextSpan(
                       text: item.text,
                       style: TextStyle(
-                        color: item.color ?? const Color(0xFF1E293B),
+                        color: item.color ?? const Color(0xFF0A0A0A),
                         fontWeight:
                             item.color != null && item.color != Colors.black
                                 ? FontWeight.bold
@@ -199,7 +199,7 @@ class CompositionCard extends StatelessWidget {
               const SizedBox(height: 24),
               Container(
                 height: 1,
-                color: const Color(0xFFF1F5F9), // Divider
+                color: const Color(0xFFF7F8FA), // Divider
               ),
               const SizedBox(height: 20),
               Row(
@@ -209,7 +209,7 @@ class CompositionCard extends StatelessWidget {
                     margin: const EdgeInsets.only(top: 2),
                     decoration: const BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Color(0xFF64748B),
+                      color: Color(0xFF4A5565),
                     ),
                     width: 16,
                     height: 16,
@@ -225,7 +225,7 @@ class CompositionCard extends StatelessWidget {
                     child: Text(
                       footer!,
                       style: const TextStyle(
-                        color: Color(0xFF64748B),
+                        color: Color(0xFF4A5565),
                         fontSize: 15,
                         height: 1.5,
                       ),
@@ -247,7 +247,7 @@ class CompositionCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(12),
       child: Container(
         height: 24, // Thicker bar
-        color: const Color(0xFFF1F5F9), // Background track
+        color: const Color(0xFFF7F8FA), // Background track
         child: Row(
           children: items.map((item) {
             final flex = (item.percentage * 10).round();
@@ -292,7 +292,7 @@ class CompositionCard extends StatelessWidget {
                   '${item.label} (${item.percentage.toInt()}%)',
                   style: const TextStyle(
                     fontSize: 13,
-                    color: Color(0xFF475569),
+                    color: Color(0xFF4A5565),
                     fontWeight: FontWeight.w500,
                   ),
                   overflow: TextOverflow.ellipsis,

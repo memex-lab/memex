@@ -5,6 +5,7 @@ import 'package:memex/ui/knowledge/widgets/knowledge/knowledge_file_card.dart';
 import 'package:memex/ui/knowledge/widgets/knowledge_search_delegate.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'knowledge_directory_page.dart';
+import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 
 /// Knowledge base page. Receives [viewModel] from parent (Compass-style).
 class KnowledgeBaseScreen extends StatefulWidget {
@@ -45,32 +46,50 @@ class KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
         final vm = widget.viewModel;
         return Scaffold(
           backgroundColor: const Color(
-              0xFFF1F5F9), // Match Timeline, Insights and bottom nav background
+              0xFFF7F8FA), // Match Timeline, Insights and bottom nav background
           appBar: AppBar(
-            title: Text(
-              'Memex',
-              style: GoogleFonts.orbitron(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 2,
-                color: const Color(0xFF0F172A),
+            title: RichText(
+              text: TextSpan(
+                children: [
+                  TextSpan(
+                    text: 'Meme',
+                    style: GoogleFonts.bricolageGrotesque(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.4,
+                      color: const Color(0xFF0A0A0A),
+                    ),
+                  ),
+                  TextSpan(
+                    text: 'x',
+                    style: GoogleFonts.bricolageGrotesque(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.4,
+                      color: const Color(0xFF5B6CFF),
+                    ),
+                  ),
+                ],
               ),
             ),
             backgroundColor: Colors.transparent,
             elevation: 0,
             centerTitle: false,
             actions: [
-              IconButton(
-                icon: const Icon(Icons.search,
-                    color: Color(0xFF64748B), size: 28),
-                onPressed: () {
+              GestureDetector(
+                onTap: () {
                   showSearch(
                     context: context,
                     delegate: KnowledgeSearchDelegate(),
                   );
                 },
+                child: const SizedBox(
+                  width: 36,
+                  height: 36,
+                  child: Icon(Icons.search, color: Color(0xFF4A5565), size: 24),
+                ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 16),
             ],
           ),
           body: RefreshIndicator(
@@ -80,7 +99,7 @@ class KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
                     physics: const AlwaysScrollableScrollPhysics(),
                     child: SizedBox(
                       height: MediaQuery.of(context).size.height * 0.6,
-                      child: const Center(child: CircularProgressIndicator()),
+                      child: Center(child: AgentLogoLoading()),
                     ),
                   )
                 : SingleChildScrollView(

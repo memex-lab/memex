@@ -523,7 +523,6 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
             ),
             TextButton(
               onPressed: () => Navigator.pop(context, true),
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
               child: Text(UserStorage.l10n.confirm),
             ),
           ],
@@ -960,6 +959,7 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
           Text(l10n.providerSeed),
           Text(l10n.providerZhipu),
           Text(l10n.providerMinimax),
+          Text(l10n.providerMimo),
           Text(l10n.providerOpenRouter),
           Text(l10n.providerOllama),
         ];
@@ -1117,6 +1117,14 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
           ),
         ),
         DropdownMenuItem(
+          value: LLMConfig.typeMimo,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 12),
+            child: Text(UserStorage.l10n.providerMimo,
+                style: TextStyle(color: Colors.grey[800])),
+          ),
+        ),
+        DropdownMenuItem(
           value: LLMConfig.typeOpenRouter,
           child: Padding(
             padding: const EdgeInsets.only(left: 12),
@@ -1149,6 +1157,12 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
           _modelDropdownKey.currentState?.setText(_modelIdController.text);
           _apiKeyController.text = '';
           _baseUrlController.text = LLMConfig.defaultBaseUrl(value);
+
+          // Reset Bedrock fields when switching providers
+          _bedrockAccessKeyController.text = '';
+          _bedrockSecretKeyController.text = '';
+          _bedrockRegionController.text = 'us-west-2';
+
           if (value == LLMConfig.typeOpenAiOauth) {
             _loadOpenAiTokens();
           } else if (value == LLMConfig.typeGeminiOauth) {

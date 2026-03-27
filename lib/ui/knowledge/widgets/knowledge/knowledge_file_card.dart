@@ -52,7 +52,7 @@ class KnowledgeFileCard extends StatelessWidget {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9), // Slate 100
+                color: const Color(0xFFF7F8FA), // Slate 100
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(Icons.description_outlined,
@@ -75,7 +75,7 @@ class KnowledgeFileCard extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                            color: const Color(0xFFF1F5F9),
+                            color: const Color(0xFFF7F8FA),
                             borderRadius: BorderRadius.circular(4)),
                         child: Text(isMd ? 'MD' : 'FILE',
                             style: const TextStyle(

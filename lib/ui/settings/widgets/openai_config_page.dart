@@ -4,6 +4,7 @@ import 'package:memex/data/services/openai_auth_service.dart';
 import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/utils/toast_helper.dart';
 import 'package:memex/utils/user_storage.dart';
+import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 
 class OpenAiConfigPage extends StatefulWidget {
   const OpenAiConfigPage({super.key});
@@ -65,13 +66,14 @@ class _OpenAiConfigPageState extends State<OpenAiConfigPage> {
     }
 
     if (mounted) {
-      ToastHelper.showSuccess(context, UserStorage.l10n.modelSetAsDefault(modelId));
+      ToastHelper.showSuccess(
+          context, UserStorage.l10n.modelSetAsDefault(modelId));
     }
   }
 
   Widget _buildContent() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return Center(child: AgentLogoLoading());
     }
 
     if (_error != null) {
@@ -115,8 +117,9 @@ class _OpenAiConfigPageState extends State<OpenAiConfigPage> {
       separatorBuilder: (context, index) => const Divider(height: 1),
       itemBuilder: (context, index) {
         final model = _models[index];
-        final id =
-            model['id']?.toString() ?? model['slug']?.toString() ?? UserStorage.l10n.unknownModel;
+        final id = model['id']?.toString() ??
+            model['slug']?.toString() ??
+            UserStorage.l10n.unknownModel;
         final description = model['description']?.toString() ?? '';
         final isSelected = id == _selectedModel;
 
@@ -147,7 +150,7 @@ class _OpenAiConfigPageState extends State<OpenAiConfigPage> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
       ),
-      backgroundColor: const Color(0xFFF1F5F9),
+      backgroundColor: const Color(0xFFF7F8FA),
       body: _buildContent(),
     );
   }

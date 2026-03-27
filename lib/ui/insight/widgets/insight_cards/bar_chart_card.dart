@@ -58,12 +58,12 @@ class BarChartCard extends StatelessWidget {
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(32),
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha:0.04),
-              blurRadius: 20,
-              offset: const Offset(0, 4),
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 16,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
@@ -76,7 +76,7 @@ class BarChartCard extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF0F172A), // Slate-900
+                color: Color(0xFF0A0A0A), // Slate-900
               ),
             ),
             if (subtitle != null) ...[
@@ -85,7 +85,7 @@ class BarChartCard extends StatelessWidget {
                 subtitle!,
                 style: const TextStyle(
                   fontSize: 15,
-                  color: Color(0xFF64748B), // Slate-500
+                  color: Color(0xFF4A5565), // Slate-500
                 ),
               ),
             ],
@@ -100,7 +100,7 @@ class BarChartCard extends StatelessWidget {
               final percent = (item.value / maxY).clamp(0.0, 1.0);
               final color = item.color != null
                   ? _parseColor(item.color!)
-                  : const Color(0xFF6366F1);
+                  : const Color(0xFF5B6CFF);
               final isHighlight = item.isHighlight;
 
               return Padding(
@@ -115,7 +115,7 @@ class BarChartCard extends StatelessWidget {
                         height: 40,
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
+                          color: const Color(0xFFF7F8FA),
                           shape: BoxShape.circle,
                           border: Border.all(color: const Color(0xFFE2E8F0)),
                         ),
@@ -145,8 +145,8 @@ class BarChartCard extends StatelessWidget {
                                         ? FontWeight.bold
                                         : FontWeight.w500,
                                     color: isHighlight
-                                        ? const Color(0xFF0F172A)
-                                        : const Color(0xFF64748B),
+                                        ? const Color(0xFF0A0A0A)
+                                        : const Color(0xFF4A5565),
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -160,7 +160,7 @@ class BarChartCard extends StatelessWidget {
                                   fontWeight: FontWeight.bold,
                                   color: isHighlight
                                       ? color
-                                      : const Color(0xFF64748B),
+                                      : const Color(0xFF4A5565),
                                 ),
                               ),
                             ],
@@ -175,7 +175,7 @@ class BarChartCard extends StatelessWidget {
                                 // Background
                                 Container(
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFF1F5F9), // Slate-100
+                                    color: const Color(0xFFF7F8FA), // Slate-100
                                     borderRadius: BorderRadius.circular(5),
                                   ),
                                 ),
@@ -210,7 +210,7 @@ class BarChartCard extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
-                  color: Color(0xFF64748B), // Slate-500
+                  color: Color(0xFF4A5565), // Slate-500
                   fontStyle: FontStyle.italic,
                   height: 1.5,
                 ),
@@ -223,7 +223,7 @@ class BarChartCard extends StatelessWidget {
   }
 
   Color _parseColor(String colorStr) {
-    if (colorStr.isEmpty) return const Color(0xFF6366F1);
+    if (colorStr.isEmpty) return const Color(0xFF5B6CFF);
 
     try {
       // 1. Clean up the string (remove hash, whitespace)
@@ -236,7 +236,7 @@ class BarChartCard extends StatelessWidget {
         hex = match.group(0)!;
       } else {
         // If no valid hex found at start, return default
-        return const Color(0xFF6366F1);
+        return const Color(0xFF5B6CFF);
       }
 
       // 3. Parse based on length
@@ -248,6 +248,6 @@ class BarChartCard extends StatelessWidget {
     } catch (e) {
       debugPrint('Error parsing color: $colorStr - $e');
     }
-    return const Color(0xFF6366F1);
+    return const Color(0xFF5B6CFF);
   }
 }

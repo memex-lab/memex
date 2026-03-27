@@ -39,92 +39,104 @@ class HealthService {
   // Registry
   final Map<HealthDataType, HealthStrategyConfig> _configs = {};
 
+  /// Returns the list of health data types registered for the current platform.
+  List<HealthDataType> get registeredTypes => _configs.keys.toList();
+
   void _registerStrategies() {
-    // 1. Steps Strategy
-    _configs[HealthDataType.STEPS] = HealthStrategyConfig(
-      type: HealthDataType.STEPS,
-      prefKeySuffix: 'steps',
-      primaryFetcher: HealthKitFetcher(),
-      fallbackFetcher: PedometerFetcher(),
-      reportIntervalMinutes: 1,
-    );
+    if (Platform.isAndroid) {
+      // Android: Only steps via Pedometer (Health Connect permissions removed
+      // to comply with Google Play policy).
+      _configs[HealthDataType.STEPS] = HealthStrategyConfig(
+        type: HealthDataType.STEPS,
+        prefKeySuffix: 'steps',
+        primaryFetcher: PedometerFetcher(),
+        reportIntervalMinutes: 1,
+      );
+    } else {
+      // iOS: Full HealthKit support
+      _configs[HealthDataType.STEPS] = HealthStrategyConfig(
+        type: HealthDataType.STEPS,
+        prefKeySuffix: 'steps',
+        primaryFetcher: HealthKitFetcher(),
+        fallbackFetcher: PedometerFetcher(),
+        reportIntervalMinutes: 1,
+      );
 
-    // 2. Heart Rate and Resting Heart Rate
-    _configs[HealthDataType.HEART_RATE] = HealthStrategyConfig(
-      type: HealthDataType.HEART_RATE,
-      prefKeySuffix: 'heart_rate',
-      primaryFetcher: HealthKitFetcher(),
-      reportIntervalMinutes: 1,
-    );
-    _configs[HealthDataType.RESTING_HEART_RATE] = HealthStrategyConfig(
-      type: HealthDataType.RESTING_HEART_RATE,
-      prefKeySuffix: 'resting_heart_rate',
-      primaryFetcher: HealthKitFetcher(),
-      reportIntervalMinutes: 1,
-    );
+      _configs[HealthDataType.HEART_RATE] = HealthStrategyConfig(
+        type: HealthDataType.HEART_RATE,
+        prefKeySuffix: 'heart_rate',
+        primaryFetcher: HealthKitFetcher(),
+        reportIntervalMinutes: 1,
+      );
+      _configs[HealthDataType.RESTING_HEART_RATE] = HealthStrategyConfig(
+        type: HealthDataType.RESTING_HEART_RATE,
+        prefKeySuffix: 'resting_heart_rate',
+        primaryFetcher: HealthKitFetcher(),
+        reportIntervalMinutes: 1,
+      );
 
-    // 3. Blood Pressure
-    _configs[HealthDataType.BLOOD_PRESSURE_SYSTOLIC] = HealthStrategyConfig(
-      type: HealthDataType.BLOOD_PRESSURE_SYSTOLIC,
-      prefKeySuffix: 'bp_sys',
-      primaryFetcher: HealthKitFetcher(),
-      reportIntervalMinutes: 1,
-    );
-    _configs[HealthDataType.BLOOD_PRESSURE_DIASTOLIC] = HealthStrategyConfig(
-      type: HealthDataType.BLOOD_PRESSURE_DIASTOLIC,
-      prefKeySuffix: 'bp_dia',
-      primaryFetcher: HealthKitFetcher(),
-      reportIntervalMinutes: 1,
-    );
+      _configs[HealthDataType.BLOOD_PRESSURE_SYSTOLIC] = HealthStrategyConfig(
+        type: HealthDataType.BLOOD_PRESSURE_SYSTOLIC,
+        prefKeySuffix: 'bp_sys',
+        primaryFetcher: HealthKitFetcher(),
+        reportIntervalMinutes: 1,
+      );
+      _configs[HealthDataType.BLOOD_PRESSURE_DIASTOLIC] = HealthStrategyConfig(
+        type: HealthDataType.BLOOD_PRESSURE_DIASTOLIC,
+        prefKeySuffix: 'bp_dia',
+        primaryFetcher: HealthKitFetcher(),
+        reportIntervalMinutes: 1,
+      );
 
-    // 4. Blood Oxygen and Glucose
-    _configs[HealthDataType.BLOOD_OXYGEN] = HealthStrategyConfig(
-      type: HealthDataType.BLOOD_OXYGEN,
-      prefKeySuffix: 'blood_oxygen',
-      primaryFetcher: HealthKitFetcher(),
-      reportIntervalMinutes: 1, // Or longer
-    );
-    _configs[HealthDataType.BLOOD_GLUCOSE] = HealthStrategyConfig(
-      type: HealthDataType.BLOOD_GLUCOSE,
-      prefKeySuffix: 'blood_glucose',
-      primaryFetcher: HealthKitFetcher(),
-      reportIntervalMinutes: 1,
-    );
+      _configs[HealthDataType.BLOOD_OXYGEN] = HealthStrategyConfig(
+        type: HealthDataType.BLOOD_OXYGEN,
+        prefKeySuffix: 'blood_oxygen',
+        primaryFetcher: HealthKitFetcher(),
+        reportIntervalMinutes: 1,
+      );
+      _configs[HealthDataType.BLOOD_GLUCOSE] = HealthStrategyConfig(
+        type: HealthDataType.BLOOD_GLUCOSE,
+        prefKeySuffix: 'blood_glucose',
+        primaryFetcher: HealthKitFetcher(),
+        reportIntervalMinutes: 1,
+      );
 
-    // 5. Sleep
-    _configs[HealthDataType.SLEEP_ASLEEP] = HealthStrategyConfig(
-      type: HealthDataType.SLEEP_ASLEEP,
-      prefKeySuffix: 'sleep',
-      primaryFetcher: HealthKitFetcher(),
-      reportIntervalMinutes: 1,
-    );
+      _configs[HealthDataType.SLEEP_ASLEEP] = HealthStrategyConfig(
+        type: HealthDataType.SLEEP_ASLEEP,
+        prefKeySuffix: 'sleep',
+        primaryFetcher: HealthKitFetcher(),
+        reportIntervalMinutes: 1,
+      );
 
-    // 6. Active Energy and Weight
-    _configs[HealthDataType.ACTIVE_ENERGY_BURNED] = HealthStrategyConfig(
-      type: HealthDataType.ACTIVE_ENERGY_BURNED,
-      prefKeySuffix: 'active_energy',
-      primaryFetcher: HealthKitFetcher(),
-      reportIntervalMinutes: 1,
-    );
-    _configs[HealthDataType.WEIGHT] = HealthStrategyConfig(
-      type: HealthDataType.WEIGHT,
-      prefKeySuffix: 'weight',
-      primaryFetcher: HealthKitFetcher(),
-      reportIntervalMinutes: 120,
-    );
+      _configs[HealthDataType.ACTIVE_ENERGY_BURNED] = HealthStrategyConfig(
+        type: HealthDataType.ACTIVE_ENERGY_BURNED,
+        prefKeySuffix: 'active_energy',
+        primaryFetcher: HealthKitFetcher(),
+        reportIntervalMinutes: 1,
+      );
+      _configs[HealthDataType.WEIGHT] = HealthStrategyConfig(
+        type: HealthDataType.WEIGHT,
+        prefKeySuffix: 'weight',
+        primaryFetcher: HealthKitFetcher(),
+        reportIntervalMinutes: 120,
+      );
 
-    // 7. Workouts
-    _configs[HealthDataType.WORKOUT] = HealthStrategyConfig(
-      type: HealthDataType.WORKOUT,
-      prefKeySuffix: 'workout',
-      primaryFetcher: HealthKitFetcher(),
-      reportIntervalMinutes: 1,
-    );
+      _configs[HealthDataType.WORKOUT] = HealthStrategyConfig(
+        type: HealthDataType.WORKOUT,
+        prefKeySuffix: 'workout',
+        primaryFetcher: HealthKitFetcher(),
+        reportIntervalMinutes: 1,
+      );
+    }
 
-    // 2. Initialize Background Task for Pedometer (Ensure it's registered on app start)
-    // We do this immediately to ensure the worker is alive/updated.
-    (_configs[HealthDataType.STEPS]!.fallbackFetcher as PedometerFetcher)
-        .ensureBackgroundTaskRegistered();
+    // Initialize Background Task for Pedometer (Ensure it's registered on app start)
+    final stepsFallback = _configs[HealthDataType.STEPS]?.fallbackFetcher;
+    final stepsPrimary = _configs[HealthDataType.STEPS]?.primaryFetcher;
+    if (stepsFallback is PedometerFetcher) {
+      stepsFallback.ensureBackgroundTaskRegistered();
+    } else if (stepsPrimary is PedometerFetcher) {
+      stepsPrimary.ensureBackgroundTaskRegistered();
+    }
   }
 
   // --- Public API ---
@@ -132,14 +144,26 @@ class HealthService {
   /// Request all necessary permissions in one batch prompt
   Future<void> requestAllPermissions() async {
     try {
+      // On Android, we only use Pedometer for steps — no Health Connect needed.
+      // HealthKit authorization is only requested on iOS.
+      if (Platform.isAndroid) {
+        // Just request pedometer/activity recognition permission
+        if (_configs.containsKey(HealthDataType.STEPS)) {
+          final primary = _configs[HealthDataType.STEPS]?.primaryFetcher;
+          if (primary != null) {
+            await primary.requestPermissions(HealthDataType.STEPS);
+          }
+        }
+        return;
+      }
+
       final health = Health();
 
-      // 1. Ask for all Health package data types at once
+      // iOS: Ask for all Health package data types at once
       List<HealthDataType> allTypesToRequest = [];
 
       for (final config in _configs.values) {
         if (config.primaryFetcher is HealthKitFetcher) {
-          // If it's sleep, we need to request all related sleep types as done in the fetcher
           if (config.type == HealthDataType.SLEEP_ASLEEP) {
             allTypesToRequest.addAll([
               HealthDataType.SLEEP_ASLEEP,
@@ -150,13 +174,6 @@ class HealthService {
             ]);
             if (Platform.isIOS) {
               allTypesToRequest.add(HealthDataType.SLEEP_IN_BED);
-            } else if (Platform.isAndroid) {
-              allTypesToRequest.addAll([
-                HealthDataType.SLEEP_AWAKE_IN_BED,
-                HealthDataType.SLEEP_OUT_OF_BED,
-                HealthDataType.SLEEP_UNKNOWN,
-                HealthDataType.SLEEP_SESSION,
-              ]);
             }
           } else {
             allTypesToRequest.add(config.type);
@@ -164,7 +181,6 @@ class HealthService {
         }
       }
 
-      // Remove duplicates
       allTypesToRequest = allTypesToRequest.toSet().toList();
 
       if (allTypesToRequest.isNotEmpty) {
@@ -176,7 +192,7 @@ class HealthService {
         }
       }
 
-      // 2. Also implicitly ask for Pedometer permission if it hasn't been granted
+      // Also request Pedometer permission as fallback for steps
       if (_configs.containsKey(HealthDataType.STEPS)) {
         final fallback = _configs[HealthDataType.STEPS]?.fallbackFetcher;
         if (fallback != null) {

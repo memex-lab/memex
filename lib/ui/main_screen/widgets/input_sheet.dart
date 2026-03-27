@@ -817,7 +817,7 @@ class _InputSheetState extends State<InputSheet>
                                         Container(
                                           padding: const EdgeInsets.all(12),
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFFF8FAFC),
+                                            color: const Color(0xFFF7F8FA),
                                             borderRadius:
                                                 BorderRadius.circular(12),
                                           ),
@@ -889,7 +889,7 @@ class _InputSheetState extends State<InputSheet>
                                               decoration: BoxDecoration(
                                                 color: _isRecording
                                                     ? const Color(0xFFEF4444)
-                                                    : const Color(0xFFF8FAFC),
+                                                    : const Color(0xFFF7F8FA),
                                                 borderRadius:
                                                     BorderRadius.circular(24),
                                               ),
@@ -911,7 +911,7 @@ class _InputSheetState extends State<InputSheet>
                                               width: 48,
                                               height: 48,
                                               decoration: BoxDecoration(
-                                                color: const Color(0xFFF8FAFC),
+                                                color: const Color(0xFFF7F8FA),
                                                 borderRadius:
                                                     BorderRadius.circular(24),
                                               ),
@@ -1049,7 +1049,7 @@ class _InputSheetState extends State<InputSheet>
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: const Color(0xFFF1F5F9), width: 1.5),
+          border: Border.all(color: const Color(0xFFF7F8FA), width: 1.5),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.04),

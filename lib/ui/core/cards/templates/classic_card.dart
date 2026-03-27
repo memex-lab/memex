@@ -325,7 +325,7 @@ class _ClassicCardState extends State<ClassicCard> {
                       width: 36,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF94A3B8).withValues(alpha: 0.3),
+                        color: const Color(0xFF99A1AF).withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -364,7 +364,7 @@ class _ClassicCardState extends State<ClassicCard> {
                             style: const TextStyle(
                               fontSize: 17,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF1E293B),
+                              color: Color(0xFF0A0A0A),
                               letterSpacing: -0.3,
                             ),
                           ),
@@ -375,13 +375,13 @@ class _ClassicCardState extends State<ClassicCard> {
                             width: 30,
                             height: 30,
                             decoration: BoxDecoration(
-                              color: const Color(0xFF94A3B8)
+                              color: const Color(0xFF99A1AF)
                                   .withValues(alpha: 0.12),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(Icons.close_rounded,
                                 size: 16,
-                                color: const Color(0xFF64748B)
+                                color: const Color(0xFF4A5565)
                                     .withValues(alpha: 0.8)),
                           ),
                         ),
@@ -401,11 +401,11 @@ class _ClassicCardState extends State<ClassicCard> {
                             width: double.infinity,
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF0F172A)
+                              color: const Color(0xFF0A0A0A)
                                   .withValues(alpha: 0.03),
                               borderRadius: BorderRadius.circular(14),
                               border: Border.all(
-                                color: const Color(0xFF94A3B8)
+                                color: const Color(0xFF99A1AF)
                                     .withValues(alpha: 0.12),
                                 width: 0.5,
                               ),
@@ -416,7 +416,7 @@ class _ClassicCardState extends State<ClassicCard> {
                                 reason,
                                 style: const TextStyle(
                                   fontSize: 13,
-                                  color: Color(0xFF64748B),
+                                  color: Color(0xFF4A5565),
                                   height: 1.6,
                                   fontFamily: 'monospace',
                                   letterSpacing: -0.2,
@@ -447,7 +447,7 @@ class _ClassicCardState extends State<ClassicCard> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9), // Slate-100 (Light Grey)
+        color: const Color(0xFFF7F8FA), // Slate-100 (Light Grey)
         borderRadius: BorderRadius.circular(24),
       ),
       child: Column(

@@ -74,12 +74,12 @@ class SummaryCard extends StatelessWidget {
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(32),
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha:0.04),
-              blurRadius: 20,
-              offset: const Offset(0, 4),
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 16,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
@@ -95,7 +95,7 @@ class SummaryCard extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9), // Slate-100
+                    color: const Color(0xFFF7F8FA), // Slate-100
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -103,7 +103,7 @@ class SummaryCard extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF64748B), // Slate-500
+                      color: Color(0xFF4A5565), // Slate-500
                       letterSpacing: 0.5,
                     ),
                   ),
@@ -146,7 +146,7 @@ class SummaryCard extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF0F172A), // Slate-900
+                color: Color(0xFF0A0A0A), // Slate-900
                 height: 1.2,
               ),
             ),
@@ -156,7 +156,7 @@ class SummaryCard extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: Color(0xFF94A3B8), // Slate-400
+                color: Color(0xFF99A1AF), // Slate-400
                 fontFamily: 'monospace',
               ),
             ),
@@ -166,9 +166,9 @@ class SummaryCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC), // Slate-50
+                color: const Color(0xFFF7F8FA), // Slate-50
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFFF1F5F9)),
+                border: Border.all(color: const Color(0xFFF7F8FA)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -176,7 +176,7 @@ class SummaryCard extends StatelessWidget {
                   Row(
                     children: [
                       const Icon(Icons.smart_toy_outlined,
-                          size: 18, color: Color(0xFF6366F1)),
+                          size: 18, color: Color(0xFF5B6CFF)),
                       const SizedBox(width: 8),
                       Text(
                         insightTitle,
@@ -194,7 +194,7 @@ class SummaryCard extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 15,
                       height: 1.6,
-                      color: Color(0xFF475569), // Slate-600
+                      color: Color(0xFF4A5565), // Slate-600
                     ),
                   ),
                 ],
@@ -230,7 +230,7 @@ class SummaryCard extends StatelessWidget {
                                 metric.label,
                                 style: const TextStyle(
                                   fontSize: 12,
-                                  color: Color(0xFF94A3B8),
+                                  color: Color(0xFF99A1AF),
                                 ),
                                 maxLines: 1,
                               ),
@@ -244,7 +244,7 @@ class SummaryCard extends StatelessWidget {
                               fontWeight: FontWeight.bold,
                               color: metric.color != null
                                   ? _parseColor(metric.color!)
-                                  : const Color(0xFF0F172A),
+                                  : const Color(0xFF0A0A0A),
                             ),
                           ),
                         ],
@@ -266,7 +266,7 @@ class SummaryCard extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF0F172A),
+                        color: Color(0xFF0A0A0A),
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -277,7 +277,7 @@ class SummaryCard extends StatelessWidget {
                     '(${highlights.length})',
                     style: const TextStyle(
                       fontSize: 13,
-                      color: Color(0xFF94A3B8),
+                      color: Color(0xFF99A1AF),
                     ),
                   ),
                 ],
@@ -303,7 +303,7 @@ class SummaryCard extends StatelessWidget {
                             errorBuilder: (_, __, ___) => Container(
                               width: 120,
                               height: 120,
-                              color: const Color(0xFFF1F5F9),
+                              color: const Color(0xFFF7F8FA),
                               child: const Icon(Icons.broken_image,
                                   color: Color(0xFFCBD5E1)),
                             ),
@@ -350,6 +350,6 @@ class SummaryCard extends StatelessWidget {
     if (colorStr.startsWith('#')) {
       return Color(int.parse(colorStr.substring(1), radix: 16) + 0xFF000000);
     }
-    return const Color(0xFF6366F1);
+    return const Color(0xFF5B6CFF);
   }
 }

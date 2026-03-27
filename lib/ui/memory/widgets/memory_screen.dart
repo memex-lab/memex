@@ -3,6 +3,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 
 import 'package:memex/ui/memory/view_models/memory_viewmodel.dart';
 import 'package:memex/utils/user_storage.dart';
+import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 
 /// Memory screen. Receives [viewModel] from parent (Compass-style).
 class MemoryScreen extends StatefulWidget {
@@ -30,26 +31,26 @@ class _MemoryScreenState extends State<MemoryScreen> {
       builder: (context, _) {
         final vm = widget.viewModel;
         return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          UserStorage.l10n.memoryTitle,
-          style:
-              const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF0F172A)),
-      ),
-      backgroundColor: const Color(0xFFF8FAFC),
-      body: _buildBody(vm),
-    );
+          appBar: AppBar(
+            title: Text(
+              UserStorage.l10n.memoryTitle,
+              style: const TextStyle(
+                  color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
+            ),
+            backgroundColor: Colors.white,
+            elevation: 0,
+            iconTheme: const IconThemeData(color: Color(0xFF0F172A)),
+          ),
+          backgroundColor: const Color(0xFFF7F8FA),
+          body: _buildBody(vm),
+        );
       },
     );
   }
 
   Widget _buildBody(MemoryViewModel vm) {
     if (vm.isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return Center(child: AgentLogoLoading());
     }
 
     if (vm.error != null) {

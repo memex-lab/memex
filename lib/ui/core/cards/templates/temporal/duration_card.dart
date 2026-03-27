@@ -181,7 +181,7 @@ class _DurationCardState extends State<DurationCard>
 
     return GlassCard(
       onTap: widget.onTap,
-      backgroundColor: const Color(0xFF0F172A), // Slate-900
+      backgroundColor: const Color(0xFF0A0A0A), // Slate-900
       padding: EdgeInsets.zero,
       child: Stack(
         children: [
@@ -195,7 +195,7 @@ class _DurationCardState extends State<DurationCard>
                 width: 120,
                 height: 120,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF6366F1).withValues(alpha:0.3),
+                  color: const Color(0xFF5B6CFF).withValues(alpha:0.3),
                   shape: BoxShape.circle,
                 ),
               ),

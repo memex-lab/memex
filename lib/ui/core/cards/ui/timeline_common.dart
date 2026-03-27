@@ -123,20 +123,14 @@ class TimelineTag extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: TimelineTheme.colors.background,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(
-            color: TimelineTheme.colors.textTertiary.withValues(alpha: 0.1)),
-      ),
-      child: Text(
-        '#$label'.toUpperCase(),
-        style: TimelineTheme.typography.label.copyWith(
-          fontSize: 10,
-          color: TimelineTheme.colors.textSecondary,
-        ),
+    return Text(
+      '#$label',
+      style: TextStyle(
+        fontFamily: 'PingFang SC',
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        color: TimelineTheme.colors.primary,
+        height: 1.43,
       ),
     );
   }
@@ -166,8 +160,8 @@ class TimelineDivider extends StatelessWidget {
                   height: 1,
                   child: DecoratedBox(
                     decoration: BoxDecoration(
-                        color:
-                            TimelineTheme.colors.textTertiary.withValues(alpha: 0.3)),
+                        color: TimelineTheme.colors.textTertiary
+                            .withValues(alpha: 0.3)),
                   ),
                 );
               }),

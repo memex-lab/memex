@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'dart:ui' show PlatformDispatcher;
 import 'package:memex/utils/user_storage.dart';
@@ -91,14 +92,17 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
         setState(() => _isSubmitting = false);
 
         // Step 2 for first-time flow: configure storage before model config/home.
-        final completedStorageSetup = await Navigator.push<bool>(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const DataStoragePage(onboardingMode: true),
-          ),
-        );
-        if (!mounted || completedStorageSetup != true) {
-          return;
+        // On Android, skip storage setup — only app storage is available.
+        if (Platform.isIOS) {
+          final completedStorageSetup = await Navigator.push<bool>(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const DataStoragePage(onboardingMode: true),
+            ),
+          );
+          if (!mounted || completedStorageSetup != true) {
+            return;
+          }
         }
 
         if (defaultConfig.isValid) {
@@ -131,7 +135,7 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: const Color(0xFFF7F8FA),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -267,7 +271,7 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
                               ),
                             ),
                             filled: true,
-                            fillColor: const Color(0xFFF8FAFC),
+                            fillColor: const Color(0xFFF7F8FA),
                             contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16, vertical: 14),
                           ),

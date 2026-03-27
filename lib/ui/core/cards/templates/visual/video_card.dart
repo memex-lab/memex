@@ -114,13 +114,13 @@ class _VideoCardState extends State<VideoCard> {
                     title,
                     style: const TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF1E293B),
+                      color: Color(0xFF0A0A0A),
                     ),
                   ),
                 ),
                 if (duration.isNotEmpty)
                   Text(duration,
-                      style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)))
+                      style: const TextStyle(fontSize: 12, color: Color(0xFF99A1AF)))
               ],
             ),
           ),

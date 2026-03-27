@@ -20,132 +20,84 @@ class DetailPageLayout extends StatelessWidget {
     this.actions,
   });
 
-  Color _getHeaderColor(String? type) {
-    if (type == 'alert') {
-      return const Color(0xFFE11D48);
-    }
-    return const Color(0xFF6366F1);
+  Color _getIconBgColor(String? type) {
+    if (type == 'alert') return const Color(0xFFFFE4E6);
+    return const Color(0xFFEEF0FF);
   }
 
-  Color _getIconBgColor(String? type) {
-    if (type == 'alert') {
-      return const Color(0xFFFFE4E6);
-    }
-    return const Color(0xFFE0E7FF);
+  Color _getIconColor(String? type) {
+    if (type == 'alert') return const Color(0xFFE11D48);
+    return const Color(0xFF5B6CFF);
   }
 
   @override
   Widget build(BuildContext context) {
-    final headerColor = _getHeaderColor(type);
     final iconBgColor = _getIconBgColor(type);
+    final iconColor = _getIconColor(type);
+    final topPadding = MediaQuery.of(context).padding.top;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF7F8FA),
       body: Stack(
         children: [
           CustomScrollView(
             slivers: [
               // Header
-              SliverAppBar(
-                expandedHeight: 100,
-                pinned: false,
-                leading: const SizedBox.shrink(),
-                flexibleSpace: FlexibleSpaceBar(
-                  background: Container(
-                    decoration: BoxDecoration(
-                      color: headerColor,
-                    ),
-                    child: Stack(
-                      children: [
-                        Positioned(
-                          top: -40,
-                          right: -40,
-                          child: Container(
-                            width: 160,
-                            height: 160,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.1),
-                              shape: BoxShape.circle,
-                            ),
-                          ),
+              SliverToBoxAdapter(
+                child: Container(
+                  padding: EdgeInsets.fromLTRB(24, topPadding + 48, 24, 20),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: iconBgColor,
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        // Header content overlay
-                        Positioned(
-                          bottom: 0,
-                          left: 0,
-                          right: 0,
-                          child: Container(
-                            padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 40,
-                                  height: 40,
-                                  decoration: BoxDecoration(
-                                    color: iconBgColor,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Center(
-                                    child: IconHelper.getIcon(
-                                      icon,
-                                      size: 20,
-                                      color: headerColor,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        subTitle.isEmpty ? UserStorage.l10n.detailSubtitle : subTitle,
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w500,
-                                          color: Colors.white.withOpacity(0.8),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        title,
-                                        style: const TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                        child: Center(
+                          child: IconHelper.getIcon(icon,
+                              size: 20, color: iconColor),
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              subTitle.isEmpty
+                                  ? UserStorage.l10n.detailSubtitle
+                                  : subTitle,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF99A1AF),
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              title,
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF0A0A0A),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
 
               // Content
               SliverToBoxAdapter(
-                child: Transform.translate(
-                  offset: const Offset(0, -16),
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(24),
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 20, 24, 120),
-                      child: child,
-                    ),
-                  ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 120),
+                  child: child,
                 ),
               ),
             ],
@@ -153,7 +105,7 @@ class DetailPageLayout extends StatelessWidget {
 
           // Top actions and close button
           Positioned(
-            top: MediaQuery.of(context).padding.top + 8,
+            top: topPadding + 8,
             right: 16,
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -162,21 +114,11 @@ class DetailPageLayout extends StatelessWidget {
                 if (actions != null) const SizedBox(width: 8),
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.3),
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Icon(
-                      Icons.close,
-                      size: 20,
-                      color: Colors.white,
-                    ),
+                  child: const SizedBox(
+                    width: 32,
+                    height: 32,
+                    child:
+                        Icon(Icons.close, size: 20, color: Color(0xFF4A5565)),
                   ),
                 ),
               ],

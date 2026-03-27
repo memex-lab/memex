@@ -5,6 +5,7 @@ import 'package:memex/ui/core/cards/native_card_factory.dart';
 import 'package:memex/ui/core/widgets/html_webview_card.dart';
 import 'package:memex/ui/timeline/widgets/timeline_card_detail_screen.dart';
 import 'package:memex/utils/user_storage.dart';
+import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 
 class RelatedFactsList extends StatefulWidget {
   final List<String> factIds;
@@ -52,9 +53,9 @@ class _RelatedFactsListState extends State<RelatedFactsList> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 20),
-        child: Center(child: CircularProgressIndicator()),
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        child: Center(child: AgentLogoLoading()),
       );
     }
 
