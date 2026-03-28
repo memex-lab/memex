@@ -4,7 +4,7 @@
     </picture>
 </p>
 <p align="center">
-  An AI-powered personal knowledge management app that runs entirely on your device.
+  An AI-powered personal life logging app that runs entirely on your device. 
 </p>
 
 <p align="center">
@@ -20,7 +20,7 @@
 
 ## What is Memex?
 
-Memex is a local-first, AI-native personal knowledge management app. Capture text, photos, and voice — a multi-agent system automatically organizes your records into structured timeline cards, extracts knowledge, and generates insights across your entries.
+Memex is a local-first, AI-native personal logging app. Capture text, photos, and voice — a multi-agent system automatically organizes your records into structured timeline cards, extracts knowledge, and generates insights across your entries.
 
 Under the hood, Memex's multi-agent intelligence is powered by a fully open Custom Agent System — you can use the same engine to orchestrate and run your own agents. If you're curious about building autonomous workflows on your phone, [jump straight to the details](#-custom-agent-system).
 
