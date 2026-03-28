@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:memex/ui/core/widgets/local_image.dart';
 
 class SummaryMetric {
   final String label;
@@ -295,8 +296,8 @@ class SummaryCard extends StatelessWidget {
                       children: [
                         ClipRRect(
                           borderRadius: BorderRadius.circular(16),
-                          child: Image.network(
-                            item.url,
+                          child: LocalImage(
+                            url: item.url,
                             width: 120,
                             height: 120,
                             fit: BoxFit.cover,

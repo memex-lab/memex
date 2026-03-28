@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:memex/ui/core/widgets/local_image.dart';
 
 class ChronicleImage {
   final String url;
@@ -132,8 +133,8 @@ class GalleryCard extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           // Image
-          Image.network(
-            image.url,
+          LocalImage(
+            url: image.url,
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) {
               return Container(
@@ -149,7 +150,8 @@ class GalleryCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       error.toString(),
-                      style: const TextStyle(fontSize: 8, color: Color(0xFF99A1AF)),
+                      style: const TextStyle(
+                          fontSize: 8, color: Color(0xFF99A1AF)),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -167,7 +169,7 @@ class GalleryCard extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha:0.6),
+                color: Colors.black.withValues(alpha: 0.6),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(

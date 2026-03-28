@@ -551,7 +551,7 @@ class FileSystemService {
       if (token == null) {
         getLogger('FileSystemService')
             .warning('Access token unavailable, cannot generate secure URL');
-        return fsPath;
+        return 'http://127.0.0.1:$port/assets/$encodedUserId/$encodedFilename?token=$token';;
       }
       return 'http://127.0.0.1:$port/assets/$encodedUserId/$encodedFilename?token=$token';
     } catch (e) {
