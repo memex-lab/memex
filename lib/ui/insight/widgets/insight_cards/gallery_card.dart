@@ -54,13 +54,16 @@ class GalleryCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Header Title
+            // Title
             Text(
               title,
               style: const TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFFEA580C), // Orange-600
+                fontFamily: 'PingFang SC',
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                height: 28 / 18,
+                letterSpacing: -0.15,
+                color: Color(0xFF0A0A0A),
               ),
             ),
             if (insight != null && insight!.isNotEmpty) ...[
@@ -70,21 +73,23 @@ class GalleryCard extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
-                  color: Color(0xFF4A5565), // Slate-500
+                  color: Color(0xFF4A5565),
                   fontStyle: FontStyle.italic,
                 ),
               ),
             ],
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
 
-            // Main Headline
+            // Subtitle (headline)
             Text(
               headline,
               style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF0A0A0A), // Slate-900
-                height: 1.3,
+                fontFamily: 'PingFang SC',
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                height: 20 / 14,
+                letterSpacing: -0.15,
+                color: Color(0xFF9CA3AF),
               ),
             ),
             const SizedBox(height: 20),

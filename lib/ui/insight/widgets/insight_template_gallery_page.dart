@@ -16,11 +16,15 @@ class InsightTemplateGalleryPage extends StatelessWidget {
         title: Text(
           UserStorage.l10n.insightTemplateGalleryTitle,
           style: const TextStyle(
+            fontFamily: 'PingFang SC',
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
             color: Color(0xFF0A0A0A),
-            fontWeight: FontWeight.bold,
           ),
         ),
+        centerTitle: true,
         backgroundColor: const Color(0xFFF7F8FA),
+        surfaceTintColor: const Color(0xFFF7F8FA),
         elevation: 0,
         leading: const AppBackButton(),
       ),
@@ -499,7 +503,7 @@ class InsightTemplateGalleryPage extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.only(bottom: 12, top: 24),
+          padding: const EdgeInsets.only(bottom: 8, top: 12),
           child: Text(
             label,
             style: const TextStyle(

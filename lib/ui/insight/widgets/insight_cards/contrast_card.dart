@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:memex/utils/user_storage.dart';
 
 class ContrastCard extends StatelessWidget {
@@ -24,16 +25,10 @@ class ContrastCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFFFFE4E6), // Rose-100/200 mix
-              Color(0xFFDBEAFE), // Blue-100/200 mix
-            ],
-          ),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.05),
@@ -42,181 +37,98 @@ class ContrastCard extends StatelessWidget {
             ),
           ],
         ),
-        padding: const EdgeInsets.all(3), // For gradient border effect
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(17),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Header
-                Row(
-                  children: [
-                    _buildEmotionIcon(),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        title,
-                        style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFFE11D48), // Rose-600
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Title
+            Text(
+              title,
+              style: const TextStyle(
+                fontFamily: 'PingFang SC',
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                height: 28 / 18,
+                letterSpacing: -0.15,
+                color: Color(0xFF0A0A0A),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Old perspective (quoted)
+            Text(
+              '\u201C${oldPerspective['content'] ?? ''}\u201D',
+              style: const TextStyle(
+                fontFamily: 'PingFang SC',
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                height: 20 / 14,
+                letterSpacing: -0.15,
+                color: Color(0xFF9CA3AF),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // New perspective box
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0F4FF),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Title row: emoji + text
+                  SizedBox(
+                    height: 20,
+                    child: Row(
+                      children: [
+                        SvgPicture.asset(
+                          'assets/icons/icon_edit_pen.svg',
+                          width: 16,
+                          height: 16,
                         ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            newPerspective['title'] ??
+                                UserStorage.l10n.newPerspective,
+                            style: const TextStyle(
+                              fontFamily: 'PingFang SC',
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              height: 20 / 14,
+                              letterSpacing: -0.15,
+                              color: Color(0xFF155DFC),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                if (insight != null && insight!.isNotEmpty) ...[
+                  ),
                   const SizedBox(height: 12),
+
+                  // Content
                   Text(
-                    insight!,
+                    newPerspective['content'] ?? '',
                     style: const TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF4A5565), // Slate-500
-                      fontStyle: FontStyle.italic,
+                      fontFamily: 'PingFang SC',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                      height: 22.75 / 14,
+                      letterSpacing: -0.15,
+                      color: Color(0xFF1E2939),
                     ),
                   ),
                 ],
-                const SizedBox(height: 16),
-
-                // Old Perspective
-                Container(
-                  decoration: const BoxDecoration(
-                    border: Border(
-                      left: BorderSide(
-                        color: Color(0xFFE2E8F0), // Slate-200
-                        width: 4,
-                      ),
-                    ),
-                  ),
-                  padding: const EdgeInsets.only(left: 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '"${oldPerspective['content'] ?? ''}"',
-                        style: const TextStyle(
-                          fontSize: 15,
-                          color: Color(0xFF4A5565), // Slate-500
-                          fontStyle: FontStyle.italic,
-                          height: 1.5,
-                        ),
-                      ),
-                      if (oldPerspective['source'] != null) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          '—— ${oldPerspective['source']}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFF99A1AF), // Slate-400
-                          ),
-                        ),
-                      ]
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // New Perspective (Reframing Box)
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF5F7FF), // Very light indigo/blue
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.edit_outlined, // Or auto_fix_high
-                            size: 16,
-                            color: Color(0xFF5B6CFF), // Indigo-500
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              newPerspective['title'] ??
-                                  UserStorage.l10n.newPerspective,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF4338CA),
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      RichText(
-                        text: TextSpan(
-                          style: const TextStyle(
-                            fontSize: 17,
-                            color: Color(0xFF0A0A0A), // Slate-800
-                            height: 1.6,
-                          ),
-                          children: [
-                            TextSpan(
-                              text: newPerspective['content'] ?? '',
-                            ),
-                            if (newPerspective['content'] != null &&
-                                newPerspective['highlight'] != null)
-                              const TextSpan(text: '\n'),
-                            if (newPerspective['highlight'] != null)
-                              TextSpan(
-                                text: newPerspective['highlight'],
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  color: Color(0xFF5B6CFF), // Indigo-500
-                                  fontWeight: FontWeight.bold,
-                                  height: 1.5,
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
-  }
-
-  Widget _buildEmotionIcon() {
-    IconData icon;
-    Color color;
-
-    switch (emotion) {
-      case 'positive':
-        icon = Icons.favorite_rounded;
-        color = const Color(0xFFF43F5E);
-        break;
-      case 'neutral':
-        icon = Icons.sentiment_neutral_rounded;
-        color = const Color(0xFF4A5565);
-        break;
-      case 'negative':
-      default:
-        icon = Icons.heart_broken_rounded;
-        color = const Color(0xFFF43F5E); // Rose-500
-        break;
-    }
-
-    return Icon(icon, color: color, size: 20);
   }
 }

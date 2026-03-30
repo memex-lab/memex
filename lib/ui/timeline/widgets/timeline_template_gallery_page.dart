@@ -18,11 +18,15 @@ class TimelineTemplateGalleryPage extends StatelessWidget {
         title: Text(
           UserStorage.l10n.timelineTemplateGalleryTitle,
           style: const TextStyle(
-            color: Color(0xFF0F172A),
-            fontWeight: FontWeight.bold,
+            fontFamily: 'PingFang SC',
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF0A0A0A),
           ),
         ),
+        centerTitle: true,
         backgroundColor: const Color(0xFFF7F8FA),
+        surfaceTintColor: const Color(0xFFF7F8FA),
         elevation: 0,
         leading: const AppBackButton(),
       ),
