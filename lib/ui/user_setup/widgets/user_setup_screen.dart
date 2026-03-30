@@ -1,12 +1,14 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'dart:ui' show PlatformDispatcher;
+import 'package:google_fonts/google_fonts.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/utils/toast_helper.dart';
 import 'package:memex/domain/models/llm_config.dart';
 import 'package:memex/ui/user_setup/widgets/setup_model_config_page.dart';
 import 'package:memex/ui/settings/widgets/data_storage_page.dart';
 import 'package:memex/ui/core/widgets/avatar_picker.dart';
+import 'package:memex/ui/core/themes/app_colors.dart';
 
 /// User setup screen. Shown when user opens app for the first time or no local userId.
 class UserSetupScreen extends StatefulWidget {
@@ -159,14 +161,12 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
                             color: Colors.white,
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: const Color(0xFF6366F1)
-                                  .withValues(alpha: 0.3),
+                              color: AppColors.primary.withValues(alpha: 0.3),
                               width: 3,
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF6366F1)
-                                    .withValues(alpha: 0.1),
+                                color: AppColors.primary.withValues(alpha: 0.1),
                                 blurRadius: 24,
                                 offset: const Offset(0, 8),
                               ),
@@ -183,13 +183,14 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.edit, size: 13, color: Colors.grey[400]),
+                            Icon(Icons.edit,
+                                size: 13, color: AppColors.textTertiary),
                             const SizedBox(width: 4),
                             Text(
                               UserStorage.l10n.chooseAvatar,
-                              style: TextStyle(
+                              style: GoogleFonts.inter(
                                 fontSize: 12,
-                                color: Colors.grey[400],
+                                color: AppColors.textTertiary,
                               ),
                             ),
                           ],
@@ -203,10 +204,10 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
                   // ── Title ──
                   Text(
                     UserStorage.l10n.welcomeToMemex,
-                    style: const TextStyle(
+                    style: GoogleFonts.inter(
                       fontSize: 26,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF0F172A),
+                      color: AppColors.textPrimary,
                       letterSpacing: -0.5,
                     ),
                     textAlign: TextAlign.center,
@@ -214,9 +215,9 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
                   const SizedBox(height: 8),
                   Text(
                     UserStorage.l10n.createUserIdToStart,
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       fontSize: 14,
-                      color: Colors.grey[500],
+                      color: AppColors.textTertiary,
                       height: 1.5,
                     ),
                     textAlign: TextAlign.center,
@@ -232,10 +233,9 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color:
-                              const Color(0xFF64748B).withValues(alpha: 0.06),
-                          blurRadius: 20,
-                          offset: const Offset(0, 4),
+                          color: AppColors.shadowLight,
+                          blurRadius: 16,
+                          offset: const Offset(0, 2),
                         ),
                       ],
                     ),
@@ -266,12 +266,12 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: const BorderSide(
-                                color: Color(0xFF6366F1),
+                                color: AppColors.primary,
                                 width: 2,
                               ),
                             ),
                             filled: true,
-                            fillColor: const Color(0xFFF7F8FA),
+                            fillColor: AppColors.background,
                             contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16, vertical: 14),
                           ),
@@ -292,9 +292,9 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
                         const SizedBox(height: 8),
                         Text(
                           UserStorage.l10n.userIdTip,
-                          style: TextStyle(
+                          style: GoogleFonts.inter(
                             fontSize: 11,
-                            color: Colors.grey[400],
+                            color: AppColors.textTertiary,
                           ),
                         ),
                       ],
@@ -309,7 +309,7 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
                     child: ElevatedButton(
                       onPressed: _isSubmitting ? null : _handleSubmit,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6366F1),
+                        backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
@@ -329,7 +329,7 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
                             )
                           : Text(
                               UserStorage.l10n.startUsing,
-                              style: const TextStyle(
+                              style: GoogleFonts.inter(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -357,14 +357,14 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
   Widget _buildLanguageSelector() {
     return Row(
       children: [
-        Icon(Icons.language, size: 18, color: Colors.grey[400]),
+        Icon(Icons.language, size: 18, color: AppColors.textTertiary),
         const SizedBox(width: 10),
         Expanded(
           child: Text(
             UserStorage.l10n.chooseLanguage,
-            style: TextStyle(
+            style: GoogleFonts.inter(
               fontSize: 14,
-              color: Colors.grey[600],
+              color: AppColors.textSecondary,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -391,18 +391,18 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF6366F1) : Colors.transparent,
+          color: isSelected ? AppColors.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? const Color(0xFF6366F1) : Colors.grey[300]!,
+            color: isSelected ? AppColors.primary : Colors.grey[300]!,
           ),
         ),
         child: Text(
           label,
-          style: TextStyle(
+          style: GoogleFonts.inter(
             fontSize: 13,
             fontWeight: FontWeight.w500,
-            color: isSelected ? Colors.white : Colors.grey[600],
+            color: isSelected ? Colors.white : AppColors.textSecondary,
           ),
         ),
       ),

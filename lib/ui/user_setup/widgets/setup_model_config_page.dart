@@ -1,5 +1,6 @@
 import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:memex/domain/models/llm_config.dart';
 import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/utils/user_storage.dart';
@@ -7,6 +8,7 @@ import 'package:memex/data/services/openai_auth_service.dart';
 import 'package:memex/data/services/gemini_auth_service.dart';
 import 'package:memex/data/services/model_list_service.dart';
 import 'package:memex/ui/core/widgets/searchable_dropdown.dart';
+import 'package:memex/ui/core/themes/app_colors.dart';
 
 class SetupModelConfigPage extends StatefulWidget {
   final LLMConfig config;
@@ -164,7 +166,7 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
                 children: [
                   const CircularProgressIndicator(
                     valueColor:
-                        AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
+                        AlwaysStoppedAnimation<Color>(AppColors.primary),
                   ),
                   const SizedBox(height: 16),
                   Text(UserStorage.l10n.authorizing,
@@ -227,7 +229,7 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
                 children: [
                   const CircularProgressIndicator(
                     valueColor:
-                        AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
+                        AlwaysStoppedAnimation<Color>(AppColors.primary),
                   ),
                   const SizedBox(height: 16),
                   Text(UserStorage.l10n.authorizing,
@@ -307,7 +309,7 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
                   Text(isAuthorized ? 'Re-authorize' : 'Authorize with OpenAI'),
               style: ElevatedButton.styleFrom(
                 backgroundColor:
-                    isAuthorized ? Colors.white : const Color(0xFF6366F1),
+                    isAuthorized ? Colors.white : AppColors.primary,
                 foregroundColor: isAuthorized ? Colors.black87 : Colors.white,
                 elevation: 0,
                 side:
@@ -381,7 +383,7 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
                   Text(isAuthorized ? 'Re-authorize' : 'Authorize with Google'),
               style: ElevatedButton.styleFrom(
                 backgroundColor:
-                    isAuthorized ? Colors.white : const Color(0xFF6366F1),
+                    isAuthorized ? Colors.white : AppColors.primary,
                 foregroundColor: isAuthorized ? Colors.black87 : Colors.white,
                 elevation: 0,
                 side:
@@ -611,17 +613,18 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppColors.background,
+        surfaceTintColor: AppColors.background,
         elevation: 0,
         actions: [
           TextButton(
             onPressed: _skip,
             child: Text(
               UserStorage.l10n.skipForNow,
-              style: TextStyle(
-                color: Colors.grey[600],
+              style: GoogleFonts.inter(
+                color: AppColors.textTertiary,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -643,7 +646,7 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
                     width: 72,
                     height: 72,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF6366F1), // Indigo
+                      color: AppColors.primary,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: const Icon(
@@ -658,10 +661,10 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
                 // Title & Subtitle
                 Text(
                   UserStorage.l10n.setupModelConfigTitle,
-                  style: const TextStyle(
+                  style: GoogleFonts.inter(
                     fontSize: 26,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF0F172A),
+                    color: AppColors.textPrimary,
                     letterSpacing: -0.5,
                   ),
                   textAlign: TextAlign.center,
@@ -669,9 +672,9 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
                 const SizedBox(height: 12),
                 Text(
                   UserStorage.l10n.setupModelConfigSubtitle,
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                     fontSize: 15,
-                    color: Colors.grey[600],
+                    color: AppColors.textSecondary,
                     height: 1.5,
                   ),
                   textAlign: TextAlign.center,
@@ -782,7 +785,7 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: const BorderSide(
-                                    color: Color(0xFF6366F1), width: 2),
+                                    color: AppColors.primary, width: 2),
                               ),
                               filled: true,
                               fillColor: Colors.grey[50],
@@ -878,7 +881,7 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
                 ElevatedButton(
                   onPressed: _isSubmitting ? null : _save,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6366F1),
+                    backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
@@ -898,7 +901,7 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
                         )
                       : Text(
                           UserStorage.l10n.setupModelConfigComplete,
-                          style: const TextStyle(
+                          style: GoogleFonts.inter(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                           ),
@@ -931,7 +934,7 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF6366F1), width: 2),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
         ),
         filled: true,
         fillColor: Colors.grey[50],
@@ -1198,7 +1201,7 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF6366F1), width: 2),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
         ),
         filled: true,
         fillColor: Colors.grey[50],
@@ -1228,7 +1231,7 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF6366F1), width: 2),
+              borderSide: const BorderSide(color: AppColors.primary, width: 2),
             ),
             filled: true,
             fillColor: Colors.grey[50],
@@ -1264,7 +1267,7 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF6366F1), width: 2),
+              borderSide: const BorderSide(color: AppColors.primary, width: 2),
             ),
             filled: true,
             fillColor: Colors.grey[50],
@@ -1294,7 +1297,7 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF6366F1), width: 2),
+              borderSide: const BorderSide(color: AppColors.primary, width: 2),
             ),
             filled: true,
             fillColor: Colors.grey[50],
@@ -1327,7 +1330,7 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF6366F1), width: 2),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
         ),
         filled: true,
         fillColor: Colors.grey[50],

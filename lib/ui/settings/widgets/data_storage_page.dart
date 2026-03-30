@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:memex/data/repositories/memex_router.dart';
@@ -7,6 +8,7 @@ import 'package:memex/utils/user_storage.dart';
 import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:memex/utils/toast_helper.dart';
 import 'package:memex/main.dart' show rootShellKey;
+import 'package:memex/ui/core/themes/app_colors.dart';
 
 /// Page to choose data storage.
 /// Android: app storage or custom folder.
@@ -273,6 +275,8 @@ class _DataStoragePageState extends State<DataStoragePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.dataStorage),
+        backgroundColor: AppColors.background,
+        surfaceTintColor: AppColors.background,
       ),
       bottomNavigationBar: widget.onboardingMode
           ? Padding(
@@ -287,7 +291,7 @@ class _DataStoragePageState extends State<DataStoragePage> {
                 child: ElevatedButton(
                   onPressed: () => Navigator.of(context).pop(true),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6366F1),
+                    backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
@@ -296,7 +300,7 @@ class _DataStoragePageState extends State<DataStoragePage> {
                   ),
                   child: Text(
                     UserStorage.l10n.startUsing,
-                    style: const TextStyle(
+                    style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
@@ -338,7 +342,7 @@ class _DataStoragePageState extends State<DataStoragePage> {
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
-                            color: Color(0xFF6366F1),
+                            color: AppColors.primary,
                           ),
                         ),
                         if (!Platform.isIOS &&
@@ -374,7 +378,7 @@ class _DataStoragePageState extends State<DataStoragePage> {
                                       : UserStorage.l10n.switchingStorage,
                                   style: const TextStyle(
                                     fontSize: 14,
-                                    color: Color(0xFF6366F1),
+                                    color: AppColors.primary,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -408,14 +412,14 @@ class _DataStoragePageState extends State<DataStoragePage> {
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: selected ? const Color(0xFF6366F1) : Colors.grey[300]!,
+              color: selected ? AppColors.primary : Colors.grey[300]!,
               width: selected ? 2 : 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF64748B).withValues(alpha: 0.08),
+                color: AppColors.shadowLight,
                 blurRadius: 16,
-                offset: const Offset(0, 4),
+                offset: const Offset(0, 2),
               ),
             ],
           ),
@@ -424,7 +428,7 @@ class _DataStoragePageState extends State<DataStoragePage> {
               Icon(
                 icon,
                 color: enabled
-                    ? (selected ? const Color(0xFF6366F1) : Colors.grey[600])
+                    ? (selected ? AppColors.primary : Colors.grey[600])
                     : Colors.grey[400],
                 size: 24,
               ),
@@ -438,7 +442,7 @@ class _DataStoragePageState extends State<DataStoragePage> {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
-                        color: enabled ? const Color(0xFF0F172A) : Colors.grey,
+                        color: enabled ? AppColors.textPrimary : Colors.grey,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -460,7 +464,7 @@ class _DataStoragePageState extends State<DataStoragePage> {
               ),
               if (selected)
                 const Icon(Icons.check_circle,
-                    color: Color(0xFF6366F1), size: 22),
+                    color: AppColors.primary, size: 22),
             ],
           ),
         ),

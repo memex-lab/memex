@@ -380,12 +380,13 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                         offset: Offset(0, -10)),
                   ],
                 ),
+                clipBehavior: Clip.antiAlias,
                 child: Column(
                   children: [
                     _buildHeader(),
                     Expanded(
                       child: Container(
-                        color: const Color(0xFFFAFAFA).withOpacity(0.5),
+                        color: Colors.white,
                         child: _isLoading
                             ? Center(child: AgentLogoLoading())
                             : _items.isEmpty
