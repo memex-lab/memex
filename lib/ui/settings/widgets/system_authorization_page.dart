@@ -46,7 +46,9 @@ class _SystemAuthorizationPageState extends State<SystemAuthorizationPage> {
     final photos = await Permission.photos.status;
     final camera = await Permission.camera.status;
     final mic = await Permission.microphone.status;
-    final calendar = await Permission.calendarFullAccess.status;
+    final calendar = Platform.isIOS
+        ? await Permission.calendarFullAccess.status
+        : await Permission.calendarWriteOnly.status;
     final fitness = Platform.isIOS
         ? await Permission.sensors.status
         : await Permission.activityRecognition.status;
@@ -265,7 +267,10 @@ class _SystemAuthorizationPageState extends State<SystemAuthorizationPage> {
                   subtitle: UserStorage.l10n.calendarPermissionReason,
                   status: _calendarStatus,
                   onTap: () => _requestPermission(
-                      Permission.calendarFullAccess, _checkAllPermissions),
+                      Platform.isIOS
+                          ? Permission.calendarFullAccess
+                          : Permission.calendarWriteOnly,
+                      _checkAllPermissions),
                 ),
                 const Divider(height: 1, indent: 56),
                 _buildPermissionItem(
