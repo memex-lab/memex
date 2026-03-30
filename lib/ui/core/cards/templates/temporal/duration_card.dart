@@ -181,7 +181,7 @@ class _DurationCardState extends State<DurationCard>
 
     return GlassCard(
       onTap: widget.onTap,
-      backgroundColor: const Color(0xFF0A0A0A), // Slate-900
+      backgroundColor: Colors.white,
       padding: EdgeInsets.zero,
       child: Stack(
         children: [
@@ -195,7 +195,7 @@ class _DurationCardState extends State<DurationCard>
                 width: 120,
                 height: 120,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF5B6CFF).withValues(alpha:0.3),
+                  color: const Color(0xFF5B6CFF).withValues(alpha: 0.08),
                   shape: BoxShape.circle,
                 ),
               ),
@@ -216,18 +216,18 @@ class _DurationCardState extends State<DurationCard>
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha:0.1),
+                            color: const Color(0xFFF7F8FA),
                             shape: BoxShape.circle,
                             border: Border.all(
                                 color: _isRunning
                                     ? const Color(0xFF34D399) // Emerald
-                                    : Colors.white.withValues(alpha:0.05)),
+                                    : const Color(0xFFE2E8F0)),
                           ),
                           child: Icon(
                               _isRunning ? Icons.timer : Icons.timer_outlined,
                               color: _isRunning
                                   ? const Color(0xFF34D399) // Emerald
-                                  : const Color(0xFFC7D2FE), // Indigo-200
+                                  : const Color(0xFF5B6CFF), // Indigo-200
                               size: 20),
                         ),
                       ),
@@ -239,14 +239,14 @@ class _DurationCardState extends State<DurationCard>
                             Row(
                               children: [
                                 const Icon(Icons.access_time,
-                                    size: 12, color: Color(0xFFE0E7FF)),
+                                    size: 12, color: Color(0xFF4A5565)),
                                 const SizedBox(width: 6),
                                 Text(
                                   durationStr,
                                   style: const TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
-                                    color: Color(0xFFE0E7FF), // Indigo-100
+                                    color: Color(0xFF4A5565), // Indigo-100
                                   ),
                                 ),
                               ],
@@ -257,7 +257,7 @@ class _DurationCardState extends State<DurationCard>
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
-                                color: Colors.white.withValues(alpha:0.5),
+                                color: const Color(0xFF99A1AF),
                               ),
                             ),
                           ],
@@ -289,7 +289,7 @@ class _DurationCardState extends State<DurationCard>
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
                             letterSpacing: 0.5,
-                            color: Colors.white.withValues(alpha:0.5),
+                            color: const Color(0xFF99A1AF),
                           ),
                         ),
                       ],

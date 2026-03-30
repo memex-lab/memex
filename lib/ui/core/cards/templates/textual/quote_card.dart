@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:memex/ui/core/cards/ui/glass_card.dart';
 
 class QuoteCard extends StatelessWidget {
@@ -15,55 +16,77 @@ class QuoteCard extends StatelessWidget {
 
     return GlassCard(
       onTap: onTap,
-      padding: const EdgeInsets.all(24),
-      backgroundColor:
-          const Color(0xFF1E1E2E), // Dark theme for quotes as per example
+      padding: const EdgeInsets.all(20),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.format_quote, color: Colors.white24, size: 32),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
+          // Opening quote
           Text(
-            content,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 22,
-              fontFamily: 'Serif', // Use system Serif or custom if available
-              fontStyle: FontStyle.italic,
-              height: 1.4,
-              color: Colors.white,
+            '\u201C',
+            style: GoogleFonts.imbue(
+              fontSize: 60,
+              fontWeight: FontWeight.w700,
+              height: 0.3,
+              color: const Color(0xFFD1D5DB),
             ),
           ),
-          const SizedBox(height: 24),
-          if (author != null || source != null)
-            Column(
-              children: [
-                Container(
-                  width: 40,
-                  height: 1,
-                  color: Colors.white24,
-                ),
-                const SizedBox(height: 12),
-                if (author != null)
-                  Text(
-                    author,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white70,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                if (source != null)
-                  Text(
-                    source,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.white38,
-                    ),
-                  ),
-              ],
+          const SizedBox(height: 8),
+
+          // Quote content
+          Text(
+            content,
+            style: GoogleFonts.inter(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              height: 1.5,
+              letterSpacing: 0.2,
+              color: const Color(0xFF0A0A0A),
             ),
+          ),
+          const SizedBox(height: 8),
+
+          // Closing quote
+          Align(
+            alignment: Alignment.centerRight,
+            child: Text(
+              '\u201D',
+              style: GoogleFonts.imbue(
+                fontSize: 60,
+                fontWeight: FontWeight.w700,
+                height: 0.3,
+                color: const Color(0xFFD1D5DB),
+              ),
+            ),
+          ),
+
+          // Author + source
+          if (author != null || source != null) ...[
+            const SizedBox(height: 20),
+            if (author != null)
+              Text(
+                '— $author',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                  height: 20 / 14,
+                  letterSpacing: -0.15,
+                  color: const Color(0xFF99A1AF),
+                ),
+              ),
+            if (source != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(
+                  source,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    color: const Color(0xFF99A1AF),
+                  ),
+                ),
+              ),
+          ],
         ],
       ),
     );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:memex/ui/core/cards/ui/glass_card.dart';
 
 class RoutineCard extends StatelessWidget {
@@ -18,97 +19,92 @@ class RoutineCard extends StatelessWidget {
     return GlassCard(
       onTap: onTap,
       padding: const EdgeInsets.all(20),
-      backgroundColor: const Color(0xFFFFF7ED), // Orange-50 tint
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header: streak label + icon
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.local_fire_department,
-                          color: Colors.orange, size: 20),
-                      const SizedBox(width: 4),
-                      Text(
-                        'CURRENT STREAK',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.orange[800],
-                          letterSpacing: 1.0,
-                        ),
-                      ),
-                    ],
+                  Text(
+                    'CURRENT STREAK',
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: const Color(0xFF9CA3AF),
+                      letterSpacing: 0.6,
+                    ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.baseline,
                     textBaseline: TextBaseline.alphabetic,
                     children: [
                       Text(
                         '$streak',
-                        style: const TextStyle(
+                        style: GoogleFonts.inter(
                           fontSize: 32,
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFF0A0A0A),
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF0A0A0A),
                         ),
                       ),
                       const SizedBox(width: 4),
                       Text(
                         'DAYS',
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: const Color(0xFF4A5565),
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF9CA3AF),
                         ),
                       ),
                     ],
                   ),
                 ],
               ),
-              // Circular progress or icon
               Container(
-                width: 50,
-                height: 50,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white,
-                  border: Border.all(color: Colors.orange[100]!, width: 4),
+                  color: const Color(0xFFF7F8FA),
                 ),
-                child: Center(
-                  child: Icon(Icons.replay, color: Colors.orange[400]),
+                child: const Center(
+                  child: Icon(Icons.replay, color: Color(0xFF5B6CFF), size: 22),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 20),
-          // History Dots (Last 7 days)
+
+          // History bars
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: history.map((completed) {
               return Container(
                 width: 8,
-                height: 32, // mini bar chart style or dot
+                height: 28,
                 decoration: BoxDecoration(
-                  color: completed ? Colors.orange : Colors.orange[100],
+                  color: completed
+                      ? const Color(0xFF5B6CFF)
+                      : const Color(0xFFE5E7EB),
                   borderRadius: BorderRadius.circular(4),
                 ),
               );
             }).toList(),
           ),
-          const SizedBox(height: 12),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              habitName,
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-                color: Colors.orange[900],
-              ),
+          const SizedBox(height: 14),
+
+          // Habit name
+          Text(
+            habitName,
+            style: const TextStyle(
+              fontFamily: 'PingFang SC',
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF0A0A0A),
             ),
           ),
         ],

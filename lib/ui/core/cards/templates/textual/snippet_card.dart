@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-import 'dart:ui';
 import 'package:memex/ui/core/cards/ui/glass_card.dart';
 
 class SnippetCard extends StatelessWidget {
@@ -18,73 +17,42 @@ class SnippetCard extends StatelessWidget {
 
     return GlassCard(
       onTap: onTap,
-      padding: EdgeInsets.zero,
-      child: Stack(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Decorative background element (subtle gradient/blur)
-          Positioned(
-            top: -20,
-            right: -20,
-            child: ImageFiltered(
-              imageFilter: ImageFilter.blur(sigmaX: 50, sigmaY: 50),
-              child: Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color(0xFF5B6CFF).withValues(alpha: 0.1),
-                ),
+          MarkdownBody(
+            data: text,
+            styleSheet: MarkdownStyleSheet(
+              p: _getTextStyle(style),
+              code: const TextStyle(
+                backgroundColor: Color(0xFFF7F8FA),
+                color: Color(0xFF0A0A0A),
+                fontFamily: 'monospace',
+              ),
+              codeblockDecoration: BoxDecoration(
+                color: const Color(0xFFF7F8FA),
+                borderRadius: BorderRadius.circular(8),
               ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                MarkdownBody(
-                  data: text,
-                  styleSheet: MarkdownStyleSheet(
-                    p: _getTextStyle(style),
-                    // Map other styles if needed or use defaults
-                    code: const TextStyle(
-                      backgroundColor: Color(0xFFF7F8FA),
-                      color: Color(0xFF0A0A0A),
-                      fontFamily: 'monospace',
-                    ),
-                    codeblockDecoration: BoxDecoration(
-                      color: const Color(0xFFF7F8FA),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-                if (tags.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 8,
-                    children: tags
-                        .map((tag) => Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF7F8FA), // Slate-100
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                '#$tag',
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFF4A5565), // Slate-500
-                                ),
-                              ),
-                            ))
-                        .toList(),
-                  ),
-                ]
-              ],
+          if (tags.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              children: tags
+                  .map((tag) => Text(
+                        '#$tag',
+                        style: const TextStyle(
+                          fontFamily: 'PingFang SC',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                          color: Color(0xFF5B6CFF),
+                        ),
+                      ))
+                  .toList(),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -97,21 +65,22 @@ class SnippetCard extends StatelessWidget {
           fontFamily: 'monospace',
           fontSize: 15,
           height: 1.5,
-          color: Color(0xFF334155), // Slate-700
+          color: Color(0xFF4A5565),
         );
       case 'handwritten':
         return const TextStyle(
           fontStyle: FontStyle.italic,
           fontSize: 18,
           height: 1.4,
-          color: Color(0xFF0A0A0A), // Slate-800
+          color: Color(0xFF0A0A0A),
         );
       default:
         return const TextStyle(
-          fontSize: 18,
+          fontFamily: 'PingFang SC',
+          fontSize: 15,
           fontWeight: FontWeight.w400,
-          height: 1.5,
-          color: Color(0xFF0A0A0A), // Slate-800
+          height: 1.6,
+          color: Color(0xFF4A5565),
         );
     }
   }

@@ -158,8 +158,12 @@ class _ClassicCardState extends State<ClassicCard> {
               content,
               maxLines: 8,
               overflow: TextOverflow.ellipsis,
-              style: TimelineTheme.typography.body.copyWith(
-                color: TimelineTheme.colors.textSecondary,
+              style: const TextStyle(
+                fontFamily: 'PingFang SC',
+                fontSize: 15,
+                fontWeight: FontWeight.w400,
+                height: 1.6,
+                color: Color(0xFF4A5565),
               ),
             ),
             if (imageUrls.isNotEmpty || audioUrl != null || tags.isNotEmpty)

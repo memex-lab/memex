@@ -21,7 +21,7 @@ class TimelineCard extends StatelessWidget {
     required this.child,
     this.onTap,
     this.variant = TimelineCardVariant.glass,
-    this.padding = const EdgeInsets.all(24),
+    this.padding = const EdgeInsets.all(20),
     this.customBackgroundColor,
   });
 

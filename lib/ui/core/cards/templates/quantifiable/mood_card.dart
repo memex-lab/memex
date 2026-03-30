@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:memex/ui/core/cards/ui/glass_card.dart';
 
 class MoodCard extends StatelessWidget {
@@ -11,34 +12,26 @@ class MoodCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final String moodName = data['mood_name'] ?? data['mood'] ?? 'Neutral';
     final int intensity = (data['intensity'] as num?)?.toInt() ?? 5;
-    final String? colorHex = data['color_hex'];
-
-    Color moodColor = _getMoodColor(moodName, colorHex);
-    IconData moodIcon = _getMoodIcon(moodName);
+    final IconData moodIcon = _getMoodIcon(moodName);
 
     return GlassCard(
       onTap: onTap,
-      padding: const EdgeInsets.all(16),
-      borderRadius: 24,
-      backgroundColor: moodColor.withValues(alpha: 0.1),
+      padding: const EdgeInsets.all(20),
       child: Row(
         children: [
+          // Icon
           Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white,
+            width: 44,
+            height: 44,
+            decoration: const BoxDecoration(
+              color: Color(0xFFF7F8FA),
               shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: moodColor.withValues(alpha: 0.2),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
             ),
-            child: Icon(moodIcon, color: moodColor, size: 24),
+            child: Icon(moodIcon, color: const Color(0xFF5B6CFF), size: 22),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 14),
+
+          // Name + trigger
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -46,39 +39,49 @@ class MoodCard extends StatelessWidget {
                 Text(
                   moodName,
                   style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
+                    fontFamily: 'PingFang SC',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
                     color: Color(0xFF0A0A0A),
                   ),
                 ),
-                if (data.containsKey('trigger'))
+                if (data.containsKey('trigger')) ...[
+                  const SizedBox(height: 4),
                   Text(
                     data['trigger'],
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: const Color(0xFF0A0A0A).withValues(alpha: 0.6),
+                    style: const TextStyle(
+                      fontFamily: 'PingFang SC',
+                      fontSize: 13,
+                      fontWeight: FontWeight.w400,
+                      color: Color(0xFF9CA3AF),
                     ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
+                ],
               ],
             ),
           ),
+
+          // Score (mood intensity 1-10)
+          const SizedBox(width: 16),
           Column(
             children: [
               Text(
                 '$intensity',
-                style: const TextStyle(
+                style: GoogleFonts.inter(
                   fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF99A1AF),
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF0A0A0A),
                   height: 1.0,
                 ),
               ),
-              const Text(
+              Text(
                 '/10',
-                style: TextStyle(
+                style: GoogleFonts.inter(
                   fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFFCBD5E1),
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFF9CA3AF),
                 ),
               ),
             ],
@@ -88,31 +91,23 @@ class MoodCard extends StatelessWidget {
     );
   }
 
-  Color _getMoodColor(String mood, String? hex) {
-    if (hex != null) {
-      // Basic hex parsing
-      try {
-        return Color(int.parse(hex.replaceAll('#', '0xFF')));
-      } catch (_) {}
-    }
-
-    final lower = mood.toLowerCase();
-    if (['happy', 'excited', 'energetic'].contains(lower)) return Colors.amber;
-    if (['sad', 'tired'].contains(lower)) return Colors.indigo;
-    if (['angry', 'stressed'].contains(lower)) return Colors.red;
-    if (['creative', 'curious'].contains(lower)) return Colors.purple;
-    if (['relaxed', 'calm'].contains(lower)) return Colors.teal;
-    return const Color(0xFF4A5565);
-  }
-
   IconData _getMoodIcon(String mood) {
     final lower = mood.toLowerCase();
-    if (['happy', 'excited', 'energetic'].contains(lower))
+    if (['happy', 'excited', 'energetic'].contains(lower)) {
       return Icons.sentiment_very_satisfied;
-    if (['sad', 'tired'].contains(lower)) return Icons.sentiment_dissatisfied;
-    if (['angry', 'stressed'].contains(lower)) return Icons.mood_bad;
-    if (['creative', 'curious'].contains(lower)) return Icons.auto_awesome;
-    if (['relaxed', 'calm'].contains(lower)) return Icons.spa;
+    }
+    if (['sad', 'tired'].contains(lower)) {
+      return Icons.sentiment_dissatisfied;
+    }
+    if (['angry', 'stressed'].contains(lower)) {
+      return Icons.mood_bad;
+    }
+    if (['creative', 'curious'].contains(lower)) {
+      return Icons.auto_awesome;
+    }
+    if (['relaxed', 'calm'].contains(lower)) {
+      return Icons.spa;
+    }
     return Icons.sentiment_neutral;
   }
 }
