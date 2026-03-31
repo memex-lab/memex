@@ -53,6 +53,9 @@ class TimelineScreenState extends State<TimelineScreen> {
   String? _userAvatar;
   bool _showModelConfigBanner = false;
   bool _showFitnessBanner = false;
+  late PageController _pageController;
+  int _currentPageIndex = 0;
+  final ScrollController _tagScrollController = ScrollController();
 
   /// Show loading indicator for submission (called from main screen).
   void showLoading() {
@@ -117,6 +120,7 @@ class TimelineScreenState extends State<TimelineScreen> {
   @override
   void initState() {
     super.initState();
+    _pageController = PageController();
     _scrollController.addListener(_onScroll);
     _checkPermissionBadge();
     _loadUserAvatar();
@@ -192,6 +196,8 @@ class TimelineScreenState extends State<TimelineScreen> {
 
   @override
   void dispose() {
+    _pageController.dispose();
+    _tagScrollController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -204,6 +210,67 @@ class TimelineScreenState extends State<TimelineScreen> {
         vm.loadMore();
       }
     }
+  }
+
+  /// Get the total number of tab pages: All(0) + Insight(1) + user tags(2..)
+  int _totalPageCount(TimelineViewModel vm) => 2 + vm.tags.length;
+
+  /// Convert a page index to the corresponding filter string.
+  String _pageIndexToFilter(int index, TimelineViewModel vm) {
+    if (index == 0) return 'all';
+    if (index == 1) return 'insight';
+    return vm.tags[index - 2].name;
+  }
+
+  /// Convert the current active filter to a page index.
+  int _filterToPageIndex(TimelineViewModel vm) {
+    if (vm.viewMode == TimelineViewMode.insight) return 1;
+    if (vm.activeFilter == 'all') return 0;
+    final idx = vm.tags.indexWhere((t) => t.name == vm.activeFilter);
+    return idx >= 0 ? idx + 2 : 0;
+  }
+
+  /// Called when user swipes to a new page.
+  void _onPageChanged(int index, TimelineViewModel vm) {
+    if (index == _currentPageIndex) return;
+    _currentPageIndex = index;
+    final filter = _pageIndexToFilter(index, vm);
+    if (index == 1) {
+      vm.setViewMode(TimelineViewMode.insight);
+      vm.setActiveFilter('insight');
+    } else {
+      vm.setViewMode(TimelineViewMode.timeline);
+      vm.setActiveFilter(filter);
+      vm.loadCards(refresh: true);
+    }
+    _scrollTagIntoView(index, vm);
+  }
+
+  /// Scroll the tag chip list so the active tag is visible.
+  void _scrollTagIntoView(int index, TimelineViewModel vm) {
+    if (!_tagScrollController.hasClients) return;
+    // Estimate each chip width ~80px + 10px gap
+    const estimatedChipWidth = 90.0;
+    final targetOffset = (index * estimatedChipWidth) -
+        (MediaQuery.of(context).size.width / 2 - estimatedChipWidth / 2);
+    final maxScroll = _tagScrollController.position.maxScrollExtent;
+    final clampedOffset = targetOffset.clamp(0.0, maxScroll);
+    _tagScrollController.animateTo(
+      clampedOffset,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  /// Called when user taps a tag chip — animate PageView to that page.
+  void _animateToPage(int index) {
+    _currentPageIndex = index;
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+    _scrollTagIntoView(index, widget.viewModel);
   }
 
   /// Check if a card is a system_task created by a custom agent.
@@ -673,6 +740,9 @@ class TimelineScreenState extends State<TimelineScreen> {
                     vm.loadCards(refresh: true).catchError((e) {
                       if (mounted) ToastHelper.showError(context, e);
                     });
+                    // Also sync PageView
+                    final pageIdx = _filterToPageIndex(vm);
+                    _animateToPage(pageIdx);
                     return true;
                   } else if (action['action'] == 'navigate_to_card' &&
                       action['card_id'] != null) {
@@ -694,13 +764,21 @@ class TimelineScreenState extends State<TimelineScreen> {
                   }
                   return false;
                 },
-                child: IndexedStack(
-                  index: vm.viewMode == TimelineViewMode.timeline ? 0 : 1,
-                  children: [
-                    _buildTimelineBody(vm),
-                    InsightScreen(
-                        isEmbedded: true, viewModel: widget.insightViewModel),
-                  ],
+                child: PageView.builder(
+                  controller: _pageController,
+                  itemCount: _totalPageCount(vm),
+                  onPageChanged: (index) => _onPageChanged(index, vm),
+                  itemBuilder: (context, index) {
+                    if (index == 1) {
+                      // Insight page
+                      return InsightScreen(
+                        isEmbedded: true,
+                        viewModel: widget.insightViewModel,
+                      );
+                    }
+                    // Timeline page (All or filtered by tag)
+                    return _buildTimelineBody(vm);
+                  },
                 ),
               ),
             ),
@@ -718,6 +796,7 @@ class TimelineScreenState extends State<TimelineScreen> {
     final totalCount = 2 + userTags.length;
 
     return ListView.separated(
+      controller: _tagScrollController,
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.only(left: 20, right: 20),
       itemCount: totalCount,
@@ -731,13 +810,10 @@ class TimelineScreenState extends State<TimelineScreen> {
             label: UserStorage.l10n.timelineFilterAll,
             isSelected: isSelected,
             onTap: () {
-              final wasAlreadyAll = vm.activeFilter == 'all' &&
-                  vm.viewMode == TimelineViewMode.timeline;
               vm.setViewMode(TimelineViewMode.timeline);
               vm.setActiveFilter('all');
-              if (!wasAlreadyAll) {
-                vm.loadCards(refresh: true);
-              }
+              vm.loadCards(refresh: true);
+              _animateToPage(0);
             },
           );
         }
@@ -750,10 +826,9 @@ class TimelineScreenState extends State<TimelineScreen> {
             icon: '✨',
             isSelected: isSelected,
             onTap: () {
-              if (vm.viewMode != TimelineViewMode.insight) {
-                vm.setViewMode(TimelineViewMode.insight);
-                vm.setActiveFilter('insight');
-              }
+              vm.setViewMode(TimelineViewMode.insight);
+              vm.setActiveFilter('insight');
+              _animateToPage(1);
             },
           );
         }
@@ -770,6 +845,7 @@ class TimelineScreenState extends State<TimelineScreen> {
             vm.setViewMode(TimelineViewMode.timeline);
             vm.setActiveFilter(tag.name);
             vm.loadCards(refresh: true);
+            _animateToPage(index);
           },
         );
       },

@@ -1,4 +1,4 @@
-import 'package:fl_chart/fl_chart.dart';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -39,7 +39,7 @@ class RadarChartCard extends StatelessWidget {
     required this.centerValue,
     required this.centerLabel,
     this.dimensions = const [],
-    this.color = '#8B5CF6',
+    this.color = '#5B6CFF',
     this.insight,
     this.onTap,
   });
@@ -49,7 +49,7 @@ class RadarChartCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
@@ -102,105 +102,75 @@ class RadarChartCard extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 32),
-
-            // Radar Chart + Center Text
-            AspectRatio(
-              aspectRatio: 1.1,
-              child: Stack(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: RadarChart(
-                      RadarChartData(
-                        dataSets: [
-                          RadarDataSet(
-                            fillColor: const Color(0xD95B6CFF), // #5B6CFFD9
-                            borderColor: const Color(0xD95B6CFF),
-                            entryRadius: 0, // No dots on corners
-                            borderWidth: 2, // Thicker border
-                            dataEntries: dimensions
-                                .map((d) => RadarEntry(value: _normalize(d)))
-                                .toList(),
-                          ),
-                        ],
-                        radarBackgroundColor: Colors.transparent,
-                        radarShape: RadarShape.polygon,
-                        borderData: FlBorderData(show: false),
-                        radarBorderData: const BorderSide(
-                          color: Color(0xFF374151), // Slate-700 lines
-                          width: 1.5,
-                        ),
-                        titlePositionPercentageOffset: 0.1,
-                        titleTextStyle: GoogleFonts.inter(
-                          color: const Color(0xFF9CA3AF),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w400,
-                        ),
+            const SizedBox(height: 16),
+            // Radar Chart
+            if (dimensions.length >= 3)
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final size = constraints.maxWidth;
+                  return SizedBox(
+                    height: size,
+                    child: CustomPaint(
+                      size: Size(size, size),
+                      painter: _RadarPainter(
+                        dimensions: dimensions,
                         tickCount: 4,
-                        ticksTextStyle: const TextStyle(
-                            color: Colors.transparent, fontSize: 0),
-                        tickBorderData: const BorderSide(
-                          color: Color(0xFF374151), // Slate-700
-                          width: 1,
+                      ),
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              centerValue,
+                              style: GoogleFonts.inter(
+                                fontSize: 32,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                                height: 1.1,
+                                shadows: [
+                                  Shadow(
+                                    color: const Color(0xFF5B6CFF)
+                                        .withValues(alpha: 0.6),
+                                    blurRadius: 12,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              centerLabel,
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w400,
+                                color: Colors.white.withValues(alpha: 0.9),
+                                height: 1.3,
+                                shadows: [
+                                  Shadow(
+                                    color: const Color(0xFF5B6CFF)
+                                        .withValues(alpha: 0.6),
+                                    blurRadius: 8,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
-                        gridBorderData: const BorderSide(
-                          color: Color(0xFF374151), // Slate-700
-                          width: 1.5,
-                        ),
-                        getTitle: (index, angle) {
-                          return RadarChartTitle(
-                            text: dimensions[index].label,
-                            angle: 0,
-                          );
-                        },
                       ),
                     ),
-                  ),
-
-                  // Center Value
-                  Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          centerValue,
-                          style: GoogleFonts.inter(
-                            fontSize: 36,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                            height: 40 / 36,
-                            letterSpacing: 0.37,
-                          ),
-                        ),
-                        const SizedBox(height: 1),
-                        Text(
-                          centerLabel,
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w400,
-                            color: Colors.white,
-                            height: 16 / 12,
-                            letterSpacing: 0,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                  );
+                },
               ),
-            ),
-
             if (insight != null && insight!.isNotEmpty) ...[
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               Text(
                 insight!,
-                style: TextStyle(
+                style: GoogleFonts.inter(
                   fontSize: 13,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w400,
                   color: const Color(0xFF4A5565),
                   fontStyle: FontStyle.italic,
                   height: 1.5,
+                  letterSpacing: -0.15,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -210,36 +180,139 @@ class RadarChartCard extends StatelessWidget {
       ),
     );
   }
+}
 
-  double _normalize(RadarDimension d) {
-    if (d.max == 0) return 0;
-    // We normalize to a somewhat standard scale, say 100 max for logic?
-    // Actually RadarChart works best if all entries are relatively scaled?
-    // Let's assume input values are comparable or normalized by caller.
-    // If max is provided, normalize to percentage.
-    return (d.value / d.max) * 100;
+class _RadarPainter extends CustomPainter {
+  final List<RadarDimension> dimensions;
+  final int tickCount;
+
+  _RadarPainter({required this.dimensions, this.tickCount = 4});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width * 0.34; // chart radius (leaves room for labels)
+    final n = dimensions.length;
+    final angleStep = 2 * pi / n;
+    // Start from top (-pi/2)
+    const startAngle = -pi / 2;
+
+    final gridPaint = Paint()
+      ..color = const Color(0xFFE5E7EB)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+
+    final axisPaint = Paint()
+      ..color = const Color(0xFFE5E7EB)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.8;
+
+    // Draw grid polygons
+    for (int t = 1; t <= tickCount; t++) {
+      final r = radius * t / tickCount;
+      final path = Path();
+      for (int i = 0; i <= n; i++) {
+        final angle = startAngle + angleStep * (i % n);
+        final x = center.dx + r * cos(angle);
+        final y = center.dy + r * sin(angle);
+        if (i == 0) {
+          path.moveTo(x, y);
+        } else {
+          path.lineTo(x, y);
+        }
+      }
+      path.close();
+      canvas.drawPath(path, gridPaint);
+    }
+
+    // Draw axis lines
+    for (int i = 0; i < n; i++) {
+      final angle = startAngle + angleStep * i;
+      final x = center.dx + radius * cos(angle);
+      final y = center.dy + radius * sin(angle);
+      canvas.drawLine(center, Offset(x, y), axisPaint);
+    }
+
+    // Draw data polygon
+    final dataPath = Path();
+    for (int i = 0; i <= n; i++) {
+      final idx = i % n;
+      final d = dimensions[idx];
+      final ratio = d.max > 0 ? (d.value / d.max) : 0.0;
+      final r = radius * ratio;
+      final angle = startAngle + angleStep * idx;
+      final x = center.dx + r * cos(angle);
+      final y = center.dy + r * sin(angle);
+      if (i == 0) {
+        dataPath.moveTo(x, y);
+      } else {
+        dataPath.lineTo(x, y);
+      }
+    }
+    dataPath.close();
+
+    // Fill
+    final fillPaint = Paint()
+      ..color = const Color(0xD95B6CFF)
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(dataPath, fillPaint);
+
+    // Border
+    final borderPaint = Paint()
+      ..color = const Color(0xFF5B6CFF)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+    canvas.drawPath(dataPath, borderPaint);
+
+    // Draw labels
+    final labelStyle = TextStyle(
+      fontFamily: 'Inter',
+      fontSize: 11,
+      fontWeight: FontWeight.w400,
+      color: const Color(0xFF9CA3AF),
+    );
+
+    for (int i = 0; i < n; i++) {
+      final angle = startAngle + angleStep * i;
+      final labelRadius = radius + 18;
+      final x = center.dx + labelRadius * cos(angle);
+      final y = center.dy + labelRadius * sin(angle);
+
+      final tp = TextPainter(
+        text: TextSpan(text: dimensions[i].label, style: labelStyle),
+        textDirection: TextDirection.ltr,
+        maxLines: 2,
+        ellipsis: '…',
+      )..layout(maxWidth: size.width * 0.28);
+
+      // Position label based on angle
+      double dx = x - tp.width / 2;
+      double dy = y - tp.height / 2;
+
+      // Adjust horizontal alignment for left/right labels
+      final normalizedAngle = angle % (2 * pi);
+      if (normalizedAngle > pi * 0.1 && normalizedAngle < pi * 0.9) {
+        // Right side
+        dx = x - tp.width * 0.1;
+      } else if (normalizedAngle > pi * 1.1 && normalizedAngle < pi * 1.9) {
+        // Left side
+        dx = x - tp.width * 0.9;
+      }
+      // Top label: center below
+      if (normalizedAngle < 0.1 || normalizedAngle > pi * 1.9) {
+        dx = x - tp.width / 2;
+        dy = y - tp.height - 2;
+      }
+      // Bottom label: center above
+      if (normalizedAngle > pi * 0.9 && normalizedAngle < pi * 1.1) {
+        dx = x - tp.width / 2;
+        dy = y + 2;
+      }
+
+      tp.paint(canvas, Offset(dx, dy));
+    }
   }
 
-  Color _parseColor(String colorStr) {
-    if (colorStr.startsWith('#')) {
-      return Color(int.parse(colorStr.substring(1), radix: 16) + 0xFF000000);
-    }
-    // Fallback simple names
-    switch (colorStr.toLowerCase()) {
-      case 'red':
-        return Colors.red;
-      case 'blue':
-        return Colors.blue;
-      case 'green':
-        return Colors.green;
-      case 'orange':
-        return Colors.orange;
-      case 'purple':
-        return const Color(0xFF5B6CFF); // Violet-500
-      case 'pink':
-        return Colors.pink;
-      default:
-        return const Color(0xFF5B6CFF);
-    }
-  }
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }

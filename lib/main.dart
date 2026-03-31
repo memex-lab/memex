@@ -1087,9 +1087,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                           textAlign: TextAlign.center,
                           style: GoogleFonts.inter(
                             fontSize: 14,
-                            fontWeight: _currentTab == 0
-                                ? FontWeight.w500
-                                : FontWeight.w400,
+                            fontWeight: FontWeight.w400,
                             color: _currentTab == 0
                                 ? const Color(0xFF1F1F1F)
                                 : const Color(0xFF99A1AF),
@@ -1138,9 +1136,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                           textAlign: TextAlign.center,
                           style: GoogleFonts.inter(
                             fontSize: 14,
-                            fontWeight: _currentTab == 1
-                                ? FontWeight.w500
-                                : FontWeight.w400,
+                            fontWeight: FontWeight.w400,
                             color: _currentTab == 1
                                 ? const Color(0xFF1F1F1F)
                                 : const Color(0xFF99A1AF),
