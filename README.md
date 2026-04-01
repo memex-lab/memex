@@ -4,7 +4,7 @@
     </picture>
 </p>
 <p align="center">
-  An AI-powered personal life logging app that runs entirely on your device. 
+  An AI-powered personal life recording app that runs entirely on your device. 
 </p>
 
 <p align="center">
@@ -20,11 +20,11 @@
 
 ## What is Memex?
 
-Memex is a local-first, AI-native personal logging app. Capture text, photos, and voice — a multi-agent system automatically organizes your records into structured timeline cards, extracts knowledge, and generates insights across your entries.
+Memex is a local-first, AI-native personal life recording app. Capture text, photos, and voice — a multi-agent system automatically organizes your records into structured timeline cards, extracts knowledge, and generates insights across your entries.
 
 Under the hood, Memex's multi-agent intelligence is powered by a fully open Custom Agent System — you can use the same engine to orchestrate and run your own agents. If you're curious about building autonomous workflows on your phone, [jump straight to the details](#-custom-agent-system).
 
-All data stays on your device. You just need to pick your preferred LLM provider.
+All data stays on your device. You bring your own LLM provider.
 
 <div align="center">
   <img src="https://github.com/user-attachments/assets/450eb6e5-8adf-4c1f-bc46-a63c9836f22c" width="300" />
@@ -32,18 +32,18 @@ All data stays on your device. You just need to pick your preferred LLM provider
 
 ## Features
 
-### 🎙️ Multi-Modal Input
-- Text, images, and voice recording in a single input flow
+### 🎙️ Multi-Modal Recording
+- Capture text, images, and voice in a single input flow
 - Long-press to record audio, release to send
 - Automatic EXIF extraction (timestamp, GPS location) from photos
 - On-device OCR and image labeling via Google ML Kit
 
 ### 🤖 AI-Powered Organization
-- Multi-agent architecture: each agent handles a specific domain (PKM, card generation, insights, comments, memory summarization, media analysis)
-- Automatically generates the most fitting card for each type of input:
-  - Life & productivity (task, routine, event, duration, progress) — track todos, habits, schedules and goals
+- Multi-agent architecture: each agent handles a specific domain (recording organization, card generation, insights, comments, memory summarization, media analysis)
+- Automatically generates the most fitting card for each type of record:
+  - Life & productivity (task, routine, event, duration, progress) — record todos, habits, schedules and goals
   - Knowledge & media (article, snippet, quote, link, conversation) — capture notes, references and dialogues
-  - People & places (person, place) — log contacts and locations with map preview
+  - People & places (person, place) — record contacts and locations with map preview
   - Data & metrics (metric, rating, transaction, spec sheet) — record measurements, reviews and expenses
   - Visual (gallery) — preserve moments through photos
 - Auto-tagging, entity extraction, and cross-reference linking
@@ -58,9 +58,9 @@ All data stays on your device. You just need to pick your preferred LLM provider
   - Gallery — visual memory from your photos
 
 ### 📝 Pure Text & Data Freedom
-- **Effortless Archiving**: After AI organization, all your inputs naturally settle into a series of interconnected Markdown files, automatically making one-click diary and document archiving a breeze.
-- **Evolve Alongside AI**: Why stick to Markdown? Because as AI capabilities rapidly advance, only the purest Markdown texts can bridge the gap of time and truly keep pace with its evolution. As LLM models strengthen, these simple text records will reliably unlock entirely new interactive experiences and profound insights for you in the future.
-- **Absolute Freedom to Leave**: Zero vendor lock-in; we completely return the freedom of choice to you. If you ever feel our product no longer meets your expectations, you can simply one-click export all your notes as standard Markdown files and migrate seamlessly to any basic note-taking app in the world at zero cost.
+- **Effortless Archiving**: After AI organization, all your records naturally settle into a series of interconnected Markdown files, making one-click diary and document archiving a breeze.
+- **Evolve Alongside AI**: Why Markdown? Because as AI capabilities rapidly advance, only the purest text records can bridge the gap of time and truly keep pace with its evolution. As LLM models strengthen, these simple records will reliably unlock entirely new interactive experiences and profound insights for you in the future.
+- **Absolute Freedom to Leave**: Zero vendor lock-in. If you ever feel our product no longer meets your expectations, you can one-click export all your records as standard Markdown files and migrate seamlessly to any note-taking app at zero cost.
 
 ### 🔒 Privacy & Local-First
 - All data stored locally (filesystem + SQLite)
@@ -107,7 +107,7 @@ Memex requires an LLM API key to power its AI features. On first launch:
 
 ## 🧩 Custom Agent System
 
-Memex isn't just a note-taking app — it's a platform that lets you build your own AI agents on your phone.
+Memex isn't just a recording app — it's a platform that lets you build your own AI agents on your phone.
 
 Every built-in agent in Memex (knowledge extraction, card generation, insight discovery…) runs on the same custom agent infrastructure, and that infrastructure is fully open to you. That means you can create agents with the same capabilities as the built-in ones.
 

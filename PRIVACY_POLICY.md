@@ -4,7 +4,7 @@ Last updated: 2026-03-18
 
 ## Overview
 
-Memex ("the App") is a local-first personal knowledge management application. We are committed to protecting your privacy. This policy explains how the App handles your data.
+Memex ("the App") is a local-first AI-powered personal life recording application. We are committed to protecting your privacy. This policy explains how the App handles your data.
 
 ## Data Collection
 
@@ -16,31 +16,33 @@ Memex does not operate its own servers and does not collect or store your person
 
 Memex connects to third-party LLM (Large Language Model) providers only when you explicitly configure an API key. These providers may include:
 
-- Google Gemini
-- OpenAI
-- Anthropic Claude
-- AWS Bedrock
+- Google Gemini — [Privacy Policy](https://policies.google.com/privacy)
+- OpenAI — [Privacy Policy](https://openai.com/privacy)
+- Anthropic Claude — [Privacy Policy](https://www.anthropic.com/privacy)
+- AWS Bedrock — [Privacy Policy](https://aws.amazon.com/privacy/)
+- Kimi (Moonshot) — [Privacy Policy](https://www.kimi.com/user/agreement/userPrivacy)
+- Aliyun Qwen — [Privacy Policy](https://terms.aliyun.com/legal-agreement/terms/suit_bu1_ali_cloud/suit_bu1_ali_cloud202107091605_49213.html)
+- Volcengine (Doubao/Seed) — [Privacy Policy](https://www.volcengine.com/docs/6256/64902?lang=zh)
+- Zhipu GLM — [Privacy Policy](https://docs.bigmodel.cn/cn/terms/privacy-policy)
+- MiniMax — [Privacy Policy](https://platform.minimaxi.com/protocol/privacy-policy)
+- Xiaomi MIMO — [Privacy Policy](https://platform.xiaomimimo.com/#/docs/terms/privacy-policy)
+- OpenRouter, Ollama, and other aggregator/local inference platforms
 
-When you use these services, the following types of data may be sent to the provider you selected:
+When you use any of these services, the following types of data may be sent directly from your device to the provider you selected:
 
-- Text you enter (notes, voice transcriptions)
+- Text you enter (records, voice transcriptions)
 - Photo metadata and text extracted by on-device OCR
 - Health and fitness summaries (if you have enabled health data collection)
 - Timeline card content used for AI analysis and insight generation
 
-This data is sent directly from your device to the provider. Memex does not relay, store, or process your data through any intermediary server. This is the only scenario in which data leaves your device. Please refer to each provider's own privacy policy for details on how they handle your data:
-
-- [Google Privacy Policy](https://policies.google.com/privacy)
-- [OpenAI Privacy Policy](https://openai.com/privacy)
-- [Anthropic Privacy Policy](https://www.anthropic.com/privacy)
-- [AWS Privacy Policy](https://aws.amazon.com/privacy/)
+This data is sent directly from your device to the provider. Memex does not relay, store, or process your data through any intermediary server. This is the only scenario in which data leaves your device. Please refer to each provider's own privacy policy (linked above) for details on how they handle your data.
 
 ## Device Permissions
 
 Memex may request the following device permissions. All data obtained through these permissions is processed and stored locally on your device and is never uploaded to our servers.
 
 - **Camera** — Used to take photos for your records.
-- **Microphone** — Used for voice recording input.
+- **Microphone** — Used for voice recording.
 - **Photo Library / Media** — Used to select existing photos from your device for your records.
 - **Location** — Used to read GPS metadata embedded in photos for place-based records, and to allow you to pick a location on the map when editing a record. Memex does not track your location in the background. Location data is stored locally and is not transmitted externally.
 - **Calendar** — Used to write calendar events to your device's system calendar when the AI agent identifies scheduling intent from your input. Memex does not read from your system calendar.
