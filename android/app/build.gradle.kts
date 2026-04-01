@@ -34,14 +34,23 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.memexlab.memex"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 26  // Required by health plugin 13.2.1
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+    }
+
+    flavorDimensions += "market"
+    productFlavors {
+        create("global") {
+            dimension = "market"
+            applicationId = "com.memexlab.memex"
+        }
+        create("cn") {
+            dimension = "market"
+            applicationId = "com.memexlab.memex.cn"
+        }
     }
 
     signingConfigs {
@@ -68,7 +77,7 @@ android {
         val variant = this
         outputs.all {
             val output = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
-            output.outputFileName = "memex_${variant.versionName}_${variant.versionCode}.apk"
+            output.outputFileName = "memex_${variant.flavorName}_${variant.versionName}_${variant.versionCode}.apk"
         }
     }
 }

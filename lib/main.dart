@@ -9,6 +9,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:memex/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:memex/config/dependencies.dart';
+import 'package:memex/config/app_flavor.dart';
 import 'package:memex/ui/insight/view_models/insight_viewmodel.dart';
 import 'package:memex/ui/knowledge/view_models/knowledge_base_viewmodel.dart';
 import 'package:memex/ui/timeline/view_models/timeline_viewmodel.dart';
@@ -54,6 +55,10 @@ final GlobalKey<RootShellState> rootShellKey = GlobalKey<RootShellState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize flavor from platform (set by --flavor flag)
+  AppFlavor.init(appFlavor);
+
   await setupLogger();
 
   // Initialize l10n

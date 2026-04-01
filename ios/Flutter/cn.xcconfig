@@ -1,0 +1,3 @@
+// Flavor: cn (China domestic)
+PRODUCT_BUNDLE_IDENTIFIER=com.memexlab.memex.cn
+BUNDLE_DISPLAY_NAME=Memex

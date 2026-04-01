@@ -1,0 +1,3 @@
+// Flavor: global (overseas)
+PRODUCT_BUNDLE_IDENTIFIER=com.memexlab.memex
+BUNDLE_DISPLAY_NAME=Memex
