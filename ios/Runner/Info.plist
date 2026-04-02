@@ -86,9 +86,9 @@
 		<key>NSRemindersFullAccessUsageDescription</key>
 		<string>Need reminders access to read, add and edit your todos</string>
 		<key>NSHealthShareUsageDescription</key>
-		<string>Need health data access to read your activity, vitals and body metrics (e.g. heart rate, blood pressure, sleep)</string>
+		<string>Memex reads your step count and walking distance to generate personalized activity insights and trend analysis cards.</string>
 		<key>NSHealthUpdateUsageDescription</key>
-		<string>Need health data access to record and sync your physiological metrics</string>
+		<string>Memex records your activity data to track fitness trends and generate AI-powered insights.</string>
 		<key>NSFamilyControlsUsageDescription</key>
 		<string>Need Screen Time access to analyze your attention distribution</string>
 		<key>NSMotionUsageDescription</key>
