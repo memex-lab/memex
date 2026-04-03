@@ -1,3 +1,5 @@
+import 'package:memex/config/app_flavor.dart';
+
 class LLMConfig {
   static const String defaultClientKey = 'default';
 
@@ -435,6 +437,17 @@ class LLMConfig {
   }
 
   static LLMConfig createDefaultClientConfig() {
+    if (AppFlavor.isCN) {
+      return const LLMConfig(
+        key: defaultClientKey,
+        baseUrl: 'https://api.moonshot.cn/v1',
+        type: typeKimi,
+        modelId: 'kimi-k2.5',
+        maxTokens: 65536,
+        apiKey: '',
+        extra: {},
+      );
+    }
     return const LLMConfig(
       key: defaultClientKey,
       baseUrl: "https://api.openai.com/v1",

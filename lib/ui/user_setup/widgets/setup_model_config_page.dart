@@ -9,6 +9,7 @@ import 'package:memex/data/services/gemini_auth_service.dart';
 import 'package:memex/data/services/model_list_service.dart';
 import 'package:memex/ui/core/widgets/searchable_dropdown.dart';
 import 'package:memex/ui/core/themes/app_colors.dart';
+import 'package:memex/config/app_config.dart';
 
 class SetupModelConfigPage extends StatefulWidget {
   final LLMConfig config;
@@ -917,12 +918,115 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
   }
 
   Widget _buildProviderDropdown() {
+    final available = AppConfig.availableProviders;
+    final l10n = UserStorage.l10n;
+
+    String displayName(String type) {
+      switch (type) {
+        case LLMConfig.typeChatCompletion:
+          return l10n.providerOpenAiApiKey;
+        case LLMConfig.typeResponses:
+          return l10n.providerOpenAiResponses;
+        case LLMConfig.typeOpenAiOauth:
+          return l10n.providerChatGptOauth;
+        case LLMConfig.typeClaude:
+          return l10n.providerClaudeApiKey;
+        case LLMConfig.typeBedrockClaude:
+          return l10n.providerBedrockSecret;
+        case LLMConfig.typeGemini:
+          return l10n.providerGemini;
+        case LLMConfig.typeGeminiOauth:
+          return l10n.providerGeminiOauth;
+        case LLMConfig.typeKimi:
+          return l10n.providerKimi;
+        case LLMConfig.typeQwen:
+          return l10n.providerQwen;
+        case LLMConfig.typeSeed:
+          return l10n.providerSeed;
+        case LLMConfig.typeZhipu:
+          return l10n.providerZhipu;
+        case LLMConfig.typeMimo:
+          return l10n.providerMimo;
+        case LLMConfig.typeOpenRouter:
+          return l10n.providerOpenRouter;
+        case LLMConfig.typeOllama:
+          return l10n.providerOllama;
+        default:
+          return LLMConfig.providerDisplayName(type);
+      }
+    }
+
+    final groups = <String, List<String>>{
+      l10n.providerGroupOpenAi: [
+        LLMConfig.typeChatCompletion,
+        LLMConfig.typeResponses,
+        LLMConfig.typeOpenAiOauth,
+      ],
+      l10n.providerGroupAnthropic: [
+        LLMConfig.typeClaude,
+        LLMConfig.typeBedrockClaude,
+      ],
+      l10n.providerGroupGoogle: [
+        LLMConfig.typeGemini,
+        LLMConfig.typeGeminiOauth,
+      ],
+      l10n.providerGroupOthers: [
+        LLMConfig.typeKimi,
+        LLMConfig.typeQwen,
+        LLMConfig.typeSeed,
+        LLMConfig.typeZhipu,
+        LLMConfig.typeMimo,
+        LLMConfig.typeOpenRouter,
+        LLMConfig.typeOllama,
+      ],
+    };
+
+    final items = <DropdownMenuItem<String>>[];
+    final selectedItems = <Widget>[];
+    var headerIdx = 0;
+
+    for (final entry in groups.entries) {
+      final groupProviders =
+          entry.value.where((t) => available.contains(t)).toList();
+      if (groupProviders.isEmpty) continue;
+
+      items.add(DropdownMenuItem<String>(
+        enabled: false,
+        value: '__header_${headerIdx++}__',
+        child: Padding(
+          padding: EdgeInsets.only(top: items.isEmpty ? 0 : 4),
+          child: Text(
+            entry.key,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[500],
+              letterSpacing: 0.5,
+            ),
+          ),
+        ),
+      ));
+      selectedItems.add(const SizedBox.shrink());
+
+      for (final type in groupProviders) {
+        items.add(DropdownMenuItem(
+          value: type,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 12),
+            child: Text(displayName(type),
+                style: TextStyle(color: Colors.grey[800])),
+          ),
+        ));
+        selectedItems.add(Text(displayName(type)));
+      }
+    }
+
     return DropdownButtonFormField<String>(
       isExpanded: true,
       value: _selectedType.isEmpty ? null : _selectedType,
-      hint: Text(UserStorage.l10n.select),
+      hint: Text(l10n.select),
       decoration: InputDecoration(
-        labelText: UserStorage.l10n.clientLabel,
+        labelText: l10n.clientLabel,
         prefixIcon: const Icon(Icons.cloud_outlined),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -939,206 +1043,10 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
         filled: true,
         fillColor: Colors.grey[50],
       ),
-      selectedItemBuilder: (context) {
-        final l10n = UserStorage.l10n;
-        return [
-          // OpenAI group header
-          const SizedBox.shrink(),
-          Text(LLMConfig.providerDisplayName(LLMConfig.typeChatCompletion)),
-          Text(LLMConfig.providerDisplayName(LLMConfig.typeResponses)),
-          Text(LLMConfig.providerDisplayName(LLMConfig.typeOpenAiOauth)),
-          // Anthropic group header
-          const SizedBox.shrink(),
-          Text(LLMConfig.providerDisplayName(LLMConfig.typeClaude)),
-          Text(LLMConfig.providerDisplayName(LLMConfig.typeBedrockClaude)),
-          // Google group header
-          const SizedBox.shrink(),
-          Text(l10n.providerGemini),
-          Text(l10n.providerGeminiOauth),
-          // Chinese LLM group header
-          const SizedBox.shrink(),
-          Text(l10n.providerKimi),
-          Text(l10n.providerQwen),
-          Text(l10n.providerSeed),
-          Text(l10n.providerZhipu),
-          Text(l10n.providerMimo),
-          Text(l10n.providerOpenRouter),
-          Text(l10n.providerOllama),
-        ];
-      },
-      items: [
-        // ── OpenAI Group ──
-        DropdownMenuItem<String>(
-          enabled: false,
-          value: '__openai_header__',
-          child: Text(
-            UserStorage.l10n.providerGroupOpenAi,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[500],
-              letterSpacing: 0.5,
-            ),
-          ),
-        ),
-        DropdownMenuItem(
-          value: LLMConfig.typeChatCompletion,
-          child: Padding(
-            padding: const EdgeInsets.only(left: 12),
-            child: Text(UserStorage.l10n.providerOpenAiApiKey,
-                style: TextStyle(color: Colors.grey[800])),
-          ),
-        ),
-        DropdownMenuItem(
-          value: LLMConfig.typeResponses,
-          child: Padding(
-            padding: const EdgeInsets.only(left: 12),
-            child: Text(UserStorage.l10n.providerOpenAiResponses,
-                style: TextStyle(color: Colors.grey[800])),
-          ),
-        ),
-        DropdownMenuItem(
-          value: LLMConfig.typeOpenAiOauth,
-          child: Padding(
-            padding: const EdgeInsets.only(left: 12),
-            child: Text(UserStorage.l10n.providerChatGptOauth,
-                style: TextStyle(color: Colors.grey[800])),
-          ),
-        ),
-        // ── Anthropic Group ──
-        DropdownMenuItem<String>(
-          enabled: false,
-          value: '__anthropic_header__',
-          child: Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: Text(
-              UserStorage.l10n.providerGroupAnthropic,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey[500],
-                letterSpacing: 0.5,
-              ),
-            ),
-          ),
-        ),
-        DropdownMenuItem(
-          value: LLMConfig.typeClaude,
-          child: Padding(
-            padding: const EdgeInsets.only(left: 12),
-            child: Text(UserStorage.l10n.providerClaudeApiKey,
-                style: TextStyle(color: Colors.grey[800])),
-          ),
-        ),
-        DropdownMenuItem(
-          value: LLMConfig.typeBedrockClaude,
-          child: Padding(
-            padding: const EdgeInsets.only(left: 12),
-            child: Text(UserStorage.l10n.providerBedrockSecret,
-                style: TextStyle(color: Colors.grey[800])),
-          ),
-        ),
-        // ── Google Group ──
-        DropdownMenuItem<String>(
-          enabled: false,
-          value: '__google_header__',
-          child: Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: Text(
-              UserStorage.l10n.providerGroupGoogle,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey[500],
-                letterSpacing: 0.5,
-              ),
-            ),
-          ),
-        ),
-        DropdownMenuItem(
-            value: LLMConfig.typeGemini,
-            child: Text(UserStorage.l10n.providerGemini)),
-        DropdownMenuItem(
-            value: LLMConfig.typeGeminiOauth,
-            child: Text(UserStorage.l10n.providerGeminiOauth)),
-        // ── Others ──
-        DropdownMenuItem<String>(
-          enabled: false,
-          value: '__others_header__',
-          child: Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: Text(
-              UserStorage.l10n.providerGroupOthers,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey[500],
-                letterSpacing: 0.5,
-              ),
-            ),
-          ),
-        ),
-        DropdownMenuItem(
-          value: LLMConfig.typeKimi,
-          child: Padding(
-            padding: const EdgeInsets.only(left: 12),
-            child: Text(UserStorage.l10n.providerKimi,
-                style: TextStyle(color: Colors.grey[800])),
-          ),
-        ),
-        DropdownMenuItem(
-          value: LLMConfig.typeQwen,
-          child: Padding(
-            padding: const EdgeInsets.only(left: 12),
-            child: Text(UserStorage.l10n.providerQwen,
-                style: TextStyle(color: Colors.grey[800])),
-          ),
-        ),
-        DropdownMenuItem(
-          value: LLMConfig.typeSeed,
-          child: Padding(
-            padding: const EdgeInsets.only(left: 12),
-            child: Text(UserStorage.l10n.providerSeed,
-                style: TextStyle(color: Colors.grey[800])),
-          ),
-        ),
-        DropdownMenuItem(
-          value: LLMConfig.typeZhipu,
-          child: Padding(
-            padding: const EdgeInsets.only(left: 12),
-            child: Text(UserStorage.l10n.providerZhipu,
-                style: TextStyle(color: Colors.grey[800])),
-          ),
-        ),
-        DropdownMenuItem(
-          value: LLMConfig.typeMimo,
-          child: Padding(
-            padding: const EdgeInsets.only(left: 12),
-            child: Text(UserStorage.l10n.providerMimo,
-                style: TextStyle(color: Colors.grey[800])),
-          ),
-        ),
-        DropdownMenuItem(
-          value: LLMConfig.typeOpenRouter,
-          child: Padding(
-            padding: const EdgeInsets.only(left: 12),
-            child: Text(UserStorage.l10n.providerOpenRouter,
-                style: TextStyle(color: Colors.grey[800])),
-          ),
-        ),
-        DropdownMenuItem(
-          value: LLMConfig.typeOllama,
-          child: Padding(
-            padding: const EdgeInsets.only(left: 12),
-            child: Text(UserStorage.l10n.providerOllama,
-                style: TextStyle(color: Colors.grey[800])),
-          ),
-        ),
-      ],
+      selectedItemBuilder: (context) => selectedItems,
+      items: items,
       validator: (value) {
-        if (value == null || value.isEmpty) {
-          return UserStorage.l10n.required;
-        }
+        if (value == null || value.isEmpty) return l10n.required;
         return null;
       },
       onChanged: (value) {
@@ -1151,20 +1059,15 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
           _modelDropdownKey.currentState?.setText(_modelIdController.text);
           _apiKeyController.text = '';
           _baseUrlController.text = LLMConfig.defaultBaseUrl(value);
-
-          // Reset Bedrock fields when switching providers
           _bedrockAccessKeyController.text = '';
           _bedrockSecretKeyController.text = '';
           _bedrockRegionController.text = 'us-west-2';
-
           if (value == LLMConfig.typeOpenAiOauth) {
             _loadOpenAiTokens();
           } else if (value == LLMConfig.typeGeminiOauth) {
             _loadGeminiTokens();
           }
-          if (!LLMConfig.requiresApiKey(value)) {
-            _fetchModels();
-          }
+          if (!LLMConfig.requiresApiKey(value)) _fetchModels();
         }
       },
     );
