@@ -84,7 +84,11 @@ class InsightViewModel extends ChangeNotifier {
     isRefreshing = true;
     notifyListeners();
     (await _router.updateKnowledgeInsights()).when(
-      onOk: (_) {},
+      onOk: (_) {
+        // Request sent. The handler will emit NewInsightMessage on
+        // both success and failure via try/finally, which triggers
+        // _reloadAfterInsightUpdated to reset isRefreshing.
+      },
       onError: (_, __) {
         errorMessage = UserStorage.l10n.dataLoadFailedRetry;
         isRefreshing = false;

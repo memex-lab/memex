@@ -15,15 +15,16 @@ Future<void> handleKnowledgeInsight(
 ) async {
   _logger.info(
       'Executing handleKnowledgeInsight for task ${context.taskId}, bizId: ${context.bizId}');
-  // We don't need type or period for global insights anymore, but we can log them if present
-  // final type = payload['type'] as String?;
-  // final period = payload['period'] as String?;
 
-  await KnowledgeInsightAgent.updateKnowledgeInsight();
-
-  // Notify UI layer that insight data should be reloaded.
-  EventBusService.instance.emitEvent(NewInsightMessage(
-    insightId: context.bizId ?? context.taskId,
-    html: '',
-  ));
+  try {
+    await KnowledgeInsightAgent.updateKnowledgeInsight();
+  } finally {
+    // Always notify UI that the refresh operation is done (success or failure).
+    // On failure, handleGenericAgentFailure also emits ErrorNotificationMessage
+    // for the error toast, but we need NewInsightMessage to stop the loading state.
+    EventBusService.instance.emitEvent(NewInsightMessage(
+      insightId: context.bizId ?? context.taskId,
+      html: '',
+    ));
+  }
 }
