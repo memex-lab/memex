@@ -131,6 +131,10 @@ Every built-in agent in Memex (knowledge extraction, card generation, insight di
 
 ### How It Works
 
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/78f49de7-0f0d-44a8-9710-40bf7da970d1" width="800" />
+</div>
+
 ```
 System Event (user input, card created, insight generated, ...)
     ↓
