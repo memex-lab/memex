@@ -566,13 +566,30 @@ class UserStorage {
   static const List<String> avatarOptions = ['Felix'];
 
   /// Get stored user avatar. Returns null if not set.
+  /// Automatically migrates legacy emoji avatars to DiceBear seeds.
   static Future<String?> getUserAvatar() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      return prefs.getString(_keyUserAvatar);
+      final avatar = prefs.getString(_keyUserAvatar);
+      if (avatar != null && _isLegacyEmoji(avatar)) {
+        // Migrate: replace emoji with user's nickname as seed
+        final userId = prefs.getString(_keyUserId);
+        final seed =
+            (userId != null && userId.isNotEmpty) ? userId : defaultAvatarSeed;
+        await prefs.setString(_keyUserAvatar, seed);
+        return seed;
+      }
+      return avatar;
     } catch (e) {
       return null;
     }
+  }
+
+  /// Check if a stored avatar is a legacy emoji (not a DiceBear seed).
+  static bool _isLegacyEmoji(String s) {
+    if (s.isEmpty) return false;
+    // Emoji strings are short and contain non-ASCII codepoints
+    return s.runes.length <= 7 && s.runes.any((r) => r > 255);
   }
 
   /// Save user avatar selection.
