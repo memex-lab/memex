@@ -89,6 +89,7 @@ All data stays on your device. You bring your own LLM provider.
 | Xiaomi MIMO | Anthropic-compatible | MiMo-7B-RL |
 | OpenRouter | OpenAI-compatible | Access multiple providers via one API |
 | Ollama | OpenAI-compatible (local) | Run models locally on your device |
+| Gemma (On-Device) | LiteRT-LM (on-device) | Run Gemma 4 fully on-device, no API key needed. Android only |
 
 ## Install
 - **iOS**: Download on the [App Store](https://apps.apple.com/app/memexai/id6760325170)
@@ -203,7 +204,7 @@ flutter run
 | Platforms | iOS, Android |
 | Database | Drift (SQLite) |
 | State Management | Provider + MVVM |
-| LLM Providers | Gemini, OpenAI, Claude, Bedrock, Kimi, Qwen, Doubao, GLM, MiniMax, MIMO, OpenRouter, Ollama |
+| LLM Providers | Gemini, OpenAI, Claude, Bedrock, Kimi, Qwen, Doubao, GLM, MiniMax, MIMO, OpenRouter, Ollama, Gemma (On-Device) |
 | Agent Framework | dart_agent_core |
 
 ### Project Structure
