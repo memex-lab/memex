@@ -1324,6 +1324,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get providerMimo => 'Xiaomi MIMO (小米)';
 
   @override
+  String get providerGemmaLocal => 'Gemma（端侧）';
+
+  @override
+  String get providerGroupOnDevice => '端侧模型';
+
+  @override
   String get modelIdLabel => 'Model ID';
 
   @override

@@ -636,6 +636,8 @@
   "providerOpenRouter": "OpenRouter",
   "providerOllama": "Ollama (Local)",
   "providerMimo": "Xiaomi MIMO",
+  "providerGemmaLocal": "Gemma (On-Device)",
+  "providerGroupOnDevice": "On-Device",
   "modelIdLabel": "Model ID",
   "modelIdHelper": "e.g. gemini-3.1-pro-preview, gpt-4o",
   "fetchingModels": "Fetching models...",

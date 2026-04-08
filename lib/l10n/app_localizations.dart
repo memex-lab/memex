@@ -2528,6 +2528,18 @@ abstract class AppLocalizations {
   /// **'Xiaomi MIMO'**
   String get providerMimo;
 
+  /// No description provided for @providerGemmaLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'Gemma (On-Device)'**
+  String get providerGemmaLocal;
+
+  /// No description provided for @providerGroupOnDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'On-Device'**
+  String get providerGroupOnDevice;
+
   /// No description provided for @modelIdLabel.
   ///
   /// In en, this message translates to:

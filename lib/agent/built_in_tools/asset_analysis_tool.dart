@@ -1,11 +1,13 @@
 import 'dart:io';
 import 'dart:convert';
+import 'dart:ui' as ui;
 import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 import 'package:memex/utils/logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:memex/llm_client/gemma_model_manager.dart';
 
 class AssetAnalysisTool {
   final Logger _logger = getLogger('AssetAnalysisTool');
@@ -80,9 +82,20 @@ class AssetAnalysisTool {
       }
 
       // --- Step 1: compress and resize image ---
-      // Target: convert to WebP, max side 2048, quality 85%
+      // Gemma 4 (LiteRT-LM) only supports JPEG/PNG; other models accept WebP.
+      // LiteRT-LM crashes when image produces too many patches (limit: 2520).
+      // 2400x1080 → 2475 patches is dangerously close. Use 896px for Gemma 4.
+      final isGemma4 = GemmaModelManager.isKnownModel(modelConfig.model);
+      final compressFormat =
+          isGemma4 ? CompressFormat.jpeg : CompressFormat.webp;
+      final mimeType = isGemma4 ? 'image/jpeg' : 'image/webp';
+      final targetSize = isGemma4 ? 896 : 2048;
+
       final compressedBytes = await _compressAndResizeImage(file.path,
-          targetSize: 2048, quality: 85);
+          targetSize: targetSize,
+          quality: 85,
+          format: compressFormat,
+          enforceMaxSide: isGemma4);
 
       if (compressedBytes == null) {
         throw Exception("Image compression failed");
@@ -92,12 +105,9 @@ class AssetAnalysisTool {
           "Compressed size: ${(compressedBytes.length / 1024).toStringAsFixed(2)} KB");
 
       // --- Step 2: Base64 encode ---
-      // Encoding on a background isolate is still good practice even with smaller bytes
       final base64Image = await compute(base64Encode, compressedBytes);
 
       // --- Step 3: prepare prompt ---
-      // Note: MimeType is fixed as image/webp since we converted to WebP
-      const mimeType = 'image/webp';
 
       final fullPrompt = """
   ## Requirements:
@@ -132,22 +142,47 @@ class AssetAnalysisTool {
   }
 
   Future<Uint8List?> _compressAndResizeImage(String path,
-      {int targetSize = 2048, int quality = 85}) async {
+      {int targetSize = 2048,
+      int quality = 85,
+      CompressFormat format = CompressFormat.webp,
+      bool enforceMaxSide = false}) async {
     try {
-      // compressWithFile reads path and returns Uint8List (bytes in memory),
-      // no temp files, very efficient.
+      int outW = targetSize;
+      int outH = targetSize;
+
+      if (enforceMaxSide) {
+        // For Gemma 4: enforce maximum side to avoid patch count overflow in LiteRT-LM.
+        // flutter_image_compress minWidth/minHeight is a minimum constraint, not maximum,
+        // so we calculate exact output dimensions first.
+        final originalBytes = await File(path).readAsBytes();
+        final codec = await ui.instantiateImageCodec(originalBytes);
+        final frame = await codec.getNextFrame();
+        final origW = frame.image.width;
+        final origH = frame.image.height;
+        frame.image.dispose();
+
+        if (origW > targetSize || origH > targetSize) {
+          if (origW >= origH) {
+            outW = targetSize;
+            outH = (origH * targetSize / origW).round();
+          } else {
+            outH = targetSize;
+            outW = (origW * targetSize / origH).round();
+          }
+        } else {
+          outW = origW;
+          outH = origH;
+        }
+      }
+
       final result = await FlutterImageCompress.compressWithFile(
         path,
-        minWidth: targetSize, // limit width
-        minHeight: targetSize, // limit height
-        quality:
-            quality, // 0-100, 85 is usually a good balance for visually lossless
-        format: CompressFormat.webp, // output as WebP
-
-        // Key: keep aspect ratio, auto-rotate (handles phone photo orientation)
+        minWidth: outW,
+        minHeight: outH,
+        quality: quality,
+        format: format,
         autoCorrectionAngle: true,
-        keepExif:
-            false, // AI analysis usually doesn't need Exif (GPS etc.), omitting reduces size
+        keepExif: false,
       );
 
       return result;
@@ -167,51 +202,53 @@ class AssetAnalysisTool {
 
     try {
       final file = File(assetPath);
-      final bytes = await file.readAsBytes();
 
-      String mimeType = 'audio/mp3'; // Default fallback
-      final ext = path.extension(assetPath).toLowerCase();
-      switch (ext) {
-        case '.wav':
-          mimeType = 'audio/wav';
-          break;
-        case '.mp3':
-        case '.m4a':
-          mimeType = 'audio/mp3';
-          break;
-        case '.aiff':
-        case '.aif':
-          mimeType = 'audio/aiff';
-          break;
-        case '.aac':
-          mimeType = 'audio/aac';
-          break;
-        case '.ogg':
-          mimeType = 'audio/ogg'; // Gemini docs often cite audio/ogg
-          break;
-        case '.flac':
-          mimeType = 'audio/flac';
-          break;
-        case '.wma':
-          // Gemini doesn't officially support WMA according to docs, but we can try or fail.
-          // Python implementation throws error for WMA.
-          throw Exception("Audio format $ext (WMA) is not supported.");
-      }
+      // For Gemma 4 (LiteRT-LM), Kotlin side handles M4A→WAV conversion.
+      // For other models, base64 encode with appropriate mimeType.
+      final isGemma4 = GemmaModelManager.isKnownModel(modelConfig.model);
 
-      // Python uses "Generate a transcript of the speech." as fixed prompt for audio
       const transcriptPrompt = "Generate a transcript of the speech.";
 
-      final base64Audio = base64Encode(bytes);
+      List<UserContentPart> parts;
+      if (isGemma4) {
+        final bytes = await file.readAsBytes();
+        final base64Audio = base64Encode(bytes);
+        // Pass raw bytes — Kotlin converts to PCM WAV before sending to LiteRT-LM
+        parts = [
+          TextPart(transcriptPrompt),
+          AudioPart(base64Audio, 'audio/m4a')
+        ];
+      } else {
+        final bytes = await file.readAsBytes();
+        String mimeType = 'audio/mp3';
+        final ext = path.extension(assetPath).toLowerCase();
+        switch (ext) {
+          case '.wav':
+            mimeType = 'audio/wav';
+          case '.mp3':
+          case '.m4a':
+            mimeType = 'audio/mp3';
+          case '.aiff':
+          case '.aif':
+            mimeType = 'audio/aiff';
+          case '.aac':
+            mimeType = 'audio/aac';
+          case '.ogg':
+            mimeType = 'audio/ogg';
+          case '.flac':
+            mimeType = 'audio/flac';
+          case '.wma':
+            throw Exception("Audio format $ext (WMA) is not supported.");
+        }
+        parts = [
+          TextPart(transcriptPrompt),
+          AudioPart(base64Encode(bytes), mimeType)
+        ];
+      }
 
-      _logger.info(
-          "Calling API for audio transcription..., mimeType: $mimeType, audioLength: ${bytes.length}");
+      _logger.info("Calling API for audio transcription...");
       final response = await client.generate(
-        [
-          UserMessage([
-            TextPart(transcriptPrompt),
-            AudioPart(base64Audio, mimeType),
-          ])
-        ],
+        [UserMessage(parts)],
         modelConfig: modelConfig,
       );
 
