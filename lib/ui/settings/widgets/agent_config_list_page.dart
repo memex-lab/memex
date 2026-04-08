@@ -147,7 +147,7 @@ class _AgentConfigListPageState extends State<AgentConfigListPage> {
       body: _isLoading
           ? Center(child: AgentLogoLoading())
           : ListView.builder(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               itemCount: _agentIds.length,
               itemBuilder: (context, index) {
                 final agentId = _agentIds[index];
@@ -156,56 +156,76 @@ class _AgentConfigListPageState extends State<AgentConfigListPage> {
                 final currentConfig = _agentConfigs[agentId];
                 final selectedKey = currentConfig?.llmConfigKey;
 
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  elevation: 2,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          displayName,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.textSecondary.withValues(alpha: 0.08),
+                        blurRadius: 16,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        displayName,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          UserStorage.l10n.selectLlmClient,
-                          style:
-                              const TextStyle(fontSize: 14, color: Colors.grey),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        UserStorage.l10n.selectLlmClient,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: AppColors.textTertiary,
                         ),
-                        const SizedBox(height: 8),
-                        DropdownButtonFormField<String>(
-                          value: selectedKey,
-                          isExpanded: true,
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 8),
+                      ),
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<String>(
+                        value: selectedKey,
+                        isExpanded: true,
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: AppColors.background,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
                           ),
-                          hint: const Text(''),
-                          items: [
-                            ..._llmConfigs.map((config) {
-                              return DropdownMenuItem<String>(
-                                value: config.key,
-                                child: Text(
-                                  config.key,
-                                  overflow: TextOverflow.ellipsis,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                        ),
+                        hint: const Text(''),
+                        items: [
+                          ..._llmConfigs.map((config) {
+                            return DropdownMenuItem<String>(
+                              value: config.key,
+                              child: Text(
+                                config.key,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: AppColors.textPrimary,
                                 ),
-                              );
-                            }),
-                          ],
-                          onChanged: (String? newValue) {
-                            if (newValue != selectedKey) {
-                              _updateAgentConfig(agentId, newValue);
-                            }
-                          },
-                        ),
-                      ],
-                    ),
+                              ),
+                            );
+                          }),
+                        ],
+                        onChanged: (String? newValue) {
+                          if (newValue != selectedKey) {
+                            _updateAgentConfig(agentId, newValue);
+                          }
+                        },
+                      ),
+                    ],
                   ),
                 );
               },
