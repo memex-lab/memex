@@ -1362,6 +1362,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get providerMimo => 'Xiaomi MIMO';
 
   @override
+  String get providerGemmaLocal => 'Gemma (On-Device)';
+
+  @override
+  String get providerGroupOnDevice => 'On-Device';
+
+  @override
   String get modelIdLabel => 'Model ID';
 
   @override

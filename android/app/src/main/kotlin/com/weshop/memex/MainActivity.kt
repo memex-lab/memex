@@ -8,12 +8,18 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterFragmentActivity() {
-    private val CHANNEL = "com.memexlab.memex/webview"
+    private val WEBVIEW_CHANNEL = "com.memexlab.memex/webview"
+
+    private var liteRtLmPlugin: LiteRtLmPlugin? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
+
+        // WebView scrolling helper
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            WEBVIEW_CHANNEL,
+        ).setMethodCallHandler { call, result ->
             if (call.method == "disableScrolling") {
                 disableWebViewScrolling()
                 result.success(null)
@@ -21,22 +27,31 @@ class MainActivity : FlutterFragmentActivity() {
                 result.notImplemented()
             }
         }
+
+        // LiteRT-LM official Kotlin API plugin
+        liteRtLmPlugin = LiteRtLmPlugin(
+            context = applicationContext,
+            messenger = flutterEngine.dartExecutor.binaryMessenger,
+        )
+    }
+
+    override fun onDestroy() {
+        liteRtLmPlugin?.dispose()
+        liteRtLmPlugin = null
+        super.onDestroy()
     }
 
     private fun disableWebViewScrolling() {
-        // Find all WebView instances in the view hierarchy and disable scrolling.
         val rootView = window.decorView.rootView
         disableScrollingInView(rootView)
     }
 
     private fun disableScrollingInView(view: View) {
         if (view is WebView) {
-            // Disable scrolling on the WebView scroll container.
             view.isVerticalScrollBarEnabled = false
             view.isHorizontalScrollBarEnabled = false
             view.overScrollMode = View.OVER_SCROLL_NEVER
         }
-        
         if (view is ViewGroup) {
             for (i in 0 until view.childCount) {
                 disableScrollingInView(view.getChildAt(i))

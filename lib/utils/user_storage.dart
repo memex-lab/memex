@@ -18,6 +18,7 @@ import 'package:memex/data/services/gemini_auth_service.dart';
 import 'package:memex/domain/models/task_exceptions.dart';
 import 'package:memex/llm_client/codex_responses_client.dart';
 import 'package:memex/llm_client/gemini_oauth_client.dart';
+import 'package:memex/llm_client/gemma_local_client.dart';
 
 /// Agent cache data structure
 class AgentCacheData {
@@ -518,6 +519,10 @@ class UserStorage {
           baseUrl: llmConfig.baseUrl,
           proxyUrl: proxyUrl,
         );
+        break;
+      // Gemma Local runs on-device via flutter_gemma, no API key or network needed
+      case LLMConfig.typeGemmaLocal:
+        client = GemmaLocalClient(modelId: llmConfig.modelId);
         break;
       default:
         throw InvalidModelConfigException(

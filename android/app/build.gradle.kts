@@ -113,4 +113,10 @@ flutter {
 
 dependencies {
     implementation("com.google.mlkit:text-recognition-chinese:16.0.1")
+    // Official LiteRT-LM Kotlin API (replaces flutter_gemma)
+    implementation("com.google.ai.edge.litertlm:litertlm-android:latest.release")
+    // Coroutines for async inference
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+    // OkHttp for model downloads (respects system VPN/proxy)
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
 }

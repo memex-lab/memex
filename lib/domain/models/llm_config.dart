@@ -20,6 +20,7 @@ class LLMConfig {
   static const String typeOpenRouter = 'openrouter';
   static const String typeOllama = 'ollama';
   static const String typeMimo = 'mimo';
+  static const String typeGemmaLocal = 'gemma_local';
 
   /// User-friendly display name for a provider type.
   /// Only OpenAI and Anthropic types need special handling since their
@@ -56,6 +57,8 @@ class LLMConfig {
         return 'OpenRouter';
       case typeOllama:
         return 'Ollama';
+      case typeGemmaLocal:
+        return 'Gemma (On-Device)';
       default:
         return type;
     }
@@ -114,6 +117,8 @@ class LLMConfig {
         return 'Ollama';
       case typeMimo:
         return 'Xiaomi MIMO';
+      case typeGemmaLocal:
+        return 'Gemma Local';
       default:
         return type;
     }
@@ -219,6 +224,8 @@ class LLMConfig {
           'mimo-v2-flash',
           'MiMo-7B-RL',
         ];
+      case typeGemmaLocal:
+        return const ['gemma-4-e2b', 'gemma-4-e4b'];
       default:
         return const [];
     }
@@ -233,6 +240,7 @@ class LLMConfig {
       case typeGeminiOauth:
       case typeBedrockClaude:
       case typeOllama:
+      case typeGemmaLocal:
         return false;
       default:
         return true;
@@ -345,6 +353,10 @@ class LLMConfig {
     }
     // OpenAI OAuth uses its own internal token, so apiKey is allowed to be empty
     // Ollama does not require an API key
+    // Gemma Local runs on-device, no API key or base URL needed
+    if (type == typeGemmaLocal) {
+      return true;
+    }
     if ((type == typeResponses ||
             type == typeChatCompletion ||
             type == typeClaude ||

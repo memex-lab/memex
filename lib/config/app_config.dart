@@ -47,6 +47,8 @@ class AppConfig {
     // Aggregators
     LLMConfig.typeOpenRouter,
     LLMConfig.typeOllama,
+    // On-device
+    LLMConfig.typeGemmaLocal,
   ];
 
   static const _cnProviders = [
@@ -58,6 +60,8 @@ class AppConfig {
     LLMConfig.typeMimo,
     // Aggregators
     LLMConfig.typeOllama,
+    // On-device
+    LLMConfig.typeGemmaLocal,
   ];
 
   // ─── Feature Flags ───────────────────────────────────────────────

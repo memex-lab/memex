@@ -46,19 +46,28 @@ class PkmSkill extends Skill {
                 "update_timeline_card_insight must be called within an agent execution context.");
           }
           final userId = context.state.metadata['userId'] as String;
+          final stateFactId = context.state.metadata['factId'] as String?;
 
-          final factInfo =
-              await fileService.extractFactContentFromFile(userId, fact_id);
+          // Use state factId as fallback if model-provided one is invalid
+          final effectiveFactId =
+              (stateFactId != null && stateFactId.isNotEmpty)
+                  ? stateFactId
+                  : fact_id;
+
+          final factInfo = await fileService.extractFactContentFromFile(
+              userId, effectiveFactId);
           if (factInfo == null) {
             throw ArgumentError(
-                "fact id: $fact_id not exist, please check the fact id is correct, or create/edit fact file first, the format of fact_id is 2026/01/20.md#ts_5");
+                "fact id: $effectiveFactId not exist, please check the fact id is correct, or create/edit fact file first, the format of fact_id is 2026/01/20.md#ts_5");
           }
 
           final relatedCount = related_fact_ids?.length ?? 0;
-          final cardPath = fileService.getCardPath(userId, fact_id);
+          final cardPath = fileService.getCardPath(userId, effectiveFactId);
 
           final relatedFacts = (related_fact_ids != null
-                  ? related_fact_ids.where((id) => id != fact_id).toList()
+                  ? related_fact_ids
+                      .where((id) => id != effectiveFactId)
+                      .toList()
                   : <String>[])
               .map((id) => RelatedFact(id: id))
               .toList();
@@ -71,7 +80,7 @@ class PkmSkill extends Skill {
 
           final updatedCardData = await fileService.updateCardFile(
             userId,
-            fact_id,
+            effectiveFactId,
             createIfNotExists: true,
             (card) => card.copyWith(insight: insightData),
           );
@@ -82,17 +91,18 @@ class PkmSkill extends Skill {
 
           if (updatedCardData == null) {
             logger.warning(
-                "Card file not found for fact_id: $fact_id, maybe it has been deleted");
+                "Card file not found for fact_id: $effectiveFactId, maybe it has been deleted");
             return AgentToolResult(
               content: TextPart(
-                  Prompts.pkmAgentUpdateCardInsightErrorCardNotFound(fact_id)),
+                  Prompts.pkmAgentUpdateCardInsightErrorCardNotFound(
+                      effectiveFactId)),
               stopFlag: stopFlag,
             );
           }
 
           return AgentToolResult(
             content: TextPart(Prompts.pkmAgentUpdateCardInsightSuccess(
-                cardPath, fact_id, relatedCount)),
+                cardPath, effectiveFactId, relatedCount)),
             stopFlag: stopFlag,
           );
         },

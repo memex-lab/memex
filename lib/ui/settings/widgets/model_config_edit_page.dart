@@ -10,6 +10,7 @@ import 'package:memex/data/services/model_list_service.dart';
 import 'package:memex/utils/toast_helper.dart';
 import 'package:memex/ui/core/widgets/searchable_dropdown.dart';
 import 'package:memex/config/app_config.dart';
+import 'package:memex/llm_client/gemma_model_manager.dart';
 
 class ModelConfigEditPage extends StatefulWidget {
   final LLMConfig? config;
@@ -51,6 +52,12 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
 
   List<String> _fetchedModels = [];
   bool _isFetchingModels = false;
+
+  // Gemma local model download state
+  bool? _gemmaModelInstalled;
+  bool _gemmaDownloading = false;
+  int _gemmaDownloadProgress = 0;
+  String? _gemmaDownloadError;
 
   @override
   void initState() {
@@ -500,6 +507,7 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
       l10n.providerGroupGoogle: [
         _ProviderEntry(LLMConfig.typeGemini, l10n.providerGemini),
         _ProviderEntry(LLMConfig.typeGeminiOauth, l10n.providerGeminiOauth),
+        _ProviderEntry(LLMConfig.typeGemmaLocal, l10n.providerGemmaLocal),
       ],
       l10n.providerGroupOthers: [
         _ProviderEntry(LLMConfig.typeKimi, l10n.providerKimi),
@@ -512,11 +520,17 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
       ],
     };
 
+    // Filter out gemma_local on iOS (flutter_gemma not yet supported)
+    final filteredAvailable = available.where((t) {
+      if (t == LLMConfig.typeGemmaLocal && !Platform.isAndroid) return false;
+      return true;
+    }).toSet();
+
     final items = <DropdownMenuItem<String>>[];
     var groupIndex = 0;
     for (final entry in groups.entries) {
       final filtered =
-          entry.value.where((p) => available.contains(p.type)).toList();
+          entry.value.where((p) => filteredAvailable.contains(p.type)).toList();
       if (filtered.isEmpty) continue;
 
       // Group header
@@ -659,10 +673,12 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
       key: _keyController.text,
       type: _selectedType,
       modelId: _modelIdController.text,
-      apiKey: _selectedType == LLMConfig.typeBedrockClaude
+      apiKey: (_selectedType == LLMConfig.typeBedrockClaude ||
+              _selectedType == LLMConfig.typeGemmaLocal)
           ? ''
           : _apiKeyController.text,
-      baseUrl: _selectedType == LLMConfig.typeBedrockClaude
+      baseUrl: (_selectedType == LLMConfig.typeBedrockClaude ||
+              _selectedType == LLMConfig.typeGemmaLocal)
           ? ''
           : _baseUrlController.text,
       proxyUrl:
@@ -843,6 +859,119 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
     return confirmed ?? false;
   }
 
+  Future<void> _checkGemmaModelStatus() async {
+    if (_selectedType != LLMConfig.typeGemmaLocal) return;
+    final modelId = _modelIdController.text;
+    if (modelId.isEmpty || !GemmaModelManager.isKnownModel(modelId)) {
+      setState(() => _gemmaModelInstalled = null);
+      return;
+    }
+    final installed = await GemmaModelManager.isModelInstalled(modelId);
+    if (mounted) setState(() => _gemmaModelInstalled = installed);
+  }
+
+  Future<void> _downloadGemmaModel() async {
+    final modelId = _modelIdController.text;
+    if (modelId.isEmpty) return;
+    setState(() {
+      _gemmaDownloading = true;
+      _gemmaDownloadProgress = 0;
+      _gemmaDownloadError = null;
+    });
+    try {
+      await GemmaModelManager.downloadModel(
+        modelId,
+        onProgress: (progress) {
+          if (mounted) setState(() => _gemmaDownloadProgress = progress);
+        },
+      );
+      if (mounted) {
+        setState(() {
+          _gemmaDownloading = false;
+          _gemmaModelInstalled = true;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _gemmaDownloading = false;
+          _gemmaDownloadError = e.toString();
+        });
+      }
+    }
+  }
+
+  Widget _buildGemmaDownloadSection() {
+    final modelId = _modelIdController.text;
+    final sizeDesc = GemmaModelManager.getModelSize(modelId) ?? '';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                _gemmaModelInstalled == true
+                    ? Icons.check_circle
+                    : Icons.download_outlined,
+                color:
+                    _gemmaModelInstalled == true ? Colors.green : Colors.orange,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  _gemmaModelInstalled == true
+                      ? 'Model ready'
+                      : _gemmaModelInstalled == false
+                          ? 'Model not downloaded ($sizeDesc)'
+                          : 'Checking model status...',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: _gemmaModelInstalled == true
+                        ? Colors.green
+                        : Colors.grey[800],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (_gemmaDownloading) ...[
+            const SizedBox(height: 12),
+            LinearProgressIndicator(value: _gemmaDownloadProgress / 100.0),
+            const SizedBox(height: 4),
+            Text('Downloading... $_gemmaDownloadProgress%',
+                style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+          ],
+          if (_gemmaDownloadError != null) ...[
+            const SizedBox(height: 8),
+            Text(_gemmaDownloadError!,
+                style: const TextStyle(fontSize: 12, color: Colors.red)),
+          ],
+          if (_gemmaModelInstalled == false && !_gemmaDownloading) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _downloadGemmaModel,
+                icon: const Icon(Icons.download),
+                label: Text('Download Model ($sizeDesc)'),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDefault = widget.config?.isDefault ?? false;
@@ -966,10 +1095,12 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
                   if (value != null && value.isNotEmpty) {
                     // Reset Model ID to first recommended
                     final recommended = _getRecommendedModels(value);
-                    _modelIdController.text =
-                        recommended.isNotEmpty ? recommended.first : '';
-                    _modelDropdownKey.currentState
-                        ?.setText(_modelIdController.text);
+                    // For gemma_local, don't pre-fill so user can see all options in dropdown
+                    final defaultModel = value == LLMConfig.typeGemmaLocal
+                        ? ''
+                        : (recommended.isNotEmpty ? recommended.first : '');
+                    _modelIdController.text = defaultModel;
+                    _modelDropdownKey.currentState?.setText(defaultModel);
                     // Reset API Key
                     _apiKeyController.text = '';
 
@@ -990,6 +1121,9 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
                     if (!LLMConfig.requiresApiKey(value)) {
                       _fetchModels();
                     }
+                    if (value == LLMConfig.typeGemmaLocal) {
+                      _checkGemmaModelStatus();
+                    }
                   }
                 },
               ),
@@ -998,7 +1132,8 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
               // Base URL (before API key — needed for model fetching)
               if (_selectedType != LLMConfig.typeBedrockClaude &&
                   _selectedType != LLMConfig.typeOpenAiOauth &&
-                  _selectedType != LLMConfig.typeGeminiOauth) ...[
+                  _selectedType != LLMConfig.typeGeminiOauth &&
+                  _selectedType != LLMConfig.typeGemmaLocal) ...[
                 TextFormField(
                   controller: _baseUrlController,
                   decoration: InputDecoration(
@@ -1070,6 +1205,8 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
                 const SizedBox(height: 16),
               ] else if (_selectedType == LLMConfig.typeOllama) ...[
                 // Ollama doesn't need an API key — skip
+              ] else if (_selectedType == LLMConfig.typeGemmaLocal) ...[
+                // Gemma Local runs on-device, no API key needed
               ] else ...[
                 TextFormField(
                   controller: _apiKeyController,
@@ -1119,6 +1256,9 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
                             _modelIdController.text = value;
                             _checkChanges();
                             setState(() {});
+                            if (_selectedType == LLMConfig.typeGemmaLocal) {
+                              _checkGemmaModelStatus();
+                            }
                           },
                           decoration: InputDecoration(
                             labelText: UserStorage.l10n.modelIdLabel,
@@ -1211,6 +1351,11 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
                   ),
                 ),
               const SizedBox(height: 24),
+
+              // Gemma model download section
+              if (_selectedType == LLMConfig.typeGemmaLocal &&
+                  _modelIdController.text.isNotEmpty)
+                _buildGemmaDownloadSection(),
 
               // Advanced Settings
               ExpansionTile(

@@ -172,9 +172,19 @@ class TimelineCardSkill extends Skill {
 
           // fact_id and userId are available via closure/args.
 
-          logger.info("Saving card for fact: $fact_id");
 
           final userId = AgentCallToolContext.current!.state.metadata['userId'];
+          final stateFactId =
+              AgentCallToolContext.current!.state.metadata['factId'] as String?;
+
+          // Use state factId as fallback if model-provided one is invalid
+          final effectiveFactId =
+              (stateFactId != null && stateFactId.isNotEmpty)
+                  ? stateFactId
+                  : fact_id;
+
+          logger.info(
+              "Saving card for fact: $fact_id (effective: $effectiveFactId)");
 
           try {
             // 1. Validate required fields
@@ -215,11 +225,11 @@ class TimelineCardSkill extends Skill {
             }
 
             // 2. Read factContent from file (validates fact exists)
-            final factInfo =
-                await fileService.extractFactContentFromFile(userId, fact_id);
+            final factInfo = await fileService.extractFactContentFromFile(
+                userId, effectiveFactId);
             if (factInfo == null) {
               throw ArgumentError(
-                  "fact id: $fact_id not exist, please check the fact id is correct, or create/edit fact file first, the format of fact_id is 2026/01/20.md#ts_5");
+                  "fact id: $effectiveFactId not exist, please check the fact id is correct, or create/edit fact file first, the format of fact_id is 2026/01/20.md#ts_5");
             }
 
             // 3. Load existing tags
@@ -315,7 +325,7 @@ class TimelineCardSkill extends Skill {
 
             final updatedCardData = await fileService.updateCardFile(
               userId,
-              fact_id,
+              effectiveFactId,
               createIfNotExists: true,
               (card) {
                 var c = card.copyWith(
@@ -346,14 +356,14 @@ class TimelineCardSkill extends Skill {
             if (updatedCardData == null) {
               return AgentToolResult(
                 content: TextPart(
-                    "Card file not found for fact_id: $fact_id, maybe it has been deleted"),
+                    "Card file not found for fact_id: $effectiveFactId, maybe it has been deleted"),
               );
             }
 
             // Log event
             try {
               // Determine card file path from fact_id
-              final parts = fact_id.split('#');
+              final parts = effectiveFactId.split('#');
               if (parts.length == 2) {
                 final datePart = parts[0]; // e.g., "2025/01/21.md"
                 final dateWithoutExt = datePart.replaceFirst('.md', '');
@@ -365,7 +375,7 @@ class TimelineCardSkill extends Skill {
                   userId: userId,
                   filePath: cardPath,
                   description: 'Agent updated timeline card',
-                  metadata: {'fact_id': fact_id, 'title': title},
+                  metadata: {'fact_id': effectiveFactId, 'title': title},
                 );
               }
             } catch (e) {
@@ -374,7 +384,7 @@ class TimelineCardSkill extends Skill {
 
             return AgentToolResult(
               content: TextPart(
-                  "Successfully saved timeline card for Fact $fact_id"),
+                  "Successfully saved timeline card for Fact $effectiveFactId"),
               stopFlag: stopAfterSuccessSaveCard,
             );
           } catch (e, stack) {
