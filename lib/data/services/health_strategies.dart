@@ -35,9 +35,12 @@ class HealthKitFetcher implements HealthDataFetcher {
     try {
       final types = [type];
       // Only check if we have permissions — do NOT request.
-      // Permissions are now requested via System Authorization page.
+      // On iOS, hasPermissions returns null if never requested — treat as "try anyway"
+      // because HealthKit won't crash, it just returns empty data if denied.
       bool? hasPermissions = await _health.hasPermissions(types);
-      return hasPermissions == true;
+      _logger.info('HealthKit hasPermissions($type): $hasPermissions');
+      // Allow null (unknown) — let fetchData attempt and return empty if denied
+      return hasPermissions != false;
     } catch (e) {
       _logger.warning('Permission check error for $type: $e');
       return false;
@@ -475,6 +478,17 @@ class PedometerFetcher implements HealthDataFetcher {
       return <String, int>{};
     }
 
+    // Check if pedometer was previously marked as unavailable
+    if (skipThisSession || !_pedometerAvailable) {
+      _logger.warning('Pedometer skipped this session');
+      return <String, int>{};
+    }
+
+    // Mark as "attempting" — if app crashes during pedometer access,
+    // this flag will still be set on next launch
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('pedometer_attempting', true);
+
     // 1. Ensure background task is registered (critical for daily tracking)
     await ensureBackgroundTaskRegistered();
 
@@ -509,8 +523,19 @@ class PedometerFetcher implements HealthDataFetcher {
     }
   }
 
+  /// Track whether pedometer has previously crashed to avoid repeated native crashes.
+  static bool _pedometerAvailable = true;
+
+  /// Set by main.dart if previous launch crashed during pedometer access.
+  static bool skipThisSession = false;
+
   Future<Map<String, int>> _calculateStepsFromSnapshots(
       DateTime startTime, DateTime endTime) async {
+    if (!_pedometerAvailable) {
+      _logger.warning('Pedometer previously failed, skipping');
+      return <String, int>{};
+    }
+
     try {
       _logger.info('Calculating steps from snapshots...');
 
@@ -519,12 +544,20 @@ class PedometerFetcher implements HealthDataFetcher {
       try {
         final stepCountStream = Pedometer.stepCountStream;
         final stepCount =
-            await stepCountStream.first.timeout(const Duration(seconds: 3));
+            await stepCountStream.first.timeout(const Duration(seconds: 5));
         currentSteps = stepCount.steps;
         _logger.info('Current total device steps: $currentSteps');
+        // Success — clear the attempting flag
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('pedometer_attempting');
       } catch (e) {
         _logger.severe('Failed to read current pedometer: $e');
-        return <String, int>{}; // Return empty instead of crashing
+        _pedometerAvailable = false;
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.remove('pedometer_attempting');
+        } catch (_) {}
+        return <String, int>{};
       }
 
       final prefs = await SharedPreferences.getInstance();

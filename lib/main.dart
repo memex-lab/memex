@@ -33,6 +33,9 @@ import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/data/services/publish_timestamp_service.dart';
 import 'package:memex/data/services/health_service.dart';
+import 'package:memex/data/services/health_strategies.dart';
+import 'package:memex/data/services/whisper_service.dart';
+import 'package:memex/ui/core/themes/app_colors.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:health/health.dart';
 import 'package:memex/domain/models/timeline_card_model.dart';
@@ -69,6 +72,12 @@ void main() async {
     callbackDispatcher,
     isInDebugMode: false,
   );
+
+  // Cancel any previously registered pedometer background tasks on iOS
+  // (iOS now uses HealthKit only, not CMPedometer)
+  if (Platform.isIOS) {
+    await Workmanager().cancelAll();
+  }
 
   // MemexRouter is provided via config/dependencies.dart and created on first read
 
@@ -672,6 +681,17 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   Future<void> _checkAndReportHealthData() async {
     try {
       _logger.info('=== Starting comprehensive health check ===');
+
+      // Detect if previous pedometer access crashed the app — skip this launch only
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.getBool('pedometer_attempting') == true) {
+        _logger.warning(
+            'Pedometer crash detected from previous launch, skipping this session');
+        await prefs.remove('pedometer_attempting');
+        // Set in-memory flag only — will retry on next app launch
+        PedometerFetcher.skipThisSession = true;
+      }
+
       final healthService = HealthService();
       Map<String, Map<String, dynamic>> dailySummary = {};
 
@@ -684,12 +704,15 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       final fitnessStatus = Platform.isIOS
           ? await Permission.sensors.status
           : await Permission.activityRecognition.status;
+      _logger.info('Fitness permission status: $fitnessStatus');
       if (!fitnessStatus.isGranted && !fitnessStatus.isLimited) {
         _logger.info(
             'Fitness permission not granted, skipping health data collection');
         return;
       }
 
+      _logger
+          .info('Types to check: ${typesToCheck.map((t) => t.name).toList()}');
       Map<HealthDataType, dynamic> newlyFetchedData = {};
 
       for (var type in typesToCheck) {
@@ -789,15 +812,163 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
   Future<void> _startRecording() async {
     try {
+      // Check if speech model is downloaded
+      if (!await WhisperService.instance.isModelDownloaded()) {
+        // Cancel the radial menu and show download prompt
+        setState(() => _isRadialMenuOpen = false);
+        if (!mounted) return;
+        _showSpeechModelDownloadDialog();
+        return;
+      }
+
       if (await Permission.microphone.request().isGranted) {
         final directory = await getTemporaryDirectory();
         final path =
-            '${directory.path}/audio_${DateTime.now().millisecondsSinceEpoch}.m4a';
-        await _audioRecorder.start(const RecordConfig(), path: path);
+            '${directory.path}/audio_${DateTime.now().millisecondsSinceEpoch}.wav';
+        await _audioRecorder.start(
+          const RecordConfig(
+            encoder: AudioEncoder.wav,
+            sampleRate: 16000,
+            numChannels: 1,
+          ),
+          path: path,
+        );
         _recordingPath = path;
       }
     } catch (e) {
       _logger.severe('Error starting recording: $e', e);
+    }
+  }
+
+  void _showSpeechModelDownloadDialog() {
+    final isZh = UserStorage.l10n.localeName == 'zh';
+    final sizeMB = WhisperService.modelSizeMB.toInt();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        title: Text(isZh ? '下载语音识别模型' : 'Download Speech Model'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(isZh
+                ? '首次使用语音功能需要下载离线模型（约${sizeMB}MB）。\n\n下载后语音识别将完全在本地运行，无需联网。'
+                : 'A one-time model download (~${sizeMB}MB) is required.\n\nOnce downloaded, transcription runs entirely on-device.'),
+            const SizedBox(height: 20),
+            Text(
+              isZh ? '选择下载线路：' : 'Choose download source:',
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _downloadSpeechModel(useChineseMirror: true);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: Text(isZh ? '🇨🇳 国内线路（推荐）' : '🇨🇳 China Mirror'),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _downloadSpeechModel(useChineseMirror: false);
+                },
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: Text(isZh ? '🌐 GitHub（海外线路）' : '🌐 GitHub (Global)'),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(UserStorage.l10n.cancel),
+          ),
+        ],
+      ),
+    );
+  }
+
+  double _speechDownloadProgress = 0;
+  StateSetter? _speechDownloadSetState;
+
+  Future<void> _downloadSpeechModel({required bool useChineseMirror}) async {
+    final isZh = UserStorage.l10n.localeName == 'zh';
+    _speechDownloadProgress = 0;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          _speechDownloadSetState = setDialogState;
+          return AlertDialog(
+            backgroundColor: Colors.white,
+            title: Text(isZh ? '正在下载模型...' : 'Downloading model...'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                LinearProgressIndicator(
+                  value: _speechDownloadProgress > 0
+                      ? _speechDownloadProgress
+                      : null,
+                  backgroundColor: AppColors.background,
+                  color: AppColors.primary,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  _speechDownloadProgress > 0
+                      ? '${(_speechDownloadProgress * 100).toInt()}%'
+                      : (isZh ? '连接中...' : 'Connecting...'),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+
+    try {
+      await WhisperService.instance.downloadModel(
+        useChineseMirror: useChineseMirror,
+        onProgress: (p) {
+          _speechDownloadSetState?.call(() {
+            _speechDownloadProgress = p;
+          });
+        },
+      );
+    } catch (e) {
+      _logger.severe('Speech model download failed: $e');
+    } finally {
+      _speechDownloadProgress = 0;
+      if (mounted) Navigator.of(context).pop();
     }
   }
 

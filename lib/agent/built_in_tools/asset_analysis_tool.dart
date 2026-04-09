@@ -6,6 +6,7 @@ import 'package:path/path.dart' as path;
 import 'package:memex/utils/logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:memex/data/services/whisper_service.dart';
 
 class AssetAnalysisTool {
   final Logger _logger = getLogger('AssetAnalysisTool');
@@ -166,65 +167,83 @@ class AssetAnalysisTool {
     _logger.info('Analyzing audio: $assetPath');
 
     try {
-      final file = File(assetPath);
-      final bytes = await file.readAsBytes();
-
-      String mimeType = 'audio/mp3'; // Default fallback
-      final ext = path.extension(assetPath).toLowerCase();
-      switch (ext) {
-        case '.wav':
-          mimeType = 'audio/wav';
-          break;
-        case '.mp3':
-        case '.m4a':
-          mimeType = 'audio/mp3';
-          break;
-        case '.aiff':
-        case '.aif':
-          mimeType = 'audio/aiff';
-          break;
-        case '.aac':
-          mimeType = 'audio/aac';
-          break;
-        case '.ogg':
-          mimeType = 'audio/ogg'; // Gemini docs often cite audio/ogg
-          break;
-        case '.flac':
-          mimeType = 'audio/flac';
-          break;
-        case '.wma':
-          // Gemini doesn't officially support WMA according to docs, but we can try or fail.
-          // Python implementation throws error for WMA.
-          throw Exception("Audio format $ext (WMA) is not supported.");
+      // Use local Whisper model for transcription
+      final whisper = WhisperService.instance;
+      if (await whisper.isModelDownloaded()) {
+        final transcript = await whisper.transcribe(assetPath);
+        if (transcript != null && transcript.trim().isNotEmpty) {
+          _logger.info(
+              'Audio transcribed locally via Whisper: ${transcript.substring(0, transcript.length.clamp(0, 100))}...');
+          return (
+            '#Asset $assetName analysis result\n: $transcript',
+            null, // No LLM usage
+            'whisper-base (local)',
+          );
+        }
       }
 
-      // Python uses "Generate a transcript of the speech." as fixed prompt for audio
-      const transcriptPrompt = "Generate a transcript of the speech.";
-
-      final base64Audio = base64Encode(bytes);
-
-      _logger.info(
-          "Calling API for audio transcription..., mimeType: $mimeType, audioLength: ${bytes.length}");
-      final response = await client.generate(
-        [
-          UserMessage([
-            TextPart(transcriptPrompt),
-            AudioPart(base64Audio, mimeType),
-          ])
-        ],
-        modelConfig: modelConfig,
-      );
-
-      final analysisResult = response.textOutput ?? "";
-      _logger.info("Audio analysis completed. Result : $analysisResult");
-      return (
-        '#Asset $assetName analysis result\n: $analysisResult',
-        response.usage,
-        response.model,
-      );
+      // Fallback to LLM if Whisper model not available or transcription failed
+      _logger.info('Whisper unavailable, falling back to LLM for audio');
+      return _analyzeAudioWithLLM(assetPath, assetName);
     } catch (e) {
       _logger.severe('Failed to analyze audio $assetPath: $e');
       rethrow;
     }
+  }
+
+  Future<(String result, ModelUsage? usage, String model)> _analyzeAudioWithLLM(
+      String assetPath, String assetName) async {
+    final file = File(assetPath);
+    final bytes = await file.readAsBytes();
+
+    String mimeType = 'audio/mp3';
+    final ext = path.extension(assetPath).toLowerCase();
+    switch (ext) {
+      case '.wav':
+        mimeType = 'audio/wav';
+        break;
+      case '.mp3':
+      case '.m4a':
+        mimeType = 'audio/mp3';
+        break;
+      case '.aiff':
+      case '.aif':
+        mimeType = 'audio/aiff';
+        break;
+      case '.aac':
+        mimeType = 'audio/aac';
+        break;
+      case '.ogg':
+        mimeType = 'audio/ogg';
+        break;
+      case '.flac':
+        mimeType = 'audio/flac';
+        break;
+      case '.wma':
+        throw Exception("Audio format $ext (WMA) is not supported.");
+    }
+
+    const transcriptPrompt = "Generate a transcript of the speech.";
+    final base64Audio = base64Encode(bytes);
+
+    _logger.info(
+        "Calling API for audio transcription..., mimeType: $mimeType, audioLength: ${bytes.length}");
+    final response = await client.generate(
+      [
+        UserMessage([
+          TextPart(transcriptPrompt),
+          AudioPart(base64Audio, mimeType),
+        ])
+      ],
+      modelConfig: modelConfig,
+    );
+
+    final analysisResult = response.textOutput ?? "";
+    _logger.info("Audio analysis completed. Result : $analysisResult");
+    return (
+      '#Asset $assetName analysis result\n: $analysisResult',
+      response.usage,
+      response.model,
+    );
   }
 }

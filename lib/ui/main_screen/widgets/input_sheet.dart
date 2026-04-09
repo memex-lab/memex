@@ -13,7 +13,9 @@ import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/data/services/photo_suggestion_service.dart';
+import 'package:memex/data/services/whisper_service.dart';
 import 'package:memex/ui/core/themes/app_colors.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// Input data model for submission
 class InputData {
@@ -349,6 +351,14 @@ class _InputSheetState extends State<InputSheet>
 
   Future<void> _startRecording() async {
     try {
+      // Check if speech model is downloaded before recording
+      if (!await WhisperService.instance.isModelDownloaded()) {
+        if (!mounted) return;
+        await _showModelDownloadDialog();
+        if (!await WhisperService.instance.isModelDownloaded() || !mounted)
+          return;
+      }
+
       var status = await Permission.microphone.status;
       if (status.isDenied) {
         status = await Permission.microphone.request();
@@ -365,16 +375,16 @@ class _InputSheetState extends State<InputSheet>
 
       final directory = await getTemporaryDirectory();
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final path = '${directory.path}/audio_$timestamp.m4a';
+      final wavPath = '${directory.path}/audio_$timestamp.wav';
 
       if (await _audioRecorder.hasPermission()) {
         await _audioRecorder.start(
           const RecordConfig(
-            encoder: AudioEncoder.aacLc,
-            bitRate: 128000,
-            sampleRate: 44100,
+            encoder: AudioEncoder.wav,
+            sampleRate: 16000,
+            numChannels: 1,
           ),
-          path: path,
+          path: wavPath,
         );
 
         setState(() {
@@ -401,6 +411,11 @@ class _InputSheetState extends State<InputSheet>
           _recordingDuration =
               Duration(seconds: _recordingDuration.inSeconds + 1);
         });
+        // Auto-stop at 60 seconds
+        if (_recordingDuration.inSeconds >= 60) {
+          _stopRecording();
+          return;
+        }
         _updateRecordingDuration();
       }
     });
@@ -428,6 +443,264 @@ class _InputSheetState extends State<InputSheet>
       }
     }
   }
+
+  bool _isTranscribing = false;
+
+  /// Transcribe audio and show result in a bottom sheet.
+  Future<void> _previewTranscription() async {
+    if (_audioPath == null) return;
+    final whisper = WhisperService.instance;
+
+    if (!await whisper.isModelDownloaded()) {
+      if (!mounted) return;
+      await _showModelDownloadDialog();
+      if (!await whisper.isModelDownloaded() || !mounted) return;
+    }
+
+    final isZh = UserStorage.l10n.localeName == 'zh';
+    String? resultText;
+    bool isLoading = true;
+
+    setState(() => _isTranscribing = true);
+
+    // Show bottom sheet immediately with loading state
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) {
+          // Kick off transcription on first build
+          if (isLoading && resultText == null) {
+            whisper.transcribe(_audioPath!).then((text) {
+              resultText = text;
+              isLoading = false;
+              if (ctx.mounted) setSheetState(() {});
+              if (mounted) setState(() => _isTranscribing = false);
+            }).catchError((_) {
+              isLoading = false;
+              if (ctx.mounted) setSheetState(() {});
+              if (mounted) setState(() => _isTranscribing = false);
+            });
+          }
+
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  isZh ? '语音识别结果' : 'Transcription',
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  constraints: const BoxConstraints(minHeight: 60),
+                  decoration: BoxDecoration(
+                    color: AppColors.background,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: isLoading
+                      ? Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              isZh ? '正在识别...' : 'Recognizing...',
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                color: AppColors.textTertiary,
+                              ),
+                            ),
+                          ],
+                        )
+                      : SelectableText(
+                          resultText?.trim().isNotEmpty == true
+                              ? resultText!
+                              : (isZh ? '未识别到语音内容' : 'No speech detected'),
+                          style: GoogleFonts.inter(
+                            fontSize: 15,
+                            color: resultText?.trim().isNotEmpty == true
+                                ? AppColors.textPrimary
+                                : AppColors.textTertiary,
+                            height: 1.5,
+                          ),
+                        ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<bool?> _showModelDownloadDialog() {
+    final isZh = UserStorage.l10n.localeName == 'zh';
+    final sizeMB = WhisperService.modelSizeMB.toInt();
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        title: Text(isZh ? '下载语音识别模型' : 'Download Speech Model'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(isZh
+                ? '首次使用语音转文字需要下载离线模型（约${sizeMB}MB）。\n\n下载后语音识别将完全在本地运行，无需联网。'
+                : 'A one-time model download (~${sizeMB}MB) is required.\n\nOnce downloaded, transcription runs entirely on-device.'),
+            const SizedBox(height: 20),
+            Text(
+              isZh ? '选择下载线路：' : 'Choose download source:',
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _downloadWhisperModel(useChineseMirror: true);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: Text(isZh
+                    ? '🇨🇳 国内线路（推荐）'
+                    : '🇨🇳 China Mirror (Faster in CN)'),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _downloadWhisperModel(useChineseMirror: false);
+                },
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: Text(isZh ? '🌐 GitHub（海外线路）' : '🌐 GitHub (Global)'),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(UserStorage.l10n.cancel),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _downloadWhisperModel({required bool useChineseMirror}) async {
+    final isZh = UserStorage.l10n.localeName == 'zh';
+
+    // Show progress dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          _downloadDialogSetState = setDialogState;
+          return AlertDialog(
+            backgroundColor: Colors.white,
+            title: Text(isZh ? '正在下载模型...' : 'Downloading model...'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                LinearProgressIndicator(
+                  value: _downloadProgress > 0 ? _downloadProgress : null,
+                  backgroundColor: AppColors.background,
+                  color: AppColors.primary,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  _downloadProgress > 0
+                      ? '${(_downloadProgress * 100).toInt()}%'
+                      : (isZh ? '连接中...' : 'Connecting...'),
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+
+    _downloadProgress = 0;
+
+    try {
+      await WhisperService.instance.downloadModel(
+        useChineseMirror: useChineseMirror,
+        onProgress: (p) {
+          _downloadDialogSetState?.call(() {
+            _downloadProgress = p;
+          });
+        },
+      );
+    } catch (e) {
+      _logger.severe('Model download failed: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(isZh ? '下载失败: $e' : 'Download failed: $e')),
+        );
+      }
+    } finally {
+      _downloadProgress = 0;
+      if (mounted) Navigator.of(context).pop();
+    }
+  }
+
+  StateSetter? _downloadDialogSetState;
+  double _downloadProgress = 0;
 
   void _removeImage(int index) {
     setState(() {
@@ -844,16 +1117,27 @@ class _InputSheetState extends State<InputSheet>
                                                             .recordingWithDuration(
                                                                 _formatDuration(
                                                                     _recordingDuration))
-                                                        : (_isPlaying
-                                                            ? UserStorage
-                                                                .l10n.playing
-                                                            : UserStorage.l10n
-                                                                .recordedAudio),
+                                                        : _isTranscribing
+                                                            ? (UserStorage.l10n
+                                                                        .localeName ==
+                                                                    'zh'
+                                                                ? '正在识别...'
+                                                                : 'Transcribing...')
+                                                            : (_isPlaying
+                                                                ? UserStorage
+                                                                    .l10n
+                                                                    .playing
+                                                                : UserStorage
+                                                                    .l10n
+                                                                    .recordedAudio),
                                                     style: TextStyle(
-                                                      color: _isPlaying
+                                                      color: _isTranscribing
                                                           ? AppColors.primary
-                                                          : AppColors
-                                                              .textSecondary,
+                                                          : _isPlaying
+                                                              ? AppColors
+                                                                  .primary
+                                                              : AppColors
+                                                                  .textSecondary,
                                                       fontSize: 14,
                                                       fontWeight: _isPlaying
                                                           ? FontWeight.bold
@@ -861,7 +1145,24 @@ class _InputSheetState extends State<InputSheet>
                                                     ),
                                                   ),
                                                 ),
-                                                if (!_isRecording)
+                                                if (!_isRecording) ...[
+                                                  GestureDetector(
+                                                    onTap: _isTranscribing
+                                                        ? null
+                                                        : _previewTranscription,
+                                                    child: Icon(
+                                                      _isTranscribing
+                                                          ? Icons.hourglass_top
+                                                          : Icons
+                                                              .text_snippet_outlined,
+                                                      size: 20,
+                                                      color: _isTranscribing
+                                                          ? AppColors.primary
+                                                          : AppColors
+                                                              .textSecondary,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 12),
                                                   GestureDetector(
                                                     onTap: _removeAudio,
                                                     child: const Icon(
@@ -871,6 +1172,7 @@ class _InputSheetState extends State<InputSheet>
                                                           .textSecondary,
                                                     ),
                                                   ),
+                                                ],
                                               ],
                                             ),
                                           ),
