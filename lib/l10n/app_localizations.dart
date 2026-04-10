@@ -656,6 +656,12 @@ abstract class AppLocalizations {
   /// **'Playing...'**
   String get playing;
 
+  /// No description provided for @selectedAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected audio'**
+  String get selectedAudio;
+
   /// No description provided for @recordedAudio.
   ///
   /// In en, this message translates to:
@@ -667,6 +673,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Record'**
   String get recordLabel;
+
+  /// No description provided for @stopRecordingFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Please stop recording first'**
+  String get stopRecordingFirst;
+
+  /// No description provided for @selectAudioFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to select audio'**
+  String get selectAudioFailed;
+
+  /// No description provided for @unsupportedAudioFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'This audio format is not supported yet'**
+  String get unsupportedAudioFormat;
 
   /// No description provided for @smartSuggesting.
   ///

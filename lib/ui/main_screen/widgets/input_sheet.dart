@@ -9,6 +9,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
+import 'package:file_picker/file_picker.dart';
 
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/user_storage.dart';
@@ -74,6 +75,12 @@ class _InputSheetState extends State<InputSheet>
 
   List<XFile> _selectedImages = [];
   final Map<String, String> _originalFilenames = {};
+  static const Set<String> _supportedAudioExtensions = {
+    'm4a',
+    'mp3',
+    'wav',
+    'ogg',
+  };
   String? _audioPath;
   bool _isRecording = false;
   Duration _recordingDuration = Duration.zero;
@@ -425,6 +432,72 @@ class _InputSheetState extends State<InputSheet>
         setState(() {
           _isRecording = false;
         });
+      }
+    }
+  }
+
+  Future<void> _pickAudioFile() async {
+    if (_isRecording) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(UserStorage.l10n.stopRecordingFirst)),
+        );
+      }
+      return;
+    }
+
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowMultiple: false,
+        allowedExtensions: _supportedAudioExtensions.toList(),
+      );
+
+      if (result == null || result.files.isEmpty) return;
+
+      final filePath = result.files.single.path;
+      if (filePath == null || filePath.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(UserStorage.l10n.selectAudioFailed)),
+          );
+        }
+        return;
+      }
+
+      final extension = filePath.split('.').last.toLowerCase();
+      if (!_supportedAudioExtensions.contains(extension)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(UserStorage.l10n.unsupportedAudioFormat)),
+          );
+        }
+        return;
+      }
+
+      final file = File(filePath);
+      if (!await file.exists()) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(UserStorage.l10n.selectAudioFailed)),
+          );
+        }
+        return;
+      }
+
+      await _audioPlayer.stop();
+      if (!mounted) return;
+
+      setState(() {
+        _audioPath = filePath;
+        _isPlaying = false;
+        _isRecording = false;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(UserStorage.l10n.selectAudioFailed)),
+        );
       }
     }
   }
@@ -848,7 +921,7 @@ class _InputSheetState extends State<InputSheet>
                                                             ? UserStorage
                                                                 .l10n.playing
                                                             : UserStorage.l10n
-                                                                .recordedAudio),
+                                                                .selectedAudio),
                                                     style: TextStyle(
                                                       color: _isPlaying
                                                           ? AppColors.primary
@@ -883,6 +956,7 @@ class _InputSheetState extends State<InputSheet>
                                             onTap: _isRecording
                                                 ? _stopRecording
                                                 : _startRecording,
+                                            onLongPress: _pickAudioFile,
                                             child: Container(
                                               width: 48,
                                               height: 48,

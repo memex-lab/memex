@@ -318,10 +318,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get playing => 'Playing...';
 
   @override
+  String get selectedAudio => 'Selected audio';
+
+  @override
   String get recordedAudio => 'Recorded audio';
 
   @override
   String get recordLabel => 'Record';
+
+  @override
+  String get stopRecordingFirst => 'Please stop recording first';
+
+  @override
+  String get selectAudioFailed => 'Failed to select audio';
+
+  @override
+  String get unsupportedAudioFormat => 'This audio format is not supported yet';
 
   @override
   String get smartSuggesting => 'Smart suggesting...';

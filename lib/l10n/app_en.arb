@@ -143,8 +143,12 @@
   },
   "recordingWithDuration": "Recording: {duration}",
   "playing": "Playing...",
+  "selectedAudio": "Selected audio",
   "recordedAudio": "Recorded audio",
   "recordLabel": "Record",
+  "stopRecordingFirst": "Please stop recording first",
+  "selectAudioFailed": "Failed to select audio",
+  "unsupportedAudioFormat": "This audio format is not supported yet",
   "smartSuggesting": "Smart suggesting...",
   "noTaskData": "No task data",
   "@createdAtDate": {

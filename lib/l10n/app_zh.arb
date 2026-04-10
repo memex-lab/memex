@@ -143,8 +143,12 @@
   },
   "recordingWithDuration": "录音中: {duration}",
   "playing": "播放中...",
+  "selectedAudio": "已选择音频",
   "recordedAudio": "已录制音频",
   "recordLabel": "记录",
+  "stopRecordingFirst": "请先停止录音",
+  "selectAudioFailed": "选择音频失败",
+  "unsupportedAudioFormat": "暂不支持该音频格式",
   "smartSuggesting": "智能建议中...",
   "noTaskData": "暂无任务数据",
   "@createdAtDate": {

@@ -309,10 +309,22 @@ class AppLocalizationsZh extends AppLocalizations {
   String get playing => '播放中...';
 
   @override
+  String get selectedAudio => '已选择音频';
+
+  @override
   String get recordedAudio => '已录制音频';
 
   @override
   String get recordLabel => '记录';
+
+  @override
+  String get stopRecordingFirst => '请先停止录音';
+
+  @override
+  String get selectAudioFailed => '选择音频失败';
+
+  @override
+  String get unsupportedAudioFormat => '暂不支持该音频格式';
 
   @override
   String get smartSuggesting => '智能建议中...';
