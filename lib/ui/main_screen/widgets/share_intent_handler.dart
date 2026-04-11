@@ -11,6 +11,7 @@ import 'package:share_handler/share_handler.dart';
 import 'package:memex/ui/main_screen/widgets/input_sheet.dart';
 import 'package:memex/utils/toast_helper.dart';
 import 'package:memex/utils/user_storage.dart';
+import 'package:memex/data/services/resource_recognition/resource_recognizer.dart';
 
 /// Handles system share intents (text, images) and forwards them
 /// as drafts into the input sheet for user confirmation.
@@ -63,7 +64,7 @@ class ShareIntentHandler {
         return;
       }
 
-      final trimmedText =
+      var trimmedText =
           media.content == null || media.content!.trim().isEmpty
               ? null
               : media.content!.trim();
@@ -81,6 +82,13 @@ class ShareIntentHandler {
                 _looksLikeImageFile(path);
         if (isImageAttachment) {
           imageFiles.add(XFile(path));
+        } else if (_looksLikeDocument(path)) {
+          // Append document file path as a resource reference in text
+          final fileName = path.split('/').last;
+          final docRef = '[📎 $fileName]($path)';
+          trimmedText = trimmedText == null
+              ? docRef
+              : '$trimmedText\n$docRef';
         }
       }
 
@@ -148,6 +156,10 @@ class ShareIntentHandler {
       '.tiff',
     ];
     return imageExtensions.any(lowerPath.endsWith);
+  }
+
+  bool _looksLikeDocument(String path) {
+    return ResourceRecognizer.detectFileType(path) != null;
   }
 }
 

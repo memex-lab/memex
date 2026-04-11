@@ -6,6 +6,7 @@ import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/card_renderer.dart';
 import 'package:memex/data/services/global_event_bus.dart';
 import 'package:memex/domain/models/system_event.dart';
+import 'package:memex/data/services/resource_recognition/resource_recognizer.dart';
 
 final _logger = getLogger('SubmitInputEndpoint');
 final _fileSystem = FileSystemService.instance;
@@ -119,6 +120,26 @@ Future<Map<String, dynamic>> submitInput(
     }
 
     final combinedText = textParts.join('\n\n');
+
+    // 1.5 Resource Recognition: detect URLs, PDFs, etc. in text input
+    // Phase 1: Synchronous detection (instant, no network calls)
+    List<Map<String, dynamic>>? recognizedResources;
+    final pureText = textParts
+        .where((p) => !p.startsWith('![') && !p.startsWith('['))
+        .join('\n');
+    try {
+      if (ResourceRecognizer.containsResources(pureText)) {
+        // Synchronous detection — just regex, no blocking
+        final detected = ResourceRecognizer.detectResources(pureText);
+        if (detected.isNotEmpty) {
+          recognizedResources = detected.map((r) => r.toJson()).toList();
+          _logger.info(
+              'Detected ${detected.length} resource(s) from input text');
+        }
+      }
+    } catch (e) {
+      _logger.warning('Resource detection failed (non-blocking): $e');
+    }
     // Extract pure text content (without markdown image/audio references)
     final textContent = textParts
         .where((part) => !part.startsWith('![') && !part.startsWith('['))
@@ -180,6 +201,11 @@ Future<Map<String, dynamic>> submitInput(
       placeholderData['audioUrl'] = audioUrl;
     }
 
+    // Add recognized resources if any
+    if (recognizedResources != null && recognizedResources.isNotEmpty) {
+      placeholderData['resources'] = recognizedResources;
+    }
+
     final placeholderCard = CardData(
       factId: factId,
       title: '',
@@ -225,6 +251,7 @@ Future<Map<String, dynamic>> submitInput(
           markdownEntry: markdownEntry,
           createdAtTs: publishTimestamp,
           pkmCreatedAtTs: now.millisecondsSinceEpoch / 1000.0,
+          resources: recognizedResources,
         ),
       ),
     );

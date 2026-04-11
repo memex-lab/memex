@@ -38,6 +38,7 @@ class UserInputSubmittedPayload {
     required this.markdownEntry,
     required this.createdAtTs,
     required this.pkmCreatedAtTs,
+    this.resources,
   });
 
   final String factId;
@@ -46,6 +47,7 @@ class UserInputSubmittedPayload {
   final String markdownEntry;
   final int createdAtTs;
   final double pkmCreatedAtTs;
+  final List<Map<String, dynamic>>? resources; // Recognized resources metadata
 
   Map<String, dynamic> toJson() => {
         'fact_id': factId,
@@ -54,6 +56,8 @@ class UserInputSubmittedPayload {
         'markdown_entry': markdownEntry,
         'created_at_ts': createdAtTs,
         'pkm_created_at_ts': pkmCreatedAtTs,
+        if (resources != null && resources!.isNotEmpty)
+          'resources': resources,
       };
 }
 
