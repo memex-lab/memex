@@ -1,7 +1,7 @@
 name: memex
 description: A personal knowledge management and insights app
 publish_to: "none"
-version: 1.0.21+101
+version: 1.0.23+105
 
 environment:
   sdk: ">=3.6.0 <4.0.0"
@@ -81,6 +81,7 @@ dependencies:
   share_plus: ^10.1.4
   file_picker: ^8.1.7
   screenshot: ^3.0.0
+  sherpa_onnx: ^1.12.36
 
 dev_dependencies:
   flutter_test:
@@ -100,3 +101,4 @@ flutter:
     - assets/startup.png
     - assets/icon.png
     - assets/icons/
+    - assets/silero_vad.onnx

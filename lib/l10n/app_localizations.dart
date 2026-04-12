@@ -3499,6 +3499,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Go to Settings'**
   String get goToModelConfig;
+
+  /// No description provided for @speechModelDownloadTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Download Speech Model'**
+  String get speechModelDownloadTitle;
+
+  /// No description provided for @speechModelDownloadDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'A one-time model download (~{sizeMB}MB) is required.\n\nOnce downloaded, transcription runs entirely on-device.'**
+  String speechModelDownloadDesc(Object sizeMB);
+
+  /// No description provided for @speechModelStartDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Download'**
+  String get speechModelStartDownload;
+
+  /// No description provided for @speechModelChooseSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose download source:'**
+  String get speechModelChooseSource;
+
+  /// No description provided for @speechModelChinaMirror.
+  ///
+  /// In en, this message translates to:
+  /// **'🇨🇳 China Mirror (Faster in CN)'**
+  String get speechModelChinaMirror;
+
+  /// No description provided for @speechModelGithub.
+  ///
+  /// In en, this message translates to:
+  /// **'🌐 GitHub (Global)'**
+  String get speechModelGithub;
+
+  /// No description provided for @speechModelDownloading.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading model...'**
+  String get speechModelDownloading;
+
+  /// No description provided for @speechModelConnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting...'**
+  String get speechModelConnecting;
+
+  /// No description provided for @speechModelDownloadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Download failed: {error}'**
+  String speechModelDownloadFailed(Object error);
+
+  /// No description provided for @speechTranscribing.
+  ///
+  /// In en, this message translates to:
+  /// **'Recognizing...'**
+  String get speechTranscribing;
+
+  /// No description provided for @speechTranscriptionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcription'**
+  String get speechTranscriptionTitle;
+
+  /// No description provided for @speechNoResult.
+  ///
+  /// In en, this message translates to:
+  /// **'No speech detected'**
+  String get speechNoResult;
 }
 
 class _AppLocalizationsDelegate

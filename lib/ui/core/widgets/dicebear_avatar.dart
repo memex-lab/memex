@@ -66,21 +66,26 @@ class DiceBearAvatar extends StatelessWidget {
           future: _cacheFile(seed!),
           builder: (context, snapshot) {
             if (snapshot.hasData && snapshot.data!.existsSync()) {
-              // Load from local cache
-              return SvgPicture.file(
-                snapshot.data!,
-                width: size,
-                height: size,
-                fit: BoxFit.cover,
-              );
+              try {
+                return SvgPicture.file(
+                  snapshot.data!,
+                  width: size,
+                  height: size,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => _placeholder(),
+                );
+              } catch (_) {
+                return _placeholder();
+              }
             }
-            // Fallback to network
+            // Fallback to network with error handling
             return SvgPicture.network(
               dicebearUrl(seed!),
               width: size,
               height: size,
               fit: BoxFit.cover,
               placeholderBuilder: (_) => _loadingIndicator(),
+              errorBuilder: (_, __, ___) => _placeholder(),
             );
           },
         ),

@@ -867,5 +867,19 @@
   "llmNetworkError": "Network connection failed. Please check your internet connection.",
   "llmUnknownError": "An unexpected error occurred while processing your content.",
   "llmErrorDialogTitle": "Processing Failed",
-  "goToModelConfig": "Go to Settings"
+  "goToModelConfig": "Go to Settings",
+  "speechModelDownloadTitle": "Download Speech Model",
+  "speechModelDownloadDesc": "A one-time model download (~{sizeMB}MB) is required.\n\nOnce downloaded, transcription runs entirely on-device.",
+  "@speechModelDownloadDesc": { "placeholders": { "sizeMB": {} } },
+  "speechModelStartDownload": "Start Download",
+  "speechModelChooseSource": "Choose download source:",
+  "speechModelChinaMirror": "🇨🇳 China Mirror (Faster in CN)",
+  "speechModelGithub": "🌐 GitHub (Global)",
+  "speechModelDownloading": "Downloading model...",
+  "speechModelConnecting": "Connecting...",
+  "speechModelDownloadFailed": "Download failed: {error}",
+  "@speechModelDownloadFailed": { "placeholders": { "error": {} } },
+  "speechTranscribing": "Recognizing...",
+  "speechTranscriptionTitle": "Transcription",
+  "speechNoResult": "No speech detected"
 }

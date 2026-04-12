@@ -1841,4 +1841,44 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get goToModelConfig => '前往设置';
+
+  @override
+  String get speechModelDownloadTitle => '下载语音识别模型';
+
+  @override
+  String speechModelDownloadDesc(Object sizeMB) {
+    return '首次使用语音转文字需要下载离线模型（约${sizeMB}MB）。\n\n下载后语音识别将完全在本地运行，无需联网。';
+  }
+
+  @override
+  String get speechModelStartDownload => '开始下载';
+
+  @override
+  String get speechModelChooseSource => '选择下载线路：';
+
+  @override
+  String get speechModelChinaMirror => '🇨🇳 国内线路（推荐）';
+
+  @override
+  String get speechModelGithub => '🌐 GitHub（海外线路）';
+
+  @override
+  String get speechModelDownloading => '正在下载模型...';
+
+  @override
+  String get speechModelConnecting => '连接中...';
+
+  @override
+  String speechModelDownloadFailed(Object error) {
+    return '下载失败: $error';
+  }
+
+  @override
+  String get speechTranscribing => '正在识别...';
+
+  @override
+  String get speechTranscriptionTitle => '语音识别结果';
+
+  @override
+  String get speechNoResult => '未识别到语音内容';
 }

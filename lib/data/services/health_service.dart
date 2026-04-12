@@ -54,13 +54,11 @@ class HealthService {
       );
     } else {
       // iOS: Use HealthKit for accurate step count data.
-      // Only STEPS is requested — other types (heart rate, sleep, etc.)
-      // will be added in a future release when UI surfaces them.
+      // Pedometer fallback removed — CMPedometer can crash on some devices/debug modes.
       _configs[HealthDataType.STEPS] = HealthStrategyConfig(
         type: HealthDataType.STEPS,
         prefKeySuffix: 'steps',
         primaryFetcher: HealthKitFetcher(),
-        fallbackFetcher: PedometerFetcher(),
         reportIntervalMinutes: 1,
       );
     }
@@ -133,9 +131,10 @@ class HealthService {
 
       // 1. Check Interval
       if (!await _shouldReport(config)) {
-        _logger.info('Not time to report ${config.type} yet.');
+        _logger.info('Not time to report ${config.type} yet, skipping.');
         return null; // Not time yet
       }
+      _logger.info('Time to report ${config.type}, proceeding to fetch...');
 
       // 2. Fetch Data
       final data = await _fetchWithFallback<T>(config);
@@ -184,13 +183,19 @@ class HealthService {
     _logger.info(
         'Trying Primary: ${config.primaryFetcher.name} for ${config.type}');
     try {
-      if (await config.primaryFetcher.requestPermissions(config.type)) {
+      final hasPermission =
+          await config.primaryFetcher.requestPermissions(config.type);
+      _logger.info('Primary permission result: $hasPermission');
+      if (hasPermission) {
+        _logger.info('Fetching data from primary (range: $start to $end)...');
         final data =
             await config.primaryFetcher.fetchData(config.type, start, end);
 
         bool hasData = false;
         if (data is Map) hasData = data.isNotEmpty;
         if (data is List) hasData = data.isNotEmpty;
+        _logger.info(
+            'Primary returned data: hasData=$hasData, type=${data.runtimeType}');
 
         if (hasData) {
           return data as T;

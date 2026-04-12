@@ -1909,4 +1909,44 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get goToModelConfig => 'Go to Settings';
+
+  @override
+  String get speechModelDownloadTitle => 'Download Speech Model';
+
+  @override
+  String speechModelDownloadDesc(Object sizeMB) {
+    return 'A one-time model download (~${sizeMB}MB) is required.\n\nOnce downloaded, transcription runs entirely on-device.';
+  }
+
+  @override
+  String get speechModelStartDownload => 'Start Download';
+
+  @override
+  String get speechModelChooseSource => 'Choose download source:';
+
+  @override
+  String get speechModelChinaMirror => '🇨🇳 China Mirror (Faster in CN)';
+
+  @override
+  String get speechModelGithub => '🌐 GitHub (Global)';
+
+  @override
+  String get speechModelDownloading => 'Downloading model...';
+
+  @override
+  String get speechModelConnecting => 'Connecting...';
+
+  @override
+  String speechModelDownloadFailed(Object error) {
+    return 'Download failed: $error';
+  }
+
+  @override
+  String get speechTranscribing => 'Recognizing...';
+
+  @override
+  String get speechTranscriptionTitle => 'Transcription';
+
+  @override
+  String get speechNoResult => 'No speech detected';
 }

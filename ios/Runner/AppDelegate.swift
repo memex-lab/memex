@@ -3,6 +3,7 @@ import UIKit
 import WebKit
 import workmanager_apple
 import EventKit
+import AVFoundation
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -16,8 +17,8 @@ import EventKit
     WorkmanagerPlugin.setPluginRegistrantCallback { registry in
         GeneratedPluginRegistrant.register(with: registry)
     }
-    // Required for BGTaskScheduler
-    WorkmanagerPlugin.registerPeriodicTask(withIdentifier: "workmanager.background.task", frequency: NSNumber(value: 20 * 60))
+    // Periodic task registration removed — iOS uses HealthKit, not CMPedometer.
+    // Background pedometer tasks are no longer needed.
 
     let webViewChannel = FlutterMethodChannel(
       name: "com.memexlab.memex/webview",
@@ -68,6 +69,25 @@ import EventKit
       name: "com.memexlab.memex/system_actions",
       binaryMessenger: controller.binaryMessenger
     )
+
+    // Audio converter channel
+    let audioConverterChannel = FlutterMethodChannel(
+      name: "com.memexlab.memex/audio_converter",
+      binaryMessenger: controller.binaryMessenger
+    )
+    audioConverterChannel.setMethodCallHandler { (call: FlutterMethodCall, result: @escaping FlutterResult) in
+      if call.method == "convertToWav" {
+        guard let args = call.arguments as? [String: Any],
+              let inputPath = args["inputPath"] as? String,
+              let outputPath = args["outputPath"] as? String else {
+          result(FlutterError(code: "INVALID_ARGUMENTS", message: "Missing inputPath or outputPath", details: nil))
+          return
+        }
+        Self.convertToWav(inputPath: inputPath, outputPath: outputPath, result: result)
+      } else {
+        result(FlutterMethodNotImplemented)
+      }
+    }
     
     systemActionsChannel.setMethodCallHandler { (call: FlutterMethodCall, result: @escaping FlutterResult) in
       let eventStore = EKEventStore()
@@ -185,6 +205,77 @@ import EventKit
     
     for subview in view.subviews {
       disableScrollingInView(subview)
+    }
+  }
+
+  /// Convert audio to WAV 16kHz mono using AVFoundation
+  static func convertToWav(inputPath: String, outputPath: String, result: @escaping FlutterResult) {
+    DispatchQueue.global(qos: .userInitiated).async {
+      let inputURL = URL(fileURLWithPath: inputPath)
+      let outputURL = URL(fileURLWithPath: outputPath)
+
+      // Remove existing output file
+      try? FileManager.default.removeItem(at: outputURL)
+
+      guard let inputFile = try? AVAudioFile(forReading: inputURL) else {
+        DispatchQueue.main.async { result(FlutterError(code: "READ_ERROR", message: "Cannot read input audio file", details: nil)) }
+        return
+      }
+
+      // Target format: PCM 16kHz mono 16-bit
+      guard let outputFormat = AVAudioFormat(commonFormat: .pcmFormatInt16, sampleRate: 16000, channels: 1, interleaved: true) else {
+        DispatchQueue.main.async { result(FlutterError(code: "FORMAT_ERROR", message: "Cannot create output format", details: nil)) }
+        return
+      }
+
+      guard let converter = AVAudioConverter(from: inputFile.processingFormat, to: outputFormat) else {
+        DispatchQueue.main.async { result(FlutterError(code: "CONVERTER_ERROR", message: "Cannot create audio converter", details: nil)) }
+        return
+      }
+
+      // Calculate output frame count
+      let ratio = outputFormat.sampleRate / inputFile.processingFormat.sampleRate
+      let outputFrameCount = AVAudioFrameCount(Double(inputFile.length) * ratio)
+
+      guard let outputBuffer = AVAudioPCMBuffer(pcmFormat: outputFormat, frameCapacity: outputFrameCount) else {
+        DispatchQueue.main.async { result(FlutterError(code: "BUFFER_ERROR", message: "Cannot create output buffer", details: nil)) }
+        return
+      }
+
+      // Read input into buffer
+      let inputFrameCapacity = AVAudioFrameCount(inputFile.length)
+      guard let inputBuffer = AVAudioPCMBuffer(pcmFormat: inputFile.processingFormat, frameCapacity: inputFrameCapacity) else {
+        DispatchQueue.main.async { result(FlutterError(code: "BUFFER_ERROR", message: "Cannot create input buffer", details: nil)) }
+        return
+      }
+
+      do {
+        try inputFile.read(into: inputBuffer)
+      } catch {
+        DispatchQueue.main.async { result(FlutterError(code: "READ_ERROR", message: "Cannot read audio data: \(error)", details: nil)) }
+        return
+      }
+
+      // Convert
+      var conversionError: NSError?
+      converter.convert(to: outputBuffer, error: &conversionError) { _, outStatus in
+        outStatus.pointee = .haveData
+        return inputBuffer
+      }
+
+      if let error = conversionError {
+        DispatchQueue.main.async { result(FlutterError(code: "CONVERT_ERROR", message: "Conversion failed: \(error)", details: nil)) }
+        return
+      }
+
+      // Write WAV file
+      do {
+        let outputFile = try AVAudioFile(forWriting: outputURL, settings: outputFormat.settings)
+        try outputFile.write(from: outputBuffer)
+        DispatchQueue.main.async { result(outputPath) }
+      } catch {
+        DispatchQueue.main.async { result(FlutterError(code: "WRITE_ERROR", message: "Cannot write WAV: \(error)", details: nil)) }
+      }
     }
   }
 }

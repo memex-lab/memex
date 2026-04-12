@@ -847,5 +847,17 @@
   "llmNetworkError": "网络连接失败，请检查网络设置。",
   "llmUnknownError": "处理内容时发生未知错误。",
   "llmErrorDialogTitle": "处理失败",
-  "goToModelConfig": "前往设置"
+  "goToModelConfig": "前往设置",
+  "speechModelDownloadTitle": "下载语音识别模型",
+  "speechModelDownloadDesc": "首次使用语音转文字需要下载离线模型（约{sizeMB}MB）。\n\n下载后语音识别将完全在本地运行，无需联网。",
+  "speechModelStartDownload": "开始下载",
+  "speechModelChooseSource": "选择下载线路：",
+  "speechModelChinaMirror": "🇨🇳 国内线路（推荐）",
+  "speechModelGithub": "🌐 GitHub（海外线路）",
+  "speechModelDownloading": "正在下载模型...",
+  "speechModelConnecting": "连接中...",
+  "speechModelDownloadFailed": "下载失败: {error}",
+  "speechTranscribing": "正在识别...",
+  "speechTranscriptionTitle": "语音识别结果",
+  "speechNoResult": "未识别到语音内容"
 }

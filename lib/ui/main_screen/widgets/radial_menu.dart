@@ -12,6 +12,8 @@ class RadialMenu extends StatefulWidget {
   final Function(ShortcutItem?) onItemSelected;
   final VoidCallback onCancel;
   final bool visible;
+  final String? transcriptText;
+  final bool isCalibrating;
 
   const RadialMenu({
     super.key,
@@ -20,6 +22,8 @@ class RadialMenu extends StatefulWidget {
     required this.onItemSelected,
     required this.onCancel,
     required this.visible,
+    this.transcriptText,
+    this.isCalibrating = false,
   });
 
   @override
@@ -360,12 +364,48 @@ class RadialMenuState extends State<RadialMenu> with TickerProviderStateMixin {
                                     ),
                             ),
                             Text(
-                              UserStorage.l10n.releaseToSend,
+                              widget.isCalibrating
+                                  ? UserStorage.l10n.speechTranscribing
+                                  : UserStorage.l10n.releaseToSend,
                               textAlign: TextAlign.center,
                               style: TimelineTheme.typography.small.copyWith(
                                 color: TimelineTheme.colors.textSecondary,
                               ),
                             ),
+                            if (widget.isCalibrating) ...[
+                              const SizedBox(height: 8),
+                              SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: TimelineTheme.colors.primary,
+                                ),
+                              ),
+                            ],
+                            // Real-time transcript
+                            if (widget.transcriptText != null &&
+                                widget.transcriptText!.isNotEmpty) ...[
+                              const SizedBox(height: 12),
+                              Container(
+                                constraints: const BoxConstraints(
+                                    maxWidth: 280, maxHeight: 120),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: _TranscriptAutoScroll(
+                                  text: widget.transcriptText!,
+                                  style: TimelineTheme.typography.body.copyWith(
+                                    fontSize: 14,
+                                    color: TimelineTheme.colors.textPrimary,
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ],
                         ],
                       ),
@@ -487,5 +527,52 @@ class _CurvedItemPainter extends CustomPainter {
     return color != oldDelegate.color ||
         isHovered != oldDelegate.isHovered ||
         curvatureRadius != oldDelegate.curvatureRadius;
+  }
+}
+
+/// Auto-scrolling transcript text widget.
+class _TranscriptAutoScroll extends StatefulWidget {
+  final String text;
+  final TextStyle style;
+
+  const _TranscriptAutoScroll({required this.text, required this.style});
+
+  @override
+  State<_TranscriptAutoScroll> createState() => _TranscriptAutoScrollState();
+}
+
+class _TranscriptAutoScrollState extends State<_TranscriptAutoScroll> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void didUpdateWidget(covariant _TranscriptAutoScroll oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.text != oldWidget.text) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_scrollController.hasClients) {
+          _scrollController.jumpTo(
+            _scrollController.position.maxScrollExtent,
+          );
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      controller: _scrollController,
+      child: Text(
+        widget.text,
+        textAlign: TextAlign.center,
+        style: widget.style,
+      ),
+    );
   }
 }
