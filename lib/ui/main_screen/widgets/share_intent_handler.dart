@@ -64,10 +64,9 @@ class ShareIntentHandler {
         return;
       }
 
-      var trimmedText =
-          media.content == null || media.content!.trim().isEmpty
-              ? null
-              : media.content!.trim();
+      var trimmedText = media.content == null || media.content!.trim().isEmpty
+          ? null
+          : media.content!.trim();
 
       final imageFiles = <XFile>[];
 
@@ -85,10 +84,9 @@ class ShareIntentHandler {
         } else if (_looksLikeDocument(path)) {
           // Append document file path as a resource reference in text
           final fileName = path.split('/').last;
-          final docRef = '[📎 $fileName]($path)';
-          trimmedText = trimmedText == null
-              ? docRef
-              : '$trimmedText\n$docRef';
+          final encodedPath = Uri.encodeFull(path);
+          final docRef = '[📎 $fileName](<$encodedPath>)';
+          trimmedText = trimmedText == null ? docRef : '$trimmedText\n$docRef';
         }
       }
 
@@ -162,4 +160,3 @@ class ShareIntentHandler {
     return ResourceRecognizer.detectFileType(path) != null;
   }
 }
-

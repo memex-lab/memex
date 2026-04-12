@@ -27,6 +27,9 @@ class PdfTextExtractor {
   /// Larger files get metadata only.
   static const int _maxFullReadSize = 20 * 1024 * 1024;
 
+  /// Files under this size are read all at once for simplicity.
+  static const int _smallFileThreshold = 5 * 1024 * 1024;
+
   /// Extract metadata and text content from a PDF file.
   /// Never throws — returns basic metadata on any failure.
   static Future<ResourceMetadata> extract(String filePath) async {
@@ -148,10 +151,13 @@ class PdfTextExtractor {
 
   /// Best-effort text extraction from PDF streams.
   /// Reads the file in chunks to avoid loading everything into memory at once.
+  ///
+  /// NOTE: This only works for PDFs with uncompressed text streams (BT/ET blocks).
+  /// Most modern PDFs use FlateDecode compression, in which case this returns null.
+  /// The LLM agent handles the heavy lifting for those cases.
   static Future<String?> _extractText(File file, int fileSize) async {
     try {
-      // For files under 5MB, read all at once for simplicity
-      if (fileSize <= 5 * 1024 * 1024) {
+      if (fileSize <= _smallFileThreshold) {
         final bytes = await file.readAsBytes();
         final content = _safeDecodeBytes(bytes);
         return _extractTextFromContent(content);
@@ -201,8 +207,7 @@ class PdfTextExtractor {
       final block = match.group(1) ?? '';
 
       // Tj: show string
-      for (final tj
-          in RegExp(r'\(([^)]*)\)\s*Tj').allMatches(block)) {
+      for (final tj in RegExp(r'\(([^)]*)\)\s*Tj').allMatches(block)) {
         final text = _decodePdfString(tj.group(1) ?? '');
         if (text.isNotEmpty) {
           buffer.write(text);
@@ -214,8 +219,7 @@ class PdfTextExtractor {
       for (final tjArray
           in RegExp(r'\[(.*?)\]\s*TJ', dotAll: true).allMatches(block)) {
         final arrayContent = tjArray.group(1) ?? '';
-        for (final part
-            in RegExp(r'\(([^)]*)\)').allMatches(arrayContent)) {
+        for (final part in RegExp(r'\(([^)]*)\)').allMatches(arrayContent)) {
           final text = _decodePdfString(part.group(1) ?? '');
           if (text.isNotEmpty) buffer.write(text);
         }
@@ -223,10 +227,7 @@ class PdfTextExtractor {
       }
     }
 
-    final result = buffer
-        .toString()
-        .replaceAll(RegExp(r'\s+'), ' ')
-        .trim();
+    final result = buffer.toString().replaceAll(RegExp(r'\s+'), ' ').trim();
     return result.isEmpty ? null : result;
   }
 

@@ -140,6 +140,9 @@
 				<array>
 					<string>public.image</string>
 					<string>public.text</string>
+					<string>com.adobe.pdf</string>
+					<string>org.openxmlformats.wordprocessingml.document</string>
+					<string>com.microsoft.word.doc</string>
 				</array>
 			</dict>
 		</array>

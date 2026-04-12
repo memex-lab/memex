@@ -7,6 +7,7 @@ import 'package:memex/data/services/card_renderer.dart';
 import 'package:memex/data/services/global_event_bus.dart';
 import 'package:memex/domain/models/system_event.dart';
 import 'package:memex/data/services/resource_recognition/resource_recognizer.dart';
+import 'package:memex/data/services/resource_recognition/resource_type.dart';
 
 final _logger = getLogger('SubmitInputEndpoint');
 final _fileSystem = FileSystemService.instance;
@@ -123,18 +124,18 @@ Future<Map<String, dynamic>> submitInput(
 
     // 1.5 Resource Recognition: detect URLs, PDFs, etc. in text input
     // Phase 1: Synchronous detection (instant, no network calls)
-    List<Map<String, dynamic>>? recognizedResources;
-    final pureText = textParts
-        .where((p) => !p.startsWith('![') && !p.startsWith('['))
-        .join('\n');
+    // Phase 2 (async enrichment) runs in the background after submit — see TODO below
+    List<ResourceMetadata>? recognizedResources;
+    // Only filter out image/audio markdown refs (![...]), keep [link](url) for URL detection
+    final pureText = textParts.where((p) => !p.startsWith('![')).join('\n');
     try {
       if (ResourceRecognizer.containsResources(pureText)) {
         // Synchronous detection — just regex, no blocking
         final detected = ResourceRecognizer.detectResources(pureText);
         if (detected.isNotEmpty) {
-          recognizedResources = detected.map((r) => r.toJson()).toList();
-          _logger.info(
-              'Detected ${detected.length} resource(s) from input text');
+          recognizedResources = detected;
+          _logger
+              .info('Detected ${detected.length} resource(s) from input text');
         }
       }
     } catch (e) {
@@ -203,7 +204,8 @@ Future<Map<String, dynamic>> submitInput(
 
     // Add recognized resources if any
     if (recognizedResources != null && recognizedResources.isNotEmpty) {
-      placeholderData['resources'] = recognizedResources;
+      placeholderData['resources'] =
+          recognizedResources.map((r) => r.toJson()).toList();
     }
 
     final placeholderCard = CardData(

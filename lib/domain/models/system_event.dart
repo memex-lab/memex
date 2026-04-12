@@ -1,3 +1,5 @@
+import 'package:memex/data/services/resource_recognition/resource_type.dart';
+
 class SystemEvent<T> {
   SystemEvent({
     required this.type,
@@ -47,7 +49,7 @@ class UserInputSubmittedPayload {
   final String markdownEntry;
   final int createdAtTs;
   final double pkmCreatedAtTs;
-  final List<Map<String, dynamic>>? resources; // Recognized resources metadata
+  final List<ResourceMetadata>? resources;
 
   Map<String, dynamic> toJson() => {
         'fact_id': factId,
@@ -57,7 +59,7 @@ class UserInputSubmittedPayload {
         'created_at_ts': createdAtTs,
         'pkm_created_at_ts': pkmCreatedAtTs,
         if (resources != null && resources!.isNotEmpty)
-          'resources': resources,
+          'resources': resources!.map((r) => r.toJson()).toList(),
       };
 }
 

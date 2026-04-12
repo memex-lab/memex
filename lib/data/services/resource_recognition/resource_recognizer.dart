@@ -26,8 +26,8 @@ class ResourceRecognizer {
   static final RegExp _urlPattern = RegExp(
     r'https?://'
     r'[^\s<>\[\]{}"'
-    r'\uFF01-\uFF5E'  // Fullwidth ASCII variants
-    r'\uFF0C\u3002\uFF01\uFF1F\u3001\uFF1B\uFF1A'  // Chinese punctuation
+    r'\uFF01-\uFF5E' // Fullwidth ASCII variants
+    r'\uFF0C\u3002\uFF01\uFF1F\u3001\uFF1B\uFF1A' // Chinese punctuation
     r'\u201C\u201D\u2018\u2019\uFF08\uFF09\u3010\u3011\u300A\u300B'
     r']+',
     unicode: true,
@@ -47,9 +47,10 @@ class ResourceRecognizer {
   /// Overall timeout for recognizeText (prevents blocking submit).
   static const Duration _overallTimeout = Duration(seconds: 12);
 
-  // --- Simple in-memory cache ---
-  static final Map<String, ResourceMetadata> _cache = {};
+  // --- Simple in-memory cache with TTL ---
+  static final Map<String, _CacheEntry> _cache = {};
   static const int _maxCacheSize = 100;
+  static const Duration _cacheTtl = Duration(hours: 1);
 
   /// Synchronous detection: extract resource references from text.
   /// Returns immediately with basic metadata (no network calls).
@@ -58,8 +59,8 @@ class ResourceRecognizer {
     final urls = extractUrls(text);
     for (final url in urls) {
       // Check cache first
-      if (_cache.containsKey(url)) {
-        results.add(_cache[url]!);
+      if (_cache.containsKey(url) && !_cache[url]!.isExpired) {
+        results.add(_cache[url]!.metadata);
         continue;
       }
       results.add(_classifyUrl(url));
@@ -72,8 +73,8 @@ class ResourceRecognizer {
   /// Returns whatever it managed to fetch within the time limit.
   static Future<List<ResourceMetadata>> recognizeText(String text) async {
     try {
-      return await _recognizeTextInternal(text)
-          .timeout(_overallTimeout, onTimeout: () {
+      return await _recognizeTextInternal(text).timeout(_overallTimeout,
+          onTimeout: () {
         _logger.info('Resource recognition timed out, returning detected-only');
         return detectResources(text);
       });
@@ -158,7 +159,8 @@ class ResourceRecognizer {
     final uri = Uri.tryParse(url);
     final path = uri?.path.toLowerCase() ?? lower;
 
-    if (_pdfExtensions.any((ext) => path.endsWith(ext) || lower.contains('$ext?'))) {
+    if (_pdfExtensions
+        .any((ext) => path.endsWith(ext) || lower.contains('$ext?'))) {
       return ResourceMetadata(
         type: ResourceType.pdf,
         source: url,
@@ -187,8 +189,10 @@ class ResourceRecognizer {
   }
 
   static Future<ResourceMetadata> _processUrl(String url) async {
-    // Check cache
-    if (_cache.containsKey(url)) return _cache[url]!;
+    // Check cache (with TTL)
+    if (_cache.containsKey(url) && !_cache[url]!.isExpired) {
+      return _cache[url]!.metadata;
+    }
 
     _logger.fine('Processing URL: $url');
 
@@ -239,14 +243,15 @@ class ResourceRecognizer {
   }
 
   static void _cacheResult(String key, ResourceMetadata meta) {
+    // Evict expired entries first, then oldest if still over limit
+    _cache.removeWhere((_, entry) => entry.isExpired);
     if (_cache.length >= _maxCacheSize) {
-      // Evict oldest entries
       final keysToRemove = _cache.keys.take(_maxCacheSize ~/ 4).toList();
       for (final k in keysToRemove) {
         _cache.remove(k);
       }
     }
-    _cache[key] = meta;
+    _cache[key] = _CacheEntry(meta);
   }
 
   /// Balance parentheses in URL — handles Wikipedia-style URLs like
@@ -286,4 +291,15 @@ class ResourceRecognizer {
       return url;
     }
   }
+}
+
+/// Cache entry with TTL support.
+class _CacheEntry {
+  final ResourceMetadata metadata;
+  final DateTime createdAt;
+
+  _CacheEntry(this.metadata) : createdAt = DateTime.now();
+
+  bool get isExpired =>
+      DateTime.now().difference(createdAt) > ResourceRecognizer._cacheTtl;
 }
