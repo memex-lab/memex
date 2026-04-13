@@ -613,11 +613,15 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
 
   /// Long press mic button: pick an audio file and transcribe it.
   Future<void> _pickAudioFile() async {
+    bool showedLoading = false;
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['m4a', 'mp3', 'wav', 'ogg', 'aac', 'flac'],
       );
+
+      // Force rebuild after native picker returns
+      if (mounted) setState(() {});
 
       if (result == null || result.files.isEmpty || !mounted) return;
       final filePath = result.files.single.path;
@@ -631,7 +635,8 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
           return;
       }
 
-      // Show loading dialog over the input sheet
+      // Show loading dialog
+      showedLoading = true;
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -679,6 +684,10 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
 
       final text = await WhisperService.instance
           .transcribe(filePath, skipLengthCheck: true);
+
+      if (mounted) Navigator.of(context).pop(); // Dismiss loading dialog
+      showedLoading = false;
+
       if (text != null && text.trim().isNotEmpty && mounted) {
         final current = _textController.text;
         final separator = current.isNotEmpty ? '\n' : '';
@@ -696,14 +705,13 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
       }
     } catch (e) {
       _logger.severe('Pick audio file failed: $e');
+      if (showedLoading && mounted) {
+        Navigator.of(context).pop();
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to process audio: $e')),
         );
-      }
-    } finally {
-      if (mounted) {
-        Navigator.of(context).pop(); // Dismiss loading dialog
       }
     }
   }
