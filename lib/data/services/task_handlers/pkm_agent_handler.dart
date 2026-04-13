@@ -29,6 +29,16 @@ Future<void> processWithPkmAgent({
   try {
     _logger.info("processWithPkmAgent for $factId (dryRun: $dryRun)");
 
+    // Skip if LLM is not configured.
+    final llmConfig = await UserStorage.getAgentLLMConfig(
+      AgentDefinitions.pkmAgent,
+      defaultClientKey: LLMConfig.defaultClientKey,
+    );
+    if (!llmConfig.isValid) {
+      _logger.info('No LLM configured — skipping PKM agent for $factId');
+      return;
+    }
+
     // 1. Get LLM Resources (Default to Responses for PKM)
     final resources = await UserStorage.getAgentLLMResources(
       AgentDefinitions.pkmAgent,

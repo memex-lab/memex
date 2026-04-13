@@ -12,7 +12,10 @@ class GalleryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final List<String> imageUrls =
         (data['image_urls'] as List<dynamic>?)?.cast<String>() ?? [];
-    final String? title = data['title'];
+    final String? title =
+        data['title'] is String && (data['title'] as String).isNotEmpty
+            ? data['title'] as String
+            : null;
 
     if (imageUrls.isEmpty) {
       return GlassCard(
@@ -147,8 +150,8 @@ class GalleryCard extends StatelessWidget {
         fit: BoxFit.cover,
         width: double.infinity,
         height: double.infinity,
-        errorBuilder: (_, __, ___) =>
-            const Center(child: Icon(Icons.broken_image, color: Color(0xFF99A1AF))),
+        errorBuilder: (_, __, ___) => const Center(
+            child: Icon(Icons.broken_image, color: Color(0xFF99A1AF))),
       ),
     );
   }

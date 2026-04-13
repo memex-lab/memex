@@ -1949,4 +1949,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get speechNoResult => 'No speech detected';
+
+  @override
+  String get pendingAiProcessingHint =>
+      'Connect AI to auto-process this record';
 }

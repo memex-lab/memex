@@ -29,7 +29,8 @@ class ArticleCard extends StatelessWidget {
               child: LocalImage(
                 url: imageUrl,
                 fit: BoxFit.cover,
-                errorBuilder: (c, e, s) => Container(color: const Color(0xFFE2E8F0)),
+                errorBuilder: (c, e, s) =>
+                    Container(color: const Color(0xFFE2E8F0)),
               ),
             ),
 

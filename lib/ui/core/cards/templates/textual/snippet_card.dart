@@ -25,6 +25,7 @@ class SnippetCard extends StatelessWidget {
           children: [
             MarkdownBody(
               data: text,
+              softLineBreak: true,
               styleSheet: MarkdownStyleSheet(
                 p: _getTextStyle(style),
                 code: const TextStyle(

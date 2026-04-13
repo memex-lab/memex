@@ -881,5 +881,6 @@
   "@speechModelDownloadFailed": { "placeholders": { "error": {} } },
   "speechTranscribing": "Recognizing...",
   "speechTranscriptionTitle": "Transcription",
-  "speechNoResult": "No speech detected"
+  "speechNoResult": "No speech detected",
+  "pendingAiProcessingHint": "Connect AI to auto-process this record"
 }

@@ -25,6 +25,7 @@ import 'package:memex/data/services/local_task_executor.dart';
 import 'package:memex/data/services/global_event_bus.dart';
 import 'package:memex/data/repositories/submit_input.dart'
     as submit_input_endpoint;
+import 'package:memex/data/repositories/reprocess_pending_cards.dart';
 import 'package:memex/data/services/task_handlers/analyze_assets_handler.dart';
 import 'package:memex/data/services/task_handlers/card_agent_handler.dart';
 import 'package:memex/data/services/task_handlers/pkm_agent_handler.dart';
@@ -1135,8 +1136,20 @@ class MemexRouter {
 
   Future<List<LLMConfig>> getLLMConfigs() => UserStorage.getLLMConfigs();
 
-  Future<void> saveLLMConfigs(List<LLMConfig> configs) =>
-      UserStorage.saveLLMConfigs(configs);
+  Future<void> saveLLMConfigs(List<LLMConfig> configs) async {
+    final previousConfigs = await UserStorage.getLLMConfigs();
+    final hadValidConfig = previousConfigs.any((c) => c.isValid);
+    final hasValidConfig = configs.any((c) => c.isValid);
+
+    await UserStorage.saveLLMConfigs(configs);
+
+    if (!hadValidConfig && hasValidConfig) {
+      final userId = await UserStorage.getUserId();
+      if (userId != null) {
+        reprocessPendingCards(userId);
+      }
+    }
+  }
 
   Future<void> resetLLMConfigs() => UserStorage.resetLLMConfigs();
 

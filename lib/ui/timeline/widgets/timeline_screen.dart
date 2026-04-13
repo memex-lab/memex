@@ -138,6 +138,9 @@ class TimelineScreenState extends State<TimelineScreen> {
   }
 
   Future<void> _checkFitnessBanner() async {
+    // Fitness permission banner is temporarily hidden — may be re-enabled in the future.
+    return;
+    // ignore: dead_code
     final prefs = await SharedPreferences.getInstance();
     final dismissed = prefs.getBool('fitness_banner_dismissed') ?? false;
     if (dismissed) {
@@ -1289,7 +1292,21 @@ class _TimelineEntryItemState extends State<_TimelineEntryItem> {
               mainAxisAlignment: MainAxisAlignment.end,
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (card.address != null && card.address!.isNotEmpty) ...[
+                if (card.status == 'processing' &&
+                    card.uiConfigs.isNotEmpty &&
+                    card.uiConfigs.first.templateId != 'classic_card') ...[
+                  const Icon(Icons.auto_awesome_outlined,
+                      size: 11, color: Color(0xFF99A1AF)),
+                  const SizedBox(width: 3),
+                  Text(
+                    UserStorage.l10n.pendingAiProcessingHint,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF99A1AF),
+                    ),
+                  ),
+                ] else if (card.address != null &&
+                    card.address!.isNotEmpty) ...[
                   const Icon(
                     Icons.location_on_outlined,
                     size: 14,

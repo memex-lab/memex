@@ -1881,4 +1881,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get speechNoResult => '未识别到语音内容';
+
+  @override
+  String get pendingAiProcessingHint => '配置 AI 模型以自动整理此记录';
 }

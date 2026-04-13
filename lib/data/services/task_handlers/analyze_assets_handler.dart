@@ -97,6 +97,18 @@ Future<void> handleAnalyzeAssetsImpl(
   // Initialize FileSystem Service
   final fileSystem = FileSystemService.instance;
 
+  // Skip LLM analysis if not configured — card agent will use rule-based matching.
+  final llmConfig = await UserStorage.getAgentLLMConfig(
+    AgentDefinitions.analyzeAssets,
+    defaultClientKey: LLMConfig.defaultClientKey,
+  );
+  if (!llmConfig.isValid) {
+    _logger
+        .info('No LLM configured — skipping asset analysis for ${data.factId}');
+    await _updateTaskResult(userId, context.taskId, []);
+    return;
+  }
+
   // 1. Get LLM Resources (Default to Gemini Flash for Asset Analysis)
   final resources = await UserStorage.getAgentLLMResources(
     AgentDefinitions.analyzeAssets,

@@ -576,37 +576,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _handleAICoreButtonTap() async {
-    // Check if model is configured before opening input
-    final configs = await UserStorage.getLLMConfigs();
-    final hasValidConfig = configs.any((c) => c.isValid);
-    if (!hasValidConfig && mounted) {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text(UserStorage.l10n.configureNow),
-          content: Text(UserStorage.l10n.modelNotConfiguredBanner),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(UserStorage.l10n.cancel),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ModelConfigListPage(),
-                  ),
-                );
-              },
-              child: Text(UserStorage.l10n.modelConfig),
-            ),
-          ],
-        ),
-      );
-      return;
-    }
+    // No LLM config check — users can submit records without AI configured.
+    // Card agent will use rule-based matching when LLM is unavailable.
 
     // Skip auto-publish, go directly to input_sheet
     if (mounted) {

@@ -859,5 +859,6 @@
   "speechModelDownloadFailed": "下载失败: {error}",
   "speechTranscribing": "正在识别...",
   "speechTranscriptionTitle": "语音识别结果",
-  "speechNoResult": "未识别到语音内容"
+  "speechNoResult": "未识别到语音内容",
+  "pendingAiProcessingHint": "配置 AI 模型以自动整理此记录"
 }

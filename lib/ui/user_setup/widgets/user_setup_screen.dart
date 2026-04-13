@@ -4,8 +4,7 @@ import 'dart:ui' show PlatformDispatcher;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/utils/toast_helper.dart';
-import 'package:memex/domain/models/llm_config.dart';
-import 'package:memex/ui/user_setup/widgets/setup_model_config_page.dart';
+
 import 'package:memex/ui/settings/widgets/data_storage_page.dart';
 import 'package:memex/ui/core/widgets/avatar_picker.dart';
 import 'package:memex/ui/core/widgets/dicebear_avatar.dart';
@@ -98,12 +97,6 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
       await UserStorage.saveUser(userId);
       await UserStorage.saveUserAvatar(_selectedAvatar);
 
-      final configs = await UserStorage.getLLMConfigs();
-      final defaultConfig = configs.firstWhere(
-        (c) => c.key == LLMConfig.defaultClientKey,
-        orElse: () => LLMConfig.createDefaultClientConfig(),
-      );
-
       if (mounted) {
         setState(() => _isSubmitting = false);
 
@@ -121,24 +114,7 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
           }
         }
 
-        if (defaultConfig.isValid) {
-          widget.onUserCreated();
-        } else {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => SetupModelConfigPage(
-                config: defaultConfig,
-                onComplete: () {
-                  if (mounted) {
-                    Navigator.pop(context);
-                    widget.onUserCreated();
-                  }
-                },
-              ),
-            ),
-          );
-        }
+        widget.onUserCreated();
       }
     } catch (e) {
       if (mounted) {

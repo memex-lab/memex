@@ -1,5 +1,6 @@
 import 'package:logging/logging.dart';
 import 'package:memex/agent/card_agent/card_agent.dart';
+import 'package:memex/agent/card_agent/rule_based_card_matcher.dart';
 import 'package:memex/agent/prompts.dart';
 import 'package:memex/domain/models/llm_config.dart';
 import 'package:memex/domain/models/agent_definitions.dart';
@@ -33,6 +34,19 @@ Future<void> processWithCardAgent({
 }) async {
   try {
     _logger.info("processWithCardAgent for $factId (dryRun: $dryRun)");
+
+    // Check if LLM is configured; fall back to rule-based matching if not.
+    final llmConfig = await UserStorage.getAgentLLMConfig(
+      AgentDefinitions.cardAgent,
+      defaultClientKey: LLMConfig.defaultClientKey,
+    );
+    if (!llmConfig.isValid) {
+      _logger.info(
+          'No LLM configured — using rule-based card matching for $factId');
+      await _applyRuleBasedCard(
+          userId: userId, factId: factId, combinedText: contentText);
+      return;
+    }
 
     // 1. Get LLM Config
     // 1. Get LLM Resources (Default to Responses for Cards)
@@ -72,6 +86,40 @@ Future<void> processWithCardAgent({
     _logger.severe('Error in processWithCardAgent', e, stack);
     rethrowIfNonRetryable(e);
   }
+}
+
+/// Applies rule-based template matching and writes the card file.
+Future<void> _applyRuleBasedCard({
+  required String userId,
+  required String factId,
+  required String combinedText,
+}) async {
+  final fs = FileSystemService.instance;
+
+  // Extract image URLs and audio URL from combinedText markdown refs
+  final imageUrls = RegExp(r'!\[.*?\]\((fs://[^\)]+)\)')
+      .allMatches(combinedText)
+      .map((m) => m.group(1)!)
+      .toList();
+  final audioMatch =
+      RegExp(r'\[audio\]\((fs://[^\)]+)\)').firstMatch(combinedText);
+  final audioUrl = audioMatch?.group(1);
+
+  final result = await fs.updateCardFile(userId, factId, (existing) {
+    return applyRuleBasedTemplate(
+      card: existing,
+      combinedText: combinedText,
+      imageUrls: imageUrls,
+      audioUrl: audioUrl,
+    );
+  });
+
+  if (result == null) {
+    _logger.warning('Rule-based: card file not found for $factId, skipping');
+    return;
+  }
+  _logger.info(
+      'Rule-based card written for $factId: ${result.uiConfigs.first.templateId}');
 }
 
 /// Task Handler implementation for `card_agent_task`.

@@ -6,6 +6,9 @@ import 'package:memex/data/services/local_task_executor.dart';
 import 'package:memex/data/repositories/post_comment.dart';
 import 'package:memex/data/services/character_service.dart';
 import 'package:memex/data/services/task_handlers/llm_error_utils.dart';
+import 'package:memex/utils/user_storage.dart';
+import 'package:memex/domain/models/agent_definitions.dart';
+import 'package:memex/domain/models/llm_config.dart';
 
 final _logger = Logger('CommentAgentHandler');
 
@@ -19,6 +22,16 @@ Future<void> handleCommentAgentImpl(
       .info("Running Comment Agent selection for fact $factId, user $userId");
 
   try {
+    // Skip if LLM is not configured.
+    final llmConfig = await UserStorage.getAgentLLMConfig(
+      AgentDefinitions.commentAgent,
+      defaultClientKey: LLMConfig.defaultClientKey,
+    );
+    if (!llmConfig.isValid) {
+      _logger.info('No LLM configured — skipping comment agent for $factId');
+      return;
+    }
+
     // Check if asset analysis failed and input is media-only
     await failIfAssetAnalysisFailed(
       bizId: context.bizId,

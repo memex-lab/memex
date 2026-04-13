@@ -475,19 +475,8 @@ class FileSystemService {
         try {
           // Parse factId from path
           // Path: .../Cards/YYYY/MM/DD_ts_X.yaml
-          final parts = path.split(cardFile);
-          if (parts.length < 3) continue;
-
-          final year = parts[parts.length - 3];
-          final month = parts[parts.length - 2];
-          final dayTsFile = parts[parts.length - 1];
-          final dayTs = dayTsFile.replaceAll('.yaml', '');
-          final dayTsParts = dayTs.split('_');
-          if (dayTsParts.length < 2) continue;
-
-          final day = dayTsParts[0];
-          final tsPart = dayTsParts.sublist(1).join('_');
-          final factId = '$year/$month/$day.md#$tsPart';
+          final factId = factIdFromCardPath(cardFile);
+          if (factId == null) continue;
 
           // Read card data
           final cardData = await readCardFile(userId, factId);
@@ -507,6 +496,23 @@ class FileSystemService {
     } finally {
       _isRebuilding = false;
     }
+  }
+
+  /// Parse a factId from an absolute card file path.
+  /// Path format: .../Cards/YYYY/MM/DD_ts_X.yaml → YYYY/MM/DD.md#ts_X
+  /// Returns null if the path doesn't match the expected format.
+  String? factIdFromCardPath(String cardFilePath) {
+    final parts = path.split(cardFilePath);
+    if (parts.length < 3) return null;
+    final year = parts[parts.length - 3];
+    final month = parts[parts.length - 2];
+    final dayTsFile = parts[parts.length - 1];
+    final dayTs = dayTsFile.replaceAll('.yaml', '');
+    final dayTsParts = dayTs.split('_');
+    if (dayTsParts.length < 2) return null;
+    final day = dayTsParts[0];
+    final tsPart = dayTsParts.sublist(1).join('_');
+    return '$year/$month/$day.md#$tsPart';
   }
 
   /// Convert fs:// path to local HTTP URL (client mode). Maps to backend TimelineService.convert_fs_to_http.
@@ -551,7 +557,8 @@ class FileSystemService {
       if (token == null) {
         getLogger('FileSystemService')
             .warning('Access token unavailable, cannot generate secure URL');
-        return 'http://127.0.0.1:$port/assets/$encodedUserId/$encodedFilename?token=$token';;
+        return 'http://127.0.0.1:$port/assets/$encodedUserId/$encodedFilename?token=$token';
+        ;
       }
       return 'http://127.0.0.1:$port/assets/$encodedUserId/$encodedFilename?token=$token';
     } catch (e) {

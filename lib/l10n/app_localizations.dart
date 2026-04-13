@@ -3571,6 +3571,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No speech detected'**
   String get speechNoResult;
+
+  /// No description provided for @pendingAiProcessingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect AI to auto-process this record'**
+  String get pendingAiProcessingHint;
 }
 
 class _AppLocalizationsDelegate
