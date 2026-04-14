@@ -23,6 +23,7 @@ import 'package:memex/ui/core/widgets/local_image.dart';
 import 'package:memex/ui/chat/widgets/agent_chat_dialog.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
+import 'package:memex/ui/core/widgets/dicebear_avatar.dart';
 import 'package:memex/ui/core/cards/style/timeline_theme.dart';
 import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:memex/utils/share_service.dart';
@@ -1095,6 +1096,7 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
     if (detail.insight.character != null) {
       commentWidgets.add(
         _buildSingleComment(
+          characterId: detail.insight.characterId,
           avatar: detail.insight.character!.avatar,
           name: detail.insight.character!.name,
           content: detail.insight.text,
@@ -1108,6 +1110,7 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
     for (var comment in detail.insight.comments) {
       commentWidgets.add(
         _buildSingleComment(
+          characterId: comment.character?.id,
           avatar: comment.character?.avatar,
           name: comment.isAi ? (comment.character?.name ?? 'AI') : 'User',
           content: comment.content,
@@ -1127,6 +1130,7 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
   }
 
   Widget _buildSingleComment({
+    String? characterId,
     String? avatar,
     required String name,
     required String content,
@@ -1134,26 +1138,39 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
     bool isAuthor = false,
     bool isAi = false,
   }) {
+    // Determine avatar widget:
+    // - characterId "0" or null with isAuthor = Memex system → use logo
+    // - Other characters → use DiceBear
+    Widget avatarWidget;
+    final isMemexSystem = characterId == null || characterId == '0';
+
+    if (isMemexSystem) {
+      // Memex logo
+      avatarWidget = CircleAvatar(
+        radius: 18,
+        backgroundColor: Colors.white,
+        child: ClipOval(
+          child: SvgPicture.asset(
+            'assets/logo_perfect.svg',
+            width: 28,
+            height: 28,
+            fit: BoxFit.contain,
+          ),
+        ),
+      );
+    } else {
+      // Character DiceBear avatar
+      avatarWidget = DiceBearAvatar(
+        seed: 'companion_$name',
+        size: 36,
+        backgroundColor: const Color(0xFFEEF2FF),
+      );
+    }
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        CircleAvatar(
-          radius: 18,
-          backgroundImage: avatar != null && avatar.isNotEmpty
-              ? LocalImage.provider(avatar)
-              : null,
-          backgroundColor:
-              isAuthor ? const Color(0xFF8B5CF6) : Colors.grey[200],
-          child: avatar == null || avatar.isEmpty
-              ? Text(
-                  name.isNotEmpty ? name[0].toUpperCase() : '?',
-                  style: TextStyle(
-                    color: isAuthor ? Colors.white : Colors.grey[600],
-                    fontSize: 14,
-                  ),
-                )
-              : null,
-        ),
+        avatarWidget,
         const SizedBox(width: 12),
         Expanded(
           child: Column(
