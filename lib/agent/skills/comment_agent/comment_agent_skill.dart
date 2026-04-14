@@ -4,6 +4,7 @@ import 'package:memex/agent/prompts.dart';
 import 'package:memex/agent/security/file_permission_manager.dart';
 import 'package:memex/domain/models/character_model.dart';
 import 'package:memex/agent/skills/comment_agent/tools/comment_tools.dart';
+import 'package:memex/agent/skills/comment_agent/tools/memory_tools.dart';
 import 'package:memex/utils/user_storage.dart';
 
 /// Skill for Comment Agent - generates warm, empathetic comments for user's private tree hole entries
@@ -50,6 +51,20 @@ class CommentAgentSkill extends Skill {
       personaBuffer.writeln("Name: ${character.name}");
       personaBuffer.writeln("Tags: ${character.tags.join(', ')}");
       personaBuffer.writeln("### Persona: \n${character.persona}");
+
+      // Inject character memory as relationship context
+      if (character.memory.isNotEmpty) {
+        personaBuffer.writeln("\n### Your Memory of This User:");
+        personaBuffer.writeln(
+            "The following is what you remember from past interactions. "
+            "Use this to make your response feel continuous and personal. "
+            "Reference specific things you remember when natural.");
+        for (final block in character.memory) {
+          if (block.value.isNotEmpty) {
+            personaBuffer.writeln("- [${block.label}]: ${block.value}");
+          }
+        }
+      }
     }
     String persona = personaBuffer.toString();
 
@@ -84,10 +99,22 @@ class CommentAgentSkill extends Skill {
       characterId: characterId,
     );
 
-    return [
+    final tools = <Tool>[
       fileFactory.buildReadTool(),
       fileFactory.buildGrepTool(),
       commentFactory.buildSaveCommentTool(),
     ];
+
+    // Add memory tools so the character can remember things about the user
+    if (characterId != null) {
+      final memoryFactory = MemoryToolFactory(
+        userId: userId,
+        defaultCharacterId: characterId,
+      );
+      tools.add(memoryFactory.buildMemoryReadTool());
+      tools.add(memoryFactory.buildMemoryWriteTool());
+    }
+
+    return tools;
   }
 }

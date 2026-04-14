@@ -1,10 +1,8 @@
-import 'dart:math';
-
 import 'package:logging/logging.dart';
 import 'package:memex/agent/prompts.dart';
 import 'package:memex/data/services/local_task_executor.dart';
 import 'package:memex/data/repositories/post_comment.dart';
-import 'package:memex/data/services/character_service.dart';
+import 'package:memex/data/services/character_selection_service.dart';
 import 'package:memex/data/services/task_handlers/llm_error_utils.dart';
 
 final _logger = Logger('CommentAgentHandler');
@@ -31,24 +29,18 @@ Future<void> handleCommentAgentImpl(
     String? selectedCharId = payload['character_id'] as String?;
 
     if (selectedCharId == null) {
-      final characters =
-          await CharacterService.instance.getAllCharacters(userId);
-      final enabledCharacters = characters.where((c) => c.enabled).toList();
+      // Smart character selection based on content affinity
+      final selectedChar = await CharacterSelectionService.selectCharacter(
+        userId: userId,
+        inputContent: combinedText,
+        factId: factId,
+      );
 
-      if (enabledCharacters.isEmpty) {
+      if (selectedChar == null) {
         _logger.info("No enabled characters, skipping comment agent");
-        if (characters.isNotEmpty) {
-          _logger.warning("No ENABLED characters. Skipping.");
-          return;
-        }
         return;
       }
 
-      // Deterministic random selection
-      final seed = factId.hashCode;
-      final rng = Random(seed);
-      final selectedChar =
-          enabledCharacters[rng.nextInt(enabledCharacters.length)];
       selectedCharId = selectedChar.id;
       _logger.info(
           "Selected character ${selectedChar.name} ($selectedCharId) for comment");

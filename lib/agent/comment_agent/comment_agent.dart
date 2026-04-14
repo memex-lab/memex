@@ -197,10 +197,14 @@ class CommentAgent {
     return "";
   }
 
-  /// Find PKM Context using Grep
+  /// Find PKM Context using Grep.
+  /// Falls back to recent daily facts if the specific fact_id isn't in PKM yet.
   static Future<String> _findPkmContext(String userId, String workingDirectory,
       String pkmPath, String factId, FileOperationService fileOpService,
       {int contextLines = 10}) async {
+    final buffer = StringBuffer();
+
+    // 1. Try to find the specific fact_id in PKM
     try {
       final factIdPattern = "<!-- fact_id: $factId -->";
       final result = await fileOpService.grepFiles(
@@ -213,16 +217,72 @@ class CommentAgent {
         workingDirectory: workingDirectory,
       );
 
-      if (result.contains("No match found") || result.trim().isEmpty) {
-        getLogger('CommentAgent')
-            .warning("Could not find fact_id $factId in PKM files");
-        return "";
+      if (!result.contains("No match found") && result.trim().isNotEmpty) {
+        buffer.writeln(result);
       }
-      return result;
     } catch (e) {
       getLogger('CommentAgent')
           .warning("Error finding PKM context for fact_id $factId: $e");
-      return "";
     }
+
+    // 2. Always try to include recent daily facts for life context
+    // This gives the character awareness of what the user has been up to lately
+    try {
+      final recentContext = await _getRecentFactsContext(
+          userId, workingDirectory, fileOpService);
+      if (recentContext.isNotEmpty) {
+        buffer.writeln("\n## Recent User Activity (last few days):");
+        buffer.writeln(recentContext);
+      }
+    } catch (e) {
+      getLogger('CommentAgent')
+          .warning("Error getting recent facts context: $e");
+    }
+
+    return buffer.toString();
+  }
+
+  /// Read the most recent daily fact files to give the character
+  /// awareness of the user's recent life context.
+  static Future<String> _getRecentFactsContext(String userId,
+      String workingDirectory, FileOperationService fileOpService) async {
+    final fileSystem = FileSystemService.instance;
+    final now = DateTime.now();
+    final buffer = StringBuffer();
+    var totalChars = 0;
+    const maxChars = 3000; // Keep it concise
+
+    // Try the last 3 days of facts
+    for (var i = 0; i < 3 && totalChars < maxChars; i++) {
+      final date = now.subtract(Duration(days: i));
+      final year = date.year;
+      final month = date.month.toString().padLeft(2, '0');
+      final day = date.day.toString().padLeft(2, '0');
+      final factRelPath = 'Facts/$year/$month/$day.md';
+      final factFullPath =
+          '${fileSystem.getWorkspacePath(userId)}/$factRelPath';
+
+      try {
+        final content = await fileOpService.readFile(
+          filePath: factFullPath,
+          workingDirectory: workingDirectory,
+        );
+
+        if (content.isNotEmpty && !content.contains('Error')) {
+          // Truncate if needed
+          final remaining = maxChars - totalChars;
+          final truncated = content.length > remaining
+              ? '${content.substring(0, remaining)}...(truncated)'
+              : content;
+          buffer.writeln("### $year-$month-$day");
+          buffer.writeln(truncated);
+          totalChars += truncated.length;
+        }
+      } catch (_) {
+        // File doesn't exist for this day, skip
+      }
+    }
+
+    return buffer.toString();
   }
 }
