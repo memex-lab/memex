@@ -56,9 +56,28 @@ class DemoService extends ChangeNotifier {
   String? _userRecordFactId;
 
   /// Start the demo: write intro card, then show welcome overlay.
+  /// Skips automatically for existing users who upgrade (they have legacy
+  /// onboarding flags but not the new demo-seen flag).
   Future<void> start(String userId) async {
     final seen = await OnboardingService.hasDemoBeenSeen();
     if (seen) return;
+
+    // If the user already has fact files, they're not new — skip the demo.
+    try {
+      final factsDir =
+          Directory(FileSystemService.instance.getFactsPath(userId));
+      if (await factsDir.exists()) {
+        final hasFacts = await factsDir
+            .list(recursive: true)
+            .any((e) => e.path.endsWith('.md'));
+        if (hasFacts) {
+          await OnboardingService.markDemoAsSeen();
+          return;
+        }
+      }
+    } catch (_) {
+      // If we can't check, proceed with the demo — safe default for new users.
+    }
     _logger.info('Starting onboarding demo');
 
     // Write the intro card before showing welcome
