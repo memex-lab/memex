@@ -1435,13 +1435,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chooseAvatar => 'Choose Avatar';
 
   @override
-  String get coachMarkFirstPost => 'Tap here to capture your first thought ✨';
-
-  @override
-  String get coachMarkInsightRefresh =>
-      'Tap to generate insights from your records 🔮';
-
-  @override
   String get coachMarkConfigureModel =>
       'Set up your AI model first to unlock all features 🔑';
 
@@ -1952,5 +1945,43 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pendingAiProcessingHint =>
-      'Connect AI to auto-process this record';
+      'Set up AI model to auto-process this record';
+
+  @override
+  String get demoWelcome =>
+      'Welcome to Memex!\nLet\'s take a quick tour of what AI can do for your records.';
+
+  @override
+  String get demoTapAdd => 'Tap here to create your first record';
+
+  @override
+  String get demoTapSend => 'Tap to send your first record';
+
+  @override
+  String get demoTapCard => 'Tap to see how AI organized your record';
+
+  @override
+  String get demoTapInsight => 'Tap to see AI-generated insights';
+
+  @override
+  String get demoTapInsightUpdate =>
+      'Tap to generate insights from your records';
+
+  @override
+  String get demoTapKnowledge => 'Check your auto-organized knowledge files';
+
+  @override
+  String get demoDone => 'Start recording your life.';
+
+  @override
+  String get demoStartTour => 'Start Tour';
+
+  @override
+  String get demoGetStarted => 'Get Started';
+
+  @override
+  String get demoSkip => 'Skip';
+
+  @override
+  String get demoPrefillText => 'Hello Memex! This is my first record 🎉';
 }

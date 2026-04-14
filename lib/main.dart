@@ -50,7 +50,8 @@ import 'package:memex/data/services/local_server_service.dart';
 import 'package:go_router/go_router.dart';
 import 'package:memex/routing/router.dart';
 import 'package:memex/data/services/onboarding_service.dart';
-import 'package:memex/ui/core/widgets/coach_mark_overlay.dart';
+import 'package:memex/data/services/demo_service.dart';
+import 'package:memex/ui/core/widgets/demo_overlay.dart';
 import 'package:memex/ui/main_screen/widgets/share_intent_handler.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -428,7 +429,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   final GlobalKey _mainStackKey = GlobalKey();
   bool _isInvalidConfigDialogShowing = false;
   bool _isErrorNotificationDialogShowing = false;
-  bool _showFirstPostCoachMark = false;
   late final ShareIntentHandler _shareIntentHandler;
   InputData? _sharedDraft;
 
@@ -438,6 +438,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    DemoService.instance.addListener(_onDemoChanged);
     // Init event bus connection and local DB (delay to ensure token is loaded)
     Future.delayed(const Duration(seconds: 1), () async {
       final userId = await UserStorage.getUserId();
@@ -445,6 +446,11 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         await AppDatabase.init(userId);
       }
       _eventBus.connect();
+
+      // Start onboarding demo on first launch
+      if (userId != null) {
+        DemoService.instance.start(userId);
+      }
     });
 
     // Check and report all health data
@@ -462,8 +468,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     _eventBus.addHandler(
         EventBusMessageType.errorNotification, _handleErrorNotification);
 
-    // Check onboarding state for first post coach mark
-    _checkFirstPostOnboarding();
     _shareIntentHandler = ShareIntentHandler(
       logger: _logger,
       scaffoldMessengerKey: rootScaffoldMessengerKey,
@@ -575,34 +579,33 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     });
   }
 
+  void _onDemoChanged() {
+    if (!mounted) return;
+    final demo = DemoService.instance;
+
+    // When demo advances to tapKnowledgeTab, refresh the knowledge base
+    // so the demo-written guide file appears.
+    if (demo.currentStep == DemoStep.tapKnowledgeTab) {
+      _knowledgeBaseKey.currentState?.scrollToTopAndRefresh();
+    }
+
+    setState(() {});
+  }
+
   Future<void> _handleAICoreButtonTap() async {
     // No LLM config check — users can submit records without AI configured.
-    // Card agent will use rule-based matching when LLM is unavailable.
 
-    // Skip auto-publish, go directly to input_sheet
     if (mounted) {
-      setState(() {
-        _isInputOpen = true;
-      });
+      // Prefill text during demo
+      if (DemoService.instance.currentStep == DemoStep.tapSend) {
+        setState(() {
+          _sharedDraft = InputData(text: DemoService.instance.prefillText);
+          _isInputOpen = true;
+        });
+      } else {
+        setState(() => _isInputOpen = true);
+      }
     }
-    // Dismiss coach mark if showing
-    if (_showFirstPostCoachMark) {
-      _dismissFirstPostCoachMark();
-    }
-  }
-
-  Future<void> _checkFirstPostOnboarding() async {
-    // Check first post onboarding
-    final done = await OnboardingService.isFirstPostDone();
-    if (!done && mounted) {
-      await Future.delayed(const Duration(milliseconds: 800));
-      if (mounted) setState(() => _showFirstPostCoachMark = true);
-    }
-  }
-
-  void _dismissFirstPostCoachMark() {
-    setState(() => _showFirstPostCoachMark = false);
-    OnboardingService.markFirstPostDone();
   }
 
   void _handleAICoreButtonLongPressStart() {
@@ -776,6 +779,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    DemoService.instance.removeListener(_onDemoChanged);
     WidgetsBinding.instance.removeObserver(this);
     _memoryButtonTapTimer?.cancel();
     _knowledgeBaseButtonTapTimer?.cancel();
@@ -1089,6 +1093,10 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _handleInputSubmit(InputData data) async {
+    // During demo: advance tapSend → tapCard first, so the overlay
+    // immediately shows a blocking scrim (cardReady is still false).
+    DemoService.instance.tryAdvance(DemoStep.tapSend);
+
     // Close input sheet immediately
     if (mounted) {
       setState(() {
@@ -1122,6 +1130,18 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         await PublishTimestampService.saveLastPublishTimestamp(
           DateTime.now().millisecondsSinceEpoch,
         );
+
+        // During demo: write preset completed card with insight/comment
+        if (DemoService.instance.isActive) {
+          final userId = await UserStorage.getUserId();
+          if (userId != null) {
+            DemoService.instance.handleDemoSubmit(
+              userId,
+              response['fact_id'] as String,
+              data.text ?? '',
+            );
+          }
+        }
       }
 
       // Show success message
@@ -1228,13 +1248,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                   isCalibrating: _isQuickCalibrating,
                 ),
 
-              // First post onboarding coach mark
-              if (_showFirstPostCoachMark)
-                CoachMarkOverlay(
-                  targetKey: _aiButtonKey,
-                  message: UserStorage.l10n.coachMarkFirstPost,
-                  onDismiss: _dismissFirstPostCoachMark,
-                ),
+              // Onboarding demo overlay
+              const DemoOverlay(),
             ],
           ),
         ));
@@ -1286,8 +1301,14 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                     top: -16.0,
                     left: 156.0,
                     child: AICoreButton(
-                      key: _aiButtonKey,
-                      onTap: _handleAICoreButtonTap,
+                      key: DemoService.instance.isActive
+                          ? DemoService.instance.addButtonKey
+                          : _aiButtonKey,
+                      onTap: () {
+                        // Advance first so _handleAICoreButtonTap sees tapSend step for prefill
+                        DemoService.instance.tryAdvance(DemoStep.tapAddButton);
+                        _handleAICoreButtonTap();
+                      },
                       onLongPress: _handleAICoreButtonLongPressStart,
                       onLongPressMoveUpdate:
                           _handleAICoreButtonLongPressMoveUpdate,
@@ -1344,51 +1365,48 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                     ),
                   ),
 
-                  // Library Icon
+                  // Library — single widget for both icon + text so the
+                  // demo spotlight key covers the whole tab area.
                   Positioned(
-                    top: 47.02, // 27.02 local + 20px shadow
+                    top: 47.02,
                     left: 299.58,
                     child: GestureDetector(
+                      key: DemoService.instance.knowledgeTabKey,
                       behavior: HitTestBehavior.opaque,
-                      onTap: _handleLibraryTabTap,
-                      child: SvgPicture.asset(
-                        'assets/icons/tab_library_inactive.svg',
-                        width: 25.06,
-                        height: 21.15,
-                        colorFilter: ColorFilter.mode(
-                          _currentTab == 1
-                              ? const Color(0xFF1F1F1F)
-                              : const Color(0xFF99A1AF),
-                          BlendMode.srcIn,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // Library text
-                  Positioned(
-                    top: 76.0,
-                    left: 262.11,
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: _handleLibraryTabTap,
-                      child: SizedBox(
-                        width:
-                            100, // Widened from strict 48 to permit iOS text expansion
-                        // Removed strict height boundary to prevent vertical ascender clipping
-                        child: Text(
-                          UserStorage.l10n.bottomNavLibrary,
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                            color: _currentTab == 1
-                                ? const Color(0xFF1F1F1F)
-                                : const Color(0xFF99A1AF),
-                            letterSpacing: 0.14,
-                            height: 1.0,
+                      onTap: () {
+                        _handleLibraryTabTap();
+                        DemoService.instance
+                            .tryAdvance(DemoStep.tapKnowledgeTab);
+                      },
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SvgPicture.asset(
+                            'assets/icons/tab_library_inactive.svg',
+                            width: 25.06,
+                            height: 21.15,
+                            colorFilter: ColorFilter.mode(
+                              _currentTab == 1
+                                  ? const Color(0xFF1F1F1F)
+                                  : const Color(0xFF99A1AF),
+                              BlendMode.srcIn,
+                            ),
                           ),
-                        ),
+                          SizedBox(height: 76.0 - 47.02 - 21.15),
+                          Text(
+                            UserStorage.l10n.bottomNavLibrary,
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w400,
+                              color: _currentTab == 1
+                                  ? const Color(0xFF1F1F1F)
+                                  : const Color(0xFF99A1AF),
+                              letterSpacing: 0.14,
+                              height: 1.0,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),

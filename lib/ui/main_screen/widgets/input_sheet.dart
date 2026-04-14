@@ -19,6 +19,7 @@ import 'package:memex/data/services/whisper_service.dart';
 import 'package:memex/data/services/streaming_transcriber.dart';
 import 'package:memex/config/app_flavor.dart';
 import 'package:memex/ui/core/themes/app_colors.dart';
+import 'package:memex/data/services/demo_service.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -1504,6 +1505,10 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
                                           ),
                                           const Spacer(),
                                           GestureDetector(
+                                            key: DemoService.instance.isActive
+                                                ? DemoService
+                                                    .instance.sendButtonKey
+                                                : null,
                                             onTap: _handleSubmit,
                                             child: Container(
                                               padding:

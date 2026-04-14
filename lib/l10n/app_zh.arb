@@ -659,8 +659,6 @@
   "discardButton": "放弃",
   "chooseLanguage": "选择语言",
   "chooseAvatar": "选择头像",
-  "coachMarkFirstPost": "点击这里，记录你的第一个想法 ✨",
-  "coachMarkInsightRefresh": "点击生成你的专属洞察 🔮",
   "coachMarkConfigureModel": "先配置 AI 模型，解锁全部功能 🔑",
   "configureNow": "立即配置",
   "modelNotConfiguredBanner": "AI 模型尚未配置，请先设置以解锁全部功能。",
@@ -860,5 +858,17 @@
   "speechTranscribing": "正在识别...",
   "speechTranscriptionTitle": "语音识别结果",
   "speechNoResult": "未识别到语音内容",
-  "pendingAiProcessingHint": "配置 AI 模型以自动整理此记录"
+  "pendingAiProcessingHint": "配置 AI 模型以自动整理此记录",
+  "demoWelcome": "欢迎来到 Memex！\n快速了解 AI 如何帮你整理记录。",
+  "demoTapAdd": "点击这里创建你的第一条记录",
+  "demoTapSend": "点击发送你的第一条记录",
+  "demoTapCard": "点击查看 AI 如何整理你的记录",
+  "demoTapInsight": "点击查看 AI 生成的洞察",
+  "demoTapInsightUpdate": "点击生成你的专属洞察",
+  "demoTapKnowledge": "查看自动整理的知识文件",
+  "demoDone": "开始记录你的生活吧。",
+  "demoStartTour": "开始体验",
+  "demoGetStarted": "开始使用",
+  "demoSkip": "跳过",
+  "demoPrefillText": "你好 Memex！这是我的第一条记录 🎉"
 }

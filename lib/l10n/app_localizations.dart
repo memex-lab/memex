@@ -2666,18 +2666,6 @@ abstract class AppLocalizations {
   /// **'Choose Avatar'**
   String get chooseAvatar;
 
-  /// No description provided for @coachMarkFirstPost.
-  ///
-  /// In en, this message translates to:
-  /// **'Tap here to capture your first thought ✨'**
-  String get coachMarkFirstPost;
-
-  /// No description provided for @coachMarkInsightRefresh.
-  ///
-  /// In en, this message translates to:
-  /// **'Tap to generate insights from your records 🔮'**
-  String get coachMarkInsightRefresh;
-
   /// No description provided for @coachMarkConfigureModel.
   ///
   /// In en, this message translates to:
@@ -3575,8 +3563,80 @@ abstract class AppLocalizations {
   /// No description provided for @pendingAiProcessingHint.
   ///
   /// In en, this message translates to:
-  /// **'Connect AI to auto-process this record'**
+  /// **'Set up AI model to auto-process this record'**
   String get pendingAiProcessingHint;
+
+  /// No description provided for @demoWelcome.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to Memex!\nLet\'s take a quick tour of what AI can do for your records.'**
+  String get demoWelcome;
+
+  /// No description provided for @demoTapAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap here to create your first record'**
+  String get demoTapAdd;
+
+  /// No description provided for @demoTapSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to send your first record'**
+  String get demoTapSend;
+
+  /// No description provided for @demoTapCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to see how AI organized your record'**
+  String get demoTapCard;
+
+  /// No description provided for @demoTapInsight.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to see AI-generated insights'**
+  String get demoTapInsight;
+
+  /// No description provided for @demoTapInsightUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to generate insights from your records'**
+  String get demoTapInsightUpdate;
+
+  /// No description provided for @demoTapKnowledge.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your auto-organized knowledge files'**
+  String get demoTapKnowledge;
+
+  /// No description provided for @demoDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Start recording your life.'**
+  String get demoDone;
+
+  /// No description provided for @demoStartTour.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Tour'**
+  String get demoStartTour;
+
+  /// No description provided for @demoGetStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Get Started'**
+  String get demoGetStarted;
+
+  /// No description provided for @demoSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get demoSkip;
+
+  /// No description provided for @demoPrefillText.
+  ///
+  /// In en, this message translates to:
+  /// **'Hello Memex! This is my first record 🎉'**
+  String get demoPrefillText;
 }
 
 class _AppLocalizationsDelegate

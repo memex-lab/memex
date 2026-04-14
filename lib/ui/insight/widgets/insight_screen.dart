@@ -8,8 +8,8 @@ import 'package:memex/utils/toast_helper.dart';
 import 'package:memex/ui/core/cards/native_widget_factory.dart';
 import 'package:memex/ui/chat/widgets/agent_chat_dialog.dart';
 import 'package:memex/utils/user_storage.dart';
-import 'package:memex/data/services/onboarding_service.dart';
-import 'package:memex/ui/core/widgets/coach_mark_overlay.dart';
+import 'package:memex/data/services/demo_service.dart';
+import 'package:memex/ui/insight/widgets/insight_preview_data.dart';
 
 /// Insight screen - global knowledge analytics. Receives [viewModel] from parent (Compass-style).
 class InsightScreen extends StatefulWidget {
@@ -28,26 +28,10 @@ class InsightScreen extends StatefulWidget {
 
 class _InsightScreenState extends State<InsightScreen> {
   Offset? _fabPosition;
-  bool _showInsightCoachMark = false;
-  final GlobalKey _updateFabKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
-    _checkInsightOnboarding();
-  }
-
-  Future<void> _checkInsightOnboarding() async {
-    final done = await OnboardingService.isInsightRefreshDone();
-    if (!done && mounted) {
-      await Future.delayed(const Duration(milliseconds: 800));
-      if (mounted) setState(() => _showInsightCoachMark = true);
-    }
-  }
-
-  void _dismissInsightCoachMark() {
-    setState(() => _showInsightCoachMark = false);
-    OnboardingService.markInsightRefreshDone();
   }
 
   Future<void> _onTogglePin(
@@ -69,8 +53,10 @@ class _InsightScreenState extends State<InsightScreen> {
   }
 
   Future<void> _onRefreshInsights(InsightViewModel vm) async {
-    // Dismiss coach mark if showing
-    if (_showInsightCoachMark) _dismissInsightCoachMark();
+    // During demo: don't hit the backend, just advance the demo step.
+    if (DemoService.instance.tryAdvance(DemoStep.tapInsightUpdate)) {
+      return;
+    }
     try {
       ToastHelper.showInfo(context, UserStorage.l10n.refreshingInsightData);
       await vm.refreshInsights();
@@ -543,12 +529,20 @@ class _InsightScreenState extends State<InsightScreen> {
                                       ),
                                     )))
                               else
+                              // During demo: hide preview until user taps the update button.
+                              // After demo (or on subsequent launches): always show preview.
+                              if (!DemoService.instance.isActive ||
+                                  DemoService.instance.currentStep!.index >
+                                      DemoStep.tapInsightUpdate.index)
+                                _buildPreviewCards()
+                              else
                                 Center(
-                                    child: Padding(
-                                  padding: const EdgeInsets.all(32.0),
-                                  child:
-                                      Text(UserStorage.l10n.noKnowledgeInsight),
-                                )),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(32.0),
+                                    child: Text(
+                                        UserStorage.l10n.noKnowledgeInsight),
+                                  ),
+                                ),
                             ],
                           ],
                         ),
@@ -585,7 +579,7 @@ class _InsightScreenState extends State<InsightScreen> {
                         });
                       },
                       child: KeyedSubtree(
-                        key: _updateFabKey,
+                        key: DemoService.instance.insightUpdateKey,
                         child: _buildPremiumUpdateFab(vm),
                       ),
                     ),
@@ -593,31 +587,74 @@ class _InsightScreenState extends State<InsightScreen> {
               ],
             );
 
-            // Wrap content with coach mark overlay if needed
-            final wrappedContent = Stack(
-              children: [
-                if (widget.isEmbedded)
-                  content
-                else
-                  Scaffold(
+            // Wrap in Scaffold when not embedded
+            final wrappedContent = widget.isEmbedded
+                ? content
+                : Scaffold(
                     backgroundColor: const Color(0xFFF7F8FA),
                     body: SafeArea(
                       child: content,
                     ),
-                  ),
-                if (_showInsightCoachMark)
-                  CoachMarkOverlay(
-                    targetKey: _updateFabKey,
-                    message: UserStorage.l10n.coachMarkInsightRefresh,
-                    onDismiss: _dismissInsightCoachMark,
-                  ),
-              ],
-            );
+                  );
 
             return wrappedContent;
           },
         );
       },
+    );
+  }
+
+  /// Preview cards shown when the user has no real insights yet.
+  /// Rendered with reduced opacity and a banner hint; non-interactive.
+  Widget _buildPreviewCards() {
+    final samples = InsightPreviewData.samples;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Banner hint
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF6366F1).withOpacity(0.08),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: const Color(0xFF6366F1).withOpacity(0.15),
+            ),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.auto_awesome,
+                  size: 18, color: Color(0xFF6366F1)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  UserStorage.l10n.noKnowledgeInsight,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF6366F1),
+                    fontWeight: FontWeight.w500,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        // Sample cards — visual only, no interaction
+        ...samples.map((s) {
+          final card = NativeWidgetFactory.build(s.template, s.data);
+          if (card == null) return const SizedBox.shrink();
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Opacity(
+              opacity: 0.55,
+              child: IgnorePointer(child: card),
+            ),
+          );
+        }),
+      ],
     );
   }
 

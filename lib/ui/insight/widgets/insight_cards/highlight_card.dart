@@ -49,14 +49,18 @@ class HighlightCard extends StatelessWidget {
               child: Row(
                 children: [
                   // Badge
-                  Text(
-                    title.toUpperCase(),
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      height: 16 / 12,
-                      letterSpacing: 0,
-                      color: const Color(0xFF0A0A0A),
+                  Expanded(
+                    child: Text(
+                      title.toUpperCase(),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        height: 16 / 12,
+                        letterSpacing: 0,
+                        color: const Color(0xFF0A0A0A),
+                      ),
                     ),
                   ),
                   if (date != null) ...[

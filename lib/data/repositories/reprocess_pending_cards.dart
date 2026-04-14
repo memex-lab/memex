@@ -30,11 +30,17 @@ Future<void> reprocessPendingCards(String userId) async {
         final factInfo = await fs.extractFactContentFromFile(userId, factId);
         if (factInfo == null) continue;
 
-        // Reconstruct assetPaths from fs:// references in combinedText
-        final assetPaths = RegExp(r'fs://([^\s\)]+)')
-            .allMatches(factInfo.content)
-            .map((m) => m.group(1)!)
-            .toList();
+        // Reconstruct assetPaths from fs:// references in combinedText.
+        // fs:// URIs contain only the filename; convert to relative paths
+        // (relative to dataRoot) so that toAbsolutePath resolves correctly
+        // even after an iOS sandbox UUID change.
+        final assetsDir = fs.getAssetsPath(userId);
+        final assetPaths =
+            RegExp(r'fs://([^\s\)]+)').allMatches(factInfo.content).map((m) {
+          final filename = m.group(1)!;
+          final absolutePath = '$assetsDir/$filename';
+          return fs.toRelativePath(absolutePath);
+        }).toList();
 
         // Reconstruct markdownEntry
         final simpleFactId = fs.extractSimpleFactId(factId);

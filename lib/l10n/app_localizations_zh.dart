@@ -1396,12 +1396,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chooseAvatar => '选择头像';
 
   @override
-  String get coachMarkFirstPost => '点击这里，记录你的第一个想法 ✨';
-
-  @override
-  String get coachMarkInsightRefresh => '点击生成你的专属洞察 🔮';
-
-  @override
   String get coachMarkConfigureModel => '先配置 AI 模型，解锁全部功能 🔑';
 
   @override
@@ -1884,4 +1878,40 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get pendingAiProcessingHint => '配置 AI 模型以自动整理此记录';
+
+  @override
+  String get demoWelcome => '欢迎来到 Memex！\n快速了解 AI 如何帮你整理记录。';
+
+  @override
+  String get demoTapAdd => '点击这里创建你的第一条记录';
+
+  @override
+  String get demoTapSend => '点击发送你的第一条记录';
+
+  @override
+  String get demoTapCard => '点击查看 AI 如何整理你的记录';
+
+  @override
+  String get demoTapInsight => '点击查看 AI 生成的洞察';
+
+  @override
+  String get demoTapInsightUpdate => '点击生成你的专属洞察';
+
+  @override
+  String get demoTapKnowledge => '查看自动整理的知识文件';
+
+  @override
+  String get demoDone => '开始记录你的生活吧。';
+
+  @override
+  String get demoStartTour => '开始体验';
+
+  @override
+  String get demoGetStarted => '开始使用';
+
+  @override
+  String get demoSkip => '跳过';
+
+  @override
+  String get demoPrefillText => '你好 Memex！这是我的第一条记录 🎉';
 }

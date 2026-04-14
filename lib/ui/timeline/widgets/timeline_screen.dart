@@ -11,6 +11,7 @@ import 'package:memex/ui/core/widgets/html_webview_card.dart';
 import 'package:memex/ui/main_screen/widgets/action_center_sheet.dart';
 
 import 'package:memex/ui/core/cards/native_card_factory.dart';
+import 'package:memex/data/services/demo_service.dart';
 import 'package:memex/ui/core/cards/card_action_notification.dart';
 import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/ui/timeline/view_models/timeline_viewmodel.dart';
@@ -819,7 +820,7 @@ class TimelineScreenState extends State<TimelineScreen> {
         // Index 1: "Insight"
         if (index == 1) {
           final isSelected = vm.viewMode == TimelineViewMode.insight;
-          return _buildTagChip(
+          final chip = _buildTagChip(
             label: UserStorage.l10n.insights,
             icon: '✨',
             isSelected: isSelected,
@@ -827,8 +828,16 @@ class TimelineScreenState extends State<TimelineScreen> {
               vm.setViewMode(TimelineViewMode.insight);
               vm.setActiveFilter('insight');
               _animateToPage(1);
+              DemoService.instance.tryAdvance(DemoStep.tapInsightTab);
             },
           );
+          // Only attach the demo GlobalKey when the demo is active,
+          // to avoid duplicate-key crashes during normal tab switching.
+          if (DemoService.instance.isActive) {
+            return KeyedSubtree(
+                key: DemoService.instance.insightTabKey, child: chip);
+          }
+          return chip;
         }
 
         // Index 2+: user tags
@@ -1015,6 +1024,7 @@ class TimelineScreenState extends State<TimelineScreen> {
           final card = vm.cards[index];
           return _TimelineEntryItem(
             card: card,
+            isDemoTarget: index == 0,
             onTap: () async {
               // If this is a custom agent system_task card, open chat dialog.
               if (_isCustomAgentSystemTask(card)) {
@@ -1028,6 +1038,13 @@ class TimelineScreenState extends State<TimelineScreen> {
                 ),
               );
               if (!mounted) return;
+
+              // Advance demo AFTER returning from detail screen so the
+              // knowledgeTab spotlight measures the correct position.
+              if (index == 0) {
+                DemoService.instance.tryAdvance(DemoStep.tapCard);
+              }
+
               if (result == true) {
                 vm.loadCards(refresh: true);
               } else if (result is Map &&
@@ -1047,10 +1064,13 @@ class TimelineScreenState extends State<TimelineScreen> {
 class _TimelineEntryItem extends StatefulWidget {
   final TimelineCardModel card;
   final VoidCallback onTap;
+  final bool isDemoTarget;
 
   const _TimelineEntryItem({
+    super.key,
     required this.card,
     required this.onTap,
+    this.isDemoTarget = false,
   });
 
   @override
@@ -1208,23 +1228,32 @@ class _TimelineEntryItemState extends State<_TimelineEntryItem> {
                   return const SizedBox.shrink();
                 }
 
+                final cardWidget = NativeCardFactory.build(
+                  status: card.status,
+                  templateId: config.templateId,
+                  data: config.data,
+                  title: card.title ?? '',
+                  tags: card.tags,
+                  onTap: onTap,
+                  cardId: card.id,
+                  configIndex: index,
+                  overrideTitle: index == 0,
+                  failureReason: card.failureReason,
+                  onUpdate: (cardId, configIndex, data) {
+                    MemexRouter().updateCardUiConfig(cardId, configIndex, data);
+                  },
+                );
+
                 return Padding(
                   padding: EdgeInsets.only(bottom: isLast ? 0 : 8.0),
-                  child: NativeCardFactory.build(
-                    status: card.status,
-                    templateId: config.templateId,
-                    data: config.data,
-                    title: card.title ?? '',
-                    tags: card.tags,
-                    onTap: onTap,
-                    cardId: card.id,
-                    configIndex: index,
-                    failureReason: card.failureReason,
-                    onUpdate: (cardId, configIndex, data) {
-                      MemexRouter()
-                          .updateCardUiConfig(cardId, configIndex, data);
-                    },
-                  ),
+                  child: (widget.isDemoTarget &&
+                          index == 0 &&
+                          DemoService.instance.isActive)
+                      ? Container(
+                          key: DemoService.instance.firstCardKey,
+                          child: cardWidget,
+                        )
+                      : cardWidget,
                 );
               })
             else

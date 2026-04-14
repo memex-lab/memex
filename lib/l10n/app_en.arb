@@ -659,8 +659,6 @@
   "discardButton": "Discard",
   "chooseLanguage": "Choose Language",
   "chooseAvatar": "Choose Avatar",
-  "coachMarkFirstPost": "Tap here to capture your first thought ✨",
-  "coachMarkInsightRefresh": "Tap to generate insights from your records 🔮",
   "coachMarkConfigureModel": "Set up your AI model first to unlock all features 🔑",
   "configureNow": "Configure Now",
   "modelNotConfiguredBanner": "AI model not configured yet. Set it up to unlock all features.",
@@ -882,5 +880,17 @@
   "speechTranscribing": "Recognizing...",
   "speechTranscriptionTitle": "Transcription",
   "speechNoResult": "No speech detected",
-  "pendingAiProcessingHint": "Connect AI to auto-process this record"
+  "pendingAiProcessingHint": "Set up AI model to auto-process this record",
+  "demoWelcome": "Welcome to Memex!\nLet's take a quick tour of what AI can do for your records.",
+  "demoTapAdd": "Tap here to create your first record",
+  "demoTapSend": "Tap to send your first record",
+  "demoTapCard": "Tap to see how AI organized your record",
+  "demoTapInsight": "Tap to see AI-generated insights",
+  "demoTapInsightUpdate": "Tap to generate insights from your records",
+  "demoTapKnowledge": "Check your auto-organized knowledge files",
+  "demoDone": "Start recording your life.",
+  "demoStartTour": "Start Tour",
+  "demoGetStarted": "Get Started",
+  "demoSkip": "Skip",
+  "demoPrefillText": "Hello Memex! This is my first record 🎉"
 }

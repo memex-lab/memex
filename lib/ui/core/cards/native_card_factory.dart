@@ -40,6 +40,7 @@ class NativeCardFactory {
     String? cardId,
     int? configIndex,
     String? failureReason,
+    bool overrideTitle = true,
     Function(String cardId, int configIndex, Map<String, dynamic> data)?
         onUpdate,
   }) {
@@ -49,7 +50,7 @@ class NativeCardFactory {
       'status': status,
       if (failureReason != null) 'failure_reason': failureReason,
       ...data,
-      'title': title,
+      if (overrideTitle) 'title': title,
     };
 
     switch (templateId) {
