@@ -28,6 +28,7 @@ import 'package:memex/ui/settings/widgets/model_config_list_page.dart';
 import 'package:memex/ui/settings/widgets/system_authorization_page.dart';
 import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:memex/ui/core/widgets/dicebear_avatar.dart';
+import 'package:memex/ui/character/widgets/persona_avatar_button.dart';
 
 /// Timeline screen - main memory view. Receives [viewModel] and [insightViewModel] from parent (Compass-style).
 class TimelineScreen extends StatefulWidget {
@@ -349,11 +350,11 @@ class TimelineScreenState extends State<TimelineScreen> {
                       ],
                     ),
                   ),
-                  // 3 buttons: 36px each, 6px gap, total 120px
+                  // 4 buttons: chat, companion, notification, avatar
                   SizedBox(
-                    width: 120,
                     height: 36,
                     child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         // Chat button
                         GestureDetector(
@@ -370,7 +371,10 @@ class TimelineScreenState extends State<TimelineScreen> {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 6),
+                        // Companion character button
+                        const PersonaAvatarButton(),
+                        const SizedBox(width: 6),
                         // Notification button
                         if (AppDatabase.isInitialized)
                           StreamBuilder<List<SystemAction>>(
@@ -426,7 +430,7 @@ class TimelineScreenState extends State<TimelineScreen> {
                               );
                             },
                           ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 6),
                         // Avatar button
                         GestureDetector(
                           onTap: () {
