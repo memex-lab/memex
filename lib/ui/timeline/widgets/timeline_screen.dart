@@ -350,7 +350,7 @@ class TimelineScreenState extends State<TimelineScreen> {
                       ],
                     ),
                   ),
-                  // 4 buttons: chat, companion, notification, avatar
+                  // 4 buttons: chat, notification, companion, user avatar
                   SizedBox(
                     height: 36,
                     child: Row(
@@ -371,9 +371,6 @@ class TimelineScreenState extends State<TimelineScreen> {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 6),
-                        // Companion character button
-                        const PersonaAvatarButton(),
                         const SizedBox(width: 6),
                         // Notification button
                         if (AppDatabase.isInitialized)
@@ -430,6 +427,9 @@ class TimelineScreenState extends State<TimelineScreen> {
                               );
                             },
                           ),
+                        const SizedBox(width: 6),
+                        // Companion character button (next to user avatar)
+                        const PersonaAvatarButton(),
                         const SizedBox(width: 6),
                         // Avatar button
                         GestureDetector(
