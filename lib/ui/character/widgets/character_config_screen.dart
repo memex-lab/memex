@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 import 'package:memex/domain/models/character_model.dart';
-import 'package:memex/data/repositories/memex_router.dart';
+import 'package:memex/data/services/character_service.dart';
 import 'package:memex/ui/character/view_models/character_viewmodel.dart';
+import 'package:memex/ui/core/widgets/dicebear_avatar.dart';
+import 'package:memex/ui/core/widgets/avatar_picker.dart';
 import 'package:memex/utils/toast_helper.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/user_storage.dart';
@@ -28,9 +30,10 @@ class _CharacterConfigScreenState extends State<CharacterConfigScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       widget.viewModel.loadCharacters().catchError((e) {
-        if (mounted)
+        if (mounted) {
           ToastHelper.showError(
               context, UserStorage.l10n.loadCharacterFailed(e.toString()));
+        }
       });
     });
   }
@@ -39,13 +42,15 @@ class _CharacterConfigScreenState extends State<CharacterConfigScreen> {
       CharacterViewModel vm, CharacterModel character, bool enabled) async {
     try {
       await vm.setCharacterEnabled(character, enabled);
-      if (mounted)
+      if (mounted) {
         ToastHelper.showSuccess(context,
             enabled ? UserStorage.l10n.enabled : UserStorage.l10n.disabled);
+      }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ToastHelper.showError(
             context, UserStorage.l10n.operationFailed(e.toString()));
+      }
     }
   }
 
@@ -74,12 +79,14 @@ class _CharacterConfigScreenState extends State<CharacterConfigScreen> {
     if (confirmed == true) {
       try {
         await vm.deleteCharacter(character);
-        if (mounted)
+        if (mounted) {
           ToastHelper.showSuccess(context, UserStorage.l10n.deleteSuccess);
+        }
       } catch (e) {
-        if (mounted)
+        if (mounted) {
           ToastHelper.showError(
               context, UserStorage.l10n.deleteFailed(e.toString()));
+        }
       }
     }
   }
@@ -112,8 +119,8 @@ class _CharacterConfigScreenState extends State<CharacterConfigScreen> {
         return Scaffold(
           backgroundColor: const Color(0xFFF7F8FA),
           appBar: AppBar(
-            title: Text(
-              UserStorage.l10n.configureAiCharacter,
+            title: const Text(
+              'Configure AI character',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -127,7 +134,7 @@ class _CharacterConfigScreenState extends State<CharacterConfigScreen> {
             leading: const AppBackButton(),
             actions: [
               IconButton(
-                icon: Icon(Icons.add, size: 24),
+                icon: const Icon(Icons.add, size: 24),
                 onPressed: () => _showAddCharacterDialog(vm),
                 color: AppColors.primary,
                 tooltip: UserStorage.l10n.addCharacter,
@@ -143,7 +150,7 @@ class _CharacterConfigScreenState extends State<CharacterConfigScreen> {
                     padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
                     child: Text(
                       UserStorage.l10n.addCharacterSubtitle,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 14,
                         color: AppColors.textSecondary,
                         height: 1.5,
@@ -152,7 +159,7 @@ class _CharacterConfigScreenState extends State<CharacterConfigScreen> {
                   ),
                   Expanded(
                     child: vm.isLoading
-                        ? Center(child: AgentLogoLoading())
+                        ? const Center(child: AgentLogoLoading())
                         : vm.characters.isEmpty
                             ? Center(
                                 child: Column(
@@ -180,8 +187,6 @@ class _CharacterConfigScreenState extends State<CharacterConfigScreen> {
                   ),
                 ],
               ),
-
-              // bottom input bar
               Positioned(
                 bottom: 0,
                 left: 0,
@@ -226,27 +231,12 @@ class _CharacterConfigScreenState extends State<CharacterConfigScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        const Color(0xFFF7F8FA),
-                        const Color(0xFFE2E8F0),
-                      ],
-                    ),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Icon(
-                      Icons.face,
-                      color: AppColors.textSecondary,
-                      size: 24,
-                    ),
-                  ),
+                DiceBearAvatar(
+                  seed: character.avatar != null && character.avatar!.isNotEmpty
+                      ? character.avatar!
+                      : 'companion_${character.name}',
+                  size: 48,
+                  backgroundColor: AppColors.primary.withValues(alpha: 0.08),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -262,6 +252,7 @@ class _CharacterConfigScreenState extends State<CharacterConfigScreen> {
                             fontWeight: FontWeight.w600,
                             color: AppColors.textPrimary,
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -269,7 +260,7 @@ class _CharacterConfigScreenState extends State<CharacterConfigScreen> {
                         character.tags.isNotEmpty
                             ? character.tags.join('  ·  ')
                             : UserStorage.l10n.noTags,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 13,
                           color: AppColors.textTertiary,
                           height: 1.4,
@@ -307,10 +298,6 @@ class _CharacterConfigScreenState extends State<CharacterConfigScreen> {
                         padding: const EdgeInsets.symmetric(
                           horizontal: 8,
                           vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.transparent,
-                          borderRadius: BorderRadius.circular(4),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -355,13 +342,15 @@ class CharacterEditPage extends StatefulWidget {
 }
 
 class _CharacterEditPageState extends State<CharacterEditPage> {
-  final MemexRouter _memexRouter = MemexRouter();
   final Logger _logger = getLogger('CharacterEditPage');
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _tagsController = TextEditingController();
-  final _personaController = TextEditingController(); // combined persona fields
+  final _personaController = TextEditingController();
   bool _isSaving = false;
+
+  String _avatarSeed = '';
+  bool _hasPickedAvatar = false;
 
   @override
   void initState() {
@@ -369,26 +358,47 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
     if (widget.character != null) {
       _nameController.text = widget.character!.name;
       _tagsController.text = widget.character!.tags.join(', ');
-      _personaController.text = widget.character!.persona; // already combined
+      _personaController.text = widget.character!.persona;
+      _avatarSeed = widget.character!.avatar ?? '';
+      _hasPickedAvatar = widget.character!.avatar != null &&
+          widget.character!.avatar!.isNotEmpty;
+    }
+    if (_avatarSeed.isEmpty) {
+      _avatarSeed = 'companion_${_nameController.text}';
+    }
+    _nameController.addListener(_onNameChanged);
+  }
+
+  void _onNameChanged() {
+    // Only auto-derive avatar from name if user hasn't explicitly picked one
+    if (!_hasPickedAvatar) {
+      setState(() => _avatarSeed = 'companion_${_nameController.text}');
     }
   }
 
   @override
   void dispose() {
+    _nameController.removeListener(_onNameChanged);
     _nameController.dispose();
     _tagsController.dispose();
     _personaController.dispose();
     super.dispose();
   }
 
-  Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
+  void _pickAvatar() async {
+    final picked = await showAvatarPicker(context, _avatarSeed);
+    if (picked != null && mounted) {
+      setState(() {
+        _avatarSeed = picked;
+        _hasPickedAvatar = true;
+      });
     }
+  }
 
-    setState(() {
-      _isSaving = true;
-    });
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isSaving = true);
 
     try {
       final tags = _tagsController.text
@@ -397,36 +407,46 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
           .where((e) => e.isNotEmpty)
           .toList();
 
+      final avatarSeed = _avatarSeed.isEmpty ? null : _avatarSeed;
+
+      final userId = await UserStorage.getUserId();
+      if (userId == null) return;
+
       if (widget.character == null) {
-        // create new
-        await _memexRouter.createCharacter(
-          name: _nameController.text.trim(),
-          tags: tags,
-          persona: _personaController.text.trim(), // already combined
+        await CharacterService.instance.createCharacter(
+          userId: userId,
+          characterData: {
+            'name': _nameController.text.trim(),
+            'tags': tags,
+            'persona': _personaController.text.trim(),
+            'avatar': avatarSeed,
+          },
         );
-        if (mounted) {
-          ToastHelper.showSuccess(context, UserStorage.l10n.createSuccess);
-          Navigator.of(context).pop(true);
-        }
       } else {
-        // update
-        await _memexRouter.updateCharacter(
+        await CharacterService.instance.updateCharacter(
+          userId: userId,
           characterId: widget.character!.id,
-          name: _nameController.text.trim(),
-          tags: tags,
-          persona: _personaController.text.trim(), // already combined
+          updates: {
+            'name': _nameController.text.trim(),
+            'tags': tags,
+            'persona': _personaController.text.trim(),
+            'avatar': avatarSeed,
+          },
         );
-        if (mounted) {
-          ToastHelper.showSuccess(context, UserStorage.l10n.updateSuccess);
-          Navigator.of(context).pop(true);
-        }
+      }
+
+      if (mounted) {
+        ToastHelper.showSuccess(
+            context,
+            widget.character == null
+                ? UserStorage.l10n.createSuccess
+                : UserStorage.l10n.updateSuccess);
+        Navigator.of(context).pop(true);
       }
     } catch (e) {
       _logger.severe('Error saving character: $e', e);
       if (mounted) {
-        setState(() {
-          _isSaving = false;
-        });
+        setState(() => _isSaving = false);
         ToastHelper.showError(
             context, UserStorage.l10n.saveFailed(e.toString()));
       }
@@ -442,7 +462,7 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
           widget.character == null
               ? UserStorage.l10n.newCharacter
               : UserStorage.l10n.editCharacter,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.textPrimary,
@@ -474,7 +494,7 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
                     )
                   : Text(
                       UserStorage.l10n.save,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: AppColors.primary,
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
@@ -489,6 +509,49 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
         child: ListView(
           padding: const EdgeInsets.all(24),
           children: [
+            // Avatar — tap to change
+            Center(
+              child: GestureDetector(
+                onTap: _pickAvatar,
+                child: Column(
+                  children: [
+                    Container(
+                      width: 88,
+                      height: 88,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppColors.primary.withValues(alpha: 0.3),
+                          width: 2.5,
+                        ),
+                      ),
+                      child: DiceBearAvatar(
+                        key: ValueKey(_avatarSeed),
+                        seed: _avatarSeed,
+                        size: 82,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.edit,
+                            size: 13, color: AppColors.textTertiary),
+                        const SizedBox(width: 4),
+                        Text(
+                          UserStorage.l10n.chooseAvatar,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textTertiary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
             _buildLabel(UserStorage.l10n.characterName),
             const SizedBox(height: 8),
             TextFormField(
@@ -562,7 +625,7 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
   Widget _buildLabel(String text) {
     return Text(
       text,
-      style: TextStyle(
+      style: const TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w600,
         color: AppColors.textSecondary,
@@ -587,7 +650,7 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: AppColors.primary, width: 1.5),
+        borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),

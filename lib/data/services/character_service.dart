@@ -64,15 +64,14 @@ class CharacterService {
             "\n\n## PKM Interest Filter\n${charData['pkm_interest_filter']}";
       }
       if (charData.containsKey('example_dialogue')) {
-        persona +=
-            "\n\n## Example Dialogue\n${charData['example_dialogue']}";
+        persona += "\n\n## Example Dialogue\n${charData['example_dialogue']}";
       }
 
       final charDict = {
         "name": charData['name'],
         "tags": charData['tags'],
         "persona": persona,
-        "avatar": null,
+        "avatar": charData['avatar'],
         "enabled": true,
       };
 
@@ -300,8 +299,7 @@ class CharacterService {
 
   /// Set a character as the primary companion.
   /// Clears the flag on all other characters first.
-  Future<bool> setPrimaryCompanion(
-      String userId, String characterId) async {
+  Future<bool> setPrimaryCompanion(String userId, String characterId) async {
     final characters = await getAllCharacters(userId);
     // Clear existing primary
     for (final char in characters) {

@@ -51,6 +51,8 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
   Timer? _pollingTimer;
   static const Duration _pollingInterval =
       Duration(seconds: 5); // poll every 5s
+  String _userName = 'User';
+  String? _userAvatar;
 
   @override
   void initState() {
@@ -58,6 +60,18 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
     _memexRouter = MemexRouter();
     _fetchDetail();
     _startPollingIfNeeded();
+    _loadUserInfo();
+  }
+
+  Future<void> _loadUserInfo() async {
+    final name = await UserStorage.getUserId();
+    final avatar = await UserStorage.getUserAvatar();
+    if (mounted) {
+      setState(() {
+        _userName = name ?? 'User';
+        _userAvatar = avatar;
+      });
+    }
   }
 
   @override
@@ -1108,11 +1122,12 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
 
     // Add other comments
     for (var comment in detail.insight.comments) {
+      final isUser = !comment.isAi;
       commentWidgets.add(
         _buildSingleComment(
-          characterId: comment.character?.id,
-          avatar: comment.character?.avatar,
-          name: comment.isAi ? (comment.character?.name ?? 'AI') : 'User',
+          characterId: isUser ? 'user' : comment.character?.id,
+          avatar: isUser ? _userAvatar : comment.character?.avatar,
+          name: isUser ? _userName : (comment.character?.name ?? 'AI'),
           content: comment.content,
           time: DateFormat('MM-dd').format(
               DateTime.fromMillisecondsSinceEpoch(comment.timestamp * 1000)),
@@ -1139,12 +1154,21 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
     bool isAi = false,
   }) {
     // Determine avatar widget:
-    // - characterId "0" or null with isAuthor = Memex system → use logo
-    // - Other characters → use DiceBear
+    // - characterId "0" or null = Memex system → use logo
+    // - characterId "user" = user comment → use DiceBear with user avatar
+    // - Other characters → use DiceBear with character avatar
     Widget avatarWidget;
-    final isMemexSystem = characterId == null || characterId == '0';
+    final isMemexSystem = (characterId == null || characterId == '0') && !isAi;
+    final isUserComment = characterId == 'user';
 
-    if (isMemexSystem) {
+    if (isUserComment) {
+      // User's own DiceBear avatar
+      avatarWidget = DiceBearAvatar(
+        seed: (avatar != null && avatar.isNotEmpty) ? avatar : name,
+        size: 36,
+        backgroundColor: const Color(0xFFEEF2FF),
+      );
+    } else if (isMemexSystem || (characterId == null || characterId == '0')) {
       // Memex logo
       avatarWidget = CircleAvatar(
         radius: 18,
@@ -1159,9 +1183,11 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
         ),
       );
     } else {
-      // Character DiceBear avatar
+      // Character DiceBear avatar — use avatar field if set, fallback to name
+      final seed =
+          (avatar != null && avatar.isNotEmpty) ? avatar : 'companion_$name';
       avatarWidget = DiceBearAvatar(
-        seed: 'companion_$name',
+        seed: seed,
         size: 36,
         backgroundColor: const Color(0xFFEEF2FF),
       );

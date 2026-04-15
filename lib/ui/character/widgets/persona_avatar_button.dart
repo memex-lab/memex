@@ -12,6 +12,7 @@ import 'package:memex/utils/user_storage.dart';
 
 /// Small avatar button in the timeline header.
 /// Shows the user's primary companion character with an unread badge.
+/// Tap to open chat, long-press to switch characters.
 class PersonaAvatarButton extends StatefulWidget {
   const PersonaAvatarButton({super.key});
 
@@ -29,8 +30,6 @@ class _PersonaAvatarButtonState extends State<PersonaAvatarButton> {
   @override
   void initState() {
     super.initState();
-    // Delay load to ensure FileSystemService is initialized
-    // (TimelineScreen builds before MemexRouter finishes init)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future.delayed(const Duration(seconds: 2), _load);
     });
@@ -44,15 +43,15 @@ class _PersonaAvatarButtonState extends State<PersonaAvatarButton> {
 
       final primary =
           await CharacterService.instance.getPrimaryCompanion(userId);
-      _logger.info('PersonaAvatarButton _load: primary=${primary?.name}, enabled=${primary?.enabled}');
+      _logger.info('PersonaAvatarButton _load: primary=${primary?.name}');
       if (!mounted || primary == null) return;
 
       setState(() => _character = primary);
 
       if (AppDatabase.isInitialized) {
-        _unreadSub = PersonaChatService.instance
-            .watchTotalUnreadCount()
-            .listen((count) {
+        _unreadSub?.cancel();
+        _unreadSub =
+            PersonaChatService.instance.watchTotalUnreadCount().listen((count) {
           if (mounted) setState(() => _unreadCount = count);
         });
       }
@@ -76,12 +75,50 @@ class _PersonaAvatarButtonState extends State<PersonaAvatarButton> {
     );
   }
 
+  Future<void> _showCharacterSwitcher() async {
+    final userId = await UserStorage.getUserId();
+    if (userId == null) return;
+
+    final characters = await CharacterService.instance.getAllCharacters(userId);
+    final enabled = characters.where((c) => c.enabled).toList();
+    if (enabled.isEmpty || !mounted) return;
+
+    final selected = await showModalBottomSheet<CharacterModel>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _CharacterSwitcherSheet(
+        characters: enabled,
+        currentId: _character?.id,
+      ),
+    );
+
+    if (selected != null && mounted) {
+      // Set as primary and reload
+      await CharacterService.instance.setPrimaryCompanion(userId, selected.id);
+      setState(() => _character = selected.copyWith(isPrimaryCompanion: true));
+      // Open chat with the newly selected character
+      if (mounted) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => PersonaChatScreen(characterId: selected.id),
+          ),
+        );
+      }
+    }
+  }
+
+  String _avatarSeed(CharacterModel char) {
+    if (char.avatar != null && char.avatar!.isNotEmpty) return char.avatar!;
+    return 'companion_${char.name}';
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_character == null) return const SizedBox(width: 36, height: 36);
 
     return GestureDetector(
       onTap: _openChat,
+      onLongPress: _showCharacterSwitcher,
       child: SizedBox(
         width: 36,
         height: 36,
@@ -89,7 +126,7 @@ class _PersonaAvatarButtonState extends State<PersonaAvatarButton> {
           children: [
             Center(
               child: DiceBearAvatar(
-                seed: 'companion_${_character!.name}',
+                seed: _avatarSeed(_character!),
                 size: 30,
                 backgroundColor: AppColors.primary.withValues(alpha: 0.1),
               ),
@@ -118,6 +155,111 @@ class _PersonaAvatarButtonState extends State<PersonaAvatarButton> {
                   ),
                 ),
               ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Bottom sheet for switching companion characters.
+class _CharacterSwitcherSheet extends StatelessWidget {
+  final List<CharacterModel> characters;
+  final String? currentId;
+
+  const _CharacterSwitcherSheet({
+    required this.characters,
+    this.currentId,
+  });
+
+  String _avatarSeed(CharacterModel char) {
+    if (char.avatar != null && char.avatar!.isNotEmpty) return char.avatar!;
+    return 'companion_${char.name}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE2E8F0),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Switch companion',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.4,
+              ),
+              child: ListView.builder(
+                shrinkWrap: true,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: characters.length,
+                itemBuilder: (context, index) {
+                  final char = characters[index];
+                  final isCurrent = char.id == currentId;
+                  return ListTile(
+                    leading: DiceBearAvatar(
+                      seed: _avatarSeed(char),
+                      size: 40,
+                      backgroundColor:
+                          AppColors.primary.withValues(alpha: 0.08),
+                    ),
+                    title: Text(
+                      char.name,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight:
+                            isCurrent ? FontWeight.w600 : FontWeight.w400,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    subtitle: char.tags.isNotEmpty
+                        ? Text(
+                            char.tags.join(' · '),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textTertiary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          )
+                        : null,
+                    trailing: isCurrent
+                        ? const Icon(Icons.check_circle,
+                            color: AppColors.primary, size: 20)
+                        : null,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    onTap: isCurrent
+                        ? () => Navigator.pop(context)
+                        : () => Navigator.pop(context, char),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
           ],
         ),
       ),

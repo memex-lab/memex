@@ -52,6 +52,28 @@ class CompanionMemory {
     }
   }
 
+  /// Load the character's memory blocks (written by CommentAgent via MemoryWrite).
+  /// These contain observations the character has made about the user.
+  static Future<String> loadCharacterMemory(
+      String userId, String characterId) async {
+    try {
+      final character =
+          await CharacterService.instance.getCharacter(userId, characterId);
+      if (character == null || character.memory.isEmpty) return '';
+
+      final buffer = StringBuffer();
+      for (final block in character.memory) {
+        if (block.value.isNotEmpty) {
+          buffer.writeln('- [${block.label}]: ${block.value}');
+        }
+      }
+      return buffer.toString();
+    } catch (e) {
+      _logger.warning('Failed to load character memory blocks: $e');
+      return '';
+    }
+  }
+
   /// Load recent daily facts (last 2-3 days) for life context.
   static Future<String> loadRecentFacts(String userId,
       {int days = 3, int maxChars = 3000}) async {
@@ -65,8 +87,8 @@ class CompanionMemory {
       final y = date.year;
       final m = date.month.toString().padLeft(2, '0');
       final d = date.day.toString().padLeft(2, '0');
-      final factFile = File(
-          p.join(fs.getWorkspacePath(userId), 'Facts', '$y', m, '$d.md'));
+      final factFile =
+          File(p.join(fs.getWorkspacePath(userId), 'Facts', '$y', m, '$d.md'));
 
       try {
         if (!await factFile.exists()) continue;
@@ -128,7 +150,9 @@ Output the two sections now, separated by ---SPLIT---:''';
 
     try {
       final response = await client.generate(
-        [UserMessage([TextPart(prompt)])],
+        [
+          UserMessage([TextPart(prompt)])
+        ],
         modelConfig: modelConfig,
       );
 
@@ -144,7 +168,8 @@ Output the two sections now, separated by ---SPLIT---:''';
           final file = File(_relationshipPath(userId, characterId));
           await file.parent.create(recursive: true);
           await file.writeAsString(newRelationship);
-          _logger.info('Updated relationship memory for character $characterId');
+          _logger
+              .info('Updated relationship memory for character $characterId');
         }
 
         if (newEmotional.isNotEmpty) {

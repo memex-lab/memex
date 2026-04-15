@@ -38,6 +38,13 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
   final List<LLMMessage> _llmHistory = [];
   static const int _maxHistoryMessages = 30;
 
+  String get _avatarSeed {
+    if (_character?.avatar != null && _character!.avatar!.isNotEmpty) {
+      return _character!.avatar!;
+    }
+    return 'companion_${_character?.name ?? ''}';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -58,8 +65,8 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
     final reversed = messages.reversed.toList();
     for (final msg in reversed) {
       if (msg.isFromCharacter) {
-        _llmHistory.add(ModelMessage(
-            model: 'history', textOutput: msg.content));
+        _llmHistory
+            .add(ModelMessage(model: 'history', textOutput: msg.content));
       } else {
         _llmHistory.add(UserMessage([TextPart(msg.content)]));
       }
@@ -225,7 +232,7 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   DiceBearAvatar(
-                    seed: 'companion_${_character!.name}',
+                    seed: _avatarSeed,
                     size: 28,
                     backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                   ),
@@ -253,8 +260,11 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
   }
 
   Widget _buildMessageList() {
-    final itemCount =
-        _messages.length + (_isStreaming && _streamingText.isNotEmpty ? 1 : 0);
+    // Show typing indicator or streaming bubble at the end
+    final showStreamingBubble = _isStreaming && _streamingText.isNotEmpty;
+    final showTypingIndicator = _isStreaming && _streamingText.isEmpty;
+    final extraItems = (showStreamingBubble || showTypingIndicator) ? 1 : 0;
+    final itemCount = _messages.length + extraItems;
 
     if (itemCount == 0) return _buildEmptyState();
 
@@ -263,8 +273,11 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       itemCount: itemCount,
       itemBuilder: (context, index) {
-        // Streaming message at the end
-        if (index == _messages.length && _isStreaming) {
+        // Typing indicator or streaming message at the end
+        if (index == _messages.length) {
+          if (showTypingIndicator) {
+            return _buildTypingIndicator();
+          }
           return _buildBubble(
             text: _streamingText,
             isCharacter: true,
@@ -304,7 +317,7 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
                 color: AppColors.primary.withValues(alpha: 0.1),
               ),
               child: DiceBearAvatar(
-                seed: 'companion_${_character?.name ?? ''}',
+                seed: _avatarSeed,
                 size: 64,
                 backgroundColor: Colors.transparent,
               ),
@@ -371,7 +384,7 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
         children: [
           if (isCharacter) ...[
             DiceBearAvatar(
-              seed: 'companion_${_character?.name ?? ''}',
+              seed: _avatarSeed,
               size: 32,
               backgroundColor: AppColors.primary.withValues(alpha: 0.08),
             ),
@@ -408,9 +421,8 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
                       style: TextStyle(
                         fontSize: 15,
                         height: 1.5,
-                        color: isCharacter
-                            ? AppColors.textPrimary
-                            : Colors.white,
+                        color:
+                            isCharacter ? AppColors.textPrimary : Colors.white,
                       ),
                     ),
                   ),
@@ -430,6 +442,44 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
             ),
           ),
           if (!isCharacter) const SizedBox(width: 8),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTypingIndicator() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          DiceBearAvatar(
+            seed: _avatarSeed,
+            size: 32,
+            backgroundColor: AppColors.primary.withValues(alpha: 0.08),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
+                bottomLeft: Radius.circular(4),
+                bottomRight: Radius.circular(16),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.shadowLight,
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: const _TypingDots(),
+          ),
         ],
       ),
     );
@@ -480,13 +530,12 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: _isStreaming
-                    ? AppColors.textTertiary
-                    : AppColors.primary,
+                color:
+                    _isStreaming ? AppColors.textTertiary : AppColors.primary,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.arrow_upward,
-                  color: Colors.white, size: 20),
+              child:
+                  const Icon(Icons.arrow_upward, color: Colors.white, size: 20),
             ),
           ),
         ],
@@ -496,4 +545,69 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
 
   bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
+}
+
+/// Animated three-dot typing indicator.
+class _TypingDots extends StatefulWidget {
+  const _TypingDots();
+
+  @override
+  State<_TypingDots> createState() => _TypingDotsState();
+}
+
+class _TypingDotsState extends State<_TypingDots>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(3, (i) {
+            // Stagger each dot by 0.2
+            final delay = i * 0.2;
+            final t = (_controller.value - delay) % 1.0;
+            // Bounce: peak at 0.3, back to 0 at 0.6
+            final offset = t < 0.3
+                ? -4.0 * (t / 0.3)
+                : t < 0.6
+                    ? -4.0 * (1 - (t - 0.3) / 0.3)
+                    : 0.0;
+            return Padding(
+              padding: EdgeInsets.only(right: i < 2 ? 4 : 0),
+              child: Transform.translate(
+                offset: Offset(0, offset),
+                child: Container(
+                  width: 7,
+                  height: 7,
+                  decoration: BoxDecoration(
+                    color: AppColors.textTertiary,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+            );
+          }),
+        );
+      },
+    );
+  }
 }

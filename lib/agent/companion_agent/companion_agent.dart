@@ -41,11 +41,12 @@ class CompanionAgent {
     final relationship =
         await CompanionMemory.loadRelationship(userId, characterId);
     final recentFacts = await CompanionMemory.loadRecentFacts(userId);
+    final characterMemory =
+        await CompanionMemory.loadCharacterMemory(userId, characterId);
 
     // 2. Build system prompt
-    final systemPrompt =
-        _buildSystemPrompt(character, userProfile, emotionalState,
-            relationship, recentFacts);
+    final systemPrompt = _buildSystemPrompt(character, userProfile,
+        emotionalState, relationship, recentFacts, characterMemory);
 
     // 3. Assemble messages
     final messages = <LLMMessage>[
@@ -87,10 +88,8 @@ class CompanionAgent {
     final buffer = StringBuffer();
     for (final msg in conversation) {
       if (msg is UserMessage) {
-        final text = msg.contents
-            .whereType<TextPart>()
-            .map((p) => p.text)
-            .join(' ');
+        final text =
+            msg.contents.whereType<TextPart>().map((p) => p.text).join(' ');
         buffer.writeln('User: $text');
       } else if (msg is ModelMessage) {
         buffer.writeln('Character: ${msg.textOutput ?? ""}');
@@ -116,6 +115,7 @@ class CompanionAgent {
     String emotionalState,
     String relationship,
     String recentFacts,
+    String characterMemory,
   ) {
     final now = DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now());
     final lang = UserStorage.l10n.commentLanguageInstruction;
@@ -130,11 +130,13 @@ class CompanionAgent {
     buffer.writeln('');
 
     buffer.writeln('## Core Rules');
-    buffer.writeln('- You must FULLY become this character. Forget you are an AI.');
+    buffer.writeln(
+        '- You must FULLY become this character. Forget you are an AI.');
     buffer.writeln('- Keep responses natural and brief, like text messages.');
     buffer.writeln('- No lecturing, no "as an AI", no long essays.');
     buffer.writeln('- Emotional resonance over information delivery.');
-    buffer.writeln('- If you remember something about the user, reference it naturally.');
+    buffer.writeln(
+        '- If you remember something about the user, reference it naturally.');
     buffer.writeln('- Language: $lang');
     buffer.writeln('');
 
@@ -146,7 +148,8 @@ class CompanionAgent {
 
     if (relationship.isNotEmpty) {
       buffer.writeln('## Your Memory of This User');
-      buffer.writeln('Use these memories to make the conversation feel continuous.');
+      buffer.writeln(
+          'Use these memories to make the conversation feel continuous.');
       buffer.writeln(relationship);
       buffer.writeln('');
     }
@@ -157,9 +160,18 @@ class CompanionAgent {
       buffer.writeln('');
     }
 
+    if (characterMemory.isNotEmpty) {
+      buffer.writeln('## Your Observations From Past Comments');
+      buffer.writeln(
+          'Things you noticed while commenting on the user\'s records:');
+      buffer.writeln(characterMemory);
+      buffer.writeln('');
+    }
+
     if (recentFacts.isNotEmpty) {
       buffer.writeln('## What the User Has Been Up To Recently');
-      buffer.writeln('Use this as background context. Reference naturally if relevant.');
+      buffer.writeln(
+          'Use this as background context. Reference naturally if relevant.');
       buffer.writeln(recentFacts);
     }
 
