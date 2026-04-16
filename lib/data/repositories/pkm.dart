@@ -140,6 +140,7 @@ Future<Map<String, dynamic>> listPkmDirectory({String? path}) async {
 
     // List directory contents
     final items = <Map<String, dynamic>>[];
+    final seenNames = <String>{};
     try {
       await for (final entity in targetDir.list()) {
         // Skip hidden files
@@ -149,6 +150,7 @@ Future<Map<String, dynamic>> listPkmDirectory({String? path}) async {
           continue;
         }
 
+        seenNames.add(name);
         final isDirectory = await FileSystemEntity.isDirectory(entityPath);
         final item = <String, dynamic>{
           'name': name,
@@ -165,6 +167,42 @@ Future<Map<String, dynamic>> listPkmDirectory({String? path}) async {
         }
 
         items.add(item);
+      }
+
+      // For PARA root categories: if Chinese dir still exists (has leftover
+      // duplicates that couldn't be moved), merge its items into the listing
+      // with deduplication by name.
+      if (dirPath != null &&
+          dirPath.isNotEmpty &&
+          _isParaRootCategory(dirPath)) {
+        final chineseName = _paraCategoryMapping[dirPath]!;
+        final chineseDir = Directory(p.join(pkmRoot, chineseName));
+        if (await chineseDir.exists()) {
+          await for (final entity in chineseDir.list()) {
+            final name = p.basename(entity.path);
+            if (name.startsWith('.')) continue;
+            if (seenNames.contains(name)) continue;
+
+            seenNames.add(name);
+            final isDirectory =
+                await FileSystemEntity.isDirectory(entity.path);
+            final item = <String, dynamic>{
+              'name': name,
+              'path': p.relative(entity.path, from: pkmRoot),
+              'is_directory': isDirectory,
+            };
+
+            if (!isDirectory) {
+              final file = File(entity.path);
+              if (await file.exists()) {
+                final stat = await file.stat();
+                item['size'] = stat.size;
+              }
+            }
+
+            items.add(item);
+          }
+        }
       }
     } catch (e) {
       _logger.severe('Error listing directory ${targetDir.path}: $e');
@@ -246,7 +284,7 @@ Future<Map<String, dynamic>> readPkmFileEndpoint(String filePath) async {
         // Check for invalid UTF-8
         if (content.contains('\uFFFD')) {
           // Replacement char present, likely binary
-          throw const FormatException('Binary file detected');
+          throw FormatException('Binary file detected');
         }
         isBinary = false;
       } catch (e) {
