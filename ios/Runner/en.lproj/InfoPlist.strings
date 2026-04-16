@@ -14,3 +14,6 @@
 "NSHealthUpdateUsageDescription" = "Memex records health metrics to your Health data when relevant information is identified from your input. For example, log a workout note and Memex syncs the exercise data to Health.";
 "NSFamilyControlsUsageDescription" = "Memex reads your Screen Time data to analyze attention distribution patterns and generate insight cards. For example, see how your app usage correlates with your productivity records.";
 "NSMotionUsageDescription" = "Memex uses motion data to track your daily step count and create activity-based timeline cards.";
+
+/* Quick Action shortcuts */
+"QuickNoteShortcutTitle" = "Quick Note";
