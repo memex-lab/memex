@@ -246,7 +246,7 @@ Future<Map<String, dynamic>> readPkmFileEndpoint(String filePath) async {
         // Check for invalid UTF-8
         if (content.contains('\uFFFD')) {
           // Replacement char present, likely binary
-          throw FormatException('Binary file detected');
+          throw const FormatException('Binary file detected');
         }
         isBinary = false;
       } catch (e) {
