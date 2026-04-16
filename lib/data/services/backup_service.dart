@@ -97,19 +97,44 @@ class BackupService {
     String backupFilePath, {
     void Function(String status)? onProgress,
   }) async {
-    final userId = await UserStorage.getUserId();
-    if (userId == null) throw Exception('No user logged in');
-
-    final fs = FileSystemService.instance;
-    final workspacePath = fs.getWorkspacePath(userId);
-    final appDir = await getApplicationDocumentsDirectory();
+    final currentUserId = await UserStorage.getUserId();
+    if (currentUserId == null) throw Exception('No user logged in');
 
     try {
       onProgress?.call('Reading backup...');
       final bytes = await File(backupFilePath).readAsBytes();
       final archive = ZipDecoder().decodeBytes(bytes);
 
-      // 1. Restore workspace files
+      // 1. Restore settings FIRST to get the correct userId from backup
+      onProgress?.call('Restoring settings...');
+      for (final file in archive) {
+        if (file.name == 'settings.json' && file.isFile) {
+          final jsonStr = utf8.decode(file.content as List<int>);
+          final settings = jsonDecode(jsonStr) as Map<String, dynamic>;
+          final prefs = await SharedPreferences.getInstance();
+          for (final entry in settings.entries) {
+            final value = entry.value;
+            if (value is String) {
+              await prefs.setString(entry.key, value);
+            } else if (value is int) {
+              await prefs.setInt(entry.key, value);
+            } else if (value is double) {
+              await prefs.setDouble(entry.key, value);
+            } else if (value is bool) {
+              await prefs.setBool(entry.key, value);
+            }
+          }
+          _logger.info('Restored ${settings.length} settings');
+        }
+      }
+
+      // Use the restored userId (from backup settings) for workspace and DB paths
+      final restoredUserId = await UserStorage.getUserId() ?? currentUserId;
+      final fs = FileSystemService.instance;
+      final workspacePath = fs.getWorkspacePath(restoredUserId);
+      final appDir = await getApplicationDocumentsDirectory();
+
+      // 2. Restore workspace files
       onProgress?.call('Restoring workspace...');
       for (final file in archive) {
         if (file.name.startsWith('workspace/') && !file.isFile) continue;
@@ -126,7 +151,7 @@ class BackupService {
         await File(targetPath).writeAsBytes(file.content as List<int>);
       }
 
-      // 2. Restore DB
+      // 3. Restore DB
       onProgress?.call('Restoring database...');
       // Close current DB first
       if (AppDatabase.isInitialized) {
@@ -156,34 +181,11 @@ class BackupService {
       }
 
       // Re-init DB
-      await AppDatabase.init(userId);
-
-      // 3. Restore settings
-      onProgress?.call('Restoring settings...');
-      for (final file in archive) {
-        if (file.name == 'settings.json' && file.isFile) {
-          final jsonStr = utf8.decode(file.content as List<int>);
-          final settings = jsonDecode(jsonStr) as Map<String, dynamic>;
-          final prefs = await SharedPreferences.getInstance();
-          for (final entry in settings.entries) {
-            final value = entry.value;
-            if (value is String) {
-              await prefs.setString(entry.key, value);
-            } else if (value is int) {
-              await prefs.setInt(entry.key, value);
-            } else if (value is double) {
-              await prefs.setDouble(entry.key, value);
-            } else if (value is bool) {
-              await prefs.setBool(entry.key, value);
-            }
-          }
-          _logger.info('Restored ${settings.length} settings');
-        }
-      }
+      await AppDatabase.init(restoredUserId);
 
       // 4. Rebuild card cache
       onProgress?.call('Rebuilding cache...');
-      await fs.rebuildCardCache(userId);
+      await fs.rebuildCardCache(restoredUserId);
 
       _logger.info('Backup restored successfully');
       return true;
@@ -191,7 +193,8 @@ class BackupService {
       _logger.severe('Restore failed: $e', e, stack);
       // Try to re-init DB even on failure
       try {
-        await AppDatabase.init(userId);
+        final userId = await UserStorage.getUserId();
+        if (userId != null) await AppDatabase.init(userId);
       } catch (_) {}
       rethrow;
     }
