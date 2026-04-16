@@ -34,6 +34,9 @@ dependencies:
   shared_preferences: ^2.2.2
   path_provider: ^2.1.1
 
+  # Quick Actions (app icon long-press shortcuts)
+  quick_actions: ^1.1.0
+
   # Media
   image_picker: ^1.0.7
   record: ^6.0.0

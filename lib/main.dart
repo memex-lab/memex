@@ -22,7 +22,7 @@ import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:memex/ui/core/themes/app_theme.dart';
 import 'dart:io';
 import 'package:memex/ui/main_screen/widgets/radial_menu.dart';
-import 'package:memex/domain/models/shortcut_item.dart';
+import 'package:memex/domain/models/shortcut_item.dart' as app_shortcut;
 import 'package:record/record.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -53,6 +53,8 @@ import 'package:memex/data/services/onboarding_service.dart';
 import 'package:memex/data/services/demo_service.dart';
 import 'package:memex/ui/core/widgets/demo_overlay.dart';
 import 'package:memex/ui/main_screen/widgets/share_intent_handler.dart';
+import 'package:quick_actions/quick_actions.dart';
+import 'package:memex/data/services/quick_action_service.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey =
@@ -102,6 +104,13 @@ void main() async {
 
   final appRouter =
       createAppRouter(rootNavigatorKey, () => RootShell(key: rootShellKey));
+
+  // Initialize quick actions (app icon long-press shortcuts).
+  const QuickActions quickActions = QuickActions();
+  quickActions.initialize((String shortcutType) {
+    QuickActionService.instance.handleAction(shortcutType);
+  });
+
   runApp(MultiProvider(
     providers: dependencyProviders,
     child: MemexApp(router: appRouter),
@@ -414,7 +423,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
   // Radial Menu & Recording State
   bool _isRadialMenuOpen = false;
-  List<ShortcutItem> _shortcuts = [];
+  List<app_shortcut.ShortcutItem> _shortcuts = [];
   final AudioRecorder _audioRecorder = AudioRecorder();
   String? _recordingPath;
   StreamingTranscriber? _quickTranscriber;
@@ -479,6 +488,10 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         });
       },
     )..init();
+
+    // Consume pending quick action (app icon long-press shortcut).
+    QuickActionService.instance.attach();
+    _consumeQuickActionIfNeeded();
   }
 
   void _handleInvalidModelConfig(EventBusMessage message) {
@@ -783,6 +796,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     _memoryButtonTapTimer?.cancel();
     _knowledgeBaseButtonTapTimer?.cancel();
+    QuickActionService.instance.detach();
     _shareIntentHandler.dispose();
     _eventBus.removeHandler(
         EventBusMessageType.invalidModelConfig, _handleInvalidModelConfig);
@@ -1046,7 +1060,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     }
   }
 
-  void _handleShortcutSelect(ShortcutItem? item) async {
+  void _handleShortcutSelect(app_shortcut.ShortcutItem? item) async {
     final hasRecording = _recordingPath != null;
 
     if (item != null) {
@@ -1082,6 +1096,23 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     }
   }
 
+  /// Consume a pending quick action (e.g. "记一下" from app icon long-press).
+  /// Handles cold-start (action queued before widget built) and warm-start
+  /// (action arrives while app is in background).
+  void _consumeQuickActionIfNeeded() {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final action =
+          await QuickActionService.instance.consumePendingAction();
+      if (!mounted) return;
+      if (action == 'quick_note') {
+        _logger.info('Quick action: opening input sheet');
+        setState(() {
+          _isInputOpen = true;
+        });
+      }
+    });
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // when app enters foreground, ensure event bus is connected
@@ -1089,6 +1120,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       if (!_eventBus.isConnected) {
         _eventBus.connect();
       }
+      // Also consume any quick action that arrived while in background.
+      _consumeQuickActionIfNeeded();
     }
   }
 

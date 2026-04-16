@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="quick_note"
+        android:enabled="true"
+        android:icon="@drawable/ic_quick_note"
+        android:shortcutShortLabel="@string/shortcut_quick_note"
+        android:shortcutLongLabel="@string/shortcut_quick_note_long">
+        <intent
+            android:action="android.intent.action.RUN"
+            android:targetPackage="com.memexlab.memex"
+            android:targetClass="com.memexlab.memex.MainActivity">
+            <extra android:name="some unique action key" android:value="quick_note" />
+        </intent>
+    </shortcut>
+</shortcuts>

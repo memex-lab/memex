@@ -108,6 +108,17 @@
 		<array>
 			<string>workmanager.background.task</string>
 		</array>
+		<key>UIApplicationShortcutItems</key>
+		<array>
+			<dict>
+				<key>UIApplicationShortcutItemType</key>
+				<string>quick_note</string>
+				<key>UIApplicationShortcutItemTitle</key>
+				<string>记一下</string>
+				<key>UIApplicationShortcutItemIconType</key>
+				<string>UIApplicationShortcutIconTypeCompose</string>
+			</dict>
+		</array>
 		<key>NSAppTransportSecurity</key>
 		<dict>
 			<key>NSAllowsArbitraryLoads</key>
