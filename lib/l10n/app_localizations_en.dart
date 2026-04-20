@@ -1984,4 +1984,34 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get demoPrefillText => 'Hello Memex! This is my first record 🎉';
+
+  @override
+  String get quickQueryTitle => 'Quick Query';
+
+  @override
+  String get quickQueryTabLabel => 'Quick Query';
+
+  @override
+  String get quickQueryReadOnlyBadge => 'READ-ONLY';
+
+  @override
+  String get quickQueryEmptyHint =>
+      'Ask anything about your records — read-only, no data will be created.';
+
+  @override
+  String get quickQuerySwitchTitle => 'Switch Mode';
+
+  @override
+  String get quickQuerySwitchToQuickQuery =>
+      'Switch to Quick Query? Current conversation will be cleared.';
+
+  @override
+  String get quickQuerySwitchToChat =>
+      'Switch to Chat? Current conversation will be cleared.';
+
+  @override
+  String get readOnlyMode => 'Read-Only Mode';
+
+  @override
+  String get readOnlyBadge => 'READ-ONLY';
 }

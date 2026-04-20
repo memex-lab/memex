@@ -5,7 +5,6 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/data/model/chat_events.dart';
 import 'package:memex/utils/toast_helper.dart';
-import 'package:provider/provider.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
@@ -98,6 +97,11 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   bool _isStreaming = false;
   bool _isLoadingAgent = false;
   ChatTokenUsageEvent? _lastTokenUsage;
+  bool _isReadOnly = false;
+  // Tracks whether the user switched from read-only to normal (but hasn't sent a message yet).
+  bool _previouslyReadOnly = false;
+  // Once the user sends a message in normal mode after having been in read-only, lock permanently.
+  bool _readOnlyLocked = false;
 
   // Controllers
   final TextEditingController _messageController = TextEditingController();
@@ -217,6 +221,12 @@ class _AgentChatDialogState extends State<AgentChatDialog>
       _contextSent = true;
     }
 
+    // Lock read-only if user sends a message in normal mode after having been in read-only
+    if (!_isReadOnly && _previouslyReadOnly) {
+      _readOnlyLocked = true;
+      _previouslyReadOnly = false;
+    }
+
     setState(() {
       _items.add(UserMessageItem(finalMessage, refs: refs));
       _isStreaming = true;
@@ -234,6 +244,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
       scene: widget.scene,
       sceneId: widget.sceneId,
       refs: refs,
+      isQuickQuery: _isReadOnly,
     )
         .listen(
       (event) {
@@ -445,6 +456,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                     ),
                     _buildTokenUsageDisplay(),
                     _buildContextIndicator(),
+                    _buildModeToggle(),
                     _buildInput(),
                   ],
                 ),
@@ -508,6 +520,24 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary),
           ),
+          if (_isReadOnly) ...[
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                UserStorage.l10n.readOnlyBadge,
+                style: const TextStyle(
+                  fontSize: 10,
+                  color: Colors.orange,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
           const Spacer(),
           IconButton(
             icon: const Icon(Icons.history,
@@ -531,6 +561,60 @@ class _AgentChatDialogState extends State<AgentChatDialog>
             icon: const Icon(Icons.close,
                 size: 20, color: AppColors.textTertiary),
             onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModeToggle() {
+    final locked = _readOnlyLocked;
+    final canToggle = !locked && !_isStreaming;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: canToggle
+                ? () {
+                    setState(() {
+                      if (_isReadOnly) {
+                        _isReadOnly = false;
+                        _previouslyReadOnly = true;
+                      } else {
+                        _isReadOnly = true;
+                        _previouslyReadOnly = false;
+                      }
+                    });
+                  }
+                : null,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              decoration: BoxDecoration(
+                color: _isReadOnly ? AppColors.primary : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: _isReadOnly
+                      ? AppColors.primary
+                      : locked
+                          ? const Color(0xFFF0F0F0)
+                          : const Color(0xFFE2E8F0),
+                ),
+              ),
+              child: Text(
+                UserStorage.l10n.readOnlyMode,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: _isReadOnly
+                      ? Colors.white
+                      : locked
+                          ? AppColors.textTertiary
+                          : AppColors.textSecondary,
+                ),
+              ),
+            ),
           ),
         ],
       ),

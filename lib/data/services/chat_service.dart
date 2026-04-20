@@ -34,7 +34,10 @@ class ChatService {
   final FileSystemService _fileService = FileSystemService.instance;
   final Uuid _uuid = const Uuid();
 
-  /// Send a message and get a stream of events
+  /// Send a message and get a stream of events.
+  ///
+  /// When [isQuickQuery] is true, the agent operates in read-only mode
+  /// (filtered tools/skills), but the session is still persisted normally.
   Stream<ChatEvent> sendMessage(
     String message, {
     String? sessionId,
@@ -42,6 +45,7 @@ class ChatService {
     String? scene = 'assistant',
     String? sceneId,
     List<Map<String, String>>? refs,
+    bool isQuickQuery = false,
   }) async* {
     _logger.info(
         'sendMessage: sessionId=$sessionId, message=$message, refs=${refs?.length}');
@@ -88,6 +92,7 @@ class ChatService {
             'session_id': finalSessionId,
             'message': message,
             'has_refs': refs != null && refs.isNotEmpty,
+            'is_quick_query': isQuickQuery,
           },
         );
       } catch (e) {
@@ -216,6 +221,7 @@ When the user disputes content you generated (such as Cards, PKM entries, or Ass
           controller: controller,
           disableSubAgents: false,
           forceActiveSkills: forceActiveSkills,
+          quickQuery: isQuickQuery,
           additionalSystemPrompt: additionalSystemPrompt,
         );
       }

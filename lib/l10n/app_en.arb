@@ -892,5 +892,16 @@
   "demoStartTour": "Start Tour",
   "demoGetStarted": "Get Started",
   "demoSkip": "Skip",
-  "demoPrefillText": "Hello Memex! This is my first record 🎉"
+  "demoPrefillText": "Hello Memex! This is my first record 🎉",
+
+  "quickQueryTitle": "Quick Query",
+  "quickQueryTabLabel": "Quick Query",
+  "quickQueryReadOnlyBadge": "READ-ONLY",
+  "quickQueryEmptyHint": "Ask anything about your records — read-only, no data will be created.",
+  "quickQuerySwitchTitle": "Switch Mode",
+  "quickQuerySwitchToQuickQuery": "Switch to Quick Query? Current conversation will be cleared.",
+  "quickQuerySwitchToChat": "Switch to Chat? Current conversation will be cleared.",
+
+  "readOnlyMode": "Read-Only Mode",
+  "readOnlyBadge": "READ-ONLY"
 }

@@ -1914,4 +1914,31 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get demoPrefillText => '你好 Memex！这是我的第一条记录 🎉';
+
+  @override
+  String get quickQueryTitle => '快速查询';
+
+  @override
+  String get quickQueryTabLabel => '快速查询';
+
+  @override
+  String get quickQueryReadOnlyBadge => '只读';
+
+  @override
+  String get quickQueryEmptyHint => '向你的记录提问 — 只读模式，不会创建任何数据。';
+
+  @override
+  String get quickQuerySwitchTitle => '切换模式';
+
+  @override
+  String get quickQuerySwitchToQuickQuery => '切换到快速查询？当前对话将被清除。';
+
+  @override
+  String get quickQuerySwitchToChat => '切换到聊天？当前对话将被清除。';
+
+  @override
+  String get readOnlyMode => '只读模式';
+
+  @override
+  String get readOnlyBadge => '只读';
 }

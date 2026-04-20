@@ -3637,6 +3637,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Hello Memex! This is my first record 🎉'**
   String get demoPrefillText;
+
+  /// No description provided for @quickQueryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick Query'**
+  String get quickQueryTitle;
+
+  /// No description provided for @quickQueryTabLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick Query'**
+  String get quickQueryTabLabel;
+
+  /// No description provided for @quickQueryReadOnlyBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'READ-ONLY'**
+  String get quickQueryReadOnlyBadge;
+
+  /// No description provided for @quickQueryEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask anything about your records — read-only, no data will be created.'**
+  String get quickQueryEmptyHint;
+
+  /// No description provided for @quickQuerySwitchTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch Mode'**
+  String get quickQuerySwitchTitle;
+
+  /// No description provided for @quickQuerySwitchToQuickQuery.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to Quick Query? Current conversation will be cleared.'**
+  String get quickQuerySwitchToQuickQuery;
+
+  /// No description provided for @quickQuerySwitchToChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to Chat? Current conversation will be cleared.'**
+  String get quickQuerySwitchToChat;
+
+  /// No description provided for @readOnlyMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Read-Only Mode'**
+  String get readOnlyMode;
+
+  /// No description provided for @readOnlyBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'READ-ONLY'**
+  String get readOnlyBadge;
 }
 
 class _AppLocalizationsDelegate

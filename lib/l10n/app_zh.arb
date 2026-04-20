@@ -870,5 +870,16 @@
   "demoStartTour": "开始体验",
   "demoGetStarted": "开始使用",
   "demoSkip": "跳过",
-  "demoPrefillText": "你好 Memex！这是我的第一条记录 🎉"
+  "demoPrefillText": "你好 Memex！这是我的第一条记录 🎉",
+
+  "quickQueryTitle": "快速查询",
+  "quickQueryTabLabel": "快速查询",
+  "quickQueryReadOnlyBadge": "只读",
+  "quickQueryEmptyHint": "向你的记录提问 — 只读模式，不会创建任何数据。",
+  "quickQuerySwitchTitle": "切换模式",
+  "quickQuerySwitchToQuickQuery": "切换到快速查询？当前对话将被清除。",
+  "quickQuerySwitchToChat": "切换到聊天？当前对话将被清除。",
+
+  "readOnlyMode": "只读模式",
+  "readOnlyBadge": "只读"
 }
