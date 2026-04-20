@@ -54,18 +54,20 @@ class CharacterService {
       final charId = charData['id'] as String;
       final charFile = p.join(charsPath, '$charId.yaml');
 
-      // Construct merged persona
+      // Persona is now self-contained (no more separate style_guide/example_dialogue)
       var persona = charData['persona'] as String;
+
+      // Legacy support: merge old fields if they still exist
       if (charData.containsKey('style_guide')) {
         persona += "\n\n## Style Guide\n${charData['style_guide']}";
       }
+      if (charData.containsKey('example_dialogue')) {
+        persona += "\n\n## Example Dialogue\n${charData['example_dialogue']}";
+      }
+      // Legacy: pkm_interest_filter merged into persona
       if (charData.containsKey('pkm_interest_filter')) {
         persona +=
             "\n\n## PKM Interest Filter\n${charData['pkm_interest_filter']}";
-      }
-      if (charData.containsKey('example_dialogue')) {
-        persona +=
-            "\n\n## Example Dialogue\n${charData['example_dialogue']}";
       }
 
       final charDict = {
@@ -74,6 +76,9 @@ class CharacterService {
         "persona": persona,
         "avatar": null,
         "enabled": true,
+        // New field: standalone interest_filter for CharacterSelectionService
+        if (charData.containsKey('interest_filter'))
+          "interest_filter": charData['interest_filter'],
       };
 
       try {
