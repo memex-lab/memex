@@ -256,6 +256,44 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
                                                         AppColors.textTertiary,
                                                   ),
                                                 ),
+                                                if (session['is_quick_query'] ==
+                                                    true) ...[
+                                                  const SizedBox(width: 8),
+                                                  const Text(
+                                                    '•',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color:
+                                                          AppColors.textTertiary,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  Container(
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                        horizontal: 6,
+                                                        vertical: 2),
+                                                    decoration: BoxDecoration(
+                                                      color: AppColors.primary
+                                                          .withValues(
+                                                              alpha: 0.1),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              4),
+                                                    ),
+                                                    child: Text(
+                                                      UserStorage
+                                                          .l10n.readOnlyBadge,
+                                                      style: TextStyle(
+                                                        fontSize: 10,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                        color:
+                                                            AppColors.primary,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
                                               ],
                                             ),
                                           ],

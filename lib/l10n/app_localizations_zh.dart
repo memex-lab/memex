@@ -1914,4 +1914,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get demoPrefillText => '你好 Memex！这是我的第一条记录 🎉';
+
+  @override
+  String get readOnlyMode => '只读模式';
+
+  @override
+  String get readOnlyBadge => '只读';
 }

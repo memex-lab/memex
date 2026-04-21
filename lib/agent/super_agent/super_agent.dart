@@ -16,9 +16,21 @@ import 'package:memex/data/services/file_system_service.dart';
 import 'package:logging/logging.dart';
 import 'package:memex/utils/logger.dart';
 
+/// Read-only tool names available in Quick Query mode.
+const _readOnlyToolNames = {
+  'LS', 'Glob', 'Grep', 'Read', 'BatchRead',
+  'search_event_logs', 'getCurrentTime', 'get_pkm_overview',
+};
+
+/// Skills excluded in Quick Query mode (those that create/modify data).
+const _quickQueryExcludedSkills = {
+  'manage_timeline_card',
+};
+
 class SuperAgent {
   static final Logger _logger = getLogger('SuperAgent');
 
+  /// Whether this agent operates in read-only Quick Query mode.
   static Future<StatefulAgent> createAgent(
       {required LLMClient client,
       required ModelConfig modelConfig,
@@ -28,6 +40,7 @@ class SuperAgent {
       AgentController? controller,
       List<String>? forceActiveSkills,
       bool disableSubAgents = false,
+      bool quickQuery = false,
       String? additionalSystemPrompt}) async {
     final fileService = FileSystemService.instance;
 
@@ -37,11 +50,11 @@ class SuperAgent {
 
     final workingDirectory = fileService.getWorkspacePath(userId);
 
-    // SuperAgent has full access to the workspace
+    // SuperAgent has full access to the workspace (read-only in Quick Query)
     final permissionManager = FilePermissionManager(userId, [
       PermissionRule(
           rootPath: fileService.getWorkspacePath(userId),
-          access: FileAccessType.write),
+          access: quickQuery ? FileAccessType.read : FileAccessType.write),
     ]);
 
     final fileToolFactory = FileToolFactory(
@@ -49,7 +62,7 @@ class SuperAgent {
       workingDirectory: workingDirectory,
     );
 
-    final tools = [
+    final allTools = [
       fileToolFactory.buildLSTool(),
       fileToolFactory.buildGlobTool(),
       fileToolFactory.buildGrepTool(),
@@ -64,25 +77,37 @@ class SuperAgent {
       getPkmOverviewTool
     ];
 
-    // Memory Management
+    // Filter tools in Quick Query mode — only keep read-only tools
+    final tools = quickQuery
+        ? allTools.where((t) => _readOnlyToolNames.contains(t.name)).toList()
+        : allTools;
+
+    // Memory Management (skip write tools in Quick Query mode)
     final memoryManagement = await MemoryManagement.createDefault(
       userId: userId,
       sourceAgent: name,
     );
     final memoryManagementPrompt =
         await memoryManagement.buildMemoryManagementPrompt();
-    final memoryManagementTools = memoryManagement.buildMemoryManagementTools();
-    tools.addAll(memoryManagementTools);
+    if (!quickQuery) {
+      final memoryManagementTools = memoryManagement.buildMemoryManagementTools();
+      tools.addAll(memoryManagementTools);
+    }
 
     final userMemory = await memoryManagement.buildMemoryPrompt();
     state.systemReminders["user_memory"] = userMemory;
 
-    final skills = [
+    var skills = [
       KnowledgeInsightSkill(),
       TimelineCardSkill(),
       PkmSkill(workingDirectory: '/PKM'),
       SystemActionSkill(),
     ];
+    if (quickQuery) {
+      skills = skills
+          .where((s) => !_quickQueryExcludedSkills.contains(s.name))
+          .toList();
+    }
     if (forceActiveSkills != null) {
       for (var skill in skills) {
         if (forceActiveSkills.contains(skill.name)) {
@@ -92,6 +117,15 @@ class SuperAgent {
     }
 
     final systemPrompts = [superAgentSystemPrompt, memoryManagementPrompt];
+    if (quickQuery) {
+      systemPrompts.add(
+        '## Quick Query Mode\n'
+        'You are in **Quick Query** (read-only) mode. You can ONLY read and search existing data.\n'
+        'You MUST NOT create, modify, or delete any records, cards, knowledge entries, or files.\n'
+        'If the user asks you to create or change something, explain that this is a read-only mode '
+        'and suggest they use the full Chat mode instead.',
+      );
+    }
     if (additionalSystemPrompt != null) {
       systemPrompts.add(additionalSystemPrompt);
     }

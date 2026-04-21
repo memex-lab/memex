@@ -120,6 +120,7 @@ Future<List<Map<String, dynamic>>> fetchChatSessionsEndpoint({
               DateTime.now().toIso8601String(),
           'message_count': messages.length,
           'last_message_preview': lastMessagePreview,
+          'is_quick_query': sessionData['is_quick_query'] == true,
         });
       } catch (e) {
         _logger.warning('Failed to load session from ${sessionFile.path}: $e');

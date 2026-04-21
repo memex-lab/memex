@@ -892,5 +892,8 @@
   "demoStartTour": "Start Tour",
   "demoGetStarted": "Get Started",
   "demoSkip": "Skip",
-  "demoPrefillText": "Hello Memex! This is my first record 🎉"
+  "demoPrefillText": "Hello Memex! This is my first record 🎉",
+
+  "readOnlyMode": "Read-Only Mode",
+  "readOnlyBadge": "READ-ONLY"
 }

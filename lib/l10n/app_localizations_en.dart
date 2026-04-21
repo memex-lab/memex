@@ -1983,4 +1983,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get demoPrefillText => 'Hello Memex! This is my first record 🎉';
+
+  @override
+  String get readOnlyMode => 'Read-Only Mode';
+
+  @override
+  String get readOnlyBadge => 'READ-ONLY';
 }

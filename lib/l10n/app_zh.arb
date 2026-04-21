@@ -870,5 +870,8 @@
   "demoStartTour": "开始体验",
   "demoGetStarted": "开始使用",
   "demoSkip": "跳过",
-  "demoPrefillText": "你好 Memex！这是我的第一条记录 🎉"
+  "demoPrefillText": "你好 Memex！这是我的第一条记录 🎉",
+
+  "readOnlyMode": "只读模式",
+  "readOnlyBadge": "只读"
 }

@@ -3637,6 +3637,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Hello Memex! This is my first record 🎉'**
   String get demoPrefillText;
+
+  /// No description provided for @readOnlyMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Read-Only Mode'**
+  String get readOnlyMode;
+
+  /// No description provided for @readOnlyBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'READ-ONLY'**
+  String get readOnlyBadge;
 }
 
 class _AppLocalizationsDelegate
