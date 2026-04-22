@@ -20,18 +20,21 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   String _currentLang = 'en';
+  bool _useLocalSpeechToText = false;
 
   @override
   void initState() {
     super.initState();
-    _loadCurrentLanguage();
+    _loadSettings();
   }
 
-  Future<void> _loadCurrentLanguage() async {
+  Future<void> _loadSettings() async {
     final locale = await UserStorage.getLocale();
+    final useLocalSpeechToText = await UserStorage.getUseLocalSpeechToText();
     if (mounted) {
       setState(() {
         _currentLang = locale.languageCode == 'zh' ? 'zh' : 'en';
+        _useLocalSpeechToText = useLocalSpeechToText;
       });
     }
   }
@@ -43,6 +46,13 @@ class _SettingsPageState extends State<SettingsPage> {
     await UserStorage.initL10n();
     if (mounted) {
       setState(() => _currentLang = langCode);
+    }
+  }
+
+  Future<void> _updateUseLocalSpeechToText(bool value) async {
+    await UserStorage.setUseLocalSpeechToText(value);
+    if (mounted) {
+      setState(() => _useLocalSpeechToText = value);
     }
   }
 
@@ -110,6 +120,81 @@ class _SettingsPageState extends State<SettingsPage> {
                     const SizedBox(width: 10),
                     _buildLangChip('中文', 'zh'),
                   ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.textSecondary.withValues(alpha: 0.08),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.graphic_eq, color: AppColors.primary, size: 22),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            UserStorage.l10n.useLocalSpeechToTextTitle,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            UserStorage.l10n.useLocalSpeechToTextDesc,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[600],
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppColors.background,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    UserStorage.l10n.useLocalSpeechToTextCloudNotice,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey[700],
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(UserStorage.l10n.useLocalSpeechToTextTitle),
+                  value: _useLocalSpeechToText,
+                  onChanged: _updateUseLocalSpeechToText,
                 ),
               ],
             ),

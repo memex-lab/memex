@@ -86,25 +86,6 @@ class _AgentConfigListPageState extends State<AgentConfigListPage> {
     await _saveAgentConfig(agentId, newConfig);
   }
 
-  Future<void> _updateSpeechModelConfig(
-      String agentId, String? speechLlmConfigKey) async {
-    final normalizedKey = speechLlmConfigKey == null || speechLlmConfigKey.isEmpty
-        ? null
-        : speechLlmConfigKey;
-    final newConfig = (_agentConfigs[agentId] ?? const AgentConfig()).copyWith(
-      speechLlmConfigKey: normalizedKey,
-      speechFallbackToLocal:
-          normalizedKey == null ? false : null,
-    );
-    await _saveAgentConfig(agentId, newConfig);
-  }
-
-  Future<void> _updateSpeechFallback(String agentId, bool enabled) async {
-    final newConfig = (_agentConfigs[agentId] ?? const AgentConfig())
-        .copyWith(speechFallbackToLocal: enabled);
-    await _saveAgentConfig(agentId, newConfig);
-  }
-
   InputDecoration _dropdownDecoration() {
     return InputDecoration(
       filled: true,
@@ -178,7 +159,7 @@ class _AgentConfigListPageState extends State<AgentConfigListPage> {
         ],
       ),
       body: _isLoading
-          ? Center(child: AgentLogoLoading())
+          ? const Center(child: AgentLogoLoading())
           : ListView.builder(
               padding: const EdgeInsets.all(20),
               itemCount: _agentIds.length,
@@ -188,8 +169,6 @@ class _AgentConfigListPageState extends State<AgentConfigListPage> {
                     AgentDefinitions.displayNames[agentId] ?? agentId;
                 final currentConfig = _agentConfigs[agentId] ?? const AgentConfig();
                 final selectedKey = currentConfig.llmConfigKey;
-                final isMediaAnalysis = agentId == AgentDefinitions.analyzeAssets;
-                final speechUsesLocal = currentConfig.usesLocalSpeechModel;
 
                 return Container(
                   margin: const EdgeInsets.only(bottom: 12),
@@ -252,78 +231,6 @@ class _AgentConfigListPageState extends State<AgentConfigListPage> {
                           }
                         },
                       ),
-                      if (isMediaAnalysis) ...[
-                        const SizedBox(height: 20),
-                        const Divider(height: 1),
-                        const SizedBox(height: 20),
-                        Text(
-                          UserStorage.l10n.speechProcessingModel,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          UserStorage.l10n.speechProcessingModelDesc,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: AppColors.textTertiary,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        DropdownButtonFormField<String>(
-                          key: ValueKey(
-                              'speech-model-$agentId-${currentConfig.speechLlmConfigKey ?? 'local'}'),
-                          initialValue: currentConfig.speechLlmConfigKey,
-                          isExpanded: true,
-                          decoration: _dropdownDecoration(),
-                          hint: Text(UserStorage.l10n.localSpeechModel),
-                          items: [
-                            DropdownMenuItem<String>(
-                              value: null,
-                              child: Text(
-                                UserStorage.l10n.localSpeechModel,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                            ),
-                            ..._llmConfigs.map((config) {
-                              return DropdownMenuItem<String>(
-                                value: config.key,
-                                child: Text(
-                                  config.key,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    color: AppColors.textPrimary,
-                                  ),
-                                ),
-                              );
-                            }),
-                          ],
-                          onChanged: (String? newValue) {
-                            if (newValue != currentConfig.speechLlmConfigKey) {
-                              _updateSpeechModelConfig(agentId, newValue);
-                            }
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                        SwitchListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(UserStorage.l10n.speechFallbackToLocal),
-                          subtitle:
-                              Text(UserStorage.l10n.speechFallbackToLocalDesc),
-                          value: !speechUsesLocal && currentConfig.speechFallbackToLocal,
-                          onChanged: speechUsesLocal
-                              ? null
-                              : (value) => _updateSpeechFallback(agentId, value),
-                        ),
-                      ],
                     ],
                   ),
                 );

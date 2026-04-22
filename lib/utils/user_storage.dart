@@ -277,6 +277,7 @@ class UserStorage {
   }
 
   static const String _keyAgentConfigs = 'agent_configs';
+  static const String _keyUseLocalSpeechToText = 'use_local_speech_to_text';
 
   /// Get specified agent config
   static Future<AgentConfig> getAgentConfig(String agentId) async {
@@ -309,28 +310,42 @@ class UserStorage {
       }
     }
 
-    // Validate speechLlmConfigKey if present
-    if (config.speechLlmConfigKey != null &&
-        config.speechLlmConfigKey!.isNotEmpty) {
-      final exists =
-          allConfigs.any((c) => c.key == config.speechLlmConfigKey);
-      if (!exists) {
-        throw Exception(
-            'Invalid speech LLM Config Key: ${config.speechLlmConfigKey}. Available keys: $availableKeys');
-      }
-    }
-
     try {
       final prefs = await SharedPreferences.getInstance();
       final jsonString = jsonEncode(config.toJson());
       await prefs.setString('${_keyAgentConfigs}_$agentId', jsonString);
     } catch (e) {
-      // Re-throw validation exception, wrap others
-      if (e.toString().contains('Invalid LLM Config Key') ||
-          e.toString().contains('Invalid speech LLM Config Key')) {
+      if (e.toString().contains('Invalid LLM Config Key')) {
         rethrow;
       }
       throw Exception('Failed to save agent config: $e');
+    }
+  }
+
+  static Future<bool> getUseLocalSpeechToText() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getBool(_keyUseLocalSpeechToText) ?? false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  static Future<void> setUseLocalSpeechToText(bool value) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_keyUseLocalSpeechToText, value);
+    } catch (e) {
+      throw Exception('Failed to save speech preference: $e');
+    }
+  }
+
+  static Future<void> resetUseLocalSpeechToText() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_keyUseLocalSpeechToText);
+    } catch (e) {
+      throw Exception('Failed to reset speech preference: $e');
     }
   }
 

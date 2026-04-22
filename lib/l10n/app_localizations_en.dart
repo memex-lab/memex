@@ -1944,21 +1944,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get speechNoResult => 'No speech detected';
 
   @override
-  String get speechProcessingModel => 'Speech processing model';
+  String get useLocalSpeechToTextTitle => 'Use local speech to text';
 
   @override
-  String get localSpeechModel => 'Local model';
+  String get useLocalSpeechToTextDesc =>
+      'When enabled, audio is transcribed on-device before sending. When disabled, the original audio is sent directly to the model.';
 
   @override
-  String get speechProcessingModelDesc =>
-      'Choose one model for speech transcription.';
-
-  @override
-  String get speechFallbackToLocal => 'Fallback to local model';
-
-  @override
-  String get speechFallbackToLocalDesc =>
-      'Use the local speech model if the cloud model fails or returns no result.';
+  String get useLocalSpeechToTextCloudNotice =>
+      'When this is on, the original audio is not sent to the cloud model. Memex sends only the local transcript, which is useful for text-only models that do not support audio input.';
 
   @override
   String get pendingAiProcessingHint => 'Set up AI model to process';

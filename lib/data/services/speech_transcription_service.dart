@@ -6,7 +6,6 @@ import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 import 'package:memex/data/services/whisper_service.dart';
-import 'package:memex/domain/models/agent_config.dart';
 import 'package:memex/domain/models/agent_definitions.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/user_storage.dart';
@@ -33,15 +32,8 @@ class SpeechTranscriptionService {
 
   final Logger _logger = getLogger('SpeechTranscriptionService');
 
-  static const String localModelKey = '__local_speech_model__';
-
-  Future<AgentConfig> _getSpeechConfig() {
-    return UserStorage.getAgentConfig(AgentDefinitions.analyzeAssets);
-  }
-
-  Future<bool> isUsingLocalModel() async {
-    final config = await _getSpeechConfig();
-    return config.usesLocalSpeechModel;
+  Future<bool> isUsingLocalModel() {
+    return UserStorage.getUseLocalSpeechToText();
   }
 
   Future<bool> requiresLocalModelDownload() async {
@@ -49,11 +41,15 @@ class SpeechTranscriptionService {
     return !await WhisperService.instance.isModelDownloaded();
   }
 
-  Future<String?> transcribeFile(String audioPath,
-      {bool skipLengthCheck = false}) async {
+  Future<String?> transcribeFile(
+    String audioPath, {
+    bool skipLengthCheck = false,
+    bool preferLocal = false,
+  }) async {
     final result = await transcribeFileWithMetadata(
       audioPath,
       skipLengthCheck: skipLengthCheck,
+      preferLocal: preferLocal,
     );
     return result.text;
   }
@@ -61,79 +57,35 @@ class SpeechTranscriptionService {
   Future<SpeechTranscriptionResult> transcribeFileWithMetadata(
     String audioPath, {
     bool skipLengthCheck = false,
+    bool preferLocal = false,
   }) async {
-    final config = await _getSpeechConfig();
-
-    if (config.usesLocalSpeechModel) {
+    if (preferLocal) {
       return _transcribeFileLocally(audioPath, skipLengthCheck: skipLengthCheck);
     }
 
-    try {
-      final cloudResult = await _transcribeFileWithCloud(
-        audioPath,
-        speechLlmConfigKey: config.speechLlmConfigKey!,
-      );
-      if ((cloudResult.text?.trim().isNotEmpty ?? false) ||
-          !config.speechFallbackToLocal) {
-        return cloudResult;
-      }
-
-      _logger.info(
-          'Cloud speech transcription returned no valid transcript; falling back to local model');
-    } catch (e) {
-      if (!config.speechFallbackToLocal) rethrow;
-      _logger.warning(
-          'Cloud speech transcription failed; falling back to local model: $e');
-    }
-
-    final localResult =
-        await _transcribeFileLocally(audioPath, skipLengthCheck: skipLengthCheck);
-    return SpeechTranscriptionResult(
-      text: localResult.text,
-      usage: localResult.usage,
-      model: localResult.model,
-      usedFallback: true,
-    );
+    return _transcribeFileWithCloud(audioPath);
   }
 
-  Future<String?> transcribeSamples(Float32List samples) async {
-    final result = await transcribeSamplesWithMetadata(samples);
+  Future<String?> transcribeSamples(
+    Float32List samples, {
+    bool preferLocal = false,
+  }) async {
+    final result = await transcribeSamplesWithMetadata(
+      samples,
+      preferLocal: preferLocal,
+    );
     return result.text;
   }
 
   Future<SpeechTranscriptionResult> transcribeSamplesWithMetadata(
-      Float32List samples) async {
-    final config = await _getSpeechConfig();
-
-    if (config.usesLocalSpeechModel) {
+    Float32List samples, {
+    bool preferLocal = false,
+  }) async {
+    if (preferLocal) {
       return _transcribeSamplesLocally(samples);
     }
 
-    try {
-      final cloudResult = await _transcribeSamplesWithCloud(
-        samples,
-        speechLlmConfigKey: config.speechLlmConfigKey!,
-      );
-      if ((cloudResult.text?.trim().isNotEmpty ?? false) ||
-          !config.speechFallbackToLocal) {
-        return cloudResult;
-      }
-
-      _logger.info(
-          'Cloud speech transcription for samples returned no valid transcript; falling back to local model');
-    } catch (e) {
-      if (!config.speechFallbackToLocal) rethrow;
-      _logger.warning(
-          'Cloud speech transcription for samples failed; falling back to local model: $e');
-    }
-
-    final localResult = await _transcribeSamplesLocally(samples);
-    return SpeechTranscriptionResult(
-      text: localResult.text,
-      usage: localResult.usage,
-      model: localResult.model,
-      usedFallback: true,
-    );
+    return _transcribeSamplesWithCloud(samples);
   }
 
   Future<SpeechTranscriptionResult> _transcribeFileLocally(
@@ -162,9 +114,8 @@ class SpeechTranscriptionService {
   }
 
   Future<SpeechTranscriptionResult> _transcribeFileWithCloud(
-    String audioPath, {
-    required String speechLlmConfigKey,
-  }) async {
+    String audioPath,
+  ) async {
     final file = File(audioPath);
     if (!file.existsSync()) {
       throw Exception('Audio file not found: $audioPath');
@@ -174,31 +125,25 @@ class SpeechTranscriptionService {
     return _transcribeAudioBytesWithCloud(
       bytes,
       mimeType: mimeType,
-      speechLlmConfigKey: speechLlmConfigKey,
     );
   }
 
   Future<SpeechTranscriptionResult> _transcribeSamplesWithCloud(
-    Float32List samples, {
-    required String speechLlmConfigKey,
-  }) async {
+    Float32List samples,
+  ) async {
     final bytes = _samplesToWavBytes(samples);
     return _transcribeAudioBytesWithCloud(
       bytes,
       mimeType: 'audio/wav',
-      speechLlmConfigKey: speechLlmConfigKey,
     );
   }
 
   Future<SpeechTranscriptionResult> _transcribeAudioBytesWithCloud(
     List<int> bytes, {
     required String mimeType,
-    required String speechLlmConfigKey,
   }) async {
-    final llmConfig = await UserStorage.getLLMConfigByKey(speechLlmConfigKey);
-    final resources = await UserStorage.getLLMResourcesByConfig(
-      llmConfig,
-      agentId: AgentDefinitions.analyzeAssets,
+    final resources = await UserStorage.getAgentLLMResources(
+      AgentDefinitions.analyzeAssets,
     );
 
     const systemPrompt = '''You are a speech transcription engine.

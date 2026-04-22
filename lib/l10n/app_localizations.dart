@@ -3560,35 +3560,23 @@ abstract class AppLocalizations {
   /// **'No speech detected'**
   String get speechNoResult;
 
-  /// No description provided for @speechProcessingModel.
+  /// No description provided for @useLocalSpeechToTextTitle.
   ///
   /// In en, this message translates to:
-  /// **'Speech processing model'**
-  String get speechProcessingModel;
+  /// **'Use local speech to text'**
+  String get useLocalSpeechToTextTitle;
 
-  /// No description provided for @localSpeechModel.
+  /// No description provided for @useLocalSpeechToTextDesc.
   ///
   /// In en, this message translates to:
-  /// **'Local model'**
-  String get localSpeechModel;
+  /// **'When enabled, audio is transcribed on-device before sending. When disabled, the original audio is sent directly to the model.'**
+  String get useLocalSpeechToTextDesc;
 
-  /// No description provided for @speechProcessingModelDesc.
+  /// No description provided for @useLocalSpeechToTextCloudNotice.
   ///
   /// In en, this message translates to:
-  /// **'Choose one model for speech transcription.'**
-  String get speechProcessingModelDesc;
-
-  /// No description provided for @speechFallbackToLocal.
-  ///
-  /// In en, this message translates to:
-  /// **'Fallback to local model'**
-  String get speechFallbackToLocal;
-
-  /// No description provided for @speechFallbackToLocalDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Use the local speech model if the cloud model fails or returns no result.'**
-  String get speechFallbackToLocalDesc;
+  /// **'When this is on, the original audio is not sent to the cloud model. Memex sends only the local transcript, which is useful for text-only models that do not support audio input.'**
+  String get useLocalSpeechToTextCloudNotice;
 
   /// No description provided for @pendingAiProcessingHint.
   ///
