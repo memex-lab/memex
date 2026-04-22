@@ -114,7 +114,7 @@
 				<key>UIApplicationShortcutItemType</key>
 				<string>quick_note</string>
 				<key>UIApplicationShortcutItemTitle</key>
-				<string>记一下</string>
+				<string>QUICK_NOTE_TITLE</string>
 				<key>UIApplicationShortcutItemIconType</key>
 				<string>UIApplicationShortcutIconTypeCompose</string>
 			</dict>

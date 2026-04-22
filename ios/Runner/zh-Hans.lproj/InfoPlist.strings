@@ -14,3 +14,6 @@
 "NSHealthUpdateUsageDescription" = "当从您的输入中识别出相关信息时，Memex 会将健康指标记录到健康数据中。例如，记录一条运动笔记，Memex 会将锻炼数据同步到「健康」应用。";
 "NSFamilyControlsUsageDescription" = "Memex 读取您的屏幕使用时间数据以分析注意力分布模式并生成洞察卡片。例如，查看您的应用使用情况与生产力记录之间的关联。";
 "NSMotionUsageDescription" = "Memex 使用运动数据追踪每日步数并生成活动相关的时间线卡片。";
+
+/* Quick Action (app icon long-press shortcut) */
+"QUICK_NOTE_TITLE" = "记一下";
