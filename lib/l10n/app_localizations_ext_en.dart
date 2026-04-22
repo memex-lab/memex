@@ -118,7 +118,7 @@ class AppLocalizationsExtEn extends AppLocalizationsEn
 
   @override
   String get pkmFileLanguageInstruction =>
-      'All file contents, filenames, and folder names created in the P.A.R.A. knowledge base MUST be in English.';
+      'P.A.R.A. root category folders (Projects, Areas, Resources, Archives) must always use these exact English names. All other file contents, subfolder names, and filenames inside the P.A.R.A. knowledge base MUST be in English.';
 
   @override
   String get pkmInsightLanguageInstruction =>

@@ -71,7 +71,7 @@ class AppLocalizationsExtZh extends AppLocalizationsZh
   @override
   String get pkmPARAStructureExample => '''## P.A.R.A. 知识库结构示例（根据用户实际输入灵活组织）：
 │
-├── 项目
+├── Projects
 │   ├── 2025春节全家三亚旅游/      <-- 涉及行程、机票、酒店，使用文件夹
 │   │   ├── 行程规划日程表.md
 │   │   └── 机票酒店预订确认单.md
@@ -81,7 +81,7 @@ class AppLocalizationsExtZh extends AppLocalizationsZh
 │   ├── 考取驾照_C1.md             <-- 目标单一，单文件即可
 │   └── 12月工作汇报PPT准备.md
 │
-├── 领域
+├── Areas
 │   ├── 健康与医疗/
 │   │   ├── 家庭成员体检报告汇总.md
 │   │   └── 健身打卡与体重记录.md     <-- 适合追加写入
@@ -93,7 +93,7 @@ class AppLocalizationsExtZh extends AppLocalizationsZh
 │   └── 职业发展/
 │       └── 个人简历_通用版维护.md    <-- 会随时间不断更新
 │
-├── 资源
+├── Resources
 │   ├── 烹饪美食/
 │   │   ├── 减脂餐食谱收藏.md
 │   │   └── 家电使用指南.md
@@ -105,7 +105,7 @@ class AppLocalizationsExtZh extends AppLocalizationsZh
 │   └── 家居生活技巧/
 │       └── 收纳整理术笔记.md
 │
-└── 归档
+└── Archives
     ├── [已完成]购买第一辆车.md
     └── [已失效]旧租房合同资料/
            ├── 租房合同.md
@@ -117,7 +117,7 @@ class AppLocalizationsExtZh extends AppLocalizationsZh
 
   @override
   String get pkmFileLanguageInstruction =>
-      'All file contents, filenames, and folder names created in the P.A.R.A. knowledge base MUST be in Simplified Chinese (zh-CN).';
+      'P.A.R.A. root category folders (Projects, Areas, Resources, Archives) must always use these exact English names. All other file contents, subfolder names, and filenames inside the P.A.R.A. knowledge base MUST be in Simplified Chinese (zh-CN).';
 
   @override
   String get pkmInsightLanguageInstruction =>

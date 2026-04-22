@@ -5,7 +5,6 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/data/model/chat_events.dart';
 import 'package:memex/utils/toast_helper.dart';
-import 'package:provider/provider.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
@@ -98,6 +97,9 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   bool _isStreaming = false;
   bool _isLoadingAgent = false;
   ChatTokenUsageEvent? _lastTokenUsage;
+  bool _isReadOnly = false;
+  // Whether the user has sent at least one message in normal mode — prevents switching to read-only.
+  bool _hasSentInNormalMode = false;
 
   // Controllers
   final TextEditingController _messageController = TextEditingController();
@@ -197,6 +199,11 @@ class _AgentChatDialogState extends State<AgentChatDialog>
         _items = historyItems;
         _lastTokenUsage = restoredUsage;
         _isLoading = false;
+        // Restore read-only mode from persisted session
+        final wasQuickQuery = sessionData['is_quick_query'] == true;
+        _isReadOnly = wasQuickQuery;
+        // If session was in normal mode (or field missing for old sessions), lock toggle
+        _hasSentInNormalMode = !wasQuickQuery;
       });
       _scrollToBottom();
     } catch (e) {
@@ -217,6 +224,11 @@ class _AgentChatDialogState extends State<AgentChatDialog>
       _contextSent = true;
     }
 
+    // Lock read-only toggle once user sends in normal mode
+    if (!_isReadOnly) {
+      _hasSentInNormalMode = true;
+    }
+
     setState(() {
       _items.add(UserMessageItem(finalMessage, refs: refs));
       _isStreaming = true;
@@ -234,6 +246,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
       scene: widget.scene,
       sceneId: widget.sceneId,
       refs: refs,
+      isQuickQuery: _isReadOnly,
     )
         .listen(
       (event) {
@@ -508,6 +521,8 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary),
           ),
+          const SizedBox(width: 8),
+          _buildModeChip(),
           const Spacer(),
           IconButton(
             icon: const Icon(Icons.history,
@@ -537,60 +552,110 @@ class _AgentChatDialogState extends State<AgentChatDialog>
     );
   }
 
+  Widget _buildModeChip() {
+    final locked = !_isReadOnly && _hasSentInNormalMode;
+    final canToggle = !locked && !_isStreaming;
+
+    final label = _isReadOnly
+        ? UserStorage.l10n.readOnlyMode
+        : UserStorage.l10n.chatModeLabel;
+
+    return GestureDetector(
+      onTap: canToggle
+          ? () {
+              setState(() {
+                _isReadOnly = !_isReadOnly;
+              });
+            }
+          : null,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: _isReadOnly
+              ? AppColors.primary.withValues(alpha: 0.08)
+              : locked
+                  ? const Color(0xFFF0F0F0)
+                  : const Color(0xFFEEEEEE),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: _isReadOnly
+                    ? AppColors.primary
+                    : locked
+                        ? AppColors.textTertiary
+                        : AppColors.textSecondary,
+              ),
+            ),
+            if (canToggle) ...[
+              const SizedBox(width: 2),
+              Icon(
+                Icons.unfold_more,
+                size: 12,
+                color:
+                    _isReadOnly ? AppColors.primary : AppColors.textSecondary,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildInput() {
     return Container(
       padding: EdgeInsets.fromLTRB(
-          16, 16, 16, MediaQuery.of(context).viewInsets.bottom + 16),
+          16, 12, 16, MediaQuery.of(context).viewInsets.bottom + 16),
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(top: BorderSide(color: Color(0xFFF7F8FA))),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF7F8FA),
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _messageController,
-                      focusNode: _messageFocusNode,
-                      decoration: InputDecoration(
-                        hintText: widget.inputHint,
-                        hintStyle: const TextStyle(
-                            color: AppColors.textTertiary, fontSize: 14),
-                        border: InputBorder.none,
-                        contentPadding:
-                            const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      onSubmitted: (text) => _sendMessage(text),
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () => _sendMessage(_messageController.text),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: _isStreaming ? Colors.grey : AppColors.primary,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        _isStreaming ? Icons.stop : Icons.arrow_upward,
-                        size: 16,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF7F8FA),
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _messageController,
+                focusNode: _messageFocusNode,
+                decoration: InputDecoration(
+                  hintText: widget.inputHint,
+                  hintStyle: const TextStyle(
+                      color: AppColors.textTertiary, fontSize: 14),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                onSubmitted: (text) => _sendMessage(text),
               ),
             ),
-          ),
-        ],
+            GestureDetector(
+              onTap: () => _sendMessage(_messageController.text),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: _isStreaming ? Colors.grey : AppColors.primary,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  _isStreaming ? Icons.stop : Icons.arrow_upward,
+                  size: 16,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -651,7 +716,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                         }).toList(),
                       ),
                     ),
-                  Text(
+                  SelectableText(
                     item.text,
                     style: const TextStyle(
                         fontSize: 14, color: Colors.white, height: 1.5),
@@ -685,7 +750,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                     .copyWith(topLeft: const Radius.circular(4)),
                 border: Border.all(color: const Color(0xFFF7F8FA)),
               ),
-              child: Text(
+              child: SelectableText(
                 item.text,
                 style: TextStyle(
                     fontSize: 14, color: AppColors.textSecondary, height: 1.5),

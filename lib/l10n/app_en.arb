@@ -880,7 +880,7 @@
   "speechTranscribing": "Recognizing...",
   "speechTranscriptionTitle": "Transcription",
   "speechNoResult": "No speech detected",
-  "pendingAiProcessingHint": "Set up AI model to auto-process this record",
+  "pendingAiProcessingHint": "Set up AI model to process",
   "demoWelcome": "Welcome to Memex!\nLet's take a quick tour of what AI can do for your records.",
   "demoTapAdd": "Tap here to create your first record",
   "demoTapSend": "Tap to send your first record",
@@ -892,5 +892,10 @@
   "demoStartTour": "Start Tour",
   "demoGetStarted": "Get Started",
   "demoSkip": "Skip",
-  "demoPrefillText": "Hello Memex! This is my first record 🎉"
+  "demoPrefillText": "Hello Memex! This is my first record 🎉",
+
+  "readOnlyMode": "Chat",
+  "readOnlyBadge": "CHAT",
+
+  "chatModeLabel": "Agent"
 }

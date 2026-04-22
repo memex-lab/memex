@@ -227,7 +227,11 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
                                                 overflow: TextOverflow.ellipsis,
                                               ),
                                             const SizedBox(height: 8),
-                                            Row(
+                                            Wrap(
+                                              spacing: 8,
+                                              runSpacing: 4,
+                                              crossAxisAlignment:
+                                                  WrapCrossAlignment.center,
                                               children: [
                                                 Text(
                                                   _formatDateTime(updatedAt),
@@ -237,7 +241,6 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
                                                         AppColors.textTertiary,
                                                   ),
                                                 ),
-                                                const SizedBox(width: 8),
                                                 const Text(
                                                   '•',
                                                   style: TextStyle(
@@ -246,7 +249,6 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
                                                         AppColors.textTertiary,
                                                   ),
                                                 ),
-                                                const SizedBox(width: 8),
                                                 Text(
                                                   UserStorage.l10n.messageCount(
                                                       messageCount),
@@ -256,6 +258,42 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
                                                         AppColors.textTertiary,
                                                   ),
                                                 ),
+                                                if (session['is_quick_query'] ==
+                                                    true) ...[
+                                                  const Text(
+                                                    '•',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: AppColors
+                                                          .textTertiary,
+                                                    ),
+                                                  ),
+                                                  Container(
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                        horizontal: 6,
+                                                        vertical: 2),
+                                                    decoration: BoxDecoration(
+                                                      color: AppColors.primary
+                                                          .withValues(
+                                                              alpha: 0.1),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              4),
+                                                    ),
+                                                    child: Text(
+                                                      UserStorage
+                                                          .l10n.readOnlyBadge,
+                                                      style: const TextStyle(
+                                                        fontSize: 10,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                        color:
+                                                            AppColors.primary,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
                                               ],
                                             ),
                                           ],

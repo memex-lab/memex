@@ -1331,11 +1331,15 @@ class _TimelineEntryItemState extends State<_TimelineEntryItem> {
                   const Icon(Icons.auto_awesome_outlined,
                       size: 11, color: Color(0xFF99A1AF)),
                   const SizedBox(width: 3),
-                  Text(
-                    UserStorage.l10n.pendingAiProcessingHint,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: Color(0xFF99A1AF),
+                  Flexible(
+                    child: Text(
+                      UserStorage.l10n.pendingAiProcessingHint,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFF99A1AF),
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
                   ),
                 ] else if (card.address != null &&

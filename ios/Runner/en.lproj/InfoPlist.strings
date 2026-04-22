@@ -15,5 +15,5 @@
 "NSFamilyControlsUsageDescription" = "Memex reads your Screen Time data to analyze attention distribution patterns and generate insight cards. For example, see how your app usage correlates with your productivity records.";
 "NSMotionUsageDescription" = "Memex uses motion data to track your daily step count and create activity-based timeline cards.";
 
-/* Quick Action shortcuts */
-"QuickNoteShortcutTitle" = "Quick Note";
+/* Quick Action (app icon long-press shortcut) */
+"QUICK_NOTE_TITLE" = "Quick Note";

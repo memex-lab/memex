@@ -1944,8 +1944,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get speechNoResult => 'No speech detected';
 
   @override
-  String get pendingAiProcessingHint =>
-      'Set up AI model to auto-process this record';
+  String get pendingAiProcessingHint => 'Set up AI model to process';
 
   @override
   String get demoWelcome =>
@@ -1984,4 +1983,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get demoPrefillText => 'Hello Memex! This is my first record 🎉';
+
+  @override
+  String get readOnlyMode => 'Chat';
+
+  @override
+  String get readOnlyBadge => 'CHAT';
+
+  @override
+  String get chatModeLabel => 'Agent';
 }

@@ -941,22 +941,8 @@ class MemexRouter {
     String? scene = 'assistant',
     String? sceneId,
     List<Map<String, String>>? refs,
+    bool isQuickQuery = false,
   }) {
-    // Local implementation delegates to ChatService
-    // ChatService uses imported ChatEvent which matches the interface
-    // but ChatService.sendMessage returns Stream<ChatEvent> from package:memex/data/services/chat_service.dart
-    // which exports package:memex/data/model/chat_events.dart
-    // So types should be compatible.
-
-    // Check if we need to initialize something?
-    // ChatService handles its own initialization somewhat, but depends on global state.
-    // _ensureInitialized might be needed if ChatService uses DB or FileSystem that we init.
-    // However, ChatService.instance uses FileSystemService.instance which is static.
-    // MemexRouter inits FileSystemService.
-
-    // We can't await inside a sync generator or stream return easily without Stream.fromFuture or async*
-    // ChatService.sendMessage is async*.
-
     return ChatService.instance.sendMessage(
       message,
       sessionId: sessionId,
@@ -964,6 +950,7 @@ class MemexRouter {
       scene: scene,
       sceneId: sceneId,
       refs: refs,
+      isQuickQuery: isQuickQuery,
     );
   }
 

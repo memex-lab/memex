@@ -3563,7 +3563,7 @@ abstract class AppLocalizations {
   /// No description provided for @pendingAiProcessingHint.
   ///
   /// In en, this message translates to:
-  /// **'Set up AI model to auto-process this record'**
+  /// **'Set up AI model to process'**
   String get pendingAiProcessingHint;
 
   /// No description provided for @demoWelcome.
@@ -3637,6 +3637,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Hello Memex! This is my first record 🎉'**
   String get demoPrefillText;
+
+  /// No description provided for @readOnlyMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat'**
+  String get readOnlyMode;
+
+  /// No description provided for @readOnlyBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'CHAT'**
+  String get readOnlyBadge;
+
+  /// No description provided for @chatModeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Agent'**
+  String get chatModeLabel;
 }
 
 class _AppLocalizationsDelegate

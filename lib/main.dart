@@ -1115,13 +1115,28 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      // Reset consumed-action dedup so the same shortcut can be triggered
+      // on the next foreground session.
+      QuickActionService.instance.resetConsumed();
+    }
     // when app enters foreground, ensure event bus is connected
     if (state == AppLifecycleState.resumed) {
       if (!_eventBus.isConnected) {
         _eventBus.connect();
       }
-      // Also consume any quick action that arrived while in background.
-      _consumeQuickActionIfNeeded();
+      // Consume any quick action that arrived while in background.
+      // Use synchronous check — platform callback fires before resumed,
+      // so no need for the 2-sec wait (which could catch a re-delivered intent).
+      final action = QuickActionService.instance.consumeIfPending();
+      if (action == 'quick_note' && mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _logger.info('Quick action (resumed): opening input sheet');
+            setState(() => _isInputOpen = true);
+          }
+        });
+      }
     }
   }
 

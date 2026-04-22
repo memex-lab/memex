@@ -9,6 +9,62 @@ import 'package:path/path.dart' as p;
 final _logger = getLogger('PkmEndpoint');
 final _fileSystemService = FileSystemService.instance;
 
+/// English → Chinese mapping for PARA root categories.
+const _paraCategoryMapping = <String, String>{
+  'Projects': '项目',
+  'Areas': '领域',
+  'Resources': '资源',
+  'Archives': '归档',
+};
+
+/// Check if [dirPath] is a PARA root category path (e.g. "Projects", "Areas").
+bool _isParaRootCategory(String dirPath) {
+  // Only top-level paths like "Projects", not "Projects/Foo"
+  return _paraCategoryMapping.containsKey(dirPath);
+}
+
+/// Migrate Chinese PARA root directory contents into the English directory.
+///
+/// Moves all files/subdirectories from the Chinese-named directory into the
+/// English-named one, then removes the now-empty Chinese directory.
+/// Silently skips if either directory is missing or if individual items
+/// already exist in the target (no overwrite).
+Future<void> _migrateChineseToEnglish(
+    String pkmRoot, String englishName, String chineseName) async {
+  final englishDir = Directory(p.join(pkmRoot, englishName));
+  final chineseDir = Directory(p.join(pkmRoot, chineseName));
+
+  if (!await chineseDir.exists()) return;
+  if (!await englishDir.exists()) return; // nothing to migrate into
+
+  try {
+    await for (final entity in chineseDir.list()) {
+      final name = p.basename(entity.path);
+      if (name.startsWith('.')) continue;
+
+      final targetPath = p.join(englishDir.path, name);
+      if (await FileSystemEntity.isDirectory(targetPath) ||
+          await FileSystemEntity.isFile(targetPath)) {
+        // Already exists in target, skip
+        continue;
+      }
+      await entity.rename(targetPath);
+    }
+
+    // Remove Chinese dir if empty
+    final remaining = await chineseDir.list().toList();
+    final nonHidden =
+        remaining.where((e) => !p.basename(e.path).startsWith('.')).toList();
+    if (nonHidden.isEmpty) {
+      await chineseDir.delete(recursive: false);
+      _logger.info(
+          'Migrated PARA category $chineseName → $englishName and removed empty dir');
+    }
+  } catch (e) {
+    _logger.warning('Failed to migrate PARA category $chineseName: $e');
+  }
+}
+
 /// List PKM directory contents
 ///
 /// Args:
@@ -55,18 +111,16 @@ Future<Map<String, dynamic>> listPkmDirectory({String? path}) async {
 
       targetDir = Directory(targetPath);
 
-      // Special handling for English/Chinese root PKM categories
-      if (!await targetDir.exists()) {
-        final Map<String, String> categoryMapping = {
-          'Projects': '项目',
-          'Areas': '领域',
-          'Resources': '资源',
-          'Archives': '归档',
-        };
+      // For PARA root categories: migrate Chinese dirs into English and merge listing
+      if (_isParaRootCategory(dirPath)) {
+        final chineseName = _paraCategoryMapping[dirPath]!;
 
-        if (categoryMapping.containsKey(dirPath)) {
-          final chinesePath = p.join(pkmRoot, categoryMapping[dirPath]!);
-          final chineseDir = Directory(chinesePath);
+        // Auto-migrate: move contents from Chinese dir into English dir
+        await _migrateChineseToEnglish(pkmRoot, dirPath, chineseName);
+
+        // If English dir doesn't exist but Chinese does, use Chinese as fallback
+        if (!await targetDir.exists()) {
+          final chineseDir = Directory(p.join(pkmRoot, chineseName));
           if (await chineseDir.exists()) {
             targetDir = chineseDir;
           }
@@ -86,6 +140,7 @@ Future<Map<String, dynamic>> listPkmDirectory({String? path}) async {
 
     // List directory contents
     final items = <Map<String, dynamic>>[];
+    final seenNames = <String>{};
     try {
       await for (final entity in targetDir.list()) {
         // Skip hidden files
@@ -95,6 +150,7 @@ Future<Map<String, dynamic>> listPkmDirectory({String? path}) async {
           continue;
         }
 
+        seenNames.add(name);
         final isDirectory = await FileSystemEntity.isDirectory(entityPath);
         final item = <String, dynamic>{
           'name': name,
@@ -111,6 +167,42 @@ Future<Map<String, dynamic>> listPkmDirectory({String? path}) async {
         }
 
         items.add(item);
+      }
+
+      // For PARA root categories: if Chinese dir still exists (has leftover
+      // duplicates that couldn't be moved), merge its items into the listing
+      // with deduplication by name.
+      if (dirPath != null &&
+          dirPath.isNotEmpty &&
+          _isParaRootCategory(dirPath)) {
+        final chineseName = _paraCategoryMapping[dirPath]!;
+        final chineseDir = Directory(p.join(pkmRoot, chineseName));
+        if (await chineseDir.exists()) {
+          await for (final entity in chineseDir.list()) {
+            final name = p.basename(entity.path);
+            if (name.startsWith('.')) continue;
+            if (seenNames.contains(name)) continue;
+
+            seenNames.add(name);
+            final isDirectory =
+                await FileSystemEntity.isDirectory(entity.path);
+            final item = <String, dynamic>{
+              'name': name,
+              'path': p.relative(entity.path, from: pkmRoot),
+              'is_directory': isDirectory,
+            };
+
+            if (!isDirectory) {
+              final file = File(entity.path);
+              if (await file.exists()) {
+                final stat = await file.stat();
+                item['size'] = stat.size;
+              }
+            }
+
+            items.add(item);
+          }
+        }
       }
     } catch (e) {
       _logger.severe('Error listing directory ${targetDir.path}: $e');

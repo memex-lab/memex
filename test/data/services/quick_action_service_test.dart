@@ -12,6 +12,7 @@ void main() {
   tearDown(() {
     // Reset internal state between tests
     service.detach();
+    service.resetConsumed();
   });
 
   group('QuickActionService', () {
@@ -83,6 +84,64 @@ void main() {
       // No action queued — should timeout and return null
       final action = await service.consumePendingAction();
       expect(action, isNull);
+    });
+
+    test('consumeIfPending returns action immediately when queued', () {
+      service.attach();
+      service.handleAction('quick_note');
+      final action = service.consumeIfPending();
+      expect(action, 'quick_note');
+    });
+
+    test('consumeIfPending returns null when nothing queued', () {
+      service.attach();
+      final action = service.consumeIfPending();
+      expect(action, isNull);
+    });
+  });
+
+  group('dedup — double delivery from quick_actions_android', () {
+    test(
+        'second handleAction with same action is ignored after consumption',
+        () async {
+      service.attach();
+      // 1. First delivery (from onAttachedToActivity)
+      service.handleAction('quick_note');
+      // 2. Consumed by initState
+      final action1 = await service.consumePendingAction();
+      expect(action1, 'quick_note');
+      // 3. Second delivery (from initialize→getLaunchAction, ~1s later)
+      service.handleAction('quick_note');
+      // 4. _pendingAction should NOT be set — dedup blocks it
+      final action2 = service.consumeIfPending();
+      expect(action2, isNull);
+    });
+
+    test('same action is allowed again after resetConsumed', () async {
+      service.attach();
+      service.handleAction('quick_note');
+      final action1 = await service.consumePendingAction();
+      expect(action1, 'quick_note');
+
+      // Reset (app goes to background)
+      service.resetConsumed();
+
+      // User triggers the same shortcut again
+      service.handleAction('quick_note');
+      final action2 = service.consumeIfPending();
+      expect(action2, 'quick_note');
+    });
+
+    test('different action type is not blocked by dedup', () async {
+      service.attach();
+      service.handleAction('quick_note');
+      final action1 = await service.consumePendingAction();
+      expect(action1, 'quick_note');
+
+      // A different action type should not be blocked
+      service.handleAction('other_action');
+      final action2 = service.consumeIfPending();
+      expect(action2, 'other_action');
     });
   });
 }
