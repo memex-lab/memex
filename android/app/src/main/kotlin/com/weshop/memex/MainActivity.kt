@@ -20,6 +20,16 @@ class MainActivity : FlutterFragmentActivity() {
     private val CHANNEL = "com.memexlab.memex/webview"
     private val AUDIO_CHANNEL = "com.memexlab.memex/audio_converter"
 
+    override fun onCreate(savedInstanceState: android.os.Bundle?) {
+        // If the Activity is being recreated (system killed it in background),
+        // clear the stale shortcut extra so the quick_actions plugin won't
+        // re-deliver an already-consumed action on the next attach cycle.
+        if (savedInstanceState != null) {
+            intent?.removeExtra("some unique action key")
+        }
+        super.onCreate(savedInstanceState)
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         

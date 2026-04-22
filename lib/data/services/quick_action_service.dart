@@ -16,6 +16,12 @@ class QuickActionService {
   /// The action ID that was tapped, if not yet consumed.
   String? _pendingAction;
 
+  /// The last action type that was consumed.
+  /// Used to deduplicate the double delivery from quick_actions_android
+  /// (onAttachedToActivity fires once, then initialize()→getLaunchAction()
+  /// fires again ~1 s later with the same action).
+  String? _consumedAction;
+
   /// Listener notified when an action arrives or becomes consumable.
   Completer<void>? _actionReady;
 
@@ -25,6 +31,10 @@ class QuickActionService {
   /// Called by the platform quick_actions callback.
   void handleAction(String actionType) {
     _logger.info('Quick action received: $actionType');
+    if (actionType == _consumedAction) {
+      _logger.info('Ignoring re-delivered action: $actionType');
+      return;
+    }
     _pendingAction = actionType;
     if (_hasListener) {
       // Listener is ready — deliver immediately.
@@ -44,6 +54,19 @@ class QuickActionService {
     _actionReady = null;
   }
 
+  /// Consume the pending action synchronously without waiting.
+  ///
+  /// Use this when the platform callback is expected to have already fired
+  /// (e.g. on app resume). Unlike [consumePendingAction], this does NOT wait
+  /// for a late-arriving callback, which prevents re-delivered shortcut
+  /// intents from re-triggering the action.
+  String? consumeIfPending() {
+    final action = _pendingAction;
+    _pendingAction = null;
+    if (action != null) _consumedAction = action;
+    return action;
+  }
+
   /// Wait for and consume the pending action.
   ///
   /// Returns the action type, or `null` if no action is pending.
@@ -54,6 +77,7 @@ class QuickActionService {
     if (_pendingAction != null) {
       final action = _pendingAction;
       _pendingAction = null;
+      _consumedAction = action;
       return action;
     }
 
@@ -68,6 +92,14 @@ class QuickActionService {
 
     final action = _pendingAction;
     _pendingAction = null;
+    if (action != null) _consumedAction = action;
     return action;
+  }
+
+  /// Reset the dedup tracking so the same action type can be consumed again.
+  /// Called when the app goes to background, allowing a fresh shortcut trigger
+  /// on the next foreground session.
+  void resetConsumed() {
+    _consumedAction = null;
   }
 }
