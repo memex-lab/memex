@@ -716,7 +716,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                         }).toList(),
                       ),
                     ),
-                  Text(
+                  SelectableText(
                     item.text,
                     style: const TextStyle(
                         fontSize: 14, color: Colors.white, height: 1.5),
@@ -750,7 +750,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                     .copyWith(topLeft: const Radius.circular(4)),
                 border: Border.all(color: const Color(0xFFF7F8FA)),
               ),
-              child: Text(
+              child: SelectableText(
                 item.text,
                 style: TextStyle(
                     fontSize: 14, color: AppColors.textSecondary, height: 1.5),
