@@ -1471,6 +1471,100 @@ class FileSystemService {
     return path.join(getSystemPath(userId), 'insight_tags.md');
   }
 
+  /// Get ScheduleAggregations directory path
+  String getScheduleAggregationsPath(String userId) {
+    return path.join(getWorkspacePath(userId), 'ScheduleAggregations');
+  }
+
+  /// Read schedule aggregation file (YAML)
+  Future<Map<String, dynamic>?> readScheduleAggregation(
+      String userId, String aggregationId) async {
+    final filePath = getScheduleAggregationPath(userId, aggregationId);
+
+    if (!await _baseService.exists(filePath)) {
+      return null;
+    }
+
+    try {
+      final content = await _baseService.readFile(filePath);
+      final data = _parseYaml(content);
+      return data.isEmpty ? null : data;
+    } catch (e) {
+      _logger.severe('Failed to read schedule aggregation $filePath: $e');
+      return null;
+    }
+  }
+
+  /// Write schedule aggregation file (YAML)
+  Future<void> writeScheduleAggregation(
+    String userId,
+    String aggregationId,
+    Map<String, dynamic> data,
+  ) async {
+    final filePath = getScheduleAggregationPath(userId, aggregationId);
+    final parentDir = path.dirname(filePath);
+    await ensureDirectory(parentDir);
+
+    try {
+      final yamlContent = _mapToYaml(data);
+      await _baseService.writeFile(filePath, yamlContent);
+      _logger.info('Schedule aggregation written: $filePath');
+    } catch (e) {
+      _logger.severe('Failed to write schedule aggregation $filePath: $e');
+      rethrow;
+    }
+  }
+
+  /// List all schedule aggregations
+  Future<List<Map<String, dynamic>>> listScheduleAggregations(
+      String userId) async {
+    final dirPath = getScheduleAggregationsPath(userId);
+    if (!await _baseService.exists(dirPath)) {
+      return [];
+    }
+
+    final aggregations = <Map<String, dynamic>>[];
+    try {
+      final items = await _baseService.listDirectory(dirPath);
+      for (final item in items) {
+        if (item.endsWith('.yaml')) {
+          final aggregationId = path.basename(item);
+          final data = await readScheduleAggregation(userId, aggregationId);
+          if (data != null) {
+            if (!data.containsKey('id')) {
+              data['id'] = path.basenameWithoutExtension(aggregationId);
+            }
+            aggregations.add(data);
+          }
+        }
+      }
+      // Sort by generated_at descending (newest first)
+      aggregations.sort((a, b) {
+        final aTime = DateTime.tryParse(a['generated_at'] ?? '') ?? DateTime(0);
+        final bTime = DateTime.tryParse(b['generated_at'] ?? '') ?? DateTime(0);
+        return bTime.compareTo(aTime);
+      });
+    } catch (e) {
+      _logger.warning('Failed to list schedule aggregations: $e');
+    }
+    return aggregations;
+  }
+
+  /// Get the latest schedule aggregation
+  Future<Map<String, dynamic>?> getLatestScheduleAggregation(
+      String userId) async {
+    final aggregations = await listScheduleAggregations(userId);
+    if (aggregations.isEmpty) return null;
+    return aggregations.first;
+  }
+
+  /// Schedule aggregation file path
+  String getScheduleAggregationPath(String userId, String aggregationId) {
+    final filename =
+        aggregationId.endsWith('.yaml') ? aggregationId : '$aggregationId.yaml';
+    return path.join(getScheduleAggregationsPath(userId), filename);
+  }
+
   /// Knowledge insight card file path
   String getKnowledgeInsightCardPath(String userId, String cardId) {
     final filename = cardId.endsWith('.yaml') ? cardId : '$cardId.yaml';

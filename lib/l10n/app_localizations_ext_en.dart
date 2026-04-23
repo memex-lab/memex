@@ -133,6 +133,10 @@ class AppLocalizationsExtEn extends AppLocalizationsEn
       '**Important**: All output text must be in **English**.';
 
   @override
+  String get scheduleAggregatorLanguageInstruction =>
+      '**Important**: All output text (editorial_intro, quote_blocks, conflict descriptions) must be in **English**.';
+
+  @override
   String get assetAnalysisLanguageInstruction =>
       'IMPORTANT: You must respond in English.';
 

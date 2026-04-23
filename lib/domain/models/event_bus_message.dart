@@ -6,6 +6,7 @@ enum EventBusMessageType {
   cardAdded('card_added'),
   cardDetailUpdated('card_detail_updated'),
   newInsight('new_insight'),
+  scheduleAggregationUpdated('schedule_aggregation_updated'),
   newSystemAction('new_system_action'),
   invalidModelConfig('invalid_model_config'),
   errorNotification('error_notification'),
@@ -44,6 +45,8 @@ abstract class EventBusMessage {
         return CardDetailUpdatedMessage.fromJson(json);
       case EventBusMessageType.newInsight:
         return NewInsightMessage.fromJson(json);
+      case EventBusMessageType.scheduleAggregationUpdated:
+        return ScheduleAggregationUpdatedMessage.fromJson(json);
       case EventBusMessageType.newSystemAction:
         return NewSystemActionMessage.fromJson(json);
       case EventBusMessageType.invalidModelConfig:
@@ -239,6 +242,25 @@ class NewInsightMessage extends EventBusMessage {
     return NewInsightMessage(
       insightId: data['insight_id'] as String,
       html: data['html'] as String,
+    );
+  }
+}
+
+/// Schedule Aggregation Updated Message
+class ScheduleAggregationUpdatedMessage extends EventBusMessage {
+  final String aggregationId;
+
+  ScheduleAggregationUpdatedMessage({
+    required this.aggregationId,
+  }) : super(
+          type: EventBusMessageType.scheduleAggregationUpdated,
+          data: {'aggregation_id': aggregationId},
+        );
+
+  factory ScheduleAggregationUpdatedMessage.fromJson(Map<String, dynamic> json) {
+    final data = json['data'] as Map<String, dynamic>;
+    return ScheduleAggregationUpdatedMessage(
+      aggregationId: data['aggregation_id'] as String,
     );
   }
 }

@@ -20,11 +20,14 @@ class SystemEventTypes {
   static const String cardCommentPosted = 'card_comment_posted';
   static const String knowledgeInsightRefreshRequested =
       'knowledge_insight_refresh_requested';
+  static const String scheduleAggregationRequested =
+      'schedule_aggregation_requested';
 
   static const List<String> allTypes = [
     userInputSubmitted,
     cardCommentPosted,
     knowledgeInsightRefreshRequested,
+    scheduleAggregationRequested,
   ];
 }
 

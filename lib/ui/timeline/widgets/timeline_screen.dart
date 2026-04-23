@@ -30,6 +30,7 @@ import 'package:memex/ui/settings/widgets/system_authorization_page.dart';
 import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:memex/ui/core/widgets/dicebear_avatar.dart';
 import 'package:memex/ui/character/widgets/persona_avatar_button.dart';
+import 'package:memex/ui/schedule/widgets/schedule_aggregator_screen.dart';
 
 /// Timeline screen - main memory view. Receives [viewModel] and [insightViewModel] from parent (Compass-style).
 class TimelineScreen extends StatefulWidget {
@@ -218,22 +219,24 @@ class TimelineScreenState extends State<TimelineScreen> {
     }
   }
 
-  /// Get the total number of tab pages: All(0) + Insight(1) + user tags(2..)
-  int _totalPageCount(TimelineViewModel vm) => 2 + vm.tags.length;
+  /// Get the total number of tab pages: All(0) + Schedule(1) + Insight(2) + user tags(3..)
+  int _totalPageCount(TimelineViewModel vm) => 3 + vm.tags.length;
 
   /// Convert a page index to the corresponding filter string.
   String _pageIndexToFilter(int index, TimelineViewModel vm) {
     if (index == 0) return 'all';
-    if (index == 1) return 'insight';
-    return vm.tags[index - 2].name;
+    if (index == 1) return 'schedule';
+    if (index == 2) return 'insight';
+    return vm.tags[index - 3].name;
   }
 
   /// Convert the current active filter to a page index.
   int _filterToPageIndex(TimelineViewModel vm) {
-    if (vm.viewMode == TimelineViewMode.insight) return 1;
+    if (vm.viewMode == TimelineViewMode.insight) return 2;
+    if (vm.activeFilter == 'schedule') return 1;
     if (vm.activeFilter == 'all') return 0;
     final idx = vm.tags.indexWhere((t) => t.name == vm.activeFilter);
-    return idx >= 0 ? idx + 2 : 0;
+    return idx >= 0 ? idx + 3 : 0;
   }
 
   /// Called when user swipes to a new page.
@@ -241,13 +244,15 @@ class TimelineScreenState extends State<TimelineScreen> {
     if (index == _currentPageIndex) return;
     _currentPageIndex = index;
     final filter = _pageIndexToFilter(index, vm);
-    if (index == 1) {
+    if (index == 2) {
       vm.setViewMode(TimelineViewMode.insight);
       vm.setActiveFilter('insight');
     } else {
       vm.setViewMode(TimelineViewMode.timeline);
       vm.setActiveFilter(filter);
-      vm.loadCards(refresh: true);
+      if (index != 1) {
+        vm.loadCards(refresh: true);
+      }
     }
     _scrollTagIntoView(index, vm);
   }
@@ -773,6 +778,10 @@ class TimelineScreenState extends State<TimelineScreen> {
                   onPageChanged: (index) => _onPageChanged(index, vm),
                   itemBuilder: (context, index) {
                     if (index == 1) {
+                      // Schedule Aggregator page
+                      return const ScheduleAggregatorScreen();
+                    }
+                    if (index == 2) {
                       // Insight page
                       return InsightScreen(
                         isEmbedded: true,
@@ -795,8 +804,8 @@ class TimelineScreenState extends State<TimelineScreen> {
     if (vm.tags.isEmpty) return const SizedBox.shrink();
 
     final userTags = vm.tags;
-    // Items: All(0) + Insight(1) + user tags(2..)
-    final totalCount = 2 + userTags.length;
+    // Items: All(0) + Schedule(1) + Insight(2) + user tags(3..)
+    final totalCount = 3 + userTags.length;
 
     return ListView.separated(
       controller: _tagScrollController,
@@ -821,8 +830,23 @@ class TimelineScreenState extends State<TimelineScreen> {
           );
         }
 
-        // Index 1: "Insight"
+        // Index 1: "Schedule"
         if (index == 1) {
+          final isSelected = vm.activeFilter == 'schedule';
+          return _buildTagChip(
+            label: '日程',
+            icon: '📅',
+            isSelected: isSelected,
+            onTap: () {
+              vm.setViewMode(TimelineViewMode.timeline);
+              vm.setActiveFilter('schedule');
+              _animateToPage(1);
+            },
+          );
+        }
+
+        // Index 2: "Insight"
+        if (index == 2) {
           final isSelected = vm.viewMode == TimelineViewMode.insight;
           final chip = _buildTagChip(
             label: UserStorage.l10n.insights,
@@ -831,7 +855,7 @@ class TimelineScreenState extends State<TimelineScreen> {
             onTap: () {
               vm.setViewMode(TimelineViewMode.insight);
               vm.setActiveFilter('insight');
-              _animateToPage(1);
+              _animateToPage(2);
               DemoService.instance.tryAdvance(DemoStep.tapInsightTab);
             },
           );
@@ -844,8 +868,8 @@ class TimelineScreenState extends State<TimelineScreen> {
           return chip;
         }
 
-        // Index 2+: user tags
-        final tag = userTags[index - 2];
+        // Index 3+: user tags
+        final tag = userTags[index - 3];
         final isSelected = vm.activeFilter == tag.name &&
             vm.viewMode == TimelineViewMode.timeline;
         return _buildTagChip(
