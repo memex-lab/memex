@@ -1944,6 +1944,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get speechNoResult => 'No speech detected';
 
   @override
+  String get useLocalSpeechToTextTitle => 'Use local speech to text';
+
+  @override
+  String get useLocalSpeechToTextDesc =>
+      'When enabled, audio is transcribed on-device before sending — useful for models that do not support audio input. When disabled, the original audio is sent directly to the model.';
+
+  @override
   String get pendingAiProcessingHint => 'Set up AI model to process';
 
   @override

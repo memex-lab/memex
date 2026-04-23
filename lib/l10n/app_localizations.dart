@@ -3560,6 +3560,18 @@ abstract class AppLocalizations {
   /// **'No speech detected'**
   String get speechNoResult;
 
+  /// No description provided for @useLocalSpeechToTextTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use local speech to text'**
+  String get useLocalSpeechToTextTitle;
+
+  /// No description provided for @useLocalSpeechToTextDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'When enabled, audio is transcribed on-device before sending — useful for models that do not support audio input. When disabled, the original audio is sent directly to the model.'**
+  String get useLocalSpeechToTextDesc;
+
   /// No description provided for @pendingAiProcessingHint.
   ///
   /// In en, this message translates to:

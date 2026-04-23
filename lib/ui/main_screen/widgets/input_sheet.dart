@@ -8,7 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:logging/logging.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:crypto/crypto.dart';
+import 'package:crypto/crypto.dart' as crypto;
 import 'dart:convert';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
@@ -17,6 +17,7 @@ import 'package:memex/utils/user_storage.dart';
 import 'package:memex/data/services/photo_suggestion_service.dart';
 import 'package:memex/data/services/whisper_service.dart';
 import 'package:memex/data/services/streaming_transcriber.dart';
+import 'package:memex/data/services/speech_transcription_service.dart';
 import 'package:memex/config/app_flavor.dart';
 import 'package:memex/ui/core/themes/app_colors.dart';
 import 'package:memex/data/services/demo_service.dart';
@@ -104,13 +105,14 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
   final Map<String, String> _originalFilenames = {};
   String? _audioPath;
   bool _isRecording = false;
+  bool _isPlaying = false;
   Duration _recordingDuration = Duration.zero;
+  Duration _audioDuration = Duration.zero;
   List<String> _detectedTags = [];
 
   List<List<EnhancedPhoto>>? _autoClusters;
   bool _isLoadingAuto = false;
   final Map<String, AssetEntity> _assetsMap = {}; // path -> AssetEntity
-  bool _isPlaying = false;
 
   @override
   void initState() {
@@ -149,6 +151,7 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
     _textController.addListener(_onTextChanged);
 
     _audioPlayer.onPlayerComplete.listen((event) {
+      if (!mounted) return;
       setState(() {
         _isPlaying = false;
       });
@@ -195,10 +198,13 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
       _isRecording = false;
       _isPlaying = false;
       _recordingDuration = Duration.zero;
+      _audioDuration = Duration.zero;
       _detectedTags = tags;
       _autoClusters = null;
       _isLoadingAuto = false;
     });
+
+    _loadAudioDuration();
   }
 
   void _resetForm() {
@@ -211,6 +217,7 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
       _isRecording = false;
       _isPlaying = false;
       _recordingDuration = Duration.zero;
+      _audioDuration = Duration.zero;
       _detectedTags = [];
       _autoClusters = null;
       _isLoadingAuto = false;
@@ -387,13 +394,9 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
 
   Future<void> _startRecording() async {
     try {
-      // Check if speech model is downloaded before recording
-      if (!await WhisperService.instance.isModelDownloaded()) {
-        if (!mounted) return;
-        await _showModelDownloadDialog();
-        if (!await WhisperService.instance.isModelDownloaded() || !mounted)
-          return;
-      }
+      final speechService = SpeechTranscriptionService.instance;
+
+      if (!await _ensureLocalModelReady()) return;
 
       var status = await Permission.microphone.status;
       if (status.isDenied) {
@@ -409,27 +412,29 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
         return;
       }
 
-      // Initialize streaming transcriber
       _preRecordingText = _textController.text;
 
-      _streamingTranscriber = StreamingTranscriber(
-        onTextChanged: (fullText) {
-          if (mounted) {
-            final separator =
-                _preRecordingText.isNotEmpty && fullText.isNotEmpty ? ' ' : '';
-            setState(() {
-              _textController.text = '$_preRecordingText$separator$fullText';
-              _textController.selection = TextSelection.collapsed(
-                offset: _textController.text.length,
-              );
-            });
-            _scrollTextToBottom();
-          }
-        },
-      );
-      await _streamingTranscriber!.init();
+      if (await speechService.supportsStreamingTranscription()) {
+        _streamingTranscriber = StreamingTranscriber(
+          onTextChanged: (fullText) {
+            if (mounted) {
+              final separator =
+                  _preRecordingText.isNotEmpty && fullText.isNotEmpty
+                      ? ' '
+                      : '';
+              setState(() {
+                _textController.text = '$_preRecordingText$separator$fullText';
+                _textController.selection = TextSelection.collapsed(
+                  offset: _textController.text.length,
+                );
+              });
+              _scrollTextToBottom();
+            }
+          },
+        );
+        await _streamingTranscriber!.init();
+      }
 
-      // Start streaming recording (PCM 16-bit, 16kHz, mono)
       _pcmBuffer.clear();
       final audioStream = await _audioRecorder.startStream(
         const RecordConfig(
@@ -439,12 +444,12 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
         ),
       );
 
-      int _chunkCount = 0;
+      int chunkCount = 0;
       _audioStreamSub = audioStream.listen((chunk) {
-        _chunkCount++;
-        if (_chunkCount % 50 == 1) {
+        chunkCount++;
+        if (chunkCount % 50 == 1) {
           _logger.info(
-              'Audio stream chunk #$_chunkCount, size=${chunk.length} bytes');
+              'Audio stream chunk #$chunkCount, size=${chunk.length} bytes');
         }
         _pcmBuffer.addAll(chunk);
         _streamingTranscriber?.addAudioChunk(chunk);
@@ -486,6 +491,9 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
 
   Future<void> _stopRecording() async {
     try {
+      final useLocal =
+          await SpeechTranscriptionService.instance.isUsingLocalModel();
+
       await _audioStreamSub?.cancel();
       _audioStreamSub = null;
       await _audioRecorder.stop();
@@ -500,23 +508,28 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
       _pulseController.stop();
       _pulseController.reset();
 
-      // Save PCM buffer as WAV for final calibration
       if (_pcmBuffer.isNotEmpty) {
         final directory = await getTemporaryDirectory();
         final timestamp = DateTime.now().millisecondsSinceEpoch;
         final wavPath = '${directory.path}/audio_$timestamp.wav';
-        await _savePcmAsWav(wavPath, Uint8List.fromList(_pcmBuffer));
+        await SpeechTranscriptionService.instance
+            .savePcmAsWav(wavPath, Uint8List.fromList(_pcmBuffer));
         _pcmBuffer.clear();
 
-        // Show loading on mic button during calibration
-        setState(() => _isTranscribing = true);
-        await _calibrateFromFile(wavPath);
-        if (mounted) setState(() => _isTranscribing = false);
-
-        // Clean up temp WAV — no longer needed for submission
-        try {
-          File(wavPath).deleteSync();
-        } catch (_) {}
+        if (!useLocal) {
+          setState(() {
+            _audioPath = wavPath;
+            _isPlaying = false;
+            _audioDuration = _recordingDuration;
+          });
+        } else {
+          setState(() => _isTranscribing = true);
+          await _calibrateFromFile(wavPath);
+          if (mounted) setState(() => _isTranscribing = false);
+          try {
+            File(wavPath).deleteSync();
+          } catch (_) {}
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -530,51 +543,6 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
         });
       }
     }
-  }
-
-  /// Save raw PCM 16-bit data as a WAV file (16kHz, mono).
-  Future<void> _savePcmAsWav(String path, Uint8List pcmData) async {
-    final file = File(path);
-    final sink = file.openWrite();
-
-    final dataSize = pcmData.length;
-    final fileSize = 36 + dataSize;
-
-    // WAV header
-    final header = ByteData(44);
-    // RIFF
-    header.setUint8(0, 0x52); // R
-    header.setUint8(1, 0x49); // I
-    header.setUint8(2, 0x46); // F
-    header.setUint8(3, 0x46); // F
-    header.setUint32(4, fileSize, Endian.little);
-    // WAVE
-    header.setUint8(8, 0x57); // W
-    header.setUint8(9, 0x41); // A
-    header.setUint8(10, 0x56); // V
-    header.setUint8(11, 0x45); // E
-    // fmt
-    header.setUint8(12, 0x66); // f
-    header.setUint8(13, 0x6D); // m
-    header.setUint8(14, 0x74); // t
-    header.setUint8(15, 0x20); // (space)
-    header.setUint32(16, 16, Endian.little); // chunk size
-    header.setUint16(20, 1, Endian.little); // PCM format
-    header.setUint16(22, 1, Endian.little); // mono
-    header.setUint32(24, 16000, Endian.little); // sample rate
-    header.setUint32(28, 32000, Endian.little); // byte rate (16000 * 2)
-    header.setUint16(32, 2, Endian.little); // block align
-    header.setUint16(34, 16, Endian.little); // bits per sample
-    // data
-    header.setUint8(36, 0x64); // d
-    header.setUint8(37, 0x61); // a
-    header.setUint8(38, 0x74); // t
-    header.setUint8(39, 0x61); // a
-    header.setUint32(40, dataSize, Endian.little);
-
-    sink.add(header.buffer.asUint8List());
-    sink.add(pcmData);
-    await sink.close();
   }
 
   /// Final calibration from saved WAV file after recording stops.
@@ -594,7 +562,8 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
       for (int i = 0; i < int16Data.length; i++) {
         samples[i] = int16Data[i] / 32768.0;
       }
-      final text = await WhisperService.instance.transcribeSamples(samples);
+      final text =
+          await SpeechTranscriptionService.instance.transcribeSamples(samples);
       if (text != null && text.isNotEmpty && mounted) {
         final separator = _preRecordingText.isNotEmpty ? ' ' : '';
         setState(() {
@@ -612,7 +581,7 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
 
   bool _isTranscribing = false;
 
-  /// Long press mic button: pick an audio file and transcribe it.
+  /// Long press mic button: pick an audio file.
   Future<void> _pickAudioFile() async {
     bool showedLoading = false;
     try {
@@ -621,22 +590,33 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
         allowedExtensions: ['m4a', 'mp3', 'wav', 'ogg', 'aac', 'flac'],
       );
 
-      // Force rebuild after native picker returns
       if (mounted) setState(() {});
 
       if (result == null || result.files.isEmpty || !mounted) return;
       final filePath = result.files.single.path;
       if (filePath == null) return;
 
-      // Check if model is downloaded
-      if (!await WhisperService.instance.isModelDownloaded()) {
-        if (!mounted) return;
-        await _showModelDownloadDialog();
-        if (!await WhisperService.instance.isModelDownloaded() || !mounted)
-          return;
+      final speechService = SpeechTranscriptionService.instance;
+      final useLocal = await speechService.isUsingLocalModel();
+      if (!mounted) return;
+      final messenger = ScaffoldMessenger.of(context);
+      final l10n = UserStorage.l10n;
+
+      if (!useLocal) {
+        setState(() {
+          _audioPath = filePath;
+          _isPlaying = false;
+          _audioDuration = Duration.zero;
+        });
+        await _loadAudioDuration();
+        return;
       }
 
-      // Show loading dialog
+      if (!await _ensureLocalModelReady()) return;
+
+      if (!mounted) return;
+      final navigator = Navigator.of(context);
+
       showedLoading = true;
       showDialog(
         context: context,
@@ -660,7 +640,7 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                SizedBox(
+                const SizedBox(
                   width: 32,
                   height: 32,
                   child: CircularProgressIndicator(
@@ -670,7 +650,7 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  UserStorage.l10n.speechTranscribing,
+                  l10n.speechTranscribing,
                   style: GoogleFonts.inter(
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
@@ -683,13 +663,16 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
         ),
       );
 
-      final text = await WhisperService.instance
-          .transcribe(filePath, skipLengthCheck: true);
+      final text = await speechService.transcribeFile(
+        filePath,
+        skipLengthCheck: true,
+      );
 
-      if (mounted) Navigator.of(context).pop(); // Dismiss loading dialog
+      if (!mounted) return;
+      navigator.pop();
       showedLoading = false;
 
-      if (text != null && text.trim().isNotEmpty && mounted) {
+      if (text != null && text.trim().isNotEmpty) {
         final current = _textController.text;
         final separator = current.isNotEmpty ? '\n' : '';
         setState(() {
@@ -699,9 +682,9 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
           );
         });
         _scrollTextToBottom();
-      } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(UserStorage.l10n.speechNoResult)),
+      } else {
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.speechNoResult)),
         );
       }
     } catch (e) {
@@ -737,121 +720,15 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
     );
   }
 
-  /// Transcribe audio and show result in a bottom sheet.
-  Future<void> _previewTranscription() async {
-    if (_audioPath == null) return;
-    final whisper = WhisperService.instance;
-
-    if (!await whisper.isModelDownloaded()) {
-      if (!mounted) return;
-      await _showModelDownloadDialog();
-      if (!await whisper.isModelDownloaded() || !mounted) return;
-    }
-
-    final l10n = UserStorage.l10n;
-    String? resultText;
-    bool isLoading = true;
-
-    setState(() => _isTranscribing = true);
-
-    // Show bottom sheet immediately with loading state
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheetState) {
-          // Kick off transcription on first build
-          if (isLoading && resultText == null) {
-            whisper.transcribe(_audioPath!).then((text) {
-              resultText = text;
-              isLoading = false;
-              if (ctx.mounted) setSheetState(() {});
-              if (mounted) setState(() => _isTranscribing = false);
-            }).catchError((_) {
-              isLoading = false;
-              if (ctx.mounted) setSheetState(() {});
-              if (mounted) setState(() => _isTranscribing = false);
-            });
-          }
-
-          return Padding(
-            padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  l10n.speechTranscriptionTitle,
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  constraints: const BoxConstraints(minHeight: 60),
-                  decoration: BoxDecoration(
-                    color: AppColors.background,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: isLoading
-                      ? Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              l10n.speechTranscribing,
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
-                                color: AppColors.textTertiary,
-                              ),
-                            ),
-                          ],
-                        )
-                      : SelectableText(
-                          resultText?.trim().isNotEmpty == true
-                              ? resultText!
-                              : l10n.speechNoResult,
-                          style: GoogleFonts.inter(
-                            fontSize: 15,
-                            color: resultText?.trim().isNotEmpty == true
-                                ? AppColors.textPrimary
-                                : AppColors.textTertiary,
-                            height: 1.5,
-                          ),
-                        ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
+  /// Check if local model download is needed, prompt user if so.
+  /// Returns true if ready to proceed, false if user declined or not mounted.
+  Future<bool> _ensureLocalModelReady() async {
+    final speechService = SpeechTranscriptionService.instance;
+    if (!await speechService.requiresLocalModelDownload()) return true;
+    if (!mounted) return false;
+    await _showModelDownloadDialog();
+    if (!mounted) return false;
+    return !await speechService.requiresLocalModelDownload();
   }
 
   Future<bool?> _showModelDownloadDialog() {
@@ -1042,24 +919,52 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
     });
   }
 
-  void _removeAudio() {
-    _audioPlayer.stop();
-    setState(() {
-      _audioPath = null;
-      _isPlaying = false;
-    });
+  Future<void> _loadAudioDuration() async {
+    final audioPath = _audioPath;
+    if (audioPath == null) return;
+
+    try {
+      await _audioPlayer.setSourceDeviceFile(audioPath);
+      final duration = await _audioPlayer.getDuration();
+      if (!mounted || _audioPath != audioPath) return;
+      setState(() {
+        _audioDuration = duration ?? Duration.zero;
+      });
+    } catch (_) {}
   }
 
   Future<void> _toggleAudioPlayback() async {
-    if (_audioPath == null) return;
+    final audioPath = _audioPath;
+    if (audioPath == null) return;
 
     if (_isPlaying) {
       await _audioPlayer.pause();
+      if (!mounted) return;
       setState(() => _isPlaying = false);
-    } else {
-      await _audioPlayer.play(DeviceFileSource(_audioPath!));
-      setState(() => _isPlaying = true);
+      return;
     }
+
+    await _audioPlayer.stop();
+    await _audioPlayer.play(DeviceFileSource(audioPath));
+    if (!mounted) return;
+    setState(() => _isPlaying = true);
+  }
+
+  Future<void> _removeAudio() async {
+    await _audioPlayer.stop();
+    if (!mounted) return;
+    setState(() {
+      _audioPath = null;
+      _isPlaying = false;
+      _audioDuration = Duration.zero;
+    });
+  }
+
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    final minutes = twoDigits(duration.inMinutes.remainder(60));
+    final seconds = twoDigits(duration.inSeconds.remainder(60));
+    return '$minutes:$seconds';
   }
 
   void _showImagePreview(int index) {
@@ -1115,7 +1020,8 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
     );
   }
 
-  void _handleSubmit() async {
+  Future<void> _handleSubmit() async {
+    if (!mounted) return;
     final trimmedText = _textController.text.trim().isEmpty
         ? null
         : _textController.text.trim();
@@ -1123,9 +1029,21 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
     // Generate hashes in background to prevent UI jank
     String? textHash;
     List<String>? imageHashes;
+    String? audioHash;
 
     if (trimmedText != null && trimmedText.isNotEmpty) {
-      textHash = md5.convert(utf8.encode(trimmedText)).toString();
+      textHash = crypto.md5.convert(utf8.encode(trimmedText)).toString();
+    }
+
+    if (_audioPath != null) {
+      final audioFile = File(_audioPath!);
+      if (await audioFile.exists()) {
+        final length = await audioFile.length();
+        final fileName = _audioPath!.split(Platform.pathSeparator).last;
+        audioHash = crypto.md5
+            .convert(utf8.encode('audio_${fileName}_$length'))
+            .toString();
+      }
     }
 
     if (_selectedImages.isNotEmpty) {
@@ -1138,9 +1056,10 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
 
           _logger.info('Generating hash for image: $rawHashStr');
           await Future.delayed(Duration.zero);
-          imageHashes.add(md5.convert(utf8.encode(rawHashStr)).toString());
+          imageHashes
+              .add(crypto.md5.convert(utf8.encode(rawHashStr)).toString());
         } catch (e) {
-          imageHashes.add(md5
+          imageHashes.add(crypto.md5
               .convert(utf8.encode(
                   'photo_${xFile.path}_${DateTime.now().millisecondsSinceEpoch}'))
               .toString());
@@ -1151,11 +1070,14 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
     final inputData = InputData(
       text: trimmedText,
       images: _selectedImages,
+      audioPath: _audioPath,
       textHash: textHash,
       imageHashes: imageHashes,
+      audioHash: audioHash,
     );
 
     if (inputData.isEmpty) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(UserStorage.l10n.enterContentOrMediaHint)),
       );
@@ -1164,13 +1086,6 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
 
     widget.onSubmit(inputData);
     _resetForm();
-  }
-
-  String _formatDuration(Duration duration) {
-    String twoDigits(int n) => n.toString().padLeft(2, '0');
-    final minutes = twoDigits(duration.inMinutes.remainder(60));
-    final seconds = twoDigits(duration.inSeconds.remainder(60));
-    return '$minutes:$seconds';
   }
 
   @override
@@ -1191,7 +1106,7 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
           child: GestureDetector(
             onTap: widget.onClose,
             child: Container(
-              color: Colors.black.withOpacity(0.2),
+              color: Colors.black.withValues(alpha: 0.2),
             ),
           ),
         ),
@@ -1220,7 +1135,7 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
                           borderRadius: BorderRadius.circular(32),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
+                              color: Colors.black.withValues(alpha: 0.1),
                               blurRadius: 30,
                               offset:
                                   const Offset(0, 10), // Shadow below for float
@@ -1400,8 +1315,91 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
                                       ],
                                       if (_audioPath != null &&
                                           !_isRecording) ...[
-                                        // Audio file exists but hidden — no playback bar needed
-                                        // Text was already transcribed into the text field
+                                        const SizedBox(height: 16),
+                                        Container(
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFF8FAFC),
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              GestureDetector(
+                                                onTap: _toggleAudioPlayback,
+                                                child: Container(
+                                                  width: 36,
+                                                  height: 36,
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.white,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            18),
+                                                  ),
+                                                  child: Icon(
+                                                    _isPlaying
+                                                        ? Icons.pause
+                                                        : Icons.play_arrow,
+                                                    size: 20,
+                                                    color:
+                                                        AppColors.textPrimary,
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 12),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      UserStorage
+                                                          .l10n.recordedAudio,
+                                                      style: const TextStyle(
+                                                        fontSize: 14,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                        color: AppColors
+                                                            .textPrimary,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 2),
+                                                    Text(
+                                                      _isPlaying
+                                                          ? UserStorage
+                                                              .l10n.playing
+                                                          : _formatDuration(
+                                                              _audioDuration),
+                                                      style: const TextStyle(
+                                                        fontSize: 13,
+                                                        color: AppColors
+                                                            .textSecondary,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              GestureDetector(
+                                                onTap: _removeAudio,
+                                                child: Container(
+                                                  padding:
+                                                      const EdgeInsets.all(4),
+                                                  decoration:
+                                                      const BoxDecoration(
+                                                    color: Colors.white,
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                  child: const Icon(
+                                                    Icons.close,
+                                                    size: 16,
+                                                    color:
+                                                        AppColors.textSecondary,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
                                       ],
                                       const SizedBox(height: 24),
                                       Row(
@@ -1541,8 +1539,8 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
                                                           FontWeight.bold,
                                                     ),
                                                   ),
-                                                  SizedBox(width: 8),
-                                                  Icon(
+                                                  const SizedBox(width: 8),
+                                                  const Icon(
                                                     Icons.arrow_upward,
                                                     size: 18,
                                                     color: Colors.white,
@@ -1645,7 +1643,7 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
           border: Border.all(color: const Color(0xFFF7F8FA), width: 1.5),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),

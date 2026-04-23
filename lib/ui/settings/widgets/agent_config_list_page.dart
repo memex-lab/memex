@@ -62,17 +62,12 @@ class _AgentConfigListPageState extends State<AgentConfigListPage> {
     }
   }
 
-  Future<void> _updateAgentConfig(String agentId, String? llmConfigKey) async {
+  Future<void> _saveAgentConfig(String agentId, AgentConfig config) async {
     try {
-      final newConfig = (_agentConfigs[agentId] ?? const AgentConfig())
-          .copyWith(llmConfigKey: llmConfigKey);
-
-      await MemexRouter().saveAgentConfig(agentId, newConfig);
-
+      await MemexRouter().saveAgentConfig(agentId, config);
       setState(() {
-        _agentConfigs[agentId] = newConfig;
+        _agentConfigs[agentId] = config;
       });
-
       if (mounted) {
         ToastHelper.showSuccess(context, UserStorage.l10n.updateSuccess);
       }
@@ -82,6 +77,25 @@ class _AgentConfigListPageState extends State<AgentConfigListPage> {
             context, UserStorage.l10n.saveConfigFailed(e.toString()));
       }
     }
+  }
+
+  Future<void> _updateAgentModelConfig(
+      String agentId, String? llmConfigKey) async {
+    final newConfig = (_agentConfigs[agentId] ?? const AgentConfig())
+        .copyWith(llmConfigKey: llmConfigKey);
+    await _saveAgentConfig(agentId, newConfig);
+  }
+
+  InputDecoration _dropdownDecoration() {
+    return InputDecoration(
+      filled: true,
+      fillColor: AppColors.background,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    );
   }
 
   @override
@@ -145,7 +159,7 @@ class _AgentConfigListPageState extends State<AgentConfigListPage> {
         ],
       ),
       body: _isLoading
-          ? Center(child: AgentLogoLoading())
+          ? const Center(child: AgentLogoLoading())
           : ListView.builder(
               padding: const EdgeInsets.all(20),
               itemCount: _agentIds.length,
@@ -153,8 +167,8 @@ class _AgentConfigListPageState extends State<AgentConfigListPage> {
                 final agentId = _agentIds[index];
                 final displayName =
                     AgentDefinitions.displayNames[agentId] ?? agentId;
-                final currentConfig = _agentConfigs[agentId];
-                final selectedKey = currentConfig?.llmConfigKey;
+                final currentConfig = _agentConfigs[agentId] ?? const AgentConfig();
+                final selectedKey = currentConfig.llmConfigKey;
 
                 return Container(
                   margin: const EdgeInsets.only(bottom: 12),
@@ -191,18 +205,10 @@ class _AgentConfigListPageState extends State<AgentConfigListPage> {
                       ),
                       const SizedBox(height: 12),
                       DropdownButtonFormField<String>(
-                        value: selectedKey,
+                        key: ValueKey('agent-model-$agentId-${selectedKey ?? ''}'),
+                        initialValue: selectedKey,
                         isExpanded: true,
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: AppColors.background,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 12),
-                        ),
+                        decoration: _dropdownDecoration(),
                         hint: const Text(''),
                         items: [
                           ..._llmConfigs.map((config) {
@@ -221,7 +227,7 @@ class _AgentConfigListPageState extends State<AgentConfigListPage> {
                         ],
                         onChanged: (String? newValue) {
                           if (newValue != selectedKey) {
-                            _updateAgentConfig(agentId, newValue);
+                            _updateAgentModelConfig(agentId, newValue);
                           }
                         },
                       ),

@@ -20,18 +20,21 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   String _currentLang = 'en';
+  bool _useLocalSpeechToText = true;
 
   @override
   void initState() {
     super.initState();
-    _loadCurrentLanguage();
+    _loadSettings();
   }
 
-  Future<void> _loadCurrentLanguage() async {
+  Future<void> _loadSettings() async {
     final locale = await UserStorage.getLocale();
+    final useLocalSpeechToText = await UserStorage.getUseLocalSpeechToText();
     if (mounted) {
       setState(() {
         _currentLang = locale.languageCode == 'zh' ? 'zh' : 'en';
+        _useLocalSpeechToText = useLocalSpeechToText;
       });
     }
   }
@@ -43,6 +46,13 @@ class _SettingsPageState extends State<SettingsPage> {
     await UserStorage.initL10n();
     if (mounted) {
       setState(() => _currentLang = langCode);
+    }
+  }
+
+  Future<void> _updateUseLocalSpeechToText(bool value) async {
+    await UserStorage.setUseLocalSpeechToText(value);
+    if (mounted) {
+      setState(() => _useLocalSpeechToText = value);
     }
   }
 
@@ -112,6 +122,47 @@ class _SettingsPageState extends State<SettingsPage> {
                   ],
                 ),
               ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.textSecondary.withValues(alpha: 0.08),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              secondary:
+                  Icon(Icons.graphic_eq, color: AppColors.primary, size: 22),
+              title: Text(
+                UserStorage.l10n.useLocalSpeechToTextTitle,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              subtitle: Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(
+                  UserStorage.l10n.useLocalSpeechToTextDesc,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey[600],
+                    height: 1.4,
+                  ),
+                ),
+              ),
+              value: _useLocalSpeechToText,
+              onChanged: _updateUseLocalSpeechToText,
             ),
           ),
           // Data Storage (iOS only — Android has no storage options to choose)

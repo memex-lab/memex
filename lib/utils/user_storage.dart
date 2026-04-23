@@ -277,6 +277,7 @@ class UserStorage {
   }
 
   static const String _keyAgentConfigs = 'agent_configs';
+  static const String _keyUseLocalSpeechToText = 'use_local_speech_to_text';
 
   /// Get specified agent config
   static Future<AgentConfig> getAgentConfig(String agentId) async {
@@ -297,12 +298,13 @@ class UserStorage {
   /// Save specified agent config
   static Future<void> saveAgentConfig(
       String agentId, AgentConfig config) async {
+    final allConfigs = await getLLMConfigs();
+    final availableKeys = allConfigs.map((c) => c.key).join(', ');
+
     // Validate llmConfigKey if present
     if (config.llmConfigKey != null && config.llmConfigKey!.isNotEmpty) {
-      final allConfigs = await getLLMConfigs();
       final exists = allConfigs.any((c) => c.key == config.llmConfigKey);
       if (!exists) {
-        final availableKeys = allConfigs.map((c) => c.key).join(', ');
         throw Exception(
             'Invalid LLM Config Key: ${config.llmConfigKey}. Available keys: $availableKeys');
       }
@@ -313,11 +315,37 @@ class UserStorage {
       final jsonString = jsonEncode(config.toJson());
       await prefs.setString('${_keyAgentConfigs}_$agentId', jsonString);
     } catch (e) {
-      // Re-throw validation exception, wrap others
       if (e.toString().contains('Invalid LLM Config Key')) {
         rethrow;
       }
       throw Exception('Failed to save agent config: $e');
+    }
+  }
+
+  static Future<bool> getUseLocalSpeechToText() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getBool(_keyUseLocalSpeechToText) ?? true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  static Future<void> setUseLocalSpeechToText(bool value) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_keyUseLocalSpeechToText, value);
+    } catch (e) {
+      throw Exception('Failed to save speech preference: $e');
+    }
+  }
+
+  static Future<void> resetUseLocalSpeechToText() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_keyUseLocalSpeechToText);
+    } catch (e) {
+      throw Exception('Failed to reset speech preference: $e');
     }
   }
 
@@ -789,7 +817,7 @@ class UserStorage {
 
     for (final entity in rootEntities) {
       final name = entity.path.split('/').last;
-      final destination = '${documentsPath}/$name';
+      final destination = '$documentsPath/$name';
       try {
         await entity.rename(destination);
         _logger.info('iCloud migration: moved $name');

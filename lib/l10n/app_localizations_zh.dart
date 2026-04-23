@@ -1877,6 +1877,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get speechNoResult => '未识别到语音内容';
 
   @override
+  String get useLocalSpeechToTextTitle => '使用本地语音转文字';
+
+  @override
+  String get useLocalSpeechToTextDesc =>
+      '开启时，会先在设备上把音频转成文字再发送，这适合不支持音频输入的模型。关闭后，会直接把原始音频发送给模型处理。';
+
+  @override
   String get pendingAiProcessingHint => '配置 AI 模型以自动整理此记录';
 
   @override
