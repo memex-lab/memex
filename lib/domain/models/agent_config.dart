@@ -1,6 +1,4 @@
 class AgentConfig {
-  static const Object _unset = Object();
-
   /// The key of the LLMConfig to use for this agent.
   final String? llmConfigKey;
 
@@ -21,11 +19,10 @@ class AgentConfig {
   }
 
   AgentConfig copyWith({
-    Object? llmConfigKey = _unset,
+    String? llmConfigKey,
   }) {
     return AgentConfig(
-      llmConfigKey:
-          identical(llmConfigKey, _unset) ? this.llmConfigKey : llmConfigKey as String?,
+      llmConfigKey: llmConfigKey ?? this.llmConfigKey,
     );
   }
 }

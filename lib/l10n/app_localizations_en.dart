@@ -1948,11 +1948,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get useLocalSpeechToTextDesc =>
-      'When enabled, audio is transcribed on-device before sending. When disabled, the original audio is sent directly to the model.';
-
-  @override
-  String get useLocalSpeechToTextCloudNotice =>
-      'When this is on, the original audio is not sent to the cloud model. Memex sends only the local transcript, which is useful for text-only models that do not support audio input.';
+      'When enabled, audio is transcribed on-device before sending — useful for models that do not support audio input. When disabled, the original audio is sent directly to the model.';
 
   @override
   String get pendingAiProcessingHint => 'Set up AI model to process';

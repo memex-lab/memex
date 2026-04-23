@@ -395,16 +395,8 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
   Future<void> _startRecording() async {
     try {
       final speechService = SpeechTranscriptionService.instance;
-      final usesLocalSpeechModel = await speechService.isUsingLocalModel();
 
-      if (usesLocalSpeechModel &&
-          !await WhisperService.instance.isModelDownloaded()) {
-        if (!mounted) return;
-        await _showModelDownloadDialog();
-        if (!await WhisperService.instance.isModelDownloaded() || !mounted) {
-          return;
-        }
-      }
+      if (!await _ensureLocalModelReady()) return;
 
       var status = await Permission.microphone.status;
       if (status.isDenied) {
@@ -422,12 +414,14 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
 
       _preRecordingText = _textController.text;
 
-      if (usesLocalSpeechModel) {
+      if (await speechService.supportsStreamingTranscription()) {
         _streamingTranscriber = StreamingTranscriber(
           onTextChanged: (fullText) {
             if (mounted) {
               final separator =
-                  _preRecordingText.isNotEmpty && fullText.isNotEmpty ? ' ' : '';
+                  _preRecordingText.isNotEmpty && fullText.isNotEmpty
+                      ? ' '
+                      : '';
               setState(() {
                 _textController.text = '$_preRecordingText$separator$fullText';
                 _textController.selection = TextSelection.collapsed(
@@ -497,8 +491,8 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
 
   Future<void> _stopRecording() async {
     try {
-      final useLocalSpeechToText =
-          await UserStorage.getUseLocalSpeechToText();
+      final useLocal =
+          await SpeechTranscriptionService.instance.isUsingLocalModel();
 
       await _audioStreamSub?.cancel();
       _audioStreamSub = null;
@@ -518,10 +512,11 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
         final directory = await getTemporaryDirectory();
         final timestamp = DateTime.now().millisecondsSinceEpoch;
         final wavPath = '${directory.path}/audio_$timestamp.wav';
-        await _savePcmAsWav(wavPath, Uint8List.fromList(_pcmBuffer));
+        await SpeechTranscriptionService.instance
+            .savePcmAsWav(wavPath, Uint8List.fromList(_pcmBuffer));
         _pcmBuffer.clear();
 
-        if (!useLocalSpeechToText) {
+        if (!useLocal) {
           setState(() {
             _audioPath = wavPath;
             _isPlaying = false;
@@ -550,51 +545,6 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
     }
   }
 
-  /// Save raw PCM 16-bit data as a WAV file (16kHz, mono).
-  Future<void> _savePcmAsWav(String path, Uint8List pcmData) async {
-    final file = File(path);
-    final sink = file.openWrite();
-
-    final dataSize = pcmData.length;
-    final fileSize = 36 + dataSize;
-
-    // WAV header
-    final header = ByteData(44);
-    // RIFF
-    header.setUint8(0, 0x52); // R
-    header.setUint8(1, 0x49); // I
-    header.setUint8(2, 0x46); // F
-    header.setUint8(3, 0x46); // F
-    header.setUint32(4, fileSize, Endian.little);
-    // WAVE
-    header.setUint8(8, 0x57); // W
-    header.setUint8(9, 0x41); // A
-    header.setUint8(10, 0x56); // V
-    header.setUint8(11, 0x45); // E
-    // fmt
-    header.setUint8(12, 0x66); // f
-    header.setUint8(13, 0x6D); // m
-    header.setUint8(14, 0x74); // t
-    header.setUint8(15, 0x20); // (space)
-    header.setUint32(16, 16, Endian.little); // chunk size
-    header.setUint16(20, 1, Endian.little); // PCM format
-    header.setUint16(22, 1, Endian.little); // mono
-    header.setUint32(24, 16000, Endian.little); // sample rate
-    header.setUint32(28, 32000, Endian.little); // byte rate (16000 * 2)
-    header.setUint16(32, 2, Endian.little); // block align
-    header.setUint16(34, 16, Endian.little); // bits per sample
-    // data
-    header.setUint8(36, 0x64); // d
-    header.setUint8(37, 0x61); // a
-    header.setUint8(38, 0x74); // t
-    header.setUint8(39, 0x61); // a
-    header.setUint32(40, dataSize, Endian.little);
-
-    sink.add(header.buffer.asUint8List());
-    sink.add(pcmData);
-    await sink.close();
-  }
-
   /// Final calibration from saved WAV file after recording stops.
   /// Uses background Isolate to avoid blocking UI.
   Future<void> _calibrateFromFile(String wavPath) async {
@@ -612,8 +562,8 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
       for (int i = 0; i < int16Data.length; i++) {
         samples[i] = int16Data[i] / 32768.0;
       }
-      final text = await SpeechTranscriptionService.instance
-          .transcribeSamples(samples, preferLocal: true);
+      final text =
+          await SpeechTranscriptionService.instance.transcribeSamples(samples);
       if (text != null && text.isNotEmpty && mounted) {
         final separator = _preRecordingText.isNotEmpty ? ' ' : '';
         setState(() {
@@ -646,13 +596,13 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
       final filePath = result.files.single.path;
       if (filePath == null) return;
 
-      final useLocalSpeechToText =
-          await UserStorage.getUseLocalSpeechToText();
+      final speechService = SpeechTranscriptionService.instance;
+      final useLocal = await speechService.isUsingLocalModel();
       if (!mounted) return;
       final messenger = ScaffoldMessenger.of(context);
       final l10n = UserStorage.l10n;
 
-      if (!useLocalSpeechToText) {
+      if (!useLocal) {
         setState(() {
           _audioPath = filePath;
           _isPlaying = false;
@@ -662,14 +612,7 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
         return;
       }
 
-      final speechService = SpeechTranscriptionService.instance;
-      if (!await WhisperService.instance.isModelDownloaded()) {
-        if (!mounted) return;
-        await _showModelDownloadDialog();
-        if (!await WhisperService.instance.isModelDownloaded() || !mounted) {
-          return;
-        }
-      }
+      if (!await _ensureLocalModelReady()) return;
 
       if (!mounted) return;
       final navigator = Navigator.of(context);
@@ -723,7 +666,6 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
       final text = await speechService.transcribeFile(
         filePath,
         skipLengthCheck: true,
-        preferLocal: true,
       );
 
       if (!mounted) return;
@@ -776,6 +718,17 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
         ),
       ),
     );
+  }
+
+  /// Check if local model download is needed, prompt user if so.
+  /// Returns true if ready to proceed, false if user declined or not mounted.
+  Future<bool> _ensureLocalModelReady() async {
+    final speechService = SpeechTranscriptionService.instance;
+    if (!await speechService.requiresLocalModelDownload()) return true;
+    if (!mounted) return false;
+    await _showModelDownloadDialog();
+    if (!mounted) return false;
+    return !await speechService.requiresLocalModelDownload();
   }
 
   Future<bool?> _showModelDownloadDialog() {
@@ -1087,8 +1040,9 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
       if (await audioFile.exists()) {
         final length = await audioFile.length();
         final fileName = _audioPath!.split(Platform.pathSeparator).last;
-        audioHash =
-            crypto.md5.convert(utf8.encode('audio_${fileName}_$length')).toString();
+        audioHash = crypto.md5
+            .convert(utf8.encode('audio_${fileName}_$length'))
+            .toString();
       }
     }
 
@@ -1102,7 +1056,8 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
 
           _logger.info('Generating hash for image: $rawHashStr');
           await Future.delayed(Duration.zero);
-          imageHashes.add(crypto.md5.convert(utf8.encode(rawHashStr)).toString());
+          imageHashes
+              .add(crypto.md5.convert(utf8.encode(rawHashStr)).toString());
         } catch (e) {
           imageHashes.add(crypto.md5
               .convert(utf8.encode(
@@ -1151,7 +1106,7 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
           child: GestureDetector(
             onTap: widget.onClose,
             child: Container(
-              color: Colors.black.withValues(alpha:0.2),
+              color: Colors.black.withValues(alpha: 0.2),
             ),
           ),
         ),
@@ -1180,7 +1135,7 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
                           borderRadius: BorderRadius.circular(32),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha:0.1),
+                              color: Colors.black.withValues(alpha: 0.1),
                               blurRadius: 30,
                               offset:
                                   const Offset(0, 10), // Shadow below for float
@@ -1365,7 +1320,8 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
                                           padding: const EdgeInsets.all(12),
                                           decoration: BoxDecoration(
                                             color: const Color(0xFFF8FAFC),
-                                            borderRadius: BorderRadius.circular(12),
+                                            borderRadius:
+                                                BorderRadius.circular(12),
                                           ),
                                           child: Row(
                                             children: [
@@ -1377,14 +1333,16 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
                                                   decoration: BoxDecoration(
                                                     color: Colors.white,
                                                     borderRadius:
-                                                        BorderRadius.circular(18),
+                                                        BorderRadius.circular(
+                                                            18),
                                                   ),
                                                   child: Icon(
                                                     _isPlaying
                                                         ? Icons.pause
                                                         : Icons.play_arrow,
                                                     size: 20,
-                                                    color: AppColors.textPrimary,
+                                                    color:
+                                                        AppColors.textPrimary,
                                                   ),
                                                 ),
                                               ),
@@ -1434,8 +1392,8 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
                                                   child: const Icon(
                                                     Icons.close,
                                                     size: 16,
-                                                    color: AppColors
-                                                        .textSecondary,
+                                                    color:
+                                                        AppColors.textSecondary,
                                                   ),
                                                 ),
                                               ),
@@ -1685,7 +1643,7 @@ class _InputSheetState extends State<InputSheet> with TickerProviderStateMixin {
           border: Border.all(color: const Color(0xFFF7F8FA), width: 1.5),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha:0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),

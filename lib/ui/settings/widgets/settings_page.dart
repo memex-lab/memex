@@ -20,7 +20,7 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   String _currentLang = 'en';
-  bool _useLocalSpeechToText = false;
+  bool _useLocalSpeechToText = true;
 
   @override
   void initState() {
@@ -138,65 +138,31 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
               ],
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(Icons.graphic_eq, color: AppColors.primary, size: 22),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            UserStorage.l10n.useLocalSpeechToTextTitle,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            UserStorage.l10n.useLocalSpeechToTextDesc,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey[600],
-                              height: 1.4,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+            child: SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              secondary:
+                  Icon(Icons.graphic_eq, color: AppColors.primary, size: 22),
+              title: Text(
+                UserStorage.l10n.useLocalSpeechToTextTitle,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textPrimary,
                 ),
-                const SizedBox(height: 16),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: AppColors.background,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    UserStorage.l10n.useLocalSpeechToTextCloudNotice,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey[700],
-                      height: 1.4,
-                    ),
+              ),
+              subtitle: Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(
+                  UserStorage.l10n.useLocalSpeechToTextDesc,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey[600],
+                    height: 1.4,
                   ),
                 ),
-                const SizedBox(height: 12),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(UserStorage.l10n.useLocalSpeechToTextTitle),
-                  value: _useLocalSpeechToText,
-                  onChanged: _updateUseLocalSpeechToText,
-                ),
-              ],
+              ),
+              value: _useLocalSpeechToText,
+              onChanged: _updateUseLocalSpeechToText,
             ),
           ),
           // Data Storage (iOS only — Android has no storage options to choose)

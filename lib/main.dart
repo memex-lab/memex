@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
+import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
@@ -55,6 +57,7 @@ import 'package:memex/ui/core/widgets/demo_overlay.dart';
 import 'package:memex/ui/main_screen/widgets/share_intent_handler.dart';
 import 'package:quick_actions/quick_actions.dart';
 import 'package:memex/data/services/quick_action_service.dart';
+import 'package:memex/data/services/speech_transcription_service.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey =
@@ -430,6 +433,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   StreamSubscription<Uint8List>? _quickAudioSub;
   final List<int> _quickPcmBuffer = [];
   String _quickTranscribedText = '';
+  String? _quickAudioPath;
   bool _isQuickCalibrating = false;
   Offset _centerButtonCenter = Offset.zero;
   final GlobalKey<RadialMenuState> _radialMenuKey =
@@ -808,8 +812,10 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
   Future<void> _startRecording() async {
     try {
-      // Check if speech model is downloaded
-      if (!await WhisperService.instance.isModelDownloaded()) {
+      final speechService = SpeechTranscriptionService.instance;
+
+      // Check if local speech model needs downloading
+      if (await speechService.requiresLocalModelDownload()) {
         setState(() => _isRadialMenuOpen = false);
         if (!mounted) return;
         _showSpeechModelDownloadDialog();
@@ -817,16 +823,18 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       }
 
       if (await Permission.microphone.request().isGranted) {
-        // Initialize streaming transcriber
+        // Initialize streaming transcriber (only when local model is available)
         _quickTranscribedText = '';
         _quickPcmBuffer.clear();
-        _quickTranscriber = StreamingTranscriber(
-          onTextChanged: (fullText) {
-            _quickTranscribedText = fullText;
-            if (mounted) setState(() {});
-          },
-        );
-        await _quickTranscriber!.init();
+        if (await speechService.supportsStreamingTranscription()) {
+          _quickTranscriber = StreamingTranscriber(
+            onTextChanged: (fullText) {
+              _quickTranscribedText = fullText;
+              if (mounted) setState(() {});
+            },
+          );
+          await _quickTranscriber!.init();
+        }
 
         // Start streaming PCM recording
         final audioStream = await _audioRecorder.startStream(
@@ -1036,22 +1044,36 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       if (cancel) {
         _quickPcmBuffer.clear();
         _quickTranscribedText = '';
+        _quickAudioPath = null;
         _recordingPath = null;
         return;
       }
 
       // Final calibration from accumulated PCM
       if (_quickPcmBuffer.isNotEmpty) {
+        final useLocal =
+            await SpeechTranscriptionService.instance.isUsingLocalModel();
         final aligned = Uint8List.fromList(_quickPcmBuffer);
         final int16Data = Int16List.view(aligned.buffer);
         final samples = Float32List(int16Data.length);
         for (int i = 0; i < int16Data.length; i++) {
           samples[i] = int16Data[i] / 32768.0;
         }
-        final calibrated =
-            await WhisperService.instance.transcribeSamples(samples);
-        if (calibrated != null && calibrated.isNotEmpty) {
-          _quickTranscribedText = calibrated;
+
+        if (useLocal) {
+          final calibrated = await SpeechTranscriptionService.instance
+              .transcribeSamples(samples);
+          if (calibrated != null && calibrated.isNotEmpty) {
+            _quickTranscribedText = calibrated;
+          }
+        } else {
+          // Cloud mode: save WAV and submit as audio file
+          final directory = await getTemporaryDirectory();
+          final timestamp = DateTime.now().millisecondsSinceEpoch;
+          final wavPath = '${directory.path}/quick_audio_$timestamp.wav';
+          await SpeechTranscriptionService.instance
+              .savePcmAsWav(wavPath, Uint8List.fromList(_quickPcmBuffer));
+          _quickAudioPath = wavPath;
         }
         _quickPcmBuffer.clear();
       }
@@ -1081,8 +1103,20 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       }
       if (_quickTranscribedText.isNotEmpty) {
         _handleInputSubmit(InputData(text: _quickTranscribedText));
+      } else if (_quickAudioPath != null) {
+        final audioFile = File(_quickAudioPath!);
+        String? audioHash;
+        if (await audioFile.exists()) {
+          final length = await audioFile.length();
+          final fileName = _quickAudioPath!.split(Platform.pathSeparator).last;
+          audioHash =
+              md5.convert(utf8.encode('audio_${fileName}_$length')).toString();
+        }
+        _handleInputSubmit(
+            InputData(audioPath: _quickAudioPath, audioHash: audioHash));
       }
       _quickTranscribedText = '';
+      _quickAudioPath = null;
       _recordingPath = null;
     } else {
       if (mounted) setState(() => _isRadialMenuOpen = false);
@@ -1101,8 +1135,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   /// (action arrives while app is in background).
   void _consumeQuickActionIfNeeded() {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final action =
-          await QuickActionService.instance.consumePendingAction();
+      final action = await QuickActionService.instance.consumePendingAction();
       if (!mounted) return;
       if (action == 'quick_note') {
         _logger.info('Quick action: opening input sheet');

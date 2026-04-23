@@ -7,6 +7,7 @@ import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 import 'package:memex/data/services/whisper_service.dart';
 import 'package:memex/domain/models/agent_definitions.dart';
+import 'package:memex/domain/models/llm_config.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/user_storage.dart';
 
@@ -14,13 +15,11 @@ class SpeechTranscriptionResult {
   final String? text;
   final ModelUsage? usage;
   final String model;
-  final bool usedFallback;
 
   const SpeechTranscriptionResult({
     required this.text,
     required this.usage,
     required this.model,
-    this.usedFallback = false,
   });
 }
 
@@ -36,20 +35,27 @@ class SpeechTranscriptionService {
     return UserStorage.getUseLocalSpeechToText();
   }
 
+  /// Whether the local speech model needs to be downloaded before recording.
+  /// Returns false when using cloud model (no local download needed).
   Future<bool> requiresLocalModelDownload() async {
     if (!await isUsingLocalModel()) return false;
     return !await WhisperService.instance.isModelDownloaded();
   }
 
+  /// Whether real-time streaming transcription is available.
+  /// Only supported with the local model.
+  Future<bool> supportsStreamingTranscription() async {
+    if (!await isUsingLocalModel()) return false;
+    return await WhisperService.instance.isModelDownloaded();
+  }
+
   Future<String?> transcribeFile(
     String audioPath, {
     bool skipLengthCheck = false,
-    bool preferLocal = false,
   }) async {
     final result = await transcribeFileWithMetadata(
       audioPath,
       skipLengthCheck: skipLengthCheck,
-      preferLocal: preferLocal,
     );
     return result.text;
   }
@@ -57,31 +63,27 @@ class SpeechTranscriptionService {
   Future<SpeechTranscriptionResult> transcribeFileWithMetadata(
     String audioPath, {
     bool skipLengthCheck = false,
-    bool preferLocal = false,
   }) async {
-    if (preferLocal) {
-      return _transcribeFileLocally(audioPath, skipLengthCheck: skipLengthCheck);
+    final useLocal = await UserStorage.getUseLocalSpeechToText();
+
+    if (useLocal) {
+      return _transcribeFileLocally(audioPath,
+          skipLengthCheck: skipLengthCheck);
     }
 
     return _transcribeFileWithCloud(audioPath);
   }
 
-  Future<String?> transcribeSamples(
-    Float32List samples, {
-    bool preferLocal = false,
-  }) async {
-    final result = await transcribeSamplesWithMetadata(
-      samples,
-      preferLocal: preferLocal,
-    );
+  Future<String?> transcribeSamples(Float32List samples) async {
+    final result = await transcribeSamplesWithMetadata(samples);
     return result.text;
   }
 
   Future<SpeechTranscriptionResult> transcribeSamplesWithMetadata(
-    Float32List samples, {
-    bool preferLocal = false,
-  }) async {
-    if (preferLocal) {
+      Float32List samples) async {
+    final useLocal = await UserStorage.getUseLocalSpeechToText();
+
+    if (useLocal) {
       return _transcribeSamplesLocally(samples);
     }
 
@@ -144,6 +146,7 @@ class SpeechTranscriptionService {
   }) async {
     final resources = await UserStorage.getAgentLLMResources(
       AgentDefinitions.analyzeAssets,
+      defaultClientKey: LLMConfig.defaultClientKey,
     );
 
     const systemPrompt = '''You are a speech transcription engine.
@@ -188,7 +191,8 @@ Rules:
       return _trimOuterQuotes(trimmed);
     }
 
-    _logger.warning('Cloud speech transcription returned non-transcript text: $trimmed');
+    _logger.warning(
+        'Cloud speech transcription returned non-transcript text: $trimmed');
     return null;
   }
 
@@ -251,6 +255,46 @@ Rules:
       normalized = normalized.substring(1, normalized.length - 1).trim();
     }
     return normalized;
+  }
+
+  /// Save raw PCM 16-bit data (16kHz, mono) as a WAV file.
+  Future<void> savePcmAsWav(String filePath, Uint8List pcmData) async {
+    final file = File(filePath);
+    final sink = file.openWrite();
+    final dataSize = pcmData.length;
+    final fileSize = 36 + dataSize;
+    final header = ByteData(44);
+    // RIFF header
+    header.setUint8(0, 0x52); // R
+    header.setUint8(1, 0x49); // I
+    header.setUint8(2, 0x46); // F
+    header.setUint8(3, 0x46); // F
+    header.setUint32(4, fileSize, Endian.little);
+    header.setUint8(8, 0x57); // W
+    header.setUint8(9, 0x41); // A
+    header.setUint8(10, 0x56); // V
+    header.setUint8(11, 0x45); // E
+    // fmt chunk
+    header.setUint8(12, 0x66); // f
+    header.setUint8(13, 0x6D); // m
+    header.setUint8(14, 0x74); // t
+    header.setUint8(15, 0x20); // (space)
+    header.setUint32(16, 16, Endian.little);
+    header.setUint16(20, 1, Endian.little); // PCM
+    header.setUint16(22, 1, Endian.little); // mono
+    header.setUint32(24, 16000, Endian.little); // sample rate
+    header.setUint32(28, 32000, Endian.little); // byte rate
+    header.setUint16(32, 2, Endian.little); // block align
+    header.setUint16(34, 16, Endian.little); // bits per sample
+    // data chunk
+    header.setUint8(36, 0x64); // d
+    header.setUint8(37, 0x61); // a
+    header.setUint8(38, 0x74); // t
+    header.setUint8(39, 0x61); // a
+    header.setUint32(40, dataSize, Endian.little);
+    sink.add(header.buffer.asUint8List());
+    sink.add(pcmData);
+    await sink.close();
   }
 
   String _mimeTypeForPath(String audioPath) {

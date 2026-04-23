@@ -3569,14 +3569,8 @@ abstract class AppLocalizations {
   /// No description provided for @useLocalSpeechToTextDesc.
   ///
   /// In en, this message translates to:
-  /// **'When enabled, audio is transcribed on-device before sending. When disabled, the original audio is sent directly to the model.'**
+  /// **'When enabled, audio is transcribed on-device before sending — useful for models that do not support audio input. When disabled, the original audio is sent directly to the model.'**
   String get useLocalSpeechToTextDesc;
-
-  /// No description provided for @useLocalSpeechToTextCloudNotice.
-  ///
-  /// In en, this message translates to:
-  /// **'When this is on, the original audio is not sent to the cloud model. Memex sends only the local transcript, which is useful for text-only models that do not support audio input.'**
-  String get useLocalSpeechToTextCloudNotice;
 
   /// No description provided for @pendingAiProcessingHint.
   ///

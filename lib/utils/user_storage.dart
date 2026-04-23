@@ -325,7 +325,7 @@ class UserStorage {
   static Future<bool> getUseLocalSpeechToText() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      return prefs.getBool(_keyUseLocalSpeechToText) ?? false;
+      return prefs.getBool(_keyUseLocalSpeechToText) ?? true;
     } catch (e) {
       return false;
     }
@@ -406,17 +406,21 @@ class UserStorage {
     }
   }
 
+  /// Get both the LLMClient and ModelConfig for an agent.
+  /// This centralized method handles client creation and model configuration mapping.
+  /// [defaultClientKey] specifies which default config to use if the agent hasn't selected one.
   static Future<({LLMClient client, ModelConfig modelConfig})>
-      getLLMResourcesByConfig(LLMConfig llmConfig, {String? agentId}) async {
+      getAgentLLMResources(String agentId, {String? defaultClientKey}) async {
+    final llmConfig =
+        await getAgentLLMConfig(agentId, defaultClientKey: defaultClientKey);
+
     if (!llmConfig.isValid) {
-      if (agentId != null) {
-        EventBusService.instance.emitEvent(InvalidModelConfigMessage(
-          agentId: AgentDefinitions.displayNames[agentId] ?? agentId,
-          configKey: llmConfig.key,
-        ));
-      }
+      EventBusService.instance.emitEvent(InvalidModelConfigMessage(
+        agentId: AgentDefinitions.displayNames[agentId] ?? agentId,
+        configKey: llmConfig.key,
+      ));
       throw InvalidModelConfigException(
-          'The LLM configuration${agentId != null ? ' for $agentId' : ''} is invalid.');
+          'The LLM configuration for $agentId is invalid.');
     }
 
     // Use proxy URL from LLM config if set
@@ -559,25 +563,6 @@ class UserStorage {
     );
 
     return (client: client, modelConfig: modelConfig);
-  }
-
-  static Future<LLMConfig> getLLMConfigByKey(String configKey) async {
-    final allConfigs = await getLLMConfigs();
-    try {
-      return allConfigs.firstWhere((c) => c.key == configKey);
-    } catch (e) {
-      throw Exception('LLM config not found (key: $configKey)');
-    }
-  }
-
-  /// Get both the LLMClient and ModelConfig for an agent.
-  /// This centralized method handles client creation and model configuration mapping.
-  /// [defaultClientKey] specifies which default config to use if the agent hasn't selected one.
-  static Future<({LLMClient client, ModelConfig modelConfig})>
-      getAgentLLMResources(String agentId, {String? defaultClientKey}) async {
-    final llmConfig =
-        await getAgentLLMConfig(agentId, defaultClientKey: defaultClientKey);
-    return getLLMResourcesByConfig(llmConfig, agentId: agentId);
   }
 
   /// Get photo suggestion cache
