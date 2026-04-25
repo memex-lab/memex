@@ -14,6 +14,7 @@ class TodoCell extends StatelessWidget {
   final bool compact;
 
   const TodoCell({
+    super.key,
     required this.item,
     required this.onToggle,
     required this.onTap,
@@ -70,8 +71,11 @@ class TodoCell extends StatelessWidget {
                           style: GoogleFonts.inter(
                             fontSize: compact ? 15 : 16,
                             fontWeight: FontWeight.w600,
-                            color: isCompleted ? AppColors.textTertiary : AppColors.textPrimary,
-                            decoration: isCompleted ? TextDecoration.lineThrough : null,
+                            color: isCompleted
+                                ? AppColors.textTertiary
+                                : AppColors.textPrimary,
+                            decoration:
+                                isCompleted ? TextDecoration.lineThrough : null,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -102,13 +106,15 @@ class TodoCell extends StatelessWidget {
                     const SizedBox(height: 6),
                     Wrap(
                       spacing: 6,
-                      children: item.tags.map((tag) => TagChip(label: tag)).toList(),
+                      children:
+                          item.tags.map((tag) => TagChip(label: tag)).toList(),
                     ),
                   ],
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, size: 20, color: AppColors.textTertiary),
+            const Icon(Icons.chevron_right,
+                size: 20, color: AppColors.textTertiary),
           ],
         ),
       ),

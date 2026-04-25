@@ -13,6 +13,7 @@ class SmartAgendaTab extends StatelessWidget {
   final void Function(ScheduleItem) onTapItem;
 
   const SmartAgendaTab({
+    super.key,
     required this.items,
     required this.onToggle,
     required this.onTapItem,
@@ -24,9 +25,13 @@ class SmartAgendaTab extends StatelessWidget {
       ..sort((a, b) {
         // Sort by: completed last, then by priority desc, then by start time
         if (a.status == ScheduleItemStatus.completed &&
-            b.status != ScheduleItemStatus.completed) return 1;
+            b.status != ScheduleItemStatus.completed) {
+          return 1;
+        }
         if (b.status == ScheduleItemStatus.completed &&
-            a.status != ScheduleItemStatus.completed) return -1;
+            a.status != ScheduleItemStatus.completed) {
+          return -1;
+        }
         if (a.priority != null && b.priority != null) {
           return b.priority!.compareTo(a.priority!);
         }
@@ -50,7 +55,7 @@ class SmartAgendaTab extends StatelessWidget {
           '基于优先级和时间自动排序',
           style: TextStyle(
             fontSize: 12,
-            color: AppColors.textTertiary.withOpacity(0.8),
+            color: AppColors.textTertiary.withValues(alpha: 0.8),
           ),
         ),
         const SizedBox(height: 16),
@@ -81,10 +86,12 @@ class SmartAgendaTab extends StatelessWidget {
   }
 
   Widget _buildSmartSummaryCard(List<ScheduleItem> allItems, int currentHour) {
-    final highPriority = allItems.where((i) =>
-        i.priority == 3 && i.status != ScheduleItemStatus.completed).length;
-    final inProgress = allItems.where((i) =>
-        i.status == ScheduleItemStatus.inProgress).length;
+    final highPriority = allItems
+        .where(
+            (i) => i.priority == 3 && i.status != ScheduleItemStatus.completed)
+        .length;
+    final inProgress =
+        allItems.where((i) => i.status == ScheduleItemStatus.inProgress).length;
     final upcoming = allItems.where((i) {
       if (i.startTime == null) return false;
       return i.startTime!.hour > currentHour &&
@@ -107,7 +114,11 @@ class SmartAgendaTab extends StatelessWidget {
                   ),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.psychology, color: Colors.white, size: 20),
+                child: const Icon(
+                  Icons.psychology,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -123,9 +134,9 @@ class SmartAgendaTab extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 2),
-                    Text(
+                    const Text(
                       'AI 建议优先处理高优先级任务',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         color: AppColors.textTertiary,
                       ),
@@ -139,7 +150,11 @@ class SmartAgendaTab extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildSmartStat('高优先级', highPriority.toString(), AppColors.danger),
+              _buildSmartStat(
+                '高优先级',
+                highPriority.toString(),
+                AppColors.danger,
+              ),
               _buildSmartStat('进行中', inProgress.toString(), AppColors.primary),
               _buildSmartStat('即将开始', upcoming.toString(), AppColors.warning),
             ],
@@ -156,7 +171,7 @@ class SmartAgendaTab extends StatelessWidget {
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(14),
           ),
           child: Center(

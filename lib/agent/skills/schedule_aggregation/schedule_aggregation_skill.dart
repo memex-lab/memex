@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:dart_agent_core/dart_agent_core.dart';
-import 'package:drift/drift.dart';
 import 'package:memex/agent/prompts.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/db/app_database.dart';
@@ -56,22 +55,25 @@ Tool buildGetScheduleCardsTool() {
 
       // Default date range: past 3 days ~ future 7 days
       final now = DateTime.now();
-      final from = fromDate != null
-          ? DateTime.tryParse(fromDate) ?? now.subtract(const Duration(days: 3))
-          : now.subtract(const Duration(days: 3));
-      final to = toDate != null
-          ? DateTime.tryParse(toDate) ?? now.add(const Duration(days: 7))
-          : now.add(const Duration(days: 7));
-
-      final fromTs = from.millisecondsSinceEpoch ~/ 1000;
-      final toTs = to.millisecondsSinceEpoch ~/ 1000;
+      final from = _parseBoundaryDate(
+        fromDate,
+        fallback: now.subtract(const Duration(days: 3)),
+      );
+      final to = _parseBoundaryDate(
+        toDate,
+        fallback: now.add(const Duration(days: 7)),
+        endOfDay: true,
+      );
 
       try {
-        // Query CardCache for cards in time range
+        // Query all cached cards, then filter temporal cards by their own
+        // schedule fields. Creation time alone misses tasks created earlier
+        // with future due dates.
         final db = AppDatabase.instance;
-        final query = db.select(db.cardCache)
-          ..where((tbl) => tbl.timestamp.isBiggerOrEqualValue(fromTs))
-          ..where((tbl) => tbl.timestamp.isSmallerOrEqualValue(toTs));
+        if (await db.cardDao.isCacheEmpty()) {
+          await fileSystem.rebuildCardCache(userId);
+        }
+        final query = db.select(db.cardCache);
         final cachedCards = await query.get();
 
         if (cachedCards.isEmpty) {
@@ -100,10 +102,24 @@ Tool buildGetScheduleCardsTool() {
             final uiConfigs = cardData.uiConfigs;
             if (uiConfigs.isEmpty) continue;
 
-            final templateId = uiConfigs.first.templateId;
-            if (!temporalTemplates.contains(templateId)) continue;
+            final temporalConfigs = uiConfigs.where(
+              (config) => temporalTemplates.contains(config.templateId),
+            );
+            if (temporalConfigs.isEmpty) continue;
 
-            final data = uiConfigs.first.data;
+            final uiConfig = temporalConfigs.first;
+            final templateId = uiConfig.templateId;
+
+            final data = uiConfig.data;
+            if (!_isCardInScheduleRange(
+              templateId: templateId,
+              data: data,
+              fallbackTimestamp: cardData.timestamp,
+              from: from,
+              to: to,
+            )) {
+              continue;
+            }
 
             // Extract key fields
             final result = <String, dynamic>{
@@ -116,19 +132,17 @@ Tool buildGetScheduleCardsTool() {
             };
 
             // Extract temporal-specific fields
-            if (data != null) {
-              result['start_time'] = data['start_time'];
-              result['end_time'] = data['end_time'];
-              result['location'] = data['location'];
-              result['is_completed'] = data['is_completed'];
-              result['priority'] = data['priority'];
-              result['due_date'] = data['due_date'];
-              result['subtasks'] = data['subtasks'];
-              result['habit_name'] = data['habit_name'];
-              result['streak'] = data['streak'];
-              result['steps'] = data['steps'];
-              result['elapsed'] = data['elapsed'];
-            }
+            result['start_time'] = data['start_time'];
+            result['end_time'] = data['end_time'];
+            result['location'] = data['location'];
+            result['is_completed'] = data['is_completed'];
+            result['priority'] = data['priority'];
+            result['due_date'] = data['due_date'];
+            result['subtasks'] = data['subtasks'];
+            result['habit_name'] = data['habit_name'];
+            result['streak'] = data['streak'];
+            result['steps'] = data['steps'];
+            result['elapsed'] = data['elapsed'];
 
             results.add(result);
           } catch (e) {
@@ -141,11 +155,11 @@ Tool buildGetScheduleCardsTool() {
           return "No temporal cards (event/task/routine/duration/procedure) found in the specified date range.";
         }
 
-        // Sort by timestamp
+        // Sort by actual schedule time, then by card timestamp.
         results.sort((a, b) {
-          final aTs = (a['timestamp'] as num?)?.toInt() ?? 0;
-          final bTs = (b['timestamp'] as num?)?.toInt() ?? 0;
-          return aTs.compareTo(bTs);
+          final aTime = _resultScheduleDate(a);
+          final bTime = _resultScheduleDate(b);
+          return aTime.compareTo(bTime);
         });
 
         return jsonEncode({
@@ -220,7 +234,7 @@ Tool buildSaveScheduleAggregationTool() {
             description: 'Agent created schedule aggregation',
             metadata: {
               'aggregation_id': aggregationId,
-              'card_count': (yamlData['timeline'] as List?)?.length ?? 0,
+              'card_count': _countAggregationItems(yamlData),
             },
           );
         } catch (e) {
@@ -234,4 +248,82 @@ Tool buildSaveScheduleAggregationTool() {
       }
     },
   );
+}
+
+DateTime _parseBoundaryDate(
+  String? value, {
+  required DateTime fallback,
+  bool endOfDay = false,
+}) {
+  final parsed = value == null ? null : DateTime.tryParse(value);
+  if (parsed == null) return fallback;
+
+  final isDateOnly = RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(value!);
+  if (!endOfDay || !isDateOnly) return parsed;
+  return DateTime(parsed.year, parsed.month, parsed.day, 23, 59, 59, 999);
+}
+
+bool _isCardInScheduleRange({
+  required String templateId,
+  required Map<String, dynamic> data,
+  required int fallbackTimestamp,
+  required DateTime from,
+  required DateTime to,
+}) {
+  final fallback = DateTime.fromMillisecondsSinceEpoch(
+    fallbackTimestamp * 1000,
+    isUtc: true,
+  ).toLocal();
+
+  final start = switch (templateId) {
+    'event' => _parseScheduleDateTime(data['start_time']) ?? fallback,
+    'task' => _parseScheduleDateTime(data['due_date']) ?? fallback,
+    _ => _parseScheduleDateTime(data['start_time']) ??
+        _parseScheduleDateTime(data['due_date']) ??
+        fallback,
+  };
+
+  final end = _parseScheduleDateTime(data['end_time']) ?? start;
+  return !end.isBefore(from) && !start.isAfter(to);
+}
+
+DateTime? _parseScheduleDateTime(dynamic value) {
+  if (value == null) return null;
+  if (value is DateTime) return value;
+  if (value is int) {
+    final milliseconds = value > 100000000000 ? value : value * 1000;
+    return DateTime.fromMillisecondsSinceEpoch(milliseconds, isUtc: true)
+        .toLocal();
+  }
+  if (value is num) {
+    final milliseconds = value > 100000000000 ? value.toInt() : value * 1000;
+    return DateTime.fromMillisecondsSinceEpoch(milliseconds.toInt(),
+            isUtc: true)
+        .toLocal();
+  }
+  if (value is String) return DateTime.tryParse(value);
+  return null;
+}
+
+DateTime _resultScheduleDate(Map<String, dynamic> result) {
+  final timestamp = (result['timestamp'] as num?)?.toInt() ?? 0;
+  final fallback = DateTime.fromMillisecondsSinceEpoch(
+    timestamp * 1000,
+    isUtc: true,
+  ).toLocal();
+  return _parseScheduleDateTime(result['start_time']) ??
+      _parseScheduleDateTime(result['due_date']) ??
+      fallback;
+}
+
+int _countAggregationItems(Map<String, dynamic> yamlData) {
+  final heroCount = yamlData['hero_item'] == null ? 0 : 1;
+  final timelineCount =
+      (yamlData['timeline'] as List?)?.whereType<Map>().fold<int>(
+                0,
+                (count, day) => count + ((day['items'] as List?)?.length ?? 0),
+              ) ??
+          0;
+  final completedCount = (yamlData['completed'] as List?)?.length ?? 0;
+  return heroCount + timelineCount + completedCount;
 }

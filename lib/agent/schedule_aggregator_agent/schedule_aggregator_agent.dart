@@ -13,7 +13,6 @@ import 'package:memex/agent/security/file_permission_manager.dart';
 import 'package:memex/agent/skills/schedule_aggregation/schedule_aggregation_skill.dart';
 import 'package:memex/agent/state_util.dart';
 import 'package:memex/data/services/event_bus_service.dart';
-import 'package:memex/domain/models/event_bus_message.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/domain/models/agent_definitions.dart';
 import 'package:memex/domain/models/llm_config.dart';
@@ -135,7 +134,8 @@ class ScheduleAggregatorAgent {
   static Future<bool> updateScheduleAggregation() async {
     final userId = await UserStorage.getUserId();
     if (userId == null) {
-      throw Exception('User not logged in, cannot refresh schedule aggregation');
+      throw Exception(
+          'User not logged in, cannot refresh schedule aggregation');
     }
 
     final resources = await UserStorage.getAgentLLMResources(
@@ -165,8 +165,8 @@ class ScheduleAggregatorAgent {
             "ScheduleAggregatorAgent resume, sessionId:${state.sessionId}");
         result = await agent.resume();
       } else {
-        _logger.info(
-            "ScheduleAggregatorAgent run, sessionId:${state.sessionId}");
+        _logger
+            .info("ScheduleAggregatorAgent run, sessionId:${state.sessionId}");
 
         String inputMessage = "Please update schedule aggregation.";
 

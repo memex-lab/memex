@@ -5,7 +5,7 @@ import '../../../core/themes/app_colors.dart';
 class TagChip extends StatelessWidget {
   final String label;
 
-  const TagChip({required this.label});
+  const TagChip({super.key, required this.label});
 
   @override
   Widget build(BuildContext context) {

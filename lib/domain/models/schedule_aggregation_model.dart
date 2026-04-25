@@ -27,14 +27,15 @@ class ScheduleAggregationModel {
 
   factory ScheduleAggregationModel.fromYaml(Map<String, dynamic> yaml) {
     return ScheduleAggregationModel(
-      id: yaml['id'] as String? ?? '',
+      id: _parseString(yaml['id']),
       generatedAt: _parseDateTime(yaml['generated_at']),
-      version: yaml['version'] as int? ?? 1,
-      timeRange: TimeRange.fromYaml(yaml['time_range'] as Map<String, dynamic>? ?? {}),
+      version: _parseInt(yaml['version']) ?? 1,
+      timeRange:
+          TimeRange.fromYaml(yaml['time_range'] as Map<String, dynamic>? ?? {}),
       heroItem: yaml['hero_item'] != null
           ? HeroItem.fromYaml(yaml['hero_item'] as Map<String, dynamic>)
           : null,
-      editorialIntro: yaml['editorial_intro'] as String? ?? '',
+      editorialIntro: _parseString(yaml['editorial_intro']),
       quoteBlocks: _parseList(yaml['quote_blocks'], QuoteBlock.fromYaml),
       timeline: _parseList(yaml['timeline'], TimelineDay.fromYaml),
       completed: _parseList(yaml['completed'], CompletedItem.fromYaml),
@@ -43,17 +44,17 @@ class ScheduleAggregationModel {
   }
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'generated_at': generatedAt.toIso8601String(),
-    'version': version,
-    'time_range': timeRange.toJson(),
-    if (heroItem != null) 'hero_item': heroItem!.toJson(),
-    'editorial_intro': editorialIntro,
-    'quote_blocks': quoteBlocks.map((e) => e.toJson()).toList(),
-    'timeline': timeline.map((e) => e.toJson()).toList(),
-    'completed': completed.map((e) => e.toJson()).toList(),
-    'conflicts': conflicts.map((e) => e.toJson()).toList(),
-  };
+        'id': id,
+        'generated_at': generatedAt.toIso8601String(),
+        'version': version,
+        'time_range': timeRange.toJson(),
+        if (heroItem != null) 'hero_item': heroItem!.toJson(),
+        'editorial_intro': editorialIntro,
+        'quote_blocks': quoteBlocks.map((e) => e.toJson()).toList(),
+        'timeline': timeline.map((e) => e.toJson()).toList(),
+        'completed': completed.map((e) => e.toJson()).toList(),
+        'conflicts': conflicts.map((e) => e.toJson()).toList(),
+      };
 
   static DateTime _parseDateTime(dynamic value) {
     if (value == null) return DateTime.now();
@@ -62,7 +63,8 @@ class ScheduleAggregationModel {
     return DateTime.now();
   }
 
-  static List<T> _parseList<T>(dynamic value, T Function(Map<String, dynamic>) parser) {
+  static List<T> _parseList<T>(
+      dynamic value, T Function(Map<String, dynamic>) parser) {
     if (value == null) return [];
     if (value is! List) return [];
     return value
@@ -86,9 +88,9 @@ class TimeRange {
   }
 
   Map<String, dynamic> toJson() => {
-    'from': _formatDate(from),
-    'to': _formatDate(to),
-  };
+        'from': _formatDate(from),
+        'to': _formatDate(to),
+      };
 
   static DateTime _parseDate(dynamic value) {
     if (value == null) return DateTime.now();
@@ -123,25 +125,25 @@ class HeroItem {
 
   factory HeroItem.fromYaml(Map<String, dynamic> yaml) {
     return HeroItem(
-      cardId: yaml['card_id'] as String? ?? yaml['id'] as String? ?? '',
-      title: yaml['title'] as String? ?? '',
-      description: yaml['description'] as String?,
+      cardId: _parseString(yaml['card_id'], fallback: _parseString(yaml['id'])),
+      title: _parseString(yaml['title']),
+      description: _parseNullableString(yaml['description']),
       startTime: _parseDateTimeNullable(yaml['start_time']),
       endTime: _parseDateTimeNullable(yaml['end_time']),
-      location: yaml['location'] as String?,
-      priority: yaml['priority'] as int?,
+      location: _parseNullableString(yaml['location']),
+      priority: _parseInt(yaml['priority']),
     );
   }
 
   Map<String, dynamic> toJson() => {
-    'card_id': cardId,
-    'title': title,
-    if (description != null) 'description': description,
-    if (startTime != null) 'start_time': startTime!.toIso8601String(),
-    if (endTime != null) 'end_time': endTime!.toIso8601String(),
-    if (location != null) 'location': location,
-    if (priority != null) 'priority': priority,
-  };
+        'card_id': cardId,
+        'title': title,
+        if (description != null) 'description': description,
+        if (startTime != null) 'start_time': startTime!.toIso8601String(),
+        if (endTime != null) 'end_time': endTime!.toIso8601String(),
+        if (location != null) 'location': location,
+        if (priority != null) 'priority': priority,
+      };
 }
 
 class QuoteBlock {
@@ -159,19 +161,19 @@ class QuoteBlock {
 
   factory QuoteBlock.fromYaml(Map<String, dynamic> yaml) {
     return QuoteBlock(
-      title: yaml['title'] as String? ?? '',
-      content: yaml['content'] as String? ?? '',
-      priority: yaml['priority'] as String? ?? 'normal',
-      relatedCardId: yaml['related_card_id'] as String?,
+      title: _parseString(yaml['title']),
+      content: _parseString(yaml['content']),
+      priority: _parseString(yaml['priority'], fallback: 'normal'),
+      relatedCardId: _parseNullableString(yaml['related_card_id']),
     );
   }
 
   Map<String, dynamic> toJson() => {
-    'title': title,
-    'content': content,
-    'priority': priority,
-    if (relatedCardId != null) 'related_card_id': relatedCardId,
-  };
+        'title': title,
+        'content': content,
+        'priority': priority,
+        if (relatedCardId != null) 'related_card_id': relatedCardId,
+      };
 }
 
 class TimelineDay {
@@ -187,17 +189,17 @@ class TimelineDay {
 
   factory TimelineDay.fromYaml(Map<String, dynamic> yaml) {
     return TimelineDay(
-      dayLabel: yaml['day_label'] as String? ?? '',
+      dayLabel: _parseString(yaml['day_label']),
       dayDate: _parseDateTimeNullable(yaml['day_date']),
       items: _parseList(yaml['items'], TimelineItem.fromYaml),
     );
   }
 
   Map<String, dynamic> toJson() => {
-    'day_label': dayLabel,
-    if (dayDate != null) 'day_date': _formatDate(dayDate!),
-    'items': items.map((e) => e.toJson()).toList(),
-  };
+        'day_label': dayLabel,
+        if (dayDate != null) 'day_date': _formatDate(dayDate!),
+        'items': items.map((e) => e.toJson()).toList(),
+      };
 
   static String _formatDate(DateTime date) {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
@@ -225,25 +227,25 @@ class TimelineItem {
 
   factory TimelineItem.fromYaml(Map<String, dynamic> yaml) {
     return TimelineItem(
-      cardId: yaml['card_id'] as String? ?? yaml['id'] as String? ?? '',
-      title: yaml['title'] as String? ?? '',
-      status: yaml['status'] as String? ?? 'pending',
+      cardId: _parseString(yaml['card_id'], fallback: _parseString(yaml['id'])),
+      title: _parseString(yaml['title']),
+      status: _parseString(yaml['status'], fallback: 'pending'),
       startTime: _parseDateTimeNullable(yaml['start_time']),
-      type: yaml['type'] as String? ?? 'event',
-      priority: yaml['priority'] as int?,
-      description: yaml['description'] as String?,
+      type: _parseString(yaml['type'], fallback: 'event'),
+      priority: _parseInt(yaml['priority']),
+      description: _parseNullableString(yaml['description']),
     );
   }
 
   Map<String, dynamic> toJson() => {
-    'card_id': cardId,
-    'title': title,
-    'status': status,
-    if (startTime != null) 'start_time': startTime!.toIso8601String(),
-    'type': type,
-    if (priority != null) 'priority': priority,
-    if (description != null) 'description': description,
-  };
+        'card_id': cardId,
+        'title': title,
+        'status': status,
+        if (startTime != null) 'start_time': startTime!.toIso8601String(),
+        'type': type,
+        if (priority != null) 'priority': priority,
+        if (description != null) 'description': description,
+      };
 }
 
 class CompletedItem {
@@ -259,17 +261,17 @@ class CompletedItem {
 
   factory CompletedItem.fromYaml(Map<String, dynamic> yaml) {
     return CompletedItem(
-      cardId: yaml['card_id'] as String? ?? yaml['id'] as String? ?? '',
-      title: yaml['title'] as String? ?? '',
+      cardId: _parseString(yaml['card_id'], fallback: _parseString(yaml['id'])),
+      title: _parseString(yaml['title']),
       completedAt: _parseDateTimeNullable(yaml['completed_at']),
     );
   }
 
   Map<String, dynamic> toJson() => {
-    'card_id': cardId,
-    'title': title,
-    if (completedAt != null) 'completed_at': completedAt!.toIso8601String(),
-  };
+        'card_id': cardId,
+        'title': title,
+        if (completedAt != null) 'completed_at': completedAt!.toIso8601String(),
+      };
 }
 
 class Conflict {
@@ -283,15 +285,18 @@ class Conflict {
 
   factory Conflict.fromYaml(Map<String, dynamic> yaml) {
     return Conflict(
-      description: yaml['description'] as String? ?? '',
-      itemIds: (yaml['item_ids'] as List?)?.cast<String>() ?? [],
+      description: _parseString(yaml['description']),
+      itemIds: (yaml['item_ids'] as List?)
+              ?.map((item) => item.toString())
+              .toList() ??
+          [],
     );
   }
 
   Map<String, dynamic> toJson() => {
-    'description': description,
-    'item_ids': itemIds,
-  };
+        'description': description,
+        'item_ids': itemIds,
+      };
 }
 
 DateTime? _parseDateTimeNullable(dynamic value) {
@@ -308,4 +313,33 @@ List<T> _parseList<T>(dynamic value, T Function(Map<String, dynamic>) parser) {
       .whereType<Map>()
       .map((e) => parser(Map<String, dynamic>.from(e)))
       .toList();
+}
+
+String _parseString(dynamic value, {String fallback = ''}) {
+  if (value == null) return fallback;
+  if (value is String) return value;
+  return value.toString();
+}
+
+String? _parseNullableString(dynamic value) {
+  if (value == null) return null;
+  if (value is String) return value;
+  return value.toString();
+}
+
+int? _parseInt(dynamic value) {
+  if (value == null) return null;
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  if (value is String) {
+    final parsed = int.tryParse(value);
+    if (parsed != null) return parsed;
+    return switch (value.toLowerCase().trim()) {
+      'high' || 'urgent' || '重要' || '高' => 3,
+      'medium' || 'normal' || '中' => 2,
+      'low' || '低' => 1,
+      _ => null,
+    };
+  }
+  return null;
 }

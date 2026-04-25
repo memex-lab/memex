@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 
 import '../../models/schedule_item.dart';
 import '../../../core/cards/ui/glass_card.dart';
-import '../../../core/themes/app_colors.dart';
 import '../../../core/themes/app_shadows.dart';
 import '../shared/tag_chip.dart';
 
@@ -15,6 +14,7 @@ class AdaptiveCardsTab extends StatefulWidget {
   final void Function(ScheduleItem) onTapItem;
 
   const AdaptiveCardsTab({
+    super.key,
     required this.items,
     required this.onToggle,
     required this.onTapItem,
@@ -33,16 +33,28 @@ class AdaptiveCardsTabState extends State<AdaptiveCardsTab> {
     _items = List.from(widget.items);
   }
 
+  @override
+  void didUpdateWidget(covariant AdaptiveCardsTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.items != oldWidget.items) {
+      _items = List.from(widget.items);
+    }
+  }
+
   void _toggle(int index) {
     final item = _items[index];
-    if (item.type != ScheduleItemType.todo) return;
+    if (item.type != ScheduleItemType.todo) {
+      return;
+    }
     final newStatus = item.status == ScheduleItemStatus.completed
         ? ScheduleItemStatus.pending
         : ScheduleItemStatus.completed;
     setState(() {
       _items[index] = item.copyWith(
         status: newStatus,
-        completedAt: newStatus == ScheduleItemStatus.completed ? DateTime.now() : null,
+        completedAt:
+            newStatus == ScheduleItemStatus.completed ? DateTime.now() : null,
+        clearCompletedAt: newStatus != ScheduleItemStatus.completed,
       );
     });
     widget.onToggle(index);
@@ -101,7 +113,7 @@ class AdaptiveCardsTabState extends State<AdaptiveCardsTab> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
-            boxShadow: [AppShadows.card],
+            boxShadow: const [AppShadows.card],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -290,13 +302,15 @@ class AdaptiveCardsTabState extends State<AdaptiveCardsTab> {
                     color: Color(0xFF4A5565),
                   ),
                   h1: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF0A0A0A)),
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF0A0A0A),
+                  ),
                   h2: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF0A0A0A)),
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF0A0A0A),
+                  ),
                   blockquote: const TextStyle(
                     color: Color(0xFF4A5565),
                     fontStyle: FontStyle.italic,
@@ -352,7 +366,9 @@ class AdaptiveCardsTabState extends State<AdaptiveCardsTab> {
                       ),
                     ),
                     Text(
-                      item.startTime != null ? dayFormat.format(item.startTime!) : '--',
+                      item.startTime != null
+                          ? dayFormat.format(item.startTime!)
+                          : '--',
                       style: GoogleFonts.inter(
                         fontSize: 20,
                         fontWeight: FontWeight.w600,
@@ -477,7 +493,8 @@ class AdaptiveCardsTabState extends State<AdaptiveCardsTab> {
               if (item.priority == 2)
                 const Icon(Icons.flag, size: 16, color: Color(0xFFF59E0B)),
               if (item.priority == 3)
-                const Icon(Icons.priority_high, size: 16, color: Color(0xFFF43F5E)),
+                const Icon(Icons.priority_high,
+                    size: 16, color: Color(0xFFF43F5E)),
             ],
           ),
         ),

@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
-import '../data/schedule_mock_data.dart';
 import '../models/schedule_item.dart';
 import '../view_models/schedule_aggregator_view_model.dart';
 import '../../core/themes/app_colors.dart';
 import '../../core/themes/app_shadows.dart';
-import 'schedule_detail_screen.dart';
+import '../../timeline/widgets/timeline_card_detail_screen.dart';
 import 'tabs/daily_focus_tab.dart';
 import 'tabs/weekly_overview_tab.dart';
 import 'tabs/smart_agenda_tab.dart';
@@ -37,30 +36,14 @@ class _ScheduleAggregatorScreenBody extends StatefulWidget {
 }
 
 class _ScheduleAggregatorScreenState
-    extends State<_ScheduleAggregatorScreenBody>
-    with TickerProviderStateMixin {
+    extends State<_ScheduleAggregatorScreenBody> with TickerProviderStateMixin {
   late TabController _tabController;
-
-  // State for each interaction's data
-  late List<ScheduleItem> _dailyFocusItems;
-  late List<ScheduleItem> _weeklyItems;
-  late List<ScheduleItem> _smartAgendaItems;
-  late List<ScheduleItem> _adaptiveItems;
-  late List<ScheduleItem> _conversationalItems;
-  late List<ScheduleItem> _magazineItems;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 6, vsync: this);
-    _dailyFocusItems = ScheduleMockData.dailyFocusData;
-    _weeklyItems = ScheduleMockData.weeklyOverviewData;
-    _smartAgendaItems = ScheduleMockData.smartAgendaData;
-    _adaptiveItems = ScheduleMockData.adaptiveCardData;
-    _conversationalItems = ScheduleMockData.conversationalData;
-    _magazineItems = ScheduleMockData.magazineData;
 
-    // Load real aggregation data in background
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ScheduleAggregatorViewModel>().ensureFresh();
     });
@@ -72,29 +55,29 @@ class _ScheduleAggregatorScreenState
     super.dispose();
   }
 
-  void _toggleTodoCompletion(List<ScheduleItem> items, int index,
-      void Function(List<ScheduleItem>) onUpdate) {
+  void _toggleTodoCompletion(List<ScheduleItem> items, int index) {
+    if (index < 0 || index >= items.length) {
+      return;
+    }
     final item = items[index];
-    if (item.type != ScheduleItemType.todo) return;
-
-    final newStatus = item.status == ScheduleItemStatus.completed
-        ? ScheduleItemStatus.pending
-        : ScheduleItemStatus.completed;
-
-    final newItems = List<ScheduleItem>.from(items);
-    newItems[index] = item.copyWith(
-      status: newStatus,
-      completedAt:
-          newStatus == ScheduleItemStatus.completed ? DateTime.now() : null,
-    );
-    onUpdate(newItems);
+    if (item.type != ScheduleItemType.todo) {
+      return;
+    }
+    context.read<ScheduleAggregatorViewModel>().toggleCompletion(item);
   }
 
   void _navigateToDetail(ScheduleItem item) {
+    _navigateToCard(item.id);
+  }
+
+  void _navigateToCard(String cardId) {
+    if (cardId.isEmpty) {
+      return;
+    }
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => ScheduleDetailScreen(item: item),
+        builder: (_) => TimelineCardDetailScreen(cardId: cardId),
       ),
     );
   }
@@ -119,72 +102,120 @@ class _ScheduleAggregatorScreenState
             Expanded(
               child: Consumer<ScheduleAggregatorViewModel>(
                 builder: (context, vm, child) {
+                  if (vm.isLoading && !vm.hasData) {
+                    return _buildLoadingState();
+                  }
+                  if (!vm.hasData) {
+                    return _buildEmptyState(vm.error);
+                  }
+
+                  final allItems = vm.items;
+                  final todayItems = vm.todayItems;
+
                   return TabBarView(
                     controller: _tabController,
                     children: [
                       DailyFocusTab(
-                        items: _dailyFocusItems,
+                        items: todayItems,
                         onToggle: (index) => _toggleTodoCompletion(
-                          _dailyFocusItems,
+                          todayItems,
                           index,
-                          (newItems) =>
-                              setState(() => _dailyFocusItems = newItems),
                         ),
                         onTapItem: _navigateToDetail,
                       ),
                       WeeklyOverviewTab(
-                        items: _weeklyItems,
+                        items: allItems,
                         onToggle: (index) => _toggleTodoCompletion(
-                          _weeklyItems,
+                          allItems,
                           index,
-                          (newItems) =>
-                              setState(() => _weeklyItems = newItems),
                         ),
                         onTapItem: _navigateToDetail,
                       ),
                       SmartAgendaTab(
-                        items: _smartAgendaItems,
+                        items: allItems,
                         onToggle: (index) => _toggleTodoCompletion(
-                          _smartAgendaItems,
+                          allItems,
                           index,
-                          (newItems) =>
-                              setState(() => _smartAgendaItems = newItems),
                         ),
                         onTapItem: _navigateToDetail,
                       ),
                       AdaptiveCardsTab(
-                        items: _adaptiveItems,
+                        items: allItems,
                         onToggle: (index) => _toggleTodoCompletion(
-                          _adaptiveItems,
+                          allItems,
                           index,
-                          (newItems) =>
-                              setState(() => _adaptiveItems = newItems),
                         ),
                         onTapItem: _navigateToDetail,
                       ),
                       ConversationalBriefingTab(
-                        items: _conversationalItems,
+                        items: allItems,
                         onTapItem: _navigateToDetail,
                       ),
                       MagazineNarrativeTab(
-                        items: _magazineItems,
-                        aggregation: vm.aggregation,
-                        onToggle: (index) => _toggleTodoCompletion(
-                          _magazineItems,
-                          index,
-                          (newItems) =>
-                              setState(() => _magazineItems = newItems),
-                        ),
-                        onTapItem: _navigateToDetail,
-                        onTapCardId: (cardId) {
-                          // TODO: Navigate to card detail by factId
-                          debugPrint('Tapped card: $cardId');
-                        },
+                        aggregation: vm.aggregation!,
+                        onTapCardId: _navigateToCard,
                       ),
                     ],
                   );
                 },
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return const Center(
+      child: CircularProgressIndicator(),
+    );
+  }
+
+  Widget _buildEmptyState(String? error) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: const Icon(
+                Icons.calendar_month_outlined,
+                color: AppColors.primary,
+                size: 30,
+              ),
+            ),
+            const SizedBox(height: 18),
+            Text(
+              '暂无日程聚合',
+              style: GoogleFonts.inter(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              error ?? '点击右上角 AI 生成，从真实时间卡片里整理日程和待办。',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 14,
+                height: 1.5,
+                color: AppColors.textTertiary,
+              ),
+            ),
+            const SizedBox(height: 18),
+            FilledButton.icon(
+              onPressed: _onRefresh,
+              icon: const Icon(Icons.auto_awesome, size: 18),
+              label: const Text('AI 生成'),
             ),
           ],
         ),
@@ -238,7 +269,7 @@ class _ScheduleAggregatorScreenState
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF5B6CFF).withOpacity(0.25),
+                        color: const Color(0xFF5B6CFF).withValues(alpha: 0.25),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -292,15 +323,7 @@ class _ScheduleAggregatorScreenState
 
   String _buildDateSubtitle() {
     final now = DateTime.now();
-    final weekdays = [
-      '周日',
-      '周一',
-      '周二',
-      '周三',
-      '周四',
-      '周五',
-      '周六'
-    ];
+    final weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
     return '${now.year}年${now.month}月${now.day}日 ${weekdays[now.weekday % 7]}';
   }
 
@@ -310,7 +333,7 @@ class _ScheduleAggregatorScreenState
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [AppShadows.card],
+        boxShadow: const [AppShadows.card],
       ),
       child: TabBar(
         controller: _tabController,

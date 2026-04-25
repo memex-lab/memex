@@ -112,6 +112,81 @@ void main() {
       expect(model.timeline, isEmpty);
     });
 
+    test('parses LLM-style scalar variants and ignores malformed list entries',
+        () {
+      final model = ScheduleAggregationModel.fromYaml({
+        'id': 20260426,
+        'generated_at': DateTime.utc(2026, 4, 26, 1),
+        'version': '2',
+        'time_range': {
+          'from': DateTime(2026, 4, 26),
+          'to': '2026-05-03',
+        },
+        'hero_item': {
+          'id': 42,
+          'title': 123,
+          'priority': 'urgent',
+        },
+        'quote_blocks': [
+          {
+            'title': '风险',
+            'content': 88,
+            'priority': 'high',
+            'related_card_id': 42,
+          },
+          'not a map',
+        ],
+        'timeline': [
+          {
+            'day_label': 'Today',
+            'day_date': '2026-04-26',
+            'items': [
+              {
+                'id': 101,
+                'title': '确认材料',
+                'status': 'done',
+                'type': 'task',
+                'priority': 'low',
+              },
+              false,
+            ],
+          },
+          7,
+        ],
+        'completed': [
+          {
+            'id': 102,
+            'title': '完成彩排',
+            'completed_at': 'invalid datetime',
+          },
+        ],
+        'conflicts': [
+          {
+            'description': 404,
+            'item_ids': [101, '42'],
+          },
+        ],
+      });
+
+      expect(model.id, '20260426');
+      expect(model.generatedAt, DateTime.utc(2026, 4, 26, 1));
+      expect(model.version, 2);
+      expect(model.heroItem?.cardId, '42');
+      expect(model.heroItem?.title, '123');
+      expect(model.heroItem?.priority, 3);
+      expect(model.quoteBlocks, hasLength(1));
+      expect(model.quoteBlocks.single.content, '88');
+      expect(model.quoteBlocks.single.relatedCardId, '42');
+      expect(model.timeline, hasLength(1));
+      expect(model.timeline.single.items, hasLength(1));
+      expect(model.timeline.single.items.single.cardId, '101');
+      expect(model.timeline.single.items.single.priority, 1);
+      expect(model.completed.single.cardId, '102');
+      expect(model.completed.single.completedAt, isNull);
+      expect(model.conflicts.single.description, '404');
+      expect(model.conflicts.single.itemIds, ['101', '42']);
+    });
+
     test('round-trip serialization preserves data', () {
       final original = ScheduleAggregationModel(
         id: 'test_id',

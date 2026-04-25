@@ -13,6 +13,7 @@ class WeeklyOverviewTab extends StatelessWidget {
   final void Function(ScheduleItem) onTapItem;
 
   const WeeklyOverviewTab({
+    super.key,
     required this.items,
     required this.onToggle,
     required this.onTapItem,
@@ -64,13 +65,16 @@ class WeeklyOverviewTab extends StatelessWidget {
   }
 
   String _dayKey(DateTime? dt) {
-    if (dt == null) return '未安排';
+    if (dt == null) {
+      return '未安排';
+    }
     final weekdayNames = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
     return '${dt.month}/${dt.day} ${weekdayNames[dt.weekday - 1]}';
   }
 
   Widget _buildWeekSummaryCard(List<ScheduleItem> allItems) {
-    final done = allItems.where((i) => i.status == ScheduleItemStatus.completed).length;
+    final done =
+        allItems.where((i) => i.status == ScheduleItemStatus.completed).length;
     final total = allItems.length;
 
     return GlassCard(
@@ -89,7 +93,11 @@ class WeeklyOverviewTab extends StatelessWidget {
                   ),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.date_range, color: Colors.white, size: 20),
+                child: const Icon(
+                  Icons.date_range,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -123,11 +131,14 @@ class WeeklyOverviewTab extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: List.generate(5, (index) {
               final dayItems = allItems.where((i) {
-                if (i.startTime == null) return false;
+                if (i.startTime == null) {
+                  return false;
+                }
                 return i.startTime!.weekday == index + 1;
               }).toList();
-              final dayDone = dayItems.where((i) =>
-                  i.status == ScheduleItemStatus.completed).length;
+              final dayDone = dayItems
+                  .where((i) => i.status == ScheduleItemStatus.completed)
+                  .length;
               final hasItems = dayItems.isNotEmpty;
               final allDone = hasItems && dayDone == dayItems.length;
 
@@ -139,21 +150,27 @@ class WeeklyOverviewTab extends StatelessWidget {
                     height: 36,
                     decoration: BoxDecoration(
                       color: allDone
-                          ? AppColors.success.withOpacity(0.15)
+                          ? AppColors.success.withValues(alpha: 0.15)
                           : hasItems
-                              ? AppColors.primary.withOpacity(0.1)
+                              ? AppColors.primary.withValues(alpha: 0.1)
                               : const Color(0xFFF1F5F9),
                       shape: BoxShape.circle,
                     ),
                     child: Center(
                       child: allDone
-                          ? const Icon(Icons.check, size: 16, color: AppColors.success)
+                          ? const Icon(
+                              Icons.check,
+                              size: 16,
+                              color: AppColors.success,
+                            )
                           : Text(
                               weekdayLabels[index],
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
-                                color: hasItems ? AppColors.primary : AppColors.textTertiary,
+                                color: hasItems
+                                    ? AppColors.primary
+                                    : AppColors.textTertiary,
                               ),
                             ),
                     ),
@@ -163,7 +180,9 @@ class WeeklyOverviewTab extends StatelessWidget {
                     hasItems ? '$dayDone/${dayItems.length}' : '-',
                     style: TextStyle(
                       fontSize: 11,
-                      color: hasItems ? AppColors.textSecondary : AppColors.textTertiary,
+                      color: hasItems
+                          ? AppColors.textSecondary
+                          : AppColors.textTertiary,
                     ),
                   ),
                 ],
@@ -176,8 +195,10 @@ class WeeklyOverviewTab extends StatelessWidget {
   }
 
   Widget _buildDayHeader(String dayKey, List<ScheduleItem> dayItems) {
-    final done = dayItems.where((i) => i.status == ScheduleItemStatus.completed).length;
-    final isToday = dayKey.contains('${DateTime.now().month}/${DateTime.now().day}');
+    final done =
+        dayItems.where((i) => i.status == ScheduleItemStatus.completed).length;
+    final isToday =
+        dayKey.contains('${DateTime.now().month}/${DateTime.now().day}');
 
     return Row(
       children: [
@@ -211,7 +232,7 @@ class WeeklyOverviewTab extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Text(

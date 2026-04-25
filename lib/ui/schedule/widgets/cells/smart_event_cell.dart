@@ -12,6 +12,7 @@ class SmartEventCell extends StatelessWidget {
   final bool isCurrent;
 
   const SmartEventCell({
+    super.key,
     required this.item,
     required this.onTap,
     this.isCurrent = false,
@@ -37,7 +38,7 @@ class SmartEventCell extends StatelessWidget {
                   height: 40,
                   decoration: BoxDecoration(
                     color: isCurrent
-                        ? AppColors.warning.withOpacity(0.15)
+                        ? AppColors.warning.withValues(alpha: 0.15)
                         : const Color(0xFFF1F5F9),
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -45,7 +46,9 @@ class SmartEventCell extends StatelessWidget {
                     child: Icon(
                       isCurrent ? Icons.play_arrow : Icons.schedule,
                       size: 18,
-                      color: isCurrent ? AppColors.warning : AppColors.textTertiary,
+                      color: isCurrent
+                          ? AppColors.warning
+                          : AppColors.textTertiary,
                     ),
                   ),
                 ),
@@ -71,9 +74,12 @@ class SmartEventCell extends StatelessWidget {
                       if (isCurrent)
                         Container(
                           margin: const EdgeInsets.only(right: 8),
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
-                            color: AppColors.warning.withOpacity(0.15),
+                            color: AppColors.warning.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: const Text(
@@ -114,7 +120,11 @@ class SmartEventCell extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, size: 20, color: AppColors.textTertiary),
+            const Icon(
+              Icons.chevron_right,
+              size: 20,
+              color: AppColors.textTertiary,
+            ),
           ],
         ),
       ),

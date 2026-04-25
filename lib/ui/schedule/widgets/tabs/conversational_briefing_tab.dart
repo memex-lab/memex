@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../../models/schedule_item.dart';
@@ -9,23 +8,35 @@ class ConversationalBriefingTab extends StatelessWidget {
   final void Function(ScheduleItem) onTapItem;
 
   const ConversationalBriefingTab({
+    super.key,
     required this.items,
     required this.onTapItem,
   });
 
   List<ScheduleItem> _groupByTime() {
-    return items..sort((a, b) {
-      if (a.startTime == null && b.startTime == null) return 0;
-      if (a.startTime == null) return 1;
-      if (b.startTime == null) return -1;
-      return a.startTime!.compareTo(b.startTime!);
-    });
+    return List<ScheduleItem>.from(items)
+      ..sort((a, b) {
+        if (a.startTime == null && b.startTime == null) {
+          return 0;
+        }
+        if (a.startTime == null) {
+          return 1;
+        }
+        if (b.startTime == null) {
+          return -1;
+        }
+        return a.startTime!.compareTo(b.startTime!);
+      });
   }
 
   String _buildGreeting() {
     final hour = DateTime.now().hour;
-    if (hour < 12) return '早上好';
-    if (hour < 18) return '下午好';
+    if (hour < 12) {
+      return '早上好';
+    }
+    if (hour < 18) {
+      return '下午好';
+    }
     return '晚上好';
   }
 
@@ -154,9 +165,8 @@ class ConversationalBriefingTab extends StatelessWidget {
                       color: isCompleted
                           ? const Color(0xFF99A1AF)
                           : const Color(0xFF0A0A0A),
-                      decoration: isCompleted
-                          ? TextDecoration.lineThrough
-                          : null,
+                      decoration:
+                          isCompleted ? TextDecoration.lineThrough : null,
                     ),
                   ),
                   if (item.startTime != null) ...[
@@ -191,7 +201,11 @@ class ConversationalBriefingTab extends StatelessWidget {
                 ),
               ),
             if (item.priority == 3 && !isCompleted && !isInProgress)
-              const Icon(Icons.priority_high, size: 16, color: Color(0xFFF43F5E)),
+              const Icon(
+                Icons.priority_high,
+                size: 16,
+                color: Color(0xFFF43F5E),
+              ),
           ],
         ),
       ),
@@ -201,11 +215,15 @@ class ConversationalBriefingTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final sorted = _groupByTime();
-    final completed = sorted.where((i) => i.status == ScheduleItemStatus.completed).toList();
-    final inProgress = sorted.where((i) => i.status == ScheduleItemStatus.inProgress).toList();
-    final upcoming = sorted.where((i) =>
-        i.status != ScheduleItemStatus.completed &&
-        i.status != ScheduleItemStatus.inProgress).toList();
+    final completed =
+        sorted.where((i) => i.status == ScheduleItemStatus.completed).toList();
+    final inProgress =
+        sorted.where((i) => i.status == ScheduleItemStatus.inProgress).toList();
+    final upcoming = sorted
+        .where((i) =>
+            i.status != ScheduleItemStatus.completed &&
+            i.status != ScheduleItemStatus.inProgress)
+        .toList();
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 120),

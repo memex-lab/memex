@@ -13,6 +13,7 @@ class DailyFocusTab extends StatelessWidget {
   final void Function(ScheduleItem) onTapItem;
 
   const DailyFocusTab({
+    super.key,
     required this.items,
     required this.onToggle,
     required this.onTapItem,
@@ -20,11 +21,22 @@ class DailyFocusTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final pending = items.where((i) =>
-        i.status != ScheduleItemStatus.completed && i.type == ScheduleItemType.todo).toList();
-    final completed = items.where((i) =>
-        i.status == ScheduleItemStatus.completed && i.type == ScheduleItemType.todo).toList();
-    final events = items.where((i) => i.type == ScheduleItemType.event).toList();
+    final pending = items
+        .where(
+          (i) =>
+              i.status != ScheduleItemStatus.completed &&
+              i.type == ScheduleItemType.todo,
+        )
+        .toList();
+    final completed = items
+        .where(
+          (i) =>
+              i.status == ScheduleItemStatus.completed &&
+              i.type == ScheduleItemType.todo,
+        )
+        .toList();
+    final events =
+        items.where((i) => i.type == ScheduleItemType.event).toList();
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 120),
@@ -36,9 +48,9 @@ class DailyFocusTab extends StatelessWidget {
         _buildSectionHeader('今日日程', Icons.calendar_today_outlined),
         const SizedBox(height: 12),
         ...events.map((e) => EventCell(
-          item: e,
-          onTap: () => onTapItem(e),
-        )),
+              item: e,
+              onTap: () => onTapItem(e),
+            )),
         const SizedBox(height: 24),
         // Pending todos
         _buildSectionHeader('待办事项', Icons.check_circle_outline),
@@ -74,9 +86,10 @@ class DailyFocusTab extends StatelessWidget {
 
   Widget _buildSummaryCard(List<ScheduleItem> allItems) {
     final total = allItems.length;
-    final done = allItems.where((i) => i.status == ScheduleItemStatus.completed).length;
-    final pending = allItems.where((i) =>
-        i.status != ScheduleItemStatus.completed).length;
+    final done =
+        allItems.where((i) => i.status == ScheduleItemStatus.completed).length;
+    final pending =
+        allItems.where((i) => i.status != ScheduleItemStatus.completed).length;
     final progress = total == 0 ? 0.0 : done / total;
 
     return GlassCard(
@@ -138,7 +151,8 @@ class DailyFocusTab extends StatelessWidget {
               value: progress,
               minHeight: 8,
               backgroundColor: const Color(0xFFEEF2FF),
-              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF5B6CFF)),
+              valueColor:
+                  const AlwaysStoppedAnimation<Color>(Color(0xFF5B6CFF)),
             ),
           ),
           const SizedBox(height: 12),
@@ -146,7 +160,14 @@ class DailyFocusTab extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildStatItem('待办', pending.toString(), AppColors.warning),
-              _buildStatItem('日程', allItems.where((i) => i.type == ScheduleItemType.event).length.toString(), AppColors.primary),
+              _buildStatItem(
+                '日程',
+                allItems
+                    .where((i) => i.type == ScheduleItemType.event)
+                    .length
+                    .toString(),
+                AppColors.primary,
+              ),
               _buildStatItem('已完成', done.toString(), AppColors.success),
             ],
           ),

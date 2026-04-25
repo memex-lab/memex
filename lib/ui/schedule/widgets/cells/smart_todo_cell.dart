@@ -13,6 +13,7 @@ class SmartTodoCell extends StatelessWidget {
   final bool isCurrent;
 
   const SmartTodoCell({
+    super.key,
     required this.item,
     required this.onToggle,
     required this.onTap,
@@ -28,6 +29,9 @@ class SmartTodoCell extends StatelessWidget {
       AppColors.danger,
     ];
     final priorityLabels = ['低', '中', '高'];
+    final priorityIndex = item.priority == null
+        ? -1
+        : item.priority!.clamp(1, priorityColors.length).toInt() - 1;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
@@ -49,10 +53,12 @@ class SmartTodoCell extends StatelessWidget {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: isCompleted ? AppColors.success : AppColors.primary,
+                        color:
+                            isCompleted ? AppColors.success : AppColors.primary,
                         width: 2,
                       ),
-                      color: isCompleted ? AppColors.success : Colors.transparent,
+                      color:
+                          isCompleted ? AppColors.success : Colors.transparent,
                     ),
                     child: isCompleted
                         ? const Icon(Icons.check, size: 16, color: Colors.white)
@@ -60,19 +66,21 @@ class SmartTodoCell extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 6),
-                if (item.priority != null && item.priority! > 0)
+                if (priorityIndex >= 0)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: priorityColors[item.priority! - 1].withOpacity(0.12),
+                      color:
+                          priorityColors[priorityIndex].withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      priorityLabels[item.priority! - 1],
+                      priorityLabels[priorityIndex],
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
-                        color: priorityColors[item.priority! - 1],
+                        color: priorityColors[priorityIndex],
                       ),
                     ),
                   ),
@@ -88,8 +96,11 @@ class SmartTodoCell extends StatelessWidget {
                     style: GoogleFonts.inter(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: isCompleted ? AppColors.textTertiary : AppColors.textPrimary,
-                      decoration: isCompleted ? TextDecoration.lineThrough : null,
+                      color: isCompleted
+                          ? AppColors.textTertiary
+                          : AppColors.textPrimary,
+                      decoration:
+                          isCompleted ? TextDecoration.lineThrough : null,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -110,13 +121,18 @@ class SmartTodoCell extends StatelessWidget {
                     const SizedBox(height: 6),
                     Wrap(
                       spacing: 6,
-                      children: item.tags.map((tag) => TagChip(label: tag)).toList(),
+                      children:
+                          item.tags.map((tag) => TagChip(label: tag)).toList(),
                     ),
                   ],
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, size: 20, color: AppColors.textTertiary),
+            const Icon(
+              Icons.chevron_right,
+              size: 20,
+              color: AppColors.textTertiary,
+            ),
           ],
         ),
       ),

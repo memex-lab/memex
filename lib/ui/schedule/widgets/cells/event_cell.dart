@@ -13,6 +13,7 @@ class EventCell extends StatelessWidget {
   final bool compact;
 
   const EventCell({
+    super.key,
     required this.item,
     required this.onTap,
     this.compact = false,
@@ -63,7 +64,7 @@ class EventCell extends StatelessWidget {
                         style: GoogleFonts.inter(
                           fontSize: compact ? 9 : 10,
                           fontWeight: FontWeight.w400,
-                          color: Colors.white.withOpacity(0.8),
+                          color: Colors.white.withValues(alpha: 0.8),
                         ),
                       ),
                   ] else
@@ -88,9 +89,10 @@ class EventCell extends StatelessWidget {
                             color: item.status == ScheduleItemStatus.completed
                                 ? AppColors.textTertiary
                                 : AppColors.textPrimary,
-                            decoration: item.status == ScheduleItemStatus.completed
-                                ? TextDecoration.lineThrough
-                                : null,
+                            decoration:
+                                item.status == ScheduleItemStatus.completed
+                                    ? TextDecoration.lineThrough
+                                    : null,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -98,9 +100,12 @@ class EventCell extends StatelessWidget {
                       ),
                       if (item.status == ScheduleItemStatus.completed)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
-                            color: AppColors.success.withOpacity(0.1),
+                            color: AppColors.success.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: const Text(
@@ -118,8 +123,11 @@ class EventCell extends StatelessWidget {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Icon(Icons.location_on_outlined,
-                            size: 13, color: AppColors.textTertiary),
+                        const Icon(
+                          Icons.location_on_outlined,
+                          size: 13,
+                          color: AppColors.textTertiary,
+                        ),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
@@ -139,13 +147,18 @@ class EventCell extends StatelessWidget {
                     const SizedBox(height: 6),
                     Wrap(
                       spacing: 6,
-                      children: item.tags.map((tag) => TagChip(label: tag)).toList(),
+                      children:
+                          item.tags.map((tag) => TagChip(label: tag)).toList(),
                     ),
                   ],
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, size: 20, color: AppColors.textTertiary),
+            const Icon(
+              Icons.chevron_right,
+              size: 20,
+              color: AppColors.textTertiary,
+            ),
           ],
         ),
       ),
