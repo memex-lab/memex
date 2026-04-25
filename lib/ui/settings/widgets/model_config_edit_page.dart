@@ -63,19 +63,25 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
     _apiKeyController = TextEditingController(text: config?.apiKey ?? '');
     _baseUrlController = TextEditingController(text: config?.baseUrl ?? '');
     _proxyUrlController = TextEditingController(text: config?.proxyUrl ?? '');
-    _temperatureController =
-        TextEditingController(text: config?.temperature?.toString() ?? '');
-    _maxTokensController =
-        TextEditingController(text: config?.maxTokens?.toString() ?? '');
+    _temperatureController = TextEditingController(
+      text: config?.temperature?.toString() ?? '',
+    );
+    _maxTokensController = TextEditingController(
+      text: config?.maxTokens?.toString() ?? '',
+    );
     _topPController = TextEditingController(
-        text: config?.topP?.toString() ?? ''); // Fixed line
+      text: config?.topP?.toString() ?? '',
+    ); // Fixed line
 
     _bedrockAccessKeyController = TextEditingController(
-        text: config?.extra['accessKeyId'] as String? ?? '');
+      text: config?.extra['accessKeyId'] as String? ?? '',
+    );
     _bedrockSecretKeyController = TextEditingController(
-        text: config?.extra['secretAccessKey'] as String? ?? '');
+      text: config?.extra['secretAccessKey'] as String? ?? '',
+    );
     _bedrockRegionController = TextEditingController(
-        text: config?.extra['region'] as String? ?? 'us-west-2');
+      text: config?.extra['region'] as String? ?? 'us-west-2',
+    );
 
     String extraJson = '{}';
     if (config != null && config.extra.isNotEmpty) {
@@ -106,7 +112,9 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
     }
 
     _animationController = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 800));
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
 
     _keyController.addListener(_checkChanges);
     _modelIdController.addListener(_checkChanges);
@@ -205,7 +213,9 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
             mounted) {
           _dismissAuthDialog();
           ToastHelper.showError(
-              context, UserStorage.l10n.authFailed('Authorization cancelled'));
+            context,
+            UserStorage.l10n.authFailed('Authorization cancelled'),
+          );
         }
       });
     }
@@ -264,12 +274,15 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
                 children: [
                   const CircularProgressIndicator(),
                   const SizedBox(height: 16),
-                  Text(UserStorage.l10n.authorizing,
-                      style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.black87,
-                          decoration: TextDecoration.none,
-                          fontWeight: FontWeight.normal)),
+                  Text(
+                    UserStorage.l10n.authorizing,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.black87,
+                      decoration: TextDecoration.none,
+                      fontWeight: FontWeight.normal,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -291,7 +304,9 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
         _dismissAuthDialog();
         if (mounted) {
           ToastHelper.showError(
-              context, UserStorage.l10n.authFailed(error.toString()));
+            context,
+            UserStorage.l10n.authFailed(error.toString()),
+          );
         }
       },
     );
@@ -319,12 +334,15 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
                 children: [
                   const CircularProgressIndicator(),
                   const SizedBox(height: 16),
-                  Text(UserStorage.l10n.authorizing,
-                      style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.black87,
-                          decoration: TextDecoration.none,
-                          fontWeight: FontWeight.normal)),
+                  Text(
+                    UserStorage.l10n.authorizing,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.black87,
+                      decoration: TextDecoration.none,
+                      fontWeight: FontWeight.normal,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -346,7 +364,9 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
         _dismissAuthDialog();
         if (mounted) {
           ToastHelper.showError(
-              context, UserStorage.l10n.authFailed(error.toString()));
+            context,
+            UserStorage.l10n.authFailed(error.toString()),
+          );
         }
       },
     );
@@ -388,8 +408,9 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
             child: ElevatedButton.icon(
               onPressed: _startOpenAiAuth,
               icon: const Icon(Icons.login),
-              label:
-                  Text(isAuthorized ? 'Re-authorize' : 'Authorize with OpenAI'),
+              label: Text(
+                isAuthorized ? 'Re-authorize' : 'Authorize with OpenAI',
+              ),
             ),
           ),
           if (isAuthorized)
@@ -451,8 +472,9 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
             child: ElevatedButton.icon(
               onPressed: _startGeminiAuth,
               icon: const Icon(Icons.login),
-              label:
-                  Text(isAuthorized ? 'Re-authorize' : 'Authorize with Google'),
+              label: Text(
+                isAuthorized ? 'Re-authorize' : 'Authorize with Google',
+              ),
             ),
           ),
           if (isAuthorized)
@@ -522,32 +544,38 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
       if (filtered.isEmpty) continue;
 
       // Group header
-      items.add(DropdownMenuItem<String>(
-        enabled: false,
-        value: '__header_${groupIndex}__',
-        child: Padding(
-          padding: EdgeInsets.only(top: groupIndex > 0 ? 4 : 0),
-          child: Text(
-            entry.key,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[500],
-              letterSpacing: 0.5,
+      items.add(
+        DropdownMenuItem<String>(
+          enabled: false,
+          value: '__header_${groupIndex}__',
+          child: Padding(
+            padding: EdgeInsets.only(top: groupIndex > 0 ? 4 : 0),
+            child: Text(
+              entry.key,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[500],
+                letterSpacing: 0.5,
+              ),
             ),
           ),
         ),
-      ));
+      );
 
       for (final provider in filtered) {
-        items.add(DropdownMenuItem(
-          value: provider.type,
-          child: Padding(
-            padding: const EdgeInsets.only(left: 12),
-            child:
-                Text(provider.label, style: TextStyle(color: Colors.grey[800])),
+        items.add(
+          DropdownMenuItem(
+            value: provider.type,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 12),
+              child: Text(
+                provider.label,
+                style: TextStyle(color: Colors.grey[800]),
+              ),
+            ),
           ),
-        ));
+        );
       }
       groupIndex++;
     }
@@ -567,11 +595,21 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
     final missingFeatured = featured.where((m) => !models.contains(m)).toList();
     final top = [
       ...missingFeatured,
-      ...models.where((m) => featured.contains(m))
+      ...models.where((m) => featured.contains(m)),
     ];
     final rest = models.where((m) => !featured.contains(m)).toList();
     return [...top, ...rest];
   }
+
+  bool _isKnownMultimodalModel(String modelId) =>
+      LLMConfig.isKnownMultimodal(_selectedType, modelId);
+
+  String get _visionBadgeText =>
+      UserStorage.l10n.localeName == 'zh' ? '视觉' : 'Vision';
+
+  String get _notMultimodalHint => UserStorage.l10n.localeName == 'zh'
+      ? '该模型未标记为多模态；如果用于媒体分析，可能无法读取图片。建议媒体分析使用 mimo-v2.5、mimo-v2-omni 或其他视觉模型。'
+      : 'This model is not marked as multimodal; Media analysis may not be able to read images. Use mimo-v2.5, mimo-v2-omni, or another vision-capable model.';
 
   /// Whether the model selector should be disabled (needs API key first).
   bool get _modelSelectorDisabled {
@@ -663,7 +701,11 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
     }
 
     // Check Key Uniqueness if new
-    if (widget.config == null && await _isKeyExists(_keyController.text)) {
+    final keyExists =
+        widget.config == null && await _isKeyExists(_keyController.text);
+    if (!mounted) return;
+
+    if (keyExists) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(UserStorage.l10n.keyAlreadyExists)),
       );
@@ -715,8 +757,9 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
 
     // Issue 3: Check LLM data sharing consent before saving a valid config
     if (newConfig.isValid) {
-      final hasConsent =
-          await UserStorage.hasLLMConsent(providerType: _selectedType);
+      final hasConsent = await UserStorage.hasLLMConsent(
+        providerType: _selectedType,
+      );
       if (!hasConsent && mounted) {
         final l10n = UserStorage.l10n;
         final providerName = _selectedType.isNotEmpty
@@ -786,8 +829,10 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(UserStorage.l10n.resetButton,
-                style: const TextStyle(color: Colors.red)),
+            child: Text(
+              UserStorage.l10n.resetButton,
+              style: const TextStyle(color: Colors.red),
+            ),
           ),
         ],
       ),
@@ -797,8 +842,10 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
 
     final defaultKey = widget.config!.key;
     final defaultType = widget.config!.type;
-    final defaultLLMConfig =
-        LLMConfig.createDefaultConfig(defaultKey, defaultType);
+    final defaultLLMConfig = LLMConfig.createDefaultConfig(
+      defaultKey,
+      defaultType,
+    );
 
     setState(() {
       _modelIdController.text = defaultLLMConfig.modelId;
@@ -820,8 +867,9 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
       String extraJson = '{}';
       if (defaultLLMConfig.extra.isNotEmpty) {
         try {
-          extraJson = const JsonEncoder.withIndent('  ')
-              .convert(defaultLLMConfig.extra);
+          extraJson = const JsonEncoder.withIndent(
+            '  ',
+          ).convert(defaultLLMConfig.extra);
         } catch (e) {
           extraJson = '{}';
         }
@@ -853,8 +901,10 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(UserStorage.l10n.discardButton,
-                style: const TextStyle(color: Colors.red)),
+            child: Text(
+              UserStorage.l10n.discardButton,
+              style: const TextStyle(color: Colors.red),
+            ),
           ),
         ],
       ),
@@ -879,9 +929,11 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
         appBar: AppBar(
           backgroundColor: AppColors.background,
           surfaceTintColor: AppColors.background,
-          title: Text(widget.config == null
-              ? UserStorage.l10n.addConfiguration
-              : UserStorage.l10n.editConfiguration),
+          title: Text(
+            widget.config == null
+                ? UserStorage.l10n.addConfiguration
+                : UserStorage.l10n.editConfiguration,
+          ),
           actions: [
             if (isDefault)
               IconButton(
@@ -897,8 +949,10 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
                       ? 1.0 + (_animationController.value * 0.2)
                       : 1.0,
                   child: IconButton(
-                    icon: Icon(Icons.save,
-                        color: _hasChanges ? Colors.blue.shade700 : null),
+                    icon: Icon(
+                      Icons.save,
+                      color: _hasChanges ? Colors.blue.shade700 : null,
+                    ),
                     onPressed: _save,
                   ),
                 );
@@ -924,15 +978,21 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.info_outline,
-                          size: 18, color: Color(0xFFD97706)),
+                      const Icon(
+                        Icons.info_outline,
+                        size: 18,
+                        color: Color(0xFFD97706),
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           UserStorage.l10n.llmConsentDataShareNote(
-                              LLMConfig.providerDisplayName(_selectedType)),
+                            LLMConfig.providerDisplayName(_selectedType),
+                          ),
                           style: const TextStyle(
-                              fontSize: 13, color: Color(0xFF92400E)),
+                            fontSize: 13,
+                            color: Color(0xFF92400E),
+                          ),
                         ),
                       ),
                     ],
@@ -948,8 +1008,9 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
                 ),
                 enabled: !isDefault, // Default keys cannot be changed
                 validator: (value) {
-                  if (value == null || value.isEmpty)
+                  if (value == null || value.isEmpty) {
                     return UserStorage.l10n.required;
+                  }
                   return null;
                 },
               ),
@@ -958,7 +1019,7 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
               // Type
               DropdownButtonFormField<String>(
                 isExpanded: true,
-                value: _selectedType.isEmpty ? null : _selectedType,
+                initialValue: _selectedType.isEmpty ? null : _selectedType,
                 hint: Text(UserStorage.l10n.select),
                 decoration: InputDecoration(
                   labelText: UserStorage.l10n.clientLabel,
@@ -989,8 +1050,9 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
                     final recommended = _getRecommendedModels(value);
                     _modelIdController.text =
                         recommended.isNotEmpty ? recommended.first : '';
-                    _modelDropdownKey.currentState
-                        ?.setText(_modelIdController.text);
+                    _modelDropdownKey.currentState?.setText(
+                      _modelIdController.text,
+                    );
                     // Reset API Key
                     _apiKeyController.text = '';
 
@@ -1027,8 +1089,9 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
                     border: const OutlineInputBorder(),
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty)
+                    if (value == null || value.isEmpty) {
                       return UserStorage.l10n.required;
+                    }
                     return null;
                   },
                 ),
@@ -1064,9 +1127,11 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
                     labelText: 'Secret Access Key',
                     border: const OutlineInputBorder(),
                     suffixIcon: IconButton(
-                      icon: Icon(_isObscureApiKey
-                          ? Icons.visibility
-                          : Icons.visibility_off),
+                      icon: Icon(
+                        _isObscureApiKey
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                      ),
                       onPressed: () =>
                           setState(() => _isObscureApiKey = !_isObscureApiKey),
                     ),
@@ -1098,9 +1163,11 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
                     labelText: UserStorage.l10n.apiKeyLabel,
                     border: const OutlineInputBorder(),
                     suffixIcon: IconButton(
-                      icon: Icon(_isObscureApiKey
-                          ? Icons.visibility
-                          : Icons.visibility_off),
+                      icon: Icon(
+                        _isObscureApiKey
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                      ),
                       onPressed: () =>
                           setState(() => _isObscureApiKey = !_isObscureApiKey),
                     ),
@@ -1121,7 +1188,10 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
                   child: Text(
                     UserStorage.l10n.enterApiKeyFirst,
                     style: TextStyle(
-                        fontSize: 12, color: Colors.orange[700], height: 1.3),
+                      fontSize: 12,
+                      color: Colors.orange[700],
+                      height: 1.3,
+                    ),
                   ),
                 ),
               AbsorbPointer(
@@ -1158,12 +1228,15 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
                             final isPro =
                                 _selectedType == LLMConfig.typeOpenAiOauth &&
                                     _isProModel(option);
-                            final isFeatured =
-                                LLMConfig.featuredModels(_selectedType)
-                                    .contains(option);
+                            final isFeatured = LLMConfig.featuredModels(
+                              _selectedType,
+                            ).contains(option);
+                            final isVision = _isKnownMultimodalModel(option);
                             return Padding(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 12),
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
                               child: Row(
                                 children: [
                                   Expanded(child: Text(option)),
@@ -1171,40 +1244,70 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
                                     Container(
                                       margin: const EdgeInsets.only(left: 8),
                                       padding: const EdgeInsets.symmetric(
-                                          horizontal: 6, vertical: 2),
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
                                       decoration: BoxDecoration(
-                                        color: AppColors.primary
-                                            .withValues(alpha: 0.1),
+                                        color: AppColors.primary.withValues(
+                                          alpha: 0.1,
+                                        ),
                                         borderRadius: BorderRadius.circular(4),
                                       ),
                                       child: Text(
                                         UserStorage.l10n.localeName == 'zh'
                                             ? '推荐'
                                             : 'Recommended',
-                                        style: TextStyle(
-                                            fontSize: 10,
-                                            color: AppColors.primary,
-                                            fontWeight: FontWeight.w600),
+                                        style: const TextStyle(
+                                          fontSize: 10,
+                                          color: AppColors.primary,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  if (isVision)
+                                    Container(
+                                      margin: const EdgeInsets.only(left: 8),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.green.withValues(
+                                          alpha: 0.1,
+                                        ),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        _visionBadgeText,
+                                        style: const TextStyle(
+                                          fontSize: 10,
+                                          color: Colors.green,
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                       ),
                                     ),
                                   if (isPro)
                                     Container(
                                       margin: const EdgeInsets.only(left: 8),
                                       padding: const EdgeInsets.symmetric(
-                                          horizontal: 6, vertical: 2),
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: const Color(0xFFFFF7ED),
                                         borderRadius: BorderRadius.circular(4),
                                         border: Border.all(
-                                            color: const Color(0xFFFBBF24),
-                                            width: 0.5),
+                                          color: const Color(0xFFFBBF24),
+                                          width: 0.5,
+                                        ),
                                       ),
                                       child: const Text(
                                         'Pro/Plus',
                                         style: TextStyle(
-                                            fontSize: 10,
-                                            color: Color(0xFFD97706),
-                                            fontWeight: FontWeight.w600),
+                                          fontSize: 10,
+                                          color: Color(0xFFD97706),
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                       ),
                                     ),
                                 ],
@@ -1223,7 +1326,9 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
                                     width: 20,
                                     height: 20,
                                     child: CircularProgressIndicator(
-                                        strokeWidth: 2))
+                                      strokeWidth: 2,
+                                    ),
+                                  )
                                 : const Icon(Icons.refresh),
                             tooltip: UserStorage.l10n.fetchModelsButton,
                             onPressed: _isFetchingModels ? null : _fetchModels,
@@ -1239,16 +1344,47 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
                   padding: const EdgeInsets.only(top: 6, left: 4),
                   child: Row(
                     children: [
-                      const Icon(Icons.info_outline,
-                          size: 14, color: Color(0xFFD97706)),
+                      const Icon(
+                        Icons.info_outline,
+                        size: 14,
+                        color: Color(0xFFD97706),
+                      ),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
                           UserStorage.l10n.proModelHint,
                           style: const TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFFD97706),
-                              height: 1.3),
+                            fontSize: 12,
+                            color: Color(0xFFD97706),
+                            height: 1.3,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              if (_selectedType.isNotEmpty &&
+                  _modelIdController.text.trim().isNotEmpty &&
+                  !_isKnownMultimodalModel(_modelIdController.text))
+                Padding(
+                  padding: const EdgeInsets.only(top: 6, left: 4),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(
+                        Icons.visibility_off_outlined,
+                        size: 14,
+                        color: Color(0xFFD97706),
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          _notMultimodalHint,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFFD97706),
+                            height: 1.3,
+                          ),
                         ),
                       ),
                     ],
@@ -1280,7 +1416,8 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
                             border: const OutlineInputBorder(),
                           ),
                           keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true),
+                            decimal: true,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -1292,7 +1429,8 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
                             border: const OutlineInputBorder(),
                           ),
                           keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true),
+                            decimal: true,
+                          ),
                         ),
                       ),
                     ],

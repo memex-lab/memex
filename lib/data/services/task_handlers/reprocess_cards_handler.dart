@@ -3,6 +3,7 @@ import 'package:logging/logging.dart';
 import 'package:memex/domain/models/card_model.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/local_task_executor.dart';
+import 'package:memex/data/services/task_handlers/analyze_assets_handler.dart';
 import 'package:memex/data/services/task_handlers/card_agent_handler.dart';
 import 'package:memex/data/services/task_handlers/llm_error_utils.dart';
 import 'package:memex/utils/logger.dart';
@@ -26,12 +27,14 @@ Future<void> handleReprocessCardsImpl(
     // 1. Get or restore progress.
     Map<String, dynamic>? progress;
     try {
-      final existingResult =
-          await LocalTaskExecutor.instance.getTaskResult(context.taskId);
+      final existingResult = await LocalTaskExecutor.instance.getTaskResult(
+        context.taskId,
+      );
       if (existingResult != null && existingResult.containsKey('progress')) {
         progress = existingResult['progress'] as Map<String, dynamic>;
         _logger.info(
-            'Resuming from progress: ${progress['currentIndex']}/${progress['total']}');
+          'Resuming from progress: ${progress['currentIndex']}/${progress['total']}',
+        );
       }
     } catch (e) {
       _logger.warning('Failed to retrieve progress: $e');
@@ -90,8 +93,11 @@ Future<void> handleReprocessCardsImpl(
       for (final factId in allFactIds) {
         try {
           final factDate = fileSystem.parseFactIdDate(factId);
-          final cardDate =
-              DateTime(factDate.year, factDate.month, factDate.day);
+          final cardDate = DateTime(
+            factDate.year,
+            factDate.month,
+            factDate.day,
+          );
 
           if (dateFrom != null && cardDate.isBefore(dateFrom)) {
             continue;
@@ -128,7 +134,10 @@ Future<void> handleReprocessCardsImpl(
 
     final total = factIds.length;
     _logger.info(
-        'Processing ${total - currentIndex} cards (starting from index $currentIndex), batch size: $_batchSize');
+      'Processing ${total - currentIndex} cards (starting from index $currentIndex), batch size: $_batchSize',
+    );
+
+    final reanalyzeAssets = payload['reanalyze_assets'] as bool? ?? false;
 
     // 3. Process in batches: up to [_batchSize] cards per batch concurrently; run next batch after current batch completes.
     while (currentIndex < factIds.length) {
@@ -138,10 +147,14 @@ Future<void> handleReprocessCardsImpl(
       final totalBatches = (total + _batchSize - 1) ~/ _batchSize;
 
       _logger.info(
-          'Processing batch $batchNumber/$totalBatches: cards ${currentIndex + 1}-$endIndex of $total');
+        'Processing batch $batchNumber/$totalBatches: cards ${currentIndex + 1}-$endIndex of $total',
+      );
 
       final results = await Future.wait(
-        batch.map((factId) => _processOneCard(userId, factId)),
+        batch.map(
+          (factId) =>
+              _processOneCard(userId, factId, reanalyzeAssets: reanalyzeAssets),
+        ),
       );
 
       for (var i = 0; i < results.length; i++) {
@@ -179,15 +192,20 @@ Future<void> handleReprocessCardsImpl(
     );
 
     _logger.info(
-        'Reprocess cards task completed. Success: $successCount, Failed: $failCount, Total: $total');
+      'Reprocess cards task completed. Success: $successCount, Failed: $failCount, Total: $total',
+    );
   } catch (e, stack) {
     _logger.severe('Error in reprocess cards task: $e', e, stack);
     rethrowIfNonRetryable(e);
   }
 }
 
-/// Processes one card: extract content, ensure card exists, call card_agent. Returns whether it succeeded.
-Future<bool> _processOneCard(String userId, String factId) async {
+/// Processes one card: extract content, optionally refresh media analysis, ensure card exists, call card_agent. Returns whether it succeeded.
+Future<bool> _processOneCard(
+  String userId,
+  String factId, {
+  required bool reanalyzeAssets,
+}) async {
   FactContentResult? factInfo;
   try {
     final fileSystem = FileSystemService.instance;
@@ -200,14 +218,34 @@ Future<bool> _processOneCard(String userId, String factId) async {
 
     await _ensureCardExists(fileSystem, userId, factId, factInfo.datetime);
 
+    var assetAnalyses = factInfo.assetAnalyses;
+    if (reanalyzeAssets) {
+      final assetPaths = _extractAssetPaths(
+        fileSystem,
+        userId,
+        factInfo.content,
+      );
+      if (assetPaths.isNotEmpty) {
+        _logger.info('Re-analyzing ${assetPaths.length} asset(s) for $factId');
+        final refreshedAnalyses = await analyzeAssetsForFact(
+          userId: userId,
+          factId: factId,
+          assetPaths: assetPaths,
+        );
+        assetAnalyses = refreshedAnalyses.map((e) => e.toJson()).toList();
+      }
+    }
+
     await processWithCardAgent(
       userId: userId,
       factId: factId,
       contentText: factInfo.content,
-      assetAnalyses: factInfo.assetAnalyses,
+      assetAnalyses: assetAnalyses,
       inputDateTime: factInfo.datetime,
       dryRun: false,
     );
+
+    await renderAndPushCardUpdate(userId, factId, factInfo.content);
 
     return true;
   } catch (e, stack) {
@@ -216,6 +254,19 @@ Future<bool> _processOneCard(String userId, String factId) async {
   } finally {
     factInfo = null;
   }
+}
+
+List<String> _extractAssetPaths(
+  FileSystemService fileSystem,
+  String userId,
+  String content,
+) {
+  final assetsDir = fileSystem.getAssetsPath(userId);
+  return RegExp(r'fs://([^\s\)]+)').allMatches(content).map((m) {
+    final filename = m.group(1)!;
+    final absolutePath = '$assetsDir/$filename';
+    return fileSystem.toRelativePath(absolutePath);
+  }).toList();
 }
 
 /// Ensures the card exists; creates an initial card if not found.
@@ -242,14 +293,15 @@ Future<void> _ensureCardExists(
     timestamp: now.millisecondsSinceEpoch ~/ 1000,
     status: 'processing',
     tags: const [],
-    uiConfigs: [
-      UiConfig(templateId: 'classic_card', data: {}),
-    ],
+    uiConfigs: const [UiConfig(templateId: 'classic_card', data: {})],
   );
 
   try {
-    final success =
-        await fileSystem.safeWriteCardFile(userId, factId, initialCard);
+    final success = await fileSystem.safeWriteCardFile(
+      userId,
+      factId,
+      initialCard,
+    );
     if (success) {
       _logger.info('Created initial card for: $factId');
     } else {
@@ -284,8 +336,5 @@ Future<void> _saveProgress(
     'total': factIds.length,
   };
 
-  await LocalTaskExecutor.instance.updateTaskResult(
-    taskId,
-    jsonEncode(result),
-  );
+  await LocalTaskExecutor.instance.updateTaskResult(taskId, jsonEncode(result));
 }

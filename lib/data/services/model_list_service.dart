@@ -20,9 +20,7 @@ class ModelListService {
     _log.info('Fetching models from $endpoint (type=$type)');
 
     try {
-      final headers = <String, String>{
-        'Accept': 'application/json',
-      };
+      final headers = <String, String>{'Accept': 'application/json'};
 
       // Gemini uses ?key= query parameter for auth, not Bearer token
       Uri requestUri;
@@ -37,7 +35,14 @@ class ModelListService {
       } else {
         requestUri = Uri.parse(endpoint);
         if (apiKey.isNotEmpty) {
-          headers['Authorization'] = 'Bearer $apiKey';
+          if (type == LLMConfig.typeClaude ||
+              type == LLMConfig.typeMinimax ||
+              type == LLMConfig.typeMimo) {
+            headers['x-api-key'] = apiKey;
+            headers['anthropic-version'] = '2023-06-01';
+          } else {
+            headers['Authorization'] = 'Bearer $apiKey';
+          }
         }
       }
 
@@ -47,7 +52,8 @@ class ModelListService {
 
       if (response.statusCode != 200) {
         _log.warning(
-            'Failed to fetch models: HTTP ${response.statusCode} from $endpoint\n${response.body}');
+          'Failed to fetch models: HTTP ${response.statusCode} from $endpoint\n${response.body}',
+        );
         return [];
       }
 

@@ -63,7 +63,9 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
 
   Future<void> _changeAvatar() async {
     final picked = await showAvatarPicker(
-        context, _userAvatar ?? UserStorage.defaultAvatarSeed);
+      context,
+      _userAvatar ?? UserStorage.defaultAvatarSeed,
+    );
     if (picked != null && mounted) {
       await UserStorage.saveUserAvatar(picked);
       setState(() => _userAvatar = picked);
@@ -83,9 +85,7 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.red,
-            ),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: Text(UserStorage.l10n.confirm),
           ),
         ],
@@ -99,14 +99,18 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
         _memexRouter.resetForLogout();
         if (mounted) {
           ToastHelper.showSuccessWithKey(
-              _scaffoldMessengerKey, UserStorage.l10n.tokenCleared);
+            _scaffoldMessengerKey,
+            UserStorage.l10n.tokenCleared,
+          );
           // navigate to setup screen
           context.go(AppRoutes.userSetup);
         }
       } catch (e) {
         if (mounted) {
-          ToastHelper.showErrorWithKey(_scaffoldMessengerKey,
-              UserStorage.l10n.clearTokenFailed(e.toString()));
+          ToastHelper.showErrorWithKey(
+            _scaffoldMessengerKey,
+            UserStorage.l10n.clearTokenFailed(e.toString()),
+          );
         }
       }
     }
@@ -119,6 +123,7 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
     DateTime? dateFrom;
     DateTime? dateTo;
     int? limit;
+    var reanalyzeAssets = false;
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -148,9 +153,11 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
                         });
                       }
                     },
-                    child: Text(dateFrom == null
-                        ? UserStorage.l10n.select
-                        : '${dateFrom!.year}-${dateFrom!.month.toString().padLeft(2, '0')}-${dateFrom!.day.toString().padLeft(2, '0')}'),
+                    child: Text(
+                      dateFrom == null
+                          ? UserStorage.l10n.select
+                          : '${dateFrom!.year}-${dateFrom!.month.toString().padLeft(2, '0')}-${dateFrom!.day.toString().padLeft(2, '0')}',
+                    ),
                   ),
                 ),
                 ListTile(
@@ -169,9 +176,11 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
                         });
                       }
                     },
-                    child: Text(dateTo == null
-                        ? UserStorage.l10n.select
-                        : '${dateTo!.year}-${dateTo!.month.toString().padLeft(2, '0')}-${dateTo!.day.toString().padLeft(2, '0')}'),
+                    child: Text(
+                      dateTo == null
+                          ? UserStorage.l10n.select
+                          : '${dateTo!.year}-${dateTo!.month.toString().padLeft(2, '0')}-${dateTo!.day.toString().padLeft(2, '0')}',
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -183,6 +192,26 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
                   keyboardType: TextInputType.number,
                   onChanged: (value) {
                     limit = int.tryParse(value);
+                  },
+                ),
+                const SizedBox(height: 8),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: reanalyzeAssets,
+                  title: Text(
+                    UserStorage.l10n.localeName == 'zh'
+                        ? '重新分析图片/音频'
+                        : 'Re-analyze media assets',
+                  ),
+                  subtitle: Text(
+                    UserStorage.l10n.localeName == 'zh'
+                        ? '会先刷新 Facts/assets 下的媒体分析，再重新生成卡片。'
+                        : 'Refreshes media analysis files before regenerating cards.',
+                  ),
+                  onChanged: (value) {
+                    setDialogState(() {
+                      reanalyzeAssets = value;
+                    });
                   },
                 ),
               ],
@@ -216,7 +245,9 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
             _isReprocessingCards = false;
           });
           ToastHelper.showErrorWithKey(
-              _scaffoldMessengerKey, UserStorage.l10n.userIdNotFound);
+            _scaffoldMessengerKey,
+            UserStorage.l10n.userIdNotFound,
+          );
         }
         return;
       }
@@ -234,6 +265,9 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
       final limitValue = limit;
       if (limitValue != null && limitValue > 0) {
         payload['limit'] = limitValue;
+      }
+      if (reanalyzeAssets) {
+        payload['reanalyze_assets'] = true;
       }
 
       // enqueue task
@@ -259,7 +293,9 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
           _isReprocessingCards = false;
         });
         ToastHelper.showErrorWithKey(
-            _scaffoldMessengerKey, UserStorage.l10n.createTaskFailed(e));
+          _scaffoldMessengerKey,
+          UserStorage.l10n.createTaskFailed(e),
+        );
       }
     }
   }
@@ -300,9 +336,11 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
                         });
                       }
                     },
-                    child: Text(dateFrom == null
-                        ? UserStorage.l10n.select
-                        : '${dateFrom!.year}-${dateFrom!.month.toString().padLeft(2, '0')}-${dateFrom!.day.toString().padLeft(2, '0')}'),
+                    child: Text(
+                      dateFrom == null
+                          ? UserStorage.l10n.select
+                          : '${dateFrom!.year}-${dateFrom!.month.toString().padLeft(2, '0')}-${dateFrom!.day.toString().padLeft(2, '0')}',
+                    ),
                   ),
                 ),
                 ListTile(
@@ -321,9 +359,11 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
                         });
                       }
                     },
-                    child: Text(dateTo == null
-                        ? UserStorage.l10n.select
-                        : '${dateTo!.year}-${dateTo!.month.toString().padLeft(2, '0')}-${dateTo!.day.toString().padLeft(2, '0')}'),
+                    child: Text(
+                      dateTo == null
+                          ? UserStorage.l10n.select
+                          : '${dateTo!.year}-${dateTo!.month.toString().padLeft(2, '0')}-${dateTo!.day.toString().padLeft(2, '0')}',
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -368,7 +408,9 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
             _isReprocessingComments = false;
           });
           ToastHelper.showErrorWithKey(
-              _scaffoldMessengerKey, UserStorage.l10n.userIdNotFound);
+            _scaffoldMessengerKey,
+            UserStorage.l10n.userIdNotFound,
+          );
         }
         return;
       }
@@ -411,7 +453,9 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
           _isReprocessingComments = false;
         });
         ToastHelper.showErrorWithKey(
-            _scaffoldMessengerKey, UserStorage.l10n.createTaskFailed(e));
+          _scaffoldMessengerKey,
+          UserStorage.l10n.createTaskFailed(e),
+        );
       }
     }
   }
@@ -452,9 +496,11 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
                         });
                       }
                     },
-                    child: Text(dateFrom == null
-                        ? UserStorage.l10n.select
-                        : '${dateFrom!.year}-${dateFrom!.month.toString().padLeft(2, '0')}-${dateFrom!.day.toString().padLeft(2, '0')}'),
+                    child: Text(
+                      dateFrom == null
+                          ? UserStorage.l10n.select
+                          : '${dateFrom!.year}-${dateFrom!.month.toString().padLeft(2, '0')}-${dateFrom!.day.toString().padLeft(2, '0')}',
+                    ),
                   ),
                 ),
                 ListTile(
@@ -473,9 +519,11 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
                         });
                       }
                     },
-                    child: Text(dateTo == null
-                        ? UserStorage.l10n.select
-                        : '${dateTo!.year}-${dateTo!.month.toString().padLeft(2, '0')}-${dateTo!.day.toString().padLeft(2, '0')}'),
+                    child: Text(
+                      dateTo == null
+                          ? UserStorage.l10n.select
+                          : '${dateTo!.year}-${dateTo!.month.toString().padLeft(2, '0')}-${dateTo!.day.toString().padLeft(2, '0')}',
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -520,7 +568,9 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
             _isReprocessingKnowledgeBase = false;
           });
           ToastHelper.showErrorWithKey(
-              _scaffoldMessengerKey, UserStorage.l10n.userIdNotFound);
+            _scaffoldMessengerKey,
+            UserStorage.l10n.userIdNotFound,
+          );
         }
         return;
       }
@@ -564,7 +614,9 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
           _isReprocessingKnowledgeBase = false;
         });
         ToastHelper.showErrorWithKey(
-            _scaffoldMessengerKey, UserStorage.l10n.createTaskFailed(e));
+          _scaffoldMessengerKey,
+          UserStorage.l10n.createTaskFailed(e),
+        );
       }
     }
   }
@@ -589,9 +641,7 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.red,
-            ),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: Text(UserStorage.l10n.confirmClear),
           ),
         ],
@@ -619,13 +669,17 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
 
       if (mounted) {
         ToastHelper.showSuccessWithKey(
-            _scaffoldMessengerKey, UserStorage.l10n.dataClearedSuccess);
+          _scaffoldMessengerKey,
+          UserStorage.l10n.dataClearedSuccess,
+        );
       }
     } catch (e, stack) {
       _logger.severe('Clear data failed: $e', e, stack);
       if (mounted) {
         ToastHelper.showErrorWithKey(
-            _scaffoldMessengerKey, UserStorage.l10n.clearDataFailed(e));
+          _scaffoldMessengerKey,
+          UserStorage.l10n.clearDataFailed(e),
+        );
       }
     } finally {
       if (mounted) {
@@ -717,11 +771,15 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
                                     color: const Color(0xFF6366F1),
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                        color: const Color(0xFFF7F8FA),
-                                        width: 2),
+                                      color: const Color(0xFFF7F8FA),
+                                      width: 2,
+                                    ),
                                   ),
-                                  child: const Icon(Icons.edit,
-                                      size: 13, color: Colors.white),
+                                  child: const Icon(
+                                    Icons.edit,
+                                    size: 13,
+                                    color: Colors.white,
+                                  ),
                                 ),
                               ),
                             ],
@@ -897,7 +955,7 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
             border: Border.all(color: Colors.white),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF64748B).withOpacity(0.08),
+                color: const Color(0xFF64748B).withValues(alpha: 0.08),
                 blurRadius: 16,
                 offset: const Offset(0, 4),
               ),
@@ -908,11 +966,7 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
               Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  Icon(
-                    icon,
-                    color: const Color(0xFF6366F1),
-                    size: 24,
-                  ),
+                  Icon(icon, color: const Color(0xFF6366F1), size: 24),
                   if (showBadge)
                     Positioned(
                       right: -2,
@@ -945,15 +999,10 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
                 const SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                  ),
+                  child: CircularProgressIndicator(strokeWidth: 2),
                 )
               else
-                const Icon(
-                  Icons.chevron_right,
-                  color: Color(0xFFCBD5E1),
-                ),
+                const Icon(Icons.chevron_right, color: Color(0xFFCBD5E1)),
             ],
           ),
         ),

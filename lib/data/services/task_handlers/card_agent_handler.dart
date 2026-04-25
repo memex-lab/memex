@@ -42,9 +42,13 @@ Future<void> processWithCardAgent({
     );
     if (!llmConfig.isValid) {
       _logger.info(
-          'No LLM configured — using rule-based card matching for $factId');
+        'No LLM configured — using rule-based card matching for $factId',
+      );
       await _applyRuleBasedCard(
-          userId: userId, factId: factId, combinedText: contentText);
+        userId: userId,
+        factId: factId,
+        combinedText: contentText,
+      );
       return;
     }
 
@@ -59,8 +63,10 @@ Future<void> processWithCardAgent({
     // 2. Prepare Fact Content (merge assets info if needed)
     var enhancedFactContent = contentText;
     if (assetAnalyses != null && assetAnalyses.isNotEmpty) {
-      enhancedFactContent +=
-          formatAssetAnalysis(assetAnalyses, includeExif: true);
+      enhancedFactContent += formatAssetAnalysis(
+        assetAnalyses,
+        includeExif: true,
+      );
     }
 
     // 3. (Client initialized above)
@@ -70,7 +76,10 @@ Future<void> processWithCardAgent({
 
     final userMessageContent =
         Prompts.cardAgentUserMessagePromptForPublishNewContent(
-            publishTime, factId, enhancedFactContent);
+          publishTime,
+          factId,
+          enhancedFactContent,
+        );
 
     // 4. Run Agent
     await CardAgent.runWithContent(
@@ -97,12 +106,12 @@ Future<void> _applyRuleBasedCard({
   final fs = FileSystemService.instance;
 
   // Extract image URLs and audio URL from combinedText markdown refs
-  final imageUrls = RegExp(r'!\[.*?\]\((fs://[^\)]+)\)')
-      .allMatches(combinedText)
-      .map((m) => m.group(1)!)
-      .toList();
-  final audioMatch =
-      RegExp(r'\[audio\]\((fs://[^\)]+)\)').firstMatch(combinedText);
+  final imageUrls = RegExp(
+    r'!\[.*?\]\((fs://[^\)]+)\)',
+  ).allMatches(combinedText).map((m) => m.group(1)!).toList();
+  final audioMatch = RegExp(
+    r'\[audio\]\((fs://[^\)]+)\)',
+  ).firstMatch(combinedText);
   final audioUrl = audioMatch?.group(1);
 
   final result = await fs.updateCardFile(userId, factId, (existing) {
@@ -119,7 +128,8 @@ Future<void> _applyRuleBasedCard({
     return;
   }
   _logger.info(
-      'Rule-based card written for $factId: ${result.uiConfigs.first.templateId}');
+    'Rule-based card written for $factId: ${result.uiConfigs.first.templateId}',
+  );
 }
 
 /// Task Handler implementation for `card_agent_task`.
@@ -151,7 +161,10 @@ Future<void> handleCardAgentImpl(
       try {
         final analysisResult = await LocalTaskExecutor.instance
             .getTaskResultByBizId(
-                userId, 'handle_analyze_assets', taskContext.bizId!);
+              userId,
+              'handle_analyze_assets',
+              taskContext.bizId!,
+            );
 
         if (analysisResult != null &&
             analysisResult.containsKey('asset_analyses')) {
@@ -177,15 +190,18 @@ Future<void> handleCardAgentImpl(
     _logger.info("Card Agent task completed successfully for $factId");
 
     // 5. Render and Push Update
-    await _renderAndPushUpdate(userId, factId, combinedText);
+    await renderAndPushCardUpdate(userId, factId, combinedText);
   } catch (e, stack) {
     _logger.severe("Card Agent Handler failed: $e", e, stack);
     rethrow;
   }
 }
 
-Future<void> _renderAndPushUpdate(
-    String userId, String factId, String combinedText) async {
+Future<void> renderAndPushCardUpdate(
+  String userId,
+  String factId,
+  String combinedText,
+) async {
   final fs = FileSystemService.instance;
   CardData? cardData;
   try {
@@ -196,7 +212,8 @@ Future<void> _renderAndPushUpdate(
   }
 
   final tags = cardData?.tags ?? <String>[];
-  final cardForRender = cardData ??
+  final cardForRender =
+      cardData ??
       CardData(
         factId: factId,
         timestamp: DateTime.now().millisecondsSinceEpoch ~/ 1000,
@@ -220,18 +237,20 @@ Future<void> _renderAndPushUpdate(
       .toList();
   final rawText = assetsAndText['rawText'] as String?;
 
-  EventBusService.instance.emitEvent(CardUpdatedMessage(
-    id: factId,
-    html: renderResult.html ?? '',
-    timestamp: DateTime.now().millisecondsSinceEpoch ~/ 1000,
-    tags: tags,
-    status: renderResult.status,
-    title: title,
-    uiConfigs: renderResult.uiConfigs,
-    assets: assets.isNotEmpty ? assets : null,
-    rawText: rawText,
-    address: cardData?.address,
-  ));
+  EventBusService.instance.emitEvent(
+    CardUpdatedMessage(
+      id: factId,
+      html: renderResult.html ?? '',
+      timestamp: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      tags: tags,
+      status: renderResult.status,
+      title: title,
+      uiConfigs: renderResult.uiConfigs,
+      assets: assets.isNotEmpty ? assets : null,
+      rawText: rawText,
+      address: cardData?.address,
+    ),
+  );
 }
 
 /// Failure handler for card agent task
@@ -244,13 +263,15 @@ Future<void> handleCardAgentFailureImpl(
   StackTrace? stackTrace,
 ) async {
   _logger.severe(
-      'Card Agent task failed permanently for user: $userId, error: $error, stackTrace: ${stackTrace?.toString()}');
+    'Card Agent task failed permanently for user: $userId, error: $error, stackTrace: ${stackTrace?.toString()}',
+  );
 
   try {
     final factId = payload['fact_id'] as String?;
     if (factId == null) {
-      _logger
-          .warning('Cannot update card status: fact_id is missing in payload');
+      _logger.warning(
+        'Cannot update card status: fact_id is missing in payload',
+      );
       return;
     }
 
@@ -261,26 +282,23 @@ Future<void> handleCardAgentFailureImpl(
     final fs = FileSystemService.instance;
 
     // Update status to 'failed' using updateCardFile for concurrent safety
-    final cardData = await fs.updateCardFile(
-      userId,
-      factId,
-      (card) {
-        // Handle uiConfigs: preserve existing or set classic_card fallback
-        final uiConfigs = card.uiConfigs.isEmpty
-            ? [const UiConfig(templateId: 'classic_card', data: {})]
-            : card.uiConfigs;
+    final cardData = await fs.updateCardFile(userId, factId, (card) {
+      // Handle uiConfigs: preserve existing or set classic_card fallback
+      final uiConfigs = card.uiConfigs.isEmpty
+          ? [const UiConfig(templateId: 'classic_card', data: {})]
+          : card.uiConfigs;
 
-        return card.copyWith(
-          status: 'failed',
-          failureReason: friendlyMessage,
-          uiConfigs: uiConfigs,
-        );
-      },
-    );
+      return card.copyWith(
+        status: 'failed',
+        failureReason: friendlyMessage,
+        uiConfigs: uiConfigs,
+      );
+    });
 
     if (cardData == null) {
       _logger.warning(
-          'Cannot update card status: card file not found for $factId');
+        'Cannot update card status: card file not found for $factId',
+      );
       return;
     }
 
@@ -305,36 +323,36 @@ Future<void> handleCardAgentFailureImpl(
           .toList();
       final rawText = assetsAndText['rawText'] as String?;
 
-      EventBusService.instance.emitEvent(CardUpdatedMessage(
-        id: factId,
-        html: renderResult.html ?? '',
-        timestamp: DateTime.now().millisecondsSinceEpoch ~/ 1000,
-        tags: tags,
-        status: 'failed',
-        title: title,
-        uiConfigs: renderResult.uiConfigs,
-        assets: assets.isNotEmpty ? assets : null,
-        rawText: rawText,
-        address: cardData.address,
-        failureReason: friendlyMessage,
-      ));
+      EventBusService.instance.emitEvent(
+        CardUpdatedMessage(
+          id: factId,
+          html: renderResult.html ?? '',
+          timestamp: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+          tags: tags,
+          status: 'failed',
+          title: title,
+          uiConfigs: renderResult.uiConfigs,
+          assets: assets.isNotEmpty ? assets : null,
+          rawText: rawText,
+          address: cardData.address,
+          failureReason: friendlyMessage,
+        ),
+      );
 
       // Emit error notification for UI dialog
-      EventBusService.instance.emitEvent(ErrorNotificationMessage(
-        errorCategory: category.name,
-        errorMessage: friendlyMessage,
-        cardId: factId,
-      ));
+      EventBusService.instance.emitEvent(
+        ErrorNotificationMessage(
+          errorCategory: category.name,
+          errorMessage: friendlyMessage,
+          cardId: factId,
+        ),
+      );
     } catch (e) {
       _logger.warning('Failed to send EventBus update for failed card: $e');
       // Don't throw - status update is more important
     }
   } catch (e, stack) {
-    _logger.severe(
-      'Error in card agent failure handler for $userId',
-      e,
-      stack,
-    );
+    _logger.severe('Error in card agent failure handler for $userId', e, stack);
     // Don't rethrow - failure handler should not cause additional failures
   }
 }

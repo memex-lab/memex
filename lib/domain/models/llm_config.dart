@@ -139,7 +139,7 @@ class LLMConfig {
       case typeBedrockClaude:
         return const {
           'us.anthropic.claude-opus-4-6-v1',
-          'us.anthropic.claude-sonnet-4-6'
+          'us.anthropic.claude-sonnet-4-6',
         };
       case typeGemini:
       case typeGeminiOauth:
@@ -153,7 +153,7 @@ class LLMConfig {
       case typeZhipu:
         return const {'glm-5v-turbo', 'glm-4.6v'};
       case typeMimo:
-        return const {'mimo-v2-pro'};
+        return const {'mimo-v2.5', 'mimo-v2-omni'};
       case typeOpenRouter:
         return const {
           'anthropic/claude-opus-4.6',
@@ -183,7 +183,7 @@ class LLMConfig {
           'gemini-3-flash-preview',
           'gemini-3.1-flash-lite-preview',
           'gemini-2.5-flash',
-          'gemini-2.5-pro'
+          'gemini-2.5-pro',
         ];
       case typeChatCompletion:
       case typeResponses:
@@ -235,14 +235,14 @@ class LLMConfig {
           'kimi-k2',
           'kimi-k2-thinking',
           'kimi-k2-thinking-turbo',
-          'kimi-k2-turbo-preview'
+          'kimi-k2-turbo-preview',
         ];
       case typeQwen:
         return const [
           'qwen3.5-plus',
           'qwen3-coder',
           'qwen3-235b-a22b',
-          'qwen-max'
+          'qwen-max',
         ];
       case typeSeed:
         return const ['doubao-seed-1-8-251228', 'doubao-1.5-pro-256k'];
@@ -261,8 +261,10 @@ class LLMConfig {
         return const ['qwen2.5:7b', 'llama3.1:8b', 'gemma3:12b'];
       case typeMimo:
         return const [
-          'mimo-v2-pro',
+          'mimo-v2.5',
           'mimo-v2-omni',
+          'mimo-v2.5-pro',
+          'mimo-v2-pro',
           'mimo-v2-flash',
         ];
       default:
@@ -296,6 +298,7 @@ class LLMConfig {
       case typeSeed:
       case typeZhipu:
       case typeMinimax:
+      case typeMimo:
       case typeOpenRouter:
       case typeOllama:
       case typeGemini:
@@ -314,7 +317,62 @@ class LLMConfig {
     final base = baseUrl.endsWith('/')
         ? baseUrl.substring(0, baseUrl.length - 1)
         : baseUrl;
+    if (type == typeClaude || type == typeMinimax || type == typeMimo) {
+      return base.endsWith('/v1') ? '$base/models' : '$base/v1/models';
+    }
     return '$base/models';
+  }
+
+  /// Whether the model is known to support image input.
+  ///
+  /// This is intentionally conservative: unknown models return false so UI can
+  /// warn before they are used for Media analysis.
+  static bool isKnownMultimodal(String type, String modelId) {
+    final id = modelId.trim().toLowerCase();
+    if (id.isEmpty) return false;
+
+    switch (type) {
+      case typeGemini:
+      case typeGeminiOauth:
+        return id.startsWith('gemini-');
+      case typeClaude:
+      case typeBedrockClaude:
+        return id.contains('claude-3') ||
+            id.contains('claude-sonnet') ||
+            id.contains('claude-opus') ||
+            id.contains('claude-haiku');
+      case typeChatCompletion:
+      case typeResponses:
+      case typeOpenAiOauth:
+        return id.contains('gpt-4o') ||
+            id.contains('gpt-4.1') ||
+            id.contains('gpt-5') ||
+            id.contains('o3');
+      case typeZhipu:
+        return id.contains('glm-') && id.contains('v');
+      case typeMimo:
+        return id == 'mimo-v2.5' || id == 'mimo-v2-omni' || id.contains('omni');
+      case typeQwen:
+      case typeSeed:
+      case typeMinimax:
+        return id.contains('vl') ||
+            id.contains('vision') ||
+            id.contains('omni');
+      case typeOpenRouter:
+        return id.contains('gemini') ||
+            id.contains('claude') ||
+            id.contains('gpt-4o') ||
+            id.contains('gpt-4.1') ||
+            id.contains('gpt-5') ||
+            id.contains('o3') ||
+            id.contains('qwen-vl') ||
+            id.contains('vision') ||
+            id.contains('mimo-v2.5') ||
+            id.contains('mimo-v2-omni') ||
+            (id.contains('glm-') && id.contains('v'));
+      default:
+        return false;
+    }
   }
 
   /// Default base URL for a given provider type.

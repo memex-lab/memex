@@ -84,7 +84,8 @@ Future<void> handleAnalyzeAssetsImpl(
   TaskContext context,
 ) async {
   _logger.info(
-      'Executing handleAnalyzeAssets for task ${context.taskId}, bizId: ${context.bizId}');
+    'Executing handleAnalyzeAssets for task ${context.taskId}, bizId: ${context.bizId}',
+  );
 
   final data = AnalyzeAssetsPayload.fromJson(payload);
 
@@ -94,7 +95,28 @@ Future<void> handleAnalyzeAssetsImpl(
     return;
   }
 
-  // Initialize FileSystem Service
+  final assetAnalyses = await analyzeAssetsForFact(
+    userId: userId,
+    factId: data.factId,
+    assetPaths: data.assetPaths,
+  );
+
+  await _updateTaskResult(userId, context.taskId, assetAnalyses);
+}
+
+/// Analyze all assets for a fact and persist `{asset}.analysis.txt` files.
+///
+/// This is used both by the normal submit-input pipeline and by historical
+/// reprocessing when old media descriptions need to be regenerated.
+Future<List<AssetAnalysisResult>> analyzeAssetsForFact({
+  required String userId,
+  required String factId,
+  required List<String> assetPaths,
+}) async {
+  if (assetPaths.isEmpty) {
+    return const [];
+  }
+
   final fileSystem = FileSystemService.instance;
 
   // Skip LLM analysis if not configured — card agent will use rule-based matching.
@@ -103,10 +125,8 @@ Future<void> handleAnalyzeAssetsImpl(
     defaultClientKey: LLMConfig.defaultClientKey,
   );
   if (!llmConfig.isValid) {
-    _logger
-        .info('No LLM configured — skipping asset analysis for ${data.factId}');
-    await _updateTaskResult(userId, context.taskId, []);
-    return;
+    _logger.info('No LLM configured — skipping asset analysis for $factId');
+    return const [];
   }
 
   // 1. Get LLM Resources (Default to Gemini Flash for Asset Analysis)
@@ -117,16 +137,18 @@ Future<void> handleAnalyzeAssetsImpl(
 
   final futures = <Future<AssetAnalysisResult?>>[];
 
-  for (var i = 0; i < data.assetPaths.length; i++) {
-    futures.add(_analyzeSingleAsset(
-      userId: userId,
-      factId: data.factId,
-      originalAssetPath: data.assetPaths[i],
-      index: i,
-      fileSystem: fileSystem,
-      client: resources.client,
-      modelConfig: resources.modelConfig,
-    ));
+  for (var i = 0; i < assetPaths.length; i++) {
+    futures.add(
+      _analyzeSingleAsset(
+        userId: userId,
+        factId: factId,
+        originalAssetPath: assetPaths[i],
+        index: i,
+        fileSystem: fileSystem,
+        client: resources.client,
+        modelConfig: resources.modelConfig,
+      ),
+    );
   }
 
   final results = await Future.wait(futures);
@@ -135,7 +157,7 @@ Future<void> handleAnalyzeAssetsImpl(
   // Sort by index to maintain order
   assetAnalyses.sort((a, b) => a.index.compareTo(b.index));
 
-  await _updateTaskResult(userId, context.taskId, assetAnalyses);
+  return assetAnalyses;
 }
 
 Future<AssetAnalysisResult?> _analyzeSingleAsset({
@@ -154,7 +176,8 @@ Future<AssetAnalysisResult?> _analyzeSingleAsset({
     final file = File(assetPath);
     if (!file.existsSync()) {
       _logger.warning(
-          'Asset not found: $assetPath (original: $originalAssetPath)');
+        'Asset not found: $assetPath (original: $originalAssetPath)',
+      );
       return null;
     }
     final assetName = path.basename(assetPath);
@@ -173,7 +196,7 @@ Future<AssetAnalysisResult?> _analyzeSingleAsset({
       '.heif',
       '.webp',
       '.gif',
-      '.bmp'
+      '.bmp',
     };
     const audioExtensions = {
       '.mp3',
@@ -184,7 +207,7 @@ Future<AssetAnalysisResult?> _analyzeSingleAsset({
       '.aiff',
       '.aif',
       '.m4a',
-      '.wma'
+      '.wma',
     };
 
     final isImage = imageExtensions.contains(extension);
@@ -222,15 +245,17 @@ Future<AssetAnalysisResult?> _analyzeSingleAsset({
       // Add image dimensions to EXIF info
       if (width > 0 && height > 0) {
         infoLines.add('${Prompts.imageDimensions}: $width x $height');
-        infoLines
-            .add('${Prompts.aspectRatio}: ${aspectRatio.toStringAsFixed(2)}');
+        infoLines.add(
+          '${Prompts.aspectRatio}: ${aspectRatio.toStringAsFixed(2)}',
+        );
       }
 
       if (exif.isNotEmpty) {
         // Handle Timestamp
         if (exif.containsKey('datetime_original_str')) {
-          infoLines
-              .add('${Prompts.captureTime}: ${exif['datetime_original_str']}');
+          infoLines.add(
+            '${Prompts.captureTime}: ${exif['datetime_original_str']}',
+          );
         }
         if (exif.containsKey('datetime_original')) {
           datetimeOriginal = exif['datetime_original'] as DateTime?;
@@ -245,15 +270,19 @@ Future<AssetAnalysisResult?> _analyzeSingleAsset({
             gpsCoordinates = [lat, lng];
 
             infoLines.add(
-                'Gps Coordinates: ${lat.toStringAsFixed(6)}, ${lng.toStringAsFixed(6)}');
+              'Gps Coordinates: ${lat.toStringAsFixed(6)}, ${lng.toStringAsFixed(6)}',
+            );
 
             address = await ExifUtils.reverseGeocode(lat, lng);
             if (address != null) {
               var addressLine = 'Nearest Address (from GPS): $address';
 
               // Check nearest user location
-              final markAddress =
-                  await fileSystem.getNearestUserLocation(userId, lat, lng);
+              final markAddress = await fileSystem.getNearestUserLocation(
+                userId,
+                lat,
+                lng,
+              );
               if (markAddress != null) {
                 addressLine +=
                     ', very close to user marked location ($markAddress) (less than 50 meters)';
@@ -284,10 +313,7 @@ Future<AssetAnalysisResult?> _analyzeSingleAsset({
     ModelUsage? toolUsage;
     String toolModel = 'unknown';
     try {
-      final tool = AssetAnalysisTool(
-        client: client,
-        modelConfig: modelConfig,
-      );
+      final tool = AssetAnalysisTool(client: client, modelConfig: modelConfig);
 
       // Build prompt with metadata for images
       String finalPrompt = Prompts.assetAnalysisPrompt(
@@ -297,16 +323,19 @@ Future<AssetAnalysisResult?> _analyzeSingleAsset({
         final metadataLines = <String>[];
         if (structuredExifData.datetimeOriginal != null) {
           metadataLines.add(
-              "${Prompts.captureTime}: ${structuredExifData.datetimeOriginal!.toLocal().toString().substring(0, 19)}");
+            "${Prompts.captureTime}: ${structuredExifData.datetimeOriginal!.toLocal().toString().substring(0, 19)}",
+          );
         }
         if (structuredExifData.address != null) {
-          metadataLines
-              .add("${Prompts.captureLocation}: ${structuredExifData.address}");
+          metadataLines.add(
+            "${Prompts.captureLocation}: ${structuredExifData.address}",
+          );
         }
         if (structuredExifData.gpsCoordinates != null &&
             structuredExifData.gpsCoordinates!.length >= 2) {
           metadataLines.add(
-              "${Prompts.gpsCoordinates}: ${Prompts.latitude} ${structuredExifData.gpsCoordinates![0].toStringAsFixed(6)}, ${Prompts.longitude} ${structuredExifData.gpsCoordinates![1].toStringAsFixed(6)}");
+            "${Prompts.gpsCoordinates}: ${Prompts.latitude} ${structuredExifData.gpsCoordinates![0].toStringAsFixed(6)}, ${Prompts.longitude} ${structuredExifData.gpsCoordinates![1].toStringAsFixed(6)}",
+          );
         }
         if (metadataLines.isNotEmpty) {
           finalPrompt +=
@@ -333,7 +362,8 @@ Future<AssetAnalysisResult?> _analyzeSingleAsset({
         analysisResult = toolResult;
       }
       _logger.info(
-          "Asset analyzed: ${path.basename(assetPath)}, result: $toolResult");
+        "Asset analyzed: ${path.basename(assetPath)}, result: $toolResult",
+      );
 
       // Record LLM call if usage is available
       if (toolUsage != null) {
@@ -376,17 +406,21 @@ Future<AssetAnalysisResult?> _analyzeSingleAsset({
       try {
         final assetFilename = path.basename(assetPath);
         final analysisFilename = "$assetFilename.analysis.txt";
-        final analysisFile =
-            File(path.join(path.dirname(assetPath), analysisFilename));
+        final analysisFile = File(
+          path.join(path.dirname(assetPath), analysisFilename),
+        );
         await analysisFile.writeAsString(finalAnalysisResult);
         _logger.info(
-            "Saved asset analysis (with EXIF info) to: ${analysisFile.path}");
+          "Saved asset analysis (with EXIF info) to: ${analysisFile.path}",
+        );
 
         // Log event
         try {
           final workspacePath = fileSystem.getWorkspacePath(userId);
-          final relativePath = fileSystem.toRelativePath(analysisFile.path,
-              rootPath: workspacePath);
+          final relativePath = fileSystem.toRelativePath(
+            analysisFile.path,
+            rootPath: workspacePath,
+          );
           await fileSystem.eventLogService.logFileCreated(
             userId: userId,
             filePath: relativePath,
@@ -408,8 +442,9 @@ Future<AssetAnalysisResult?> _analyzeSingleAsset({
       name: assetName,
       path: assetPath,
       index: index + 1,
-      analysis:
-          finalAnalysisResult.isNotEmpty ? finalAnalysisResult : analysisResult,
+      analysis: finalAnalysisResult.isNotEmpty
+          ? finalAnalysisResult
+          : analysisResult,
       exifData: structuredExifData,
     );
   } catch (e, stack) {
@@ -419,10 +454,15 @@ Future<AssetAnalysisResult?> _analyzeSingleAsset({
 }
 
 Future<void> _updateTaskResult(
-    String userId, String taskId, List<AssetAnalysisResult> results) async {
+  String userId,
+  String taskId,
+  List<AssetAnalysisResult> results,
+) async {
   final resultData = {
     'asset_analyses': results.map((e) => e.toJson()).toList(),
   };
-  await LocalTaskExecutor.instance
-      .updateTaskResult(taskId, jsonEncode(resultData));
+  await LocalTaskExecutor.instance.updateTaskResult(
+    taskId,
+    jsonEncode(resultData),
+  );
 }

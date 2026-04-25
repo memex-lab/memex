@@ -55,6 +55,13 @@ class _ModelConfigListPageState extends State<ModelConfigListPage> {
     }
   }
 
+  bool get _isZh => UserStorage.l10n.localeName == 'zh';
+
+  String get _visionBadgeText => _isZh ? '视觉' : 'Vision';
+
+  bool _isKnownMultimodalConfig(LLMConfig config) =>
+      LLMConfig.isKnownMultimodal(config.type, config.modelId);
+
   @override
   void initState() {
     super.initState();
@@ -99,9 +106,7 @@ class _ModelConfigListPageState extends State<ModelConfigListPage> {
         builder: (context) => AlertDialog(
           backgroundColor: Colors.white,
           title: Text(l10n.cannotDeleteConfigurationTitle),
-          content: Text(
-            l10n.configUsedByAgentsMessage(usingAgents.join('\n')),
-          ),
+          content: Text(l10n.configUsedByAgentsMessage(usingAgents.join('\n'))),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -181,8 +186,10 @@ class _ModelConfigListPageState extends State<ModelConfigListPage> {
                     ),
                     TextButton(
                       onPressed: () => Navigator.pop(context, true),
-                      child: Text(l10n.resetButton,
-                          style: const TextStyle(color: Colors.red)),
+                      child: Text(
+                        l10n.resetButton,
+                        style: const TextStyle(color: Colors.red),
+                      ),
                     ),
                   ],
                 ),
@@ -196,8 +203,10 @@ class _ModelConfigListPageState extends State<ModelConfigListPage> {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                          content:
-                              Text(UserStorage.l10n.modelConfigurationsReset)),
+                        content: Text(
+                          UserStorage.l10n.modelConfigurationsReset,
+                        ),
+                      ),
                     );
                   }
                 } catch (e) {
@@ -205,8 +214,10 @@ class _ModelConfigListPageState extends State<ModelConfigListPage> {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                          content:
-                              Text(UserStorage.l10n.resetFailed(e.toString()))),
+                        content: Text(
+                          UserStorage.l10n.resetFailed(e.toString()),
+                        ),
+                      ),
                     );
                   }
                 }
@@ -216,7 +227,7 @@ class _ModelConfigListPageState extends State<ModelConfigListPage> {
         ],
       ),
       body: _isLoading
-          ? Center(child: AgentLogoLoading())
+          ? const Center(child: AgentLogoLoading())
           : Column(
               children: [
                 Expanded(
@@ -239,8 +250,9 @@ class _ModelConfigListPageState extends State<ModelConfigListPage> {
                         confirmDismiss: (direction) async {
                           if (config.isDefault) return false;
 
-                          final usingAgents =
-                              await _getAgentsUsingConfig(config.key);
+                          final usingAgents = await _getAgentsUsingConfig(
+                            config.key,
+                          );
                           if (usingAgents.isNotEmpty) {
                             if (!context.mounted) return false;
                             final l10n = UserStorage.l10n;
@@ -248,11 +260,13 @@ class _ModelConfigListPageState extends State<ModelConfigListPage> {
                               context: context,
                               builder: (context) => AlertDialog(
                                 backgroundColor: Colors.white,
-                                title:
-                                    Text(l10n.cannotDeleteConfigurationTitle),
+                                title: Text(
+                                  l10n.cannotDeleteConfigurationTitle,
+                                ),
                                 content: Text(
                                   l10n.configUsedByAgentsMessage(
-                                      usingAgents.join('\n')),
+                                    usingAgents.join('\n'),
+                                  ),
                                 ),
                                 actions: [
                                   TextButton(
@@ -274,7 +288,8 @@ class _ModelConfigListPageState extends State<ModelConfigListPage> {
                               backgroundColor: Colors.white,
                               title: Text(l10n.deleteConfigurationTitle),
                               content: Text(
-                                  l10n.confirmDeleteConfigMessage(config.key)),
+                                l10n.confirmDeleteConfigMessage(config.key),
+                              ),
                               actions: [
                                 TextButton(
                                   onPressed: () =>
@@ -303,7 +318,8 @@ class _ModelConfigListPageState extends State<ModelConfigListPage> {
                                 child: Text(
                                   config.key,
                                   style: const TextStyle(
-                                      fontWeight: FontWeight.bold),
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                   overflow: TextOverflow.ellipsis,
                                   maxLines: 1,
                                 ),
@@ -312,16 +328,46 @@ class _ModelConfigListPageState extends State<ModelConfigListPage> {
                                 Container(
                                   margin: const EdgeInsets.only(left: 8),
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 6, vertical: 2),
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: Colors.blue.withOpacity(0.1),
+                                    color: Colors.blue.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(4),
                                     border: Border.all(
-                                        color: Colors.blue.withOpacity(0.5)),
+                                      color: Colors.blue.withValues(alpha: 0.5),
+                                    ),
                                   ),
-                                  child: Text(UserStorage.l10n.defaultLabel,
-                                      style: const TextStyle(
-                                          fontSize: 10, color: Colors.blue)),
+                                  child: Text(
+                                    UserStorage.l10n.defaultLabel,
+                                    style: const TextStyle(
+                                      fontSize: 10,
+                                      color: Colors.blue,
+                                    ),
+                                  ),
+                                ),
+                              if (_isKnownMultimodalConfig(config))
+                                Container(
+                                  margin: const EdgeInsets.only(left: 8),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(
+                                      color:
+                                          Colors.green.withValues(alpha: 0.5),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    _visionBadgeText,
+                                    style: const TextStyle(
+                                      fontSize: 10,
+                                      color: Colors.green,
+                                    ),
+                                  ),
                                 ),
                             ],
                           ),
@@ -369,8 +415,10 @@ class _ModelConfigListPageState extends State<ModelConfigListPage> {
                             children: [
                               if (!config.isDefault)
                                 IconButton(
-                                  icon: const Icon(Icons.delete_outline,
-                                      color: Colors.grey),
+                                  icon: const Icon(
+                                    Icons.delete_outline,
+                                    color: Colors.grey,
+                                  ),
                                   onPressed: () => _deleteConfig(index),
                                 ),
                               const Icon(Icons.chevron_right),
