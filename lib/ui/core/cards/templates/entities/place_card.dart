@@ -15,6 +15,7 @@ class PlaceCard extends StatelessWidget {
     final String address = data['address'] ?? '';
     final double? lat = (data['latitude'] ?? data['lat']) as double?;
     final double? lng = (data['longitude'] ?? data['lng']) as double?;
+    final bool hasCoordinates = lat != null && lng != null;
 
     return GlassCard(
       onTap: onTap,
@@ -22,20 +23,21 @@ class PlaceCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Map Preview
-          SizedBox(
-            height: 140, // Slightly taller for better map view
-            child: ClipRRect(
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(16)),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  _buildMap(lat, lng),
-                ],
+          // Map Preview — only show when coordinates exist
+          if (hasCoordinates)
+            SizedBox(
+              height: 140,
+              child: ClipRRect(
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(16)),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    _buildMap(lat, lng),
+                  ],
+                ),
               ),
             ),
-          ),
           Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
@@ -58,11 +60,8 @@ class PlaceCard extends StatelessWidget {
                           padding: const EdgeInsets.only(top: 6),
                           child: Row(
                             children: [
-                              Icon(
-                                  Icons
-                                      .location_on_outlined, // Changed to outlined
-                                  size: 14,
-                                  color: const Color(0xFF4A5565)),
+                              const Icon(Icons.location_on_outlined,
+                                  size: 14, color: Color(0xFF4A5565)),
                               const SizedBox(width: 4),
                               Expanded(
                                 child: SizedBox(
@@ -89,9 +88,9 @@ class PlaceCard extends StatelessWidget {
                                         children: [
                                           Text(
                                             address,
-                                            style: TextStyle(
+                                            style: const TextStyle(
                                               fontSize: 13,
-                                              color: const Color(0xFF4A5565),
+                                              color: Color(0xFF4A5565),
                                               fontWeight: FontWeight.w500,
                                             ),
                                           ),
@@ -126,16 +125,8 @@ class PlaceCard extends StatelessWidget {
   }
 
   Widget _buildMap(double? lat, double? lng) {
-    if (lat == null || lng == null) {
-      return Container(
-        color: const Color(0xFFF7F8FA),
-        child: const Center(
-            child: Icon(Icons.map, color: Color(0xFFE2E8F0), size: 48)),
-      );
-    }
-
-    // Use WGS-84 coordinates directly (OSM tiles use WGS-84)
-    final point = LatLng(lat, lng);
+    // Caller guarantees lat/lng are non-null via _hasCoordinates check
+    final point = LatLng(lat!, lng!);
 
     return FlutterMap(
       options: MapOptions(

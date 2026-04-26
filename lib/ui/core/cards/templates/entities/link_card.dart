@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:memex/ui/core/cards/ui/glass_card.dart';
 
 class LinkCard extends StatelessWidget {
@@ -37,29 +38,30 @@ class LinkCard extends StatelessWidget {
                     ),
                   ),
                 const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF7F8FA),
-                        borderRadius: BorderRadius.circular(4),
+                GestureDetector(
+                  onTap: url.isNotEmpty ? () => _openUrl(url) : null,
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF0F9FF),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Icon(Icons.link,
+                            size: 12, color: Color(0xFF0284C7)),
                       ),
-                      child:
-                          const Icon(Icons.link, size: 12, color: Color(0xFF99A1AF)),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
+                      const SizedBox(width: 6),
+                      Text(
                         domain.toUpperCase(),
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF4A5565),
+                          color: Color(0xFF0284C7),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -67,5 +69,12 @@ class LinkCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _openUrl(String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri != null && await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 }
