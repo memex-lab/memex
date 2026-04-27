@@ -1345,153 +1345,156 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // The 393x120.5 Figma Canvas scaled flawlessly to screen width
-          FittedBox(
-            fit: BoxFit.fitWidth,
-            alignment: Alignment.bottomCenter,
-            child: SizedBox(
-              width: 393,
-              // PNG bounding box height: 120.5 (includes 20px top shadow + 80.5px white shape)
-              height: 120.5,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  // Painted Native Vector Overlay
-                  // Completely removing dependencies on Figma PNG/SVG transparent paddings!
-                  Positioned.fill(
-                    child: CustomPaint(
-                      painter: _NavBarPainter(),
-                    ),
-                  ),
-
-                  // Shadow occluder mask
-                  // The Figma export's shadow has a giant blur that leaks downward.
-                  // Placed OVER the image at exactly y=100.0 (where the white shape ends)
-                  // It completely masks out the grey blur and extends solidly into the Safe Area.
-                  Positioned(
-                    top: 100.0,
-                    bottom: -100.0,
-                    left: 0,
-                    right: 0,
-                    child: Container(color: Colors.white),
-                  ),
-
-                  // Center Action Button (88x88 widget, 68x68 nested circle)
-                  // Dialed down to -16.0 for a more subdued hover gap.
-                  Positioned(
-                    top: -16.0,
-                    left: 156.0,
-                    child: AICoreButton(
-                      key: DemoService.instance.isActive
-                          ? DemoService.instance.addButtonKey
-                          : _aiButtonKey,
-                      onTap: () {
-                        // Advance first so _handleAICoreButtonTap sees tapSend step for prefill
-                        DemoService.instance.tryAdvance(DemoStep.tapAddButton);
-                        _handleAICoreButtonTap();
-                      },
-                      onLongPress: _handleAICoreButtonLongPressStart,
-                      onLongPressMoveUpdate:
-                          _handleAICoreButtonLongPressMoveUpdate,
-                      onLongPressEnd: _handleAICoreButtonLongPressEnd,
-                    ),
-                  ),
-
-                  // Timeline Icon
-                  Positioned(
-                    top: 46.63, // 26.63 local + 20px shadow
-                    left: 64.17,
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: _handleTimelineTabTap,
-                      child: SvgPicture.asset(
-                        'assets/icons/tab_timeline_active.svg',
-                        width: 22,
-                        height: 23,
-                        colorFilter: ColorFilter.mode(
-                          _currentTab == 0
-                              ? const Color(0xFF1F1F1F)
-                              : const Color(0xFF99A1AF),
-                          BlendMode.srcIn,
-                        ),
+          // Keep the 393x120.5 design size from growing in wide/landscape layouts.
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 120.5),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.bottomCenter,
+              child: SizedBox(
+                width: 393,
+                // PNG bounding box height: 120.5 (includes 20px top shadow + 80.5px white shape)
+                height: 120.5,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    // Painted Native Vector Overlay
+                    // Completely removing dependencies on Figma PNG/SVG transparent paddings!
+                    Positioned.fill(
+                      child: CustomPaint(
+                        painter: _NavBarPainter(),
                       ),
                     ),
-                  ),
 
-                  // Timeline Text
-                  Positioned(
-                    top: 76.0,
-                    left: 25.17,
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: _handleTimelineTabTap,
-                      child: SizedBox(
-                        width:
-                            100, // Widened from strict 58 to permit iOS text expansion
-                        // Removed strict height boundary to prevent vertical ascender clipping
-                        child: Text(
-                          UserStorage.l10n.bottomNavTimeline,
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                            color: _currentTab == 0
+                    // Shadow occluder mask
+                    // The Figma export's shadow has a giant blur that leaks downward.
+                    // Placed OVER the image at exactly y=100.0 (where the white shape ends)
+                    // It completely masks out the grey blur and extends solidly into the Safe Area.
+                    Positioned(
+                      top: 100.0,
+                      bottom: -100.0,
+                      left: 0,
+                      right: 0,
+                      child: Container(color: Colors.white),
+                    ),
+
+                    // Center Action Button (88x88 widget, 68x68 nested circle)
+                    // Dialed down to -16.0 for a more subdued hover gap.
+                    Positioned(
+                      top: -16.0,
+                      left: 156.0,
+                      child: AICoreButton(
+                        key: DemoService.instance.isActive
+                            ? DemoService.instance.addButtonKey
+                            : _aiButtonKey,
+                        onTap: () {
+                          // Advance first so _handleAICoreButtonTap sees tapSend step for prefill
+                          DemoService.instance.tryAdvance(DemoStep.tapAddButton);
+                          _handleAICoreButtonTap();
+                        },
+                        onLongPress: _handleAICoreButtonLongPressStart,
+                        onLongPressMoveUpdate:
+                            _handleAICoreButtonLongPressMoveUpdate,
+                        onLongPressEnd: _handleAICoreButtonLongPressEnd,
+                      ),
+                    ),
+
+                    // Timeline Icon
+                    Positioned(
+                      top: 46.63, // 26.63 local + 20px shadow
+                      left: 64.17,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: _handleTimelineTabTap,
+                        child: SvgPicture.asset(
+                          'assets/icons/tab_timeline_active.svg',
+                          width: 22,
+                          height: 23,
+                          colorFilter: ColorFilter.mode(
+                            _currentTab == 0
                                 ? const Color(0xFF1F1F1F)
                                 : const Color(0xFF99A1AF),
-                            letterSpacing: 0.14,
-                            height: 1.0,
+                            BlendMode.srcIn,
                           ),
                         ),
                       ),
                     ),
-                  ),
 
-                  // Library — single widget for both icon + text so the
-                  // demo spotlight key covers the whole tab area.
-                  Positioned(
-                    top: 47.02,
-                    left: 299.58,
-                    child: GestureDetector(
-                      key: DemoService.instance.knowledgeTabKey,
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () {
-                        _handleLibraryTabTap();
-                        DemoService.instance
-                            .tryAdvance(DemoStep.tapKnowledgeTab);
-                      },
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          SvgPicture.asset(
-                            'assets/icons/tab_library_inactive.svg',
-                            width: 25.06,
-                            height: 21.15,
-                            colorFilter: ColorFilter.mode(
-                              _currentTab == 1
-                                  ? const Color(0xFF1F1F1F)
-                                  : const Color(0xFF99A1AF),
-                              BlendMode.srcIn,
-                            ),
-                          ),
-                          SizedBox(height: 76.0 - 47.02 - 21.15),
-                          Text(
-                            UserStorage.l10n.bottomNavLibrary,
+                    // Timeline Text
+                    Positioned(
+                      top: 76.0,
+                      left: 25.17,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: _handleTimelineTabTap,
+                        child: SizedBox(
+                          width:
+                              100, // Widened from strict 58 to permit iOS text expansion
+                          // Removed strict height boundary to prevent vertical ascender clipping
+                          child: Text(
+                            UserStorage.l10n.bottomNavTimeline,
                             textAlign: TextAlign.center,
                             style: GoogleFonts.inter(
                               fontSize: 14,
                               fontWeight: FontWeight.w400,
-                              color: _currentTab == 1
+                              color: _currentTab == 0
                                   ? const Color(0xFF1F1F1F)
                                   : const Color(0xFF99A1AF),
                               letterSpacing: 0.14,
                               height: 1.0,
                             ),
                           ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
+
+                    // Library — single widget for both icon + text so the
+                    // demo spotlight key covers the whole tab area.
+                    Positioned(
+                      top: 47.02,
+                      left: 299.58,
+                      child: GestureDetector(
+                        key: DemoService.instance.knowledgeTabKey,
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () {
+                          _handleLibraryTabTap();
+                          DemoService.instance
+                              .tryAdvance(DemoStep.tapKnowledgeTab);
+                        },
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SvgPicture.asset(
+                              'assets/icons/tab_library_inactive.svg',
+                              width: 25.06,
+                              height: 21.15,
+                              colorFilter: ColorFilter.mode(
+                                _currentTab == 1
+                                    ? const Color(0xFF1F1F1F)
+                                    : const Color(0xFF99A1AF),
+                                BlendMode.srcIn,
+                              ),
+                            ),
+                            SizedBox(height: 76.0 - 47.02 - 21.15),
+                            Text(
+                              UserStorage.l10n.bottomNavLibrary,
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                                color: _currentTab == 1
+                                    ? const Color(0xFF1F1F1F)
+                                    : const Color(0xFF99A1AF),
+                                letterSpacing: 0.14,
+                                height: 1.0,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
