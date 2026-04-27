@@ -2,6 +2,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/cupertino.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:memex/domain/models/card_model.dart';
@@ -1248,16 +1249,47 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                 ],
               ),
               const SizedBox(height: 4),
-              Text(
-                content,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
-                  color: Color(0xFF334155),
-                  height: 1.43,
-                  letterSpacing: 0,
+              if (isAuthor || isAi)
+                MarkdownBody(
+                  data: content,
+                  softLineBreak: true,
+                  styleSheet: MarkdownStyleSheet(
+                    p: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                      color: Color(0xFF334155),
+                      height: 1.43,
+                      letterSpacing: 0,
+                    ),
+                    strong: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF0A0A0A),
+                    ),
+                    em: const TextStyle(fontStyle: FontStyle.italic),
+                    listBullet: const TextStyle(color: Color(0xFF5B6CFF)),
+                    code: const TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF334155),
+                      backgroundColor: Color(0xFFF7F8FA),
+                      fontFamily: 'monospace',
+                    ),
+                    codeblockDecoration: BoxDecoration(
+                      color: const Color(0xFFF7F8FA),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                )
+              else
+                Text(
+                  content,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFF334155),
+                    height: 1.43,
+                    letterSpacing: 0,
+                  ),
                 ),
-              ),
               const SizedBox(height: 4),
               Row(
                 children: [
