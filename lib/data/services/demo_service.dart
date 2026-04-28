@@ -311,9 +311,13 @@ class DemoService extends ChangeNotifier {
 
       // Pick a default character for the comment (死党/Buddy)
       final defaultChars = UserStorage.l10n.defaultCharacters;
-      final commentCharId = defaultChars.isNotEmpty
-          ? defaultChars.last['id'] as String // "5" (死党/Buddy)
-          : '5';
+      var commentCharId = '5';
+      for (final charData in defaultChars) {
+        if (charData['id'] == '5') {
+          commentCharId = charData['id'] as String;
+          break;
+        }
+      }
 
       // Wait a moment to simulate processing
       await Future.delayed(const Duration(milliseconds: 1500));
