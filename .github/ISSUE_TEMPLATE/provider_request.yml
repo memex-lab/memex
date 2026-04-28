@@ -1,0 +1,52 @@
+name: LLM provider request
+description: Request support or compatibility fixes for an LLM provider
+title: "[Provider]: "
+labels: ["type: feature", "area: llm-provider", "needs product decision"]
+body:
+  - type: input
+    id: provider
+    attributes:
+      label: Provider name
+      placeholder: "Example: OpenRouter, Ollama, Qwen, custom OpenAI-compatible endpoint"
+    validations:
+      required: true
+  - type: dropdown
+    id: api_type
+    attributes:
+      label: API compatibility
+      options:
+        - OpenAI-compatible
+        - Anthropic-compatible
+        - Gemini-compatible
+        - AWS Bedrock
+        - Native/custom API
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: docs
+    attributes:
+      label: Provider documentation
+      description: Link official API docs and model docs if available.
+    validations:
+      required: true
+  - type: textarea
+    id: models
+    attributes:
+      label: Models and capabilities
+      description: Which models should work? Include vision, tool calling, streaming, JSON mode, or embeddings support if relevant.
+  - type: textarea
+    id: auth
+    attributes:
+      label: Authentication and base URL
+      description: Describe the auth method. Do not paste API keys.
+  - type: checkboxes
+    id: local_first
+    attributes:
+      label: Privacy check
+      options:
+        - label: This provider requires users to explicitly configure their own credentials or local endpoint.
+          required: true
+        - label: I did not include any API key or secret in this issue.
+          required: true
+

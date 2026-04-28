@@ -149,6 +149,12 @@ Every agent you create is a first-class citizen — it plugs into the same event
 
 > 💡 **Learn more about the Skill format**: [Agent Skills](https://agentskills.io) is an open standard originally developed by Anthropic for packaging agent capabilities. Visit the site to understand how to write SKILL.md files and design agent behaviors.
 
+## Community
+
+Memex welcomes bug reports, feature ideas, docs improvements, localization, provider adapters, and focused code contributions. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a large PR.
+
+Opening an issue helps us understand demand, but it does not guarantee implementation.
+
 ## Roadmap
 
 - [ ] Video and file attachments

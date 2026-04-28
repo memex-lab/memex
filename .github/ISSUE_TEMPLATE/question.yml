@@ -1,0 +1,18 @@
+name: Question
+description: Ask a focused development or usage question
+title: "[Question]: "
+labels: ["type: question", "needs triage"]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: What do you want to understand?
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Include platform, version, logs, or links if relevant. Do not include secrets.
+

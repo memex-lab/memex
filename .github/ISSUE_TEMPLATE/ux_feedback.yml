@@ -1,0 +1,41 @@
+name: UX feedback
+description: Share friction, confusing flows, or polish requests
+title: "[UX]: "
+labels: ["type: enhancement", "area: ux", "needs triage"]
+body:
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: What were you trying to do?
+    validations:
+      required: true
+  - type: textarea
+    id: friction
+    attributes:
+      label: What felt confusing or slow?
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested improvement
+      description: Optional, but helpful.
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      multiple: true
+      options:
+        - iOS
+        - Android
+        - Both
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: media
+    attributes:
+      label: Screenshots or recordings
+      description: Remove personal records, photos, locations, and API keys before posting.
+

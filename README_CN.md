@@ -149,6 +149,12 @@ Agent 执行操作（文件读写、JavaScript、fetch……）
 
 > 💡 **了解更多 Skill 格式**: [Agent Skills](https://agentskills.io) 是由 Anthropic 最初开发的开放标准，用于封装 Agent 能力。访问该网站了解如何编写 SKILL.md 文件和设计 Agent 行为。
 
+## 社区贡献
+
+欢迎提交 Bug、产品建议、文档改进、本地化、模型提供商适配和聚焦的小型代码贡献。发起大型 PR 前，请先阅读 [CONTRIBUTING.md](CONTRIBUTING.md) 并通过 Issue 讨论方向。
+
+Issue 会帮助我们判断社区需求，但不代表功能一定会实现。
+
 ## 路线图
 
 - [ ] 支持视频和文件附件

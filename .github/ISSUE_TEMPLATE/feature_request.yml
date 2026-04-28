@@ -1,0 +1,63 @@
+name: Feature request
+description: Suggest a new capability or product improvement
+title: "[Feature]: "
+labels: ["type: feature", "needs product decision"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Feature requests are treated as product signals, not implementation commitments. Maintainers will label accepted ideas when the direction fits Memex.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user problem are you trying to solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the experience or behavior you want.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Are there simpler workflows or existing features that partially solve this?
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      multiple: true
+      options:
+        - Timeline and cards
+        - AI agents and skills
+        - Knowledge base
+        - Insights
+        - Chat
+        - LLM providers
+        - Backup / restore / export
+        - App lock / privacy
+        - iOS
+        - Android
+        - Localization
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: checkboxes
+    id: principles
+    attributes:
+      label: Product principles
+      options:
+        - label: This can work in a local-first way.
+        - label: This does not require hidden telemetry or server-side storage.
+        - label: This keeps users in control of their own model provider and data.
+  - type: textarea
+    id: contribution
+    attributes:
+      label: Contribution interest
+      description: Are you interested in helping design, implement, test, or document this?
+
