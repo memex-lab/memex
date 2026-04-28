@@ -20,11 +20,13 @@ class SystemEventTypes {
   static const String cardCommentPosted = 'card_comment_posted';
   static const String knowledgeInsightRefreshRequested =
       'knowledge_insight_refresh_requested';
+  static const String dataChanged = 'data_changed';
 
   static const List<String> allTypes = [
     userInputSubmitted,
     cardCommentPosted,
     knowledgeInsightRefreshRequested,
+    dataChanged,
   ];
 }
 
@@ -73,4 +75,52 @@ class CardCommentPostedPayload {
         'content': content,
         'comment_id': commentId,
       };
+}
+
+// ---------------------------------------------------------------------------
+// Data change record (binlog / oplog style)
+// ---------------------------------------------------------------------------
+
+/// Operation type for data change events.
+enum DataChangeOp { insert, update, delete }
+
+/// Namespace constants for [DataChangeRecord].
+class DataChangeNs {
+  static const String pkmFile = 'pkm_file';
+  static const String card = 'card';
+}
+
+/// A generic data-change record modeled after database change streams
+/// (MongoDB oplog / MySQL binlog).
+///
+/// Subscribers filter by [ns] (namespace) and [op] (operation) to decide
+/// how to react. [documentKey] is the primary identifier of the changed
+/// entity. [fullDocument] carries the post-change snapshot (null on delete).
+class DataChangeRecord {
+  DataChangeRecord({
+    required this.op,
+    required this.ns,
+    required this.documentKey,
+    this.fullDocument,
+  });
+
+  /// The operation: insert, update, or delete.
+  final DataChangeOp op;
+
+  /// Namespace / collection name (e.g. 'pkm_file', 'card').
+  final String ns;
+
+  /// Primary key of the document (e.g. relative file path, factId).
+  final String documentKey;
+
+  /// Post-change document snapshot. Null for [DataChangeOp.delete].
+  /// Structure depends on [ns]:
+  ///
+  /// For `pkm_file`:
+  ///   `{ 'file_name': String, 'absolute_path': String, 'content': String }`
+  ///
+  /// For `card`:
+  ///   `{ 'title': String?, 'tags': List<String>?, 'content': String?,
+  ///      'asset_analyses': List<String>?, 'insight': String? }`
+  final Map<String, dynamic>? fullDocument;
 }

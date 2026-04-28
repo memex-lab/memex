@@ -1,11 +1,9 @@
-import 'package:memex/domain/models/card_detail_model.dart';
-
 import 'package:memex/db/app_database.dart';
 import 'package:memex/domain/models/timeline_card_model.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/data/services/file_system_service.dart';
-import 'package:memex/data/services/card_renderer.dart';
+import 'package:memex/data/repositories/hydrate_card.dart';
 
 final _logger = getLogger('GetTimelineCardsEndpoint');
 
@@ -50,60 +48,14 @@ Future<List<TimelineCardModel>> getTimelineCards({
       dateTo: dateTo,
     );
 
-    // 3. Hydrate Cards (Read full content from files)
+    // 3. Hydrate Cards
     final timelineCards = <TimelineCardModel>[];
     for (final cachedCard in cachedCards) {
       try {
-        // Read card data from file
-        final cardData =
-            await fileSystemService.readCardFile(userId, cachedCard.factId);
-
-        // If file missing (integrity issue), skip or delete from cache?
-        if (cardData == null) {
-          _logger.warning(
-              'Card file missing for cached entry: ${cachedCard.factId}');
-          // Optionally auto-repair cache here?
-          continue;
-        }
-
-        // Get fact info
-        final factInfo = await fileSystemService.extractFactContentFromFile(
-            userId, cachedCard.factId);
-        final factContent = factInfo?.content;
-
-        // Render card
-        final renderResult = await renderCard(
-          userId: userId,
-          cardData: cardData,
-          factContent: factContent,
-        );
-
-        // Extract assets
-        final assetsAndText =
-            await extractAssetsAndRawText(userId, factContent);
-        final assets = assetsAndText['assets'] as List<AssetData>;
-        final rawText = assetsAndText['rawText'] as String?;
-
-        final timelineCard = TimelineCardModel(
-          id: cachedCard.factId,
-          html: renderResult.html,
-          timestamp: DateTime.fromMillisecondsSinceEpoch(
-                  cachedCard.timestamp * 1000,
-                  isUtc: true)
-              .toLocal(),
-          tags: List<String>.from(cardData.tags),
-          status: renderResult.status,
-          title: cardData.title,
-          uiConfigs: renderResult.uiConfigs,
-          assets: assets.isNotEmpty ? assets : null,
-          rawText: rawText,
-          address: cardData.address,
-          failureReason: cardData.failureReason,
-        );
-        timelineCards.add(timelineCard);
+        final card = await hydrateCard(userId, cachedCard.factId);
+        if (card != null) timelineCards.add(card);
       } catch (e) {
         _logger.warning('Failed to hydrate card ${cachedCard.factId}: $e');
-        continue;
       }
     }
 

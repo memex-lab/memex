@@ -112,6 +112,15 @@ class AppLocalizationsEn extends AppLocalizations {
       'Regenerate comments task created, running in background';
 
   @override
+  String get rebuildSearchIndex => 'Rebuild search index';
+
+  @override
+  String get rebuildSearchIndexSuccess => 'Search index rebuilt successfully';
+
+  @override
+  String get rebuildSearchIndexFailed => 'Failed to rebuild search index';
+
+  @override
   String get clearData => 'Clear data';
 
   @override

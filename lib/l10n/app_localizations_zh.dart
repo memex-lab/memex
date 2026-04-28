@@ -107,6 +107,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get regenerateCommentsTaskCreated => '重新生成评论任务已创建，正在后台处理中';
 
   @override
+  String get rebuildSearchIndex => '重建搜索索引';
+
+  @override
+  String get rebuildSearchIndexSuccess => '搜索索引重建完成';
+
+  @override
+  String get rebuildSearchIndexFailed => '搜索索引重建失败';
+
+  @override
   String get clearData => '清除数据';
 
   @override

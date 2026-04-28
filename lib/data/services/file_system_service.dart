@@ -15,6 +15,8 @@ import 'local_asset_server.dart';
 import 'event_log_service.dart';
 import 'package:memex/db/app_database.dart';
 import 'package:memex/domain/models/card_model.dart';
+import 'package:memex/domain/models/system_event.dart';
+import 'package:memex/data/services/global_event_bus.dart';
 import 'package:drift/drift.dart' as drift;
 
 /// Result of [FileSystemService.syncSkillsIfNeeded].
@@ -413,6 +415,36 @@ class FileSystemService {
       );
 
       await AppDatabase.instance.cardDao.upsertCard(entry);
+
+      // Publish card change event for FTS and other subscribers
+      try {
+        final rawContent = factInfo?.content ?? '';
+        final assetAnalysisTexts = (factInfo?.assetAnalyses ?? [])
+            .map((a) => a['analysis'] as String? ?? '')
+            .where((s) => s.isNotEmpty)
+            .toList();
+        await GlobalEventBus.instance.publish(
+          userId: userId,
+          event: SystemEvent<DataChangeRecord>(
+            type: SystemEventTypes.dataChanged,
+            source: 'file_system_service',
+            payload: DataChangeRecord(
+              op: DataChangeOp.update,
+              ns: DataChangeNs.card,
+              documentKey: factId,
+              fullDocument: {
+                'title': cardData.title,
+                'tags': cardData.tags,
+                'content': rawContent,
+                'asset_analyses': assetAnalysisTexts,
+                'insight': cardData.insight?.text,
+              },
+            ),
+          ),
+        );
+      } catch (e) {
+        _logger.warning('Failed to publish card change event for $factId: $e');
+      }
     } catch (e) {
       _logger.warning('Failed to update card cache for $factId: $e');
     }
@@ -435,6 +467,19 @@ class FileSystemService {
             await (AppDatabase.instance.delete(AppDatabase.instance.cardCache)
                   ..where((tbl) => tbl.factId.equals(cardId)))
                 .go();
+            // Publish card deleted event
+            await GlobalEventBus.instance.publish(
+              userId: userId,
+              event: SystemEvent<DataChangeRecord>(
+                type: SystemEventTypes.dataChanged,
+                source: 'file_system_service',
+                payload: DataChangeRecord(
+                  op: DataChangeOp.delete,
+                  ns: DataChangeNs.card,
+                  documentKey: cardId,
+                ),
+              ),
+            );
           } catch (e) {
             _logger.warning('Failed to delete card from cache $cardId: $e');
           }
@@ -2275,10 +2320,12 @@ class FileSystemService {
     return fileList.take(limit).toList();
   }
 
-  /// Search PKM files by keyword (grep file name and content).
+  /// Grep PKM files by keyword — scans file names and content on disk.
   ///
-  /// Returns list of matching files with name, path, and optional snippet.
-  Future<List<Map<String, dynamic>>> searchPkmFiles(String userId, String query,
+  /// This is a brute-force search that reads every text file in the PKM
+  /// directory. It does not depend on any index and always reflects the
+  /// current file-system state.
+  Future<List<Map<String, dynamic>>> grepPkmFiles(String userId, String query,
       {int limit = 50}) async {
     final pkmPath = getPkmPath(userId);
     final dir = Directory(pkmPath);
@@ -2294,7 +2341,7 @@ class FileSystemService {
     try {
       entities = await dir.list(recursive: true, followLinks: false).toList();
     } catch (e) {
-      _logger.warning('Error listing PKM directory for search: $e');
+      _logger.warning('Error listing PKM directory for grep: $e');
       return [];
     }
 
@@ -2312,7 +2359,6 @@ class FileSystemService {
       String? snippet;
       bool contentMatch = false;
 
-      // Only grep content for text files (md/txt/json)
       final ext = path.extension(file.path).toLowerCase();
       if (['.md', '.txt', '.json', '.yaml', '.yml'].contains(ext)) {
         try {
@@ -2321,16 +2367,13 @@ class FileSystemService {
           final idx = lowerContent.indexOf(lowerQuery);
           if (idx >= 0) {
             contentMatch = true;
-            // Extract snippet around match
             final start = (idx - 40).clamp(0, content.length);
             final end = (idx + query.length + 60).clamp(0, content.length);
             snippet = (start > 0 ? '...' : '') +
                 content.substring(start, end).replaceAll('\n', ' ') +
                 (end < content.length ? '...' : '');
           }
-        } catch (_) {
-          // Skip unreadable files
-        }
+        } catch (_) {}
       }
 
       if (nameMatch || contentMatch) {

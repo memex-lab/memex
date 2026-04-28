@@ -32,6 +32,7 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
   bool _isReprocessingCards = false;
   bool _isReprocessingComments = false;
   bool _isReprocessingKnowledgeBase = false;
+  bool _isRebuildingSearchIndex = false;
   bool _showAuthBadge = false;
   String? _userAvatar;
 
@@ -619,6 +620,32 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
 
   bool _isClearingData = false;
 
+  Future<void> _rebuildSearchIndex() async {
+    if (_isRebuildingSearchIndex) return;
+    setState(() => _isRebuildingSearchIndex = true);
+    try {
+      await _memexRouter.rebuildAllFtsIndexes();
+      if (mounted) {
+        ToastHelper.showSuccessWithKey(
+          _scaffoldMessengerKey,
+          UserStorage.l10n.rebuildSearchIndexSuccess,
+        );
+      }
+    } catch (e) {
+      _logger.severe('Error rebuilding search index: $e', e);
+      if (mounted) {
+        ToastHelper.showErrorWithKey(
+          _scaffoldMessengerKey,
+          UserStorage.l10n.rebuildSearchIndexFailed,
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isRebuildingSearchIndex = false);
+      }
+    }
+  }
+
   Future<void> _clearData() async {
     if (_isClearingData) return;
 
@@ -905,12 +932,16 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
                                         _reprocessComments(),
                                     onReprocessKnowledgeBase: () async =>
                                         _reprocessKnowledgeBase(),
+                                    onRebuildSearchIndex: () async =>
+                                        _rebuildSearchIndex(),
                                     isClearingData: _isClearingData,
                                     isReprocessingCards: _isReprocessingCards,
                                     isReprocessingComments:
                                         _isReprocessingComments,
                                     isReprocessingKnowledgeBase:
                                         _isReprocessingKnowledgeBase,
+                                    isRebuildingSearchIndex:
+                                        _isRebuildingSearchIndex,
                                   ),
                                 ),
                               );

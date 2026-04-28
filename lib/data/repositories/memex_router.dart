@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:memex/domain/models/calendar_model.dart';
 import 'package:memex/data/repositories/update_card_ui_config.dart'
     as update_config_endpoint;
+import 'package:memex/data/services/search_service.dart';
+import 'package:memex/data/repositories/hydrate_card.dart';
 import 'package:memex/data/services/task_handlers/knowledge_insight_handler.dart';
 import 'package:path/path.dart' as path;
 import 'package:image_picker/image_picker.dart';
@@ -29,6 +31,7 @@ import 'package:memex/data/repositories/reprocess_pending_cards.dart';
 import 'package:memex/data/services/task_handlers/analyze_assets_handler.dart';
 import 'package:memex/data/services/task_handlers/card_agent_handler.dart';
 import 'package:memex/data/services/task_handlers/pkm_agent_handler.dart';
+import 'package:memex/data/services/task_handlers/fts_index_handler.dart';
 import 'package:memex/data/services/task_handlers/llm_error_utils.dart';
 import 'package:memex/data/services/task_handlers/comment_agent_handler.dart';
 import 'package:memex/data/services/task_handlers/reprocess_cards_handler.dart';
@@ -99,6 +102,8 @@ class MemexRouter {
       LocalTaskExecutor.instance
           .registerHandler('pkm_agent_task', handlePkmAgentImpl);
       LocalTaskExecutor.instance
+          .registerHandler('fts_index_update', handleFtsIndexUpdateImpl);
+      LocalTaskExecutor.instance
           .registerHandler('reprocess_cards_task', handleReprocessCardsImpl);
       LocalTaskExecutor.instance
           .registerHandler('comment_agent_task', handleCommentAgentImpl);
@@ -136,6 +141,9 @@ class MemexRouter {
       initCustomAgentHandler();
       registerBuiltInEventSerializers();
       await CustomAgentConfigService.instance.registerAll(userId);
+
+      // Register file change callback and FTS event subscriptions
+      SearchService.instance.init(userId);
     } catch (e) {
       _logger.severe('Failed to initialize MemexRouter: $e');
       // Reset future to allow retry if needed, or keep failed state
@@ -295,6 +303,7 @@ class MemexRouter {
     _targetUserIdForInit = null;
     _initFuture = null;
     LocalTaskExecutor.instance.stop();
+    SearchService.instance.reset();
   }
 
   void dispose() {
@@ -1033,8 +1042,51 @@ class MemexRouter {
       await _ensureInitialized();
       final userId = await UserStorage.getUserId();
       if (userId == null) return <Map<String, dynamic>>[];
-      return await fileSystemService.searchPkmFiles(userId, query);
+      return await SearchService.instance.searchPkmFiles(userId, query);
     });
+  }
+
+  /// Search timeline cards using FTS5 full-text search.
+  ///
+  /// Returns hydrated [TimelineCardModel] list, same format as [fetchTimelineCards].
+  Future<Result<List<TimelineCardModel>>> searchCards(String query,
+      {int limit = 50}) async {
+    return runResult(() async {
+      await _ensureInitialized();
+      final userId = await UserStorage.getUserId();
+      if (userId == null) return <TimelineCardModel>[];
+
+      final ftsResults =
+          await SearchService.instance.searchCards(query, limit: limit);
+
+      final cards = <TimelineCardModel>[];
+      for (final r in ftsResults) {
+        final factId = r['fact_id'] as String;
+        try {
+          final card = await hydrateCard(userId, factId);
+          if (card != null) cards.add(card);
+        } catch (e) {
+          _logger.warning('Failed to hydrate search result: $e');
+        }
+      }
+      return cards;
+    });
+  }
+
+  /// Rebuild the PKM FTS index (e.g. after import or manual trigger).
+  Future<void> rebuildPkmFtsIndex() async {
+    await _ensureInitialized();
+    final userId = await UserStorage.getUserId();
+    if (userId == null) return;
+    await SearchService.instance.rebuildPkmFtsIndex(userId);
+  }
+
+  /// Rebuild all FTS indexes (card + PKM). Intended for debugging / manual trigger.
+  Future<void> rebuildAllFtsIndexes() async {
+    await _ensureInitialized();
+    final userId = await UserStorage.getUserId();
+    if (userId == null) return;
+    await SearchService.instance.rebuildAll(userId);
   }
 
   Future<Map<String, dynamic>> readPkmFile(String filePath) async {

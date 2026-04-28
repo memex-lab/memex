@@ -278,6 +278,24 @@ abstract class AppLocalizations {
   /// **'Regenerate comments task created, running in background'**
   String get regenerateCommentsTaskCreated;
 
+  /// No description provided for @rebuildSearchIndex.
+  ///
+  /// In en, this message translates to:
+  /// **'Rebuild search index'**
+  String get rebuildSearchIndex;
+
+  /// No description provided for @rebuildSearchIndexSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Search index rebuilt successfully'**
+  String get rebuildSearchIndexSuccess;
+
+  /// No description provided for @rebuildSearchIndexFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to rebuild search index'**
+  String get rebuildSearchIndexFailed;
+
   /// No description provided for @clearData.
   ///
   /// In en, this message translates to:

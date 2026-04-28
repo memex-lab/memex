@@ -15,10 +15,12 @@ class DebugSettingsPage extends StatelessWidget {
   final Future<void> Function() onReprocessCards;
   final Future<void> Function() onReprocessComments;
   final Future<void> Function() onReprocessKnowledgeBase;
+  final Future<void> Function() onRebuildSearchIndex;
   final bool isClearingData;
   final bool isReprocessingCards;
   final bool isReprocessingComments;
   final bool isReprocessingKnowledgeBase;
+  final bool isRebuildingSearchIndex;
 
   const DebugSettingsPage({
     Key? key,
@@ -27,10 +29,12 @@ class DebugSettingsPage extends StatelessWidget {
     required this.onReprocessCards,
     required this.onReprocessComments,
     required this.onReprocessKnowledgeBase,
+    required this.onRebuildSearchIndex,
     required this.isClearingData,
     required this.isReprocessingCards,
     required this.isReprocessingComments,
     required this.isReprocessingKnowledgeBase,
+    required this.isRebuildingSearchIndex,
   }) : super(key: key);
 
   @override
@@ -182,6 +186,14 @@ class DebugSettingsPage extends StatelessWidget {
                 ),
               );
             },
+          ),
+          const SizedBox(height: 12),
+          _buildFunctionTab(
+            context: context,
+            icon: Icons.search_outlined,
+            title: UserStorage.l10n.rebuildSearchIndex,
+            onTap: onRebuildSearchIndex,
+            isLoading: isRebuildingSearchIndex,
           ),
         ],
       ),

@@ -105,3 +105,4 @@ flutter:
     - assets/icon.png
     - assets/icons/
     - assets/silero_vad.onnx
+    - assets/jieba_dict.txt

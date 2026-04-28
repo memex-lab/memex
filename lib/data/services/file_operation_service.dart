@@ -8,6 +8,12 @@ import 'api_exception.dart';
 import 'base_file_service.dart';
 import 'file_operation_utils.dart';
 
+/// Callback signature for file change notifications.
+/// [filePath] is the absolute path; [changeType] is 'created', 'modified', 'deleted', or 'moved'.
+/// For 'moved', [oldFilePath] is the original path.
+typedef FileChangedCallback = void Function(String filePath, String changeType,
+    {String? oldFilePath});
+
 /// File operation service: wraps server file ops; params and results match server.
 class FileOperationService {
   static FileOperationService? _instance;
@@ -21,6 +27,9 @@ class FileOperationService {
 
   /// Track ongoing operations per file to prevent concurrent writes
   final Map<String, Future<void>> _fileLocks = {};
+
+  /// Optional callback invoked after successful write/edit/move/remove operations.
+  FileChangedCallback? onFileChanged;
 
   FileOperationService._({BaseFileService? baseService})
       : _baseService = baseService ?? BaseFileService();
@@ -218,6 +227,10 @@ class FileOperationService {
       // Write file
       await _baseService.writeFile(filePath, content);
 
+      // Notify file change
+      onFileChanged?.call(
+          filePath, operation == 'create' ? 'created' : 'modified');
+
       // Build result message
       if (operation == 'create') {
         return _maskResult(
@@ -283,6 +296,7 @@ class FileOperationService {
         }
 
         await _baseService.writeFile(filePath, newString);
+        onFileChanged?.call(filePath, 'created');
         originFileContent = '';
       } else {
         // Handle edit
@@ -323,6 +337,7 @@ class FileOperationService {
         }
 
         await _baseService.writeFile(filePath, updatedContent);
+        onFileChanged?.call(filePath, 'modified');
         originFileContent = content;
       }
 
@@ -503,6 +518,10 @@ ${addLineNumbers(snippet, startLine: startLine)}''';
           overwrite: overwrite,
         );
 
+        // Notify file change
+        onFileChanged?.call(actualDestination, 'moved',
+            oldFilePath: sourcePath);
+
         // Rename vs move
         final sourceParent = path.dirname(sourcePath);
         final destParent = path.dirname(actualDestination);
@@ -565,6 +584,9 @@ ${addLineNumbers(snippet, startLine: startLine)}''';
 
       // executedelete
       await _baseService.remove(filePath, recursive: true);
+
+      // Notify file change
+      onFileChanged?.call(filePath, 'deleted');
 
       return _maskResult(
           'Successfully removed $operationType: $filePath\n', workingDirectory);
