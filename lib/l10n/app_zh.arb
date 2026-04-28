@@ -138,6 +138,17 @@
   "selectFromAlbum": "从相册选择",
   "takePhoto": "拍照",
   "enterContentOrMediaHint": "请输入内容、选择图片或录制音频",
+  "@inputDraftLabel": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "inputDraftLabel": "草稿 · {count} 字",
+  "discardDraftTitle": "丢弃这份草稿？",
+  "discardDraftMessage": "草稿内容会被清空。",
+  "discardDraftTooltip": "丢弃草稿",
   "tellAiWhatHappened": "告诉AI发生了什么...",
   "@recordingWithDuration": {
     "placeholders": {

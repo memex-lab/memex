@@ -307,6 +307,20 @@ class AppLocalizationsZh extends AppLocalizations {
   String get enterContentOrMediaHint => '请输入内容、选择图片或录制音频';
 
   @override
+  String inputDraftLabel(num count) {
+    return '草稿 · $count 字';
+  }
+
+  @override
+  String get discardDraftTitle => '丢弃这份草稿？';
+
+  @override
+  String get discardDraftMessage => '草稿内容会被清空。';
+
+  @override
+  String get discardDraftTooltip => '丢弃草稿';
+
+  @override
   String get tellAiWhatHappened => '告诉AI发生了什么...';
 
   @override

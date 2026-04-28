@@ -656,6 +656,30 @@ abstract class AppLocalizations {
   /// **'Enter content, select image or record audio.'**
   String get enterContentOrMediaHint;
 
+  /// No description provided for @inputDraftLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Draft · 1 char} other{Draft · {count} chars}}'**
+  String inputDraftLabel(num count);
+
+  /// No description provided for @discardDraftTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard this draft?'**
+  String get discardDraftTitle;
+
+  /// No description provided for @discardDraftMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The draft content will be cleared.'**
+  String get discardDraftMessage;
+
+  /// No description provided for @discardDraftTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard draft'**
+  String get discardDraftTooltip;
+
   /// No description provided for @tellAiWhatHappened.
   ///
   /// In en, this message translates to:

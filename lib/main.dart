@@ -1087,7 +1087,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
     if (item != null) {
       if (mounted) setState(() => _isRadialMenuOpen = false);
-      _handleInputSubmit(InputData(text: item.content));
+      unawaited(_handleInputSubmit(InputData(text: item.content)));
     } else if (hasRecording) {
       // Show calibrating state — keep menu open
       if (mounted) setState(() => _isQuickCalibrating = true);
@@ -1102,7 +1102,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         });
       }
       if (_quickTranscribedText.isNotEmpty) {
-        _handleInputSubmit(InputData(text: _quickTranscribedText));
+        unawaited(_handleInputSubmit(InputData(text: _quickTranscribedText)));
       } else if (_quickAudioPath != null) {
         final audioFile = File(_quickAudioPath!);
         String? audioHash;
@@ -1112,8 +1112,11 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
           audioHash =
               md5.convert(utf8.encode('audio_${fileName}_$length')).toString();
         }
-        _handleInputSubmit(
-            InputData(audioPath: _quickAudioPath, audioHash: audioHash));
+        unawaited(
+          _handleInputSubmit(
+            InputData(audioPath: _quickAudioPath, audioHash: audioHash),
+          ),
+        );
       }
       _quickTranscribedText = '';
       _quickAudioPath = null;
@@ -1173,7 +1176,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _handleInputSubmit(InputData data) async {
+  Future<bool> _handleInputSubmit(InputData data) async {
     // During demo: advance tapSend → tapCard first, so the overlay
     // immediately shows a blocking scrim (cardReady is still false).
     DemoService.instance.tryAdvance(DemoStep.tapSend);
@@ -1233,6 +1236,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
       // Refresh auto-input count after manual input
       // since the manual input might have consumed items that were pending auto-publish.
+      return true;
     } catch (e) {
       // Hide loading on error
       if (mounted) context.read<TimelineViewModel>().setSubmitting(false);
@@ -1240,6 +1244,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       if (mounted) {
         ToastHelper.showError(context, e);
       }
+      return false;
     }
   }
 

@@ -138,6 +138,17 @@
   "selectFromAlbum": "Select from album",
   "takePhoto": "Take photo",
   "enterContentOrMediaHint": "Enter content, select image or record audio.",
+  "@inputDraftLabel": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "inputDraftLabel": "{count, plural, =1{Draft · 1 char} other{Draft · {count} chars}}",
+  "discardDraftTitle": "Discard this draft?",
+  "discardDraftMessage": "The draft content will be cleared.",
+  "discardDraftTooltip": "Discard draft",
   "tellAiWhatHappened": "Tell AI what happened...",
   "@recordingWithDuration": {
     "placeholders": {

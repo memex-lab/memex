@@ -316,6 +316,26 @@ class AppLocalizationsEn extends AppLocalizations {
       'Enter content, select image or record audio.';
 
   @override
+  String inputDraftLabel(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Draft · $count chars',
+      one: 'Draft · 1 char',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get discardDraftTitle => 'Discard this draft?';
+
+  @override
+  String get discardDraftMessage => 'The draft content will be cleared.';
+
+  @override
+  String get discardDraftTooltip => 'Discard draft';
+
+  @override
   String get tellAiWhatHappened => 'Tell AI what happened...';
 
   @override
