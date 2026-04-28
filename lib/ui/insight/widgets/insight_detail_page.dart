@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:memex/data/repositories/memex_router.dart';
@@ -81,6 +82,32 @@ class _InsightDetailPageState extends State<InsightDetailPage> {
   // Get content
   String get _content {
     return _insightDetail?.content ?? '';
+  }
+
+  Widget _buildInsightMarkdown(String content, TextStyle style) {
+    return MarkdownBody(
+      data: content,
+      softLineBreak: true,
+      styleSheet: MarkdownStyleSheet(
+        p: style,
+        strong: style.copyWith(
+          fontWeight: FontWeight.w700,
+          color: const Color(0xFF1E293B),
+        ),
+        em: style.copyWith(fontStyle: FontStyle.italic),
+        listBullet: style.copyWith(color: const Color(0xFF5B6CFF)),
+        code: TextStyle(
+          fontSize: (style.fontSize ?? 14) - 1,
+          color: const Color(0xFF334155),
+          backgroundColor: const Color(0xFFF7F8FA),
+          fontFamily: 'monospace',
+        ),
+        codeblockDecoration: BoxDecoration(
+          color: const Color(0xFFF7F8FA),
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+    );
   }
 
   // Get related cards
@@ -217,14 +244,14 @@ class _InsightDetailPageState extends State<InsightDetailPage> {
                     ),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: Text(
+                      child: _buildInsightMarkdown(
                         _content,
-                        style: GoogleFonts.inter(
+                        GoogleFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.w400,
                           color: const Color(0xFF4A5565),
                           height: 1.6,
-                          letterSpacing: -0.15,
+                          letterSpacing: 0,
                         ),
                       ),
                     ),
@@ -235,13 +262,13 @@ class _InsightDetailPageState extends State<InsightDetailPage> {
 
             const SizedBox(height: 32),
           ] else if (_content.isNotEmpty) ...[
-            Text(
+            _buildInsightMarkdown(
               _content,
-              style: const TextStyle(
+              const TextStyle(
                 fontSize: 17,
                 color: Color(0xFF334155), // Slate-700
                 height: 1.7,
-                letterSpacing: 0.2,
+                letterSpacing: 0,
               ),
             ),
             const SizedBox(height: 32),

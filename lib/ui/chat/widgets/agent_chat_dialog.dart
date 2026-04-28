@@ -750,10 +750,44 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                     .copyWith(topLeft: const Radius.circular(4)),
                 border: Border.all(color: const Color(0xFFF7F8FA)),
               ),
-              child: SelectableText(
-                item.text,
-                style: TextStyle(
-                    fontSize: 14, color: AppColors.textSecondary, height: 1.5),
+              child: MarkdownBody(
+                data: item.text,
+                selectable: true,
+                softLineBreak: true,
+                styleSheet: MarkdownStyleSheet(
+                  p: const TextStyle(
+                    fontSize: 14,
+                    color: AppColors.textSecondary,
+                    height: 1.5,
+                  ),
+                  strong: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                  em: const TextStyle(fontStyle: FontStyle.italic),
+                  listBullet: const TextStyle(color: AppColors.primary),
+                  code: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textPrimary,
+                    backgroundColor: Color(0xFFF7F8FA),
+                    fontFamily: 'monospace',
+                  ),
+                  codeblockDecoration: BoxDecoration(
+                    color: const Color(0xFFF7F8FA),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  blockquote: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontStyle: FontStyle.italic,
+                  ),
+                  blockquoteDecoration: BoxDecoration(
+                    color: const Color(0xFFF7F8FA),
+                    borderRadius: BorderRadius.circular(8),
+                    border: const Border(
+                      left: BorderSide(color: AppColors.primary, width: 3),
+                    ),
+                  ),
+                ),
               ),
             ),
           ],

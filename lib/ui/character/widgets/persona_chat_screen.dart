@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:memex/agent/companion_agent/companion_agent.dart';
 import 'package:memex/db/app_database.dart';
 import 'package:memex/domain/models/character_model.dart';
@@ -416,15 +417,43 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Flexible(
-                    child: Text(
-                      text,
-                      style: TextStyle(
-                        fontSize: 15,
-                        height: 1.5,
-                        color:
-                            isCharacter ? AppColors.textPrimary : Colors.white,
-                      ),
-                    ),
+                    child: isCharacter
+                        ? MarkdownBody(
+                            data: text,
+                            softLineBreak: true,
+                            styleSheet: MarkdownStyleSheet(
+                              p: const TextStyle(
+                                fontSize: 15,
+                                height: 1.5,
+                                color: AppColors.textPrimary,
+                              ),
+                              strong: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary,
+                              ),
+                              em: const TextStyle(fontStyle: FontStyle.italic),
+                              listBullet:
+                                  const TextStyle(color: AppColors.primary),
+                              code: const TextStyle(
+                                fontSize: 14,
+                                color: AppColors.textPrimary,
+                                backgroundColor: Color(0xFFF7F8FA),
+                                fontFamily: 'monospace',
+                              ),
+                              codeblockDecoration: BoxDecoration(
+                                color: const Color(0xFFF7F8FA),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                          )
+                        : Text(
+                            text,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              height: 1.5,
+                              color: Colors.white,
+                            ),
+                          ),
                   ),
                   if (isStreaming) ...[
                     const SizedBox(width: 4),
