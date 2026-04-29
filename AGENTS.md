@@ -1,10 +1,8 @@
-# AGENTS.md
+# Memex — Project Context for Coding Agent
 
 > *"Always leave the code better than you found it."* — The Boy Scout Rule
->
-> This is a local-first app where all user data lives on-device. Respect the existing abstractions: use the right service for data access, follow the layer boundaries, and read the surrounding code before making changes. Shortcuts that bypass encapsulation create bugs that are hard to trace in a system with agents, event pipelines, and per-user isolation.
 
-This file provides guidance to AI coding agents working with this repository.
+Memex is a local-first, AI-powered personal life recording app built with Flutter (iOS + Android). All user data stays on-device — a multi-agent system processes inputs into timeline cards, extracts knowledge, and generates cross-record insights. Users bring their own LLM provider. Respect the existing abstractions: use the right service for data access, follow the layer boundaries, and read the surrounding code before making changes. Shortcuts that bypass encapsulation create bugs that are hard to trace in a system with agents, event pipelines, and per-user isolation.
 
 ## Build & Run
 
