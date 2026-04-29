@@ -138,6 +138,12 @@ Future<void> handleGenericAgentFailure(
       'Agent task ${context.taskType} failed permanently for user: $userId, error: $error');
 
   try {
+    if (_unwrapError(error) is InvalidModelConfigException) {
+      _logger.info(
+          'Suppressing generic error notification for invalid model config.');
+      return;
+    }
+
     final category = classifyError(error);
     final friendlyMessage = getLocalizedErrorMessage(category, error);
 
