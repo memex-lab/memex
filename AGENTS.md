@@ -93,6 +93,10 @@ result.when(
 - `ToastHelper.showSuccess/showError/showInfo` for feedback
 - `showGeneralDialog` with `AgentChatDialog` for AI chat overlays
 
+### Timeline Screen boundaries
+
+`TimelineScreen` handles page-level orchestration only (tab switching, pagination, pull-to-refresh, navigation). Do not add card-specific special-case logic here. Reuse `NativeCardFactory` / `NativeWidgetFactory` for card rendering and `CardAttachmentFactory` for attachments — keep templateId branching and card-type checks out of the screen layer.
+
 ## Event & Task System
 
 The app uses an event-driven pipeline for processing. When deciding how to handle a new feature's processing logic, consider:
@@ -102,6 +106,10 @@ The app uses an event-driven pipeline for processing. When deciding how to handl
 - **`LocalTaskExecutor`** — persistent task queue for work that is slow and **must complete** (e.g. agent LLM calls that take seconds to minutes). Tasks survive app restarts and retry on failure. Async subscribers on `GlobalEventBus` are automatically enqueued here. Task handlers are registered in `MemexRouter._init()`.
 
 - **`EventBusService`** — lightweight UI notification bus. Task handlers and repositories call `emitEvent()` when data changes (card created, card updated, insight generated, error occurred) so ViewModels can refresh the screen. Ephemeral, not persisted — purely for driving UI updates.
+
+### SQLite change observation
+
+Use `TableChangeNotifier.instance.watch(tableName, handler)` to react to table-level changes. Do not scatter Drift `query.watch()` streams across services and ViewModels — centralize change observation through `TableChangeNotifier` so there is one subscription per table and consistent dispatch.
 
 ## Agent System
 
