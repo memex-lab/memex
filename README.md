@@ -92,6 +92,7 @@ All data stays on your device. You bring your own LLM provider.
 
 ## Install
 - **iOS**: Download on the [App Store](https://apps.apple.com/app/memexai/id6760325170)
+- **iOS (China)**: Download on the [App Store](https://apps.apple.com/cn/app/memexai%E5%A6%99%E8%AE%B0/id6761462644)
 - **Android**: Download on [Google Play](https://play.google.com/store/apps/details?id=com.memexlab.memex)
 - **Early Access (Android APK)**: You can also download the latest APK directly from [GitHub Releases](https://github.com/memex-lab/memex/releases).
 - **Build from Source**: [Compile and install from source](#development).
