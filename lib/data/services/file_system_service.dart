@@ -423,6 +423,10 @@ class FileSystemService {
             .map((a) => a['analysis'] as String? ?? '')
             .where((s) => s.isNotEmpty)
             .toList();
+        final assetOcrTexts = (factInfo?.assetOcrTexts ?? [])
+            .map((a) => a['ocr_text'] as String? ?? '')
+            .where((s) => s.isNotEmpty)
+            .toList();
         await GlobalEventBus.instance.publish(
           userId: userId,
           event: SystemEvent<DataChangeRecord>(
@@ -437,6 +441,7 @@ class FileSystemService {
                 'tags': cardData.tags,
                 'content': rawContent,
                 'asset_analyses': assetAnalysisTexts,
+                'asset_ocr': assetOcrTexts,
                 'insight': cardData.insight?.text,
               },
             ),
@@ -2200,6 +2205,7 @@ class FileSystemService {
 
       // Extract analysis result from media asset analysis files (image/audio markdown links)
       final assetAnalyses = <Map<String, dynamic>>[];
+      final assetOcrTexts = <Map<String, dynamic>>[];
       final assetPattern =
           RegExp(r'(?:!\[(?:图片|image)\]|\[(?:音频|audio)\])\(fs://([^)]+)\)');
       final assetMatches = assetPattern.allMatches(entryContent);
@@ -2230,8 +2236,28 @@ class FileSystemService {
           } catch (e) {
             _logger
                 .warning('Failed to read asset analysis file $assetFile: $e');
-            continue;
           }
+
+          // Read OCR text if .ocr.txt file exists
+          try {
+            final ocrFilename = '$assetFile.ocr.txt';
+            final ocrFilePath = path.join(assetsPath, ocrFilename);
+
+            if (await _baseService.exists(ocrFilePath)) {
+              final ocrContent =
+                  (await _baseService.readFile(ocrFilePath)).trim();
+              if (ocrContent.isNotEmpty) {
+                assetOcrTexts.add({
+                  'index': idx,
+                  'name': assetFile,
+                  'ocr_text': ocrContent,
+                });
+              }
+            }
+          } catch (e) {
+            _logger.warning('Failed to read OCR file for $assetFile: $e');
+          }
+
           idx++;
         }
       }
@@ -2248,6 +2274,7 @@ class FileSystemService {
         datetime: entryDatetime,
         content: entryContent,
         assetAnalyses: assetAnalyses,
+        assetOcrTexts: assetOcrTexts,
       );
     } catch (e) {
       _logger.severe('Failed to extract fact content $factId: $e');
@@ -2532,10 +2559,16 @@ class FactContentResult {
   final String content;
   final List<Map<String, dynamic>> assetAnalyses;
 
+  /// On-device OCR text extracted from image assets.
+  /// Each entry: {'index': int, 'name': String, 'ocr_text': String}.
+  /// Populated from persisted `.ocr.txt` files.
+  final List<Map<String, dynamic>> assetOcrTexts;
+
   FactContentResult({
     required this.timestamp,
     required this.datetime,
     required this.content,
     required this.assetAnalyses,
+    this.assetOcrTexts = const [],
   });
 }

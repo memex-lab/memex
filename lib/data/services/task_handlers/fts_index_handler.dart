@@ -77,7 +77,11 @@ Future<void> _handleCardFts(SearchDao searchDao, String op, String documentKey,
       final analyses = doc['asset_analyses'];
       final assetText =
           analyses is List ? analyses.whereType<String>().join(' ') : '';
-      final combined = assetText.isEmpty ? raw : '$raw $assetText';
+      final ocrTexts = doc['asset_ocr'];
+      final ocrText =
+          ocrTexts is List ? ocrTexts.whereType<String>().join(' ') : '';
+      final combined =
+          [raw, assetText, ocrText].where((s) => s.isNotEmpty).join(' ');
       await searchDao.upsertCardFts(
         factId: documentKey,
         title: doc['title'] as String? ?? '',
