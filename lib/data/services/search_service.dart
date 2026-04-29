@@ -292,8 +292,14 @@ class SearchService {
             .where((s) => s.isNotEmpty)
             .toList();
         final assetText = assetAnalysisTexts.join(' ');
-        final combined =
-            assetText.isEmpty ? rawContent : '$rawContent $assetText';
+        final assetOcrTexts = (factInfo?.assetOcrTexts ?? [])
+            .map((a) => a['ocr_text'] as String? ?? '')
+            .where((s) => s.isNotEmpty)
+            .toList();
+        final ocrText = assetOcrTexts.join(' ');
+        final combined = [rawContent, assetText, ocrText]
+            .where((s) => s.isNotEmpty)
+            .join(' ');
 
         await dao.upsertCardFts(
           factId: factId,

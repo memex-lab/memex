@@ -16,6 +16,7 @@ import 'package:memex/data/services/llm_call_record_service.dart';
 import 'package:memex/data/services/local_task_executor.dart';
 import 'package:memex/data/services/task_handlers/llm_error_utils.dart';
 import 'package:memex/agent/built_in_tools/asset_analysis_tool.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 
 final Logger _logger = getLogger('AnalyzeAssetsHandler');
 
@@ -436,20 +437,54 @@ Future<AssetAnalysisResult?> _analyzeSingleAsset({
       }
     }
 
+    // 4b. On-device OCR for images — persist as {filename}.ocr.txt
+    if (isImage) {
+      try {
+        final ocrText = await _performOnDeviceOcr(assetPath);
+        if (ocrText.isNotEmpty) {
+          final assetFilename = path.basename(assetPath);
+          final ocrFilename = '$assetFilename.ocr.txt';
+          final ocrFile = File(
+            path.join(path.dirname(assetPath), ocrFilename),
+          );
+          await ocrFile.writeAsString(ocrText);
+          _logger.info('Saved OCR result to: ${ocrFile.path}');
+        }
+      } catch (e) {
+        // OCR failure should not break the overall asset analysis
+        _logger.warning('On-device OCR failed for $assetPath: $e');
+      }
+    }
+
     // 5. Add to results (analysis field should include EXIF + tool analysis, matching backend)
     return AssetAnalysisResult(
       factId: factId,
       name: assetName,
       path: assetPath,
       index: index + 1,
-      analysis: finalAnalysisResult.isNotEmpty
-          ? finalAnalysisResult
-          : analysisResult,
+      analysis:
+          finalAnalysisResult.isNotEmpty ? finalAnalysisResult : analysisResult,
       exifData: structuredExifData,
     );
   } catch (e, stack) {
     _logger.severe('Failed to analyze asset: $assetPath', e, stack);
     rethrowIfNonRetryable(e);
+  }
+}
+
+/// Run on-device OCR (Google ML Kit) on an image file and return the
+/// concatenated recognized text. Returns empty string on failure or if no
+/// text is found.
+Future<String> _performOnDeviceOcr(String imagePath) async {
+  final textRecognizer = TextRecognizer(script: TextRecognitionScript.chinese);
+  try {
+    final inputImage = InputImage.fromFilePath(imagePath);
+    final recognizedText = await textRecognizer.processImage(inputImage);
+    if (recognizedText.blocks.isEmpty) return '';
+    // Join all block texts with newlines, preserving reading order
+    return recognizedText.blocks.map((b) => b.text).join('\n');
+  } finally {
+    textRecognizer.close();
   }
 }
 
