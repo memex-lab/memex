@@ -3650,6 +3650,36 @@ abstract class AppLocalizations {
   /// **'Download failed: {error}'**
   String speechModelDownloadFailed(Object error);
 
+  /// No description provided for @deleteSpeechModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete speech model'**
+  String get deleteSpeechModel;
+
+  /// No description provided for @confirmDeleteSpeechModelMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete the downloaded local speech recognition model files? They will be downloaded again the next time local speech-to-text is used.'**
+  String get confirmDeleteSpeechModelMessage;
+
+  /// No description provided for @speechModelDeletedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Speech model files deleted'**
+  String get speechModelDeletedSuccess;
+
+  /// No description provided for @speechModelNotDownloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'No downloaded speech model files found'**
+  String get speechModelNotDownloaded;
+
+  /// No description provided for @speechModelDeleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete speech model files: {error}'**
+  String speechModelDeleteFailed(Object error);
+
   /// No description provided for @speechTranscribing.
   ///
   /// In en, this message translates to:

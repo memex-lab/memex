@@ -1926,6 +1926,24 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get deleteSpeechModel => '删除语音识别模型';
+
+  @override
+  String get confirmDeleteSpeechModelMessage =>
+      '确定要删除已下载的本地语音识别模型文件吗？下次使用本地语音转文字时会重新下载。';
+
+  @override
+  String get speechModelDeletedSuccess => '语音识别模型文件已删除';
+
+  @override
+  String get speechModelNotDownloaded => '未找到已下载的语音识别模型文件';
+
+  @override
+  String speechModelDeleteFailed(Object error) {
+    return '删除语音识别模型文件失败: $error';
+  }
+
+  @override
   String get speechTranscribing => '正在识别...';
 
   @override

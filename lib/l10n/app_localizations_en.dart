@@ -1999,6 +1999,25 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get deleteSpeechModel => 'Delete speech model';
+
+  @override
+  String get confirmDeleteSpeechModelMessage =>
+      'Delete the downloaded local speech recognition model files? They will be downloaded again the next time local speech-to-text is used.';
+
+  @override
+  String get speechModelDeletedSuccess => 'Speech model files deleted';
+
+  @override
+  String get speechModelNotDownloaded =>
+      'No downloaded speech model files found';
+
+  @override
+  String speechModelDeleteFailed(Object error) {
+    return 'Failed to delete speech model files: $error';
+  }
+
+  @override
   String get speechTranscribing => 'Recognizing...';
 
   @override

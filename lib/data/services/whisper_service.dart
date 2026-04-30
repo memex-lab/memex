@@ -1,5 +1,4 @@
 import 'dart:io' show File, Directory, Platform;
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 import 'package:path_provider/path_provider.dart';
@@ -56,6 +55,19 @@ class WhisperService {
     final model = File('$dir/$_modelFileName');
     final tokens = File('$dir/$_tokensFileName');
     return model.existsSync() && tokens.existsSync();
+  }
+
+  /// Delete any downloaded or partially downloaded local model files.
+  Future<bool> deleteDownloadedModel() async {
+    dispose();
+
+    final dirPath = await _modelDir();
+    final dir = Directory(dirPath);
+    if (!await dir.exists()) return false;
+
+    await dir.delete(recursive: true);
+    _logger.info('Deleted SenseVoice model directory: $dirPath');
+    return true;
   }
 
   /// Download model files with progress callback.
@@ -136,6 +148,7 @@ class WhisperService {
   }
 
   /// Get or create the recognizer instance.
+  // ignore: unused_element
   Future<sherpa.OfflineRecognizer> _getRecognizer() async {
     if (_recognizer != null) return _recognizer!;
 
@@ -191,7 +204,7 @@ class WhisperService {
       final wavFile = File(wavPath);
       final fileSize = await wavFile.length();
       if (!skipLengthCheck) {
-        final maxSize = 16000 * 2 * _maxAudioSeconds + 44;
+        const maxSize = 16000 * 2 * _maxAudioSeconds + 44;
         if (fileSize > maxSize * 2) {
           _logger.warning(
               'Audio too long (${fileSize ~/ 1024}KB), max ~${_maxAudioSeconds}s. Skipping.');
@@ -209,7 +222,7 @@ class WhisperService {
       final waveData = sherpa.readWave(wavPath);
 
       // Truncate samples to max duration to prevent OOM
-      final maxSamples = 16000 * _maxAudioSeconds;
+      const maxSamples = 16000 * _maxAudioSeconds;
       final samples = (!skipLengthCheck && waveData.samples.length > maxSamples)
           ? Float32List.fromList(waveData.samples.sublist(0, maxSamples))
           : waveData.samples;
@@ -221,14 +234,14 @@ class WhisperService {
 
       if (samples.length <= chunkSamples) {
         final text = await transcribeSamples(samples);
+        final preview = text?.substring(0, text.length.clamp(0, 100));
         // Clean up converted temp file
         if (wavPath != audioPath) {
           try {
             File(wavPath).deleteSync();
           } catch (_) {}
         }
-        _logger.info(
-            'Transcription complete: ${text?.substring(0, (text?.length ?? 0).clamp(0, 100))}');
+        _logger.info('Transcription complete: $preview');
         return text;
       }
 
