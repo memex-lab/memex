@@ -1,6 +1,5 @@
 import 'dart:ui' as ui;
 import 'package:flutter/cupertino.dart';
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -23,6 +22,7 @@ import 'package:memex/ui/timeline/widgets/timeline/asset_header_gallery.dart';
 import 'package:memex/ui/core/widgets/local_image.dart';
 
 import 'package:memex/ui/chat/widgets/agent_chat_dialog.dart';
+import 'package:memex/data/services/event_bus_service.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import 'package:memex/ui/core/widgets/dicebear_avatar.dart';
@@ -52,9 +52,6 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
   bool _isLoading = true;
   String? _errorMessage;
   late final MemexRouter _memexRouter;
-  Timer? _pollingTimer;
-  static const Duration _pollingInterval =
-      Duration(seconds: 5); // poll every 5s
   String _userName = 'User';
   String? _userAvatar;
   double? _firstImageAspectRatio;
@@ -67,8 +64,23 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
     super.initState();
     _memexRouter = MemexRouter();
     _fetchDetail();
-    _startPollingIfNeeded();
     _loadUserInfo();
+    _setupEventBus();
+  }
+
+  void _setupEventBus() {
+    EventBusService.instance.addHandler(
+      EventBusMessageType.cardDetailUpdated,
+      _handleCardDetailUpdated,
+    );
+  }
+
+  void _handleCardDetailUpdated(EventBusMessage message) {
+    if (message is CardDetailUpdatedMessage &&
+        message.cardId == widget.cardId &&
+        mounted) {
+      _fetchDetail();
+    }
   }
 
   Future<void> _loadUserInfo() async {
@@ -99,7 +111,10 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
 
   @override
   void dispose() {
-    _stopPolling();
+    EventBusService.instance.removeHandler(
+      EventBusMessageType.cardDetailUpdated,
+      _handleCardDetailUpdated,
+    );
     super.dispose();
   }
 
@@ -129,48 +144,6 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
       setState(() {
         _isLoading = false;
       });
-    }
-    // check polling status after setState
-    _startPollingIfNeeded();
-  }
-
-  /// Check if there is a pending comment (last comment is user, no follow-up AI reply yet)
-  bool get _hasPendingComment {
-    if (_detail == null) return false;
-    final comments = _detail!.insight.comments;
-    if (comments.isEmpty) return false;
-
-    // check if last comment is from user
-    final lastComment = comments.last;
-    return !lastComment.isAi;
-  }
-
-  void _startPollingIfNeeded() {
-    if (_hasPendingComment && _pollingTimer == null) {
-      _startPolling();
-    } else if (!_hasPendingComment && _pollingTimer != null) {
-      _stopPolling();
-    }
-  }
-
-  void _startPolling() {
-    if (_pollingTimer != null) {
-      return;
-    }
-
-    _pollingTimer = Timer.periodic(_pollingInterval, (timer) {
-      if (!mounted) {
-        timer.cancel();
-        return;
-      }
-      _fetchDetail();
-    });
-  }
-
-  void _stopPolling() {
-    if (_pollingTimer != null) {
-      _pollingTimer?.cancel();
-      _pollingTimer = null;
     }
   }
 

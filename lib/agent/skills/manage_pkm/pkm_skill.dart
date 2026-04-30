@@ -2,6 +2,7 @@ import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:memex/agent/prompts.dart';
 import 'package:memex/domain/models/card_model.dart';
 import 'package:memex/data/services/file_system_service.dart';
+import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/user_storage.dart';
 
@@ -89,6 +90,11 @@ class PkmSkill extends Skill {
               stopFlag: stopFlag,
             );
           }
+
+          // Notify detail page to refresh after insight update
+          EventBusService.instance.emitEvent(CardDetailUpdatedMessage(
+            cardId: fact_id,
+          ));
 
           return AgentToolResult(
             content: TextPart(Prompts.pkmAgentUpdateCardInsightSuccess(

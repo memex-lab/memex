@@ -76,10 +76,10 @@ Future<void> processWithCardAgent({
 
     final userMessageContent =
         Prompts.cardAgentUserMessagePromptForPublishNewContent(
-          publishTime,
-          factId,
-          enhancedFactContent,
-        );
+      publishTime,
+      factId,
+      enhancedFactContent,
+    );
 
     // 4. Run Agent
     await CardAgent.runWithContent(
@@ -159,12 +159,12 @@ Future<void> handleCardAgentImpl(
         combinedText: combinedText,
       );
       try {
-        final analysisResult = await LocalTaskExecutor.instance
-            .getTaskResultByBizId(
-              userId,
-              'handle_analyze_assets',
-              taskContext.bizId!,
-            );
+        final analysisResult =
+            await LocalTaskExecutor.instance.getTaskResultByBizId(
+          userId,
+          'handle_analyze_assets',
+          taskContext.bizId!,
+        );
 
         if (analysisResult != null &&
             analysisResult.containsKey('asset_analyses')) {
@@ -212,8 +212,7 @@ Future<void> renderAndPushCardUpdate(
   }
 
   final tags = cardData?.tags ?? <String>[];
-  final cardForRender =
-      cardData ??
+  final cardForRender = cardData ??
       CardData(
         factId: factId,
         timestamp: DateTime.now().millisecondsSinceEpoch ~/ 1000,
