@@ -198,4 +198,10 @@ class AppLocalizationsExtZh extends AppLocalizationsZh
 
   @override
   String get appTagline => '记录微光，构筑灵魂';
+
+  @override
+  String get shareDetailStyle => '详情样式';
+
+  @override
+  String get shareCardStyle => '卡片样式';
 }

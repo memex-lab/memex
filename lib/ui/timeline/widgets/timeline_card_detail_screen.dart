@@ -699,7 +699,362 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
       ),
     );
 
-    await ShareService.shareWidgetAsPoster(context, shareWidget);
+    // Build detail-style widget (long image with full content, images, comments)
+    final detailWidget = _buildShareDetailWidget(_detail!);
+
+    await ShareService.shareWidgetAsPoster(
+      context,
+      shareWidget,
+      detailContent: detailWidget,
+    );
+  }
+
+  /// Builds a long-form detail widget for the "detail style" share image.
+  /// Mirrors the real detail page layout: images → title → content+tags →
+  /// date/location → related memories → comments (insight as first comment).
+  Widget _buildShareDetailWidget(CardDetailModel detail) {
+    final imageAssets = detail.assets.where((a) => a.isImage).toList();
+
+    return Container(
+      width: 400,
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 20),
+      color: Colors.white,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 1. Images (same as header media)
+          if (imageAssets.isNotEmpty) ...[
+            for (final asset in imageAssets) ...[
+              ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: LocalImage(
+                  url: asset.url,
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+          ],
+
+          const SizedBox(height: 4),
+
+          // 2. Title (same style as detail page)
+          if (detail.title.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Text(
+                detail.title,
+                style: const TextStyle(
+                  fontFamily: 'PingFang SC',
+                  fontSize: 24,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF334155),
+                  height: 1.375,
+                  letterSpacing: -0.45,
+                ),
+              ),
+            ),
+
+          // 3. Content with inline tags (same as detail page)
+          if (detail.rawContent.isNotEmpty || detail.tags.isNotEmpty)
+            Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: detail.rawContent,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Color(0xFF334155),
+                      height: 1.6,
+                    ),
+                  ),
+                  if (detail.rawContent.isNotEmpty && detail.tags.isNotEmpty)
+                    const TextSpan(text: ' '),
+                  ...detail.tags.map((tag) {
+                    return TextSpan(
+                      text: '#$tag',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Color(0xFF6366F1),
+                        fontWeight: FontWeight.w400,
+                        height: 1.25,
+                        letterSpacing: 0,
+                      ),
+                    );
+                  }).expand((span) => [span, const TextSpan(text: ' ')]),
+                ],
+              ),
+            ),
+
+          const SizedBox(height: 16),
+
+          // 4. Date and Location (same as detail page)
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text(
+                DateFormat('MM-dd').format(detail.timestamp),
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Color(0xFF94A3B8),
+                ),
+              ),
+              if (detail.address.isNotEmpty && detail.address != 'Unknown') ...[
+                const SizedBox(width: 6),
+                Text(
+                  detail.address,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF94A3B8),
+                  ),
+                ),
+              ],
+            ],
+          ),
+
+          const SizedBox(height: 24),
+          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+          const SizedBox(height: 16),
+
+          // 5. Related Memories (same as detail page)
+          if (detail.insight.relatedCards.isNotEmpty) ...[
+            _buildShareRelatedMemories(detail.insight.relatedCards),
+            const SizedBox(height: 24),
+          ],
+
+          // 6. Comments — insight as first comment, then other comments
+          //    (mirrors _buildCommentsList logic)
+          _buildShareCommentsList(detail),
+        ],
+      ),
+    );
+  }
+
+  /// Builds the related memories section for the share detail widget.
+  /// Compact vertical list for the long image (horizontal carousel doesn't
+  /// work well in a static off-screen capture).
+  Widget _buildShareRelatedMemories(List<RelatedCard> cards) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section Header (same as detail page)
+        Row(
+          children: [
+            Container(
+              width: 4,
+              height: 16,
+              decoration: BoxDecoration(
+                color: TimelineTheme.colors.primary,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              UserStorage.l10n.relatedMemories,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF4A5565),
+                letterSpacing: -0.15,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        // Render related cards as compact list items
+        ...cards.take(5).map((card) {
+          final hasImage = card.assets.isNotEmpty && card.assets.first.isImage;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                if (hasImage) ...[
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: SizedBox(
+                      width: 44,
+                      height: 44,
+                      child: LocalImage(
+                        url: card.assets.first.url,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        card.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF334155),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        card.date,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF94A3B8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
+  /// Builds the comments list for the share detail widget.
+  /// Insight is rendered as the first "pinned" comment (same as detail page).
+  Widget _buildShareCommentsList(CardDetailModel detail) {
+    final List<Widget> commentWidgets = [];
+
+    // Insight as first comment (same as _buildCommentsList)
+    if (_showInsightText && detail.insight.character != null) {
+      commentWidgets.add(
+        _buildShareSingleComment(
+          characterId: detail.insight.characterId,
+          avatar: detail.insight.character!.avatar,
+          name: detail.insight.character!.name,
+          content: detail.insight.text,
+          time: DateFormat('MM-dd').format(detail.timestamp),
+          isAuthor: true,
+        ),
+      );
+    }
+
+    // Other comments
+    for (var comment in detail.insight.comments) {
+      final isUser = !comment.isAi;
+      final commentName =
+          isUser ? _userName : (comment.character?.name ?? 'AI');
+      commentWidgets.add(
+        _buildShareSingleComment(
+          characterId: isUser ? 'user' : comment.character?.id,
+          avatar: isUser ? _userAvatar : comment.character?.avatar,
+          name: commentName,
+          content: comment.content,
+          time: DateFormat('MM-dd').format(
+            DateTime.fromMillisecondsSinceEpoch(comment.timestamp * 1000),
+          ),
+          isAi: comment.isAi,
+          replyToName: comment.replyToName,
+        ),
+      );
+    }
+
+    return Column(
+      children: commentWidgets
+          .map((w) =>
+              Padding(padding: const EdgeInsets.only(bottom: 24), child: w))
+          .toList(),
+    );
+  }
+
+  /// Builds a single comment for the share detail widget.
+  /// Static version of _buildSingleComment (no tap handlers, no navigation).
+  Widget _buildShareSingleComment({
+    String? characterId,
+    String? avatar,
+    required String name,
+    required String content,
+    required String time,
+    bool isAuthor = false,
+    bool isAi = false,
+    String? replyToName,
+  }) {
+    // Avatar logic — same as _buildSingleComment
+    Widget avatarWidget;
+    final isMemexSystem = (characterId == null || characterId == '0') && !isAi;
+    final isUserComment = characterId == 'user';
+
+    if (isUserComment) {
+      avatarWidget = DiceBearAvatar(
+        seed: (avatar != null && avatar.isNotEmpty) ? avatar : name,
+        size: 36,
+        backgroundColor: const Color(0xFFEEF2FF),
+      );
+    } else if (isMemexSystem || (characterId == null || characterId == '0')) {
+      avatarWidget = CircleAvatar(
+        radius: 18,
+        backgroundColor: Colors.white,
+        child: ClipOval(
+          child: Image.asset(
+            'assets/icon.png',
+            width: 36,
+            height: 36,
+            fit: BoxFit.cover,
+          ),
+        ),
+      );
+    } else {
+      final seed =
+          (avatar != null && avatar.isNotEmpty) ? avatar : 'companion_$name';
+      avatarWidget = DiceBearAvatar(
+        seed: seed,
+        size: 36,
+        backgroundColor: const Color(0xFFEEF2FF),
+      );
+    }
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        avatarWidget,
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Name row with optional reply chain indicator
+              Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 0,
+                children: [
+                  Text(name, style: AppTextStyles.commentName),
+                  if (replyToName != null) ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      child: Icon(Icons.subdirectory_arrow_right_rounded,
+                          size: 14, color: AppColors.textTertiary),
+                    ),
+                    Text(
+                      replyToName,
+                      style: AppTextStyles.commentName.copyWith(
+                        color: AppColors.primary,
+                        fontSize: 15,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 4),
+              // Use plain Text for share (MarkdownBody may not render well offscreen)
+              Text(
+                content,
+                style: AppTextStyles.commentContent,
+              ),
+              const SizedBox(height: 6),
+              Text(time, style: AppTextStyles.commentDate),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
   void _showInputModal(String cardId) {

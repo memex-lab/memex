@@ -200,4 +200,10 @@ class AppLocalizationsExtEn extends AppLocalizationsEn
 
   @override
   String get appTagline => 'Record the Spark, Architect the Soul';
+
+  @override
+  String get shareDetailStyle => 'Detail Style';
+
+  @override
+  String get shareCardStyle => 'Card Style';
 }

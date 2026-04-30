@@ -10,11 +10,20 @@ class SharePreviewDialog extends StatelessWidget {
   final VoidCallback onShare;
   final VoidCallback onCancel;
 
+  /// Callback to toggle between card style and detail style.
+  /// If null, the toggle button is hidden.
+  final VoidCallback? onToggleStyle;
+
+  /// Whether the current preview is in detail (long image) style.
+  final bool isDetailStyle;
+
   const SharePreviewDialog({
     super.key,
     required this.imageBytes,
     required this.onShare,
     required this.onCancel,
+    this.onToggleStyle,
+    this.isDetailStyle = false,
   });
 
   @override
@@ -96,6 +105,20 @@ class SharePreviewDialog extends StatelessWidget {
                     label: l10n.cancel,
                     isPrimary: false,
                   ),
+                  if (onToggleStyle != null) ...[
+                    const SizedBox(width: 24),
+                    _buildButton(
+                      onTap: onToggleStyle!,
+                      icon: isDetailStyle
+                          ? Icons.crop_square_rounded
+                          : Icons.article_outlined,
+                      label: isDetailStyle
+                          ? l10n.shareCardStyle
+                          : l10n.shareDetailStyle,
+                      isPrimary: false,
+                      isAccent: true,
+                    ),
+                  ],
                   const SizedBox(width: 24),
                   _buildButton(
                     onTap: onShare,
@@ -117,20 +140,23 @@ class SharePreviewDialog extends StatelessWidget {
     required IconData icon,
     required String label,
     required bool isPrimary,
+    bool isAccent = false,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: Column(
         children: [
           Container(
-            width: 64,
-            height: 64,
+            width: 56,
+            height: 56,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: isPrimary
                   ? Colors.white
-                  : Colors.white.withValues(alpha: 0.15),
-              border: isPrimary
+                  : isAccent
+                      ? AppColors.primary.withValues(alpha: 0.25)
+                      : Colors.white.withValues(alpha: 0.15),
+              border: isPrimary || isAccent
                   ? null
                   : Border.all(
                       color: Colors.white.withValues(alpha: 0.3), width: 1.5),
@@ -146,8 +172,12 @@ class SharePreviewDialog extends StatelessWidget {
             ),
             child: Icon(
               icon,
-              color: isPrimary ? AppColors.primary : Colors.white,
-              size: 28,
+              color: isPrimary
+                  ? AppColors.primary
+                  : isAccent
+                      ? Colors.white
+                      : Colors.white,
+              size: 24,
             ),
           ),
           const SizedBox(height: 10),
@@ -155,7 +185,7 @@ class SharePreviewDialog extends StatelessWidget {
             label,
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.9),
-              fontSize: 13,
+              fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
           ),
