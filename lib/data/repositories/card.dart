@@ -8,6 +8,7 @@ import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/llm_call_record_service.dart';
 import 'package:memex/data/services/character_service.dart';
 import 'package:memex/data/services/card_renderer.dart';
+import 'package:memex/utils/token_usage_utils.dart';
 
 final _logger = getLogger('CardDetailEndpoint');
 final _fileSystemService = FileSystemService.instance;
@@ -280,8 +281,8 @@ Future<CardDetailModel> getCardDetail(String cardId) async {
           },
         };
 
-        double _calculateCost(
-            String model, int prompt, int completion, int cached, int thought) {
+        double _calculateCost(String model, int prompt, int completion,
+            int cached, int thought, bool? cachedTokensIncludedInPrompt) {
           // Find matching model pricing
           Map<String, double>? prices;
           for (final key in _pricing.keys) {
@@ -296,8 +297,12 @@ Future<CardDetailModel> getCardDetail(String cardId) async {
 
           if (prices == null) return 0.0;
 
-          // Input cost: (prompt - cached) * input_price + cached * cached_price
-          final effectivePrompt = (prompt - cached) > 0 ? (prompt - cached) : 0;
+          // Input cost: uncached prompt * input_price + cached * cached_price.
+          final effectivePrompt = TokenUsageUtils.nonCachedPromptTokensOrNull(
+                  promptTokens: prompt,
+                  cachedTokens: cached,
+                  cachedTokensIncludedInPrompt: cachedTokensIncludedInPrompt) ??
+              prompt;
           final inputCost = (effectivePrompt * prices['input']!) +
               (cached * prices['cached']!);
 
@@ -316,6 +321,8 @@ Future<CardDetailModel> getCardDetail(String cardId) async {
         int totalPromptTokens = 0;
         int totalCompletionTokens = 0;
         int totalCachedTokens = 0;
+        int totalCacheBaseTokens = 0;
+        int totalCacheUnknownTokens = 0;
         int totalThoughtTokens = 0;
         int totalTokens = 0;
         double totalCost = 0.0;
@@ -329,14 +336,29 @@ Future<CardDetailModel> getCardDetail(String cardId) async {
           final tokens = usage['total_tokens'] as int? ?? 0;
           final agentName = call['agent_name'] as String;
           final model = call['model'] as String? ?? '';
+          final cachedTokensIncludedInPrompt =
+              TokenUsageUtils.cachedTokensIncludedInPrompt(
+            originalUsage: usage['original_usage'],
+            recordedValue: usage['cache_tokens_included_in_prompt'],
+          );
+          final cacheBaseTokens = (usage['cache_base_tokens'] as int?) ??
+              TokenUsageUtils.effectivePromptTokensOrNull(
+                promptTokens: promptTokens,
+                cachedTokens: cachedTokens,
+                cachedTokensIncludedInPrompt: cachedTokensIncludedInPrompt,
+              );
+          final cacheUnknownTokens =
+              cacheBaseTokens == null && cachedTokens > 0 ? cachedTokens : 0;
 
           final cost = _calculateCost(model, promptTokens, completionTokens,
-              cachedTokens, thoughtTokens);
+              cachedTokens, thoughtTokens, cachedTokensIncludedInPrompt);
 
           totalCalls++;
           totalPromptTokens += promptTokens;
           totalCompletionTokens += completionTokens;
           totalCachedTokens += cachedTokens;
+          totalCacheBaseTokens += cacheBaseTokens ?? 0;
+          totalCacheUnknownTokens += cacheUnknownTokens;
           totalThoughtTokens += thoughtTokens;
           totalTokens += tokens;
           totalCost += cost;
@@ -347,6 +369,8 @@ Future<CardDetailModel> getCardDetail(String cardId) async {
               promptTokens: 0,
               completionTokens: 0,
               cachedTokens: 0,
+              cacheBaseTokens: 0,
+              cacheUnknownTokens: 0,
               thoughtTokens: 0,
               totalTokens: 0,
               totalCost: 0.0,
@@ -358,6 +382,9 @@ Future<CardDetailModel> getCardDetail(String cardId) async {
             promptTokens: agentStat.promptTokens + promptTokens,
             completionTokens: agentStat.completionTokens + completionTokens,
             cachedTokens: agentStat.cachedTokens + cachedTokens,
+            cacheBaseTokens: agentStat.cacheBaseTokens + (cacheBaseTokens ?? 0),
+            cacheUnknownTokens:
+                agentStat.cacheUnknownTokens + cacheUnknownTokens,
             thoughtTokens: agentStat.thoughtTokens + thoughtTokens,
             totalTokens: agentStat.totalTokens + tokens,
             totalCost: agentStat.totalCost + cost,
@@ -369,6 +396,8 @@ Future<CardDetailModel> getCardDetail(String cardId) async {
           totalPromptTokens: totalPromptTokens,
           totalCompletionTokens: totalCompletionTokens,
           totalCachedTokens: totalCachedTokens,
+          totalCacheBaseTokens: totalCacheBaseTokens,
+          totalCacheUnknownTokens: totalCacheUnknownTokens,
           totalThoughtTokens: totalThoughtTokens,
           totalTokens: totalTokens,
           totalCost: totalCost,

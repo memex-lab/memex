@@ -41,6 +41,7 @@ void addAgentLogger(AgentController controller) {
         handlerName: null,
         usage: event.response.usage!,
         model: event.response.model,
+        client: event.agent.client,
       );
     },
   );

@@ -32,6 +32,7 @@ import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:memex/ui/character/widgets/persona_chat_screen.dart';
 import 'package:memex/utils/share_service.dart';
 import 'package:memex/ui/core/cards/native_card_factory.dart';
+import 'package:memex/utils/token_usage_utils.dart';
 
 /// Timeline card detail screen - plays full card detail
 class TimelineCardDetailScreen extends StatefulWidget {
@@ -413,6 +414,13 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                 ...stats.byAgent.entries.map((entry) {
                   final agentName = entry.key;
                   final agentStat = entry.value;
+                  final cacheRate = agentStat.cacheUnknownTokens > 0
+                      ? 'N/A'
+                      : TokenUsageUtils.formatCacheRate(
+                          promptTokens: agentStat.cacheBaseTokens,
+                          cachedTokens: agentStat.cachedTokens,
+                          cachedTokensIncludedInPrompt: true,
+                        );
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: _buildStatSection(
@@ -429,6 +437,7 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                             -2, // Special flag for cost
                       },
                       cost: agentStat.totalCost,
+                      cacheRate: cacheRate,
                     ),
                   );
                 }),
@@ -447,11 +456,7 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
   }
 
   Widget _buildStatSection(String title, Map<String, int> stats,
-      {double? cost}) {
-    // Extract values for calculation
-    final prompt = stats['Prompt Tokens'] ?? 0;
-    final cached = stats['Cached Tokens'] ?? 0;
-
+      {double? cost, String? cacheRate}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -466,12 +471,7 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
         ...stats.entries.map((entry) {
           String valueStr;
           if (entry.key == 'Cache Rate') {
-            if (prompt == 0) {
-              valueStr = '0.0%';
-            } else {
-              final rate = (cached / prompt) * 100;
-              valueStr = '${rate.toStringAsFixed(1)}%';
-            }
+            valueStr = cacheRate ?? 'N/A';
           } else if (entry.key == UserStorage.l10n.estimatedCost) {
             valueStr = _formatCost(cost ?? 0.0);
           } else {

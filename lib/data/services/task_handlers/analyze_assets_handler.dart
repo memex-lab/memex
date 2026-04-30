@@ -376,6 +376,7 @@ Future<AssetAnalysisResult?> _analyzeSingleAsset({
           handlerName: 'analyze_assets_handler',
           usage: toolUsage,
           model: toolModel,
+          client: client,
           metadata: {
             'asset_path': assetPath,
             'asset_index': index + 1,

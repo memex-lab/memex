@@ -37,6 +37,7 @@ class ChatTokenUsageEvent extends ChatEvent {
   final int promptTokens;
   final int completionTokens;
   final int cachedTokens;
+  final int cacheBaseTokens;
   final int totalTokens;
   final double estimatedCost;
 
@@ -44,6 +45,7 @@ class ChatTokenUsageEvent extends ChatEvent {
     required this.promptTokens,
     required this.completionTokens,
     required this.cachedTokens,
+    required this.cacheBaseTokens,
     required this.totalTokens,
     required this.estimatedCost,
   });

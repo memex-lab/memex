@@ -4,6 +4,7 @@ import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:memex/ui/core/themes/app_colors.dart';
+import 'package:memex/utils/token_usage_utils.dart';
 
 class ModelStatsPage extends StatefulWidget {
   const ModelStatsPage({super.key});
@@ -124,8 +125,8 @@ class _ModelStatsPageState extends State<ModelStatsPage>
     },
   };
 
-  Map<String, double> _calculateCost(
-      String model, int prompt, int completion, int cached, int thought) {
+  Map<String, double> _calculateCost(String model, int prompt, int completion,
+      int cached, int thought, bool? cachedTokensIncludedInPrompt) {
     // Find matching model pricing
     Map<String, double>? prices;
     for (final key in _pricing.keys) {
@@ -142,8 +143,12 @@ class _ModelStatsPageState extends State<ModelStatsPage>
       return {'input': 0.0, 'output': 0.0, 'total': 0.0};
     }
 
-    // Input cost: (prompt - cached) * input_price + cached * cached_price
-    final effectivePrompt = (prompt - cached) > 0 ? (prompt - cached) : 0;
+    // Input cost: uncached prompt * input_price + cached * cached_price.
+    final effectivePrompt = TokenUsageUtils.nonCachedPromptTokensOrNull(
+            promptTokens: prompt,
+            cachedTokens: cached,
+            cachedTokensIncludedInPrompt: cachedTokensIncludedInPrompt) ??
+        prompt;
     final inputCost =
         (effectivePrompt * prices['input']!) + (cached * prices['cached']!);
 
@@ -180,6 +185,8 @@ class _ModelStatsPageState extends State<ModelStatsPage>
     int totalPromptTokens = 0;
     int totalCompletionTokens = 0;
     int totalCachedTokens = 0;
+    int totalCacheBaseTokens = 0;
+    int totalCacheUnknownTokens = 0;
     int totalThoughtTokens = 0;
     int totalTokens = 0;
     double totalEstimatedCost = 0.0;
@@ -192,18 +199,30 @@ class _ModelStatsPageState extends State<ModelStatsPage>
         final promptTokens = usage['prompt_tokens'] as int? ?? 0;
         final completionTokens = usage['completion_tokens'] as int? ?? 0;
         final cachedTokens = usage['cached_tokens'] as int? ?? 0;
+        final model = call['model'] as String? ?? '';
+        final cachedTokensIncludedInPrompt =
+            TokenUsageUtils.cachedTokensIncludedInPrompt(
+          originalUsage: usage['original_usage'],
+          recordedValue: usage['cache_tokens_included_in_prompt'],
+        );
+        final cacheBaseTokens = (usage['cache_base_tokens'] as int?) ??
+            TokenUsageUtils.effectivePromptTokensOrNull(
+                promptTokens: promptTokens,
+                cachedTokens: cachedTokens,
+                cachedTokensIncludedInPrompt: cachedTokensIncludedInPrompt);
+        final cacheUnknownTokens =
+            cacheBaseTokens == null && cachedTokens > 0 ? cachedTokens : 0;
         final thoughtTokens = usage['thought_tokens'] as int? ?? 0;
         final tokens = usage['total_tokens'] as int? ?? 0;
         final agentName = call['agent_name'] as String;
-        final model = call['model'] as String? ?? '';
 
         final timestamp = call['timestamp'] as int?;
         final callCreatedAt = timestamp != null
             ? DateTime.fromMicrosecondsSinceEpoch(timestamp)
             : DateTime.fromMicrosecondsSinceEpoch(record['created_at'] as int);
 
-        final costs = _calculateCost(
-            model, promptTokens, completionTokens, cachedTokens, thoughtTokens);
+        final costs = _calculateCost(model, promptTokens, completionTokens,
+            cachedTokens, thoughtTokens, cachedTokensIncludedInPrompt);
         final cost = costs['total']!;
 
         // Helper to update stats map
@@ -215,6 +234,8 @@ class _ModelStatsPageState extends State<ModelStatsPage>
               'prompt_tokens': 0,
               'completion_tokens': 0,
               'cached_tokens': 0,
+              'cache_base_tokens': 0,
+              'cache_unknown_tokens': 0,
               'thought_tokens': 0,
               'total_tokens': 0,
               'total_cost': 0.0,
@@ -226,6 +247,10 @@ class _ModelStatsPageState extends State<ModelStatsPage>
           stat['completion_tokens'] =
               (stat['completion_tokens'] as int) + completionTokens;
           stat['cached_tokens'] = (stat['cached_tokens'] as int) + cachedTokens;
+          stat['cache_base_tokens'] =
+              (stat['cache_base_tokens'] as int) + (cacheBaseTokens ?? 0);
+          stat['cache_unknown_tokens'] =
+              (stat['cache_unknown_tokens'] as int) + cacheUnknownTokens;
           stat['thought_tokens'] =
               (stat['thought_tokens'] as int) + thoughtTokens;
           stat['total_tokens'] = (stat['total_tokens'] as int) + tokens;
@@ -244,6 +269,8 @@ class _ModelStatsPageState extends State<ModelStatsPage>
         totalPromptTokens += promptTokens;
         totalCompletionTokens += completionTokens;
         totalCachedTokens += cachedTokens;
+        totalCacheBaseTokens += cacheBaseTokens ?? 0;
+        totalCacheUnknownTokens += cacheUnknownTokens;
         totalThoughtTokens += thoughtTokens;
         totalTokens += tokens;
         totalEstimatedCost += cost;
@@ -256,6 +283,8 @@ class _ModelStatsPageState extends State<ModelStatsPage>
         'prompt_tokens': totalPromptTokens,
         'completion_tokens': totalCompletionTokens,
         'cached_tokens': totalCachedTokens,
+        'cache_base_tokens': totalCacheBaseTokens,
+        'cache_unknown_tokens': totalCacheUnknownTokens,
         'thought_tokens': totalThoughtTokens,
         'total_tokens': totalTokens,
         'total_cost': totalEstimatedCost,
@@ -344,7 +373,9 @@ class _ModelStatsPageState extends State<ModelStatsPage>
         _buildStatCard(
             'Cache Rate',
             _calculateCacheRate(total['cached_tokens'] as int? ?? 0,
-                total['prompt_tokens'] as int? ?? 0),
+                total['cache_base_tokens'] as int? ?? 0,
+                unknownCachedTokens:
+                    total['cache_unknown_tokens'] as int? ?? 0),
             Colors.teal),
         const SizedBox(height: 12),
         Row(
@@ -386,10 +417,13 @@ class _ModelStatsPageState extends State<ModelStatsPage>
     );
   }
 
-  String _calculateCacheRate(int cached, int prompt) {
-    if (prompt == 0) return '0.0%';
-    final rate = (cached / prompt) * 100;
-    return '${rate.toStringAsFixed(1)}%';
+  String _calculateCacheRate(int cached, int prompt,
+      {int unknownCachedTokens = 0}) {
+    if (unknownCachedTokens > 0) return 'N/A';
+    return TokenUsageUtils.formatCacheRate(
+        promptTokens: prompt,
+        cachedTokens: cached,
+        cachedTokensIncludedInPrompt: true);
   }
 
   Widget _buildListTab(String key, String label) {
@@ -409,8 +443,9 @@ class _ModelStatsPageState extends State<ModelStatsPage>
         final itemData = data[itemKey] as Map<String, dynamic>;
 
         final cached = itemData['cached_tokens'] as int? ?? 0;
-        final prompt = itemData['prompt_tokens'] as int? ?? 0;
-        final cacheRate = _calculateCacheRate(cached, prompt);
+        final cacheBase = itemData['cache_base_tokens'] as int? ?? 0;
+        final cacheRate = _calculateCacheRate(cached, cacheBase,
+            unknownCachedTokens: itemData['cache_unknown_tokens'] as int? ?? 0);
         final cost = itemData['total_cost'] as double? ?? 0.0;
 
         return Card(
@@ -507,6 +542,8 @@ class _ModelStatsPageState extends State<ModelStatsPage>
         int recPrompt = 0;
         int recCompletion = 0;
         int recCached = 0;
+        int recCacheBase = 0;
+        int recCacheUnknown = 0;
         int recThought = 0;
         int recTotal = 0;
         double recCost = 0.0;
@@ -516,22 +553,37 @@ class _ModelStatsPageState extends State<ModelStatsPage>
           final p = usage['prompt_tokens'] as int? ?? 0;
           final c = usage['completion_tokens'] as int? ?? 0;
           final ca = usage['cached_tokens'] as int? ?? 0;
+          final model = call['model'] as String? ?? '';
+          final cachedTokensIncludedInPrompt =
+              TokenUsageUtils.cachedTokensIncludedInPrompt(
+            originalUsage: usage['original_usage'],
+            recordedValue: usage['cache_tokens_included_in_prompt'],
+          );
+          final cacheBase = (usage['cache_base_tokens'] as int?) ??
+              TokenUsageUtils.effectivePromptTokensOrNull(
+                  promptTokens: p,
+                  cachedTokens: ca,
+                  cachedTokensIncludedInPrompt: cachedTokensIncludedInPrompt);
+          final cacheUnknown = cacheBase == null && ca > 0 ? ca : 0;
           final t = usage['thought_tokens'] as int? ?? 0;
           recPrompt += p;
           recCompletion += c;
           recCached += ca;
+          recCacheBase += cacheBase ?? 0;
+          recCacheUnknown += cacheUnknown;
           recThought += t;
           recTotal += usage['total_tokens'] as int? ?? 0;
 
-          final model = call['model'] as String? ?? '';
-          final costs = _calculateCost(model, p, c, ca, t);
+          final costs =
+              _calculateCost(model, p, c, ca, t, cachedTokensIncludedInPrompt);
           recCost += costs['total']!;
         }
 
         final timestamp =
             DateTime.fromMicrosecondsSinceEpoch(record['created_at'] as int);
         final timeStr = DateFormat('yyyy-MM-dd HH:mm:ss').format(timestamp);
-        final cacheRate = _calculateCacheRate(recCached, recPrompt);
+        final cacheRate = _calculateCacheRate(recCached, recCacheBase,
+            unknownCachedTokens: recCacheUnknown);
 
         return Card(
           elevation: 1,
@@ -677,11 +729,25 @@ class _ModelStatsPageState extends State<ModelStatsPage>
                       final cached = usage['cached_tokens'] as int? ?? 0;
                       final thought = usage['thought_tokens'] as int? ?? 0;
                       final total = usage['total_tokens'] as int? ?? 0;
-                      final cacheRate = _calculateCacheRate(cached, prompt);
 
                       final model = call['model'] as String? ?? '';
-                      final costs = _calculateCost(
-                          model, prompt, completion, cached, thought);
+                      final cachedTokensIncludedInPrompt =
+                          TokenUsageUtils.cachedTokensIncludedInPrompt(
+                        originalUsage: usage['original_usage'],
+                        recordedValue: usage['cache_tokens_included_in_prompt'],
+                      );
+                      final cacheBase = (usage['cache_base_tokens'] as int?) ??
+                          TokenUsageUtils.effectivePromptTokensOrNull(
+                              promptTokens: prompt,
+                              cachedTokens: cached,
+                              cachedTokensIncludedInPrompt:
+                                  cachedTokensIncludedInPrompt);
+                      final cacheRate = cacheBase == null && cached > 0
+                          ? 'N/A'
+                          : _calculateCacheRate(cached, cacheBase ?? 0);
+
+                      final costs = _calculateCost(model, prompt, completion,
+                          cached, thought, cachedTokensIncludedInPrompt);
                       final totalCost = costs['total']!;
                       final inputCost = costs['input']!;
                       final outputCost = costs['output']!;
@@ -826,7 +892,19 @@ class _ModelStatsPageState extends State<ModelStatsPage>
     final usage = call['usage'] as Map<String, dynamic>;
     final prompt = usage['prompt_tokens'] as int? ?? 0;
     final cached = usage['cached_tokens'] as int? ?? 0;
-    final cacheRate = _calculateCacheRate(cached, prompt);
+    final cachedTokensIncludedInPrompt =
+        TokenUsageUtils.cachedTokensIncludedInPrompt(
+      originalUsage: usage['original_usage'],
+      recordedValue: usage['cache_tokens_included_in_prompt'],
+    );
+    final cacheBase = (usage['cache_base_tokens'] as int?) ??
+        TokenUsageUtils.effectivePromptTokensOrNull(
+            promptTokens: prompt,
+            cachedTokens: cached,
+            cachedTokensIncludedInPrompt: cachedTokensIncludedInPrompt);
+    final cacheRate = cacheBase == null && cached > 0
+        ? 'N/A'
+        : _calculateCacheRate(cached, cacheBase ?? 0);
 
     showDialog(
       context: context,

@@ -266,6 +266,8 @@ class LLMStats {
   final int totalPromptTokens;
   final int totalCompletionTokens;
   final int totalCachedTokens;
+  final int totalCacheBaseTokens;
+  final int totalCacheUnknownTokens;
   final int totalThoughtTokens;
   final int totalTokens;
   final double totalCost;
@@ -276,6 +278,8 @@ class LLMStats {
     required this.totalPromptTokens,
     required this.totalCompletionTokens,
     required this.totalCachedTokens,
+    this.totalCacheBaseTokens = 0,
+    this.totalCacheUnknownTokens = 0,
     required this.totalThoughtTokens,
     required this.totalTokens,
     this.totalCost = 0.0,
@@ -294,6 +298,8 @@ class LLMStats {
       totalPromptTokens: json['total_prompt_tokens'] as int? ?? 0,
       totalCompletionTokens: json['total_completion_tokens'] as int? ?? 0,
       totalCachedTokens: json['total_cached_tokens'] as int? ?? 0,
+      totalCacheBaseTokens: json['total_cache_base_tokens'] as int? ?? 0,
+      totalCacheUnknownTokens: json['total_cache_unknown_tokens'] as int? ?? 0,
       totalThoughtTokens: json['total_thought_tokens'] as int? ?? 0,
       totalTokens: json['total_tokens'] as int? ?? 0,
       totalCost: (json['total_cost'] as num?)?.toDouble() ?? 0.0,
@@ -307,6 +313,8 @@ class LLMStats {
       'total_prompt_tokens': totalPromptTokens,
       'total_completion_tokens': totalCompletionTokens,
       'total_cached_tokens': totalCachedTokens,
+      'total_cache_base_tokens': totalCacheBaseTokens,
+      'total_cache_unknown_tokens': totalCacheUnknownTokens,
       'total_thought_tokens': totalThoughtTokens,
       'total_tokens': totalTokens,
       'total_cost': totalCost,
@@ -321,6 +329,8 @@ class AgentStats {
   final int promptTokens;
   final int completionTokens;
   final int cachedTokens;
+  final int cacheBaseTokens;
+  final int cacheUnknownTokens;
   final int thoughtTokens;
   final int totalTokens;
   final double totalCost;
@@ -330,6 +340,8 @@ class AgentStats {
     required this.promptTokens,
     required this.completionTokens,
     required this.cachedTokens,
+    this.cacheBaseTokens = 0,
+    this.cacheUnknownTokens = 0,
     required this.thoughtTokens,
     required this.totalTokens,
     this.totalCost = 0.0,
@@ -341,6 +353,8 @@ class AgentStats {
       promptTokens: json['prompt_tokens'] as int? ?? 0,
       completionTokens: json['completion_tokens'] as int? ?? 0,
       cachedTokens: json['cached_tokens'] as int? ?? 0,
+      cacheBaseTokens: json['cache_base_tokens'] as int? ?? 0,
+      cacheUnknownTokens: json['cache_unknown_tokens'] as int? ?? 0,
       thoughtTokens: json['thought_tokens'] as int? ?? 0,
       totalTokens: json['total_tokens'] as int? ?? 0,
       totalCost: (json['total_cost'] as num?)?.toDouble() ?? 0.0,
@@ -353,6 +367,8 @@ class AgentStats {
       'prompt_tokens': promptTokens,
       'completion_tokens': completionTokens,
       'cached_tokens': cachedTokens,
+      'cache_base_tokens': cacheBaseTokens,
+      'cache_unknown_tokens': cacheUnknownTokens,
       'thought_tokens': thoughtTokens,
       'total_tokens': totalTokens,
       'total_cost': totalCost,

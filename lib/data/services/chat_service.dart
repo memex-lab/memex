@@ -15,6 +15,7 @@ import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/domain/models/agent_definitions.dart';
 import 'package:memex/utils/user_storage.dart';
+import 'package:memex/utils/token_usage_utils.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 import 'package:yaml/yaml.dart';
@@ -61,9 +62,13 @@ class ChatService {
     // 1. Session Management
     try {
       if (finalSessionId.isEmpty) {
-        finalSessionId = await _createSession(userId, agentName, [
-          {'type': 'text', 'text': message}
-        ], isQuickQuery: isQuickQuery);
+        finalSessionId = await _createSession(
+            userId,
+            agentName,
+            [
+              {'type': 'text', 'text': message}
+            ],
+            isQuickQuery: isQuickQuery);
       }
 
       // Notify UI of the active session ID immediately
@@ -343,27 +348,40 @@ When the user disputes content you generated (such as Cards, PKM entries, or Ass
       int totalPrompt = 0;
       int totalCompletion = 0;
       int totalCached = 0;
+      int totalCacheBase = 0;
       int totalTokens = 0;
       double totalCost = 0.0;
 
       for (final msg in event.modelMessages) {
         final u = msg.usage;
-        if (u == null)
+        if (u == null) {
           continue; // Just in case, but lint says it's not null. Actually if lint says it CANT be null, then I don't need check.
+        }
         // Wait, if lint says "Left operand cant be null", it means msg.usage is NOT null.
         // So I can just use it.
 
         final p = u.promptTokens;
         final c = u.completionTokens;
         final ca = u.cachedToken;
+        final cachedTokensIncludedInPrompt =
+            TokenUsageUtils.cachedTokensIncludedInPrompt(
+          client: event.agent.client,
+          originalUsage: u.originalUsage,
+        );
+        final cacheBase = TokenUsageUtils.effectivePromptTokensOrNull(
+            promptTokens: p,
+            cachedTokens: ca,
+            cachedTokensIncludedInPrompt: cachedTokensIncludedInPrompt);
 
         totalPrompt += p;
         totalCompletion += c;
         totalCached += ca;
+        totalCacheBase += cacheBase ?? 0;
         totalTokens += u.totalTokens;
 
         // Calculate cost
-        final cost = _calculateCost(msg.model, p, c, ca, u.thoughtToken);
+        final cost = _calculateCost(
+            msg.model, p, c, ca, u.thoughtToken, cachedTokensIncludedInPrompt);
         totalCost += cost['total']!;
       }
 
@@ -393,6 +411,7 @@ When the user disputes content you generated (such as Cards, PKM entries, or Ass
         'prompt_tokens': totalPrompt,
         'completion_tokens': totalCompletion,
         'cached_tokens': totalCached,
+        'cache_base_tokens': totalCacheBase,
         'total_tokens': totalTokens,
         'total_cost': totalCost
       });
@@ -403,6 +422,7 @@ When the user disputes content you generated (such as Cards, PKM entries, or Ass
           promptTokens: sessionTotalUsage['prompt_tokens'] as int? ?? 0,
           completionTokens: sessionTotalUsage['completion_tokens'] as int? ?? 0,
           cachedTokens: sessionTotalUsage['cached_tokens'] as int? ?? 0,
+          cacheBaseTokens: sessionTotalUsage['cache_base_tokens'] as int? ?? 0,
           totalTokens: sessionTotalUsage['total_tokens'] as int? ?? 0,
           estimatedCost: sessionTotalUsage['total_cost'] as double? ?? 0.0,
         ));
@@ -412,6 +432,7 @@ When the user disputes content you generated (such as Cards, PKM entries, or Ass
           promptTokens: totalPrompt,
           completionTokens: totalCompletion,
           cachedTokens: totalCached,
+          cacheBaseTokens: totalCacheBase,
           totalTokens: totalTokens,
           estimatedCost: totalCost,
         ));
@@ -526,13 +547,16 @@ When the user disputes content you generated (such as Cards, PKM entries, or Ass
     },
   };
 
-  Map<String, double> _calculateCost(
-      String model, int prompt, int completion, int cached, int thought) {
+  Map<String, double> _calculateCost(String model, int prompt, int completion,
+      int cached, int thought, bool? cachedTokensIncludedInPrompt) {
     // Default to gemini-1.5-flash pricing if unknown
     final prices = _pricing[model] ?? _pricing['gemini-3-flash-preview']!;
 
-    // Effective prompt tokens = total prompt - cached tokens
-    final effectivePrompt = (prompt - cached).clamp(0, prompt);
+    final effectivePrompt = TokenUsageUtils.nonCachedPromptTokensOrNull(
+            promptTokens: prompt,
+            cachedTokens: cached,
+            cachedTokensIncludedInPrompt: cachedTokensIncludedInPrompt) ??
+        prompt;
 
     final inputCost =
         (effectivePrompt * prices['input']!) + (cached * prices['cached']!);
@@ -640,6 +664,7 @@ When the user disputes content you generated (such as Cards, PKM entries, or Ass
                 'prompt_tokens': 0,
                 'completion_tokens': 0,
                 'cached_tokens': 0,
+                'cache_base_tokens': 0,
                 'total_tokens': 0,
                 'total_cost': 0.0,
               };
@@ -651,6 +676,8 @@ When the user disputes content you generated (such as Cards, PKM entries, or Ass
             (usage['completion_tokens'] as int? ?? 0),
         'cached_tokens': (currentTotal['cached_tokens'] as int? ?? 0) +
             (usage['cached_tokens'] as int? ?? 0),
+        'cache_base_tokens': (currentTotal['cache_base_tokens'] as int? ?? 0) +
+            (usage['cache_base_tokens'] as int? ?? 0),
         'total_tokens': (currentTotal['total_tokens'] as int? ?? 0) +
             (usage['total_tokens'] as int? ?? 0),
         'total_cost': (currentTotal['total_cost'] as double? ?? 0.0) +

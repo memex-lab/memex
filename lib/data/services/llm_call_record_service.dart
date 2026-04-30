@@ -7,6 +7,7 @@ import 'package:synchronized/synchronized.dart';
 import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:uuid/uuid.dart';
 import 'package:memex/utils/logger.dart';
+import 'package:memex/utils/token_usage_utils.dart';
 import 'file_system_service.dart';
 import 'base_file_service.dart';
 
@@ -137,6 +138,7 @@ class LLMCallRecordService {
     String? handlerName,
     required ModelUsage usage,
     required String model,
+    Object? client,
     Map<String, dynamic>? metadata,
   }) async {
     return _lock.synchronized(() async {
@@ -165,6 +167,16 @@ class LLMCallRecordService {
 
         // Append the new call to the record.
         final callId = _uuid.v4();
+        final cachedTokensIncludedInPrompt =
+            TokenUsageUtils.cachedTokensIncludedInPrompt(
+          client: client,
+          originalUsage: usage.originalUsage,
+        );
+        final cacheBaseTokens = TokenUsageUtils.effectivePromptTokensOrNull(
+          promptTokens: usage.promptTokens,
+          cachedTokens: usage.cachedToken,
+          cachedTokensIncludedInPrompt: cachedTokensIncludedInPrompt,
+        );
         final call = {
           'call_id': callId,
           'agent_name': agentName,
@@ -177,6 +189,9 @@ class LLMCallRecordService {
             'total_tokens': usage.totalTokens,
             if (usage.model != null) 'model': usage.model,
             'cached_tokens': usage.cachedToken,
+            if (cachedTokensIncludedInPrompt != null)
+              'cache_tokens_included_in_prompt': cachedTokensIncludedInPrompt,
+            if (cacheBaseTokens != null) 'cache_base_tokens': cacheBaseTokens,
             'thought_tokens': usage.thoughtToken,
             if (usage.originalUsage != null)
               'original_usage': usage.originalUsage,
@@ -316,6 +331,8 @@ class LLMCallRecordService {
     int totalPromptTokens = 0;
     int totalCompletionTokens = 0;
     int totalCachedTokens = 0;
+    int totalCacheBaseTokens = 0;
+    int totalCacheUnknownTokens = 0;
     int totalThoughtTokens = 0;
     int totalTokens = 0;
 
@@ -329,6 +346,18 @@ class LLMCallRecordService {
         final promptTokens = usage['prompt_tokens'] as int? ?? 0;
         final completionTokens = usage['completion_tokens'] as int? ?? 0;
         final cachedTokens = usage['cached_tokens'] as int? ?? 0;
+        final cachedTokensIncludedInPrompt =
+            TokenUsageUtils.cachedTokensIncludedInPrompt(
+          originalUsage: usage['original_usage'],
+          recordedValue: usage['cache_tokens_included_in_prompt'],
+        );
+        final cacheBaseTokens = (usage['cache_base_tokens'] as int?) ??
+            TokenUsageUtils.effectivePromptTokensOrNull(
+                promptTokens: promptTokens,
+                cachedTokens: cachedTokens,
+                cachedTokensIncludedInPrompt: cachedTokensIncludedInPrompt);
+        final cacheUnknownTokens =
+            cacheBaseTokens == null && cachedTokens > 0 ? cachedTokens : 0;
         final thoughtTokens = usage['thought_tokens'] as int? ?? 0;
         final tokens = usage['total_tokens'] as int? ?? 0;
         final agentName = call['agent_name'] as String;
@@ -346,6 +375,8 @@ class LLMCallRecordService {
             'prompt_tokens': 0,
             'completion_tokens': 0,
             'cached_tokens': 0,
+            'cache_base_tokens': 0,
+            'cache_unknown_tokens': 0,
             'thought_tokens': 0,
             'total_tokens': 0,
           };
@@ -358,6 +389,10 @@ class LLMCallRecordService {
             (dayStat['completion_tokens'] as int) + completionTokens;
         dayStat['cached_tokens'] =
             (dayStat['cached_tokens'] as int) + cachedTokens;
+        dayStat['cache_base_tokens'] =
+            (dayStat['cache_base_tokens'] as int) + (cacheBaseTokens ?? 0);
+        dayStat['cache_unknown_tokens'] =
+            (dayStat['cache_unknown_tokens'] as int) + cacheUnknownTokens;
         dayStat['thought_tokens'] =
             (dayStat['thought_tokens'] as int) + thoughtTokens;
         dayStat['total_tokens'] = (dayStat['total_tokens'] as int) + tokens;
@@ -371,6 +406,8 @@ class LLMCallRecordService {
             'prompt_tokens': 0,
             'completion_tokens': 0,
             'cached_tokens': 0,
+            'cache_base_tokens': 0,
+            'cache_unknown_tokens': 0,
             'thought_tokens': 0,
             'total_tokens': 0,
           };
@@ -383,6 +420,10 @@ class LLMCallRecordService {
             (monthStat['completion_tokens'] as int) + completionTokens;
         monthStat['cached_tokens'] =
             (monthStat['cached_tokens'] as int) + cachedTokens;
+        monthStat['cache_base_tokens'] =
+            (monthStat['cache_base_tokens'] as int) + (cacheBaseTokens ?? 0);
+        monthStat['cache_unknown_tokens'] =
+            (monthStat['cache_unknown_tokens'] as int) + cacheUnknownTokens;
         monthStat['thought_tokens'] =
             (monthStat['thought_tokens'] as int) + thoughtTokens;
         monthStat['total_tokens'] = (monthStat['total_tokens'] as int) + tokens;
@@ -394,6 +435,8 @@ class LLMCallRecordService {
             'prompt_tokens': 0,
             'completion_tokens': 0,
             'cached_tokens': 0,
+            'cache_base_tokens': 0,
+            'cache_unknown_tokens': 0,
             'thought_tokens': 0,
             'total_tokens': 0,
           };
@@ -406,6 +449,10 @@ class LLMCallRecordService {
             (sceneStat['completion_tokens'] as int) + completionTokens;
         sceneStat['cached_tokens'] =
             (sceneStat['cached_tokens'] as int) + cachedTokens;
+        sceneStat['cache_base_tokens'] =
+            (sceneStat['cache_base_tokens'] as int) + (cacheBaseTokens ?? 0);
+        sceneStat['cache_unknown_tokens'] =
+            (sceneStat['cache_unknown_tokens'] as int) + cacheUnknownTokens;
         sceneStat['thought_tokens'] =
             (sceneStat['thought_tokens'] as int) + thoughtTokens;
         sceneStat['total_tokens'] = (sceneStat['total_tokens'] as int) + tokens;
@@ -417,6 +464,8 @@ class LLMCallRecordService {
             'prompt_tokens': 0,
             'completion_tokens': 0,
             'cached_tokens': 0,
+            'cache_base_tokens': 0,
+            'cache_unknown_tokens': 0,
             'thought_tokens': 0,
             'total_tokens': 0,
           };
@@ -429,6 +478,10 @@ class LLMCallRecordService {
             (aggAgentStat['completion_tokens'] as int) + completionTokens;
         aggAgentStat['cached_tokens'] =
             (aggAgentStat['cached_tokens'] as int) + cachedTokens;
+        aggAgentStat['cache_base_tokens'] =
+            (aggAgentStat['cache_base_tokens'] as int) + (cacheBaseTokens ?? 0);
+        aggAgentStat['cache_unknown_tokens'] =
+            (aggAgentStat['cache_unknown_tokens'] as int) + cacheUnknownTokens;
         aggAgentStat['thought_tokens'] =
             (aggAgentStat['thought_tokens'] as int) + thoughtTokens;
         aggAgentStat['total_tokens'] =
@@ -439,6 +492,8 @@ class LLMCallRecordService {
         totalPromptTokens += promptTokens;
         totalCompletionTokens += completionTokens;
         totalCachedTokens += cachedTokens;
+        totalCacheBaseTokens += cacheBaseTokens ?? 0;
+        totalCacheUnknownTokens += cacheUnknownTokens;
         totalThoughtTokens += thoughtTokens;
         totalTokens += tokens;
       }
@@ -450,6 +505,8 @@ class LLMCallRecordService {
         'prompt_tokens': totalPromptTokens,
         'completion_tokens': totalCompletionTokens,
         'cached_tokens': totalCachedTokens,
+        'cache_base_tokens': totalCacheBaseTokens,
+        'cache_unknown_tokens': totalCacheUnknownTokens,
         'thought_tokens': totalThoughtTokens,
         'total_tokens': totalTokens,
       },
@@ -460,4 +517,3 @@ class LLMCallRecordService {
     };
   }
 }
-

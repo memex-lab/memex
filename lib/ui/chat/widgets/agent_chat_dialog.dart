@@ -11,6 +11,7 @@ import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:go_router/go_router.dart';
 import 'package:memex/routing/routes.dart';
 import 'package:memex/ui/core/themes/app_colors.dart';
+import 'package:memex/utils/token_usage_utils.dart';
 
 // --- Display Models ---
 
@@ -190,6 +191,8 @@ class _AgentChatDialogState extends State<AgentChatDialog>
           promptTokens: usage['prompt_tokens'] as int? ?? 0,
           completionTokens: usage['completion_tokens'] as int? ?? 0,
           cachedTokens: usage['cached_tokens'] as int? ?? 0,
+          cacheBaseTokens: (usage['cache_base_tokens'] as int?) ??
+              (usage['prompt_tokens'] as int? ?? 0),
           totalTokens: usage['total_tokens'] as int? ?? 0,
           estimatedCost: usage['total_cost'] as double? ?? 0.0,
         );
@@ -882,11 +885,10 @@ class _AgentChatDialogState extends State<AgentChatDialog>
     if (_lastTokenUsage == null) return const SizedBox.shrink();
     final item = _lastTokenUsage!;
 
-    String cacheRate = '0.0%';
-    if (item.promptTokens > 0) {
-      final rate = (item.cachedTokens / item.promptTokens) * 100;
-      cacheRate = '${rate.toStringAsFixed(1)}%';
-    }
+    final cacheRate = TokenUsageUtils.formatCacheRate(
+        promptTokens: item.cacheBaseTokens,
+        cachedTokens: item.cachedTokens,
+        cachedTokensIncludedInPrompt: true);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
