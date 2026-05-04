@@ -17,6 +17,12 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue?style=flat-square" alt="License"></a>
 </p>
 
+<p align="center">
+  <a href="https://www.memexlab.ai/">官网</a> ·
+  <a href="https://apps.apple.com/app/memexai/id6760325170">App Store</a> ·
+  <a href="https://play.google.com/store/apps/details?id=com.memexlab.memex">Google Play</a>
+</p>
+
 
 ## Memex 是什么？
 
