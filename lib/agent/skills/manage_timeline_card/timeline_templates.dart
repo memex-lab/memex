@@ -8,11 +8,13 @@ void _reqStr(Map<String, dynamic> data, String key, [String? templateId]) {
   final v = data[key];
   if (v == null) {
     throw ArgumentError(
-        'Template${templateId != null ? " $templateId" : ""}: required field "$key" is missing.');
+      'Template${templateId != null ? " $templateId" : ""}: required field "$key" is missing.',
+    );
   }
   if (v is! String) {
     throw ArgumentError(
-        'Template${templateId != null ? " $templateId" : ""}: "$key" must be String, got ${v.runtimeType}.');
+      'Template${templateId != null ? " $templateId" : ""}: "$key" must be String, got ${v.runtimeType}.',
+    );
   }
   if (v.trim().isEmpty &&
       (key == 'url' ||
@@ -22,7 +24,8 @@ void _reqStr(Map<String, dynamic> data, String key, [String? templateId]) {
           key == 'image_url' ||
           key == 'video_url')) {
     throw ArgumentError(
-        'Template${templateId != null ? " $templateId" : ""}: "$key" must not be empty.');
+      'Template${templateId != null ? " $templateId" : ""}: "$key" must not be empty.',
+    );
   }
 }
 
@@ -30,11 +33,13 @@ void _reqNum(Map<String, dynamic> data, String key, [String? templateId]) {
   final v = data[key];
   if (v == null) {
     throw ArgumentError(
-        'Template${templateId != null ? " $templateId" : ""}: required field "$key" is missing.');
+      'Template${templateId != null ? " $templateId" : ""}: required field "$key" is missing.',
+    );
   }
   if (v is! num) {
     throw ArgumentError(
-        'Template${templateId != null ? " $templateId" : ""}: "$key" must be Number, got ${v.runtimeType}.');
+      'Template${templateId != null ? " $templateId" : ""}: "$key" must be Number, got ${v.runtimeType}.',
+    );
   }
 }
 
@@ -42,14 +47,16 @@ void _reqInt(Map<String, dynamic> data, String key, [String? templateId]) {
   final v = data[key];
   if (v == null) {
     throw ArgumentError(
-        'Template${templateId != null ? " $templateId" : ""}: required field "$key" is missing.');
+      'Template${templateId != null ? " $templateId" : ""}: required field "$key" is missing.',
+    );
   }
   if (v is! int) {
     if (v is num && v.toInt() == v) {
       return; // allow double that is whole number
     }
     throw ArgumentError(
-        'Template${templateId != null ? " $templateId" : ""}: "$key" must be int, got ${v.runtimeType}.');
+      'Template${templateId != null ? " $templateId" : ""}: "$key" must be int, got ${v.runtimeType}.',
+    );
   }
 }
 
@@ -57,11 +64,27 @@ void _reqList(Map<String, dynamic> data, String key, [String? templateId]) {
   final v = data[key];
   if (v == null) {
     throw ArgumentError(
-        'Template${templateId != null ? " $templateId" : ""}: required field "$key" is missing.');
+      'Template${templateId != null ? " $templateId" : ""}: required field "$key" is missing.',
+    );
   }
   if (v is! List) {
     throw ArgumentError(
-        'Template${templateId != null ? " $templateId" : ""}: "$key" must be List, got ${v.runtimeType}.');
+      'Template${templateId != null ? " $templateId" : ""}: "$key" must be List, got ${v.runtimeType}.',
+    );
+  }
+}
+
+void _reqNonEmptyStr(
+  Map<String, dynamic> data,
+  String key, [
+  String? templateId,
+]) {
+  _reqStr(data, key, templateId);
+  final v = data[key] as String;
+  if (v.trim().isEmpty) {
+    throw ArgumentError(
+      'Template${templateId != null ? " $templateId" : ""}: "$key" must not be empty.',
+    );
   }
 }
 
@@ -69,7 +92,8 @@ void _optStr(Map<String, dynamic> data, String key) {
   final v = data[key];
   if (v != null && v is! String) {
     throw ArgumentError(
-        'Optional "$key" must be String if present, got ${v.runtimeType}.');
+      'Optional "$key" must be String if present, got ${v.runtimeType}.',
+    );
   }
 }
 
@@ -77,7 +101,8 @@ void _optNum(Map<String, dynamic> data, String key) {
   final v = data[key];
   if (v != null && v is! num) {
     throw ArgumentError(
-        'Optional "$key" must be Number if present, got ${v.runtimeType}.');
+      'Optional "$key" must be Number if present, got ${v.runtimeType}.',
+    );
   }
 }
 
@@ -85,7 +110,8 @@ void _optBool(Map<String, dynamic> data, String key) {
   final v = data[key];
   if (v != null && v is! bool) {
     throw ArgumentError(
-        'Optional "$key" must be Boolean if present, got ${v.runtimeType}.');
+      'Optional "$key" must be Boolean if present, got ${v.runtimeType}.',
+    );
   }
 }
 
@@ -126,12 +152,14 @@ void validateTemplateData(String templateId, Map<String, dynamic> data) {
       _optStr(data, 'location');
       if (data['items'] != null) {
         final itemsList = data['items'];
-        if (itemsList is! List)
+        if (itemsList is! List) {
           throw ArgumentError('Template $t: "items" must be List.');
+        }
         for (var i = 0; i < itemsList.length; i++) {
           final item = itemsList[i];
-          if (item is! Map)
+          if (item is! Map) {
             throw ArgumentError('Template $t: items[$i] must be Map.');
+          }
           final m = Map<String, dynamic>.from(item);
           _reqStr(m, 'name', t);
           _reqStr(m, 'amount', t);
@@ -144,8 +172,9 @@ void validateTemplateData(String templateId, Map<String, dynamic> data) {
       final items = data['items'];
       for (var i = 0; i < items.length; i++) {
         final item = items[i];
-        if (item is! Map)
+        if (item is! Map) {
           throw ArgumentError('Template $t: items[$i] must be Map.');
+        }
         final m = Map<String, dynamic>.from(item);
         _reqStr(m, 'title', t);
         _reqNum(m, 'value', t);
@@ -165,7 +194,8 @@ void validateTemplateData(String templateId, Map<String, dynamic> data) {
       final moodVal = data['mood_name'] ?? data['mood'];
       if (moodVal == null) {
         throw ArgumentError(
-            'Template $t: required "mood_name" or "mood" is missing.');
+          'Template $t: required "mood_name" or "mood" is missing.',
+        );
       }
       if (moodVal is! String) {
         throw ArgumentError('Template $t: mood_name/mood must be String.');
@@ -197,12 +227,14 @@ void validateTemplateData(String templateId, Map<String, dynamic> data) {
       _optStr(data, 'due_date');
       if (data['subtasks'] != null) {
         final subtasksList = data['subtasks'];
-        if (subtasksList is! List)
+        if (subtasksList is! List) {
           throw ArgumentError('Template $t: "subtasks" must be List.');
+        }
         for (var i = 0; i < subtasksList.length; i++) {
           final item = subtasksList[i];
-          if (item is! Map)
+          if (item is! Map) {
             throw ArgumentError('Template $t: subtasks[$i] must be Map.');
+          }
           final m = Map<String, dynamic>.from(item);
           _reqStr(m, 'title', t);
           _optBool(m, 'completed');
@@ -213,8 +245,9 @@ void validateTemplateData(String templateId, Map<String, dynamic> data) {
       _reqStr(data, 'habit_name', t);
       _reqNum(data, 'streak', t);
       if (data['history'] != null) {
-        if (data['history'] is! List)
+        if (data['history'] is! List) {
           throw ArgumentError('Template $t: "history" must be List.');
+        }
       }
       break;
     case 'procedure':
@@ -232,16 +265,49 @@ void validateTemplateData(String templateId, Map<String, dynamic> data) {
       _optStr(data, 'title');
       _optStr(data, 'icon');
       if (data['details'] != null) {
-        if (data['details'] is! List)
+        if (data['details'] is! List) {
           throw ArgumentError('Template $t: "details" must be List.');
+        }
+      }
+      break;
+    case 'digest':
+      _reqNonEmptyStr(data, 'summary', t);
+      _reqList(data, 'sections', t);
+      final sections = data['sections'];
+      if (sections.isEmpty) {
+        throw ArgumentError('Template $t: "sections" must not be empty.');
+      }
+      for (var i = 0; i < sections.length; i++) {
+        final section = sections[i];
+        if (section is! Map) {
+          throw ArgumentError('Template $t: sections[$i] must be Map.');
+        }
+        final m = Map<String, dynamic>.from(section);
+        _reqNonEmptyStr(m, 'type', t);
+        _reqNonEmptyStr(m, 'title', t);
+        _reqList(m, 'items', t);
+        final items = m['items'];
+        if (items.isEmpty) {
+          throw ArgumentError(
+            'Template $t: sections[$i].items must not be empty.',
+          );
+        }
+        for (var j = 0; j < items.length; j++) {
+          if (items[j] is! String || (items[j] as String).trim().isEmpty) {
+            throw ArgumentError(
+              'Template $t: sections[$i].items[$j] must be a non-empty String.',
+            );
+          }
+        }
       }
       break;
     case 'snippet':
       _reqStr(data, 'text', t);
       _optStr(data, 'style');
       if (data['tags'] != null) {
-        if (data['tags'] is! List)
+        if (data['tags'] is! List) {
           throw ArgumentError('Template $t: "tags" must be List.');
+        }
       }
       break;
     case 'article':
@@ -255,8 +321,9 @@ void validateTemplateData(String templateId, Map<String, dynamic> data) {
       final messagesList = data['messages'];
       for (var i = 0; i < messagesList.length; i++) {
         final msg = messagesList[i];
-        if (msg is! Map)
+        if (msg is! Map) {
           throw ArgumentError('Template $t: messages[$i] must be Map.');
+        }
         final m = Map<String, dynamic>.from(msg);
         _reqStr(m, 'text', t);
         _optStr(m, 'sender');
@@ -284,7 +351,8 @@ void validateTemplateData(String templateId, Map<String, dynamic> data) {
       break;
     default:
       throw ArgumentError(
-          'Unknown template_id: "$templateId". Allowed: ${allowedTemplateIds.join(", ")}.');
+        'Unknown template_id: "$templateId". Allowed: ${allowedTemplateIds.join(", ")}.',
+      );
   }
 }
 
@@ -297,21 +365,25 @@ void validateUiConfig(Map<String, dynamic> config) {
   final tid = config['template_id'];
   if (tid is! String || tid.isEmpty) {
     throw ArgumentError(
-        'ui_configs entry "template_id" must be a non-empty String.');
+      'ui_configs entry "template_id" must be a non-empty String.',
+    );
   }
   final templateId = tid;
   if (!allowedTemplateIds.contains(templateId)) {
     throw ArgumentError(
-        'template_id "$templateId" is not allowed. Allowed: ${allowedTemplateIds.join(", ")}.');
+      'template_id "$templateId" is not allowed. Allowed: ${allowedTemplateIds.join(", ")}.',
+    );
   }
   if (!config.containsKey('data')) {
     throw ArgumentError(
-        'ui_configs entry for template "$templateId" missing "data".');
+      'ui_configs entry for template "$templateId" missing "data".',
+    );
   }
   final data = config['data'];
   if (data is! Map) {
     throw ArgumentError(
-        'ui_configs entry for template "$templateId": "data" must be an object (Map).');
+      'ui_configs entry for template "$templateId": "data" must be an object (Map).',
+    );
   }
   validateTemplateData(templateId, Map<String, dynamic>.from(data));
 }
@@ -324,7 +396,7 @@ final List<Map<String, dynamic>> timelineTemplates = [
 - `url` (String, required): Link address.
 - `title` (String, optional): Link title (defaults to card title).
 - `domain` (String, optional): Domain name, automatically extracted from URL if not provided.
-'''
+''',
   },
   {
     'template_id': 'person',
@@ -334,7 +406,7 @@ final List<Map<String, dynamic>> timelineTemplates = [
 - `image_url` (String, optional): Avatar link.
 - `relation` (String, optional): Relationship, e.g., "Colleague", "Friend".
 - `status` (String, optional): Status, e.g., "Online", "Busy", "Away".
-'''
+''',
   },
   {
     'template_id': 'place',
@@ -345,7 +417,7 @@ final List<Map<String, dynamic>> timelineTemplates = [
 - `address` (String, optional): Detailed address.
 - `latitude` or `lat` (Number, optional): Latitude (WGS-84 coordinate system).
 - `longitude` or `lng` (Number, optional): Longitude (WGS-84 coordinate system). If coordinates are provided, a map preview will be displayed.
-'''
+''',
   },
   {
     'template_id': 'spec_sheet',
@@ -356,7 +428,7 @@ final List<Map<String, dynamic>> timelineTemplates = [
 - `image_url` (String, optional): Image.
 - `subtitle` (String, optional): Subtitle.
 - `specs` (Map<String, dynamic>, optional): Specification key-value pairs, e.g., {"Brand": "Apple", "Model": "iPhone 15"}.
-'''
+''',
   },
   {
     'template_id': 'transaction',
@@ -368,7 +440,7 @@ final List<Map<String, dynamic>> timelineTemplates = [
 - `items` (List<Map>, optional): Transaction detail list, each item contains:
   - `name` (String, required): Item name.
   - `amount` (String, required): Item price, must include currency unit, e.g., "¥20.00", "\$10.99".
-'''
+''',
   },
   {
     'template_id': 'metric',
@@ -382,7 +454,7 @@ final List<Map<String, dynamic>> timelineTemplates = [
   - `label` (String, optional): Label description.
   - `trend` (String, optional): Trend, options: "up", "down", "neutral".
   - `color` (String, optional): Color theme, options: "indigo", "emerald", "orange".
-'''
+''',
   },
   {
     'template_id': 'rating',
@@ -392,7 +464,7 @@ final List<Map<String, dynamic>> timelineTemplates = [
 - `score` (Number, required): Rating value.
 - `max_score` (Number, optional): Maximum score, defaults to 5.0.
 - `comment` (String, optional): Review text.
-'''
+''',
   },
   {
     'template_id': 'mood',
@@ -402,7 +474,7 @@ final List<Map<String, dynamic>> timelineTemplates = [
 - `intensity` (Number, optional): Intensity (1-10), defaults to 5.
 - `color_hex` (String, required): Color hex value.
 - `trigger` (String, optional): Trigger reason.
-'''
+''',
   },
   {
     'template_id': 'progress',
@@ -412,7 +484,7 @@ final List<Map<String, dynamic>> timelineTemplates = [
 - `total` (Number, required): Total value.
 - `unit` (String, optional): Unit, defaults to "%".
 - `label` (String, optional): Label description (defaults to card title).
-'''
+''',
   },
   {
     'template_id': 'event',
@@ -422,7 +494,7 @@ final List<Map<String, dynamic>> timelineTemplates = [
 - `start_time` (String, required): Start time (ISO8601 format string).
 - `end_time` (String, optional): End time.
 - `location` (String, optional): Location.
-'''
+''',
   },
   {
     'template_id': 'duration',
@@ -430,7 +502,7 @@ final List<Map<String, dynamic>> timelineTemplates = [
     'data_structure': '''
 - `title` (String, optional): Title (defaults to card title).
 - `elapsed` (int, required): Duration in seconds.
-'''
+''',
   },
   {
     'template_id': 'task',
@@ -443,7 +515,7 @@ final List<Map<String, dynamic>> timelineTemplates = [
   - `completed` (Boolean, optional): Whether completed.
 - `priority` (String, optional): Priority, e.g., "high".
 - `due_date` (String, optional): Due date.
-'''
+''',
   },
   {
     'template_id': 'routine',
@@ -452,7 +524,7 @@ final List<Map<String, dynamic>> timelineTemplates = [
 - `habit_name` (String, required): Habit name.
 - `streak` (Number, required): Consecutive days.
 - `history` (List<Boolean>, optional): Completion records for the last 7 days, defaults to 7 false values.
-'''
+''',
   },
   {
     'template_id': 'procedure',
@@ -460,7 +532,7 @@ final List<Map<String, dynamic>> timelineTemplates = [
     'data_structure': '''
 - `title` (String, optional): Procedure title (defaults to card title).
 - `steps` (List<String>, required): Step list, in order.
-'''
+''',
   },
   {
     'template_id': 'compact',
@@ -471,7 +543,19 @@ final List<Map<String, dynamic>> timelineTemplates = [
 - `icon` (String, optional): Valid flutter icon key (e.g. Icons.home) suitable for this information.
 - `details` (List<String>, optional): Supplementary information list, e.g., ["200ml", "10:00"].
 - `color` (String, required): Color hex value (e.g., "#EF4444").
-'''
+''',
+  },
+  {
+    'template_id': 'digest',
+    'use_case':
+        'Mixed, long, or messy raw inputs that contain multiple semantic domains such as project updates, thoughts, emotions, schedules, and todos. Use as an overview card, not as a replacement for specific action cards.',
+    'data_structure': '''
+- `summary` (String, required): One concise synthesis of the whole input.
+- `sections` (List<Map>, required): Structured semantic sections. Use 2-6 sections when possible. Each section contains:
+  - `type` (String, required): One of "project", "thought", "mood", "schedule", "todo", "decision", "idea", "health", "finance", "relationship", "note", "other".
+  - `title` (String, required): Short section title.
+  - `items` (List<String>, required): Key extracted points for this section. Keep each item short and faithful to the raw input.
+''',
   },
   {
     'template_id': 'snippet',
@@ -480,7 +564,7 @@ final List<Map<String, dynamic>> timelineTemplates = [
 - `text` (String, required): Text content (Markdown supported).
 - `style` (String, optional): Style, options: "default", "mono", "handwritten".
 - `tags` (List<String>, optional): Tag list.
-'''
+''',
   },
   {
     'template_id': 'article',
@@ -489,7 +573,7 @@ final List<Map<String, dynamic>> timelineTemplates = [
 - `title` (String, optional): Article title (defaults to card title).
 - `body` (String, required): Body content (Markdown supported).
 - `image_url` (String, optional): Cover image.
-'''
+''',
   },
   {
     'template_id': 'conversation',
@@ -500,7 +584,7 @@ final List<Map<String, dynamic>> timelineTemplates = [
   - `text` (String, required): Message content.
   - `sender` (String, optional): Sender name.
   - `isMe` (Boolean, optional): Whether sent by me.
-'''
+''',
   },
   {
     'template_id': 'quote',
@@ -509,7 +593,7 @@ final List<Map<String, dynamic>> timelineTemplates = [
 - `content` (String, required): Quote content.
 - `author` (String, optional): Author.
 - `source` (String, optional): Source/origin.
-'''
+''',
   },
   {
     'template_id': 'snapshot',
@@ -518,7 +602,7 @@ final List<Map<String, dynamic>> timelineTemplates = [
 - `image_url` (String, required): Image link.
 - `caption` (String, optional): Image caption (defaults to card title).
 - `location` (String, optional): Shooting location.
-'''
+''',
   },
   {
     'template_id': 'gallery',
@@ -526,7 +610,7 @@ final List<Map<String, dynamic>> timelineTemplates = [
     'data_structure': '''
 - `image_urls` (List<String>, required): Image link list.
 - `title` (String, optional): Title (defaults to card title).
-'''
+''',
   },
   {
     'template_id': 'video',
@@ -535,6 +619,6 @@ final List<Map<String, dynamic>> timelineTemplates = [
 - `video_url` (String, required): Video link.
 - `title` (String, optional): Video title (defaults to card title).
 - `duration` (String, optional): Video duration.
-'''
+''',
   },
 ];

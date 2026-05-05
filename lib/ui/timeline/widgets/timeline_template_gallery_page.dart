@@ -90,6 +90,75 @@ class TimelineTemplateGalleryPage extends StatelessWidget {
           ),
           _buildSection(
             context,
+            isZh ? 'Digest Card (复杂记录整理)' : 'Digest Card (Mixed record digest)',
+            'digest',
+            isZh
+                ? {
+                    'summary': '今天的记录同时涉及项目延期、情绪压力、后续会议和几个待办，适合先做总览再拆出行动项。',
+                    'sections': [
+                      {
+                        'type': 'project',
+                        'title': '项目进展',
+                        'items': ['和 A 讨论了延期风险', 'PRD 需要重新整理优先级'],
+                      },
+                      {
+                        'type': 'mood',
+                        'title': '情绪状态',
+                        'items': ['对延期有些焦虑', '担心评审时信息不够聚焦'],
+                      },
+                      {
+                        'type': 'schedule',
+                        'title': '日程',
+                        'items': ['下周三约 B 开一次产品评审会'],
+                      },
+                      {
+                        'type': 'todo',
+                        'title': '待办',
+                        'items': ['今晚整理 PRD', '补一页风险说明'],
+                      },
+                    ],
+                  }
+                : {
+                    'summary':
+                        'This record mixes a project delay, emotional pressure, a follow-up meeting, and a few action items, so it works best as a structured overview.',
+                    'sections': [
+                      {
+                        'type': 'project',
+                        'title': 'Project update',
+                        'items': [
+                          'Discussed delay risks with Alex',
+                          'The PRD needs a priority pass',
+                        ],
+                      },
+                      {
+                        'type': 'mood',
+                        'title': 'Mood',
+                        'items': [
+                          'A little anxious about the delay',
+                          'Worried the review may feel unfocused',
+                        ],
+                      },
+                      {
+                        'type': 'schedule',
+                        'title': 'Schedule',
+                        'items': [
+                          'Set up a product review with Blair next Wednesday',
+                        ],
+                      },
+                      {
+                        'type': 'todo',
+                        'title': 'Todos',
+                        'items': [
+                          'Clean up the PRD tonight',
+                          'Add one risk slide',
+                        ],
+                      },
+                    ],
+                  },
+            title: isZh ? '复杂项目记录' : 'Mixed project note',
+          ),
+          _buildSection(
+            context,
             isZh
                 ? '4. Conversation Card (对话)'
                 : '4. Conversation Card (Conversation)',

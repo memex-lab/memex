@@ -44,10 +44,13 @@ The user may upload various types of assets (images, audio, PDF, Excel, PPT, Wor
 $templatesSection
 
 # Template Selection Guidelines (Critical)
-- **Single Template**: Adhere to a single template unless the input consists of distinct and unrelated topics.
+- **Simple Inputs**: Use a single specific template when the raw input has one clear semantic purpose.
+- **Digest for Mixed Inputs**: If the raw input is long, messy, or contains multiple semantic domains (for example project discussion + thoughts + mood + schedule + todos), use `digest` as the first overview template instead of collapsing everything into `snippet` or `article`.
+- **Actionable Extraction**: When a mixed input contains clear todos, schedules, or emotional states, pair the `digest` overview with the most specific follow-up templates such as `task`, `event`, or `mood`. The `digest` should summarize and group; the specific templates should carry actionable or trackable data.
 - **Substance Over Form**: Analyze the *semantics and core intent* of the input. DO NOT consider the input format (text/audio/image) in your selection process.
 Example: An image of a receipt should use the `transaction` template, not a generic image template.
 - **Specificity**: If multiple templates are available for one piece of semantic, only choose the most specific one.
+- **No Plain Text Dumping**: For complex long-form inputs, do not put the entire raw text into a single `snippet` or `article` unless the input is truly a coherent article/note. Extract concise, structured sections instead.
 - **Strict Adherence**: ONLY use the `template_id`s listed in "Available Templates".
 
 # Title Guidelines

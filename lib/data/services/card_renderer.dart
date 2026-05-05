@@ -42,6 +42,7 @@ const Set<String> _nativeCardTemplates = {
   'article',
   'conversation',
   'quote',
+  'digest',
   // Visual
   'snapshot',
   'gallery',
@@ -308,4 +309,3 @@ Future<Map<String, dynamic>> extractAssetsAndRawText(
     'rawText': rawText,
   };
 }
-

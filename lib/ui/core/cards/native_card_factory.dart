@@ -7,6 +7,7 @@ import 'package:memex/ui/core/cards/templates/textual/compact_card.dart';
 import 'package:memex/ui/core/cards/templates/textual/snippet_card.dart';
 import 'package:memex/ui/core/cards/templates/textual/article_card.dart';
 import 'package:memex/ui/core/cards/templates/textual/conversation_card.dart';
+import 'package:memex/ui/core/cards/templates/textual/digest_card.dart';
 import 'package:memex/ui/core/cards/templates/textual/insight_summary_card.dart';
 import 'package:memex/ui/core/cards/templates/textual/quote_card.dart';
 import 'package:memex/ui/core/cards/templates/visual/snapshot_card.dart';
@@ -197,6 +198,8 @@ class NativeCardFactory {
           data: mergedData,
           onTap: onTap,
         );
+      case 'digest':
+        return DigestCard(data: mergedData, onTap: onTap);
       case 'insight_summary':
         return InsightSummaryCard(
           data: mergedData,
