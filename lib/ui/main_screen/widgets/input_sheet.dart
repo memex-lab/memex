@@ -441,36 +441,6 @@ class _InputSheetState extends State<InputSheet>
     super.dispose();
   }
 
-  Future<void> _showImageSourceDialog() async {
-    if (!mounted) return;
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: Text(UserStorage.l10n.selectFromAlbum),
-              onTap: () {
-                Navigator.pop(context);
-                _pickImage(ImageSource.gallery);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.camera_alt),
-              title: Text(UserStorage.l10n.takePhoto),
-              onTap: () {
-                Navigator.pop(context);
-                _pickImage(ImageSource.camera);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Future<void> _pickImage(ImageSource source) async {
     try {
       if (source == ImageSource.camera) {
@@ -842,8 +812,8 @@ class _InputSheetState extends State<InputSheet>
     final t = (animValue + offset) % 1.0;
     final size = 48.0 + 24.0 * t;
     return Positioned(
-      left: (64 - size) / 2,
-      top: (64 - size) / 2,
+      left: (48 - size) / 2,
+      top: (48 - size) / 2,
       child: Container(
         width: size,
         height: size,
@@ -1648,11 +1618,12 @@ class _InputSheetState extends State<InputSheet>
                                                 animation: _pulseController,
                                                 builder: (context, child) {
                                                   return SizedBox(
-                                                    width: 64,
-                                                    height: 64,
+                                                    width: 48,
+                                                    height: 48,
                                                     child: Stack(
                                                       alignment:
                                                           Alignment.center,
+                                                      clipBehavior: Clip.none,
                                                       children: [
                                                         if (_isRecording) ...[
                                                           _buildRipple(
@@ -1731,7 +1702,9 @@ class _InputSheetState extends State<InputSheet>
                                             ),
                                             const SizedBox(width: 16),
                                             GestureDetector(
-                                              onTap: _showImageSourceDialog,
+                                              onTap: () => _pickImage(
+                                                ImageSource.camera,
+                                              ),
                                               child: Container(
                                                 width: 48,
                                                 height: 48,
@@ -1742,7 +1715,29 @@ class _InputSheetState extends State<InputSheet>
                                                       BorderRadius.circular(24),
                                                 ),
                                                 child: const Icon(
-                                                  Icons.image,
+                                                  Icons.camera_alt,
+                                                  size: 22,
+                                                  color:
+                                                      AppColors.textSecondary,
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 16),
+                                            GestureDetector(
+                                              onTap: () => _pickImage(
+                                                ImageSource.gallery,
+                                              ),
+                                              child: Container(
+                                                width: 48,
+                                                height: 48,
+                                                decoration: BoxDecoration(
+                                                  color:
+                                                      const Color(0xFFF7F8FA),
+                                                  borderRadius:
+                                                      BorderRadius.circular(24),
+                                                ),
+                                                child: const Icon(
+                                                  Icons.photo_library,
                                                   size: 22,
                                                   color:
                                                       AppColors.textSecondary,
