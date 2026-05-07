@@ -812,8 +812,8 @@ class _InputSheetState extends State<InputSheet>
     final t = (animValue + offset) % 1.0;
     final size = 48.0 + 24.0 * t;
     return Positioned(
-      left: (64 - size) / 2,
-      top: (64 - size) / 2,
+      left: (48 - size) / 2,
+      top: (48 - size) / 2,
       child: Container(
         width: size,
         height: size,
@@ -1618,11 +1618,12 @@ class _InputSheetState extends State<InputSheet>
                                                 animation: _pulseController,
                                                 builder: (context, child) {
                                                   return SizedBox(
-                                                    width: 64,
-                                                    height: 64,
+                                                    width: 48,
+                                                    height: 48,
                                                     child: Stack(
                                                       alignment:
                                                           Alignment.center,
+                                                      clipBehavior: Clip.none,
                                                       children: [
                                                         if (_isRecording) ...[
                                                           _buildRipple(
