@@ -701,14 +701,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.0"
-  glados:
-    dependency: "direct dev"
-    description:
-      name: glados
-      sha256: c39446c0c4fe83a6ee6ee4fdee5a1afa27050619c7df390bf4c3b77b6f1acb33
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.1.7"
   glob:
     dependency: transitive
     description:

@@ -96,7 +96,6 @@ dev_dependencies:
   flutter_launcher_icons: ^0.14.4
   flutter_native_splash: ^2.4.7
   sqlite3: ^2.4.6
-  glados: ^1.1.4
 
 flutter:
   uses-material-design: true
