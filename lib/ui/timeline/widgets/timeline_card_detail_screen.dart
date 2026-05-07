@@ -16,6 +16,7 @@ import 'package:flutter/services.dart';
 import 'package:memex/domain/models/card_detail_model.dart';
 import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/utils/toast_helper.dart';
+import 'package:memex/utils/time_context.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:memex/ui/timeline/widgets/timeline/asset_header_gallery.dart';
@@ -153,8 +154,8 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
 
     final contextString = StringBuffer();
     contextString.writeln('Card Fact ID: ${_detail!.id}');
-    contextString
-        .writeln('Card Timestamp: ${_detail!.timestamp.toIso8601String()}');
+    contextString.writeln(
+        'Card Local Time: ${formatLocalDateTimeWithZone(_detail!.timestamp)}');
     contextString.writeln('Card Title: ${_detail!.title}');
     contextString.writeln('Card Content: ${_detail!.rawContent}');
     if (_detail!.insight.text.isNotEmpty) {
@@ -168,9 +169,9 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
             comment.isAi ? 'AI' : (comment.character?.name ?? 'User');
         final authorId =
             comment.isAi ? 'ai_agent' : (comment.character?.id ?? 'user');
-        final time =
-            DateTime.fromMillisecondsSinceEpoch(comment.timestamp * 1000)
-                .toIso8601String();
+        final time = formatLocalDateTimeWithZone(
+          DateTime.fromMillisecondsSinceEpoch(comment.timestamp * 1000),
+        );
         contextString.writeln(
             '- [$time] $authorName (ID: $authorId): ${comment.content}');
       }

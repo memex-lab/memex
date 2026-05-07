@@ -332,6 +332,7 @@ Usage:
     String factId,
     String identity,
     String userRawInput,
+    String entryLocalTime,
     String initialInsight,
     String relatedKnowledge,
     String instruction,
@@ -368,6 +369,7 @@ Examples:
   - After generating your comment, call `SaveComment` and `MemoryWrite` in parallel if you have something to remember.
 
 # User Raw Input (Fact ID: $factId)
+Entry Local Time: $entryLocalTime
 <user_raw_input>
 $userRawInput
 </user_raw_input>

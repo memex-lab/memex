@@ -10,6 +10,7 @@ import 'package:memex/data/services/task_handlers/llm_error_utils.dart';
 import 'package:memex/domain/models/custom_agent_config.dart';
 import 'package:memex/domain/models/system_event.dart';
 import 'package:memex/utils/logger.dart';
+import 'package:memex/utils/time_context.dart';
 
 /// Escape XML special characters in text content.
 String _xmlEscape(String text) {
@@ -117,8 +118,8 @@ String defaultEventToXml(SystemEvent event) {
 }
 
 /// Compact serializer for user_input_submitted events.
-/// Keeps only fact_id and combined_text — media assets are already sent as
-/// multimodal parts, and timestamps / markdown_entry are internal bookkeeping.
+/// Keeps the raw input plus its original local timestamp. Media assets are
+/// already sent as multimodal parts, and markdown_entry is internal bookkeeping.
 String _userInputCompactXml(SystemEvent event) {
   final buf = StringBuffer();
   buf.writeln(
@@ -128,7 +129,12 @@ String _userInputCompactXml(SystemEvent event) {
 
   final payload = event.payload;
   if (payload is UserInputSubmittedPayload) {
+    final inputTime = dateTimeFromUnixSeconds(payload.createdAtTs);
     buf.writeln('  <fact_id>${_xmlEscape(payload.factId)}</fact_id>');
+    buf.writeln(
+        '  <input_local_time>${_xmlEscape(formatLocalDateTimeWithZone(inputTime))}</input_local_time>');
+    buf.writeln(
+        '  <input_unix_seconds>${payload.createdAtTs}</input_unix_seconds>');
     buf.writeln(
         '  <combined_text>${_xmlEscape(payload.combinedText)}</combined_text>');
   } else {

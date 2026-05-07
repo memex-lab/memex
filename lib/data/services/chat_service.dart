@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dart_agent_core/dart_agent_core.dart';
-import 'package:intl/intl.dart' show DateFormat;
 import 'package:logging/logging.dart';
 import 'package:memex/agent/memex_skill_host_agent/memex_skill_host_agent.dart';
 import 'package:memex/agent/pure_skill_host_agent/pure_skill_host_agent.dart';
@@ -13,6 +12,7 @@ import 'package:memex/domain/models/custom_agent_config.dart';
 import 'package:memex/domain/models/llm_config.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/utils/logger.dart';
+import 'package:memex/utils/time_context.dart';
 import 'package:memex/domain/models/agent_definitions.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/utils/token_usage_utils.dart';
@@ -299,8 +299,7 @@ When the user disputes content you generated (such as Cards, PKM entries, or Ass
     }
 
     userMessages.add(UserMessage([
-      TextPart(
-          "<system-reminder>current time is ${DateFormat("yyyy-MM-dd HH:mm:ss").format(DateTime.now())}</system-reminder>."),
+      TextPart(buildCurrentTimeReminder(DateTime.now())),
       TextPart(message),
     ]));
 

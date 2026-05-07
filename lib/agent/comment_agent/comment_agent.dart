@@ -12,7 +12,7 @@ import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/file_operation_service.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:logging/logging.dart';
-import 'package:intl/intl.dart';
+import 'package:memex/utils/time_context.dart';
 
 class CommentAgent {
   static final Logger _logger = getLogger('CommentAgent');
@@ -26,6 +26,8 @@ class CommentAgent {
     String? pkmContext,
     required String rawInputContent,
     String? initialInsight,
+    DateTime? currentTime,
+    DateTime? entryTime,
     bool withMemoryManagement = false,
   }) async {
     final fileService = FileSystemService.instance;
@@ -58,7 +60,8 @@ class CommentAgent {
     // 3. Find PKM Context if not provided
     if (pkmContext == null || pkmContext.isEmpty) {
       pkmContext = await _findPkmContext(
-          userId, workingDirectory, pkmPath, factId, fileOpService);
+          userId, workingDirectory, pkmPath, factId, fileOpService,
+          baseTime: entryTime ?? currentTime ?? DateTime.now());
     }
 
     // 4. Create Skill
@@ -92,6 +95,7 @@ class CommentAgent {
       factId: factId,
       rawInputContent: rawInputContent,
       initialInsight: initialInsight,
+      entryTime: entryTime,
       pkmContext: pkmContext,
       workingDirectory: workingDirectory,
       pkmStructure: pkmStructure,
@@ -138,8 +142,10 @@ class CommentAgent {
     required String rawInputContent,
     String? initialInsight,
     DateTime? currentTime,
+    DateTime? entryTime,
     bool withMemoryManagement = false,
   }) async {
+    final effectiveCurrentTime = currentTime ?? DateTime.now();
     final agent = await _createAgent(
       client: client,
       modelConfig: modelConfig,
@@ -149,13 +155,12 @@ class CommentAgent {
       pkmContext: pkmContext,
       rawInputContent: rawInputContent,
       initialInsight: initialInsight,
+      currentTime: effectiveCurrentTime,
+      entryTime: entryTime,
       withMemoryManagement: withMemoryManagement,
     );
     final state = agent.state;
-    final timeStr =
-        DateFormat("yyyy-MM-dd HH:mm:ss").format(currentTime ?? DateTime.now());
-    final systemReminder =
-        "<system-reminder>\nCurrent Time: $timeStr\n</system-reminder>\n\n";
+    final systemReminder = buildCurrentTimeReminder(effectiveCurrentTime);
     final fullUserContent = "$systemReminder$userContent";
     final userMessage = UserMessage([TextPart(fullUserContent)]);
 
@@ -201,7 +206,7 @@ class CommentAgent {
   /// Falls back to recent daily facts if the specific fact_id isn't in PKM yet.
   static Future<String> _findPkmContext(String userId, String workingDirectory,
       String pkmPath, String factId, FileOperationService fileOpService,
-      {int contextLines = 10}) async {
+      {required DateTime baseTime, int contextLines = 10}) async {
     final buffer = StringBuffer();
 
     // 1. Try to find the specific fact_id in PKM
@@ -229,7 +234,7 @@ class CommentAgent {
     // This gives the character awareness of what the user has been up to lately
     try {
       final recentContext = await _getRecentFactsContext(
-          userId, workingDirectory, fileOpService);
+          userId, workingDirectory, fileOpService, baseTime);
       if (recentContext.isNotEmpty) {
         buffer.writeln("\n## Recent User Activity (last few days):");
         buffer.writeln(recentContext);
@@ -245,9 +250,10 @@ class CommentAgent {
   /// Read the most recent daily fact files to give the character
   /// awareness of the user's recent life context.
   static Future<String> _getRecentFactsContext(String userId,
-      String workingDirectory, FileOperationService fileOpService) async {
+      String workingDirectory, FileOperationService fileOpService,
+      DateTime baseTime) async {
     final fileSystem = FileSystemService.instance;
-    final now = DateTime.now();
+    final now = baseTime.toLocal();
     final buffer = StringBuffer();
     var totalChars = 0;
     const maxChars = 3000; // Keep it concise

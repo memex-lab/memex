@@ -9,6 +9,7 @@ import 'package:memex/data/services/memory_sync_service.dart';
 import 'package:memex/data/services/task_handlers/llm_error_utils.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/utils/logger.dart';
+import 'package:memex/utils/time_context.dart';
 
 final Logger _logger = getLogger('PkmAgentHandler');
 
@@ -53,7 +54,7 @@ Future<void> processWithPkmAgent({
     // Build asset info string
     final assetInfo = formatAssetAnalysis(assetAnalyses);
 
-    final currentTime = dateTime.toString().substring(0, 19);
+    final currentTime = formatLocalDateTimeWithZone(dateTime);
 
     // 3. (Client initialized above)
 
@@ -92,14 +93,11 @@ Future<void> handlePkmAgentImpl(
     // 1. Parse Payload
     final factId = payload['fact_id'] as String;
     final combinedText = payload['combined_text'] as String;
-    final createdAtTs = (payload['created_at_ts'] as num?)?.toInt();
 
     // Check for dry_run flag in payload, default to false
     final dryRun = payload['dry_run'] as bool? ?? false;
 
-    final inputDateTime = createdAtTs != null
-        ? DateTime.fromMillisecondsSinceEpoch(createdAtTs * 1000)
-        : DateTime.now();
+    final inputDateTime = dateTimeFromUnixSeconds(payload['created_at_ts']);
 
     // 2. Retrieve asset analyses (Stage 1 result)
     List<Map<String, dynamic>>? assetAnalyses;

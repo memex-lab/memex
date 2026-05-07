@@ -17,6 +17,7 @@ import 'package:memex/domain/models/agent_definitions.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/domain/models/card_model.dart';
 import 'package:memex/utils/logger.dart';
+import 'package:memex/utils/time_context.dart';
 import 'package:memex/utils/user_storage.dart';
 
 final _logger = getLogger('KnowledgeInsightAgent');
@@ -181,8 +182,7 @@ class KnowledgeInsightAgent {
 
         final messages = [
           UserMessage([
-            TextPart(
-                "<system-reminder>current time is ${DateFormat("yyyy-MM-dd HH:mm:ss").format(DateTime.now())}.</system-reminder>"),
+            TextPart(buildCurrentTimeReminder(DateTime.now())),
             TextPart(inputMessage),
           ])
         ];

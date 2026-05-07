@@ -5,8 +5,8 @@ import 'package:memex/agent/companion_agent/companion_memory.dart';
 import 'package:memex/data/services/character_service.dart';
 import 'package:memex/domain/models/character_model.dart';
 import 'package:memex/utils/logger.dart';
+import 'package:memex/utils/time_context.dart';
 import 'package:memex/utils/user_storage.dart';
-import 'package:intl/intl.dart';
 
 /// Lightweight companion agent for 1-on-1 emotional chat.
 ///
@@ -25,6 +25,7 @@ class CompanionAgent {
     required String userId,
     required String characterId,
     required String userMessage,
+    DateTime? userMessageTime,
     List<LLMMessage> history = const [],
   }) async* {
     // 1. Load all context layers
@@ -49,10 +50,13 @@ class CompanionAgent {
         emotionalState, relationship, recentFacts, characterMemory);
 
     // 3. Assemble messages
+    final timedUserMessage = userMessageTime == null
+        ? userMessage
+        : '${buildMessageTimePrefix(userMessageTime)}$userMessage';
     final messages = <LLMMessage>[
       SystemMessage(systemPrompt),
       ...history,
-      UserMessage([TextPart(userMessage)]),
+      UserMessage([TextPart(timedUserMessage)]),
     ];
 
     // 4. Stream LLM response
@@ -117,7 +121,7 @@ class CompanionAgent {
     String recentFacts,
     String characterMemory,
   ) {
-    final now = DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now());
+    final now = formatLocalDateTimeWithZone(DateTime.now());
     final lang = UserStorage.l10n.commentLanguageInstruction;
 
     final buffer = StringBuffer();

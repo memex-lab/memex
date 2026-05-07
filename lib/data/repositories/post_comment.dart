@@ -10,6 +10,7 @@ import 'package:memex/domain/models/agent_definitions.dart';
 import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/data/services/global_event_bus.dart';
 import 'package:memex/domain/models/system_event.dart';
+import 'package:memex/utils/time_context.dart';
 
 final _logger = Logger('PostCommentEndpoint');
 final _fileSystemService = FileSystemService.instance;
@@ -42,12 +43,13 @@ Future<Map<String, dynamic>> postCommentEndpoint(
 
     // Save user comment to card (persist immediately)
     final commentId = const Uuid().v4();
+    final commentTimestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     await _fileSystemService.updateCardFile(userId, cardId, (card) {
       final newComment = CardComment(
         id: commentId,
         content: content,
         isAi: false,
-        timestamp: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+        timestamp: commentTimestamp,
         replyToId: replyToId,
       );
       return card.copyWith(comments: [...card.comments, newComment]);
@@ -85,6 +87,7 @@ Future<Map<String, dynamic>> postCommentEndpoint(
           cardId: cardId,
           content: content,
           commentId: commentId,
+          createdAtTs: commentTimestamp,
           replyToId: replyToId,
         ),
       ),
@@ -169,6 +172,7 @@ Future<void> processAICommentReply({
     // Build asset info string
 
     final assetAnalyses = factContent?.assetAnalyses;
+    final entryDateTime = factContent?.datetime;
     // Build asset info string
     final assetInfo = formatAssetAnalysis(assetAnalyses);
     contentToUse = contentToUse + assetInfo;
@@ -194,7 +198,11 @@ Future<void> processAICommentReply({
         final author = c.isAi ? (c.characterId ?? 'AI') : 'User';
         final replyInfo =
             c.replyToId != null ? ' (replying to ${c.replyToId})' : '';
-        buf.writeln('- [$author] (id: ${c.id})$replyInfo: ${c.content}');
+        final commentTime = formatLocalDateTimeWithZone(
+          DateTime.fromMillisecondsSinceEpoch(c.timestamp * 1000),
+        );
+        buf.writeln(
+            '- [$author] (id: ${c.id}, time: $commentTime)$replyInfo: ${c.content}');
       }
       buf.writeln('</existing_comments>');
       existingCommentsContext = buf.toString();
@@ -215,7 +223,8 @@ Future<void> processAICommentReply({
         rawInputContent: contentToUse,
         initialInsight: initialInsight,
         characterId: characterId,
-        currentTime: inputDateTime,
+        currentTime: inputDateTime ?? DateTime.now(),
+        entryTime: entryDateTime,
         withMemoryManagement: withMemoryManagement,
       );
     } catch (e) {

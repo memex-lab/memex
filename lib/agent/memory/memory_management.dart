@@ -6,6 +6,7 @@ import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:memex/domain/models/agent_definitions.dart';
 import 'package:memex/domain/models/llm_config.dart';
 import 'package:memex/data/services/file_system_service.dart';
+import 'package:memex/utils/time_context.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:path/path.dart' as p;
 
@@ -223,7 +224,7 @@ Task: Synthesize "Short-term Memories" into a cohesive "User Profile".
 Goal: **Summarize and compress** information to build a high-fidelity persona. Do NOT create a daily log.
 
 ## Context Data:
-Current System Time: ${currentTime.toIso8601String()}
+Current Local Time: ${formatLocalDateTimeWithZone(currentTime)}
 
 ## Current Profile (Markdown):
 ${archived.isEmpty ? '(Empty - Initialize new)' : archived}

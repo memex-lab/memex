@@ -7,6 +7,7 @@ import 'package:memex/data/services/agent_activity_service.dart';
 import 'package:memex/domain/models/agent_definitions.dart';
 import 'package:memex/domain/models/llm_config.dart';
 import 'package:memex/data/services/file_system_service.dart';
+import 'package:memex/utils/time_context.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:path/path.dart' as path;
 
@@ -101,7 +102,7 @@ class MemorySyncService {
           contentBuffer.writeln("<user_fact>");
           contentBuffer.writeln('ID: $factId');
           contentBuffer.writeln(
-              "Published Time: ${factInfo.datetime.toIso8601String()}");
+              "Published Time: ${formatLocalDateTimeWithZone(factInfo.datetime)}");
 
           // Explicitly label the user's original text input
           contentBuffer.writeln('User Original Content:');

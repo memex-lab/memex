@@ -11,6 +11,7 @@ import 'package:memex/data/services/character_service.dart';
 import 'package:memex/ui/core/themes/app_colors.dart';
 import 'package:memex/ui/core/widgets/back_button.dart';
 import 'package:memex/ui/core/widgets/dicebear_avatar.dart';
+import 'package:memex/utils/time_context.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/domain/models/agent_definitions.dart';
 import 'package:intl/intl.dart';
@@ -40,6 +41,18 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
   final List<LLMMessage> _llmHistory = [];
   static const int _maxHistoryMessages = 30;
 
+  String _withMessageTime(DateTime timestamp, String content) {
+    return '${buildMessageTimePrefix(timestamp)}$content';
+  }
+
+  LLMMessage _historyMessageFor(PersonaChatMessage msg) {
+    final content = _withMessageTime(msg.timestamp, msg.content);
+    if (msg.isFromCharacter) {
+      return ModelMessage(model: 'history', textOutput: content);
+    }
+    return UserMessage([TextPart(content)]);
+  }
+
   String get _avatarSeed {
     if (_character?.avatar != null && _character!.avatar!.isNotEmpty) {
       return _character!.avatar!;
@@ -67,12 +80,7 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
     _llmHistory.clear();
     final reversed = messages.reversed.toList();
     for (final msg in reversed) {
-      if (msg.isFromCharacter) {
-        _llmHistory
-            .add(ModelMessage(model: 'history', textOutput: msg.content));
-      } else {
-        _llmHistory.add(UserMessage([TextPart(msg.content)]));
-      }
+      _llmHistory.add(_historyMessageFor(msg));
     }
     // Trim to max
     if (_llmHistory.length > _maxHistoryMessages) {
@@ -125,11 +133,15 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
 
     _textController.clear();
 
+    final userMessageTime = DateTime.now();
+
     // Persist user message
-    await _chatService.addUserMessage(_currentCharacterId, text);
+    await _chatService.addUserMessage(_currentCharacterId, text,
+        timestamp: userMessageTime);
 
     // Add to LLM history
-    _llmHistory.add(UserMessage([TextPart(text)]));
+    _llmHistory.add(
+        UserMessage([TextPart(_withMessageTime(userMessageTime, text))]));
 
     // Reload messages to show user's message
     final messages = await _chatService.getMessages(_currentCharacterId);
@@ -164,6 +176,7 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
         userId: userId,
         characterId: _currentCharacterId,
         userMessage: text,
+        userMessageTime: userMessageTime,
         history: historyToSend,
       )) {
         buffer.write(chunk);
@@ -176,13 +189,16 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
       // Persist character response
       final fullResponse = buffer.toString().trim();
       if (fullResponse.isNotEmpty) {
+        final responseTime = DateTime.now();
         await _chatService.addCharacterMessage(
           _currentCharacterId,
           fullResponse,
           isRead: true, // User is looking at it
+          timestamp: responseTime,
         );
-        _llmHistory
-            .add(ModelMessage(model: 'companion', textOutput: fullResponse));
+        _llmHistory.add(ModelMessage(
+            model: 'companion',
+            textOutput: _withMessageTime(responseTime, fullResponse)));
       }
 
       // Reload messages

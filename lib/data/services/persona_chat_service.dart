@@ -21,20 +21,21 @@ class PersonaChatService {
         .get();
   }
 
-  Future<int> addUserMessage(String characterId, String content) async {
+  Future<int> addUserMessage(String characterId, String content,
+      {DateTime? timestamp}) async {
     return _db.into(_db.personaChatMessages).insert(
           PersonaChatMessagesCompanion.insert(
             characterId: characterId,
             isFromCharacter: false,
             content: content,
             isRead: const Value(true),
-            timestamp: DateTime.now(),
+            timestamp: timestamp ?? DateTime.now(),
           ),
         );
   }
 
   Future<int> addCharacterMessage(String characterId, String content,
-      {String? factId, bool isRead = false}) async {
+      {String? factId, bool isRead = false, DateTime? timestamp}) async {
     return _db.into(_db.personaChatMessages).insert(
           PersonaChatMessagesCompanion.insert(
             characterId: characterId,
@@ -42,7 +43,7 @@ class PersonaChatService {
             content: content,
             factId: Value(factId),
             isRead: Value(isRead),
-            timestamp: DateTime.now(),
+            timestamp: timestamp ?? DateTime.now(),
           ),
         );
   }

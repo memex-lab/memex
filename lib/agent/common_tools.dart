@@ -4,6 +4,7 @@ import 'package:memex/utils/date_util.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/file_operation_service.dart';
 import 'package:memex/utils/logger.dart';
+import 'package:memex/utils/time_context.dart';
 import 'dart:io';
 
 final getCurrentTimeTool = Tool(
@@ -24,7 +25,7 @@ final getCurrentTimeTool = Tool(
     final year = thursday.year;
 
     final weekId = '${year}_W${isoWeekNumber(now)}';
-    return "Current time: ${now.toIso8601String()}, Current WeekId: $weekId";
+    return "Current Local Time: ${formatLocalDateTimeWithZone(now)}, Current WeekId: $weekId";
   },
 );
 

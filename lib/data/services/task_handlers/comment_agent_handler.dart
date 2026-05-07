@@ -9,6 +9,7 @@ import 'package:memex/data/services/task_handlers/llm_error_utils.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/domain/models/agent_definitions.dart';
 import 'package:memex/domain/models/llm_config.dart';
+import 'package:memex/utils/time_context.dart';
 
 final _logger = Logger('CommentAgentHandler');
 
@@ -16,6 +17,7 @@ Future<void> handleCommentAgentImpl(
     String userId, Map<String, dynamic> payload, TaskContext context) async {
   final factId = payload['fact_id'] as String;
   final combinedText = payload['combined_text'] as String;
+  final inputDateTime = tryParseUnixSeconds(payload['created_at_ts']);
 
   _logger
       .info("Running Comment Agent selection for fact $factId, user $userId");
@@ -59,6 +61,7 @@ Future<void> handleCommentAgentImpl(
         userContent: Prompts.commentAgentInitialCommentPrompt,
         characterId: selectedCharId,
         rawInputContent: combinedText,
+        inputDateTime: inputDateTime,
       );
       return;
     }
@@ -86,6 +89,7 @@ Future<void> handleCommentAgentImpl(
         userContent: Prompts.commentAgentInitialCommentPrompt,
         characterId: selectedChar.id,
         rawInputContent: combinedText,
+        inputDateTime: inputDateTime,
       );
     } else {
       // Multi-character mode: LLM-based selection
@@ -119,6 +123,7 @@ Future<void> handleCommentAgentImpl(
           userContent: Prompts.commentAgentInitialCommentPrompt,
           characterId: char.id,
           rawInputContent: combinedText,
+          inputDateTime: inputDateTime,
         );
       }
     }
@@ -135,6 +140,7 @@ Future<void> handleProcessAiReplyImpl(
   final content = payload['content'] as String;
   final commentId = payload['comment_id'] as String?;
   final replyToId = payload['reply_to_id'] as String?;
+  final inputDateTime = tryParseUnixSeconds(payload['created_at_ts']);
 
   _logger.info(
       'HandleProcessAiReply: Processing AI reply for card $cardId, user $userId');
@@ -166,6 +172,7 @@ Future<void> handleProcessAiReplyImpl(
     userContent: content,
     userCommentId: commentId,
     characterId: targetCharacterId,
+    inputDateTime: inputDateTime,
     withMemoryManagement: true,
   );
 }

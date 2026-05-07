@@ -5,6 +5,7 @@ import 'package:memex/agent/security/file_permission_manager.dart';
 import 'package:memex/domain/models/character_model.dart';
 import 'package:memex/agent/skills/comment_agent/tools/comment_tools.dart';
 import 'package:memex/agent/skills/comment_agent/tools/memory_tools.dart';
+import 'package:memex/utils/time_context.dart';
 import 'package:memex/utils/user_storage.dart';
 
 /// Skill for Comment Agent - generates warm, empathetic comments for user's private tree hole entries
@@ -15,6 +16,7 @@ class CommentAgentSkill extends Skill {
     required String rawInputContent,
     String? initialInsight,
     String? pkmContext,
+    DateTime? entryTime,
     required String workingDirectory,
     required String pkmStructure,
     required String userId,
@@ -29,6 +31,7 @@ class CommentAgentSkill extends Skill {
             rawInputContent: rawInputContent,
             initialInsight: initialInsight,
             pkmContext: pkmContext,
+            entryTime: entryTime,
           ),
           tools: _buildTools(
             userId: userId,
@@ -45,6 +48,7 @@ class CommentAgentSkill extends Skill {
     required String rawInputContent,
     String? initialInsight,
     String? pkmContext,
+    DateTime? entryTime,
   }) {
     StringBuffer personaBuffer = StringBuffer();
     if (character != null) {
@@ -72,6 +76,7 @@ class CommentAgentSkill extends Skill {
       factId,
       persona,
       rawInputContent,
+      entryTime == null ? 'Unknown' : formatLocalDateTimeWithZone(entryTime),
       initialInsight ?? '',
       pkmContext ?? '',
       UserStorage.l10n.commentLanguageInstruction,
