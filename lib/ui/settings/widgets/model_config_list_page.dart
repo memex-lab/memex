@@ -86,20 +86,19 @@ class _ModelConfigListPageState extends State<ModelConfigListPage> {
     return usedByagents;
   }
 
-  Future<void> _deleteConfig(int index) async {
-    final config = _configs[index];
+  Future<bool> _confirmDeleteConfig(LLMConfig config) async {
     final l10n = UserStorage.l10n;
     if (config.isDefault) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.cannotDeleteDefaultConfiguration)),
       );
-      return;
+      return false;
     }
 
     final usingAgents = await _getAgentsUsingConfig(config.key);
     if (usingAgents.isNotEmpty) {
-      if (!mounted) return;
-      showDialog(
+      if (!mounted) return false;
+      await showDialog<void>(
         context: context,
         builder: (context) => AlertDialog(
           backgroundColor: Colors.white,
@@ -113,33 +112,39 @@ class _ModelConfigListPageState extends State<ModelConfigListPage> {
           ],
         ),
       );
-      return;
+      return false;
     }
 
-    if (!mounted) return;
+    if (!mounted) return false;
 
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
-        title: Text(l10n.deleteConfigurationTitle),
-        content: Text(l10n.confirmDeleteConfigMessage(config.key)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.cancel),
+    return await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            backgroundColor: Colors.white,
+            title: Text(l10n.deleteConfigurationTitle),
+            content: Text(l10n.confirmDeleteConfigMessage(config.key)),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(l10n.cancel),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text(
+                  l10n.delete,
+                  style: const TextStyle(color: Colors.red),
+                ),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(l10n.delete, style: const TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
+        ) ??
+        false;
+  }
 
-    if (confirmed == true) {
+  Future<void> _deleteConfig(LLMConfig config) async {
+    if (await _confirmDeleteConfig(config)) {
       setState(() {
-        _configs.removeAt(index);
+        _configs.removeWhere((item) => item.key == config.key);
       });
       await MemexRouter().saveLLMConfigs(_configs);
     }
@@ -256,65 +261,13 @@ class _ModelConfigListPageState extends State<ModelConfigListPage> {
                           child: const Icon(Icons.delete, color: Colors.white),
                         ),
                         confirmDismiss: (direction) async {
-                          if (config.isDefault) return false;
-
-                          final usingAgents = await _getAgentsUsingConfig(
-                            config.key,
-                          );
-                          if (usingAgents.isNotEmpty) {
-                            if (!context.mounted) return false;
-                            final l10n = UserStorage.l10n;
-                            showDialog(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                backgroundColor: Colors.white,
-                                title: Text(
-                                  l10n.cannotDeleteConfigurationTitle,
-                                ),
-                                content: Text(
-                                  l10n.configUsedByAgentsMessage(
-                                    usingAgents.join('\n'),
-                                  ),
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(context),
-                                    child: Text(l10n.ok),
-                                  ),
-                                ],
-                              ),
-                            );
-                            return false;
-                          }
-
-                          if (!context.mounted) return false;
-
-                          final l10n = UserStorage.l10n;
-                          return await showDialog<bool>(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              backgroundColor: Colors.white,
-                              title: Text(l10n.deleteConfigurationTitle),
-                              content: Text(
-                                l10n.confirmDeleteConfigMessage(config.key),
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () =>
-                                      Navigator.pop(context, false),
-                                  child: Text(l10n.cancel),
-                                ),
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context, true),
-                                  child: Text(l10n.delete),
-                                ),
-                              ],
-                            ),
-                          );
+                          return _confirmDeleteConfig(config);
                         },
                         onDismissed: (direction) async {
                           setState(() {
-                            _configs.removeAt(index);
+                            _configs.removeWhere(
+                              (item) => item.key == config.key,
+                            );
                           });
                           await MemexRouter().saveLLMConfigs(_configs);
                         },
@@ -365,8 +318,9 @@ class _ModelConfigListPageState extends State<ModelConfigListPage> {
                                     color: Colors.green.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(4),
                                     border: Border.all(
-                                      color:
-                                          Colors.green.withValues(alpha: 0.5),
+                                      color: Colors.green.withValues(
+                                        alpha: 0.5,
+                                      ),
                                     ),
                                   ),
                                   child: Text(
@@ -419,11 +373,15 @@ class _ModelConfigListPageState extends State<ModelConfigListPage> {
                             ],
                           ),
                           trailing: PopupMenuButton<String>(
+                            icon: const Icon(Icons.more_vert),
+                            tooltip: MaterialLocalizations.of(
+                              context,
+                            ).moreButtonTooltip,
                             onSelected: (value) {
                               if (value == 'duplicate') {
                                 _duplicateConfig(config);
                               } else if (value == 'delete') {
-                                _deleteConfig(index);
+                                _deleteConfig(config);
                               }
                             },
                             itemBuilder: (context) {
@@ -433,10 +391,7 @@ class _ModelConfigListPageState extends State<ModelConfigListPage> {
                                   value: 'duplicate',
                                   child: Row(
                                     children: [
-                                      const Icon(
-                                        Icons.copy_outlined,
-                                        size: 20,
-                                      ),
+                                      const Icon(Icons.copy_outlined, size: 20),
                                       const SizedBox(width: 8),
                                       Text(l10n.duplicate),
                                     ],

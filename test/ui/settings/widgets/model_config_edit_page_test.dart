@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:memex/domain/models/llm_config.dart';
@@ -36,7 +34,9 @@ void main() {
       topP: 0.9,
     );
 
-    testWidgets('shows "Duplicate Configuration" title when duplicateSource is provided', (tester) async {
+    testWidgets(
+        'shows "Duplicate Configuration" title when duplicateSource is provided',
+        (tester) async {
       await tester.pumpWidget(
         buildTestableWidget(
           const ModelConfigEditPage(duplicateSource: sourceConfig),
@@ -64,7 +64,8 @@ void main() {
       // are inside a collapsed ExpansionTile and not checked here.
     });
 
-    testWidgets('save button is present when duplicateSource is provided', (tester) async {
+    testWidgets('save button is present when duplicateSource is provided',
+        (tester) async {
       await tester.pumpWidget(
         buildTestableWidget(
           const ModelConfigEditPage(duplicateSource: sourceConfig),
@@ -125,7 +126,8 @@ void main() {
       expect(duplicated.proxyUrl, customConfig.proxyUrl);
     });
 
-    testWidgets('increments counter when duplicate key already exists', (tester) async {
+    testWidgets('increments counter when duplicate key already exists',
+        (tester) async {
       final defaultConfig = LLMConfig.createDefaultClientConfig();
       const customConfig = LLMConfig(
         key: 'myconfig',
@@ -141,7 +143,8 @@ void main() {
         apiKey: 'sk-other',
         baseUrl: 'https://other.example.com/v1',
       );
-      await UserStorage.saveLLMConfigs([defaultConfig, customConfig, existingCopy]);
+      await UserStorage.saveLLMConfigs(
+          [defaultConfig, customConfig, existingCopy]);
       await UserStorage.saveLLMConsent(
         true,
         providerType: LLMConfig.typeChatCompletion,
