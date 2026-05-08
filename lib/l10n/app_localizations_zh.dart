@@ -1301,6 +1301,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get editConfiguration => '编辑配置';
 
   @override
+  String get duplicateConfiguration => '复制配置';
+
+  @override
+  String get duplicate => '复制';
+
+  @override
   String get keyIdLabel => 'Key (ID)';
 
   @override

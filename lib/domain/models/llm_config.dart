@@ -558,6 +558,19 @@ class LLMConfig {
     );
   }
 
+  /// Creates a duplicate of this config with a new unique key.
+  /// The new key will be `{originalKey}_copy`, or `{originalKey}_copy_N`
+  /// if conflicts exist in [existingKeys].
+  LLMConfig duplicate({required List<String> existingKeys}) {
+    String newKey = '${key}_copy';
+    int counter = 2;
+    while (existingKeys.contains(newKey)) {
+      newKey = '${key}_copy_$counter';
+      counter++;
+    }
+    return copyWith(key: newKey);
+  }
+
   static LLMConfig createDefaultClientConfig() {
     if (AppFlavor.isCN) {
       return const LLMConfig(

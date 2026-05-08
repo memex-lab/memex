@@ -14,8 +14,9 @@ import 'package:memex/ui/core/themes/app_colors.dart';
 
 class ModelConfigEditPage extends StatefulWidget {
   final LLMConfig? config;
+  final LLMConfig? duplicateSource;
 
-  const ModelConfigEditPage({super.key, this.config});
+  const ModelConfigEditPage({super.key, this.config, this.duplicateSource});
 
   @override
   State<ModelConfigEditPage> createState() => _ModelConfigEditPageState();
@@ -57,7 +58,7 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    final config = widget.config;
+    final config = widget.config ?? widget.duplicateSource;
     _keyController = TextEditingController(text: config?.key ?? '');
     _modelIdController = TextEditingController(text: config?.modelId ?? '');
     _apiKeyController = TextEditingController(text: config?.apiKey ?? '');
@@ -115,6 +116,11 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
+
+    if (widget.duplicateSource != null) {
+      _hasChanges = true;
+      _animationController.repeat(reverse: true);
+    }
 
     _keyController.addListener(_checkChanges);
     _modelIdController.addListener(_checkChanges);
@@ -787,14 +793,14 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
       }
     }
 
-    if (widget.config != null) {
+    if (widget.config != null && widget.duplicateSource == null) {
       // Update
       final index = configs.indexWhere((c) => c.key == widget.config!.key);
       if (index != -1) {
         configs[index] = newConfig;
       }
     } else {
-      // Add
+      // Add (new or duplicate)
       configs.add(newConfig);
     }
 
@@ -927,7 +933,9 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
           surfaceTintColor: AppColors.background,
           title: Text(
             widget.config == null
-                ? UserStorage.l10n.addConfiguration
+                ? (widget.duplicateSource != null
+                    ? UserStorage.l10n.duplicateConfiguration
+                    : UserStorage.l10n.addConfiguration)
                 : UserStorage.l10n.editConfiguration,
           ),
           actions: [

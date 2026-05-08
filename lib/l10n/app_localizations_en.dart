@@ -1345,6 +1345,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get editConfiguration => 'Edit Configuration';
 
   @override
+  String get duplicateConfiguration => 'Duplicate Configuration';
+
+  @override
+  String get duplicate => 'Duplicate';
+
+  @override
   String get keyIdLabel => 'Key (ID)';
 
   @override

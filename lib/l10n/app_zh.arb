@@ -639,6 +639,8 @@
   "configurationResetPressSave": "配置已重置，请点击保存以应用。",
   "addConfiguration": "添加配置",
   "editConfiguration": "编辑配置",
+  "duplicateConfiguration": "复制配置",
+  "duplicate": "复制",
   "keyIdLabel": "Key (ID)",
   "keyIdHelper": "此配置的唯一标识符",
   "required": "必填",

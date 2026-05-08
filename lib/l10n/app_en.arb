@@ -639,6 +639,8 @@
   "configurationResetPressSave": "Configuration reset. Press Save to apply.",
   "addConfiguration": "Add Configuration",
   "editConfiguration": "Edit Configuration",
+  "duplicateConfiguration": "Duplicate Configuration",
+  "duplicate": "Duplicate",
   "keyIdLabel": "Key (ID)",
   "keyIdHelper": "Unique identifier for this configuration",
   "required": "Required",

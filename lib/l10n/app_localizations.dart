@@ -2474,6 +2474,18 @@ abstract class AppLocalizations {
   /// **'Edit Configuration'**
   String get editConfiguration;
 
+  /// No description provided for @duplicateConfiguration.
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicate Configuration'**
+  String get duplicateConfiguration;
+
+  /// No description provided for @duplicate.
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicate'**
+  String get duplicate;
+
   /// No description provided for @keyIdLabel.
   ///
   /// In en, this message translates to:

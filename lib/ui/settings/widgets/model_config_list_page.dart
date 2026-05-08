@@ -145,17 +145,27 @@ class _ModelConfigListPageState extends State<ModelConfigListPage> {
     }
   }
 
-  void _editConfig(LLMConfig? config) async {
+  void _editConfig(LLMConfig? config, {LLMConfig? duplicateSource}) async {
     final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (context) => ModelConfigEditPage(config: config),
+        builder: (context) => ModelConfigEditPage(
+          config: config,
+          duplicateSource: duplicateSource,
+        ),
       ),
     );
 
     if (result == true) {
       _loadConfigs();
     }
+  }
+
+  void _duplicateConfig(LLMConfig config) {
+    final duplicated = config.duplicate(
+      existingKeys: _configs.map((c) => c.key).toList(),
+    );
+    _editConfig(null, duplicateSource: duplicated);
   }
 
   @override
@@ -408,19 +418,52 @@ class _ModelConfigListPageState extends State<ModelConfigListPage> {
                               ),
                             ],
                           ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (!config.isDefault)
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.delete_outline,
-                                    color: Colors.grey,
+                          trailing: PopupMenuButton<String>(
+                            onSelected: (value) {
+                              if (value == 'duplicate') {
+                                _duplicateConfig(config);
+                              } else if (value == 'delete') {
+                                _deleteConfig(index);
+                              }
+                            },
+                            itemBuilder: (context) {
+                              final l10n = UserStorage.l10n;
+                              return [
+                                PopupMenuItem<String>(
+                                  value: 'duplicate',
+                                  child: Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.copy_outlined,
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(l10n.duplicate),
+                                    ],
                                   ),
-                                  onPressed: () => _deleteConfig(index),
                                 ),
-                              const Icon(Icons.chevron_right),
-                            ],
+                                if (!config.isDefault)
+                                  PopupMenuItem<String>(
+                                    value: 'delete',
+                                    child: Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.delete_outline,
+                                          size: 20,
+                                          color: Colors.red,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          l10n.delete,
+                                          style: const TextStyle(
+                                            color: Colors.red,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                              ];
+                            },
                           ),
                           onTap: () => _editConfig(config),
                         ),
