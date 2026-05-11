@@ -1,9 +1,14 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:logging/logging.dart';
+import 'package:memex/agent/memory/character_memory_service.dart';
 import 'package:memex/domain/models/character_model.dart';
 import 'package:memex/data/services/character_service.dart';
+import 'package:memex/routing/routes.dart';
 import 'package:memex/ui/character/view_models/character_viewmodel.dart';
-import 'package:memex/ui/core/widgets/dicebear_avatar.dart';
+import 'package:memex/ui/core/widgets/character_avatar.dart';
 import 'package:memex/ui/core/widgets/avatar_picker.dart';
 import 'package:memex/utils/toast_helper.dart';
 import 'package:memex/utils/logger.dart';
@@ -12,6 +17,7 @@ import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:memex/ui/main_screen/widgets/chat_input_bar.dart';
 import 'package:memex/ui/core/widgets/back_button.dart';
 import 'package:memex/ui/core/themes/app_colors.dart';
+import 'package:path/path.dart' as p;
 
 /// AI character config screen. Receives [viewModel] from parent (Compass-style).
 class CharacterConfigScreen extends StatefulWidget {
@@ -134,6 +140,15 @@ class _CharacterConfigScreenState extends State<CharacterConfigScreen> {
             leading: const AppBackButton(),
             actions: [
               IconButton(
+                icon: const Icon(Icons.download_rounded, size: 24),
+                onPressed: () async {
+                  final result = await context.push(AppRoutes.tavernImport);
+                  if (result != null && mounted) vm.loadCharacters();
+                },
+                color: AppColors.primary,
+                tooltip: UserStorage.l10n.importCharacterCard,
+              ),
+              IconButton(
                 icon: const Icon(Icons.add, size: 24),
                 onPressed: () => _showAddCharacterDialog(vm),
                 color: AppColors.primary,
@@ -231,10 +246,9 @@ class _CharacterConfigScreenState extends State<CharacterConfigScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                DiceBearAvatar(
-                  seed: character.avatar != null && character.avatar!.isNotEmpty
-                      ? character.avatar!
-                      : 'companion_${character.name}',
+                CharacterAvatar(
+                  avatar: character.avatar,
+                  name: character.name,
                   size: 48,
                   backgroundColor: AppColors.primary.withValues(alpha: 0.08),
                 ),
@@ -347,10 +361,18 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
   final _nameController = TextEditingController();
   final _tagsController = TextEditingController();
   final _personaController = TextEditingController();
+  final _firstMessageController = TextEditingController();
+  final _systemPromptController = TextEditingController();
+  final _postHistoryController = TextEditingController();
+  final _mesExampleController = TextEditingController();
   bool _isSaving = false;
 
   String _avatarSeed = '';
   bool _hasPickedAvatar = false;
+
+  // World book entries and memory entries (loaded from CharacterMemoryService)
+  List<Map<String, dynamic>> _worldEntries = [];
+  List<Map<String, dynamic>> _memoryEntries = [];
 
   @override
   void initState() {
@@ -359,14 +381,36 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
       _nameController.text = widget.character!.name;
       _tagsController.text = widget.character!.tags.join(', ');
       _personaController.text = widget.character!.persona;
+      _firstMessageController.text = widget.character!.firstMessage ?? '';
+      _systemPromptController.text =
+          widget.character!.systemPromptOverride ?? '';
+      _postHistoryController.text =
+          widget.character!.postHistoryInstructions ?? '';
+      _mesExampleController.text = widget.character!.mesExample ?? '';
       _avatarSeed = widget.character!.avatar ?? '';
       _hasPickedAvatar = widget.character!.avatar != null &&
           widget.character!.avatar!.isNotEmpty;
+      _loadCharacterData();
     }
     if (_avatarSeed.isEmpty) {
       _avatarSeed = 'companion_${_nameController.text}';
     }
     _nameController.addListener(_onNameChanged);
+  }
+
+  Future<void> _loadCharacterData() async {
+    final userId = await UserStorage.getUserId();
+    if (userId == null || widget.character == null) return;
+    final characterId = widget.character!.id;
+    final svc = CharacterMemoryService.instance;
+    final world = await svc.loadWorldEntries(userId, characterId);
+    final memory = await svc.loadMemoryEntries(userId, characterId);
+    if (mounted) {
+      setState(() {
+        _worldEntries = world;
+        _memoryEntries = memory;
+      });
+    }
   }
 
   void _onNameChanged() {
@@ -382,16 +426,125 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
     _nameController.dispose();
     _tagsController.dispose();
     _personaController.dispose();
+    _firstMessageController.dispose();
+    _systemPromptController.dispose();
+    _postHistoryController.dispose();
+    _mesExampleController.dispose();
     super.dispose();
   }
 
   void _pickAvatar() async {
-    final picked = await showAvatarPicker(context, _avatarSeed);
-    if (picked != null && mounted) {
-      setState(() {
-        _avatarSeed = picked;
-        _hasPickedAvatar = true;
-      });
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                UserStorage.l10n.chooseAvatar,
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 20),
+              ListTile(
+                leading:
+                    const Icon(Icons.auto_awesome, color: AppColors.primary),
+                title: Text(UserStorage.l10n.localeName == 'zh'
+                    ? '随机头像'
+                    : 'Random Avatar'),
+                onTap: () => Navigator.pop(ctx, 'dicebear'),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              ListTile(
+                leading:
+                    const Icon(Icons.photo_library, color: AppColors.primary),
+                title: Text(UserStorage.l10n.localeName == 'zh'
+                    ? '从相册选择'
+                    : 'Choose from Gallery'),
+                onTap: () => Navigator.pop(ctx, 'gallery'),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (choice == null || !mounted) return;
+
+    if (choice == 'dicebear') {
+      final picked = await showAvatarPicker(context, _avatarSeed);
+      if (picked != null && mounted) {
+        setState(() {
+          _avatarSeed = picked;
+          _hasPickedAvatar = true;
+        });
+      }
+    } else if (choice == 'gallery') {
+      await _pickImageFromGallery();
+    }
+  }
+
+  Future<void> _pickImageFromGallery() async {
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 85,
+      );
+      if (picked == null || !mounted) return;
+
+      final userId = await UserStorage.getUserId();
+      if (userId == null) return;
+
+      // Save the image to the Characters directory
+      final charsPath = CharacterService.instance.getCharactersPath(userId);
+      final dir = Directory(charsPath);
+      if (!await dir.exists()) {
+        await dir.create(recursive: true);
+      }
+
+      final ext = p.extension(picked.path).toLowerCase();
+      final fileName = 'avatar_${DateTime.now().millisecondsSinceEpoch}$ext';
+      final destPath = p.join(charsPath, fileName);
+      await File(picked.path).copy(destPath);
+
+      if (mounted) {
+        setState(() {
+          _avatarSeed = destPath;
+          _hasPickedAvatar = true;
+        });
+      }
+    } catch (e) {
+      _logger.warning('Failed to pick avatar image: $e');
+      if (mounted) {
+        ToastHelper.showError(
+            context, UserStorage.l10n.operationFailed(e.toString()));
+      }
     }
   }
 
@@ -412,27 +565,50 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
       final userId = await UserStorage.getUserId();
       if (userId == null) return;
 
+      final updates = <String, dynamic>{
+        'name': _nameController.text.trim(),
+        'tags': tags,
+        'persona': _personaController.text.trim(),
+        'avatar': avatarSeed,
+        'first_message': _firstMessageController.text.trim().isEmpty
+            ? null
+            : _firstMessageController.text.trim(),
+        'system_prompt_override': _systemPromptController.text.trim().isEmpty
+            ? null
+            : _systemPromptController.text.trim(),
+        'post_history_instructions': _postHistoryController.text.trim().isEmpty
+            ? null
+            : _postHistoryController.text.trim(),
+        'mes_example': _mesExampleController.text.trim().isEmpty
+            ? null
+            : _mesExampleController.text.trim(),
+      };
+
       if (widget.character == null) {
-        await CharacterService.instance.createCharacter(
+        final created = await CharacterService.instance.createCharacter(
           userId: userId,
-          characterData: {
-            'name': _nameController.text.trim(),
-            'tags': tags,
-            'persona': _personaController.text.trim(),
-            'avatar': avatarSeed,
-          },
+          characterData: updates..['enabled'] = true,
         );
+        // Save world entries and memory entries for new character
+        if (_worldEntries.isNotEmpty) {
+          await CharacterMemoryService.instance
+              .replaceWorldEntries(userId, created.id, _worldEntries);
+        }
+        if (_memoryEntries.isNotEmpty) {
+          await CharacterMemoryService.instance
+              .replaceMemoryEntries(userId, created.id, _memoryEntries);
+        }
       } else {
         await CharacterService.instance.updateCharacter(
           userId: userId,
           characterId: widget.character!.id,
-          updates: {
-            'name': _nameController.text.trim(),
-            'tags': tags,
-            'persona': _personaController.text.trim(),
-            'avatar': avatarSeed,
-          },
+          updates: updates,
         );
+        // Save world entries and memory entries
+        await CharacterMemoryService.instance
+            .replaceWorldEntries(userId, widget.character!.id, _worldEntries);
+        await CharacterMemoryService.instance
+            .replaceMemoryEntries(userId, widget.character!.id, _memoryEntries);
       }
 
       if (mounted) {
@@ -525,9 +701,10 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
                           width: 2.5,
                         ),
                       ),
-                      child: DiceBearAvatar(
+                      child: CharacterAvatar(
                         key: ValueKey(_avatarSeed),
-                        seed: _avatarSeed,
+                        avatar: _avatarSeed.isEmpty ? null : _avatarSeed,
+                        name: _nameController.text,
                         size: 82,
                       ),
                     ),
@@ -615,9 +792,535 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
                 },
               ),
             ),
+            const SizedBox(height: 24),
+            _buildLabel(UserStorage.l10n.firstMessageLabel),
+            const SizedBox(height: 8),
+            _buildMultilineField(
+              controller: _firstMessageController,
+              hint: UserStorage.l10n.firstMessageHint,
+              minLines: 3,
+            ),
+            const SizedBox(height: 24),
+            _buildLabel(UserStorage.l10n.systemPromptOverrideLabel),
+            const SizedBox(height: 8),
+            _buildMultilineField(
+              controller: _systemPromptController,
+              hint: UserStorage.l10n.systemPromptOverrideHint,
+              minLines: 4,
+            ),
+            const SizedBox(height: 24),
+            _buildLabel(UserStorage.l10n.postHistoryInstructionsLabel),
+            const SizedBox(height: 8),
+            _buildMultilineField(
+              controller: _postHistoryController,
+              hint: UserStorage.l10n.postHistoryInstructionsHint,
+              minLines: 3,
+            ),
+            const SizedBox(height: 24),
+            _buildLabel(UserStorage.l10n.mesExampleLabel),
+            const SizedBox(height: 8),
+            _buildMultilineField(
+              controller: _mesExampleController,
+              hint: UserStorage.l10n.mesExampleHint,
+              minLines: 4,
+            ),
+            const SizedBox(height: 32),
+            // --- World Book Section ---
+            _buildSectionHeader(
+              title: UserStorage.l10n.worldBookTitle,
+              subtitle: UserStorage.l10n.worldBookSubtitle,
+              onAdd: _addWorldEntry,
+            ),
+            const SizedBox(height: 8),
+            ..._worldEntries
+                .asMap()
+                .entries
+                .map((e) => _buildWorldEntryTile(e.key, e.value)),
+            const SizedBox(height: 24),
+            // --- Character Memory Section ---
+            _buildSectionHeader(
+              title: UserStorage.l10n.characterMemoryTitle,
+              subtitle: UserStorage.l10n.characterMemorySubtitle,
+              onAdd: _addMemoryEntry,
+            ),
+            const SizedBox(height: 8),
+            ..._memoryEntries
+                .asMap()
+                .entries
+                .map((e) => _buildMemoryEntryTile(e.key, e.value)),
             const SizedBox(height: 32),
           ],
         ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // World Book & Memory entry management
+  // ---------------------------------------------------------------------------
+
+  Widget _buildSectionHeader({
+    required String title,
+    required String subtitle,
+    required VoidCallback onAdd,
+  }) {
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textTertiary,
+                ),
+              ),
+            ],
+          ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.add_circle_outline, size: 22),
+          color: AppColors.primary,
+          onPressed: onAdd,
+          tooltip: UserStorage.l10n.addTooltip,
+        ),
+      ],
+    );
+  }
+
+  void _addWorldEntry() {
+    _showWorldEntryDialog(null, null);
+  }
+
+  void _addMemoryEntry() {
+    _showMemoryEntryDialog(null, null);
+  }
+
+  Widget _buildWorldEntryTile(int index, Map<String, dynamic> entry) {
+    final keys = ((entry['keys'] as List?) ?? []).join(', ');
+    final comment = (entry['comment'] as String?) ?? '';
+    final content = (entry['content'] as String?) ?? '';
+    final enabled = entry['enabled'] != false;
+    final constant = entry['constant'] == true;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: enabled ? const Color(0xFFF7F8FA) : const Color(0xFFF0F0F0),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: constant
+              ? AppColors.primary.withValues(alpha: 0.3)
+              : const Color(0xFFE2E8F0),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              if (constant)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  margin: const EdgeInsets.only(right: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(UserStorage.l10n.constantBadge,
+                      style: const TextStyle(
+                          fontSize: 10, color: AppColors.primary)),
+                ),
+              Expanded(
+                child: Text(
+                  comment.isNotEmpty
+                      ? comment
+                      : (keys.isNotEmpty
+                          ? keys
+                          : UserStorage.l10n.worldEntryFallbackName(index + 1)),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: enabled
+                        ? AppColors.textPrimary
+                        : AppColors.textTertiary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                onPressed: () => _showWorldEntryDialog(index, entry),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                color: AppColors.textTertiary,
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline, size: 18),
+                onPressed: () => setState(() => _worldEntries.removeAt(index)),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                color: Colors.red[300],
+              ),
+            ],
+          ),
+          if (keys.isNotEmpty && comment.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              UserStorage.l10n.keywordsPrefix(keys),
+              style:
+                  const TextStyle(fontSize: 11, color: AppColors.textTertiary),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+          if (content.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              content,
+              style: const TextStyle(
+                  fontSize: 12, color: AppColors.textSecondary, height: 1.4),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMemoryEntryTile(int index, Map<String, dynamic> entry) {
+    final label = (entry['label'] as String?) ?? '';
+    final content = (entry['content'] as String?) ?? '';
+    final salience = (entry['salience'] as num?)?.toDouble() ?? 0.5;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F8FA),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label.isNotEmpty
+                      ? label
+                      : UserStorage.l10n.memoryFallbackName(index + 1),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+              Text(
+                '${(salience * 100).round()}%',
+                style: const TextStyle(
+                    fontSize: 11, color: AppColors.textTertiary),
+              ),
+              const SizedBox(width: 4),
+              IconButton(
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                onPressed: () => _showMemoryEntryDialog(index, entry),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                color: AppColors.textTertiary,
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline, size: 18),
+                onPressed: () => setState(() => _memoryEntries.removeAt(index)),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                color: Colors.red[300],
+              ),
+            ],
+          ),
+          if (content.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              content,
+              style: const TextStyle(
+                  fontSize: 12, color: AppColors.textSecondary, height: 1.4),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showWorldEntryDialog(
+      int? index, Map<String, dynamic>? existing) async {
+    final keysCtrl = TextEditingController(
+        text: ((existing?['keys'] as List?) ?? []).join(', '));
+    final commentCtrl =
+        TextEditingController(text: existing?['comment'] as String? ?? '');
+    final contentCtrl =
+        TextEditingController(text: existing?['content'] as String? ?? '');
+    bool constant = existing?['constant'] == true;
+    bool enabled = existing?['enabled'] != false;
+
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: Colors.white,
+          title: Text(index == null
+              ? UserStorage.l10n.addWorldEntry
+              : UserStorage.l10n.editWorldEntry),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: commentCtrl,
+                  decoration: InputDecoration(
+                    labelText: UserStorage.l10n.commentTitleLabel,
+                    hintText: UserStorage.l10n.entryDescriptionHint,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: keysCtrl,
+                  decoration: InputDecoration(
+                    labelText: UserStorage.l10n.triggerKeywordsLabel,
+                    hintText: UserStorage.l10n.triggerKeywordsHint,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: contentCtrl,
+                  decoration: InputDecoration(
+                    labelText: UserStorage.l10n.contentLabel,
+                    hintText: UserStorage.l10n.worldEntryContentHint,
+                  ),
+                  maxLines: 5,
+                  minLines: 3,
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: CheckboxListTile(
+                        title: Text(UserStorage.l10n.constantBadge,
+                            style: const TextStyle(fontSize: 13)),
+                        value: constant,
+                        onChanged: (v) =>
+                            setDialogState(() => constant = v ?? false),
+                        contentPadding: EdgeInsets.zero,
+                        dense: true,
+                      ),
+                    ),
+                    Expanded(
+                      child: CheckboxListTile(
+                        title: Text(UserStorage.l10n.enabledCheckbox,
+                            style: const TextStyle(fontSize: 13)),
+                        value: enabled,
+                        onChanged: (v) =>
+                            setDialogState(() => enabled = v ?? true),
+                        contentPadding: EdgeInsets.zero,
+                        dense: true,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(UserStorage.l10n.cancel),
+            ),
+            TextButton(
+              onPressed: () {
+                final keys = keysCtrl.text
+                    .split(',')
+                    .map((e) => e.trim())
+                    .where((e) => e.isNotEmpty)
+                    .toList();
+                Navigator.pop(ctx, {
+                  'uid': existing?['uid'] ??
+                      existing?['id'] ??
+                      'entry_${DateTime.now().microsecondsSinceEpoch}',
+                  'keys': keys,
+                  'comment': commentCtrl.text.trim(),
+                  'content': contentCtrl.text.trim(),
+                  'constant': constant,
+                  'enabled': enabled,
+                });
+              },
+              child: Text(UserStorage.l10n.save),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (result != null && mounted) {
+      setState(() {
+        if (index != null) {
+          _worldEntries[index] = result;
+        } else {
+          _worldEntries.add(result);
+        }
+      });
+    }
+  }
+
+  Future<void> _showMemoryEntryDialog(
+      int? index, Map<String, dynamic>? existing) async {
+    final labelCtrl =
+        TextEditingController(text: existing?['label'] as String? ?? '');
+    final contentCtrl =
+        TextEditingController(text: existing?['content'] as String? ?? '');
+    double salience = (existing?['salience'] as num?)?.toDouble() ?? 0.5;
+
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: Colors.white,
+          title: Text(index == null
+              ? UserStorage.l10n.addMemory
+              : UserStorage.l10n.editMemory),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: labelCtrl,
+                  decoration: InputDecoration(
+                    labelText: UserStorage.l10n.memoryLabelField,
+                    hintText: UserStorage.l10n.memoryLabelHint,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: contentCtrl,
+                  decoration: InputDecoration(
+                    labelText: UserStorage.l10n.contentLabel,
+                    hintText: UserStorage.l10n.memoryContentHint,
+                  ),
+                  maxLines: 5,
+                  minLines: 3,
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Text(UserStorage.l10n.salienceLabel,
+                        style: const TextStyle(fontSize: 13)),
+                    Expanded(
+                      child: Slider(
+                        value: salience,
+                        min: 0,
+                        max: 1,
+                        divisions: 10,
+                        label: '${(salience * 100).round()}%',
+                        onChanged: (v) => setDialogState(() => salience = v),
+                      ),
+                    ),
+                    Text('${(salience * 100).round()}%',
+                        style: const TextStyle(fontSize: 12)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(UserStorage.l10n.cancel),
+            ),
+            TextButton(
+              onPressed: () {
+                if (labelCtrl.text.trim().isEmpty) {
+                  ToastHelper.showError(
+                      ctx, UserStorage.l10n.labelCannotBeEmpty);
+                  return;
+                }
+                Navigator.pop(ctx, {
+                  'label': labelCtrl.text.trim(),
+                  'content': contentCtrl.text.trim(),
+                  'salience': salience,
+                  'updated_at': DateTime.now().toIso8601String(),
+                });
+              },
+              child: Text(UserStorage.l10n.save),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (result != null && mounted) {
+      setState(() {
+        if (index != null) {
+          _memoryEntries[index] = result;
+        } else {
+          _memoryEntries.add(result);
+        }
+      });
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Common UI helpers
+  // ---------------------------------------------------------------------------
+
+  Widget _buildMultilineField({
+    required TextEditingController controller,
+    required String hint,
+    int minLines = 3,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F8FA),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: TextFormField(
+        controller: controller,
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: TextStyle(
+            color: Colors.grey[400],
+            fontSize: 14,
+            height: 1.5,
+          ),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.all(20),
+        ),
+        style: const TextStyle(
+          fontSize: 15,
+          height: 1.6,
+          color: Color(0xFF334155),
+        ),
+        maxLines: null,
+        minLines: minLines,
+        keyboardType: TextInputType.multiline,
+        textInputAction: TextInputAction.newline,
       ),
     );
   }

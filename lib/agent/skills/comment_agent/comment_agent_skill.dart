@@ -1,11 +1,8 @@
 import 'package:dart_agent_core/dart_agent_core.dart';
-import 'package:memex/agent/built_in_tools/file_tools.dart';
 import 'package:memex/agent/prompts.dart';
-import 'package:memex/agent/security/file_permission_manager.dart';
+import 'package:memex/agent/skills/character_tools_factory.dart';
 import 'package:memex/domain/models/character_model.dart';
-import 'package:memex/agent/skills/comment_agent/tools/comment_tools.dart';
-import 'package:memex/agent/skills/comment_agent/tools/memory_tools.dart';
-import 'package:memex/utils/time_context.dart';
+import 'package:memex/utils/tavern_macro.dart';
 import 'package:memex/utils/user_storage.dart';
 
 /// Skill for Comment Agent - generates warm, empathetic comments for user's private tree hole entries
@@ -13,25 +10,20 @@ class CommentAgentSkill extends Skill {
   CommentAgentSkill({
     CharacterModel? character,
     required String factId,
-    required String rawInputContent,
-    String? initialInsight,
-    String? pkmContext,
-    DateTime? entryTime,
     required String workingDirectory,
-    required String pkmStructure,
     required String userId,
+    String userName = '',
+    String userProfile = '',
+    String characterMemories = '',
     super.forceActivate,
   }) : super(
           name: "persona_comment",
           description: Prompts.commentAgentSkillDescription,
           systemPrompt: _buildSystemPrompt(
-            factId: factId,
-            userId: userId,
             character: character,
-            rawInputContent: rawInputContent,
-            initialInsight: initialInsight,
-            pkmContext: pkmContext,
-            entryTime: entryTime,
+            userName: userName,
+            userProfile: userProfile,
+            characterMemories: characterMemories,
           ),
           tools: _buildTools(
             userId: userId,
@@ -42,47 +34,42 @@ class CommentAgentSkill extends Skill {
         );
 
   static String _buildSystemPrompt({
-    required String factId,
-    required String userId,
     CharacterModel? character,
-    required String rawInputContent,
-    String? initialInsight,
-    String? pkmContext,
-    DateTime? entryTime,
+    required String userName,
+    required String userProfile,
+    required String characterMemories,
   }) {
     StringBuffer personaBuffer = StringBuffer();
     if (character != null) {
-      personaBuffer.writeln("Name: ${character.name}");
+      final charName = character.name;
+      String m(String text) =>
+          TavernMacro.resolve(text, userName: userName, charName: charName);
+      personaBuffer.writeln("Name: $charName");
       personaBuffer.writeln("Tags: ${character.tags.join(', ')}");
-      personaBuffer.writeln("### Persona: \n${character.persona}");
-
-      // Inject character memory as relationship context
-      if (character.memory.isNotEmpty) {
-        personaBuffer.writeln("\n### Your Memory of This User:");
-        personaBuffer.writeln(
-            "The following is what you remember from past interactions. "
-            "Use this to make your response feel continuous and personal. "
-            "Reference specific things you remember when natural.");
-        for (final block in character.memory) {
-          if (block.value.isNotEmpty) {
-            personaBuffer.writeln("- [${block.label}]: ${block.value}");
-          }
-        }
-      }
+      personaBuffer.writeln("### Persona: \n${m(character.persona)}");
     }
     String persona = personaBuffer.toString();
 
     final systemPrompt = Prompts.commentSkillSystemPrompt(
-      factId,
       persona,
-      rawInputContent,
-      entryTime == null ? 'Unknown' : formatLocalDateTimeWithZone(entryTime),
-      initialInsight ?? '',
-      pkmContext ?? '',
       UserStorage.l10n.commentLanguageInstruction,
     );
 
-    return systemPrompt;
+    final b = StringBuffer(systemPrompt);
+
+    if (userProfile.isNotEmpty) {
+      b.writeln('');
+      b.writeln('## User Profile');
+      b.writeln(userProfile);
+    }
+
+    if (characterMemories.isNotEmpty) {
+      b.writeln('');
+      b.writeln('## Character Memory Entries');
+      b.writeln(characterMemories);
+    }
+
+    return b.toString();
   }
 
   static List<Tool> _buildTools({
@@ -91,35 +78,11 @@ class CommentAgentSkill extends Skill {
     required String factId,
     String? characterId,
   }) {
-    final permissionManager = FilePermissionManager(userId, [
-      PermissionRule(rootPath: workingDirectory, access: FileAccessType.read),
-    ]);
-    final fileFactory = FileToolFactory(
-        permissionManager: permissionManager,
-        workingDirectory: workingDirectory);
-
-    final commentFactory = CommentToolFactory(
+    return CharacterToolsFactory.buildCommentTools(
       userId: userId,
-      cardId: factId,
+      workingDirectory: workingDirectory,
+      factId: factId,
       characterId: characterId,
     );
-
-    final tools = <Tool>[
-      fileFactory.buildReadTool(),
-      fileFactory.buildGrepTool(),
-      commentFactory.buildSaveCommentTool(),
-    ];
-
-    // Add memory tools so the character can remember things about the user
-    if (characterId != null) {
-      final memoryFactory = MemoryToolFactory(
-        userId: userId,
-        defaultCharacterId: characterId,
-      );
-      tools.add(memoryFactory.buildMemoryReadTool());
-      tools.add(memoryFactory.buildMemoryWriteTool());
-    }
-
-    return tools;
   }
 }

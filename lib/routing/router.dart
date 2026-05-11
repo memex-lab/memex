@@ -9,6 +9,7 @@ import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/ui/memory/view_models/memory_viewmodel.dart';
 import 'package:memex/ui/memory/widgets/memory_screen.dart';
 import 'package:memex/ui/character/widgets/character_config_screen.dart';
+import 'package:memex/ui/character/widgets/tavern_import_screen.dart';
 import 'package:memex/ui/character/view_models/character_viewmodel.dart';
 import 'package:memex/ui/calendar/view_models/calendar_viewmodel.dart';
 import 'package:memex/ui/calendar/widgets/calendar_screen.dart';
@@ -95,6 +96,10 @@ GoRouter createAppRouter(
       GoRoute(
         path: AppRoutes.personalCenter,
         builder: (_, __) => const PersonalCenterScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.tavernImport,
+        builder: (_, __) => const TavernImportScreen(),
       ),
     ],
   );

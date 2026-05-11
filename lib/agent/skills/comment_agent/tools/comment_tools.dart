@@ -1,4 +1,7 @@
+// ignore_for_file: non_constant_identifier_names
+
 import 'package:dart_agent_core/dart_agent_core.dart';
+import 'package:memex/agent/memory/character_memory_service.dart';
 import 'package:memex/domain/models/card_model.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:uuid/uuid.dart';
@@ -42,6 +45,7 @@ class CommentToolFactory {
         try {
           final fileSystemService = FileSystemService.instance;
           final commentId = const Uuid().v4();
+          final now = DateTime.now();
 
           final updatedCardData = await fileSystemService.updateCardFile(
             userId,
@@ -51,7 +55,7 @@ class CommentToolFactory {
                 id: commentId,
                 content: content,
                 isAi: true,
-                timestamp: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+                timestamp: now.millisecondsSinceEpoch ~/ 1000,
                 characterId: characterId,
                 replyToId: reply_to_id,
               );
@@ -82,6 +86,34 @@ class CommentToolFactory {
             );
           } catch (e) {
             getLogger('CommentTool').warning('Failed to log event: $e');
+          }
+
+          if (characterId != null) {
+            try {
+              await CharacterMemoryService.instance.appendTimelineEvent(
+                userId: userId,
+                characterId: characterId!,
+                scene: CharacterMemoryScene.comment,
+                type: CharacterMemoryEventType.characterComment,
+                content: content,
+                threadId: cardId,
+                factId: cardId,
+                commentId: commentId,
+                replyToId: reply_to_id != null && reply_to_id.isNotEmpty
+                    ? reply_to_id
+                    : null,
+                sourceId: commentId,
+                timestamp: now,
+                metadata: {
+                  if (reply_to_id != null && reply_to_id.isNotEmpty)
+                    'reply_to_id': reply_to_id,
+                  'source': 'comment_tool',
+                },
+              );
+            } catch (e) {
+              getLogger('CommentTool')
+                  .warning('Failed to append character timeline event: $e');
+            }
           }
 
           return AgentToolResult(

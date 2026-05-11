@@ -27,6 +27,7 @@ import 'package:memex/data/services/event_bus_service.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import 'package:memex/ui/core/widgets/dicebear_avatar.dart';
+import 'package:memex/ui/core/widgets/character_avatar.dart';
 import 'package:memex/ui/core/cards/style/timeline_theme.dart';
 import 'package:memex/ui/core/themes/design_system.dart';
 import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
@@ -1010,10 +1011,9 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
         ),
       );
     } else {
-      final seed =
-          (avatar != null && avatar.isNotEmpty) ? avatar : 'companion_$name';
-      avatarWidget = DiceBearAvatar(
-        seed: seed,
+      avatarWidget = CharacterAvatar(
+        avatar: avatar,
+        name: name,
         size: 36,
         backgroundColor: const Color(0xFFEEF2FF),
       );
@@ -1579,7 +1579,7 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
     // Determine avatar widget:
     // - characterId "0" or null = Memex system → use logo
     // - characterId "user" = user comment → use DiceBear with user avatar
-    // - Other characters → use DiceBear with character avatar
+    // - Other characters → use CharacterAvatar (supports image files)
     Widget avatarWidget;
     final isMemexSystem = (characterId == null || characterId == '0') && !isAi;
     final isUserComment = characterId == 'user';
@@ -1606,11 +1606,10 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
         ),
       );
     } else {
-      // Character DiceBear avatar — use avatar field if set, fallback to name
-      final seed =
-          (avatar != null && avatar.isNotEmpty) ? avatar : 'companion_$name';
-      avatarWidget = DiceBearAvatar(
-        seed: seed,
+      // Character avatar — supports both image files and DiceBear seeds
+      avatarWidget = CharacterAvatar(
+        avatar: avatar,
+        name: name,
         size: 36,
         backgroundColor: const Color(0xFFEEF2FF),
       );

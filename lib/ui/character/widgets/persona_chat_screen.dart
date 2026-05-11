@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:memex/agent/companion_agent/companion_agent.dart';
@@ -10,8 +9,8 @@ import 'package:memex/data/services/persona_chat_service.dart';
 import 'package:memex/data/services/character_service.dart';
 import 'package:memex/ui/core/themes/app_colors.dart';
 import 'package:memex/ui/core/widgets/back_button.dart';
-import 'package:memex/ui/core/widgets/dicebear_avatar.dart';
-import 'package:memex/utils/time_context.dart';
+import 'package:memex/ui/core/widgets/character_avatar.dart';
+import 'package:memex/utils/tavern_macro.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/domain/models/agent_definitions.dart';
 import 'package:intl/intl.dart';
@@ -37,29 +36,6 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
   bool _isStreaming = false;
   String _streamingText = '';
 
-  // Keep LLM history for context window
-  final List<LLMMessage> _llmHistory = [];
-  static const int _maxHistoryMessages = 30;
-
-  String _withMessageTime(DateTime timestamp, String content) {
-    return '${buildMessageTimePrefix(timestamp)}$content';
-  }
-
-  LLMMessage _historyMessageFor(PersonaChatMessage msg) {
-    final content = _withMessageTime(msg.timestamp, msg.content);
-    if (msg.isFromCharacter) {
-      return ModelMessage(model: 'history', textOutput: content);
-    }
-    return UserMessage([TextPart(content)]);
-  }
-
-  String get _avatarSeed {
-    if (_character?.avatar != null && _character!.avatar!.isNotEmpty) {
-      return _character!.avatar!;
-    }
-    return 'companion_${_character?.name ?? ''}';
-  }
-
   @override
   void initState() {
     super.initState();
@@ -76,17 +52,36 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
     final messages = await _chatService.getMessages(_currentCharacterId);
     await _chatService.markAllRead(_currentCharacterId);
 
-    // Build LLM history from persisted messages
-    _llmHistory.clear();
-    final reversed = messages.reversed.toList();
-    for (final msg in reversed) {
-      _llmHistory.add(_historyMessageFor(msg));
-    }
-    // Trim to max
-    if (_llmHistory.length > _maxHistoryMessages) {
-      _llmHistory.removeRange(0, _llmHistory.length - _maxHistoryMessages);
+    // If this is the first chat and the character has a greeting, deliver it.
+    if (messages.isEmpty &&
+        character != null &&
+        character.firstMessage != null &&
+        character.firstMessage!.trim().isNotEmpty) {
+      final greeting = TavernMacro.resolve(
+        character.firstMessage!,
+        userName: userId,
+        charName: character.name,
+      );
+      await _chatService.addCharacterMessage(
+        _currentCharacterId,
+        greeting,
+        isRead: true,
+      );
+      // Reload after inserting greeting.
+      final updatedMessages =
+          await _chatService.getMessages(_currentCharacterId);
+      if (mounted) {
+        setState(() {
+          _character = character;
+          _messages = updatedMessages.reversed.toList();
+          _isLoading = false;
+        });
+        _scrollToBottom();
+      }
+      return;
     }
 
+    final reversed = messages.reversed.toList();
     if (mounted) {
       setState(() {
         _character = character;
@@ -99,32 +94,9 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
 
   @override
   void dispose() {
-    // Trigger memory update in background when leaving chat
-    _updateMemoryInBackground();
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();
-  }
-
-  void _updateMemoryInBackground() async {
-    if (_llmHistory.isEmpty) return;
-    final userId = await UserStorage.getUserId();
-    if (userId == null) return;
-
-    try {
-      final resources = await UserStorage.getAgentLLMResources(
-        AgentDefinitions.chatAgent,
-        defaultClientKey: LLMConfig.defaultClientKey,
-      );
-      // Fire and forget — don't block dispose
-      CompanionAgent.onConversationEnd(
-        client: resources.client,
-        modelConfig: resources.modelConfig,
-        userId: userId,
-        characterId: _currentCharacterId,
-        conversation: _llmHistory,
-      );
-    } catch (_) {}
   }
 
   Future<void> _sendMessage() async {
@@ -138,10 +110,6 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
     // Persist user message
     await _chatService.addUserMessage(_currentCharacterId, text,
         timestamp: userMessageTime);
-
-    // Add to LLM history
-    _llmHistory.add(
-        UserMessage([TextPart(_withMessageTime(userMessageTime, text))]));
 
     // Reload messages to show user's message
     final messages = await _chatService.getMessages(_currentCharacterId);
@@ -162,13 +130,6 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
         defaultClientKey: LLMConfig.defaultClientKey,
       );
 
-      // Trim history before sending
-      final historyToSend = _llmHistory.length > _maxHistoryMessages
-          ? _llmHistory.sublist(_llmHistory.length - _maxHistoryMessages)
-          : List<LLMMessage>.from(_llmHistory);
-      // Remove the last user message since CompanionAgent.chat adds it
-      if (historyToSend.isNotEmpty) historyToSend.removeLast();
-
       final buffer = StringBuffer();
       await for (final chunk in CompanionAgent.chat(
         client: resources.client,
@@ -177,7 +138,6 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
         characterId: _currentCharacterId,
         userMessage: text,
         userMessageTime: userMessageTime,
-        history: historyToSend,
       )) {
         buffer.write(chunk);
         if (mounted) {
@@ -189,16 +149,12 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
       // Persist character response
       final fullResponse = buffer.toString().trim();
       if (fullResponse.isNotEmpty) {
-        final responseTime = DateTime.now();
         await _chatService.addCharacterMessage(
           _currentCharacterId,
           fullResponse,
           isRead: true, // User is looking at it
-          timestamp: responseTime,
+          timestamp: DateTime.now(),
         );
-        _llmHistory.add(ModelMessage(
-            model: 'companion',
-            textOutput: _withMessageTime(responseTime, fullResponse)));
       }
 
       // Reload messages
@@ -252,9 +208,6 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
     );
 
     if (selected != null && selected.id != _currentCharacterId && mounted) {
-      // Save memory for current conversation before switching
-      _updateMemoryInBackground();
-
       // Set as primary companion
       await CharacterService.instance.setPrimaryCompanion(userId, selected.id);
 
@@ -284,8 +237,9 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    DiceBearAvatar(
-                      seed: _avatarSeed,
+                    CharacterAvatar(
+                      avatar: _character!.avatar,
+                      name: _character!.name,
                       size: 28,
                       backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                     ),
@@ -378,8 +332,9 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
                 shape: BoxShape.circle,
                 color: AppColors.primary.withValues(alpha: 0.1),
               ),
-              child: DiceBearAvatar(
-                seed: _avatarSeed,
+              child: CharacterAvatar(
+                avatar: _character?.avatar,
+                name: _character?.name ?? '',
                 size: 64,
                 backgroundColor: Colors.transparent,
               ),
@@ -445,8 +400,9 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (isCharacter) ...[
-            DiceBearAvatar(
-              seed: _avatarSeed,
+            CharacterAvatar(
+              avatar: _character?.avatar,
+              name: _character?.name ?? '',
               size: 32,
               backgroundColor: AppColors.primary.withValues(alpha: 0.08),
             ),
@@ -544,8 +500,9 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          DiceBearAvatar(
-            seed: _avatarSeed,
+          CharacterAvatar(
+            avatar: _character?.avatar,
+            name: _character?.name ?? '',
             size: 32,
             backgroundColor: AppColors.primary.withValues(alpha: 0.08),
           ),
@@ -727,11 +684,6 @@ class _CharacterSwitcherSheet extends StatelessWidget {
     );
   }
 
-  String _avatarSeed(CharacterModel char) {
-    if (char.avatar != null && char.avatar!.isNotEmpty) return char.avatar!;
-    return 'companion_${char.name}';
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = UserStorage.l10n;
@@ -775,8 +727,9 @@ class _CharacterSwitcherSheet extends StatelessWidget {
                   final char = characters[index];
                   final isCurrent = char.id == currentId;
                   return ListTile(
-                    leading: DiceBearAvatar(
-                      seed: _avatarSeed(char),
+                    leading: CharacterAvatar(
+                      avatar: char.avatar,
+                      name: char.name,
                       size: 40,
                       backgroundColor:
                           AppColors.primary.withValues(alpha: 0.08),

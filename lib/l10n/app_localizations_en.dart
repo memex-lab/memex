@@ -2155,4 +2155,173 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsSearchEmpty => 'No matching settings found';
+
+  @override
+  String get importCharacterCard => 'Import Character Card';
+
+  @override
+  String get firstMessageLabel => 'First Message';
+
+  @override
+  String get firstMessageHint =>
+      'Greeting sent on first conversation (optional)';
+
+  @override
+  String get systemPromptOverrideLabel => 'System Prompt Override';
+
+  @override
+  String get systemPromptOverrideHint =>
+      'Override default system prompt (advanced, optional)';
+
+  @override
+  String get postHistoryInstructionsLabel => 'Post-History Instructions';
+
+  @override
+  String get postHistoryInstructionsHint =>
+      'Instructions injected after chat history, before reply (optional)';
+
+  @override
+  String get mesExampleLabel => 'Message Examples';
+
+  @override
+  String get mesExampleHint =>
+      'Example dialogues showing character style (optional)';
+
+  @override
+  String get worldBookTitle => 'World Book';
+
+  @override
+  String get worldBookSubtitle =>
+      'Background knowledge injected when keywords are triggered';
+
+  @override
+  String get characterMemoryTitle => 'Character Memory';
+
+  @override
+  String get characterMemorySubtitle =>
+      'Relationship dynamics and interaction memories between character and user';
+
+  @override
+  String get addTooltip => 'Add';
+
+  @override
+  String get constantBadge => 'Constant';
+
+  @override
+  String worldEntryFallbackName(Object index) {
+    return 'Entry $index';
+  }
+
+  @override
+  String keywordsPrefix(Object keys) {
+    return 'Keywords: $keys';
+  }
+
+  @override
+  String memoryFallbackName(Object index) {
+    return 'Memory $index';
+  }
+
+  @override
+  String get addWorldEntry => 'Add World Book Entry';
+
+  @override
+  String get editWorldEntry => 'Edit World Book Entry';
+
+  @override
+  String get commentTitleLabel => 'Comment / Title';
+
+  @override
+  String get entryDescriptionHint => 'Entry description (optional)';
+
+  @override
+  String get triggerKeywordsLabel => 'Trigger Keywords';
+
+  @override
+  String get triggerKeywordsHint => 'Comma-separated, e.g.: magic, spell';
+
+  @override
+  String get contentLabel => 'Content';
+
+  @override
+  String get worldEntryContentHint =>
+      'Background knowledge injected when keywords trigger';
+
+  @override
+  String get enabledCheckbox => 'Enabled';
+
+  @override
+  String get addMemory => 'Add Memory';
+
+  @override
+  String get editMemory => 'Edit Memory';
+
+  @override
+  String get memoryLabelField => 'Label';
+
+  @override
+  String get memoryLabelHint => 'Unique identifier, e.g.: name preference';
+
+  @override
+  String get memoryContentHint => 'Memory content';
+
+  @override
+  String get salienceLabel => 'Salience: ';
+
+  @override
+  String get labelCannotBeEmpty => 'Label cannot be empty';
+
+  @override
+  String importSuccess(Object name) {
+    return '$name imported successfully';
+  }
+
+  @override
+  String importFailed(Object error) {
+    return 'Import failed: $error';
+  }
+
+  @override
+  String get supportedFormats => 'Supported Formats';
+
+  @override
+  String get tavernImportDescription =>
+      '• SillyTavern V2 character cards (.json)\n• PNG images with embedded cards (.png)\n\nFields like persona, world book, etc. will be automatically mapped to Memex character format.';
+
+  @override
+  String get pickCharacterFile => 'Pick Character File';
+
+  @override
+  String get repickFile => 'Pick Another File';
+
+  @override
+  String get personaSettingSection => 'Persona';
+
+  @override
+  String get systemPromptSection => 'System Prompt';
+
+  @override
+  String worldEntriesCount(Object count) {
+    return 'World Book: $count entries';
+  }
+
+  @override
+  String fileLabel(Object filename) {
+    return 'File: $filename';
+  }
+
+  @override
+  String conflictWarning(Object names) {
+    return 'Character with same name already exists: $names. Importing will create a new character without overwriting existing ones.';
+  }
+
+  @override
+  String get setPrimaryCompanionTitle => 'Set as Primary Companion';
+
+  @override
+  String get setPrimaryCompanionSubtitle =>
+      'Automatically set as your primary companion after import';
+
+  @override
+  String get confirmImport => 'Confirm Import';
 }

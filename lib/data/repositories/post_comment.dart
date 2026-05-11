@@ -1,4 +1,5 @@
 import 'package:logging/logging.dart';
+import 'package:memex/agent/memory/character_memory_service.dart';
 import 'package:memex/agent/comment_agent/comment_agent.dart';
 import 'package:memex/domain/models/llm_config.dart';
 import 'package:memex/domain/models/card_model.dart';
@@ -44,6 +45,15 @@ Future<Map<String, dynamic>> postCommentEndpoint(
     // Save user comment to card (persist immediately)
     final commentId = const Uuid().v4();
     final commentTimestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    String? targetCharacterId;
+    if (replyToId != null && replyToId.isNotEmpty) {
+      for (final c in cardData.comments.reversed) {
+        if (c.id == replyToId && c.isAi && c.characterId != null) {
+          targetCharacterId = c.characterId;
+          break;
+        }
+      }
+    }
     await _fileSystemService.updateCardFile(userId, cardId, (card) {
       final newComment = CardComment(
         id: commentId,
@@ -54,6 +64,32 @@ Future<Map<String, dynamic>> postCommentEndpoint(
       );
       return card.copyWith(comments: [...card.comments, newComment]);
     });
+
+    if (targetCharacterId != null) {
+      try {
+        await CharacterMemoryService.instance.appendTimelineEvent(
+          userId: userId,
+          characterId: targetCharacterId,
+          scene: CharacterMemoryScene.comment,
+          type: CharacterMemoryEventType.userCommentReply,
+          content: content,
+          threadId: cardId,
+          factId: cardId,
+          commentId: commentId,
+          replyToId: replyToId,
+          sourceId: commentId,
+          timestamp:
+              DateTime.fromMillisecondsSinceEpoch(commentTimestamp * 1000),
+          metadata: {
+            if (replyToId != null && replyToId.isNotEmpty)
+              'reply_to_id': replyToId,
+            'source': 'post_comment',
+          },
+        );
+      } catch (e) {
+        _logger.warning('Failed to append user comment timeline event: $e');
+      }
+    }
 
     _logger.info('User comment saved for card $cardId, comment_id: $commentId');
 

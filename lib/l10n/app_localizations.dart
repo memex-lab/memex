@@ -3937,6 +3937,294 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No matching settings found'**
   String get settingsSearchEmpty;
+
+  /// No description provided for @importCharacterCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Import Character Card'**
+  String get importCharacterCard;
+
+  /// No description provided for @firstMessageLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'First Message'**
+  String get firstMessageLabel;
+
+  /// No description provided for @firstMessageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Greeting sent on first conversation (optional)'**
+  String get firstMessageHint;
+
+  /// No description provided for @systemPromptOverrideLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'System Prompt Override'**
+  String get systemPromptOverrideLabel;
+
+  /// No description provided for @systemPromptOverrideHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Override default system prompt (advanced, optional)'**
+  String get systemPromptOverrideHint;
+
+  /// No description provided for @postHistoryInstructionsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Post-History Instructions'**
+  String get postHistoryInstructionsLabel;
+
+  /// No description provided for @postHistoryInstructionsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Instructions injected after chat history, before reply (optional)'**
+  String get postHistoryInstructionsHint;
+
+  /// No description provided for @mesExampleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Message Examples'**
+  String get mesExampleLabel;
+
+  /// No description provided for @mesExampleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Example dialogues showing character style (optional)'**
+  String get mesExampleHint;
+
+  /// No description provided for @worldBookTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'World Book'**
+  String get worldBookTitle;
+
+  /// No description provided for @worldBookSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Background knowledge injected when keywords are triggered'**
+  String get worldBookSubtitle;
+
+  /// No description provided for @characterMemoryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Character Memory'**
+  String get characterMemoryTitle;
+
+  /// No description provided for @characterMemorySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Relationship dynamics and interaction memories between character and user'**
+  String get characterMemorySubtitle;
+
+  /// No description provided for @addTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get addTooltip;
+
+  /// No description provided for @constantBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Constant'**
+  String get constantBadge;
+
+  /// No description provided for @worldEntryFallbackName.
+  ///
+  /// In en, this message translates to:
+  /// **'Entry {index}'**
+  String worldEntryFallbackName(Object index);
+
+  /// No description provided for @keywordsPrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'Keywords: {keys}'**
+  String keywordsPrefix(Object keys);
+
+  /// No description provided for @memoryFallbackName.
+  ///
+  /// In en, this message translates to:
+  /// **'Memory {index}'**
+  String memoryFallbackName(Object index);
+
+  /// No description provided for @addWorldEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'Add World Book Entry'**
+  String get addWorldEntry;
+
+  /// No description provided for @editWorldEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit World Book Entry'**
+  String get editWorldEntry;
+
+  /// No description provided for @commentTitleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Comment / Title'**
+  String get commentTitleLabel;
+
+  /// No description provided for @entryDescriptionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Entry description (optional)'**
+  String get entryDescriptionHint;
+
+  /// No description provided for @triggerKeywordsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Trigger Keywords'**
+  String get triggerKeywordsLabel;
+
+  /// No description provided for @triggerKeywordsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Comma-separated, e.g.: magic, spell'**
+  String get triggerKeywordsHint;
+
+  /// No description provided for @contentLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Content'**
+  String get contentLabel;
+
+  /// No description provided for @worldEntryContentHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Background knowledge injected when keywords trigger'**
+  String get worldEntryContentHint;
+
+  /// No description provided for @enabledCheckbox.
+  ///
+  /// In en, this message translates to:
+  /// **'Enabled'**
+  String get enabledCheckbox;
+
+  /// No description provided for @addMemory.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Memory'**
+  String get addMemory;
+
+  /// No description provided for @editMemory.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Memory'**
+  String get editMemory;
+
+  /// No description provided for @memoryLabelField.
+  ///
+  /// In en, this message translates to:
+  /// **'Label'**
+  String get memoryLabelField;
+
+  /// No description provided for @memoryLabelHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Unique identifier, e.g.: name preference'**
+  String get memoryLabelHint;
+
+  /// No description provided for @memoryContentHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Memory content'**
+  String get memoryContentHint;
+
+  /// No description provided for @salienceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Salience: '**
+  String get salienceLabel;
+
+  /// No description provided for @labelCannotBeEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Label cannot be empty'**
+  String get labelCannotBeEmpty;
+
+  /// No description provided for @importSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} imported successfully'**
+  String importSuccess(Object name);
+
+  /// No description provided for @importFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Import failed: {error}'**
+  String importFailed(Object error);
+
+  /// No description provided for @supportedFormats.
+  ///
+  /// In en, this message translates to:
+  /// **'Supported Formats'**
+  String get supportedFormats;
+
+  /// No description provided for @tavernImportDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'• SillyTavern V2 character cards (.json)\n• PNG images with embedded cards (.png)\n\nFields like persona, world book, etc. will be automatically mapped to Memex character format.'**
+  String get tavernImportDescription;
+
+  /// No description provided for @pickCharacterFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick Character File'**
+  String get pickCharacterFile;
+
+  /// No description provided for @repickFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick Another File'**
+  String get repickFile;
+
+  /// No description provided for @personaSettingSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Persona'**
+  String get personaSettingSection;
+
+  /// No description provided for @systemPromptSection.
+  ///
+  /// In en, this message translates to:
+  /// **'System Prompt'**
+  String get systemPromptSection;
+
+  /// No description provided for @worldEntriesCount.
+  ///
+  /// In en, this message translates to:
+  /// **'World Book: {count} entries'**
+  String worldEntriesCount(Object count);
+
+  /// No description provided for @fileLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'File: {filename}'**
+  String fileLabel(Object filename);
+
+  /// No description provided for @conflictWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Character with same name already exists: {names}. Importing will create a new character without overwriting existing ones.'**
+  String conflictWarning(Object names);
+
+  /// No description provided for @setPrimaryCompanionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Set as Primary Companion'**
+  String get setPrimaryCompanionTitle;
+
+  /// No description provided for @setPrimaryCompanionSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatically set as your primary companion after import'**
+  String get setPrimaryCompanionSubtitle;
+
+  /// No description provided for @confirmImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Import'**
+  String get confirmImport;
 }
 
 class _AppLocalizationsDelegate

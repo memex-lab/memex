@@ -947,5 +947,94 @@
   "untitledCard": "未命名卡片",
 
   "settingsSearchPlaceholder": "搜索设置项...",
-  "settingsSearchEmpty": "未找到匹配的设置项"
+  "settingsSearchEmpty": "未找到匹配的设置项",
+
+  "importCharacterCard": "导入角色卡",
+  "firstMessageLabel": "首条消息",
+  "firstMessageHint": "角色首次对话时发送的问候语（可选）",
+  "systemPromptOverrideLabel": "系统提示词覆盖",
+  "systemPromptOverrideHint": "覆盖默认系统提示词（高级，可选）",
+  "postHistoryInstructionsLabel": "历史后指令",
+  "postHistoryInstructionsHint": "在对话历史之后、回复之前注入的指令（可选）",
+  "mesExampleLabel": "对话示例",
+  "mesExampleHint": "角色对话风格示例（可选）",
+  "worldBookTitle": "世界书",
+  "worldBookSubtitle": "触发关键词时注入的背景知识",
+  "characterMemoryTitle": "角色记忆",
+  "characterMemorySubtitle": "角色与用户之间的关系动态和互动记忆",
+  "addTooltip": "添加",
+  "constantBadge": "常驻",
+  "@worldEntryFallbackName": {
+    "placeholders": {
+      "index": {}
+    }
+  },
+  "worldEntryFallbackName": "条目 {index}",
+  "@keywordsPrefix": {
+    "placeholders": {
+      "keys": {}
+    }
+  },
+  "keywordsPrefix": "关键词: {keys}",
+  "@memoryFallbackName": {
+    "placeholders": {
+      "index": {}
+    }
+  },
+  "memoryFallbackName": "记忆 {index}",
+  "addWorldEntry": "添加世界书条目",
+  "editWorldEntry": "编辑世界书条目",
+  "commentTitleLabel": "备注/标题",
+  "entryDescriptionHint": "条目说明（可选）",
+  "triggerKeywordsLabel": "触发关键词",
+  "triggerKeywordsHint": "逗号分隔，如: 魔法, 咒语",
+  "contentLabel": "内容",
+  "worldEntryContentHint": "当关键词触发时注入的背景知识",
+  "enabledCheckbox": "启用",
+  "addMemory": "添加记忆",
+  "editMemory": "编辑记忆",
+  "memoryLabelField": "标签",
+  "memoryLabelHint": "记忆的唯一标识，如: 称呼偏好",
+  "memoryContentHint": "记忆内容",
+  "salienceLabel": "重要性: ",
+  "labelCannotBeEmpty": "标签不能为空",
+  "@importSuccess": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "importSuccess": "{name} 导入成功",
+  "@importFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "importFailed": "导入失败: {error}",
+  "supportedFormats": "支持的格式",
+  "tavernImportDescription": "• SillyTavern V2 角色卡 (.json)\n• 内嵌角色卡的 PNG 图片 (.png)\n\n导入后会自动映射角色设定、世界书等字段到 Memex 角色格式。",
+  "pickCharacterFile": "选择角色卡文件",
+  "repickFile": "重新选择文件",
+  "personaSettingSection": "角色设定",
+  "systemPromptSection": "系统提示词",
+  "@worldEntriesCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "worldEntriesCount": "世界书: {count} 条",
+  "@fileLabel": {
+    "placeholders": {
+      "filename": {}
+    }
+  },
+  "fileLabel": "文件: {filename}",
+  "@conflictWarning": {
+    "placeholders": {
+      "names": {}
+    }
+  },
+  "conflictWarning": "已存在同名角色: {names}。继续导入将创建新角色，不会覆盖已有角色。",
+  "setPrimaryCompanionTitle": "设为主要陪伴角色",
+  "setPrimaryCompanionSubtitle": "导入后自动设为你的主要陪伴角色",
+  "confirmImport": "确认导入"
 }

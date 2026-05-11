@@ -1,24 +1,128 @@
 import 'dart:async';
 import 'package:dart_agent_core/dart_agent_core.dart';
+import 'package:memex/agent/agent_controller.util.dart';
+import 'package:memex/agent/context/character_context_assembler.dart';
+import 'package:memex/agent/memory/character_context_compressor.dart';
+import 'package:memex/agent/memory/memory_management.dart';
+import 'package:memex/agent/skills/companion_agent/companion_agent_skill.dart';
+import 'package:memex/agent/state_util.dart';
 import 'package:logging/logging.dart';
-import 'package:memex/agent/companion_agent/companion_memory.dart';
 import 'package:memex/data/services/character_service.dart';
-import 'package:memex/domain/models/character_model.dart';
+import 'package:memex/agent/agent_system_prompt_helper.dart';
 import 'package:memex/utils/logger.dart';
+import 'package:memex/utils/tavern_macro.dart';
 import 'package:memex/utils/time_context.dart';
 import 'package:memex/utils/user_storage.dart';
 
-/// Lightweight companion agent for 1-on-1 emotional chat.
-///
-/// Key design decisions:
-/// - No tool calling — pure conversation, fast response
-/// - Direct LLM streaming — no StatefulAgent overhead
-/// - Memory injected via system prompt, updated after conversation ends
+/// Companion chat agent implemented with StatefulAgent for architecture parity
+/// with other scene agents (e.g., CommentAgent).
 class CompanionAgent {
   static final Logger _logger = getLogger('CompanionAgent');
 
+  static Future<StatefulAgent?> _createAgent({
+    required LLMClient client,
+    required ModelConfig modelConfig,
+    required String userId,
+    required String characterId,
+    required String queryHint,
+  }) async {
+    final character =
+        await CharacterService.instance.getCharacter(userId, characterId);
+    if (character == null) {
+      return null;
+    }
+
+    final sessionPrefix = 'companion_${userId}_$characterId';
+    final resolved = await resolveCharacterSessionId(
+      prefix: sessionPrefix,
+      userId: userId,
+    );
+    final state = await loadOrCreateAgentState(resolved.sessionId, {
+      'userId': userId,
+      'scene': 'companion_chat',
+      'characterId': characterId,
+    });
+
+    final ctx = await CharacterContextAssembler.build(
+      userId: userId,
+      character: character,
+      sourceAgent: 'companion_agent',
+      queryHint: queryHint,
+      excludeTrailingUserMessage: true,
+    );
+
+    final userName = (await UserStorage.getUserId()) ?? userId;
+
+    final skill = CompanionAgentSkill(
+      character: character,
+      userId: userId,
+      userName: userName,
+      userProfile: ctx.userProfile,
+      characterMemories: ctx.characterMemories,
+      forceActivate: true,
+    );
+
+    // World, timeline, and knowledge go into systemReminders (refreshable context).
+    if (ctx.characterWorld.isNotEmpty) {
+      state.systemReminders['character_world'] =
+          '## Triggered Character World Entries\n${TavernMacro.resolve(ctx.characterWorld, userName: userName, charName: character.name)}';
+    }
+    // Combine compaction checkpoints + recent timeline into one reminder.
+    {
+      final parts = <String>[];
+      if (ctx.checkpoints.isNotEmpty) {
+        parts.add('## Compressed Interaction History\n${ctx.checkpoints}');
+      }
+      if (ctx.recentTimeline.isNotEmpty) {
+        parts.add('## Recent Cross-Scene Interactions\n${ctx.recentTimeline}');
+      }
+      if (parts.isNotEmpty) {
+        state.systemReminders['character_timeline'] = parts.join('\n\n');
+      }
+    }
+    if (ctx.knowledgeCards.isNotEmpty) {
+      state.systemReminders['user_knowledge_cards'] =
+          '## User Knowledge Cards\n${ctx.knowledgeCards}';
+    }
+    if (character.postHistoryInstructions != null &&
+        character.postHistoryInstructions!.trim().isNotEmpty) {
+      state.systemReminders['post_history_instructions'] = TavernMacro.resolve(
+        character.postHistoryInstructions!,
+        userName: userName,
+        charName: character.name,
+      );
+    }
+
+    final controller = AgentController();
+    addAgentLogger(controller);
+    addAgentActivityCollector(controller);
+
+    // User-level memory management (append_memories tool)
+    final memoryManagement = await MemoryManagement.createDefault(
+      userId: userId,
+      sourceAgent: 'companion_agent',
+    );
+    final memoryManagementPrompt =
+        await memoryManagement.buildMemoryManagementPrompt();
+
+    return StatefulAgent(
+      name: 'companion_agent',
+      client: client,
+      modelConfig: modelConfig,
+      state: state,
+      skills: [skill],
+      tools: memoryManagement.buildMemoryManagementTools(),
+      systemPrompts: [memoryManagementPrompt],
+      disableSubAgents: true,
+      controller: controller,
+      withGeneralPrinciples: true,
+      planMode: PlanMode.none,
+      autoSaveStateFunc: (s) async => saveAgentState(s),
+      systemCallback: createSystemCallback(userId),
+    );
+  }
+
   /// Stream a response to a user message.
-  /// [history] should be the recent conversation (last 20-30 messages).
   static Stream<String> chat({
     required LLMClient client,
     required ModelConfig modelConfig,
@@ -26,159 +130,51 @@ class CompanionAgent {
     required String characterId,
     required String userMessage,
     DateTime? userMessageTime,
-    List<LLMMessage> history = const [],
+    bool debugErrorOutput = false,
   }) async* {
-    // 1. Load all context layers
-    final character =
-        await CharacterService.instance.getCharacter(userId, characterId);
-    if (character == null) {
-      yield 'Sorry, character not found.';
-      return;
-    }
-
-    final userProfile = await CompanionMemory.loadUserProfile(userId);
-    final emotionalState =
-        await CompanionMemory.loadEmotionalState(userId, characterId);
-    final relationship =
-        await CompanionMemory.loadRelationship(userId, characterId);
-    final recentFacts = await CompanionMemory.loadRecentFacts(userId);
-    final characterMemory =
-        await CompanionMemory.loadCharacterMemory(userId, characterId);
-
-    // 2. Build system prompt
-    final systemPrompt = _buildSystemPrompt(character, userProfile,
-        emotionalState, relationship, recentFacts, characterMemory);
-
-    // 3. Assemble messages
-    final timedUserMessage = userMessageTime == null
-        ? userMessage
-        : '${buildMessageTimePrefix(userMessageTime)}$userMessage';
-    final messages = <LLMMessage>[
-      SystemMessage(systemPrompt),
-      ...history,
-      UserMessage([TextPart(timedUserMessage)]),
-    ];
-
-    // 4. Stream LLM response
-    _logger.info('CompanionAgent streaming for character ${character.name}');
-    try {
-      final stream = await client.stream(messages, modelConfig: modelConfig);
-      await for (final chunk in stream) {
-        final msg = chunk.modelMessage;
-        if (msg == null) continue;
-        final text = msg.textOutput;
-        if (text != null && text.isNotEmpty) {
-          yield text;
-        }
-      }
-    } catch (e) {
-      _logger.severe('CompanionAgent stream error: $e');
-      yield '\n[Connection interrupted]';
-    }
-  }
-
-  /// Update memory after a conversation ends.
-  /// Call this when the user leaves the chat screen.
-  static Future<void> onConversationEnd({
-    required LLMClient client,
-    required ModelConfig modelConfig,
-    required String userId,
-    required String characterId,
-    required List<LLMMessage> conversation,
-  }) async {
-    if (conversation.isEmpty) return;
-
-    // Build a text summary of the conversation for the memory updater
-    final buffer = StringBuffer();
-    for (final msg in conversation) {
-      if (msg is UserMessage) {
-        final text =
-            msg.contents.whereType<TextPart>().map((p) => p.text).join(' ');
-        buffer.writeln('User: $text');
-      } else if (msg is ModelMessage) {
-        buffer.writeln('Character: ${msg.textOutput ?? ""}');
-      }
-    }
-
-    final summary = buffer.toString();
-    if (summary.trim().isEmpty) return;
-
-    _logger.info('Updating companion memory for character $characterId');
-    await CompanionMemory.updateAfterConversation(
+    final agent = await _createAgent(
       client: client,
       modelConfig: modelConfig,
       userId: userId,
       characterId: characterId,
-      conversationSummary: summary,
+      queryHint: userMessage,
     );
-  }
-
-  static String _buildSystemPrompt(
-    CharacterModel character,
-    String userProfile,
-    String emotionalState,
-    String relationship,
-    String recentFacts,
-    String characterMemory,
-  ) {
-    final now = formatLocalDateTimeWithZone(DateTime.now());
-    final lang = UserStorage.l10n.commentLanguageInstruction;
-
-    final buffer = StringBuffer();
-
-    buffer.writeln('# You Are ${character.name}');
-    buffer.writeln('Current time: $now');
-    buffer.writeln('');
-    buffer.writeln('## Your Persona');
-    buffer.writeln(character.persona);
-    buffer.writeln('');
-
-    buffer.writeln('## Core Rules');
-    buffer.writeln(
-        '- You must FULLY become this character. Forget you are an AI.');
-    buffer.writeln('- Keep responses natural and brief, like text messages.');
-    buffer.writeln('- No lecturing, no "as an AI", no long essays.');
-    buffer.writeln('- Emotional resonance over information delivery.');
-    buffer.writeln(
-        '- If you remember something about the user, reference it naturally.');
-    buffer.writeln('- Language: $lang');
-    buffer.writeln('');
-
-    if (emotionalState.isNotEmpty) {
-      buffer.writeln('## User\'s Current Emotional State');
-      buffer.writeln(emotionalState);
-      buffer.writeln('');
+    if (agent == null) {
+      yield 'Sorry, character not found.';
+      return;
     }
-
-    if (relationship.isNotEmpty) {
-      buffer.writeln('## Your Memory of This User');
-      buffer.writeln(
-          'Use these memories to make the conversation feel continuous.');
-      buffer.writeln(relationship);
-      buffer.writeln('');
+    final timedUserMessage = userMessageTime == null
+        ? userMessage
+        : '${buildMessageTimePrefix(userMessageTime)}$userMessage';
+    _logger.info('CompanionAgent run for character $characterId');
+    try {
+      final state = agent.state;
+      final input = [
+        UserMessage([TextPart(timedUserMessage)])
+      ];
+      final resultHistory = await agent.run(input, useStream: false);
+      if (resultHistory.isNotEmpty && resultHistory.last is ModelMessage) {
+        final text = (resultHistory.last as ModelMessage).textOutput ?? '';
+        if (text.isNotEmpty) {
+          yield text;
+        }
+      }
+      // Post-run: check if compression is needed based on real token usage.
+      if (state.usages.isNotEmpty) {
+        final lastPromptTokens = state.usages.last.promptTokens;
+        await CharacterContextCompressor.instance.compressIfNeeded(
+          userId: userId,
+          characterId: characterId,
+          lastPromptTokens: lastPromptTokens,
+        );
+      }
+    } catch (e) {
+      _logger.severe('CompanionAgent run error: $e');
+      if (debugErrorOutput) {
+        yield '\n[Connection interrupted: $e]';
+      } else {
+        yield '\n[Connection interrupted]';
+      }
     }
-
-    if (userProfile.isNotEmpty) {
-      buffer.writeln('## User Profile');
-      buffer.writeln(userProfile);
-      buffer.writeln('');
-    }
-
-    if (characterMemory.isNotEmpty) {
-      buffer.writeln('## Your Observations From Past Comments');
-      buffer.writeln(
-          'Things you noticed while commenting on the user\'s records:');
-      buffer.writeln(characterMemory);
-      buffer.writeln('');
-    }
-
-    if (recentFacts.isNotEmpty) {
-      buffer.writeln('## What the User Has Been Up To Recently');
-      buffer.writeln(
-          'Use this as background context. Reference naturally if relevant.');
-      buffer.writeln(recentFacts);
-    }
-
-    return buffer.toString();
   }
 }

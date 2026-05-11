@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
@@ -26,7 +25,7 @@ class CharacterService {
   };
 
   final Logger _logger = getLogger('CharacterService');
-  final FileSystemService _fileSystem = FileSystemService.instance;
+  FileSystemService get _fileSystem => FileSystemService.instance;
 
   CharacterService._();
 
@@ -238,29 +237,56 @@ class CharacterService {
     }
   }
 
+  /// Path to the file that tracks the next available numeric character ID.
+  /// This prevents ID reuse after character deletion.
+  static const String _nextIdFile = '.next_id';
+
+  /// Read the next available ID from the tracker file.
+  /// If the file doesn't exist, scans existing files to bootstrap.
+  Future<int> _readNextId(String charsPath) async {
+    final file = File(p.join(charsPath, _nextIdFile));
+    if (await file.exists()) {
+      try {
+        return int.parse((await file.readAsString()).trim());
+      } catch (_) {
+        // Corrupted file — fall through to bootstrap
+      }
+    }
+
+    // Bootstrap: scan existing numeric IDs and pick max + 1
+    final dir = Directory(charsPath);
+    int maxId = 0;
+    await for (final entity in dir.list()) {
+      if (entity is File && !p.basename(entity.path).startsWith('.')) {
+        final name = p.basenameWithoutExtension(entity.path);
+        final parsed = int.tryParse(name);
+        if (parsed != null && parsed > maxId) {
+          maxId = parsed;
+        }
+      }
+    }
+    final nextId = maxId + 1;
+    await _writeNextId(charsPath, nextId);
+    return nextId;
+  }
+
+  /// Persist the next available ID.
+  Future<void> _writeNextId(String charsPath, int nextId) async {
+    final file = File(p.join(charsPath, _nextIdFile));
+    await file.writeAsString(nextId.toString());
+  }
+
   /// Create new character
   Future<CharacterModel> createCharacter({
     required String userId,
     required Map<String, dynamic> characterData,
   }) async {
     final charsPath = await _ensureCharactersDirectory(userId);
-    final dir = Directory(charsPath);
 
-    // Generate new ID (max + 1)
-    final existingIds = <int>{};
-    await for (final entity in dir.list()) {
-      if (entity is File && !p.basename(entity.path).startsWith('.')) {
-        final name = p.basenameWithoutExtension(entity.path);
-        try {
-          existingIds.add(int.parse(name));
-        } catch (_) {}
-      }
-    }
-
-    var newId = "1";
-    if (existingIds.isNotEmpty) {
-      newId = (existingIds.reduce(max) + 1).toString();
-    }
+    // Generate new ID using monotonically increasing counter (never reuses deleted IDs)
+    final nextId = await _readNextId(charsPath);
+    final newId = nextId.toString();
+    await _writeNextId(charsPath, nextId + 1);
 
     final charFile = p.join(charsPath, '$newId.yaml');
     final charDict = {
@@ -270,6 +296,14 @@ class CharacterService {
       "avatar": characterData['avatar'],
       "enabled": characterData['enabled'] ?? true,
       "memory": characterData['memory'] ?? [],
+      if (characterData['first_message'] != null)
+        "first_message": characterData['first_message'],
+      if (characterData['system_prompt_override'] != null)
+        "system_prompt_override": characterData['system_prompt_override'],
+      if (characterData['post_history_instructions'] != null)
+        "post_history_instructions": characterData['post_history_instructions'],
+      if (characterData['mes_example'] != null)
+        "mes_example": characterData['mes_example'],
     };
 
     try {
@@ -326,6 +360,36 @@ class CharacterService {
       }
       if (updates.containsKey('interest_filter')) {
         charData['interest_filter'] = updates['interest_filter'];
+      }
+      if (updates.containsKey('first_message')) {
+        if (updates['first_message'] == null) {
+          charData.remove('first_message');
+        } else {
+          charData['first_message'] = updates['first_message'];
+        }
+      }
+      if (updates.containsKey('system_prompt_override')) {
+        if (updates['system_prompt_override'] == null) {
+          charData.remove('system_prompt_override');
+        } else {
+          charData['system_prompt_override'] =
+              updates['system_prompt_override'];
+        }
+      }
+      if (updates.containsKey('post_history_instructions')) {
+        if (updates['post_history_instructions'] == null) {
+          charData.remove('post_history_instructions');
+        } else {
+          charData['post_history_instructions'] =
+              updates['post_history_instructions'];
+        }
+      }
+      if (updates.containsKey('mes_example')) {
+        if (updates['mes_example'] == null) {
+          charData.remove('mes_example');
+        } else {
+          charData['mes_example'] = updates['mes_example'];
+        }
       }
 
       // Remove legacy fields if they exist (merged into persona already by backend logic usually, but cleanup is good)

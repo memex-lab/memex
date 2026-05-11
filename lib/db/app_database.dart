@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
+import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 
 // Import tables
@@ -66,8 +67,16 @@ class AppDatabase extends _$AppDatabase {
   /// Private constructor
   AppDatabase._(String userId) : super(_openConnection(userId));
 
+  @visibleForTesting
+  static void setTestInstance(AppDatabase database) {
+    _instance = database;
+  }
+
+  @visibleForTesting
+  AppDatabase.forTesting(super.executor);
+
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -164,6 +173,10 @@ class AppDatabase extends _$AppDatabase {
           if (from < 12) {
             await m.createTable(userNotifications);
             await _createUserNotificationIndices();
+          }
+          if (from < 13) {
+            // Create FTS5 virtual tables for character world and timeline search.
+            await searchDao.createCharacterFtsTables();
           }
         },
       );

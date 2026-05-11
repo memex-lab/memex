@@ -5,12 +5,20 @@ class CharacterModel {
   final String id;
   final String name;
   final List<String> tags;
-  final String persona; // combined persona (identity, style, examples, PKM filters, etc.)
+  final String
+      persona; // combined persona (identity, style, examples, PKM filters, etc.)
   final bool enabled;
   final String? avatar;
   final List<CharacterMemoryBlock> memory;
   final bool isPrimaryCompanion; // user's chosen main companion
-  final String? interestFilter; // what this character cares about (for selection)
+  final String?
+      interestFilter; // what this character cares about (for selection)
+  final String?
+      firstMessage; // greeting sent on first chat (from tavern first_mes)
+  final String? systemPromptOverride; // character-level system prompt override
+  final String?
+      postHistoryInstructions; // injected after history, before response
+  final String? mesExample; // example dialogues for style reference
 
   CharacterModel({
     required this.id,
@@ -22,6 +30,10 @@ class CharacterModel {
     this.memory = const [],
     this.isPrimaryCompanion = false,
     this.interestFilter,
+    this.firstMessage,
+    this.systemPromptOverride,
+    this.postHistoryInstructions,
+    this.mesExample,
   });
 
   factory CharacterModel.fromJson(Map<String, dynamic> json) {
@@ -41,6 +53,10 @@ class CharacterModel {
           [],
       isPrimaryCompanion: json['is_primary_companion'] as bool? ?? false,
       interestFilter: json['interest_filter'] as String?,
+      firstMessage: json['first_message'] as String?,
+      systemPromptOverride: json['system_prompt_override'] as String?,
+      postHistoryInstructions: json['post_history_instructions'] as String?,
+      mesExample: json['mes_example'] as String?,
     );
   }
 
@@ -55,6 +71,12 @@ class CharacterModel {
       'memory': memory.map((e) => e.toJson()).toList(),
       'is_primary_companion': isPrimaryCompanion,
       if (interestFilter != null) 'interest_filter': interestFilter,
+      if (firstMessage != null) 'first_message': firstMessage,
+      if (systemPromptOverride != null)
+        'system_prompt_override': systemPromptOverride,
+      if (postHistoryInstructions != null)
+        'post_history_instructions': postHistoryInstructions,
+      if (mesExample != null) 'mes_example': mesExample,
     };
   }
 
@@ -68,6 +90,10 @@ class CharacterModel {
     List<CharacterMemoryBlock>? memory,
     bool? isPrimaryCompanion,
     String? interestFilter,
+    String? firstMessage,
+    String? systemPromptOverride,
+    String? postHistoryInstructions,
+    String? mesExample,
   }) {
     return CharacterModel(
       id: id ?? this.id,
@@ -79,6 +105,11 @@ class CharacterModel {
       memory: memory ?? this.memory,
       isPrimaryCompanion: isPrimaryCompanion ?? this.isPrimaryCompanion,
       interestFilter: interestFilter ?? this.interestFilter,
+      firstMessage: firstMessage ?? this.firstMessage,
+      systemPromptOverride: systemPromptOverride ?? this.systemPromptOverride,
+      postHistoryInstructions:
+          postHistoryInstructions ?? this.postHistoryInstructions,
+      mesExample: mesExample ?? this.mesExample,
     );
   }
 }

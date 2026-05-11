@@ -1164,6 +1164,13 @@ class _TimelineEntryItemState extends State<_TimelineEntryItem> {
     final isAlreadyClassic = card.uiConfigs.length == 1 &&
         card.uiConfigs.first.templateId == 'classic_card';
 
+    // System-generated cards (no user raw input) should not support long-press
+    // toggle to classic mode — they have no rawText to fall back to.
+    const _systemOnlyTemplates = {'clarification_ask', 'system_task'};
+    final isSystemCard = card.uiConfigs.isNotEmpty &&
+        _systemOnlyTemplates.contains(card.uiConfigs.first.templateId);
+    final canToggleClassic = !isAlreadyClassic && !isSystemCard;
+
     // Check for single compact card
     bool isSingleCompactCard = false;
     if (displayConfigs.length == 1 && !_isClassicMode) {
@@ -1229,7 +1236,7 @@ class _TimelineEntryItemState extends State<_TimelineEntryItem> {
       padding: const EdgeInsets.only(bottom: 20),
       child: GestureDetector(
         onTap: onTap,
-        onLongPress: isAlreadyClassic ? null : _toggleClassicMode,
+        onLongPress: canToggleClassic ? _toggleClassicMode : null,
         behavior: HitTestBehavior.opaque,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
