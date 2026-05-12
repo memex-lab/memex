@@ -408,7 +408,6 @@ class PhotoSuggestionService {
         labels = List<String>.from(cachedData['labels'] ?? []);
         fileModifiedTime = DateTime.fromMillisecondsSinceEpoch(
             cachedData['fileModifiedTime'] as int);
-        _logger.fine('Cache hit: $effectiveName');
       } else {
         effectiveName = data['effectiveName'] as String;
         final latlng = data['latlng'];
