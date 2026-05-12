@@ -2251,4 +2251,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get confirmImport => '确认导入';
+
+  @override
+  String get chatBackground => '聊天背景';
+
+  @override
+  String get chooseChatBackgroundImage => '选择聊天背景图';
 }

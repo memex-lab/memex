@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:logging/logging.dart';
 import 'package:memex/agent/memory/character_memory_service.dart';
 import 'package:memex/domain/models/character_model.dart';
@@ -369,6 +371,8 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
   String _avatarValueForSave = '';
   String _avatarPreview = '';
   bool _hasPickedAvatar = false;
+  String? _chatBackgroundValue;
+  String? _chatBackgroundPreview;
 
   // World book entries and memory entries (loaded from CharacterMemoryService)
   List<Map<String, dynamic>> _worldEntries = [];
@@ -391,6 +395,8 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
       _avatarPreview = widget.character!.avatar ?? '';
       _hasPickedAvatar = widget.character!.avatar != null &&
           widget.character!.avatar!.isNotEmpty;
+      _chatBackgroundValue = widget.character!.chatBackground;
+      _chatBackgroundPreview = widget.character!.chatBackground;
       _loadCharacterData();
     }
     if (_avatarValueForSave.isEmpty) {
@@ -485,6 +491,105 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
     }
   }
 
+  Future<void> _pickChatBackground() async {
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1920,
+        maxHeight: 1920,
+        imageQuality: 90,
+      );
+      if (picked == null) return;
+
+      final userId = await UserStorage.getUserId();
+      if (userId == null) return;
+
+      final imported = await MediaService.instance.importImage(
+        userId: userId,
+        sourcePath: picked.path,
+      );
+      if (!mounted) return;
+      setState(() {
+        _chatBackgroundValue = imported.relativePath;
+        _chatBackgroundPreview = imported.absolutePath;
+      });
+    } catch (e) {
+      _logger.warning('Failed to pick chat background: $e');
+      if (mounted) {
+        ToastHelper.showError(
+            context, UserStorage.l10n.operationFailed(e.toString()));
+      }
+    }
+  }
+
+  void _removeChatBackground() {
+    setState(() {
+      _chatBackgroundValue = null;
+      _chatBackgroundPreview = null;
+    });
+  }
+
+  Widget _buildChatBackgroundPicker() {
+    final preview = _chatBackgroundPreview;
+    final hasBackground =
+        preview != null && preview.isNotEmpty && File(preview).existsSync();
+
+    return GestureDetector(
+      onTap: _pickChatBackground,
+      child: Container(
+        height: 120,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF7F8FA),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          image: hasBackground
+              ? DecorationImage(
+                  image: FileImage(File(preview)),
+                  fit: BoxFit.cover,
+                )
+              : null,
+        ),
+        child: hasBackground
+            ? Align(
+                alignment: Alignment.topRight,
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: GestureDetector(
+                    onTap: _removeChatBackground,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.5),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.close,
+                          size: 16, color: Colors.white),
+                    ),
+                  ),
+                ),
+              )
+            : Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.add_photo_alternate_outlined,
+                        size: 32, color: Colors.grey[400]),
+                    const SizedBox(height: 8),
+                    Text(
+                      UserStorage.l10n.chooseChatBackgroundImage,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey[400],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+      ),
+    );
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -520,6 +625,7 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
         'mes_example': _mesExampleController.text.trim().isEmpty
             ? null
             : _mesExampleController.text.trim(),
+        'chat_background': _chatBackgroundValue,
       };
 
       if (widget.character == null) {
@@ -737,6 +843,11 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
                 style: const TextStyle(fontSize: 16),
                 decoration: _buildInputDecoration(UserStorage.l10n.tagsHint),
               ),
+              const SizedBox(height: 24),
+              // Chat background image picker
+              _buildLabel(UserStorage.l10n.chatBackground),
+              const SizedBox(height: 8),
+              _buildChatBackgroundPicker(),
               const SizedBox(height: 24),
               _buildLabel(UserStorage.l10n.characterPersonaLabel),
               const SizedBox(height: 8),

@@ -1041,5 +1041,7 @@
   "conflictWarning": "已存在同名角色: {names}。继续导入将创建新角色，不会覆盖已有角色。",
   "setPrimaryCompanionTitle": "设为主要陪伴角色",
   "setPrimaryCompanionSubtitle": "导入后自动设为你的主要陪伴角色",
-  "confirmImport": "确认导入"
+  "confirmImport": "确认导入",
+  "chatBackground": "聊天背景",
+  "chooseChatBackgroundImage": "选择聊天背景图"
 }

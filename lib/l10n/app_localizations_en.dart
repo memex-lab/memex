@@ -2340,4 +2340,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get confirmImport => 'Confirm Import';
+
+  @override
+  String get chatBackground => 'Chat Background';
+
+  @override
+  String get chooseChatBackgroundImage => 'Choose background image';
 }

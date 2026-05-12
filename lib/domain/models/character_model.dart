@@ -19,6 +19,7 @@ class CharacterModel {
   final String?
       postHistoryInstructions; // injected after history, before response
   final String? mesExample; // example dialogues for style reference
+  final String? chatBackground; // custom chat background image path
 
   CharacterModel({
     required this.id,
@@ -34,6 +35,7 @@ class CharacterModel {
     this.systemPromptOverride,
     this.postHistoryInstructions,
     this.mesExample,
+    this.chatBackground,
   });
 
   factory CharacterModel.fromJson(Map<String, dynamic> json) {
@@ -57,6 +59,7 @@ class CharacterModel {
       systemPromptOverride: json['system_prompt_override'] as String?,
       postHistoryInstructions: json['post_history_instructions'] as String?,
       mesExample: json['mes_example'] as String?,
+      chatBackground: json['chat_background'] as String?,
     );
   }
 
@@ -77,6 +80,7 @@ class CharacterModel {
       if (postHistoryInstructions != null)
         'post_history_instructions': postHistoryInstructions,
       if (mesExample != null) 'mes_example': mesExample,
+      if (chatBackground != null) 'chat_background': chatBackground,
     };
   }
 
@@ -94,6 +98,7 @@ class CharacterModel {
     String? systemPromptOverride,
     String? postHistoryInstructions,
     String? mesExample,
+    String? chatBackground,
   }) {
     return CharacterModel(
       id: id ?? this.id,
@@ -110,6 +115,7 @@ class CharacterModel {
       postHistoryInstructions:
           postHistoryInstructions ?? this.postHistoryInstructions,
       mesExample: mesExample ?? this.mesExample,
+      chatBackground: chatBackground ?? this.chatBackground,
     );
   }
 }

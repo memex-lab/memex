@@ -4255,6 +4255,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Confirm Import'**
   String get confirmImport;
+
+  /// No description provided for @chatBackground.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat Background'**
+  String get chatBackground;
+
+  /// No description provided for @chooseChatBackgroundImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose background image'**
+  String get chooseChatBackgroundImage;
 }
 
 class _AppLocalizationsDelegate

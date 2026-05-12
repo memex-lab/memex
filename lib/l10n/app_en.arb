@@ -1063,5 +1063,7 @@
   "conflictWarning": "Character with same name already exists: {names}. Importing will create a new character without overwriting existing ones.",
   "setPrimaryCompanionTitle": "Set as Primary Companion",
   "setPrimaryCompanionSubtitle": "Automatically set as your primary companion after import",
-  "confirmImport": "Confirm Import"
+  "confirmImport": "Confirm Import",
+  "chatBackground": "Chat Background",
+  "chooseChatBackgroundImage": "Choose background image"
 }

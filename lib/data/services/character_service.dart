@@ -29,15 +29,31 @@ class CharacterService {
 
   CharacterService._();
 
-  /// Resolve avatar path: if stored as relative path, convert to absolute.
-  /// Absolute paths (legacy) are returned as-is.
-  CharacterModel _resolveAvatarPath(CharacterModel character) {
+  /// Resolve relative media paths (avatar, chatBackground) to absolute.
+  /// Absolute paths (legacy) and DiceBear seeds are returned as-is.
+  CharacterModel _resolveMediaPaths(CharacterModel character) {
     final avatar = character.avatar;
-    if (avatar == null || avatar.isEmpty) return character;
-    // DiceBear seeds and absolute paths need no resolution
-    if (!isRelativeAvatarPath(avatar)) return character;
-    final absolute = _fileSystem.toAbsolutePath(avatar);
-    return character.copyWith(avatar: absolute);
+    final bg = character.chatBackground;
+    var resolved = character;
+    if (avatar != null && avatar.isNotEmpty && isRelativeAvatarPath(avatar)) {
+      final absolute = _fileSystem.toAbsolutePath(avatar);
+      resolved = resolved.copyWith(avatar: absolute);
+    }
+    if (bg != null && bg.isNotEmpty && _isRelativeMediaPath(bg)) {
+      final absolute = _fileSystem.toAbsolutePath(bg);
+      resolved = resolved.copyWith(chatBackground: absolute);
+    }
+    return resolved;
+  }
+
+  /// Returns true if the path looks like a relative file path (image/media).
+  static bool _isRelativeMediaPath(String path) {
+    if (path.startsWith('/')) return false;
+    final lower = path.toLowerCase();
+    return lower.endsWith('.png') ||
+        lower.endsWith('.jpg') ||
+        lower.endsWith('.jpeg') ||
+        lower.endsWith('.webp');
   }
 
   /// Returns true if the avatar value looks like a relative file path
@@ -206,7 +222,7 @@ class CharacterService {
           data['id'] = charId;
 
           final character = CharacterModel.fromJson(data);
-          characters.add(_resolveAvatarPath(character));
+          characters.add(_resolveMediaPaths(character));
         } catch (e) {
           _logger.warning("Failed to load character from ${entity.path}: $e");
         }
@@ -250,7 +266,7 @@ class CharacterService {
       data['id'] = characterId;
 
       final character = CharacterModel.fromJson(data);
-      return _resolveAvatarPath(character);
+      return _resolveMediaPaths(character);
     } catch (e) {
       _logger.severe("Failed to load character $characterId: $e");
       return null;
@@ -324,6 +340,8 @@ class CharacterService {
         "post_history_instructions": characterData['post_history_instructions'],
       if (characterData['mes_example'] != null)
         "mes_example": characterData['mes_example'],
+      if (characterData['chat_background'] != null)
+        "chat_background": characterData['chat_background'],
     };
 
     try {
@@ -409,6 +427,13 @@ class CharacterService {
           charData.remove('mes_example');
         } else {
           charData['mes_example'] = updates['mes_example'];
+        }
+      }
+      if (updates.containsKey('chat_background')) {
+        if (updates['chat_background'] == null) {
+          charData.remove('chat_background');
+        } else {
+          charData['chat_background'] = updates['chat_background'];
         }
       }
 

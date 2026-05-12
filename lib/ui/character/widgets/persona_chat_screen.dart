@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -289,95 +290,84 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
 
   Widget _buildHeader() {
     final character = _character;
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(14, 8, 14, 10),
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.18),
-            border: Border(
-              bottom: BorderSide(
-                color: Colors.white.withValues(alpha: 0.05),
+
+    final content = Container(
+      padding: const EdgeInsets.fromLTRB(14, 8, 14, 10),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: const _FrostedCircleButton(
+              child: Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: _personaText,
+                size: 17,
               ),
             ),
           ),
-          child: Row(
-            children: [
-              GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: const _FrostedCircleButton(
-                  child: Icon(
-                    Icons.arrow_back_ios_new_rounded,
-                    color: _personaText,
-                    size: 17,
-                  ),
+          if (character != null) ...[
+            const SizedBox(width: 10),
+            Expanded(
+              child: GestureDetector(
+                onTap: _isStreaming ? null : _switchCharacter,
+                child: Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      padding: const EdgeInsets.all(1.5),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: _personaAccent.withValues(alpha: 0.72),
+                          width: 1.2,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.42),
+                            blurRadius: 22,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: CharacterAvatar(
+                        avatar: character.avatar,
+                        name: character.name,
+                        size: 41,
+                        backgroundColor: _personaPanelSoft,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        character.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 17,
+                          height: 1.1,
+                          fontWeight: FontWeight.w600,
+                          color: _personaText,
+                          letterSpacing: 0,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      size: 19,
+                      color: _isStreaming ? _personaTextMuted : _personaAccent,
+                    ),
+                  ],
                 ),
               ),
-              if (character != null) ...[
-                const SizedBox(width: 10),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: _isStreaming ? null : _switchCharacter,
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 44,
-                          height: 44,
-                          padding: const EdgeInsets.all(1.5),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: _personaAccent.withValues(alpha: 0.72),
-                              width: 1.2,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.42),
-                                blurRadius: 22,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
-                          ),
-                          child: CharacterAvatar(
-                            avatar: character.avatar,
-                            name: character.name,
-                            size: 41,
-                            backgroundColor: _personaPanelSoft,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            character.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 17,
-                              height: 1.1,
-                              fontWeight: FontWeight.w600,
-                              color: _personaText,
-                              letterSpacing: 0,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Icon(
-                          Icons.keyboard_arrow_down_rounded,
-                          size: 19,
-                          color:
-                              _isStreaming ? _personaTextMuted : _personaAccent,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
+            ),
+          ],
+        ],
       ),
     );
+
+    return content;
   }
 
   Widget _buildMessageList() {
@@ -811,23 +801,35 @@ class _ChatAtmosphereBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bgPath = character?.chatBackground;
+    final hasCustomBg =
+        bgPath != null && bgPath.isNotEmpty && File(bgPath).existsSync();
+
     return Stack(
       children: [
-        const DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF070A11),
-                Color(0xFF131923),
-                Color(0xFF060607),
-              ],
-              stops: [0, 0.54, 1],
+        if (hasCustomBg)
+          Positioned.fill(
+            child: Image.file(
+              File(bgPath),
+              fit: BoxFit.cover,
+            ),
+          )
+        else
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF070A11),
+                  Color(0xFF131923),
+                  Color(0xFF060607),
+                ],
+                stops: [0, 0.54, 1],
+              ),
             ),
           ),
-        ),
-        if (character != null)
+        if (!hasCustomBg && character != null)
           Positioned.fill(
             child: Opacity(
               opacity: 0.22,
@@ -846,51 +848,78 @@ class _ChatAtmosphereBackground extends StatelessWidget {
               ),
             ),
           ),
-        Positioned.fill(
-          child: CustomPaint(
-            painter: _ChatTexturePainter(),
+        if (!hasCustomBg)
+          Positioned.fill(
+            child: CustomPaint(
+              painter: _ChatTexturePainter(),
+            ),
           ),
-        ),
-        Positioned(
-          top: -88,
-          left: -72,
-          child: _AtmosphereGlow(
-            size: 240,
-            color: const Color(0xFF40516A).withValues(alpha: 0.2),
+        if (!hasCustomBg) ...[
+          Positioned(
+            top: -88,
+            left: -72,
+            child: _AtmosphereGlow(
+              size: 240,
+              color: const Color(0xFF40516A).withValues(alpha: 0.2),
+            ),
           ),
-        ),
-        Positioned(
-          top: 84,
-          right: -96,
-          child: _AtmosphereGlow(
-            size: 280,
-            color: _personaAccent.withValues(alpha: 0.08),
+          Positioned(
+            top: 84,
+            right: -96,
+            child: _AtmosphereGlow(
+              size: 280,
+              color: _personaAccent.withValues(alpha: 0.08),
+            ),
           ),
-        ),
-        Positioned(
-          bottom: 76,
-          left: -120,
-          child: _AtmosphereGlow(
-            size: 320,
-            color: const Color(0xFF334154).withValues(alpha: 0.15),
+          Positioned(
+            bottom: 76,
+            left: -120,
+            child: _AtmosphereGlow(
+              size: 320,
+              color: const Color(0xFF334154).withValues(alpha: 0.15),
+            ),
           ),
-        ),
-        Positioned.fill(
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.black.withValues(alpha: 0.16),
-                  Colors.transparent,
-                  Colors.black.withValues(alpha: 0.34),
-                ],
-                stops: const [0, 0.42, 1],
+        ],
+        if (hasCustomBg)
+          // Bottom-up dark gradient: solid dark at bottom (input bar area),
+          // fades to transparent around the first message zone so the
+          // background image emerges naturally upward. No top overlay.
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
+                  colors: [
+                    const Color(0xFF080B12),
+                    const Color(0xFF080B12).withValues(alpha: 0.92),
+                    const Color(0xFF080B12).withValues(alpha: 0.55),
+                    Colors.transparent,
+                    Colors.transparent,
+                  ],
+                  stops: const [0, 0.10, 0.30, 0.50, 1],
+                ),
+              ),
+            ),
+          )
+        else
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.16),
+                    Colors.transparent,
+                    Colors.transparent,
+                    Colors.black.withValues(alpha: 0.34),
+                  ],
+                  stops: const [0, 0.2, 0.7, 1],
+                ),
               ),
             ),
           ),
-        ),
       ],
     );
   }
