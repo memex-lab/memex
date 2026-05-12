@@ -92,6 +92,7 @@ result.when(
 - `ListenableBuilder(listenable: Listenable.merge([vm, vm.load]))` for reactive rebuilds
 - `ToastHelper.showSuccess/showError/showInfo` for feedback
 - `showGeneralDialog` with `AgentChatDialog` for AI chat overlays
+- Any interaction UI change must include a widget test covering the behavior.
 
 ### Timeline Screen boundaries
 
@@ -128,4 +129,3 @@ Two approaches — pick the right one based on string length:
 - **Multi-line text** (long descriptions, agent prompts, onboarding copy): defined directly in `AppLocalizationsExt` (`lib/l10n/app_localizations_ext.dart`) as Dart code — better readability than JSON for multi-line content.
 
 Access all strings via `UserStorage.l10n` (static, initialized in `main()`).
-

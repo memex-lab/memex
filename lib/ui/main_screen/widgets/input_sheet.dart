@@ -381,8 +381,8 @@ class _InputSheetState extends State<InputSheet>
     await _draftService.saveTextDraft(_textController.text);
   }
 
-  Future<void> _handleClose() async {
-    await _flushDraft();
+  void _handleClose() {
+    unawaited(_flushDraft());
     widget.onClose();
   }
 
@@ -1265,6 +1265,14 @@ class _InputSheetState extends State<InputSheet>
 
     return Stack(
       children: [
+        PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, result) {
+            if (didPop || !widget.isOpen) return;
+            _handleClose();
+          },
+          child: const SizedBox.shrink(),
+        ),
         FadeTransition(
           opacity: _fadeAnimation,
           child: GestureDetector(
