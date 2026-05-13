@@ -67,6 +67,7 @@ class LocalTaskExecutor {
   static const Duration _pollInterval = Duration(seconds: 1);
   static const String _crashGuardBucket = 'local_task_executor_crash_guard';
   static const String _activeTaskMarkerKeyPrefix = 'active_task_marker:';
+  static const String _gracefulExitMarkerKey = 'graceful_exit_marker';
   static const int crashLoopFailureThreshold = 2;
   static const Duration crashLikeExitWindow = Duration(minutes: 10);
 
@@ -129,6 +130,32 @@ class LocalTaskExecutor {
     _isRunning = false;
     _pollTimer?.cancel();
     _logger.info('LocalTaskExecutor stopped');
+  }
+
+  Future<void> recordGracefulShutdown({String reason = 'unknown'}) async {
+    if (!AppDatabase.isInitialized) return;
+
+    final marker = _GracefulExitMarker(
+      markedAt: DateTime.now(),
+      reason: reason,
+    );
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    await _db.into(_db.kvStore).insertOnConflictUpdate(
+          KvStoreCompanion.insert(
+            key: _gracefulExitMarkerKey,
+            value: Value(jsonEncode(marker.toJson())),
+            bucket: const Value(_crashGuardBucket),
+            updatedAt: Value(now),
+          ),
+        );
+  }
+
+  Future<void> clearGracefulShutdownMarker() async {
+    if (!AppDatabase.isInitialized) return;
+
+    await (_db.delete(_db.kvStore)
+          ..where((kv) => kv.key.equals(_gracefulExitMarkerKey)))
+        .go();
   }
 
   // Max concurrent tasks
@@ -417,10 +444,12 @@ class LocalTaskExecutor {
     try {
       final markers = await _loadTaskExecutionMarkers();
       if (markers.isEmpty) return;
+      final gracefulExitMarker = await _loadGracefulExitMarker();
 
       for (final marker in markers) {
-        await _handlePreviousExecutionMarker(marker);
+        await _handlePreviousExecutionMarker(marker, gracefulExitMarker);
       }
+      await _deleteGracefulExitMarker();
     } catch (e, stack) {
       _logger.severe(
         'Failed to handle previous task execution markers',
@@ -432,6 +461,7 @@ class LocalTaskExecutor {
 
   Future<void> _handlePreviousExecutionMarker(
     _TaskExecutionMarker marker,
+    _GracefulExitMarker? gracefulExitMarker,
   ) async {
     final task = await (_db.select(
       _db.tasks,
@@ -445,6 +475,15 @@ class LocalTaskExecutor {
     if (!marker.matchesTask(task)) {
       _logger.warning(
         'Ignoring stale crash guard marker for task ${marker.taskId}: task metadata changed',
+      );
+      await _deleteTaskExecutionMarker(marker.taskId);
+      return;
+    }
+
+    if (gracefulExitMarker != null &&
+        !gracefulExitMarker.markedAt.isBefore(marker.startedAt)) {
+      _logger.info(
+        'Ignoring crash guard marker for task ${marker.taskId}: previous app exit was graceful (${gracefulExitMarker.reason})',
       );
       await _deleteTaskExecutionMarker(marker.taskId);
       return;
@@ -480,6 +519,7 @@ class LocalTaskExecutor {
   }
 
   Future<void> _markTaskExecutionStarted(Task task) async {
+    await clearGracefulShutdownMarker();
     final existing = await _loadTaskExecutionMarker(task.id);
     final marker = _TaskExecutionMarker.fromTask(
       task,
@@ -533,6 +573,29 @@ class LocalTaskExecutor {
     }
 
     return markers;
+  }
+
+  Future<_GracefulExitMarker?> _loadGracefulExitMarker() async {
+    final row = await (_db.select(_db.kvStore)
+          ..where((kv) => kv.key.equals(_gracefulExitMarkerKey)))
+        .getSingleOrNull();
+    if (row?.value == null) return null;
+
+    try {
+      return _GracefulExitMarker.fromJson(
+        jsonDecode(row!.value!) as Map<String, dynamic>,
+      );
+    } catch (e) {
+      _logger.warning('Failed to parse graceful exit marker: $e');
+      await _deleteGracefulExitMarker();
+      return null;
+    }
+  }
+
+  Future<void> _deleteGracefulExitMarker() async {
+    await (_db.delete(_db.kvStore)
+          ..where((kv) => kv.key.equals(_gracefulExitMarkerKey)))
+        .go();
   }
 
   Future<void> _saveTaskExecutionMarker(_TaskExecutionMarker marker) async {
@@ -607,6 +670,13 @@ class LocalTaskExecutor {
       _db.kvStore,
     )..where((kv) => kv.key.like('$_activeTaskMarkerKeyPrefix%')))
         .get();
+  }
+
+  @visibleForTesting
+  Future<KvStoreData?> getGracefulExitMarkerForTesting() {
+    return (_db.select(_db.kvStore)
+          ..where((kv) => kv.key.equals(_gracefulExitMarkerKey)))
+        .getSingleOrNull();
   }
 
   /// Check if a task of [taskType] with [bizId] has failed.
@@ -795,5 +865,31 @@ class _TaskExecutionMarker {
 
   static String _payloadHashFor(String? payload) {
     return sha256.convert(utf8.encode(payload ?? '')).toString();
+  }
+}
+
+class _GracefulExitMarker {
+  _GracefulExitMarker({
+    required this.markedAt,
+    required this.reason,
+  });
+
+  final DateTime markedAt;
+  final String reason;
+
+  factory _GracefulExitMarker.fromJson(Map<String, dynamic> json) {
+    return _GracefulExitMarker(
+      markedAt: DateTime.fromMillisecondsSinceEpoch(
+        json['marked_at_ms'] as int,
+      ),
+      reason: json['reason'] as String? ?? 'unknown',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'marked_at_ms': markedAt.millisecondsSinceEpoch,
+      'reason': reason,
+    };
   }
 }

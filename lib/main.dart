@@ -33,6 +33,7 @@ import 'package:memex/ui/main_screen/widgets/input_sheet.dart';
 import 'package:memex/ui/settings/widgets/model_config_list_page.dart';
 import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/data/services/event_bus_service.dart';
+import 'package:memex/data/services/local_task_executor.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/data/services/publish_timestamp_service.dart';
 import 'package:memex/data/services/health_service.dart';
@@ -306,10 +307,16 @@ class _MemexAppState extends State<MemexApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused) {
+      unawaited(LocalTaskExecutor.instance
+          .recordGracefulShutdown(reason: 'app_lifecycle_paused'));
       _lastPausedTime = DateTime.now();
       _checkLockSettingsBeforeLocking();
     } else if (state == AppLifecycleState.resumed) {
+      unawaited(LocalTaskExecutor.instance.clearGracefulShutdownMarker());
       _checkGracePeriod();
+    } else if (state == AppLifecycleState.detached) {
+      unawaited(LocalTaskExecutor.instance
+          .recordGracefulShutdown(reason: 'app_lifecycle_detached'));
     }
   }
 

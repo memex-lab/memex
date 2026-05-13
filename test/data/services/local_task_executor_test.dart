@@ -92,6 +92,29 @@ void main() {
       expect(markerPayload['crash_count'], 1);
     });
 
+    test('graceful app exit requeues stale task without crash count',
+        () async {
+      final task = await _insertTask(
+        db,
+        id: 'task-graceful-exit',
+        type: 'long_running_task',
+        status: 'processing',
+        payload: {'value': 1},
+      );
+      await executor.markTaskExecutionStartedForTesting(task);
+      await Future<void>.delayed(const Duration(milliseconds: 2));
+      await executor.recordGracefulShutdown(reason: 'test_manual_exit');
+
+      await executor.start(userId: 'user-a');
+      executor.stop();
+
+      final updated = await _getTask(db, task.id);
+
+      expect(updated.status, 'pending');
+      expect(await executor.getTaskExecutionMarkerForTesting(task.id), isNull);
+      expect(await executor.getGracefulExitMarkerForTesting(), isNull);
+    });
+
     test('keeps separate crash markers for concurrent processing tasks',
         () async {
       final taskA = await _insertTask(
