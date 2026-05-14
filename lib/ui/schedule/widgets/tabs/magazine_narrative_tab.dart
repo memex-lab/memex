@@ -34,7 +34,7 @@ class MagazineNarrativeTab extends StatelessWidget {
   Widget _buildAgentMode(ScheduleAggregationModel agg) {
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 120),
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 220),
       children: [
         // Magazine header
         _buildMagazineHeader(),
@@ -157,6 +157,8 @@ class MagazineNarrativeTab extends StatelessWidget {
                       letterSpacing: -0.3,
                       color: Colors.white,
                     ),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 12),
                   if (item.description != null)
@@ -179,15 +181,19 @@ class MagazineNarrativeTab extends StatelessWidget {
                         color: Colors.white.withValues(alpha: 0.6),
                       ),
                       const SizedBox(width: 6),
-                      Text(
-                        item.startTime != null
-                            ? DateFormat.MMMEd(UserStorage.l10n.localeName)
-                                .add_Hm()
-                                .format(item.startTime!)
-                            : UserStorage.l10n.scheduleTbd,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.white.withValues(alpha: 0.6),
+                      Flexible(
+                        child: Text(
+                          item.startTime != null
+                              ? DateFormat.MMMEd(UserStorage.l10n.localeName)
+                                  .add_Hm()
+                                  .format(item.startTime!)
+                              : UserStorage.l10n.scheduleTbd,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.white.withValues(alpha: 0.6),
+                          ),
                         ),
                       ),
                       if (item.location != null) ...[
@@ -198,11 +204,15 @@ class MagazineNarrativeTab extends StatelessWidget {
                           color: Colors.white.withValues(alpha: 0.6),
                         ),
                         const SizedBox(width: 6),
-                        Text(
-                          item.location!,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.white.withValues(alpha: 0.6),
+                        Flexible(
+                          child: Text(
+                            item.location!,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.white.withValues(alpha: 0.6),
+                            ),
                           ),
                         ),
                       ],
@@ -492,7 +502,8 @@ class MagazineNarrativeTab extends StatelessWidget {
                       ),
                       if (item.completedAt != null)
                         Text(
-                          DateFormat('MMM d').format(item.completedAt!),
+                          DateFormat.MMMd(UserStorage.l10n.localeName)
+                              .format(item.completedAt!),
                           style: const TextStyle(
                             fontSize: 11,
                             color: Color(0xFF99A1AF),
@@ -542,6 +553,7 @@ class MagazineNarrativeTab extends StatelessWidget {
 
   Widget _buildTaskCompletionCircle(String cardId, bool isCompleted) {
     return GestureDetector(
+      key: ValueKey('schedule_task_toggle_$cardId'),
       onTap: () => onToggleTask?.call(cardId),
       behavior: HitTestBehavior.opaque,
       child: Container(

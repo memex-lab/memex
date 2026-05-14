@@ -121,7 +121,14 @@ class ScheduleRefreshRouterAgent {
     await agent.run(messages);
 
     final decision = toolDecision;
-    if (decision != null) return decision;
+    if (decision != null) {
+      return ensureScheduleRelevantDecision(
+        userId: userId,
+        factId: factId,
+        cardData: cardData,
+        decision: decision,
+      );
+    }
 
     _logger.warning(
       'Router agent did not call an action tool for $factId; using fallback',
@@ -132,6 +139,27 @@ class ScheduleRefreshRouterAgent {
       cardData: cardData,
     );
   }
+}
+
+Future<ScheduleRefreshRouteResult> ensureScheduleRelevantDecision({
+  required String userId,
+  required String factId,
+  required CardData? cardData,
+  required ScheduleRefreshRouteResult decision,
+}) async {
+  if (decision.action != ScheduleRefreshRouteAction.skipped ||
+      !hasScheduleRelevantTemplates(cardData)) {
+    return decision;
+  }
+
+  _logger.info(
+    'Schedule refresh skip overridden for temporal card $factId',
+  );
+  return fallbackScheduleRefreshDecision(
+    userId: userId,
+    factId: factId,
+    cardData: cardData,
+  );
 }
 
 Future<ScheduleRefreshRouteResult> fallbackScheduleRefreshDecision({

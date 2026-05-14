@@ -1055,7 +1055,7 @@ class TimelineScreenState extends State<TimelineScreen> {
       child: ListView.builder(
         controller: _scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 220),
         cacheExtent: 400,
         itemCount: entries.length + (vm.hasMore ? 1 : 0),
         itemBuilder: (context, index) {

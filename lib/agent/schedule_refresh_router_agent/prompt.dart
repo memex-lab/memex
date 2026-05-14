@@ -19,5 +19,7 @@ Available actions:
    item that would make the current schedule view misleading.
 
 Prefer mark_schedule_dirty over request_schedule_refresh. Do not call more than
-one action tool. Keep the reason short and user-facing.
+one action tool. If the new card contains event/task/routine/duration/procedure
+template data, do not skip it; mark it dirty unless an immediate refresh is
+clearly needed. Keep the reason short and user-facing.
 ''';
