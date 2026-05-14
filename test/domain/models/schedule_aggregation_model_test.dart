@@ -169,7 +169,7 @@ void main() {
       });
 
       expect(model.id, '20260426');
-      expect(model.generatedAt, DateTime.utc(2026, 4, 26, 1));
+      expect(model.generatedAt.toUtc(), DateTime.utc(2026, 4, 26, 1));
       expect(model.version, 2);
       expect(model.heroItem?.cardId, '42');
       expect(model.heroItem?.title, '123');
@@ -242,6 +242,41 @@ void main() {
       expect(restored.quoteBlocks.length, original.quoteBlocks.length);
       expect(restored.timeline.length, original.timeline.length);
       expect(restored.completed.length, original.completed.length);
+    });
+
+    test('parses timezone offsets as local display times', () {
+      final model = ScheduleAggregationModel.fromYaml({
+        'id': 'schedule_agg_2026_05_14',
+        'generated_at': '2026-05-14T17:39:22+08:00',
+        'time_range': {
+          'from': '2026-05-14',
+          'to': '2026-05-21',
+        },
+        'hero_item': {
+          'card_id': '2026/05/14.md#ts_1',
+          'title': 'Clean Apartment',
+          'start_time': '2026-05-15T10:00:00+08:00',
+        },
+        'timeline': [
+          {
+            'day_label': 'Tomorrow',
+            'day_date': '2026-05-15',
+            'items': [
+              {
+                'card_id': '2026/05/14.md#ts_1',
+                'title': 'Clean Apartment',
+                'start_time': '2026-05-15T10:00:00+08:00',
+                'type': 'task',
+              },
+            ],
+          },
+        ],
+      });
+
+      final expectedLocal =
+          DateTime.parse('2026-05-15T10:00:00+08:00').toLocal();
+      expect(model.heroItem!.startTime, expectedLocal);
+      expect(model.timeline.single.items.single.startTime, expectedLocal);
     });
   });
 

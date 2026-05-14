@@ -33,6 +33,19 @@ const scheduleTemporalTemplateIds = {
   'procedure',
 };
 
+dynamic scheduleStartTimeForCard(
+  String templateId,
+  Map<String, dynamic> data,
+) {
+  final startTime = _nonEmptyScheduleValue(data['start_time']);
+  if (startTime != null) return startTime;
+
+  if (templateId == 'task') {
+    return _nonEmptyScheduleValue(data['due_date']);
+  }
+  return null;
+}
+
 Future<Map<String, dynamic>> queryScheduleCardsForRange({
   required String userId,
   DateTime? from,
@@ -66,6 +79,7 @@ Future<Map<String, dynamic>> queryScheduleCardsForRange({
       final uiConfig = temporalConfigs.first;
       final templateId = uiConfig.templateId;
       final data = uiConfig.data;
+      final startTime = scheduleStartTimeForCard(templateId, data);
 
       if (!_isCardInScheduleRange(
         templateId: templateId,
@@ -84,7 +98,7 @@ Future<Map<String, dynamic>> queryScheduleCardsForRange({
         'timestamp': cardData.timestamp,
         'status': deriveScheduleCardStatus(templateId, data),
         'tags': cardData.tags,
-        'start_time': data['start_time'],
+        'start_time': startTime,
         'end_time': data['end_time'],
         'location': data['location'],
         'is_completed': templateId == 'task'
@@ -127,7 +141,7 @@ Tool buildGetScheduleCardsTool() {
   return Tool(
     name: 'get_schedule_cards',
     description:
-        'Query temporal cards (events, tasks, routines, durations, procedures) within a date range. Returns structured card data including title, times, status, and template type.',
+        'Query temporal cards (events, tasks, routines, durations, procedures) within a date range. Returns structured card data including title, normalized start_time, status, and template type. Task due_date is exposed as start_time when start_time is absent.',
     parameters: {
       'type': 'object',
       'properties': {
@@ -310,6 +324,11 @@ DateTime? _parseScheduleDateTime(dynamic value) {
   }
   if (value is String) return DateTime.tryParse(value);
   return null;
+}
+
+dynamic _nonEmptyScheduleValue(dynamic value) {
+  if (value is String && value.trim().isEmpty) return null;
+  return value;
 }
 
 DateTime _resultScheduleDate(Map<String, dynamic> result) {

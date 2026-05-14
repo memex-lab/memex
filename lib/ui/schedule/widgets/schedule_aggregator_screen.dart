@@ -195,31 +195,36 @@ class _ScheduleAggregatorScreenState
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                UserStorage.l10n.scheduleAggregation,
-                style: GoogleFonts.bricolageGrotesque(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.41,
-                  color: AppColors.textPrimary,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  UserStorage.l10n.scheduleAggregation,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.bricolageGrotesque(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                _buildDateSubtitle(),
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: AppColors.textTertiary,
-                  fontWeight: FontWeight.w500,
+                const SizedBox(height: 4),
+                Text(
+                  _buildDateSubtitle(),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textTertiary,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
+          const SizedBox(width: 12),
           // AI refresh button
           Consumer<ScheduleAggregatorViewModel>(
             builder: (context, vm, child) {
