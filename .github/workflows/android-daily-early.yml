@@ -1,0 +1,126 @@
+name: Android Daily Early
+
+on:
+  schedule:
+    # 02:00 Asia/Shanghai. Scheduled workflows run on the default branch.
+    - cron: "0 18 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-android-early:
+    name: Build Android Early APKs
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Verify signing secrets
+        run: |
+          missing=0
+          for name in \
+            ANDROID_EARLY_KEYSTORE_BASE64 \
+            ANDROID_EARLY_KEY_ALIAS \
+            ANDROID_EARLY_KEY_PASSWORD \
+            ANDROID_EARLY_STORE_PASSWORD
+          do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing required secret: ${name}"
+              missing=1
+            fi
+          done
+          exit "$missing"
+        env:
+          ANDROID_EARLY_KEYSTORE_BASE64: ${{ secrets.ANDROID_EARLY_KEYSTORE_BASE64 }}
+          ANDROID_EARLY_KEY_ALIAS: ${{ secrets.ANDROID_EARLY_KEY_ALIAS }}
+          ANDROID_EARLY_KEY_PASSWORD: ${{ secrets.ANDROID_EARLY_KEY_PASSWORD }}
+          ANDROID_EARLY_STORE_PASSWORD: ${{ secrets.ANDROID_EARLY_STORE_PASSWORD }}
+
+      - name: Restore Early signing config
+        run: |
+          echo "$ANDROID_EARLY_KEYSTORE_BASE64" | base64 --decode > android/app/memex-early.jks
+          cat > android/key-early.properties <<EOF
+          storeFile=memex-early.jks
+          storePassword=$ANDROID_EARLY_STORE_PASSWORD
+          keyPassword=$ANDROID_EARLY_KEY_PASSWORD
+          keyAlias=$ANDROID_EARLY_KEY_ALIAS
+          EOF
+        env:
+          ANDROID_EARLY_KEYSTORE_BASE64: ${{ secrets.ANDROID_EARLY_KEYSTORE_BASE64 }}
+          ANDROID_EARLY_KEY_ALIAS: ${{ secrets.ANDROID_EARLY_KEY_ALIAS }}
+          ANDROID_EARLY_KEY_PASSWORD: ${{ secrets.ANDROID_EARLY_KEY_PASSWORD }}
+          ANDROID_EARLY_STORE_PASSWORD: ${{ secrets.ANDROID_EARLY_STORE_PASSWORD }}
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Build Global Early APK
+        run: flutter build apk --release --flavor globalEarly
+
+      - name: Build CN Early APK
+        run: flutter build apk --release --flavor cnEarly
+
+      - name: Collect APK artifacts
+        run: |
+          mkdir -p artifacts
+          cp build/app/outputs/flutter-apk/*.apk artifacts/
+          ls -lah artifacts
+
+      - name: Prepare release metadata
+        id: release
+        run: |
+          date_ymd="$(TZ=Asia/Shanghai date +'%Y%m%d')"
+          display_date="$(TZ=Asia/Shanghai date +'%Y-%m-%d')"
+          short_sha="${GITHUB_SHA::7}"
+          tag="android-early-${date_ymd}-${short_sha}"
+
+          {
+            echo "tag=${tag}"
+            echo "title=Android Early ${display_date} (${short_sha})"
+          } >> "$GITHUB_OUTPUT"
+
+          cat > release_notes.md <<EOF
+          Android Early build from main.
+
+          - Commit: ${GITHUB_SHA}
+          - Date: ${display_date} Asia/Shanghai
+          - Channel: Early
+          - Packages:
+            - Global: com.memexlab.memex.early
+            - CN: com.memexlab.memex.cn.early
+
+          Early builds use isolated Android application IDs and do not overwrite Stable app data.
+          EOF
+
+      - name: Publish prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete "${{ steps.release.outputs.tag }}" \
+            --repo "$GITHUB_REPOSITORY" \
+            --yes \
+            --cleanup-tag || true
+
+          gh release create "${{ steps.release.outputs.tag }}" \
+            artifacts/*.apk \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "${{ steps.release.outputs.title }}" \
+            --notes-file release_notes.md \
+            --prerelease

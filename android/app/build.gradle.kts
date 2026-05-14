@@ -9,27 +9,27 @@ plugins {
 }
 
 android {
-    val globalKeystoreProperties = Properties()
-    val globalKeystorePropertiesFile = rootProject.file("key-global.properties")
-    if (globalKeystorePropertiesFile.exists()) {
-        globalKeystoreProperties.load(FileInputStream(globalKeystorePropertiesFile))
-    }
-    val hasGlobalKeystore = globalKeystorePropertiesFile.exists() &&
-        globalKeystoreProperties["keyAlias"] != null &&
-        globalKeystoreProperties["keyPassword"] != null &&
-        globalKeystoreProperties["storeFile"] != null &&
-        globalKeystoreProperties["storePassword"] != null
+    fun loadKeystoreProperties(fileName: String): Pair<Properties, Boolean> {
+        val properties = Properties()
+        val propertiesFile = rootProject.file(fileName)
+        if (propertiesFile.exists()) {
+            properties.load(FileInputStream(propertiesFile))
+        }
 
-    val cnKeystoreProperties = Properties()
-    val cnKeystorePropertiesFile = rootProject.file("key-cn.properties")
-    if (cnKeystorePropertiesFile.exists()) {
-        cnKeystoreProperties.load(FileInputStream(cnKeystorePropertiesFile))
+        val hasRequiredProperties = propertiesFile.exists() &&
+            properties["keyAlias"] != null &&
+            properties["keyPassword"] != null &&
+            properties["storeFile"] != null &&
+            properties["storePassword"] != null
+        return properties to hasRequiredProperties
     }
-    val hasCnKeystore = cnKeystorePropertiesFile.exists() &&
-        cnKeystoreProperties["keyAlias"] != null &&
-        cnKeystoreProperties["keyPassword"] != null &&
-        cnKeystoreProperties["storeFile"] != null &&
-        cnKeystoreProperties["storePassword"] != null
+
+    val (globalKeystoreProperties, hasGlobalKeystore) =
+        loadKeystoreProperties("key-global.properties")
+    val (cnKeystoreProperties, hasCnKeystore) =
+        loadKeystoreProperties("key-cn.properties")
+    val (earlyKeystoreProperties, hasEarlyKeystore) =
+        loadKeystoreProperties("key-early.properties")
 
     namespace = "com.memexlab.memex"
     compileSdk = flutter.compileSdkVersion
@@ -69,22 +69,61 @@ android {
                 storePassword = cnKeystoreProperties["storePassword"] as String
             }
         }
+        if (hasEarlyKeystore) {
+            create("earlyRelease") {
+                keyAlias = earlyKeystoreProperties["keyAlias"] as String
+                keyPassword = earlyKeystoreProperties["keyPassword"] as String
+                storeFile = file(earlyKeystoreProperties["storeFile"] as String)
+                storePassword = earlyKeystoreProperties["storePassword"] as String
+            }
+        }
     }
+
+    val globalApplicationId = "com.memexlab.memex"
+    val cnApplicationId = "com.memexlab.memex.cn"
+    val globalEarlyApplicationId = "com.memexlab.memex.early"
+    val cnEarlyApplicationId = "com.memexlab.memex.cn.early"
 
     flavorDimensions += "market"
     productFlavors {
         create("global") {
             dimension = "market"
-            applicationId = "com.memexlab.memex"
+            applicationId = globalApplicationId
+            manifestPlaceholders["appLabel"] = "Memex"
+            resValue("string", "quick_action_target_package", globalApplicationId)
             if (hasGlobalKeystore) {
                 signingConfig = signingConfigs.getByName("globalRelease")
             }
         }
         create("cn") {
             dimension = "market"
-            applicationId = "com.memexlab.memex.cn"
+            applicationId = cnApplicationId
+            manifestPlaceholders["appLabel"] = "Memex"
+            resValue("string", "quick_action_target_package", cnApplicationId)
             if (hasCnKeystore) {
                 signingConfig = signingConfigs.getByName("cnRelease")
+            }
+        }
+        create("globalEarly") {
+            dimension = "market"
+            applicationId = globalEarlyApplicationId
+            manifestPlaceholders["appLabel"] = "Memex Early"
+            resValue(
+                "string",
+                "quick_action_target_package",
+                globalEarlyApplicationId,
+            )
+            if (hasEarlyKeystore) {
+                signingConfig = signingConfigs.getByName("earlyRelease")
+            }
+        }
+        create("cnEarly") {
+            dimension = "market"
+            applicationId = cnEarlyApplicationId
+            manifestPlaceholders["appLabel"] = "Memex Early CN"
+            resValue("string", "quick_action_target_package", cnEarlyApplicationId)
+            if (hasEarlyKeystore) {
+                signingConfig = signingConfigs.getByName("earlyRelease")
             }
         }
     }
