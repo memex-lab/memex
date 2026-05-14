@@ -9,6 +9,9 @@ on:
 permissions:
   contents: write
 
+env:
+  EARLY_RELEASES_TO_KEEP: "14"
+
 jobs:
   build-android-early:
     name: Build Android Early APKs
@@ -70,11 +73,36 @@ jobs:
       - name: Install Flutter dependencies
         run: flutter pub get
 
+      - name: Prepare Early version
+        id: version
+        run: |
+          pubspec_version="$(grep '^version:' pubspec.yaml | awk '{print $2}')"
+          base_version="${pubspec_version%%+*}"
+          date_ymd="$(TZ=Asia/Shanghai date +'%Y%m%d')"
+          display_date="$(TZ=Asia/Shanghai date +'%Y-%m-%d')"
+          short_sha="${GITHUB_SHA::7}"
+          build_number="$(date +'%s')"
+          build_name="${base_version}-early.${date_ymd}.${short_sha}"
+
+          {
+            echo "date_ymd=${date_ymd}"
+            echo "display_date=${display_date}"
+            echo "short_sha=${short_sha}"
+            echo "build_name=${build_name}"
+            echo "build_number=${build_number}"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Build Global Early APK
-        run: flutter build apk --release --flavor globalEarly
+        run: >
+          flutter build apk --release --flavor globalEarly
+          --build-name "${{ steps.version.outputs.build_name }}"
+          --build-number "${{ steps.version.outputs.build_number }}"
 
       - name: Build CN Early APK
-        run: flutter build apk --release --flavor cnEarly
+        run: >
+          flutter build apk --release --flavor cnEarly
+          --build-name "${{ steps.version.outputs.build_name }}"
+          --build-number "${{ steps.version.outputs.build_number }}"
 
       - name: Collect APK artifacts
         run: |
@@ -85,22 +113,20 @@ jobs:
       - name: Prepare release metadata
         id: release
         run: |
-          date_ymd="$(TZ=Asia/Shanghai date +'%Y%m%d')"
-          display_date="$(TZ=Asia/Shanghai date +'%Y-%m-%d')"
-          short_sha="${GITHUB_SHA::7}"
-          tag="android-early-${date_ymd}-${short_sha}"
+          tag="android-early-${{ steps.version.outputs.date_ymd }}-${{ steps.version.outputs.short_sha }}"
 
           {
             echo "tag=${tag}"
-            echo "title=Android Early ${display_date} (${short_sha})"
+            echo "title=Android Early ${{ steps.version.outputs.display_date }} (${{ steps.version.outputs.short_sha }})"
           } >> "$GITHUB_OUTPUT"
 
           cat > release_notes.md <<EOF
           Android Early build from main.
 
           - Commit: ${GITHUB_SHA}
-          - Date: ${display_date} Asia/Shanghai
+          - Date: ${{ steps.version.outputs.display_date }} Asia/Shanghai
           - Channel: Early
+          - Version: ${{ steps.version.outputs.build_name }}+${{ steps.version.outputs.build_number }}
           - Packages:
             - Global: com.memexlab.memex.early
             - CN: com.memexlab.memex.cn.early
@@ -124,3 +150,22 @@ jobs:
             --title "${{ steps.release.outputs.title }}" \
             --notes-file release_notes.md \
             --prerelease
+
+      - name: Prune old Early prereleases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release list \
+            --repo "$GITHUB_REPOSITORY" \
+            --limit 100 \
+            --json tagName,isPrerelease,createdAt \
+            | jq -r \
+              --argjson keep "$EARLY_RELEASES_TO_KEEP" \
+              '[.[] | select(.isPrerelease and (.tagName | startswith("android-early-")))] | sort_by(.createdAt) | reverse | .[$keep:][] | .tagName' \
+            | while read -r tag; do
+                [ -n "$tag" ] || continue
+                gh release delete "$tag" \
+                  --repo "$GITHUB_REPOSITORY" \
+                  --yes \
+                  --cleanup-tag
+              done
