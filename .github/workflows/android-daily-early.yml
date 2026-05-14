@@ -120,17 +120,85 @@ jobs:
             echo "title=Android Early ${{ steps.version.outputs.display_date }} (${{ steps.version.outputs.short_sha }})"
           } >> "$GITHUB_OUTPUT"
 
+      - name: Prepare release notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+          DISPLAY_DATE: ${{ steps.version.outputs.display_date }}
+          BUILD_NAME: ${{ steps.version.outputs.build_name }}
+          BUILD_NUMBER: ${{ steps.version.outputs.build_number }}
+        run: |
+          releases_json="$(gh release list \
+            --repo "$GITHUB_REPOSITORY" \
+            --limit 100 \
+            --json tagName,isPrerelease,isDraft,createdAt)"
+
+          previous_early_tag="$(echo "$releases_json" \
+            | jq -r \
+              --arg current "$RELEASE_TAG" \
+              '[.[] | select(.isPrerelease and (.isDraft | not) and (.tagName | startswith("android-early-")) and .tagName != $current)] | sort_by(.createdAt) | reverse | .[0].tagName // ""')"
+
+          previous_release_tag="$(echo "$releases_json" \
+            | jq -r \
+              --arg current "$RELEASE_TAG" \
+              '[.[] | select((.isPrerelease | not) and (.isDraft | not) and .tagName != $current)] | sort_by(.createdAt) | reverse | .[0].tagName // ""')"
+
           cat > release_notes.md <<EOF
           Android Early build from main.
 
           - Commit: ${GITHUB_SHA}
-          - Date: ${{ steps.version.outputs.display_date }} Asia/Shanghai
+          - Date: ${DISPLAY_DATE} Asia/Shanghai
           - Channel: Early
-          - Version: ${{ steps.version.outputs.build_name }}+${{ steps.version.outputs.build_number }}
+          - Version: ${BUILD_NAME}+${BUILD_NUMBER}
           - Packages:
             - Global: com.memexlab.memex.early
             - CN: com.memexlab.memex.cn.early
 
+          EOF
+
+          append_generated_notes() {
+            local heading="$1"
+            local previous_tag="$2"
+            local notes_file
+
+            {
+              echo "## ${heading}"
+              echo
+            } >> release_notes.md
+
+            if [ -z "$previous_tag" ]; then
+              echo "No previous GitHub release was found for this comparison." >> release_notes.md
+              echo >> release_notes.md
+              return
+            fi
+
+            echo "Compared with \`${previous_tag}\`." >> release_notes.md
+            echo >> release_notes.md
+
+            notes_file="$(mktemp)"
+            if gh api "repos/${GITHUB_REPOSITORY}/releases/generate-notes" \
+              -f tag_name="$RELEASE_TAG" \
+              -f target_commitish="$GITHUB_SHA" \
+              -f previous_tag_name="$previous_tag" \
+              --jq '.body' > "$notes_file"; then
+              if [ -s "$notes_file" ]; then
+                cat "$notes_file" >> release_notes.md
+              else
+                echo "No changes detected." >> release_notes.md
+              fi
+            else
+              echo "Failed to generate GitHub release notes automatically." >> release_notes.md
+              echo "Compare: https://github.com/${GITHUB_REPOSITORY}/compare/${previous_tag}...${GITHUB_SHA}" >> release_notes.md
+            fi
+
+            echo >> release_notes.md
+            rm -f "$notes_file"
+          }
+
+          append_generated_notes "Changes since previous Early prerelease" "$previous_early_tag"
+          append_generated_notes "Changes since latest Release" "$previous_release_tag"
+
+          cat >> release_notes.md <<EOF
           Early builds use isolated Android application IDs and do not overwrite Stable app data.
           EOF
 
