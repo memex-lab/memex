@@ -2,8 +2,8 @@ name: Android Daily Early
 
 on:
   schedule:
-    # 02:00 Asia/Shanghai. Scheduled workflows run on the default branch.
-    - cron: "0 18 * * *"
+    # 02:42 Asia/Shanghai. Scheduled workflows run on the default branch.
+    - cron: "42 18 * * *"
   workflow_dispatch:
 
 permissions:
