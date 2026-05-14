@@ -57,6 +57,7 @@ void main() {
       expect(reminder, contains('current_location_context'));
       expect(reminder, contains('location_summary: 上海市 · 徐汇区 · 衡复风貌区'));
       expect(reminder, contains('Prefer current_location_context'));
+      expect(reminder, contains('do not invent a missing city'));
     });
 
     test('fresh GPS-only context is not injected into agent prompts', () {

@@ -4,8 +4,13 @@ import 'package:memex/domain/models/location_context_config.dart';
 import 'package:memex/ui/core/themes/app_colors.dart';
 import 'package:memex/utils/user_storage.dart';
 
+typedef CurrentLocationContextLoader =
+    Future<CurrentLocationContext> Function({bool forceRefresh});
+
 class LocationContextSettingsPage extends StatefulWidget {
-  const LocationContextSettingsPage({super.key});
+  const LocationContextSettingsPage({super.key, this.loadCurrentContext});
+
+  final CurrentLocationContextLoader? loadCurrentContext;
 
   @override
   State<LocationContextSettingsPage> createState() =>
@@ -55,9 +60,10 @@ class _LocationContextSettingsPageState
       _testResult = null;
     });
     try {
-      final context = await LocationContextService.instance.getCurrentContext(
-        forceRefresh: true,
-      );
+      final loader =
+          widget.loadCurrentContext ??
+          LocationContextService.instance.getCurrentContext;
+      final context = await loader(forceRefresh: true);
       final summary = context.address?.summary(context.granularity);
       if (!mounted) return;
       setState(() {
@@ -157,9 +163,8 @@ class _LocationContextSettingsPageState
                             border: const OutlineInputBorder(),
                             isDense: true,
                           ),
-                          onChanged: (value) => _save(
-                            _config.copyWith(amapApiKey: value.trim()),
-                          ),
+                          onChanged: (value) =>
+                              _save(_config.copyWith(amapApiKey: value.trim())),
                         ),
                         const SizedBox(height: 8),
                         Text(

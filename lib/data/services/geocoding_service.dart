@@ -216,12 +216,16 @@ class GeocodingService {
         return null;
       }
 
+      final city = pick(['city', 'town', 'village', 'municipality']);
+      final county = pick(['county']);
+
       return ReverseGeocodeResult(
         address: GeocodedAddress(
           country: pick(['country']),
           province: pick(['state', 'province', 'region']),
-          city: pick(['city', 'town', 'village', 'municipality', 'county']),
-          district: pick(['city_district', 'district', 'borough', 'suburb']),
+          city: city ?? county,
+          district: pick(
+              ['city_district', 'district', 'county', 'borough', 'suburb']),
           neighborhood: pick(['neighbourhood', 'quarter', 'residential']),
           street: pick(['road', 'pedestrian', 'footway']),
           fullAddress: _stringOrNull(data['display_name']),
