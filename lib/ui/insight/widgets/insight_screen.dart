@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import 'package:memex/domain/models/knowledge_insight_card.dart';
@@ -659,70 +658,63 @@ class _InsightScreenState extends State<InsightScreen> {
   }
 
   Widget _buildPremiumUpdateFab(InsightViewModel vm) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(24),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-        child: Container(
-          height: 48,
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                const Color(0xFF5B6CFF).withOpacity(0.9),
-                const Color(0xFF8B5CF6).withOpacity(0.9),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.2),
-              width: 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF5B6CFF).withOpacity(0.3),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
+    return Container(
+      height: 48,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF5B6CFF),
+            const Color(0xFF8B5CF6),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.2),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF5B6CFF).withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
-          child: InkWell(
-            onTap: vm.isRefreshing ? null : () => _onRefreshInsights(vm),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                vm.isRefreshing
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      )
-                    : const Icon(
-                        Icons.auto_awesome,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                const SizedBox(width: 10),
-                Text(
-                  vm.isRefreshing
-                      ? UserStorage.l10n.updating
-                      : UserStorage.l10n.update,
-                  style: const TextStyle(
+        ],
+      ),
+      child: InkWell(
+        onTap: vm.isRefreshing ? null : () => _onRefreshInsights(vm),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            vm.isRefreshing
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : const Icon(
+                    Icons.auto_awesome,
                     color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                    letterSpacing: 0.5,
+                    size: 20,
                   ),
-                ),
-              ],
+            const SizedBox(width: 10),
+            Text(
+              vm.isRefreshing
+                  ? UserStorage.l10n.updating
+                  : UserStorage.l10n.update,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+                letterSpacing: 0.5,
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );

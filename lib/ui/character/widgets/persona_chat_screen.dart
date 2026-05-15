@@ -1171,30 +1171,25 @@ class _FrostedCircleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipOval(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-        child: Container(
-          width: 38,
-          height: 38,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: _personaPanel.withValues(alpha: 0.36),
-            border: Border.all(color: _personaAccent.withValues(alpha: 0.2)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.34),
-                blurRadius: 18,
-                offset: const Offset(0, 10),
-              ),
-            ],
+    return Container(
+      width: 38,
+      height: 38,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: _personaPanel.withValues(alpha: 0.62),
+        border: Border.all(color: _personaAccent.withValues(alpha: 0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.34),
+            blurRadius: 18,
+            offset: const Offset(0, 10),
           ),
-          child: IconTheme(
-            data: const IconThemeData(color: _personaText),
-            child: child,
-          ),
-        ),
+        ],
+      ),
+      child: IconTheme(
+        data: const IconThemeData(color: _personaText),
+        child: child,
       ),
     );
   }
@@ -1245,76 +1240,70 @@ class PersonaChatInputBar extends StatelessWidget {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
     return Padding(
       padding: EdgeInsets.fromLTRB(14, 10, 14, bottomPadding + 12),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(30),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(18, 12, 12, 12),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.42),
-              borderRadius: BorderRadius.circular(30),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.5),
-                  blurRadius: 34,
-                  offset: const Offset(0, 16),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(18, 12, 12, 12),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.62),
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.5),
+              blurRadius: 34,
+              offset: const Offset(0, 16),
+            ),
+            BoxShadow(
+              color: _personaAccent.withValues(alpha: 0.06),
+              blurRadius: 18,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: ValueListenableBuilder<TextEditingValue>(
+          valueListenable: controller,
+          builder: (context, value, _) {
+            final canSend = _canSend(value.text);
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: controller,
+                    minLines: 1,
+                    maxLines: 5,
+                    decoration: InputDecoration(
+                      hintText: hintText,
+                      hintStyle: const TextStyle(
+                        color: _personaTextMuted,
+                        fontSize: 15,
+                      ),
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 10,
+                      ),
+                      border: InputBorder.none,
+                    ),
+                    style: const TextStyle(
+                      fontSize: 15,
+                      height: 1.35,
+                      color: _personaText,
+                    ),
+                    textInputAction: TextInputAction.send,
+                    onSubmitted: (_) {
+                      if (canSend) onSend();
+                    },
+                    enabled: !isStreaming,
+                  ),
                 ),
-                BoxShadow(
-                  color: _personaAccent.withValues(alpha: 0.06),
-                  blurRadius: 18,
-                  offset: const Offset(0, -2),
+                const SizedBox(width: 8),
+                _SendButton(
+                  enabled: canSend,
+                  onTap: onSend,
                 ),
               ],
-            ),
-            child: ValueListenableBuilder<TextEditingValue>(
-              valueListenable: controller,
-              builder: (context, value, _) {
-                final canSend = _canSend(value.text);
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: controller,
-                        minLines: 1,
-                        maxLines: 5,
-                        decoration: InputDecoration(
-                          hintText: hintText,
-                          hintStyle: const TextStyle(
-                            color: _personaTextMuted,
-                            fontSize: 15,
-                          ),
-                          isDense: true,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 10,
-                          ),
-                          border: InputBorder.none,
-                        ),
-                        style: const TextStyle(
-                          fontSize: 15,
-                          height: 1.35,
-                          color: _personaText,
-                        ),
-                        textInputAction: TextInputAction.send,
-                        onSubmitted: (_) {
-                          if (canSend) onSend();
-                        },
-                        enabled: !isStreaming,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    _SendButton(
-                      enabled: canSend,
-                      onTap: onSend,
-                    ),
-                  ],
-                );
-              },
-            ),
-          ),
+            );
+          },
         ),
       ),
     );

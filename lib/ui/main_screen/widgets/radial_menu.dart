@@ -1,5 +1,4 @@
 import 'dart:math' as math;
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:memex/domain/models/shortcut_item.dart';
@@ -209,7 +208,7 @@ class RadialMenuState extends State<RadialMenu> with TickerProviderStateMixin {
 
           return Stack(
             children: [
-              // Background blur
+              // Background overlay
               if (widget.visible)
                 Container(
                   color: Colors.black.withOpacity(0.01),
@@ -217,15 +216,8 @@ class RadialMenuState extends State<RadialMenu> with TickerProviderStateMixin {
                     tween: Tween(begin: 0.0, end: widget.visible ? 1.0 : 0.0),
                     duration: const Duration(milliseconds: 300),
                     builder: (context, value, child) {
-                      return BackdropFilter(
-                        filter: ImageFilter.blur(
-                            sigmaX: 8 * value,
-                            sigmaY:
-                                8 * value), // Increased blur for premium feel
-                        child: Container(
-                          color: Colors.white.withOpacity(
-                              0.4 * value), // Light overlay instead of dark
-                        ),
+                      return Container(
+                        color: Colors.white.withOpacity(0.55 * value),
                       );
                     },
                   ),
