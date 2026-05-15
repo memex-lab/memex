@@ -91,6 +91,21 @@ class ClarificationRequestService {
     ClarificationRequest request,
   ) async {
     try {
+      // Optimistic claim: atomically set a placeholder factId so concurrent
+      // invocations for the same request will not proceed.
+      final claimed = await (_db.update(_db.clarificationRequests)
+            ..where((t) =>
+                t.id.equals(request.id) &
+                (t.factId.isNull() | t.factId.equals(''))))
+          .write(ClarificationRequestsCompanion(
+        factId: const Value('_claiming'),
+        updatedAt: Value(DateTime.now().millisecondsSinceEpoch ~/ 1000),
+      ));
+      if (claimed == 0) {
+        // Another invocation already claimed this request.
+        return;
+      }
+
       final now = DateTime.now();
       final timestampSec = now.millisecondsSinceEpoch ~/ 1000;
       final dateStr = DateFormat('yyyy/MM/dd').format(now);
