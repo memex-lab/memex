@@ -991,6 +991,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noKnowledgeInsight => '暂无知识洞察';
 
   @override
+  String insightProcessingBacklogMessage(Object count) {
+    return '还有 $count 个后台任务正在处理，洞察可能会在完成后更新。';
+  }
+
+  @override
+  String get insightUnavailableMessage => '这个洞察仍在生成中，或已被更新。请刷新洞察后稍后再试。';
+
+  @override
   String get scheduleAggregation => '日程聚合';
 
   @override

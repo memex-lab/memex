@@ -498,6 +498,13 @@
   "knowledgeInsight": "Knowledge insight",
   "completeSort": "Complete sort",
   "noKnowledgeInsight": "No knowledge insight",
+  "@insightProcessingBacklogMessage": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "insightProcessingBacklogMessage": "{count} background tasks are still processing. Insights may update after they finish.",
+  "insightUnavailableMessage": "This insight is still being generated or was updated. Refresh insights and try again later.",
   "scheduleAggregation": "Schedule aggregation",
   "noScheduleAggregation": "No schedule aggregation",
   "scheduleAggregationEmptyHint": "Tap Update to organize schedules and todos from real temporal cards.",

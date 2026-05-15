@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:memex/data/repositories/get_knowledge_insight_detail.dart';
 import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/domain/models/insight_detail_model.dart';
 import 'package:memex/ui/core/cards/native_card_factory.dart';
@@ -17,10 +18,12 @@ import 'package:memex/ui/core/widgets/back_button.dart';
 /// Unified AI Insight detail page
 class InsightDetailPage extends StatefulWidget {
   final String id;
+  final Future<InsightDetailModel> Function(String id)? detailLoader;
 
   const InsightDetailPage({
     super.key,
     required this.id,
+    this.detailLoader,
   });
 
   /// Factory constructor for insight
@@ -54,17 +57,22 @@ class _InsightDetailPageState extends State<InsightDetailPage> {
     });
 
     try {
-      final detail = await _memexRouter.fetchInsightDetail(widget.id);
+      final detailLoader =
+          widget.detailLoader ?? _memexRouter.fetchInsightDetail;
+      final detail = await detailLoader(widget.id);
       if (!mounted) return;
       setState(() {
         _insightDetail = detail;
       });
     } catch (e) {
       if (!mounted) return;
+      final message = e is KnowledgeInsightNotFoundException
+          ? UserStorage.l10n.insightUnavailableMessage
+          : UserStorage.l10n.loadDetailFailedRetry;
       setState(() {
-        _errorMessage = UserStorage.l10n.loadDetailFailedRetry;
+        _errorMessage = message;
       });
-      ToastHelper.showError(context, e);
+      ToastHelper.showError(context, message);
     } finally {
       if (mounted) {
         setState(() {

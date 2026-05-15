@@ -1017,6 +1017,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noKnowledgeInsight => 'No knowledge insight';
 
   @override
+  String insightProcessingBacklogMessage(Object count) {
+    return '$count background tasks are still processing. Insights may update after they finish.';
+  }
+
+  @override
+  String get insightUnavailableMessage =>
+      'This insight is still being generated or was updated. Refresh insights and try again later.';
+
+  @override
   String get scheduleAggregation => 'Schedule aggregation';
 
   @override

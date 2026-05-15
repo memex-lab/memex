@@ -498,6 +498,13 @@
   "knowledgeInsight": "知识洞察",
   "completeSort": "完成排序",
   "noKnowledgeInsight": "暂无知识洞察",
+  "@insightProcessingBacklogMessage": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "insightProcessingBacklogMessage": "还有 {count} 个后台任务正在处理，洞察可能会在完成后更新。",
+  "insightUnavailableMessage": "这个洞察仍在生成中，或已被更新。请刷新洞察后稍后再试。",
   "scheduleAggregation": "日程聚合",
   "noScheduleAggregation": "暂无日程聚合",
   "scheduleAggregationEmptyHint": "点击更新，从真实时间卡片里整理日程和待办。",

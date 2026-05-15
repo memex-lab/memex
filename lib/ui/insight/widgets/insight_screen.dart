@@ -57,12 +57,22 @@ class _InsightScreenState extends State<InsightScreen> {
       return;
     }
     try {
-      ToastHelper.showInfo(context, UserStorage.l10n.refreshingInsightData);
+      await vm.refreshTaskActivity();
+      if (!mounted) {
+        return;
+      }
+      ToastHelper.showInfo(
+          context,
+          vm.hasActiveTaskBacklog
+              ? UserStorage.l10n
+                  .insightProcessingBacklogMessage(vm.activeTaskCount)
+              : UserStorage.l10n.refreshingInsightData);
       await vm.refreshInsights();
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ToastHelper.showError(
             context, UserStorage.l10n.refreshFailed(e.toString()));
+      }
     }
   }
 
@@ -331,6 +341,47 @@ class _InsightScreenState extends State<InsightScreen> {
     return const SizedBox.shrink();
   }
 
+  Widget _buildBacklogBanner(InsightViewModel vm) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF59E0B).withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFFF59E0B).withValues(alpha: 0.18),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(top: 1),
+            child: Icon(
+              Icons.hourglass_top_rounded,
+              size: 17,
+              color: Color(0xFFD97706),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              UserStorage.l10n
+                  .insightProcessingBacklogMessage(vm.activeTaskCount),
+              style: const TextStyle(
+                fontSize: 13,
+                height: 1.4,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF92400E),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
@@ -464,6 +515,9 @@ class _InsightScreenState extends State<InsightScreen> {
                               const SizedBox(height: 16),
 
                             const SizedBox(height: 16),
+
+                            if (vm.hasActiveTaskBacklog)
+                              _buildBacklogBanner(vm),
 
                             if (vm.isLoading)
                               const Center(

@@ -22,6 +22,39 @@ class TaskContext {
   });
 }
 
+/// Lightweight snapshot of active background task pressure.
+class TaskActivitySnapshot {
+  final int pending;
+  final int processing;
+  final int retrying;
+
+  const TaskActivitySnapshot({
+    required this.pending,
+    required this.processing,
+    required this.retrying,
+  });
+
+  const TaskActivitySnapshot.empty()
+      : pending = 0,
+        processing = 0,
+        retrying = 0;
+
+  int get total => pending + processing + retrying;
+
+  bool get hasActiveTasks => total > 0;
+
+  @override
+  bool operator ==(Object other) {
+    return other is TaskActivitySnapshot &&
+        other.pending == pending &&
+        other.processing == processing &&
+        other.retrying == retrying;
+  }
+
+  @override
+  int get hashCode => Object.hash(pending, processing, retrying);
+}
+
 /// Handler function type
 typedef TaskHandler = Future<void> Function(
     String userId, Map<String, dynamic> payload, TaskContext context);
@@ -41,14 +74,15 @@ class LocalTaskExecutor {
     return _instance!;
   }
 
-  LocalTaskExecutor._();
+  LocalTaskExecutor._() : _testDb = null;
 
   @visibleForTesting
-  LocalTaskExecutor.forTesting();
+  LocalTaskExecutor.forTesting({AppDatabase? db}) : _testDb = db;
 
   final Logger _logger = getLogger('LocalTaskExecutor');
+  final AppDatabase? _testDb;
   // Dynamic getter to ensure we always use the current active DB instance (handling user switches)
-  AppDatabase get _db => AppDatabase.instance;
+  AppDatabase get _db => _testDb ?? AppDatabase.instance;
   String? _currentUserId; // Track current user ID for worker context
   String? get currentUserId => _currentUserId;
 
@@ -77,6 +111,36 @@ class LocalTaskExecutor {
     final query = _db.select(_db.tasks)
       ..where((t) => t.status.isIn(['pending', 'processing', 'retrying']));
     return query.watch().map((tasks) => tasks.isNotEmpty).distinct();
+  }
+
+  Future<TaskActivitySnapshot> getTaskActivitySnapshot() async {
+    final query = _db.select(_db.tasks)
+      ..where((t) => t.status.isIn(['pending', 'processing', 'retrying']));
+    return _snapshotFromTasks(await query.get());
+  }
+
+  TaskActivitySnapshot _snapshotFromTasks(List<Task> tasks) {
+    var pending = 0;
+    var processing = 0;
+    var retrying = 0;
+    for (final task in tasks) {
+      switch (task.status) {
+        case 'pending':
+          pending++;
+          break;
+        case 'processing':
+          processing++;
+          break;
+        case 'retrying':
+          retrying++;
+          break;
+      }
+    }
+    return TaskActivitySnapshot(
+      pending: pending,
+      processing: processing,
+      retrying: retrying,
+    );
   }
 
   void registerHandler(String taskType, TaskHandler handler) {
@@ -160,6 +224,8 @@ class LocalTaskExecutor {
 
   // Max concurrent tasks
   static const int _maxConcurrency = 5;
+  static const int _candidatePageSize = 50;
+  static const int _maxCandidateScan = 500;
 
   /// Enqueue a new task
   Future<String> enqueueTask({
@@ -236,62 +302,12 @@ class LocalTaskExecutor {
 
       final slotsAvailable = _maxConcurrency - activeTasks.length;
 
-      // 2. Fetch candidate tasks
-      // We look for pending or retrying tasks where scheduledAt <= now (or null)
-      // Limit to 20 to check dependencies efficiently
-      final query = _db.select(_db.tasks)
-        ..where((t) => t.status.isIn(['pending', 'retrying']))
-        ..where((t) =>
-            t.scheduledAt.isNull() | t.scheduledAt.isSmallerOrEqualValue(now))
-        ..orderBy([
-          (t) => OrderingTerm(expression: t.priority, mode: OrderingMode.desc),
-          (t) => OrderingTerm(expression: t.rowId, mode: OrderingMode.asc),
-        ])
-        ..limit(20);
-
-      final candidates = await query.get();
-
-      if (candidates.isEmpty) {
-        _isProcessing = false;
-        _scheduleNextPoll();
-        return;
-      }
-
-      var tasksToRun = <Task>[];
-
-      for (final task in candidates) {
-        if (tasksToRun.length >= slotsAvailable) break;
-
-        // Check dependencies
-        bool dependenciesMet = true;
-        if (task.dependencies != null) {
-          try {
-            final deps =
-                (jsonDecode(task.dependencies!) as List).cast<String>();
-            if (deps.isNotEmpty) {
-              // Check if any dependency is NOT completed or failed
-              final pendingDepsQuery = _db.selectOnly(_db.tasks)
-                ..addColumns([_db.tasks.id.count()])
-                ..where(_db.tasks.id.isIn(deps))
-                ..where(_db.tasks.status.isNotIn(['completed', 'failed']));
-
-              final pendingCount = await pendingDepsQuery.getSingle();
-              if ((pendingCount.read(_db.tasks.id.count()) ?? 0) > 0) {
-                dependenciesMet = false;
-              }
-            }
-          } catch (e) {
-            _logger.warning(
-                'Failed to parse dependencies for task ${task.id}: $e');
-            await _failTask(task, 'Invalid task dependencies: $e');
-            dependenciesMet = false;
-          }
-        }
-
-        if (dependenciesMet) {
-          tasksToRun.add(task);
-        }
-      }
+      // 2. Fetch runnable tasks. Dependency-blocked tasks at the front of the
+      // queue should not starve later tasks that can safely run now.
+      final tasksToRun = await _findRunnableTasks(
+        slotsAvailable: slotsAvailable,
+        now: now,
+      );
 
       if (tasksToRun.isEmpty) {
         // No runnable tasks found in top candidates
@@ -316,6 +332,74 @@ class LocalTaskExecutor {
       _logger.severe('Error in worker loop, $e', e);
       _isProcessing = false;
       _scheduleNextPoll();
+    }
+  }
+
+  Future<List<Task>> _findRunnableTasks({
+    required int slotsAvailable,
+    required int now,
+  }) async {
+    final tasksToRun = <Task>[];
+    var offset = 0;
+    var scanned = 0;
+
+    while (tasksToRun.length < slotsAvailable && scanned < _maxCandidateScan) {
+      final remainingScan = _maxCandidateScan - scanned;
+      final pageSize = remainingScan < _candidatePageSize
+          ? remainingScan
+          : _candidatePageSize;
+
+      final query = _db.select(_db.tasks)
+        ..where((t) => t.status.isIn(['pending', 'retrying']))
+        ..where((t) =>
+            t.scheduledAt.isNull() | t.scheduledAt.isSmallerOrEqualValue(now))
+        ..orderBy([
+          (t) => OrderingTerm(expression: t.priority, mode: OrderingMode.desc),
+          (t) => OrderingTerm(expression: t.rowId, mode: OrderingMode.asc),
+        ])
+        ..limit(pageSize, offset: offset);
+
+      final candidates = await query.get();
+      if (candidates.isEmpty) break;
+
+      scanned += candidates.length;
+      offset += candidates.length;
+
+      for (final task in candidates) {
+        if (tasksToRun.length >= slotsAvailable) break;
+        if (await _dependenciesMet(task)) {
+          tasksToRun.add(task);
+        }
+      }
+    }
+
+    if (tasksToRun.isEmpty && scanned >= _maxCandidateScan) {
+      _logger.warning(
+          'No runnable tasks found after scanning $_maxCandidateScan candidates');
+    }
+
+    return tasksToRun;
+  }
+
+  Future<bool> _dependenciesMet(Task task) async {
+    if (task.dependencies == null) return true;
+
+    try {
+      final deps = (jsonDecode(task.dependencies!) as List).cast<String>();
+      if (deps.isEmpty) return true;
+
+      // Check if any dependency is NOT completed or failed.
+      final pendingDepsQuery = _db.selectOnly(_db.tasks)
+        ..addColumns([_db.tasks.id.count()])
+        ..where(_db.tasks.id.isIn(deps))
+        ..where(_db.tasks.status.isNotIn(['completed', 'failed']));
+
+      final pendingCount = await pendingDepsQuery.getSingle();
+      return (pendingCount.read(_db.tasks.id.count()) ?? 0) == 0;
+    } catch (e) {
+      _logger.warning('Failed to parse dependencies for task ${task.id}: $e');
+      await _failTask(task, 'Invalid task dependencies: $e');
+      return false;
     }
   }
 

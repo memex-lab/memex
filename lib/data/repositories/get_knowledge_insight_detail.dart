@@ -10,6 +10,15 @@ import 'package:memex/agent/skills/knowledge_insight/native_widgets.dart';
 final _logger = getLogger('GetKnowledgeInsightDetailEndpoint');
 final _fileSystemService = FileSystemService.instance;
 
+class KnowledgeInsightNotFoundException implements Exception {
+  final String insightId;
+
+  KnowledgeInsightNotFoundException(this.insightId);
+
+  @override
+  String toString() => 'Knowledge insight card not found: $insightId';
+}
+
 /// Get knowledge insight card detail
 ///
 /// Args:
@@ -27,13 +36,10 @@ Future<InsightDetailModel> getKnowledgeInsightDetail(String insightId) async {
       throw Exception('User not logged in, cannot get insight detail');
     }
 
-    // Read knowledge insight card file (id.yaml)
-    final cardFileName = '$insightId.yaml';
-    final cardData =
-        await _fileSystemService.readKnowledgeInsightCard(userId, cardFileName);
+    final cardData = await _readKnowledgeInsightCardById(userId, insightId);
 
     if (cardData == null) {
-      throw Exception('Knowledge insight card not found: $insightId');
+      throw KnowledgeInsightNotFoundException(insightId);
     }
 
     // Build InsightMetadataModel
@@ -169,6 +175,24 @@ Future<InsightDetailModel> getKnowledgeInsightDetail(String insightId) async {
     _logger.severe('Failed to get knowledge insight detail $insightId: $e');
     rethrow;
   }
+}
+
+Future<Map<String, dynamic>?> _readKnowledgeInsightCardById(
+    String userId, String insightId) async {
+  final cardData =
+      await _fileSystemService.readKnowledgeInsightCard(userId, insightId);
+  if (cardData != null) return cardData;
+
+  // Fallback for legacy or agent-produced files whose YAML `id` no longer
+  // matches the filename. This keeps stale summary links recoverable when the
+  // card still exists under a different path.
+  final allCards = await _fileSystemService.listKnowledgeInsightCards(userId);
+  for (final card in allCards) {
+    if (card['id'] == insightId) {
+      return card;
+    }
+  }
+  return null;
 }
 
 /// Render knowledge insight card HTML (for detail page)

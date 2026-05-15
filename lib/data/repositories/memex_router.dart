@@ -1526,6 +1526,11 @@ class MemexRouter {
   Future<List<Task>> getTasks({int limit = 10, int offset = 0}) =>
       LocalTaskExecutor.instance.getTasks(limit: limit, offset: offset);
 
+  Future<TaskActivitySnapshot> getTaskActivitySnapshot() async {
+    await _ensureInitialized();
+    return LocalTaskExecutor.instance.getTaskActivitySnapshot();
+  }
+
   // ---------------------------------------------------------------------------
   // Card-detail notification helpers
   // ---------------------------------------------------------------------------
