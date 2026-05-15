@@ -52,10 +52,41 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
   bool _isStreaming = false;
   String _streamingText = '';
 
+  // Pagination state — WeChat/WhatsApp style: load older messages on scroll-up
+  static const int _pageSize = 30;
+  bool _hasMoreHistory = true;
+  bool _isLoadingMore = false;
+
+  // Cached MarkdownStyleSheet — avoid recreating on every build
+  static final _cachedMarkdownStyle = MarkdownStyleSheet(
+    p: const TextStyle(
+      fontSize: 15,
+      height: 1.68,
+      color: _personaText,
+    ),
+    strong: const TextStyle(
+      fontWeight: FontWeight.w700,
+      color: _personaText,
+    ),
+    em: const TextStyle(fontStyle: FontStyle.italic),
+    listBullet: const TextStyle(color: _personaAccent),
+    code: const TextStyle(
+      fontSize: 13,
+      color: _personaText,
+      backgroundColor: Color(0xFF241615),
+      fontFamily: 'monospace',
+    ),
+    codeblockDecoration: BoxDecoration(
+      color: const Color(0xFF241615),
+      borderRadius: BorderRadius.circular(8),
+    ),
+  );
+
   @override
   void initState() {
     super.initState();
     _init();
+    _scrollController.addListener(_onScroll);
     EventBusService.instance.addHandler(
       EventBusMessageType.personaChatMessageAdded,
       _onPersonaChatMessageAdded,
@@ -70,7 +101,10 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
     final character = await CharacterService.instance
         .getCharacter(userId, _currentCharacterId);
 
-    final messages = await _chatService.getMessages(_currentCharacterId);
+    final messages = await _chatService.getMessages(
+      _currentCharacterId,
+      limit: _pageSize,
+    );
     await _chatService.markAllRead(_currentCharacterId);
 
     // If this is the first chat and the character has a greeting, deliver it.
@@ -89,14 +123,17 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
         isRead: true,
       );
       // Reload after inserting greeting.
-      final updatedMessages =
-          await _chatService.getMessages(_currentCharacterId);
+      final updatedMessages = await _chatService.getMessages(
+        _currentCharacterId,
+        limit: _pageSize,
+      );
       if (mounted) {
         setState(() {
           _character = character;
           _userId = userId;
           _userAvatar = userAvatar;
           _messages = updatedMessages;
+          _hasMoreHistory = updatedMessages.length >= _pageSize;
           _isLoading = false;
         });
         _scrollToBottom();
@@ -110,6 +147,7 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
         _userId = userId;
         _userAvatar = userAvatar;
         _messages = messages;
+        _hasMoreHistory = messages.length >= _pageSize;
         _isLoading = false;
       });
       _scrollToBottom();
@@ -122,18 +160,51 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
       EventBusMessageType.personaChatMessageAdded,
       _onPersonaChatMessageAdded,
     );
+    _scrollController.removeListener(_onScroll);
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  /// Triggered when user scrolls toward the top (older messages).
+  /// Since the list is reversed, maxScrollExtent = oldest direction.
+  void _onScroll() {
+    if (!_hasMoreHistory || _isLoadingMore) return;
+    final pos = _scrollController.position;
+    // Trigger load when within 20% of the top (maxScrollExtent in reversed list)
+    if (pos.pixels >= pos.maxScrollExtent * 0.8) {
+      _loadMoreHistory();
+    }
+  }
+
+  /// Loads the next page of older messages and prepends them to the list.
+  Future<void> _loadMoreHistory() async {
+    if (_isLoadingMore || !_hasMoreHistory) return;
+    setState(() => _isLoadingMore = true);
+
+    final olderMessages = await _chatService.getMessages(
+      _currentCharacterId,
+      limit: _pageSize,
+      offset: _messages.length,
+    );
+
+    if (!mounted) return;
+    setState(() {
+      _messages = [..._messages, ...olderMessages];
+      _hasMoreHistory = olderMessages.length >= _pageSize;
+      _isLoadingMore = false;
+    });
   }
 
   void _onPersonaChatMessageAdded(EventBusMessage message) {
     if (message is! PersonaChatMessageAddedMessage) return;
     if (message.characterId != _currentCharacterId) return;
     if (!mounted) return;
-    // Reload messages immediately so the action message appears before
-    // the spoken reply arrives.
-    _chatService.getMessages(_currentCharacterId).then((updated) {
+    // New message arrived — reload the latest page and keep any older
+    // messages that were already loaded via pagination.
+    _chatService
+        .getMessages(_currentCharacterId, limit: _messages.length + 5)
+        .then((updated) {
       if (!mounted) return;
       setState(() => _messages = updated);
       _scrollToBottom();
@@ -152,8 +223,11 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
     await _chatService.addUserMessage(_currentCharacterId, text,
         timestamp: userMessageTime);
 
-    // Reload messages to show user's message
-    final messages = await _chatService.getMessages(_currentCharacterId);
+    // Reload messages to show user's message (preserve loaded history depth)
+    final messages = await _chatService.getMessages(
+      _currentCharacterId,
+      limit: _messages.length + 1,
+    );
     setState(() {
       _messages = messages;
       _isStreaming = true;
@@ -199,7 +273,10 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
       }
 
       // Reload messages
-      final updated = await _chatService.getMessages(_currentCharacterId);
+      final updated = await _chatService.getMessages(
+        _currentCharacterId,
+        limit: _messages.length + 1,
+      );
       if (mounted) {
         setState(() {
           _messages = updated;
@@ -259,6 +336,8 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
       setState(() {
         _currentCharacterId = selected.id;
         _isLoading = true;
+        _hasMoreHistory = true;
+        _isLoadingMore = false;
       });
       await _init();
     }
@@ -273,7 +352,9 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
           : Stack(
               children: [
                 Positioned.fill(
-                  child: _ChatAtmosphereBackground(character: _character),
+                  child: RepaintBoundary(
+                    child: _ChatAtmosphereBackground(character: _character),
+                  ),
                 ),
                 Column(
                   children: [
@@ -375,9 +456,11 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
     final showStreamingBubble = _isStreaming && _streamingText.isNotEmpty;
     final showTypingIndicator = _isStreaming && _streamingText.isEmpty;
     final extraItems = (showStreamingBubble || showTypingIndicator) ? 1 : 0;
-    final itemCount = _messages.length + extraItems;
+    // Extra item at the tail (top of reversed list) for load-more indicator
+    final loadMoreItem = (_hasMoreHistory || _isLoadingMore) ? 1 : 0;
+    final itemCount = _messages.length + extraItems + loadMoreItem;
 
-    if (itemCount == 0) return _buildEmptyState();
+    if (_messages.isEmpty && extraItems == 0) return _buildEmptyState();
 
     return ListView.builder(
       controller: _scrollController,
@@ -385,7 +468,7 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
       padding: const EdgeInsets.fromLTRB(10, 8, 12, 10),
       itemCount: itemCount,
       itemBuilder: (context, index) {
-        // Typing indicator or streaming message at the end
+        // Typing indicator or streaming message at the bottom (index 0 in reversed list)
         if (extraItems == 1 && index == 0) {
           if (showTypingIndicator) {
             return _buildTypingIndicator();
@@ -395,6 +478,11 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
             isCharacter: true,
             isStreaming: true,
           );
+        }
+
+        // Load-more indicator at the top (last index in reversed list)
+        if (loadMoreItem == 1 && index == itemCount - 1) {
+          return _buildLoadMoreIndicator();
         }
 
         final messageIndex = _messageIndexForListIndex(
@@ -437,11 +525,13 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
     int messageIndex,
     List<PersonaChatMessage> messages,
   ) {
-    return messageIndex == messages.length - 1 ||
-        !_isSameDay(
-          messages[messageIndex].timestamp,
-          messages[messageIndex + 1].timestamp,
-        );
+    // Always show timestamp for the oldest loaded message
+    if (messageIndex == messages.length - 1) return true;
+    // Show timestamp when gap between adjacent messages exceeds 10 minutes
+    // (WeChat/WhatsApp convention)
+    final current = messages[messageIndex].timestamp;
+    final previous = messages[messageIndex + 1].timestamp;
+    return current.difference(previous).inMinutes.abs() >= 10;
   }
 
   Widget _buildEmptyState() {
@@ -500,15 +590,7 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
   }
 
   Widget _buildDateDivider(DateTime date) {
-    final now = DateTime.now();
-    String label;
-    if (_isSameDay(date, now)) {
-      label = UserStorage.l10n.today;
-    } else if (_isSameDay(date, now.subtract(const Duration(days: 1)))) {
-      label = UserStorage.l10n.yesterday;
-    } else {
-      label = DateFormat('MMM d').format(date);
-    }
+    final label = _formatTimeDivider(date);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 16),
       child: Center(
@@ -526,6 +608,61 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
         ),
       ),
     );
+  }
+
+  /// Formats a timestamp for the chat time divider, following WeChat conventions:
+  /// - Today: "HH:mm"
+  /// - Yesterday: "昨天 HH:mm" / "Yesterday HH:mm"
+  /// - This week (within 7 days): "周三 HH:mm" / "Wed HH:mm"
+  /// - This year: "3月15日 HH:mm" / "Mar 15 HH:mm"
+  /// - Older: "2024年3月15日 HH:mm" / "Mar 15, 2024 HH:mm"
+  String _formatTimeDivider(DateTime date) {
+    final now = DateTime.now();
+    final locale = UserStorage.l10n.localeName;
+    final time = DateFormat('HH:mm', locale).format(date);
+
+    if (_isSameDay(date, now)) {
+      return time;
+    }
+
+    if (_isSameDay(date, now.subtract(const Duration(days: 1)))) {
+      return '${UserStorage.l10n.yesterday} $time';
+    }
+
+    final daysAgo = DateTime(now.year, now.month, now.day)
+        .difference(DateTime(date.year, date.month, date.day))
+        .inDays;
+
+    if (daysAgo < 7) {
+      final weekday = DateFormat.E(locale).format(date);
+      return '$weekday $time';
+    }
+
+    if (date.year == now.year) {
+      return '${DateFormat.MMMd(locale).format(date)} $time';
+    }
+
+    return '${DateFormat.yMMMd(locale).format(date)} $time';
+  }
+
+  Widget _buildLoadMoreIndicator() {
+    if (_isLoadingMore) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 20),
+        child: Center(
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 1.5,
+              color: _personaAccentCool,
+            ),
+          ),
+        ),
+      );
+    }
+    // Invisible sentinel — the scroll listener handles triggering the load.
+    return const SizedBox(height: 1);
   }
 
   /// Renders a narrative / action description message.
@@ -676,7 +813,7 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
                       child: MarkdownBody(
                         data: text,
                         softLineBreak: true,
-                        styleSheet: _characterMarkdownStyle(),
+                        styleSheet: _cachedMarkdownStyle,
                       ),
                     ),
                     if (isStreaming) ...[
@@ -697,32 +834,6 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
           ),
           const SizedBox(width: 54),
         ],
-      ),
-    );
-  }
-
-  MarkdownStyleSheet _characterMarkdownStyle() {
-    return MarkdownStyleSheet(
-      p: const TextStyle(
-        fontSize: 15,
-        height: 1.68,
-        color: _personaText,
-      ),
-      strong: const TextStyle(
-        fontWeight: FontWeight.w700,
-        color: _personaText,
-      ),
-      em: const TextStyle(fontStyle: FontStyle.italic),
-      listBullet: const TextStyle(color: _personaAccent),
-      code: const TextStyle(
-        fontSize: 13,
-        color: _personaText,
-        backgroundColor: Color(0xFF241615),
-        fontFamily: 'monospace',
-      ),
-      codeblockDecoration: BoxDecoration(
-        color: const Color(0xFF241615),
-        borderRadius: BorderRadius.circular(8),
       ),
     );
   }
@@ -964,14 +1075,16 @@ class _AtmosphereGlow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ImageFiltered(
-      imageFilter: ImageFilter.blur(sigmaX: 46, sigmaY: 46),
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: color,
+    return RepaintBoundary(
+      child: ImageFiltered(
+        imageFilter: ImageFilter.blur(sigmaX: 46, sigmaY: 46),
+        child: Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: color,
+          ),
         ),
       ),
     );
@@ -985,40 +1098,29 @@ class _CharacterMessageFrame extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: const BorderRadius.only(
-        topLeft: Radius.circular(7),
-        topRight: Radius.circular(18),
-        bottomLeft: Radius.circular(18),
-        bottomRight: Radius.circular(18),
+    return Container(
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.sizeOf(context).width * 0.72,
       ),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: Container(
-          constraints: BoxConstraints(
-            maxWidth: MediaQuery.sizeOf(context).width * 0.72,
-          ),
-          padding: const EdgeInsets.fromLTRB(18, 13, 18, 13),
-          decoration: BoxDecoration(
-            color: _personaCharacterBubble,
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(7),
-              topRight: Radius.circular(18),
-              bottomLeft: Radius.circular(18),
-              bottomRight: Radius.circular(18),
-            ),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.34),
-                blurRadius: 24,
-                offset: const Offset(0, 12),
-              ),
-            ],
-          ),
-          child: child,
+      padding: const EdgeInsets.fromLTRB(18, 13, 18, 13),
+      decoration: BoxDecoration(
+        color: _personaCharacterBubble,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(7),
+          topRight: Radius.circular(18),
+          bottomLeft: Radius.circular(18),
+          bottomRight: Radius.circular(18),
         ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.34),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+        ],
       ),
+      child: child,
     );
   }
 }
