@@ -86,5 +86,35 @@ void main() {
       final message = loaded.history.messages.single as ModelMessage;
       expect(message.contentBlocks, blocks);
     });
+
+    test('repairs legacy DeepSeek V4 tool-call turns', () async {
+      final state = AgentState(
+        sessionId: 'legacy_deepseek_reasoning_state',
+        metadata: {'userId': userId},
+      );
+      state.history.messages.add(
+        ModelMessage(
+          model: 'deepseek-v4-pro',
+          functionCalls: [
+            FunctionCall(
+              id: 'call_1',
+              name: 'lookup',
+              arguments: '{}',
+            ),
+          ],
+          stopReason: 'tool_calls',
+          timestamp: 123,
+        ),
+      );
+      await saveAgentState(state);
+
+      final loaded = await loadOrCreateAgentState(
+        'legacy_deepseek_reasoning_state',
+        {'userId': userId},
+      );
+
+      final message = loaded.history.messages.single as ModelMessage;
+      expect(message.thought, ' ');
+    });
   });
 }

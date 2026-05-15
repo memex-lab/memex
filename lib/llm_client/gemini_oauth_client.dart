@@ -90,8 +90,7 @@ class GeminiOAuthClient extends LLMClient {
         continue;
       }
       final filtered = parts
-          .where((p) =>
-              p is! Map<String, dynamic> || p['thought'] != true)
+          .where((p) => p is! Map<String, dynamic> || p['thought'] != true)
           .toList();
       if (filtered.isEmpty && record['role'] == 'model') continue;
       sanitized.add({...record, 'parts': filtered});
@@ -115,7 +114,7 @@ class GeminiOAuthClient extends LLMClient {
         modelConfig: modelConfig,
         jsonOutput: jsonOutput);
     final wrappedBody = await _wrapRequest(geminiBody, model);
-    final url = '$_codeAssistEndpoint/v1internal:generateContent';
+    const url = '$_codeAssistEndpoint/v1internal:generateContent';
 
     int retryCount = 0;
     int currentDelayMs = initialRetryDelayMs;
@@ -191,7 +190,7 @@ class GeminiOAuthClient extends LLMClient {
         modelConfig: modelConfig,
         jsonOutput: jsonOutput);
     final wrappedBody = await _wrapRequest(geminiBody, model);
-    final url = '$_codeAssistEndpoint/v1internal:streamGenerateContent?alt=sse';
+    const url = '$_codeAssistEndpoint/v1internal:streamGenerateContent?alt=sse';
 
     final controller = StreamController<StreamingMessage>();
     int retryCount = 0;
@@ -378,18 +377,21 @@ Map<String, dynamic> _createGeminiBody(
     } else if (m is ModelMessage) {
       if (m.textOutput != null) parts.add({'text': m.textOutput});
       for (final fc in m.functionCalls) {
-        final fcPart = <String, dynamic>{
+        parts.add({
           'functionCall': {
             'name': fc.name,
-            'args': fc.arguments is Map
-                ? fc.arguments
-                : jsonDecode(fc.arguments),
+            'args':
+                fc.arguments is Map ? fc.arguments : jsonDecode(fc.arguments),
           }
-        };
-        if (m.thoughtSignature != null) {
-          fcPart['thoughtSignature'] = m.thoughtSignature;
+        });
+      }
+      if (m.thoughtSignature != null && parts.isNotEmpty) {
+        final fcIndex = parts.indexWhere((p) => p.containsKey('functionCall'));
+        if (fcIndex != -1) {
+          parts[fcIndex]['thoughtSignature'] = m.thoughtSignature;
+        } else {
+          parts.last['thoughtSignature'] = m.thoughtSignature;
         }
-        parts.add(fcPart);
       }
     } else if (m is FunctionExecutionResultMessage) {
       for (final res in m.results) {
@@ -397,7 +399,8 @@ Map<String, dynamic> _createGeminiBody(
             res.content.whereType<TextPart>().map((t) => t.text).join('\n');
         parts.add({
           'functionResponse': {
-            'name': res.id,
+            'name': res.name,
+            if (res.id != res.name) 'id': res.id,
             'response': {'content': text},
           }
         });
@@ -496,7 +499,7 @@ ModelMessage? _parseResponse(
       if (part.containsKey('functionCall')) {
         final fc = part['functionCall'] as Map;
         functionCalls.add(FunctionCall(
-          id: fc['name'] as String,
+          id: (fc['id'] ?? fc['name']) as String,
           name: fc['name'] as String,
           arguments: jsonEncode(fc['args'] ?? {}),
         ));

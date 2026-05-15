@@ -36,21 +36,46 @@ bool _repairLegacyAssistantContentBlocks(AgentState state) {
   final repairedMessages = <LLMMessage>[];
 
   for (final message in state.history.messages) {
-    if (message is ModelMessage &&
-        message.contentBlocks.isEmpty &&
-        message.thought != null &&
-        message.thought!.isNotEmpty) {
-      repairedMessages.add(_withSynthesizedContentBlocks(message));
-      changed = true;
-    } else {
+    if (message is! ModelMessage) {
       repairedMessages.add(message);
+      continue;
     }
+
+    var repaired = message;
+    if (repaired.contentBlocks.isEmpty &&
+        repaired.thought != null &&
+        repaired.thought!.isNotEmpty) {
+      repaired = _withSynthesizedContentBlocks(repaired);
+      changed = true;
+    }
+
+    if (_needsLegacyReasoningContentPlaceholder(repaired)) {
+      repaired = _withReasoningContentPlaceholder(repaired);
+      changed = true;
+    }
+
+    repairedMessages.add(repaired);
   }
 
   if (changed) {
     state.history.messages = repairedMessages;
   }
   return changed;
+}
+
+bool _needsLegacyReasoningContentPlaceholder(ModelMessage message) {
+  if (message.thought != null) return false;
+  if (message.functionCalls.isEmpty) return false;
+
+  final model = message.model.toLowerCase();
+  return model.contains('deepseek-v4');
+}
+
+ModelMessage _withReasoningContentPlaceholder(ModelMessage message) {
+  // Old interrupted DeepSeek V4 tool-call turns may have lost
+  // reasoning_content. We cannot reconstruct it, but a present field unblocks
+  // the next API call; fresh turns keep the real reasoning_content.
+  return _copyModelMessage(message, thought: ' ');
 }
 
 ModelMessage _withSynthesizedContentBlocks(ModelMessage message) {
@@ -77,10 +102,18 @@ ModelMessage _withSynthesizedContentBlocks(ModelMessage message) {
     });
   }
 
+  return _copyModelMessage(message, contentBlocks: contentBlocks);
+}
+
+ModelMessage _copyModelMessage(
+  ModelMessage message, {
+  String? thought,
+  List<Map<String, dynamic>>? contentBlocks,
+}) {
   return ModelMessage(
-    thought: message.thought,
+    thought: thought ?? message.thought,
     thoughtSignature: message.thoughtSignature,
-    contentBlocks: contentBlocks,
+    contentBlocks: contentBlocks ?? message.contentBlocks,
     functionCalls: message.functionCalls,
     textOutput: message.textOutput,
     imageOutputs: message.imageOutputs,
