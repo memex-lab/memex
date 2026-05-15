@@ -15,6 +15,7 @@ mixin AppLocalizationsExt on AppLocalizations {
   String get pkmInsightLanguageInstruction;
   String get commentLanguageInstruction;
   String get knowledgeInsightLanguageInstruction;
+  String get scheduleAggregatorLanguageInstruction;
   String get assetAnalysisLanguageInstruction;
 
   String get userLanguageInstruction;

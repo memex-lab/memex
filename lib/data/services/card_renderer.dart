@@ -61,6 +61,7 @@ const Set<String> _nativeCardTemplates = {
   'bar_chart_card_v1',
   'timeline_card_v1',
   'system_task',
+  'schedule_briefing',
 };
 
 /// Result of card rendering
@@ -154,7 +155,9 @@ Future<CardRenderResult> renderCard({
 
     // For HTML cards, return HTML
     String contentToDisplay = "";
-    contentToDisplay = cardStatus == 'processing' ? "Parsing your record..." : "Processing failed";
+    contentToDisplay = cardStatus == 'processing'
+        ? "Parsing your record..."
+        : "Processing failed";
     if (factContent != null && factContent.isNotEmpty) {
       contentToDisplay = factContent;
     }
@@ -298,8 +301,10 @@ Future<Map<String, dynamic>> extractAssetsAndRawText(
 
     // extract raw text (strip image and audio markers)
     rawText = rawContent
-        .replaceAll(RegExp(r'!\[.*?\]\(fs://[^\)]+\)'), '') // remove image markers
-        .replaceAll(RegExp(r'\[.*?\]\(fs://[^\)]+\)'), '') // remove audio markers
+        .replaceAll(
+            RegExp(r'!\[.*?\]\(fs://[^\)]+\)'), '') // remove image markers
+        .replaceAll(
+            RegExp(r'\[.*?\]\(fs://[^\)]+\)'), '') // remove audio markers
         .trim();
   }
 
@@ -308,4 +313,3 @@ Future<Map<String, dynamic>> extractAssetsAndRawText(
     'rawText': rawText,
   };
 }
-

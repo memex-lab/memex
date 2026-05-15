@@ -193,6 +193,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get all => 'All';
 
   @override
+  String get schedule => 'Schedule';
+
+  @override
   String loadStatsFailed(Object error) {
     return 'Failed to load stats: $error';
   }
@@ -204,16 +207,89 @@ class AppLocalizationsEn extends AppLocalizations {
   String get daily => 'Daily';
 
   @override
+  String get modelStatsByAgent => 'By agent';
+
+  @override
   String get detail => 'Detail';
 
   @override
   String get date => 'Date';
 
   @override
+  String get agent => 'Agent';
+
+  @override
   String get noData => 'No data';
 
   @override
   String get totalCalls => 'Total calls';
+
+  @override
+  String get calls => 'Calls';
+
+  @override
+  String callsCount(Object count) {
+    return '$count calls';
+  }
+
+  @override
+  String get selectDateRange => 'Select date range';
+
+  @override
+  String get totalTokens => 'Total tokens';
+
+  @override
+  String get cacheRate => 'Cache rate';
+
+  @override
+  String get promptTokens => 'Prompt tokens';
+
+  @override
+  String get completionTokens => 'Completion tokens';
+
+  @override
+  String get cachedTokens => 'Cached tokens';
+
+  @override
+  String get thoughtTokens => 'Thought tokens';
+
+  @override
+  String get prompt => 'Prompt';
+
+  @override
+  String get completion => 'Completion';
+
+  @override
+  String get cached => 'Cached';
+
+  @override
+  String get thought => 'Thought';
+
+  @override
+  String get model => 'Model';
+
+  @override
+  String get scene => 'Scene';
+
+  @override
+  String get sceneId => 'Scene ID';
+
+  @override
+  String get tokenUsage => 'Token usage';
+
+  @override
+  String get handler => 'Handler';
+
+  @override
+  String get modelBreakdown => 'Model breakdown';
+
+  @override
+  String get callDetails => 'Call details';
+
+  @override
+  String recordDetailsTitle(Object scene) {
+    return 'Record details: $scene';
+  }
 
   @override
   String saveLlmConfigFailed(Object error) {
@@ -939,6 +1015,75 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noKnowledgeInsight => 'No knowledge insight';
+
+  @override
+  String get scheduleAggregation => 'Schedule aggregation';
+
+  @override
+  String get noScheduleAggregation => 'No schedule aggregation';
+
+  @override
+  String get scheduleAggregationEmptyHint =>
+      'Tap Update to organize schedules and todos from real temporal cards.';
+
+  @override
+  String get scheduleAggregationDirtyReason =>
+      'New schedule-related content is available. Tap Update to reorganize.';
+
+  @override
+  String get scheduleAggregationLoadFailed => 'Failed to load schedule data';
+
+  @override
+  String get scheduleAggregationRefreshFailed =>
+      'Failed to refresh schedule data';
+
+  @override
+  String get scheduleTaskUpdateFailed => 'Failed to update task';
+
+  @override
+  String get scheduleFeatured => 'Featured';
+
+  @override
+  String get scheduleThisWeek => 'This week';
+
+  @override
+  String get scheduleDone => 'Done';
+
+  @override
+  String get scheduleTbd => 'TBD';
+
+  @override
+  String get scheduleWeekOverview => 'This week';
+
+  @override
+  String get scheduleImportant => 'Important';
+
+  @override
+  String get scheduleBriefingTitle => 'Schedule briefing';
+
+  @override
+  String get scheduleBriefingNeedsUpdate => 'Needs update';
+
+  @override
+  String get scheduleBriefingOpen => 'Open';
+
+  @override
+  String get scheduleBriefingNoData => 'No schedule briefing yet';
+
+  @override
+  String scheduleBriefingUpdated(Object time) {
+    return 'Updated $time';
+  }
+
+  @override
+  String scheduleBriefingDoneCount(Object count) {
+    return '$count done';
+  }
+
+  @override
+  String scheduleBriefingConflictCount(Object count) {
+    return '$count conflicts';
+  }
 
   @override
   String get updating => 'Updating...';

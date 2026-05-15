@@ -1,11 +1,15 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:memex/domain/models/calendar_model.dart';
+import 'package:memex/data/repositories/get_schedule_briefing_timeline_card.dart'
+    as schedule_briefing_endpoint;
 import 'package:memex/data/repositories/update_card_ui_config.dart'
     as update_config_endpoint;
 import 'package:memex/data/services/search_service.dart';
+import 'package:memex/domain/models/calendar_model.dart';
 import 'package:memex/data/repositories/hydrate_card.dart';
 import 'package:memex/data/services/task_handlers/knowledge_insight_handler.dart';
+import 'package:memex/data/services/task_handlers/schedule_aggregator_handler.dart';
+import 'package:memex/data/services/task_handlers/schedule_refresh_router_handler.dart';
 import 'package:memex/data/services/task_handlers/clarification_resolution_handler.dart';
 import 'package:memex/data/services/table_change_notifier.dart';
 import 'package:memex/data/services/card_attachment_service.dart';
@@ -18,6 +22,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:memex/data/repositories/get_timeline_card.dart'; // Import for fetchTimelineCard
 import 'package:logging/logging.dart';
 import 'package:memex/data/services/card_renderer.dart';
+import 'package:memex/data/services/event_handlers/schedule_dirty_on_card_update_handler.dart';
 import 'package:memex/domain/models/timeline_card_model.dart';
 import 'package:memex/domain/models/card_model.dart';
 import 'package:memex/domain/models/card_detail_model.dart';
@@ -136,6 +141,10 @@ class MemexRouter {
       LocalTaskExecutor.instance
           .registerHandler('knowledge_insight_task', handleKnowledgeInsight);
       LocalTaskExecutor.instance.registerHandler(
+          'schedule_aggregator_task', handleScheduleAggregation);
+      LocalTaskExecutor.instance.registerHandler(
+          'schedule_refresh_router_task', handleScheduleRefreshRouter);
+      LocalTaskExecutor.instance.registerHandler(
           'clarification_resolution_task', handleClarificationResolution);
 
       // Register Failure Handlers
@@ -146,6 +155,8 @@ class MemexRouter {
         'pkm_agent_task',
         'comment_agent_task',
         'knowledge_insight_task',
+        'schedule_aggregator_task',
+        'schedule_refresh_router_task',
         'clarification_resolution_task',
         'reprocess_cards_task',
         'reprocess_comments_task',
@@ -256,6 +267,24 @@ class MemexRouter {
     );
 
     eventBus.subscribe(
+      eventType: SystemEventTypes.userInputSubmitted,
+      subscription: EventTaskSubscription(
+        subscriptionId: 'schedule_refresh_router',
+        taskType: 'schedule_refresh_router_task',
+        dependsOn: const ['card_agent'],
+        priority: -1,
+        payloadBuilder: (_, event) {
+          final p = event.payload as UserInputSubmittedPayload;
+          return Future.value({
+            'fact_id': p.factId,
+            'combined_text': p.combinedText,
+            'created_at_ts': p.createdAtTs,
+          });
+        },
+      ),
+    );
+
+    eventBus.subscribe(
       eventType: SystemEventTypes.cardCommentPosted,
       subscription: EventTaskSubscription(
         subscriptionId: 'ai_reply',
@@ -273,11 +302,28 @@ class MemexRouter {
       ),
     );
 
+    eventBus.subscribeSync<CardUiConfigUpdatedPayload>(
+      eventType: SystemEventTypes.cardUiConfigUpdated,
+      subscription: EventSyncSubscription<CardUiConfigUpdatedPayload>(
+        subscriptionId: 'schedule_dirty_on_card_ui_config_update',
+        handler: handleScheduleDirtyOnCardUiConfigUpdated,
+      ),
+    );
+
     eventBus.subscribe(
       eventType: SystemEventTypes.knowledgeInsightRefreshRequested,
       subscription: EventTaskSubscription(
         subscriptionId: 'knowledge_insight_refresh',
         taskType: 'knowledge_insight_task',
+        payloadBuilder: (_, event) => Future.value(const {}),
+      ),
+    );
+
+    eventBus.subscribe(
+      eventType: SystemEventTypes.scheduleAggregationRequested,
+      subscription: EventTaskSubscription(
+        subscriptionId: 'schedule_aggregation_refresh',
+        taskType: 'schedule_aggregator_task',
         payloadBuilder: (_, event) => Future.value(const {}),
       ),
     );
@@ -481,6 +527,13 @@ class MemexRouter {
         dateFrom: dateFrom,
         dateTo: dateTo,
       );
+    });
+  }
+
+  Future<Result<TimelineCardModel?>> fetchScheduleBriefingCard() {
+    return runResult(() async {
+      await _ensureInitialized();
+      return schedule_briefing_endpoint.getScheduleBriefingTimelineCard();
     });
   }
 
@@ -1364,6 +1417,23 @@ class MemexRouter {
           event: SystemEvent(
             type: SystemEventTypes.knowledgeInsightRefreshRequested,
             source: 'memex_router.updateKnowledgeInsights',
+            payload: const {},
+          ),
+        );
+      });
+
+  Future<Result<void>> refreshScheduleAggregation() => runResultVoid(() async {
+        await _ensureInitialized();
+        final userId = await UserStorage.getUserId();
+        if (userId == null) {
+          throw Exception('User not logged in');
+        }
+
+        await GlobalEventBus.instance.publish(
+          userId: userId,
+          event: SystemEvent(
+            type: SystemEventTypes.scheduleAggregationRequested,
+            source: 'memex_router.refreshScheduleAggregation',
             payload: const {},
           ),
         );

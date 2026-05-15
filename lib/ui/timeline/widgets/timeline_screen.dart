@@ -10,6 +10,7 @@ import 'package:memex/ui/card_attachments/card_attachment_factory.dart';
 import 'package:memex/ui/core/widgets/html_webview_card.dart';
 import 'package:memex/ui/main_screen/widgets/action_center_sheet.dart';
 
+import 'package:memex/domain/models/system_card_constants.dart';
 import 'package:memex/ui/core/cards/native_card_factory.dart';
 import 'package:memex/data/services/demo_service.dart';
 import 'package:memex/ui/core/cards/card_action_notification.dart';
@@ -30,6 +31,7 @@ import 'package:memex/ui/settings/widgets/system_authorization_page.dart';
 import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:memex/ui/core/widgets/character_avatar.dart';
 import 'package:memex/ui/character/widgets/persona_avatar_button.dart';
+import 'package:memex/ui/schedule/widgets/schedule_aggregator_screen.dart';
 
 /// Timeline screen - main memory view. Receives [viewModel] and [insightViewModel] from parent (Compass-style).
 class TimelineScreen extends StatefulWidget {
@@ -218,22 +220,24 @@ class TimelineScreenState extends State<TimelineScreen> {
     }
   }
 
-  /// Get the total number of tab pages: All(0) + Insight(1) + user tags(2..)
-  int _totalPageCount(TimelineViewModel vm) => 2 + vm.tags.length;
+  /// Get the total number of tab pages: All(0) + Insight(1) + Schedule(2) + user tags(3..)
+  int _totalPageCount(TimelineViewModel vm) => 3 + vm.tags.length;
 
   /// Convert a page index to the corresponding filter string.
   String _pageIndexToFilter(int index, TimelineViewModel vm) {
     if (index == 0) return 'all';
     if (index == 1) return 'insight';
-    return vm.tags[index - 2].name;
+    if (index == 2) return 'schedule';
+    return vm.tags[index - 3].name;
   }
 
   /// Convert the current active filter to a page index.
   int _filterToPageIndex(TimelineViewModel vm) {
     if (vm.viewMode == TimelineViewMode.insight) return 1;
+    if (vm.activeFilter == 'schedule') return 2;
     if (vm.activeFilter == 'all') return 0;
     final idx = vm.tags.indexWhere((t) => t.name == vm.activeFilter);
-    return idx >= 0 ? idx + 2 : 0;
+    return idx >= 0 ? idx + 3 : 0;
   }
 
   /// Called when user swipes to a new page.
@@ -247,7 +251,9 @@ class TimelineScreenState extends State<TimelineScreen> {
     } else {
       vm.setViewMode(TimelineViewMode.timeline);
       vm.setActiveFilter(filter);
-      vm.loadCards(refresh: true);
+      if (index != 2) {
+        vm.loadCards(refresh: true);
+      }
     }
     _scrollTagIntoView(index, vm);
   }
@@ -723,14 +729,13 @@ class TimelineScreenState extends State<TimelineScreen> {
                   ),
                 ),
               ),
-            if (vm.tags.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: SizedBox(
-                  height: 36,
-                  child: _buildInlineTagChips(vm),
-                ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: SizedBox(
+                height: 36,
+                child: _buildInlineTagChips(vm),
               ),
+            ),
 
             // Content
             Expanded(
@@ -782,6 +787,10 @@ class TimelineScreenState extends State<TimelineScreen> {
                         viewModel: widget.insightViewModel,
                       );
                     }
+                    if (index == 2) {
+                      // Schedule Aggregator page
+                      return const ScheduleAggregatorScreen();
+                    }
                     // Timeline page (All or filtered by tag)
                     return _buildTimelineBody(vm);
                   },
@@ -795,11 +804,9 @@ class TimelineScreenState extends State<TimelineScreen> {
   }
 
   Widget _buildInlineTagChips(TimelineViewModel vm) {
-    if (vm.tags.isEmpty) return const SizedBox.shrink();
-
     final userTags = vm.tags;
-    // Items: All(0) + Insight(1) + user tags(2..)
-    final totalCount = 2 + userTags.length;
+    // Items: All(0) + Insight(1) + Schedule(2) + user tags(3..)
+    final totalCount = 3 + userTags.length;
 
     return ListView.separated(
       controller: _tagScrollController,
@@ -847,8 +854,23 @@ class TimelineScreenState extends State<TimelineScreen> {
           return chip;
         }
 
-        // Index 2+: user tags
-        final tag = userTags[index - 2];
+        // Index 2: "Schedule"
+        if (index == 2) {
+          final isSelected = vm.activeFilter == 'schedule';
+          return _buildTagChip(
+            label: UserStorage.l10n.schedule,
+            icon: '📅',
+            isSelected: isSelected,
+            onTap: () {
+              vm.setViewMode(TimelineViewMode.timeline);
+              vm.setActiveFilter('schedule');
+              _animateToPage(2);
+            },
+          );
+        }
+
+        // Index 3+: user tags
+        final tag = userTags[index - 3];
         final isSelected = vm.activeFilter == tag.name &&
             vm.viewMode == TimelineViewMode.timeline;
         return _buildTagChip(
@@ -1033,7 +1055,7 @@ class TimelineScreenState extends State<TimelineScreen> {
       child: ListView.builder(
         controller: _scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 220),
         cacheExtent: 400,
         itemCount: entries.length + (vm.hasMore ? 1 : 0),
         itemBuilder: (context, index) {
@@ -1047,9 +1069,10 @@ class TimelineScreenState extends State<TimelineScreen> {
           final entry = entries[index];
           final card = entry.card;
           final cardIndex = entry.cardIndex;
+          final isDemoTarget = _isDemoTargetCard(vm.cards, cardIndex);
           return _TimelineEntryItem(
             card: card,
-            isDemoTarget: cardIndex == 0,
+            isDemoTarget: isDemoTarget,
             attachments: vm.attachments[card.id] ?? const [],
             onTap: () async {
               // If this is a custom agent system_task card, open chat dialog.
@@ -1059,6 +1082,12 @@ class TimelineScreenState extends State<TimelineScreen> {
               }
               // Clarification Ask cards are self-contained; no detail page.
               if (_isClarificationAskCard(card)) return;
+              if (_isScheduleBriefingCard(card)) {
+                vm.setViewMode(TimelineViewMode.timeline);
+                vm.setActiveFilter('schedule');
+                _animateToPage(2);
+                return;
+              }
               final result = await Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -1069,7 +1098,7 @@ class TimelineScreenState extends State<TimelineScreen> {
 
               // Advance demo AFTER returning from detail screen so the
               // knowledgeTab spotlight measures the correct position.
-              if (cardIndex == 0) {
+              if (isDemoTarget) {
                 DemoService.instance.tryAdvance(DemoStep.tapCard);
               }
 
@@ -1107,6 +1136,21 @@ class _TimelineFeedEntry {
 
   final TimelineCardModel card;
   final int cardIndex;
+}
+
+bool _isScheduleBriefingCard(TimelineCardModel card) {
+  return card.id == scheduleBriefingCardId ||
+      card.uiConfigs.any(
+        (config) => config.templateId == scheduleBriefingTemplateId,
+      );
+}
+
+bool _isDemoTargetCard(List<TimelineCardModel> cards, int index) {
+  if (index < 0 || index >= cards.length) return false;
+  if (_isScheduleBriefingCard(cards[index])) return false;
+  final firstUserCardIndex =
+      cards.indexWhere((card) => !_isScheduleBriefingCard(card));
+  return index == firstUserCardIndex;
 }
 
 class _TimelineEntryItem extends StatefulWidget {
@@ -1167,9 +1211,13 @@ class _TimelineEntryItemState extends State<_TimelineEntryItem> {
 
     // System-generated cards (no user raw input) should not support long-press
     // toggle to classic mode — they have no rawText to fall back to.
-    const _systemOnlyTemplates = {'clarification_ask', 'system_task'};
+    const systemOnlyTemplates = {
+      'clarification_ask',
+      'schedule_briefing',
+      'system_task',
+    };
     final isSystemCard = card.uiConfigs.isNotEmpty &&
-        _systemOnlyTemplates.contains(card.uiConfigs.first.templateId);
+        systemOnlyTemplates.contains(card.uiConfigs.first.templateId);
     final canToggleClassic = !isAlreadyClassic && !isSystemCard;
 
     // Check for single compact card

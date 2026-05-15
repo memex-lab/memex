@@ -18,15 +18,20 @@ class SystemEvent<T> {
 class SystemEventTypes {
   static const String userInputSubmitted = 'user_input_submitted';
   static const String cardCommentPosted = 'card_comment_posted';
+  static const String cardUiConfigUpdated = 'card_ui_config_updated';
   static const String knowledgeInsightRefreshRequested =
       'knowledge_insight_refresh_requested';
+  static const String scheduleAggregationRequested =
+      'schedule_aggregation_requested';
   static const String clarificationAnswered = 'clarification_answered';
   static const String dataChanged = 'data_changed';
 
   static const List<String> allTypes = [
     userInputSubmitted,
     cardCommentPosted,
+    cardUiConfigUpdated,
     knowledgeInsightRefreshRequested,
+    scheduleAggregationRequested,
     clarificationAnswered,
     dataChanged,
   ];
@@ -144,4 +149,31 @@ class DataChangeRecord {
   /// Post-change snapshot. Null on [DataChangeOp.delete]. Non-null
   /// otherwise.
   final Map<String, dynamic>? after;
+}
+
+class CardUiConfigUpdatedPayload {
+  CardUiConfigUpdatedPayload({
+    required this.cardId,
+    required this.configIndex,
+    required this.templateId,
+    required this.updates,
+    required this.previousData,
+    required this.updatedData,
+  });
+
+  final String cardId;
+  final int configIndex;
+  final String templateId;
+  final Map<String, dynamic> updates;
+  final Map<String, dynamic> previousData;
+  final Map<String, dynamic> updatedData;
+
+  Map<String, dynamic> toJson() => {
+        'card_id': cardId,
+        'config_index': configIndex,
+        'template_id': templateId,
+        'updates': updates,
+        'previous_data': previousData,
+        'updated_data': updatedData,
+      };
 }

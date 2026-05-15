@@ -30,7 +30,7 @@ class _ModelStatsPageState extends State<ModelStatsPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     // Default to last 30 days
     final now = DateTime.now();
     _dateRange = DateTimeRange(
@@ -154,7 +154,10 @@ class _ModelStatsPageState extends State<ModelStatsPage>
 
         // Helper to update stats map
         void updateStat(
-            Map<String, Map<String, dynamic>> statsMap, String key) {
+          Map<String, Map<String, dynamic>> statsMap,
+          String key, {
+          String? modelName,
+        }) {
           if (!statsMap.containsKey(key)) {
             statsMap[key] = {
               'calls': 0,
@@ -166,6 +169,7 @@ class _ModelStatsPageState extends State<ModelStatsPage>
               'thought_tokens': 0,
               'total_tokens': 0,
               'total_cost': 0.0,
+              if (modelName != null) 'models': <String, Map<String, dynamic>>{},
             };
           }
           final stat = statsMap[key]!;
@@ -184,6 +188,14 @@ class _ModelStatsPageState extends State<ModelStatsPage>
               (stat['thought_tokens'] as int) + thoughtTokens;
           stat['total_tokens'] = (stat['total_tokens'] as int) + tokens;
           stat['total_cost'] = (stat['total_cost'] as double) + cost;
+
+          if (modelName != null) {
+            final models = stat.putIfAbsent(
+              'models',
+              () => <String, Map<String, dynamic>>{},
+            ) as Map<String, Map<String, dynamic>>;
+            updateStat(models, modelName);
+          }
         }
 
         // By Day
@@ -191,7 +203,11 @@ class _ModelStatsPageState extends State<ModelStatsPage>
         updateStat(dailyStats, dayKey);
 
         // By Agent
-        updateStat(agentStats, agentName);
+        updateStat(
+          agentStats,
+          agentName,
+          modelName: model.isEmpty ? UserStorage.l10n.unknownModel : model,
+        );
 
         // Total
         totalCalls++;
@@ -237,7 +253,7 @@ class _ModelStatsPageState extends State<ModelStatsPage>
           IconButton(
             icon: const Icon(Icons.calendar_today),
             onPressed: _selectDateRange,
-            tooltip: 'Select Date Range',
+            tooltip: UserStorage.l10n.selectDateRange,
           ),
         ],
         bottom: TabBar(
@@ -245,17 +261,19 @@ class _ModelStatsPageState extends State<ModelStatsPage>
           tabs: [
             Tab(text: UserStorage.l10n.overview),
             Tab(text: UserStorage.l10n.daily),
+            Tab(text: UserStorage.l10n.modelStatsByAgent),
             Tab(text: UserStorage.l10n.detail),
           ],
         ),
       ),
       body: _isLoading
-          ? Center(child: AgentLogoLoading())
+          ? const Center(child: AgentLogoLoading())
           : TabBarView(
               controller: _tabController,
               children: [
                 _buildOverviewTab(),
                 _buildListTab('by_day', UserStorage.l10n.date),
+                _buildAgentStatsTab(),
                 _buildDetailedTab(),
               ],
             ),
@@ -302,7 +320,7 @@ class _ModelStatsPageState extends State<ModelStatsPage>
         ),
         const SizedBox(height: 12),
         _buildStatCard(
-            'Cache Rate',
+            UserStorage.l10n.cacheRate,
             _calculateCacheRate(total['cached_tokens_for_rate'] as int? ?? 0,
                 total['effective_prompt_tokens'] as int? ?? 0),
             Colors.teal),
@@ -311,14 +329,14 @@ class _ModelStatsPageState extends State<ModelStatsPage>
           children: [
             Expanded(
               child: _buildStatCard(
-                  'Prompt Tokens',
+                  UserStorage.l10n.promptTokens,
                   _formatTokenCount(total['prompt_tokens'] as int? ?? 0),
                   Colors.orange),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: _buildStatCard(
-                  'Completion Tokens',
+                  UserStorage.l10n.completionTokens,
                   _formatTokenCount(total['completion_tokens'] as int? ?? 0),
                   Colors.green),
             ),
@@ -329,14 +347,14 @@ class _ModelStatsPageState extends State<ModelStatsPage>
           children: [
             Expanded(
               child: _buildStatCard(
-                  'Cached Tokens',
+                  UserStorage.l10n.cachedTokens,
                   _formatTokenCount(total['cached_tokens'] as int? ?? 0),
                   Colors.cyan),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: _buildStatCard(
-                  'Thought Tokens',
+                  UserStorage.l10n.thoughtTokens,
                   _formatTokenCount(total['thought_tokens'] as int? ?? 0),
                   Colors.teal),
             ),
@@ -405,11 +423,11 @@ class _ModelStatsPageState extends State<ModelStatsPage>
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.blue.withOpacity(0.1),
+                            color: Colors.blue.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            'Calls: ${itemData['calls']}',
+                            UserStorage.l10n.callsCount(itemData['calls']),
                             style: const TextStyle(
                               color: Colors.blue,
                               fontWeight: FontWeight.bold,
@@ -422,20 +440,190 @@ class _ModelStatsPageState extends State<ModelStatsPage>
                   ],
                 ),
                 const Divider(),
-                _buildDetailRow('Total Tokens',
+                _buildDetailRow(UserStorage.l10n.totalTokens,
                     _formatTokenCount(itemData['total_tokens'] as int? ?? 0)),
-                _buildDetailRow('Cache Rate', cacheRate),
+                _buildDetailRow(UserStorage.l10n.cacheRate, cacheRate),
                 const SizedBox(height: 4),
-                _buildDetailRow('Prompt',
+                _buildDetailRow(UserStorage.l10n.prompt,
                     _formatTokenCount(itemData['prompt_tokens'] as int? ?? 0)),
                 _buildDetailRow(
-                    'Completion',
+                    UserStorage.l10n.completion,
                     _formatTokenCount(
                         itemData['completion_tokens'] as int? ?? 0)),
-                _buildDetailRow('Cached',
+                _buildDetailRow(UserStorage.l10n.cached,
                     _formatTokenCount(itemData['cached_tokens'] as int? ?? 0)),
-                _buildDetailRow('Thought',
+                _buildDetailRow(UserStorage.l10n.thought,
                     _formatTokenCount(itemData['thought_tokens'] as int? ?? 0)),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAgentStatsTab() {
+    final data = _stats['by_agent'] as Map<String, dynamic>? ?? {};
+    if (data.isEmpty) {
+      return Center(child: Text(UserStorage.l10n.noData));
+    }
+
+    final keys = data.keys.toList()
+      ..sort((a, b) {
+        final aData = data[a] as Map<String, dynamic>;
+        final bData = data[b] as Map<String, dynamic>;
+        final byCost = (bData['total_cost'] as double? ?? 0.0)
+            .compareTo(aData['total_cost'] as double? ?? 0.0);
+        if (byCost != 0) return byCost;
+        return (bData['total_tokens'] as int? ?? 0)
+            .compareTo(aData['total_tokens'] as int? ?? 0);
+      });
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: keys.length,
+      itemBuilder: (context, index) {
+        final agentName = keys[index];
+        final itemData = data[agentName] as Map<String, dynamic>;
+        final cached = itemData['cached_tokens'] as int? ?? 0;
+        final prompt = itemData['prompt_tokens'] as int? ?? 0;
+        final cacheRate = _calculateCacheRate(cached, prompt);
+        final cost = itemData['total_cost'] as double? ?? 0.0;
+        final rawModels = itemData['models'] as Map? ?? {};
+        final models = rawModels.map(
+          (key, value) => MapEntry(
+            key.toString(),
+            Map<String, dynamic>.from(value as Map),
+          ),
+        );
+        final modelKeys = models.keys.toList()
+          ..sort((a, b) => (models[b]?['total_tokens'] as int? ?? 0)
+              .compareTo(models[a]?['total_tokens'] as int? ?? 0));
+
+        return Card(
+          elevation: 2,
+          margin: const EdgeInsets.only(bottom: 12),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '${UserStorage.l10n.agent}: $agentName',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          _formatTotalCost(cost),
+                          style: const TextStyle(
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        _buildMiniStat(
+                          UserStorage.l10n.calls,
+                          '${itemData['calls']}',
+                          Colors.blue,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const Divider(),
+                _buildDetailRow(
+                  UserStorage.l10n.totalTokens,
+                  _formatTokenCount(itemData['total_tokens'] as int? ?? 0),
+                ),
+                _buildDetailRow(UserStorage.l10n.cacheRate, cacheRate),
+                const SizedBox(height: 4),
+                _buildDetailRow(
+                  UserStorage.l10n.prompt,
+                  _formatTokenCount(itemData['prompt_tokens'] as int? ?? 0),
+                ),
+                _buildDetailRow(
+                  UserStorage.l10n.completion,
+                  _formatTokenCount(
+                    itemData['completion_tokens'] as int? ?? 0,
+                  ),
+                ),
+                _buildDetailRow(
+                  UserStorage.l10n.cached,
+                  _formatTokenCount(itemData['cached_tokens'] as int? ?? 0),
+                ),
+                _buildDetailRow(
+                  UserStorage.l10n.thought,
+                  _formatTokenCount(itemData['thought_tokens'] as int? ?? 0),
+                ),
+                if (modelKeys.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  const Divider(),
+                  Text(
+                    UserStorage.l10n.modelBreakdown,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 6),
+                  ...modelKeys.map((modelName) {
+                    final modelData = models[modelName]!;
+                    final modelCost = modelData['total_cost'] as double? ?? 0.0;
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 3),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              modelName,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[700],
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            UserStorage.l10n.callsCount(modelData['calls']),
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            _formatTokenCount(
+                              modelData['total_tokens'] as int? ?? 0,
+                            ),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            _formatTotalCost(modelCost),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Colors.red,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                ],
               ],
             ),
           ),
@@ -526,7 +714,7 @@ class _ModelStatsPageState extends State<ModelStatsPage>
                     children: [
                       Expanded(
                         child: Text(
-                          '${record['scene']} (${calls.length} calls)',
+                          '${record['scene']} (${UserStorage.l10n.callsCount(calls.length)})',
                           style: const TextStyle(fontWeight: FontWeight.bold),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -551,9 +739,10 @@ class _ModelStatsPageState extends State<ModelStatsPage>
                     runSpacing: 4,
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
+                      _buildMiniStat(UserStorage.l10n.totalTokens,
+                          _formatTokenCount(recTotal), Colors.purple),
                       _buildMiniStat(
-                          'Total', _formatTokenCount(recTotal), Colors.purple),
-                      _buildMiniStat('Rate', cacheRate, Colors.teal),
+                          UserStorage.l10n.cacheRate, cacheRate, Colors.teal),
                       Text(
                         _formatCost(recCost),
                         style: const TextStyle(
@@ -567,25 +756,29 @@ class _ModelStatsPageState extends State<ModelStatsPage>
                   Row(
                     children: [
                       Expanded(
-                          child: Text('P: ${_formatTokenCount(recPrompt)}',
+                          child: Text(
+                              '${UserStorage.l10n.prompt}: ${_formatTokenCount(recPrompt)}',
                               style: TextStyle(
                                   fontSize: 11, color: Colors.grey[700]),
                               overflow: TextOverflow.ellipsis)),
                       const SizedBox(width: 4),
                       Expanded(
-                          child: Text('C: ${_formatTokenCount(recCompletion)}',
+                          child: Text(
+                              '${UserStorage.l10n.completion}: ${_formatTokenCount(recCompletion)}',
                               style: TextStyle(
                                   fontSize: 11, color: Colors.grey[700]),
                               overflow: TextOverflow.ellipsis)),
                       const SizedBox(width: 4),
                       Expanded(
-                          child: Text('Ca: ${_formatTokenCount(recCached)}',
+                          child: Text(
+                              '${UserStorage.l10n.cached}: ${_formatTokenCount(recCached)}',
                               style: TextStyle(
                                   fontSize: 11, color: Colors.grey[700]),
                               overflow: TextOverflow.ellipsis)),
                       const SizedBox(width: 4),
                       Expanded(
-                          child: Text('T: ${_formatTokenCount(recThought)}',
+                          child: Text(
+                              '${UserStorage.l10n.thought}: ${_formatTokenCount(recThought)}',
                               style: TextStyle(
                                   fontSize: 11, color: Colors.grey[700]),
                               overflow: TextOverflow.ellipsis)),
@@ -623,7 +816,7 @@ class _ModelStatsPageState extends State<ModelStatsPage>
                   children: [
                     Expanded(
                       child: Text(
-                        'Record Details: ${record['scene']}',
+                        UserStorage.l10n.recordDetailsTitle(record['scene']),
                         style: const TextStyle(
                             fontSize: 18, fontWeight: FontWeight.bold),
                         overflow: TextOverflow.ellipsis,
@@ -693,7 +886,8 @@ class _ModelStatsPageState extends State<ModelStatsPage>
                                   children: [
                                     Expanded(
                                       child: Text(
-                                        call['agent_name'] ?? 'Unknown',
+                                        call['agent_name'] ??
+                                            UserStorage.l10n.agent,
                                         style: const TextStyle(
                                             fontWeight: FontWeight.bold,
                                             fontSize: 14),
@@ -707,7 +901,8 @@ class _ModelStatsPageState extends State<ModelStatsPage>
                                   ],
                                 ),
                                 const SizedBox(height: 4),
-                                Text('Model: ${call['model']}',
+                                Text(
+                                    '${UserStorage.l10n.model}: ${call['model']}',
                                     style: TextStyle(
                                         fontSize: 11, color: Colors.grey[600]),
                                     overflow: TextOverflow.ellipsis),
@@ -716,11 +911,13 @@ class _ModelStatsPageState extends State<ModelStatsPage>
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text('Total: ${_formatTokenCount(total)}',
+                                    Text(
+                                        '${UserStorage.l10n.totalTokens}: ${_formatTokenCount(total)}',
                                         style: const TextStyle(
                                             fontSize: 12,
                                             fontWeight: FontWeight.bold)),
-                                    Text('Rate: $cacheRate',
+                                    Text(
+                                        '${UserStorage.l10n.cacheRate}: $cacheRate',
                                         style: const TextStyle(
                                             fontSize: 12,
                                             color: Colors.teal,
@@ -737,7 +934,7 @@ class _ModelStatsPageState extends State<ModelStatsPage>
                                   children: [
                                     Expanded(
                                       child: Text(
-                                        'P: ${_formatTokenCount(prompt)}\n${_formatCost(inputCost)}',
+                                        '${UserStorage.l10n.prompt}: ${_formatTokenCount(prompt)}\n${_formatCost(inputCost)}',
                                         style: TextStyle(
                                             fontSize: 11,
                                             color: Colors.grey[700]),
@@ -747,7 +944,7 @@ class _ModelStatsPageState extends State<ModelStatsPage>
                                     const SizedBox(width: 4),
                                     Expanded(
                                       child: Text(
-                                        'C: ${_formatTokenCount(completion)}\n${_formatCost(outputCost)}',
+                                        '${UserStorage.l10n.completion}: ${_formatTokenCount(completion)}\n${_formatCost(outputCost)}',
                                         style: TextStyle(
                                             fontSize: 11,
                                             color: Colors.grey[700]),
@@ -757,7 +954,7 @@ class _ModelStatsPageState extends State<ModelStatsPage>
                                     const SizedBox(width: 4),
                                     Expanded(
                                       child: Text(
-                                        'Ca: ${_formatTokenCount(cached)}',
+                                        '${UserStorage.l10n.cached}: ${_formatTokenCount(cached)}',
                                         style: TextStyle(
                                             fontSize: 11,
                                             color: Colors.grey[700]),
@@ -767,7 +964,7 @@ class _ModelStatsPageState extends State<ModelStatsPage>
                                     const SizedBox(width: 4),
                                     Expanded(
                                       child: Text(
-                                        'T: ${_formatTokenCount(thought)}',
+                                        '${UserStorage.l10n.thought}: ${_formatTokenCount(thought)}',
                                         style: TextStyle(
                                             fontSize: 11,
                                             color: Colors.grey[700]),
@@ -796,9 +993,9 @@ class _ModelStatsPageState extends State<ModelStatsPage>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -827,31 +1024,34 @@ class _ModelStatsPageState extends State<ModelStatsPage>
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.white,
-        title: Text(call['agent_name'] ?? 'Call Details'),
+        title: Text(call['agent_name'] ?? UserStorage.l10n.callDetails),
         content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildDetailRow('Model', call['model'] ?? 'N/A'),
-              _buildDetailRow('Scene', call['scene'] ?? 'N/A'),
-              _buildDetailRow('Scene ID', call['scene_id'] ?? 'N/A'),
+              _buildDetailRow(UserStorage.l10n.model, call['model'] ?? 'N/A'),
+              _buildDetailRow(UserStorage.l10n.scene, call['scene'] ?? 'N/A'),
+              _buildDetailRow(
+                  UserStorage.l10n.sceneId, call['scene_id'] ?? 'N/A'),
               const Divider(),
-              const Text('Token Usage',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
+              Text(UserStorage.l10n.tokenUsage,
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              _buildDetailRow('Cache Rate', cacheRate),
-              _buildDetailRow('Prompt', _formatTokenCount(prompt)),
-              _buildDetailRow('Completion',
+              _buildDetailRow(UserStorage.l10n.cacheRate, cacheRate),
+              _buildDetailRow(
+                  UserStorage.l10n.prompt, _formatTokenCount(prompt)),
+              _buildDetailRow(UserStorage.l10n.completion,
                   _formatTokenCount(usage['completion_tokens'] as int? ?? 0)),
-              _buildDetailRow('Cached', _formatTokenCount(cached)),
-              _buildDetailRow('Thought',
+              _buildDetailRow(
+                  UserStorage.l10n.cached, _formatTokenCount(cached)),
+              _buildDetailRow(UserStorage.l10n.thought,
                   _formatTokenCount(usage['thought_tokens'] as int? ?? 0)),
-              _buildDetailRow('Total',
+              _buildDetailRow(UserStorage.l10n.totalTokens,
                   _formatTokenCount(usage['total_tokens'] as int? ?? 0)),
               if (call['handler_name'] != null) ...[
                 const Divider(),
-                _buildDetailRow('Handler', call['handler_name']),
+                _buildDetailRow(UserStorage.l10n.handler, call['handler_name']),
               ],
             ],
           ),
@@ -872,10 +1072,10 @@ class _ModelStatsPageState extends State<ModelStatsPage>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),

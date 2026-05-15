@@ -81,6 +81,7 @@
   "autoRefresh": "Auto refresh",
   "lineCount": "Line count: ",
   "all": "All",
+  "schedule": "Schedule",
   "@loadStatsFailed": {
     "placeholders": {
       "error": {}
@@ -89,10 +90,43 @@
   "loadStatsFailed": "Failed to load stats: {error}",
   "overview": "Overview",
   "daily": "Daily",
+  "modelStatsByAgent": "By agent",
   "detail": "Detail",
   "date": "Date",
+  "agent": "Agent",
   "noData": "No data",
   "totalCalls": "Total calls",
+  "calls": "Calls",
+  "@callsCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "callsCount": "{count} calls",
+  "selectDateRange": "Select date range",
+  "totalTokens": "Total tokens",
+  "cacheRate": "Cache rate",
+  "promptTokens": "Prompt tokens",
+  "completionTokens": "Completion tokens",
+  "cachedTokens": "Cached tokens",
+  "thoughtTokens": "Thought tokens",
+  "prompt": "Prompt",
+  "completion": "Completion",
+  "cached": "Cached",
+  "thought": "Thought",
+  "model": "Model",
+  "scene": "Scene",
+  "sceneId": "Scene ID",
+  "tokenUsage": "Token usage",
+  "handler": "Handler",
+  "modelBreakdown": "Model breakdown",
+  "callDetails": "Call details",
+  "@recordDetailsTitle": {
+    "placeholders": {
+      "scene": {}
+    }
+  },
+  "recordDetailsTitle": "Record details: {scene}",
   "@saveLlmConfigFailed": {
     "placeholders": {
       "error": {}
@@ -464,6 +498,41 @@
   "knowledgeInsight": "Knowledge insight",
   "completeSort": "Complete sort",
   "noKnowledgeInsight": "No knowledge insight",
+  "scheduleAggregation": "Schedule aggregation",
+  "noScheduleAggregation": "No schedule aggregation",
+  "scheduleAggregationEmptyHint": "Tap Update to organize schedules and todos from real temporal cards.",
+  "scheduleAggregationDirtyReason": "New schedule-related content is available. Tap Update to reorganize.",
+  "scheduleAggregationLoadFailed": "Failed to load schedule data",
+  "scheduleAggregationRefreshFailed": "Failed to refresh schedule data",
+  "scheduleTaskUpdateFailed": "Failed to update task",
+  "scheduleFeatured": "Featured",
+  "scheduleThisWeek": "This week",
+  "scheduleDone": "Done",
+  "scheduleTbd": "TBD",
+  "scheduleWeekOverview": "This week",
+  "scheduleImportant": "Important",
+  "scheduleBriefingTitle": "Schedule briefing",
+  "scheduleBriefingNeedsUpdate": "Needs update",
+  "scheduleBriefingOpen": "Open",
+  "scheduleBriefingNoData": "No schedule briefing yet",
+  "@scheduleBriefingUpdated": {
+    "placeholders": {
+      "time": {}
+    }
+  },
+  "scheduleBriefingUpdated": "Updated {time}",
+  "@scheduleBriefingDoneCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "scheduleBriefingDoneCount": "{count} done",
+  "@scheduleBriefingConflictCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "scheduleBriefingConflictCount": "{count} conflicts",
   "updating": "Updating...",
   "update": "Update",
   "enabled": "Enabled",

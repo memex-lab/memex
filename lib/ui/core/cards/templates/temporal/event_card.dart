@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:memex/utils/date_util.dart';
+import 'package:memex/utils/user_storage.dart';
 
 class EventCard extends StatelessWidget {
   final Map<String, dynamic> data;
@@ -12,26 +14,16 @@ class EventCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    DateTime? startTime;
-    if (data['start_time'] is String) {
-      startTime = DateTime.tryParse(data['start_time']);
-    } else if (data['start_time'] is DateTime) {
-      startTime = data['start_time'];
-    }
-
-    DateTime? endTime;
-    if (data['end_time'] is String) {
-      endTime = DateTime.tryParse(data['end_time']);
-    } else if (data['end_time'] is DateTime) {
-      endTime = data['end_time'];
-    }
+    final startTime = parseLocalDateTime(data['start_time']);
+    final endTime = parseLocalDateTime(data['end_time']);
 
     final String title = data['title'] ?? 'Event';
     final String? location = data['location'];
 
-    final DateFormat timeFormat = DateFormat('HH:mm');
-    final DateFormat monthFormat = DateFormat('MMM');
-    final DateFormat dayFormat = DateFormat('dd');
+    final localeName = UserStorage.l10n.localeName;
+    final DateFormat timeFormat = DateFormat('HH:mm', localeName);
+    final DateFormat monthFormat = DateFormat('MMM', localeName);
+    final DateFormat dayFormat = DateFormat('dd', localeName);
 
     return GestureDetector(
       onTap: onTap,

@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:memex/db/app_database.dart';
 import 'package:memex/data/services/system_action_service.dart';
 import 'package:memex/data/services/native_action_service.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:memex/utils/date_util.dart';
 import 'package:memex/utils/user_storage.dart';
 
 class SystemActionCard extends StatefulWidget {
@@ -47,10 +49,8 @@ class _SystemActionCardState extends State<SystemActionCard> {
 
       final startTimeStr = data['start_time'];
       final endTimeStr = data['end_time'];
-      DateTime? startTime =
-          startTimeStr != null ? DateTime.tryParse(startTimeStr) : null;
-      DateTime? endTime =
-          endTimeStr != null ? DateTime.tryParse(endTimeStr) : null;
+      DateTime? startTime = parseLocalDateTime(startTimeStr);
+      DateTime? endTime = parseLocalDateTime(endTimeStr);
 
       startTime ??= DateTime.now().add(const Duration(hours: 1));
 
@@ -72,8 +72,7 @@ class _SystemActionCardState extends State<SystemActionCard> {
       }
 
       final dueDateStr = data['due_date'];
-      DateTime? dueDate =
-          dueDateStr != null ? DateTime.tryParse(dueDateStr) : null;
+      DateTime? dueDate = parseLocalDateTime(dueDateStr);
 
       success = await NativeActionService.addReminder(
         title: title,
@@ -169,7 +168,7 @@ class _SystemActionCardState extends State<SystemActionCard> {
         ? UserStorage.l10n.addToCalendar
         : UserStorage.l10n.addToReminders;
 
-    final displayTime = isCalendar ? startTime : dueDate;
+    final displayTime = _formatDisplayTime(isCalendar ? startTime : dueDate);
     final isCompleted = widget.action.status == 'completed';
 
     if (isCompleted) {
@@ -322,5 +321,13 @@ class _SystemActionCardState extends State<SystemActionCard> {
         ),
       ),
     );
+  }
+
+  String? _formatDisplayTime(String? value) {
+    final dateTime = parseLocalDateTime(value);
+    if (dateTime == null) return value;
+    return DateFormat.yMd(UserStorage.l10n.localeName)
+        .add_Hm()
+        .format(dateTime);
   }
 }

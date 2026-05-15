@@ -81,6 +81,7 @@
   "autoRefresh": "自动刷新",
   "lineCount": "行数: ",
   "all": "全部",
+  "schedule": "日程",
   "@loadStatsFailed": {
     "placeholders": {
       "error": {}
@@ -89,10 +90,43 @@
   "loadStatsFailed": "加载统计数据失败: {error}",
   "overview": "概览",
   "daily": "每日",
+  "modelStatsByAgent": "分模型统计",
   "detail": "详情",
   "date": "日期",
+  "agent": "Agent",
   "noData": "暂无数据",
   "totalCalls": "总调用次数",
+  "calls": "调用",
+  "@callsCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "callsCount": "{count} 次调用",
+  "selectDateRange": "选择日期范围",
+  "totalTokens": "总 Token",
+  "cacheRate": "缓存命中率",
+  "promptTokens": "Prompt Token",
+  "completionTokens": "Completion Token",
+  "cachedTokens": "Cached Token",
+  "thoughtTokens": "Thought Token",
+  "prompt": "Prompt",
+  "completion": "Completion",
+  "cached": "Cached",
+  "thought": "Thought",
+  "model": "模型",
+  "scene": "场景",
+  "sceneId": "场景 ID",
+  "tokenUsage": "Token 用量",
+  "handler": "处理器",
+  "modelBreakdown": "模型拆分",
+  "callDetails": "调用详情",
+  "@recordDetailsTitle": {
+    "placeholders": {
+      "scene": {}
+    }
+  },
+  "recordDetailsTitle": "记录详情: {scene}",
   "@saveLlmConfigFailed": {
     "placeholders": {
       "error": {}
@@ -464,6 +498,41 @@
   "knowledgeInsight": "知识洞察",
   "completeSort": "完成排序",
   "noKnowledgeInsight": "暂无知识洞察",
+  "scheduleAggregation": "日程聚合",
+  "noScheduleAggregation": "暂无日程聚合",
+  "scheduleAggregationEmptyHint": "点击更新，从真实时间卡片里整理日程和待办。",
+  "scheduleAggregationDirtyReason": "有新的日程相关内容，点击更新后重新整理。",
+  "scheduleAggregationLoadFailed": "加载日程数据失败",
+  "scheduleAggregationRefreshFailed": "刷新日程数据失败",
+  "scheduleTaskUpdateFailed": "更新待办失败",
+  "scheduleFeatured": "重点",
+  "scheduleThisWeek": "本周",
+  "scheduleDone": "已完成",
+  "scheduleTbd": "待定",
+  "scheduleWeekOverview": "本周概览",
+  "scheduleImportant": "重要",
+  "scheduleBriefingTitle": "日程简报",
+  "scheduleBriefingNeedsUpdate": "待更新",
+  "scheduleBriefingOpen": "查看",
+  "scheduleBriefingNoData": "暂无日程简报",
+  "@scheduleBriefingUpdated": {
+    "placeholders": {
+      "time": {}
+    }
+  },
+  "scheduleBriefingUpdated": "{time} 更新",
+  "@scheduleBriefingDoneCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "scheduleBriefingDoneCount": "完成 {count}",
+  "@scheduleBriefingConflictCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "scheduleBriefingConflictCount": "冲突 {count}",
   "updating": "更新中...",
   "update": "更新",
   "enabled": "已启用",

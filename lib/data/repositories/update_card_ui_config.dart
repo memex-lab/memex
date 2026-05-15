@@ -1,6 +1,8 @@
+import 'package:memex/data/services/global_event_bus.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/domain/models/card_model.dart';
+import 'package:memex/domain/models/system_event.dart';
 import 'package:memex/data/services/file_system_service.dart';
 
 final _logger = getLogger('UpdateCardUiConfigEndpoint');
@@ -26,6 +28,10 @@ Future<bool> updateCardUiConfigEndpoint(
       throw Exception('User not logged in, cannot update card config');
     }
 
+    String? templateId;
+    Map<String, dynamic>? previousData;
+    Map<String, dynamic>? updatedData;
+
     // Use updateCardFile for ui_configs, concurrency-safe
     final updatedCardData = await _fileSystemService.updateCardFile(
       userId,
@@ -39,6 +45,9 @@ Future<bool> updateCardUiConfigEndpoint(
         }
         final target = card.uiConfigs[configIndex];
         final newData = {...target.data, ...updates};
+        templateId = target.templateId;
+        previousData = Map<String, dynamic>.from(target.data);
+        updatedData = Map<String, dynamic>.from(newData);
         final updatedList = card.uiConfigs.toList();
         updatedList[configIndex] =
             UiConfig(templateId: target.templateId, data: newData);
@@ -52,9 +61,52 @@ Future<bool> updateCardUiConfigEndpoint(
     }
 
     _logger.info('Updated ui_config at index $configIndex for $cardId');
+    await _publishCardUiConfigUpdated(
+      userId: userId,
+      cardId: cardId,
+      configIndex: configIndex,
+      templateId: templateId,
+      updates: updates,
+      previousData: previousData,
+      updatedData: updatedData,
+    );
     return true;
   } catch (e) {
     _logger.severe('Failed to update card ui config for $cardId: $e');
     return false;
+  }
+}
+
+Future<void> _publishCardUiConfigUpdated({
+  required String userId,
+  required String cardId,
+  required int configIndex,
+  required String? templateId,
+  required Map<String, dynamic> updates,
+  required Map<String, dynamic>? previousData,
+  required Map<String, dynamic>? updatedData,
+}) async {
+  if (templateId == null || previousData == null || updatedData == null) {
+    return;
+  }
+
+  try {
+    await GlobalEventBus.instance.publish(
+      userId: userId,
+      event: SystemEvent<CardUiConfigUpdatedPayload>(
+        type: SystemEventTypes.cardUiConfigUpdated,
+        source: 'update_card_ui_config',
+        payload: CardUiConfigUpdatedPayload(
+          cardId: cardId,
+          configIndex: configIndex,
+          templateId: templateId,
+          updates: updates,
+          previousData: previousData,
+          updatedData: updatedData,
+        ),
+      ),
+    );
+  } catch (e, st) {
+    _logger.warning('Failed to publish card ui_config update event', e, st);
   }
 }

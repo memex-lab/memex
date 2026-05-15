@@ -434,6 +434,12 @@ abstract class AppLocalizations {
   /// **'All'**
   String get all;
 
+  /// No description provided for @schedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule'**
+  String get schedule;
+
   /// No description provided for @loadStatsFailed.
   ///
   /// In en, this message translates to:
@@ -452,6 +458,12 @@ abstract class AppLocalizations {
   /// **'Daily'**
   String get daily;
 
+  /// No description provided for @modelStatsByAgent.
+  ///
+  /// In en, this message translates to:
+  /// **'By agent'**
+  String get modelStatsByAgent;
+
   /// No description provided for @detail.
   ///
   /// In en, this message translates to:
@@ -464,6 +476,12 @@ abstract class AppLocalizations {
   /// **'Date'**
   String get date;
 
+  /// No description provided for @agent.
+  ///
+  /// In en, this message translates to:
+  /// **'Agent'**
+  String get agent;
+
   /// No description provided for @noData.
   ///
   /// In en, this message translates to:
@@ -475,6 +493,132 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Total calls'**
   String get totalCalls;
+
+  /// No description provided for @calls.
+  ///
+  /// In en, this message translates to:
+  /// **'Calls'**
+  String get calls;
+
+  /// No description provided for @callsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} calls'**
+  String callsCount(Object count);
+
+  /// No description provided for @selectDateRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Select date range'**
+  String get selectDateRange;
+
+  /// No description provided for @totalTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Total tokens'**
+  String get totalTokens;
+
+  /// No description provided for @cacheRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Cache rate'**
+  String get cacheRate;
+
+  /// No description provided for @promptTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompt tokens'**
+  String get promptTokens;
+
+  /// No description provided for @completionTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Completion tokens'**
+  String get completionTokens;
+
+  /// No description provided for @cachedTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Cached tokens'**
+  String get cachedTokens;
+
+  /// No description provided for @thoughtTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Thought tokens'**
+  String get thoughtTokens;
+
+  /// No description provided for @prompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompt'**
+  String get prompt;
+
+  /// No description provided for @completion.
+  ///
+  /// In en, this message translates to:
+  /// **'Completion'**
+  String get completion;
+
+  /// No description provided for @cached.
+  ///
+  /// In en, this message translates to:
+  /// **'Cached'**
+  String get cached;
+
+  /// No description provided for @thought.
+  ///
+  /// In en, this message translates to:
+  /// **'Thought'**
+  String get thought;
+
+  /// No description provided for @model.
+  ///
+  /// In en, this message translates to:
+  /// **'Model'**
+  String get model;
+
+  /// No description provided for @scene.
+  ///
+  /// In en, this message translates to:
+  /// **'Scene'**
+  String get scene;
+
+  /// No description provided for @sceneId.
+  ///
+  /// In en, this message translates to:
+  /// **'Scene ID'**
+  String get sceneId;
+
+  /// No description provided for @tokenUsage.
+  ///
+  /// In en, this message translates to:
+  /// **'Token usage'**
+  String get tokenUsage;
+
+  /// No description provided for @handler.
+  ///
+  /// In en, this message translates to:
+  /// **'Handler'**
+  String get handler;
+
+  /// No description provided for @modelBreakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Model breakdown'**
+  String get modelBreakdown;
+
+  /// No description provided for @callDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Call details'**
+  String get callDetails;
+
+  /// No description provided for @recordDetailsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Record details: {scene}'**
+  String recordDetailsTitle(Object scene);
 
   /// No description provided for @saveLlmConfigFailed.
   ///
@@ -1753,6 +1897,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No knowledge insight'**
   String get noKnowledgeInsight;
+
+  /// No description provided for @scheduleAggregation.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule aggregation'**
+  String get scheduleAggregation;
+
+  /// No description provided for @noScheduleAggregation.
+  ///
+  /// In en, this message translates to:
+  /// **'No schedule aggregation'**
+  String get noScheduleAggregation;
+
+  /// No description provided for @scheduleAggregationEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap Update to organize schedules and todos from real temporal cards.'**
+  String get scheduleAggregationEmptyHint;
+
+  /// No description provided for @scheduleAggregationDirtyReason.
+  ///
+  /// In en, this message translates to:
+  /// **'New schedule-related content is available. Tap Update to reorganize.'**
+  String get scheduleAggregationDirtyReason;
+
+  /// No description provided for @scheduleAggregationLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load schedule data'**
+  String get scheduleAggregationLoadFailed;
+
+  /// No description provided for @scheduleAggregationRefreshFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to refresh schedule data'**
+  String get scheduleAggregationRefreshFailed;
+
+  /// No description provided for @scheduleTaskUpdateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update task'**
+  String get scheduleTaskUpdateFailed;
+
+  /// No description provided for @scheduleFeatured.
+  ///
+  /// In en, this message translates to:
+  /// **'Featured'**
+  String get scheduleFeatured;
+
+  /// No description provided for @scheduleThisWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'This week'**
+  String get scheduleThisWeek;
+
+  /// No description provided for @scheduleDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get scheduleDone;
+
+  /// No description provided for @scheduleTbd.
+  ///
+  /// In en, this message translates to:
+  /// **'TBD'**
+  String get scheduleTbd;
+
+  /// No description provided for @scheduleWeekOverview.
+  ///
+  /// In en, this message translates to:
+  /// **'This week'**
+  String get scheduleWeekOverview;
+
+  /// No description provided for @scheduleImportant.
+  ///
+  /// In en, this message translates to:
+  /// **'Important'**
+  String get scheduleImportant;
+
+  /// No description provided for @scheduleBriefingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule briefing'**
+  String get scheduleBriefingTitle;
+
+  /// No description provided for @scheduleBriefingNeedsUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs update'**
+  String get scheduleBriefingNeedsUpdate;
+
+  /// No description provided for @scheduleBriefingOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get scheduleBriefingOpen;
+
+  /// No description provided for @scheduleBriefingNoData.
+  ///
+  /// In en, this message translates to:
+  /// **'No schedule briefing yet'**
+  String get scheduleBriefingNoData;
+
+  /// No description provided for @scheduleBriefingUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated {time}'**
+  String scheduleBriefingUpdated(Object time);
+
+  /// No description provided for @scheduleBriefingDoneCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} done'**
+  String scheduleBriefingDoneCount(Object count);
+
+  /// No description provided for @scheduleBriefingConflictCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} conflicts'**
+  String scheduleBriefingConflictCount(Object count);
 
   /// No description provided for @updating.
   ///
