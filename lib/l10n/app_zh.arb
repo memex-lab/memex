@@ -853,6 +853,11 @@
     }
   },
   "backupLocationFailed": "无法更新备份位置：{error}",
+  "backupImportCreatedAt": "创建时间",
+  "backupImportSourceVersion": "来源版本",
+  "backupImportFlavor": "构建渠道",
+  "backupLegacyFormat": "旧版备份（无 manifest）",
+  "restoreInProgress": "正在恢复备份...",
   "dataStorage": "数据存储",
   "dataStorageDescription": "选择 Memex 存储数据的位置。自定义文件夹或 iCloud 可在卸载重装后保留数据。",
   "dataStorageDescriptionAndroid": "选择自定义文件夹存放工作区数据，卸载重装后仍可保留。",

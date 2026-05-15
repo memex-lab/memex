@@ -7,6 +7,7 @@ import 'package:logging/logging.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:memex/data/services/backup_service.dart';
 import 'package:memex/ui/core/themes/app_colors.dart';
+import 'package:memex/ui/settings/widgets/backup_restore_confirm_dialog.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/toast_helper.dart';
 import 'package:memex/utils/user_storage.dart';
@@ -124,7 +125,7 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
       });
 
       // Share the file so user can save it anywhere
-      final xFile = XFile(backupPath);
+      final xFile = XFile(backupPath, mimeType: BackupService.backupMimeType);
       final box = context.findRenderObject() as RenderBox?;
       await Share.shareXFiles(
         [xFile],
@@ -267,14 +268,25 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
     if (filePath == null) return;
 
     // Validate extension
-    if (!filePath.endsWith('.memex') && !filePath.endsWith('.zip')) {
+    if (!BackupService.isSelectableBackupFile(filePath)) {
       if (mounted) {
         ToastHelper.showError(context, UserStorage.l10n.invalidBackupFile);
       }
       return;
     }
 
-    final confirmed = await _confirmRestore();
+    BackupFileInfo backupInfo;
+    try {
+      backupInfo = await BackupService.inspectBackup(filePath);
+    } catch (e) {
+      if (mounted) {
+        ToastHelper.showError(context, UserStorage.l10n.restoreFailed(e));
+      }
+      return;
+    }
+    if (!mounted) return;
+
+    final confirmed = await _confirmRestore(backupInfo: backupInfo);
     if (confirmed != true) return;
 
     await _performRestore(
@@ -295,25 +307,27 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
     );
   }
 
-  Future<bool?> _confirmRestore() {
+  Future<bool?> _confirmRestore({BackupFileInfo? backupInfo}) {
     return showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
-        title: Text(UserStorage.l10n.confirmRestore),
-        content: Text(UserStorage.l10n.confirmRestoreMessage),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(UserStorage.l10n.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: Text(UserStorage.l10n.confirm),
-          ),
-        ],
-      ),
+      builder: (context) => backupInfo == null
+          ? AlertDialog(
+              backgroundColor: Colors.white,
+              title: Text(UserStorage.l10n.confirmRestore),
+              content: Text(UserStorage.l10n.confirmRestoreMessage),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: Text(UserStorage.l10n.cancel),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  style: TextButton.styleFrom(foregroundColor: Colors.red),
+                  child: Text(UserStorage.l10n.confirm),
+                ),
+              ],
+            )
+          : BackupRestoreConfirmDialog(backupInfo: backupInfo),
     );
   }
 

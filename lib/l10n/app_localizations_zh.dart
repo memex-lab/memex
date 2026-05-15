@@ -1793,6 +1793,21 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get backupImportCreatedAt => '创建时间';
+
+  @override
+  String get backupImportSourceVersion => '来源版本';
+
+  @override
+  String get backupImportFlavor => '构建渠道';
+
+  @override
+  String get backupLegacyFormat => '旧版备份（无 manifest）';
+
+  @override
+  String get restoreInProgress => '正在恢复备份...';
+
+  @override
   String get dataStorage => '数据存储';
 
   @override

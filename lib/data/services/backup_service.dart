@@ -5,15 +5,16 @@ import 'package:archive/archive.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
+import 'package:memex/config/app_flavor.dart';
+import 'package:memex/data/services/file_system_service.dart';
+import 'package:memex/db/app_database.dart';
+import 'package:memex/utils/logger.dart';
+import 'package:memex/utils/user_storage.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:synchronized/synchronized.dart';
-import 'package:memex/data/services/file_system_service.dart';
-import 'package:memex/db/app_database.dart';
-import 'package:memex/utils/logger.dart';
-import 'package:memex/utils/user_storage.dart';
 
 /// Keys to exclude from backup (Flutter internals, not user data).
 const _excludePrefKeys = <String>{'flutter.'};
@@ -24,6 +25,9 @@ const _safetyBackupPrefix = 'memex_safety';
 const _autoBackupInterval = Duration(hours: 24);
 const _autoBackupKeepRecent = 7;
 const _autoBackupMaxBytes = 2 * 1024 * 1024 * 1024; // 2 GB
+const _backupManifestFileName = 'manifest.json';
+const _backupFormat = 'memex.backup';
+const _currentBackupSchemaVersion = 1;
 
 /// Android Storage Access Framework directory selected for backups.
 class AndroidBackupDirectory {
@@ -58,14 +62,134 @@ class BackupSnapshot {
   bool get isSafetySnapshot => name.startsWith(_safetyBackupPrefix);
 }
 
+class BackupManifest {
+  final String format;
+  final int formatVersion;
+  final int backupSchemaVersion;
+  final DateTime createdAt;
+  final String? userId;
+  final String appVersion;
+  final String buildNumber;
+  final String flavor;
+  final String platform;
+  final List<Map<String, dynamic>> entries;
+
+  const BackupManifest({
+    required this.format,
+    this.formatVersion = 1,
+    required this.backupSchemaVersion,
+    required this.createdAt,
+    this.userId,
+    required this.appVersion,
+    required this.buildNumber,
+    required this.flavor,
+    required this.platform,
+    this.entries = const [],
+  });
+
+  factory BackupManifest.fromJson(Map<String, dynamic> json) {
+    final formatVersion = (json['formatVersion'] as num?)?.toInt();
+    final rawEntries = json['entries'];
+    final appVersion = json['appVersion'] as String? ?? '';
+    final buildNumber = json['buildNumber']?.toString();
+    final splitVersion = buildNumber == null && appVersion.contains('+')
+        ? appVersion.split('+')
+        : const <String>[];
+    return BackupManifest(
+      format: json['format'] as String? ??
+          (formatVersion == null ? '' : _backupFormat),
+      formatVersion: formatVersion ?? 1,
+      backupSchemaVersion:
+          (json['backupSchemaVersion'] as num?)?.toInt() ?? formatVersion ?? 0,
+      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+          DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+      userId: json['userId'] as String?,
+      appVersion: splitVersion.isEmpty ? appVersion : splitVersion.first,
+      buildNumber:
+          buildNumber ?? (splitVersion.length > 1 ? splitVersion.last : ''),
+      flavor: json['flavor'] as String? ?? '',
+      platform: json['platform'] as String? ?? '',
+      entries: rawEntries is List
+          ? rawEntries
+              .whereType<Map>()
+              .map((entry) => entry.cast<String, dynamic>())
+              .toList()
+          : const [],
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'format': format,
+        'formatVersion': formatVersion,
+        'backupSchemaVersion': backupSchemaVersion,
+        'createdAt': createdAt.toUtc().toIso8601String(),
+        if (userId != null) 'userId': userId,
+        'appVersion': appVersion,
+        'buildNumber': buildNumber,
+        'flavor': flavor,
+        'platform': platform,
+        'entries': entries,
+      };
+}
+
+class BackupFileInfo {
+  final String path;
+  final int sizeBytes;
+  final BackupManifest? manifest;
+
+  const BackupFileInfo({
+    required this.path,
+    required this.sizeBytes,
+    required this.manifest,
+  });
+
+  bool get isLegacy => manifest == null;
+}
+
+class InvalidBackupFileException implements Exception {
+  final String message;
+
+  const InvalidBackupFileException(this.message);
+
+  @override
+  String toString() => message;
+}
+
+class UnsupportedBackupVersionException implements Exception {
+  final int backupSchemaVersion;
+  final int supportedSchemaVersion;
+
+  const UnsupportedBackupVersionException({
+    required this.backupSchemaVersion,
+    required this.supportedSchemaVersion,
+  });
+
+  @override
+  String toString() {
+    return 'Backup schema $backupSchemaVersion is newer than supported schema '
+        '$supportedSchemaVersion. Please update Memex before restoring.';
+  }
+}
+
 /// Service for creating and restoring full app backups as .memex (zip) files.
 class BackupService {
   static final Logger _logger = getLogger('BackupService');
   static final Lock _autoBackupLock = Lock();
+  static const backupMimeType = 'application/x-memex-backup';
+  static const currentBackupSchemaVersion = _currentBackupSchemaVersion;
 
   static const MethodChannel _backupStorageChannel = MethodChannel(
     'com.memexlab.memex/backup_storage',
   );
+
+  static bool isSelectableBackupFile(String filePath) {
+    final lowerPath = _normalizeFilePath(filePath).toLowerCase();
+    return lowerPath.endsWith('.memex') || lowerPath.endsWith('.zip');
+  }
+
+  static bool isMemexBackupFile(String filePath) {
+    return _normalizeFilePath(filePath).toLowerCase().endsWith('.memex');
+  }
 
   /// Create a backup zip containing:
   /// - workspace/ directory (Facts, Cards, PKM, KnowledgeInsights, etc.)
@@ -160,17 +284,15 @@ class BackupService {
     );
 
     // 4. Add manifest last so it covers every payload entry.
-    final manifest = {
-      'formatVersion': 1,
-      'createdAt': createdAt.toIso8601String(),
-      'userId': userId,
-      'appVersion': await _safeAppVersion(),
-      'entries': manifestEntries,
-    };
+    final manifest = await _createManifest(
+      createdAt: createdAt,
+      userId: userId,
+      entries: manifestEntries,
+    );
     _addBytesToArchive(
       archive,
-      'manifest.json',
-      utf8.encode(jsonEncode(manifest)),
+      _backupManifestFileName,
+      utf8.encode(jsonEncode(manifest.toJson())),
     );
 
     // 5. Write zip. Automatic path writes use temp + rename in the same dir.
@@ -203,8 +325,12 @@ class BackupService {
     var databaseClosedForRestore = false;
 
     try {
+      await inspectBackup(backupFilePath);
+
       onProgress?.call('Reading backup...');
-      final bytes = await File(backupFilePath).readAsBytes();
+      final bytes = await File(
+        _normalizeFilePath(backupFilePath),
+      ).readAsBytes();
       final archive = ZipDecoder().decodeBytes(bytes);
       _validateManifest(archive);
 
@@ -614,7 +740,7 @@ class BackupService {
   }
 
   static void _validateManifest(Archive archive) {
-    final manifestFile = _findArchiveFile(archive, 'manifest.json');
+    final manifestFile = _findArchiveFile(archive, _backupManifestFileName);
     if (manifestFile == null) {
       _logger.warning('Backup has no manifest.json; treating as legacy backup');
       return;
@@ -650,16 +776,7 @@ class BackupService {
   }
 
   static List<int> _archiveFileBytes(ArchiveFile file) {
-    return file.content;
-  }
-
-  static Future<String> _safeAppVersion() async {
-    try {
-      final info = await PackageInfo.fromPlatform();
-      return '${info.version}+${info.buildNumber}';
-    } catch (_) {
-      return 'unknown';
-    }
+    return List<int>.from(file.content as List);
   }
 
   static String _timestampForFile(DateTime time) {
@@ -879,6 +996,131 @@ class BackupService {
         _logger.warning('Failed to delete old Android backup $documentUri: $e');
       }
     }
+  }
+
+  static Future<BackupFileInfo> inspectBackup(String backupFilePath) async {
+    final normalizedPath = _normalizeFilePath(backupFilePath);
+    if (!isSelectableBackupFile(normalizedPath)) {
+      throw const InvalidBackupFileException(
+        'Invalid backup file. Please select a .memex file.',
+      );
+    }
+
+    final file = File(normalizedPath);
+    if (!await file.exists()) {
+      throw InvalidBackupFileException(
+        'Backup file does not exist: $normalizedPath',
+      );
+    }
+
+    final bytes = await file.readAsBytes();
+    final archive = _decodeBackup(bytes);
+    ArchiveFile? manifestFile;
+    for (final file in archive.files) {
+      if (file.isFile && file.name == _backupManifestFileName) {
+        manifestFile = file;
+        break;
+      }
+    }
+
+    if (manifestFile == null) {
+      if (!_looksLikeLegacyBackup(archive)) {
+        throw const InvalidBackupFileException(
+          'Invalid backup file. Please select a .memex file.',
+        );
+      }
+      return BackupFileInfo(
+        path: normalizedPath,
+        sizeBytes: bytes.length,
+        manifest: null,
+      );
+    }
+
+    final manifest = _readManifest(manifestFile);
+    if (manifest.format != _backupFormat) {
+      throw InvalidBackupFileException(
+        'Unsupported backup format: ${manifest.format}',
+      );
+    }
+    if (manifest.backupSchemaVersion > _currentBackupSchemaVersion) {
+      throw UnsupportedBackupVersionException(
+        backupSchemaVersion: manifest.backupSchemaVersion,
+        supportedSchemaVersion: _currentBackupSchemaVersion,
+      );
+    }
+
+    return BackupFileInfo(
+      path: normalizedPath,
+      sizeBytes: bytes.length,
+      manifest: manifest,
+    );
+  }
+
+  static bool _looksLikeLegacyBackup(Archive archive) {
+    return archive.files.any(
+      (file) =>
+          file.name == 'settings.json' ||
+          file.name.startsWith('workspace/') ||
+          file.name.startsWith('db/'),
+    );
+  }
+
+  static Future<BackupManifest> _createManifest({
+    required DateTime createdAt,
+    required String userId,
+    required List<Map<String, dynamic>> entries,
+  }) async {
+    var appVersion = 'unknown';
+    var buildNumber = '';
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      appVersion = packageInfo.version;
+      buildNumber = packageInfo.buildNumber;
+    } catch (_) {}
+
+    return BackupManifest(
+      format: _backupFormat,
+      formatVersion: 1,
+      backupSchemaVersion: _currentBackupSchemaVersion,
+      createdAt: createdAt.toUtc(),
+      userId: userId,
+      appVersion: appVersion,
+      buildNumber: buildNumber,
+      flavor: AppFlavor.name,
+      platform: Platform.operatingSystem,
+      entries: List<Map<String, dynamic>>.unmodifiable(entries),
+    );
+  }
+
+  static Archive _decodeBackup(List<int> bytes) {
+    try {
+      return ZipDecoder().decodeBytes(bytes);
+    } catch (_) {
+      throw const InvalidBackupFileException(
+        'Invalid backup file. Please select a .memex file.',
+      );
+    }
+  }
+
+  static BackupManifest _readManifest(ArchiveFile manifestFile) {
+    try {
+      final jsonStr = utf8.decode(_archiveFileBytes(manifestFile));
+      final json = jsonDecode(jsonStr) as Map<String, dynamic>;
+      return BackupManifest.fromJson(json);
+    } catch (_) {
+      throw const InvalidBackupFileException('Invalid backup manifest.');
+    }
+  }
+
+  static String _normalizeFilePath(String filePath) {
+    if (filePath.startsWith('file://')) {
+      try {
+        return Uri.parse(filePath).toFilePath();
+      } catch (_) {
+        return filePath.replaceFirst('file://', '');
+      }
+    }
+    return filePath;
   }
 }
 

@@ -853,6 +853,11 @@
     }
   },
   "backupLocationFailed": "Could not update backup location: {error}",
+  "backupImportCreatedAt": "Created",
+  "backupImportSourceVersion": "Source version",
+  "backupImportFlavor": "Build",
+  "backupLegacyFormat": "Legacy backup (no manifest)",
+  "restoreInProgress": "Restoring backup...",
   "dataStorage": "Data Storage",
   "dataStorageDescription": "Choose where Memex stores your data. Custom folder or iCloud keeps data when you reinstall the app.",
   "dataStorageDescriptionAndroid": "Choose a custom folder to store your workspace. Data is kept when you reinstall the app.",

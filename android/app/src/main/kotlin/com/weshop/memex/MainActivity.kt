@@ -1,6 +1,7 @@
 package com.memexlab.memex
 
 import android.content.Intent
+import com.memexlab.memex.channels.BackupImportChannelHandler
 import com.memexlab.memex.channels.BackupStorageChannelHandler
 import com.memexlab.memex.channels.ChannelRegistrar
 import io.flutter.embedding.android.FlutterFragmentActivity
@@ -16,6 +17,13 @@ class MainActivity : FlutterFragmentActivity() {
             intent?.removeExtra("some unique action key")
         }
         super.onCreate(savedInstanceState)
+        BackupImportChannelHandler.handleIntent(this, intent)
+    }
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        BackupImportChannelHandler.handleIntent(this, intent)
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {

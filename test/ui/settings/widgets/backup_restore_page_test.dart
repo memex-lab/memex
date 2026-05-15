@@ -31,43 +31,47 @@ void main() {
   });
 
   testWidgets(
-      'shows stored automatic and safety snapshots with restore confirmation',
-      (tester) async {
-    const autoName = 'memex_auto_2026-05-15T10-00-00.memex';
-    const safetyName = 'memex_safety_before_restore_2026-05-15T10-05-00.memex';
-    final autoSnapshot = BackupSnapshot(
-      id: 'auto',
-      name: autoName,
-      createdAt: DateTime(2026, 5, 15, 10),
-      sizeBytes: 3,
-      filePath: '/tmp/$autoName',
-    );
-    final safetySnapshot = BackupSnapshot(
-      id: 'safety',
-      name: safetyName,
-      createdAt: DateTime(2026, 5, 15, 10, 5),
-      sizeBytes: 3,
-      filePath: '/tmp/$safetyName',
-    );
+    'shows stored automatic and safety snapshots with restore confirmation',
+    (tester) async {
+      const autoName = 'memex_auto_2026-05-15T10-00-00.memex';
+      const safetyName =
+          'memex_safety_before_restore_2026-05-15T10-05-00.memex';
+      final autoSnapshot = BackupSnapshot(
+        id: 'auto',
+        name: autoName,
+        createdAt: DateTime(2026, 5, 15, 10),
+        sizeBytes: 3,
+        filePath: '/tmp/$autoName',
+      );
+      final safetySnapshot = BackupSnapshot(
+        id: 'safety',
+        name: safetyName,
+        createdAt: DateTime(2026, 5, 15, 10, 5),
+        sizeBytes: 3,
+        filePath: '/tmp/$safetyName',
+      );
 
-    await _pumpBackupPage(
-      tester,
-      listStoredBackups: () async => [safetySnapshot, autoSnapshot],
-    );
-    await _scrollUntilVisible(tester, find.text(autoName));
+      await _pumpBackupPage(
+        tester,
+        listStoredBackups: () async => [safetySnapshot, autoSnapshot],
+      );
+      await _scrollUntilVisible(tester, find.text(autoName));
 
-    expect(find.text(autoName), findsOneWidget);
-    expect(find.text(safetyName), findsOneWidget);
-    expect(find.byTooltip(UserStorage.l10n.restoreThisBackup), findsWidgets);
+      expect(find.text(autoName), findsOneWidget);
+      expect(find.text(safetyName), findsOneWidget);
+      expect(find.byTooltip(UserStorage.l10n.restoreThisBackup), findsWidgets);
 
-    await tester.ensureVisible(find.text(autoName));
-    await tester.pump();
-    await tester.tap(find.byTooltip(UserStorage.l10n.restoreThisBackup).first);
-    await tester.pump(const Duration(milliseconds: 300));
+      await tester.ensureVisible(find.text(autoName));
+      await tester.pump();
+      await tester.tap(
+        find.byTooltip(UserStorage.l10n.restoreThisBackup).first,
+      );
+      await tester.pump(const Duration(milliseconds: 300));
 
-    expect(find.text(UserStorage.l10n.confirmRestore), findsOneWidget);
-    expect(find.text(UserStorage.l10n.confirmRestoreMessage), findsOneWidget);
-  });
+      expect(find.text(UserStorage.l10n.confirmRestore), findsOneWidget);
+      expect(find.text(UserStorage.l10n.confirmRestoreMessage), findsOneWidget);
+    },
+  );
 
   testWidgets('manual snapshot button refreshes list and status', (
     tester,
@@ -154,10 +158,7 @@ Future<void> _pumpBackupPage(
   await tester.pump();
 }
 
-Future<void> _scrollUntilVisible(
-  WidgetTester tester,
-  Finder finder,
-) async {
+Future<void> _scrollUntilVisible(WidgetTester tester, Finder finder) async {
   await tester.scrollUntilVisible(
     finder,
     250,

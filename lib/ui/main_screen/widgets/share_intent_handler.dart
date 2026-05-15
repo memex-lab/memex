@@ -8,6 +8,8 @@ import 'package:logging/logging.dart';
 import 'package:crypto/crypto.dart';
 import 'package:share_handler/share_handler.dart';
 
+import 'package:memex/data/services/backup_import_intent_service.dart';
+import 'package:memex/data/services/backup_service.dart';
 import 'package:memex/ui/main_screen/widgets/input_sheet.dart';
 import 'package:memex/utils/toast_helper.dart';
 import 'package:memex/utils/user_storage.dart';
@@ -18,14 +20,18 @@ class ShareIntentHandler {
   final Logger logger;
   final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey;
   final void Function(InputData) onSharedDraft;
+  final Future<void> Function(String backupFilePath) onBackupFileShared;
 
   StreamSubscription<SharedMedia>? _mediaSubscription;
+  StreamSubscription<String>? _backupPathSubscription;
   bool _isHandlingShare = false;
+  bool _isHandlingBackupFile = false;
 
   ShareIntentHandler({
     required this.logger,
     required this.scaffoldMessengerKey,
     required this.onSharedDraft,
+    required this.onBackupFileShared,
   });
 
   void init() {
@@ -44,6 +50,26 @@ class ShareIntentHandler {
     }, onError: (err) {
       logger.warning('Error in sharedMediaStream: $err');
     });
+
+    final backupIntentService = BackupImportIntentService.instance;
+    backupIntentService
+        .consumeInitialBackupPath()
+        .then((path) {
+          if (path != null) {
+            _handleBackupFile(path);
+          }
+        })
+        .catchError((err, stack) {
+          logger.warning('Error reading initial backup import intent: $err');
+        });
+    _backupPathSubscription = backupIntentService.backupPathStream.listen(
+      (path) {
+        _handleBackupFile(path);
+      },
+      onError: (err) {
+        logger.warning('Error in backupPathStream: $err');
+      },
+    );
   }
 
   Future<void> _handleSharedMedia(SharedMedia media) async {
@@ -52,6 +78,13 @@ class ShareIntentHandler {
     _isHandlingShare = true;
 
     try {
+      final attachments = media.attachments ?? const [];
+      final backupFilePath = _firstBackupFilePath(attachments);
+      if (backupFilePath != null) {
+        await _handleBackupFile(backupFilePath);
+        return;
+      }
+
       // Ensure model is configured before accepting shared content
       final configs = await UserStorage.getLLMConfigs();
       final hasValidConfig = configs.any((c) => c.isValid);
@@ -70,7 +103,6 @@ class ShareIntentHandler {
 
       final imageFiles = <XFile>[];
 
-      final attachments = media.attachments ?? const [];
       for (final attachment in attachments) {
         if (attachment == null) continue;
         final path = attachment.path;
@@ -131,6 +163,54 @@ class ShareIntentHandler {
 
   void dispose() {
     _mediaSubscription?.cancel();
+    _backupPathSubscription?.cancel();
+  }
+
+  Future<void> _handleBackupFile(String rawPath) async {
+    if (_isHandlingBackupFile) return;
+    final backupFilePath = _normalizeFilePath(rawPath);
+    if (!BackupService.isMemexBackupFile(backupFilePath)) {
+      ToastHelper.showErrorWithKey(
+        scaffoldMessengerKey,
+        UserStorage.l10n.invalidBackupFile,
+      );
+      return;
+    }
+
+    _isHandlingBackupFile = true;
+    try {
+      await onBackupFileShared(backupFilePath);
+    } catch (e, stackTrace) {
+      logger.severe('Error handling backup file: $e', e, stackTrace);
+      ToastHelper.showErrorWithKey(scaffoldMessengerKey, e);
+    } finally {
+      _isHandlingBackupFile = false;
+    }
+  }
+
+  String? _firstBackupFilePath(List<SharedAttachment?> attachments) {
+    for (final attachment in attachments) {
+      if (attachment == null) continue;
+      final path = attachment.path;
+      if (path.isEmpty) continue;
+      final normalizedPath = _normalizeFilePath(path);
+      if (attachment.type == SharedAttachmentType.file &&
+          BackupService.isMemexBackupFile(normalizedPath)) {
+        return normalizedPath;
+      }
+    }
+    return null;
+  }
+
+  String _normalizeFilePath(String filePath) {
+    if (filePath.startsWith('file://')) {
+      try {
+        return Uri.parse(filePath).toFilePath();
+      } catch (_) {
+        return filePath.replaceFirst('file://', '');
+      }
+    }
+    return filePath;
   }
 
   bool _looksLikeImageFile(String path) {
@@ -150,4 +230,3 @@ class ShareIntentHandler {
     return imageExtensions.any(lowerPath.endsWith);
   }
 }
-

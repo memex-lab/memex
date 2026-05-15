@@ -51,12 +51,14 @@ import 'package:memex/ui/main_screen/widgets/ai_core_button.dart';
 import 'package:memex/db/app_database.dart';
 import 'package:memex/data/services/local_server_service.dart';
 import 'package:memex/data/services/app_update_service.dart';
+import 'package:memex/data/services/backup_service.dart';
 import 'package:go_router/go_router.dart';
 import 'package:memex/routing/router.dart';
 import 'package:memex/data/services/onboarding_service.dart';
 import 'package:memex/data/services/demo_service.dart';
 import 'package:memex/ui/core/widgets/demo_overlay.dart';
 import 'package:memex/ui/main_screen/widgets/share_intent_handler.dart';
+import 'package:memex/ui/settings/widgets/backup_restore_confirm_dialog.dart';
 import 'package:quick_actions/quick_actions.dart';
 import 'package:memex/data/services/quick_action_service.dart';
 import 'package:memex/data/services/speech_transcription_service.dart';
@@ -429,6 +431,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   final EventBusService _eventBus = EventBusService.instance;
   Timer? _memoryButtonTapTimer;
   int _memoryButtonTapCount = 0;
+  bool _isRestoringExternalBackup = false;
   Timer? _knowledgeBaseButtonTapTimer;
   int _knowledgeBaseButtonTapCount = 0;
   final Logger _logger = getLogger('MainScreen');
@@ -501,6 +504,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
           _isInputOpen = true;
         });
       },
+      onBackupFileShared: _handleExternalBackupFile,
     )..init();
 
     // Consume pending quick action (app icon long-press shortcut).
@@ -1295,6 +1299,104 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         });
       }
     });
+  }
+
+  Future<void> _handleExternalBackupFile(String backupFilePath) async {
+    if (_isRestoringExternalBackup) return;
+    _isRestoringExternalBackup = true;
+
+    try {
+      final backupInfo = await BackupService.inspectBackup(backupFilePath);
+      if (!mounted) return;
+
+      final confirmed = await _confirmExternalBackupRestore(backupInfo);
+      if (confirmed != true || !mounted) return;
+
+      await _restoreExternalBackup(backupInfo.path);
+    } catch (e) {
+      if (mounted) {
+        ToastHelper.showError(context, UserStorage.l10n.restoreFailed(e));
+      }
+    } finally {
+      _isRestoringExternalBackup = false;
+    }
+  }
+
+  Future<bool?> _confirmExternalBackupRestore(BackupFileInfo backupInfo) {
+    final dialogContext = rootNavigatorKey.currentContext ?? context;
+
+    return showDialog<bool>(
+      context: dialogContext,
+      builder: (_) => BackupRestoreConfirmDialog(backupInfo: backupInfo),
+    );
+  }
+
+  Future<void> _restoreExternalBackup(String backupFilePath) async {
+    final dialogContext = rootNavigatorKey.currentContext ?? context;
+    final rootNavigator = Navigator.of(dialogContext, rootNavigator: true);
+    var statusText = UserStorage.l10n.restoreInProgress;
+    StateSetter? setProgressState;
+
+    showDialog<void>(
+      context: dialogContext,
+      barrierDismissible: false,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          setProgressState = setState;
+          return AlertDialog(
+            backgroundColor: Colors.white,
+            content: Row(
+              children: [
+                const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                const SizedBox(width: 16),
+                Expanded(child: Text(statusText)),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+
+    try {
+      await BackupService.restoreBackup(
+        backupFilePath,
+        onProgress: (status) {
+          setProgressState?.call(() {
+            statusText = status;
+          });
+        },
+      );
+
+      if (!mounted || !rootNavigator.mounted) return;
+      rootNavigator.pop();
+      await showDialog<void>(
+        context: rootNavigator.context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          backgroundColor: Colors.white,
+          title: Text(UserStorage.l10n.restoreComplete),
+          content: Text(UserStorage.l10n.restoreRestartHint),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.of(context).popUntil((route) => route.isFirst);
+              },
+              child: Text(UserStorage.l10n.ok),
+            ),
+          ],
+        ),
+      );
+    } catch (_) {
+      if (mounted && rootNavigator.mounted) {
+        rootNavigator.pop();
+      }
+      rethrow;
+    }
   }
 
   @override

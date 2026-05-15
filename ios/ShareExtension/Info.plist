@@ -15,11 +15,12 @@
 					$extensionItem.attachments,
 					$attachment,
 					(
-						ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.image"
-						|| ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.text"
-					)
-				).@count > 0
-			).@count > 0</string>
+							ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.image"
+							|| ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.text"
+							|| ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "com.memexlab.memex.backup"
+						)
+					).@count > 0
+				).@count > 0</string>
 			<key>PHSupportedMediaTypes</key>
 			<array>
 				<string>Image</string>

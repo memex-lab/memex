@@ -20,5 +20,6 @@ object ChannelRegistrar {
         SystemActionsChannelHandler.register(flutterEngine, activity)
         AppUpdateChannelHandler.register(flutterEngine, activity)
         BackupStorageChannelHandler.register(flutterEngine, activity)
+        BackupImportChannelHandler.register(flutterEngine, activity)
     }
 }
