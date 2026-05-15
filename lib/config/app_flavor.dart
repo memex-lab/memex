@@ -9,9 +9,11 @@
 ///   flutter run --flavor cn
 ///   flutter run --flavor globalEarly
 ///   flutter run --flavor cnEarly
+///   flutter run --flavor globalDev
+///   flutter run --flavor cnDev
 enum AppFlavorType { global, cn }
 
-enum AppChannelType { stable, early }
+enum AppChannelType { stable, early, dev }
 
 class AppFlavor {
   AppFlavor._();
@@ -26,6 +28,7 @@ class AppFlavor {
   static bool get isCN => _current == AppFlavorType.cn;
   static bool get isStable => _channel == AppChannelType.stable;
   static bool get isEarly => _channel == AppChannelType.early;
+  static bool get isDev => _channel == AppChannelType.dev;
 
   /// Call once at app startup with the flavor string from `appFlavor`.
   static void init(String? flavor) {
@@ -36,7 +39,9 @@ class AppFlavor {
       _current = AppFlavorType.global;
     }
 
-    if (normalized.contains('early')) {
+    if (normalized.contains('dev')) {
+      _channel = AppChannelType.dev;
+    } else if (normalized.contains('early')) {
       _channel = AppChannelType.early;
     } else {
       _channel = AppChannelType.stable;

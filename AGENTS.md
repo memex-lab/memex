@@ -9,8 +9,12 @@ Memex is a local-first, AI-powered personal life recording app built with Flutte
 ```bash
 flutter pub get
 dart run build_runner build --delete-conflicting-outputs   # after changing Drift tables or *.g.dart sources
-flutter run --flavor global   # overseas (default if omitted)
-flutter run --flavor cn       # China domestic
+flutter run --flavor globalDev   # Android local Dev overseas, isolated package/data
+flutter run --flavor cnDev       # Android local Dev China, isolated package/data
+flutter run --flavor globalEarly # Android Early overseas, isolated package/data
+flutter run --flavor cnEarly     # Android Early China, isolated package/data
+flutter run --flavor global      # Stable overseas; avoid for local dev
+flutter run --flavor cn          # Stable China domestic; avoid for local dev
 flutter analyze
 flutter test
 cd ios && pod install && cd ..

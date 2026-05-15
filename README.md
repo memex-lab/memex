@@ -218,8 +218,10 @@ cd ios && pod install && cd ..
 ### Run
 
 ```bash
-flutter run
+flutter run --flavor globalDev
 ```
+
+For Android local development, prefer `globalDev` / `cnDev`; they use isolated package IDs and app data. `global` / `cn` are Stable builds, and `globalEarly` / `cnEarly` are Android Early builds.
 
 </details>
 

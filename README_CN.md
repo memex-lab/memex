@@ -218,8 +218,10 @@ cd ios && pod install && cd ..
 ### 运行
 
 ```bash
-flutter run
+flutter run --flavor globalDev
 ```
+
+Android 本地开发优先使用 `globalDev` / `cnDev`，它们有独立包名和应用数据。`global` / `cn` 是 Stable 构建，`globalEarly` / `cnEarly` 是 Android Early 构建。
 
 </details>
 

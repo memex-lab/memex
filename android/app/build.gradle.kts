@@ -83,6 +83,8 @@ android {
     val cnApplicationId = "com.memexlab.memex.cn"
     val globalEarlyApplicationId = "com.memexlab.memex.early"
     val cnEarlyApplicationId = "com.memexlab.memex.cn.early"
+    val globalDevApplicationId = "com.memexlab.memex.dev"
+    val cnDevApplicationId = "com.memexlab.memex.cn.dev"
 
     flavorDimensions += "market"
     productFlavors {
@@ -125,6 +127,18 @@ android {
             if (hasEarlyKeystore) {
                 signingConfig = signingConfigs.getByName("earlyRelease")
             }
+        }
+        create("globalDev") {
+            dimension = "market"
+            applicationId = globalDevApplicationId
+            manifestPlaceholders["appLabel"] = "Memex Dev"
+            resValue("string", "quick_action_target_package", globalDevApplicationId)
+        }
+        create("cnDev") {
+            dimension = "market"
+            applicationId = cnDevApplicationId
+            manifestPlaceholders["appLabel"] = "Memex Dev CN"
+            resValue("string", "quick_action_target_package", cnDevApplicationId)
         }
     }
 
