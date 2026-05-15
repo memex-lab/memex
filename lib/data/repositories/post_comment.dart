@@ -33,7 +33,8 @@ Future<Map<String, dynamic>> postCommentEndpoint(
   String? replyToId,
 }) async {
   _logger.info(
-      'PostCommentEndpoint: postComment called: cardId=$cardId, userId=$userId');
+    'PostCommentEndpoint: postComment called: cardId=$cardId, userId=$userId',
+  );
 
   try {
     // Read card file
@@ -78,8 +79,9 @@ Future<Map<String, dynamic>> postCommentEndpoint(
           commentId: commentId,
           replyToId: replyToId,
           sourceId: commentId,
-          timestamp:
-              DateTime.fromMillisecondsSinceEpoch(commentTimestamp * 1000),
+          timestamp: DateTime.fromMillisecondsSinceEpoch(
+            commentTimestamp * 1000,
+          ),
           metadata: {
             if (replyToId != null && replyToId.isNotEmpty)
               'reply_to_id': replyToId,
@@ -97,8 +99,10 @@ Future<Map<String, dynamic>> postCommentEndpoint(
     try {
       final cardPath = _fileSystemService.getCardPath(userId, cardId);
       final workspacePath = _fileSystemService.getWorkspacePath(userId);
-      final relativePath =
-          _fileSystemService.toRelativePath(cardPath, rootPath: workspacePath);
+      final relativePath = _fileSystemService.toRelativePath(
+        cardPath,
+        rootPath: workspacePath,
+      );
       await _fileSystemService.eventLogService.logFileModified(
         userId: userId,
         filePath: relativePath,
@@ -163,7 +167,8 @@ Future<void> processAICommentReply({
   bool withMemoryManagement = false,
 }) async {
   _logger.info(
-      'PostCommentEndpoint: processAICommentReply called: cardId=$cardId, userId=$userId');
+    'PostCommentEndpoint: processAICommentReply called: cardId=$cardId, userId=$userId',
+  );
 
   try {
     // 1. Read card file
@@ -198,8 +203,10 @@ Future<void> processAICommentReply({
     // 3. Raw Input Content
     // If rawInputContent is null, we should try to extract it from file.
     // Always extract factContent to get assetAnalyses
-    final factContent =
-        await _fileSystemService.extractFactContentFromFile(userId, cardId);
+    final factContent = await _fileSystemService.extractFactContentFromFile(
+      userId,
+      cardId,
+    );
     String contentToUse = rawInputContent ?? '';
     if (contentToUse.isEmpty) {
       contentToUse = factContent?.content ?? '';
@@ -238,7 +245,8 @@ Future<void> processAICommentReply({
           DateTime.fromMillisecondsSinceEpoch(c.timestamp * 1000),
         );
         buf.writeln(
-            '- [$author] (id: ${c.id}, time: $commentTime)$replyInfo: ${c.content}');
+          '- [$author] (id: ${c.id}, time: $commentTime)$replyInfo: ${c.content}',
+        );
       }
       buf.writeln('</existing_comments>');
       existingCommentsContext = buf.toString();
@@ -256,6 +264,7 @@ Future<void> processAICommentReply({
         initialInsight: initialInsight,
         existingCommentsContext: existingCommentsContext,
         characterId: characterId,
+        forcedReplyToId: userCommentId,
         currentTime: inputDateTime ?? DateTime.now(),
         entryTime: entryDateTime,
         withMemoryManagement: withMemoryManagement,
@@ -270,9 +279,9 @@ Future<void> processAICommentReply({
 
     // 8. EventBus Update
     if (sendEventBus) {
-      EventBusService.instance.emitEvent(CardDetailUpdatedMessage(
-        cardId: cardId,
-      ));
+      EventBusService.instance.emitEvent(
+        CardDetailUpdatedMessage(cardId: cardId),
+      );
     }
   } catch (e) {
     _logger.severe('Failed to process AI comment reply for card $cardId: $e');

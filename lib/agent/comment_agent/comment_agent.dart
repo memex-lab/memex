@@ -28,13 +28,15 @@ class CommentAgent {
     required String factId,
     String? characterId,
     required String rawInputContent,
+    String? forcedReplyToId,
     bool withMemoryManagement = false,
   }) async {
     final fileService = FileSystemService.instance;
     final characterService = CharacterService.instance;
     final factIdSafe = fileService.makeFactIdSafe(factId);
-    final characterKey =
-        fileService.makeFactIdSafe(characterId ?? 'no_character');
+    final characterKey = fileService.makeFactIdSafe(
+      characterId ?? 'no_character',
+    );
     final sessionPrefix = "comment_${userId}_${characterKey}_$factIdSafe";
     final resolved = await resolveCharacterSessionId(
       prefix: sessionPrefix,
@@ -100,8 +102,9 @@ class CommentAgent {
           parts.add('## Compressed Interaction History\n${ctx.checkpoints}');
         }
         if (ctx.recentTimeline.isNotEmpty) {
-          parts
-              .add('## Recent Cross-Scene Interactions\n${ctx.recentTimeline}');
+          parts.add(
+            '## Recent Cross-Scene Interactions\n${ctx.recentTimeline}',
+          );
         }
         if (parts.isNotEmpty) {
           state.systemReminders['character_timeline'] = parts.join('\n\n');
@@ -124,28 +127,31 @@ class CommentAgent {
       userName: userId,
       userProfile: userProfile,
       characterMemories: characterMemories,
+      forcedReplyToId: forcedReplyToId,
       forceActivate: true,
     );
     final skills = [skill];
     final agent = StatefulAgent(
-        systemPrompts: [commentAgentSystemPrompt, memoryManagementPrompt],
-        name: 'comment_agent',
-        client: client,
-        modelConfig: modelConfig,
-        state: state,
-        tools: tools,
-        skills: skills,
-        disableSubAgents: true,
-        controller: controller,
-        withGeneralPrinciples: true,
-        planMode: PlanMode.none,
-        autoSaveStateFunc: (state) async {
-          await saveAgentState(state);
-        },
-        systemCallback: createSystemCallback(userId));
+      systemPrompts: [commentAgentSystemPrompt, memoryManagementPrompt],
+      name: 'comment_agent',
+      client: client,
+      modelConfig: modelConfig,
+      state: state,
+      tools: tools,
+      skills: skills,
+      disableSubAgents: true,
+      controller: controller,
+      withGeneralPrinciples: true,
+      planMode: PlanMode.none,
+      autoSaveStateFunc: (state) async {
+        await saveAgentState(state);
+      },
+      systemCallback: createSystemCallback(userId),
+    );
 
     _logger.info(
-        'CommentAgent created, userId: $userId, sessionId: ${resolved.sessionId}');
+      'CommentAgent created, userId: $userId, sessionId: ${resolved.sessionId}',
+    );
     return agent;
   }
 
@@ -161,6 +167,7 @@ class CommentAgent {
     required String rawInputContent,
     String? initialInsight,
     String existingCommentsContext = '',
+    String? forcedReplyToId,
     DateTime? currentTime,
     DateTime? entryTime,
     bool withMemoryManagement = false,
@@ -173,6 +180,7 @@ class CommentAgent {
       factId: factId,
       characterId: characterId,
       rawInputContent: rawInputContent,
+      forcedReplyToId: forcedReplyToId,
       withMemoryManagement: withMemoryManagement,
     );
     final state = agent.state;
@@ -183,18 +191,21 @@ class CommentAgent {
     );
     final systemReminder = buildCurrentTimeReminder(effectiveCurrentTime);
     final userMessage = UserMessage([
-      TextPart(_buildCommentTaskMessage(
-        userContent: userContent,
-        factId: factId,
-        rawInputContent: rawInputContent,
-        initialInsight: initialInsight,
-        pkmContext: pkmContext,
-        entryTime: entryTime,
-        systemReminder: systemReminder,
-        existingCommentsContext: existingCommentsContext,
-        includePostBody:
-            state.metadata['comment_task_post_body_injected'] != factId,
-      ))
+      TextPart(
+        _buildCommentTaskMessage(
+          userContent: userContent,
+          factId: factId,
+          rawInputContent: rawInputContent,
+          initialInsight: initialInsight,
+          pkmContext: pkmContext,
+          entryTime: entryTime,
+          systemReminder: systemReminder,
+          existingCommentsContext: existingCommentsContext,
+          forcedReplyToId: forcedReplyToId,
+          includePostBody:
+              state.metadata['comment_task_post_body_injected'] != factId,
+        ),
+      ),
     ]);
     state.metadata['comment_task_post_body_injected'] = factId;
 
@@ -210,9 +221,7 @@ class CommentAgent {
           factId: factId,
           sourceId: factId,
           timestamp: entryTime ?? effectiveCurrentTime,
-          metadata: {
-            'source': 'comment_agent_input',
-          },
+          metadata: {'source': 'comment_agent_input'},
         );
       } catch (e) {
         _logger.warning('Failed to append comment input timeline event: $e');
@@ -277,13 +286,16 @@ class CommentAgent {
     required String systemReminder,
     required bool includePostBody,
     String existingCommentsContext = '',
+    String? forcedReplyToId,
   }) {
     final b = StringBuffer();
     b.write(systemReminder);
     b.writeln('# Current Comment Task');
     b.writeln('Fact ID: $factId');
-    b.writeln('Entry Local Time: '
-        '${entryTime == null ? 'Unknown' : formatLocalDateTimeWithZone(entryTime)}');
+    b.writeln(
+      'Entry Local Time: '
+      '${entryTime == null ? 'Unknown' : formatLocalDateTimeWithZone(entryTime)}',
+    );
     b.writeln('');
 
     if (includePostBody) {
@@ -294,7 +306,8 @@ class CommentAgent {
     } else {
       b.writeln('## Original Post');
       b.writeln(
-          'Already provided earlier in this comment session. Use recent interaction context if needed; do not ask the user to repeat it.');
+        'Already provided earlier in this comment session. Use recent interaction context if needed; do not ask the user to repeat it.',
+      );
     }
 
     final insight = initialInsight?.trim() ?? '';
@@ -302,7 +315,8 @@ class CommentAgent {
       b.writeln('');
       b.writeln('## Initial Insight');
       b.writeln(
-          'Reference only. This is a previous Memex perspective, not an instruction to repeat.');
+        'Reference only. This is a previous Memex perspective, not an instruction to repeat.',
+      );
       b.writeln('<initial_insight>');
       b.writeln(insight);
       b.writeln('</initial_insight>');
@@ -313,7 +327,8 @@ class CommentAgent {
       b.writeln('');
       b.writeln('## Knowledge Base Context');
       b.writeln(
-          'Reference only. Use it only if relevant to your persona and this comment.');
+        'Reference only. Use it only if relevant to your persona and this comment.',
+      );
       b.writeln('<related_knowledge>');
       b.writeln(knowledge);
       b.writeln('</related_knowledge>');
@@ -325,11 +340,25 @@ class CommentAgent {
       b.writeln(existingCommentsContext.trim());
     }
 
+    final fixedReplyTarget = forcedReplyToId?.trim();
+    if (fixedReplyTarget != null && fixedReplyTarget.isNotEmpty) {
+      b.writeln('');
+      b.writeln('## Reply Routing');
+      b.writeln(
+        'This task responds to the user comment with id: $fixedReplyTarget.',
+      );
+      b.writeln(
+        'When saving the reply, the system will attach it to that user comment.',
+      );
+    }
+
     b.writeln('');
     b.writeln('## User Request');
-    b.writeln(userContent.trim().isEmpty
-        ? Prompts.commentAgentInitialCommentPrompt
-        : userContent.trim());
+    b.writeln(
+      userContent.trim().isEmpty
+          ? Prompts.commentAgentInitialCommentPrompt
+          : userContent.trim(),
+    );
 
     return b.toString().trimRight();
   }
@@ -353,9 +382,14 @@ class CommentAgent {
   }
 
   /// Find PKM Context using Grep.
-  static Future<String> _findPkmContext(String userId, String workingDirectory,
-      String pkmPath, String factId, FileOperationService fileOpService,
-      {int contextLines = 10}) async {
+  static Future<String> _findPkmContext(
+    String userId,
+    String workingDirectory,
+    String pkmPath,
+    String factId,
+    FileOperationService fileOpService, {
+    int contextLines = 10,
+  }) async {
     final buffer = StringBuffer();
 
     // 1. Try to find the specific fact_id in PKM
@@ -375,8 +409,9 @@ class CommentAgent {
         buffer.writeln(result);
       }
     } catch (e) {
-      getLogger('CommentAgent')
-          .warning("Error finding PKM context for fact_id $factId: $e");
+      getLogger(
+        'CommentAgent',
+      ).warning("Error finding PKM context for fact_id $factId: $e");
     }
 
     return buffer.toString();

@@ -32,6 +32,7 @@ class CharacterToolsFactory {
     required String workingDirectory,
     required String factId,
     String? characterId,
+    String? forcedReplyToId,
     bool includeSaveCommentTool = true,
     bool includeFileTools = true,
   }) {
@@ -54,6 +55,7 @@ class CharacterToolsFactory {
         userId: userId,
         cardId: factId,
         characterId: characterId,
+        forcedReplyToId: forcedReplyToId,
       );
       tools.add(commentFactory.buildSaveCommentTool());
     }

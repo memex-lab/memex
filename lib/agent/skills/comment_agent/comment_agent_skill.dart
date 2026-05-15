@@ -15,6 +15,7 @@ class CommentAgentSkill extends Skill {
     String userName = '',
     String userProfile = '',
     String characterMemories = '',
+    String? forcedReplyToId,
     super.forceActivate,
   }) : super(
           name: "persona_comment",
@@ -30,6 +31,7 @@ class CommentAgentSkill extends Skill {
             workingDirectory: workingDirectory,
             factId: factId,
             characterId: character?.id,
+            forcedReplyToId: forcedReplyToId,
           ),
         );
 
@@ -62,8 +64,13 @@ class CommentAgentSkill extends Skill {
         character.systemPromptOverride != null &&
         character.systemPromptOverride!.trim().isNotEmpty) {
       final charName = character.name;
-      b.writeln(TavernMacro.resolve(character.systemPromptOverride!,
-          userName: userName, charName: charName));
+      b.writeln(
+        TavernMacro.resolve(
+          character.systemPromptOverride!,
+          userName: userName,
+          charName: charName,
+        ),
+      );
       b.writeln('');
     }
 
@@ -87,8 +94,13 @@ class CommentAgentSkill extends Skill {
       final charName = character.name;
       b.writeln('');
       b.writeln('## Style Examples');
-      b.writeln(TavernMacro.resolve(character.mesExample!,
-          userName: userName, charName: charName));
+      b.writeln(
+        TavernMacro.resolve(
+          character.mesExample!,
+          userName: userName,
+          charName: charName,
+        ),
+      );
     }
 
     return b.toString();
@@ -99,12 +111,14 @@ class CommentAgentSkill extends Skill {
     required String workingDirectory,
     required String factId,
     String? characterId,
+    String? forcedReplyToId,
   }) {
     return CharacterToolsFactory.buildCommentTools(
       userId: userId,
       workingDirectory: workingDirectory,
       factId: factId,
       characterId: characterId,
+      forcedReplyToId: forcedReplyToId,
     );
   }
 }
