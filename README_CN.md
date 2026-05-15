@@ -112,6 +112,24 @@ Memex 需要 LLM API Key 来驱动 AI 功能。首次启动后：
 3. 填入 API Key 和 Base URL
 4. 不同 Agent 可以独立配置不同的模型
 
+### 配置位置上下文
+
+Memex 可以选择性地把当前城市、区县和街区上下文附加给 Agent 对话。该能力只使用设备 GPS，不使用 IP 定位。
+
+1. 打开「个人中心」→「设置」→「定位」。
+2. 开启「为对话附加当前位置」。
+3. 选择逆地理编码服务商：
+   - OpenStreetMap / Nominatim 不需要 API Key。
+   - 高德地图需要 API Key。
+4. 如需使用高德地图，请在[高德开放平台](https://lbs.amap.com/)创建应用，开通 Web 服务 API，复制 Key，并填写到「高德地图 API Key」中。
+5. 按需选择上下文粒度和位置新鲜度。
+
+本地运行高德逆地理编码 live test 时，请通过环境变量传入 Key，不要提交到仓库：
+
+```bash
+AMAP_GEOCODING_TEST_KEY=your_key flutter test test/data/services/geocoding_service_test.dart
+```
+
 ## 🧩 自定义 Agent 系统
 
 Memex 不只是一个记录应用 — 它是一个让你能够在手机上构建自己 AI Agent 的平台。

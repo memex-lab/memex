@@ -29,4 +29,7 @@ abstract final class AppRoutes {
 
   /// Character config.
   static const String characterConfig = '/character-config';
+
+  /// Tavern character card import.
+  static const String tavernImport = '/tavern-import';
 }

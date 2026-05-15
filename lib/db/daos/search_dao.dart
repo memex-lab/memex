@@ -1,5 +1,5 @@
 import 'package:drift/drift.dart';
-import 'package:memex/utils/jieba.dart';
+import 'package:memex/data/services/search/query_matcher.dart';
 
 /// DAO for full-text search using SQLite FTS5.
 ///
@@ -38,29 +38,39 @@ class SearchDao {
         tokenize='unicode61'
       )
     ''');
+    await createCharacterFtsTables();
+  }
+
+  Future<void> createCharacterFtsTables() async {
+    await _db.customStatement('''
+      CREATE VIRTUAL TABLE IF NOT EXISTS character_world_fts USING fts5(
+        character_id UNINDEXED,
+        entry_id UNINDEXED,
+        keys,
+        comment,
+        content,
+        tokenize='unicode61'
+      )
+    ''');
+    await _db.customStatement('''
+      CREATE VIRTUAL TABLE IF NOT EXISTS character_timeline_fts USING fts5(
+        character_id UNINDEXED,
+        event_id UNINDEXED,
+        source UNINDEXED,
+        scene UNINDEXED,
+        thread_id UNINDEXED,
+        ts UNINDEXED,
+        event_type,
+        content,
+        fact_id,
+        tokenize='unicode61'
+      )
+    ''');
   }
 
   // ---------------------------------------------------------------------------
   // Tokenization (jieba for CJK, passthrough for English)
   // ---------------------------------------------------------------------------
-
-  static final _jieba = JiebaSegmenter.instance;
-
-  static bool _isCjk(int code) {
-    return (code >= 0x4E00 && code <= 0x9FFF) ||
-        (code >= 0x3400 && code <= 0x4DBF) ||
-        (code >= 0xF900 && code <= 0xFAFF) ||
-        (code >= 0x3040 && code <= 0x30FF) ||
-        (code >= 0xFF00 && code <= 0xFFEF) ||
-        (code >= 0x3000 && code <= 0x303F);
-  }
-
-  static bool _containsCjk(String text) {
-    for (int i = 0; i < text.length; i++) {
-      if (_isCjk(text.codeUnitAt(i))) return true;
-    }
-    return false;
-  }
 
   /// Prepare text for FTS5 indexing.
   ///
@@ -68,12 +78,8 @@ class SearchDao {
   /// produce fine-grained tokens (bigrams + trigrams + full words).
   /// Otherwise falls back to per-character CJK splitting.
   /// English text is left as-is for FTS5's unicode61 tokenizer.
-  static String tokenizeForIndex(String text) {
-    if (text.isEmpty) return text;
-    if (_jieba.isLoaded && _containsCjk(text)) {
-      return _jieba.cutForSearch(text).join(' ');
-    }
-    return _tokenizeFallback(text);
+  static Future<String> tokenizeForIndex(String text) {
+    return QueryMatcher.tokenizeForIndex(text);
   }
 
   /// Prepare a search query for FTS5.
@@ -82,71 +88,8 @@ class SearchDao {
   /// then wraps English tokens with prefix matching and joins with OR.
   /// FTS5's BM25 ranking naturally scores documents higher when more
   /// tokens match, similar to Elasticsearch's default behavior.
-  static String tokenizeForQuery(String query) {
-    final trimmed = query.trim();
-    if (trimmed.isEmpty) return trimmed;
-
-    if (_jieba.isLoaded && _containsCjk(trimmed)) {
-      final words = _jieba.cut(trimmed);
-      final tokens = <String>[];
-      for (final w in words) {
-        final t = w.trim();
-        if (t.isEmpty) continue;
-        if (_containsCjk(t)) {
-          // CJK word — exact match
-          tokens.add('"$t"');
-        } else {
-          // English/number — prefix match
-          tokens.add('"$t"*');
-        }
-      }
-      if (tokens.isEmpty) return '';
-      return tokens.join(' OR ');
-    }
-
-    return _tokenizeQueryFallback(trimmed);
-  }
-
-  /// Fallback: per-character CJK splitting (used when jieba is not loaded).
-  static String _tokenizeFallback(String text) {
-    final buf = StringBuffer();
-    for (int i = 0; i < text.length; i++) {
-      final code = text.codeUnitAt(i);
-      if (_isCjk(code)) {
-        if (buf.isNotEmpty && !buf.toString().endsWith(' ')) buf.write(' ');
-        buf.writeCharCode(code);
-        buf.write(' ');
-      } else {
-        buf.writeCharCode(code);
-      }
-    }
-    return buf.toString().trim();
-  }
-
-  /// Fallback query tokenizer (per-character CJK + prefix English).
-  static String _tokenizeQueryFallback(String query) {
-    final tokens = <String>[];
-    final buf = StringBuffer();
-    for (int i = 0; i < query.length; i++) {
-      final code = query.codeUnitAt(i);
-      if (_isCjk(code)) {
-        if (buf.isNotEmpty) {
-          tokens.add('"${buf.toString()}"*');
-          buf.clear();
-        }
-        tokens.add(String.fromCharCode(code));
-      } else if (query[i] == ' ') {
-        if (buf.isNotEmpty) {
-          tokens.add('"${buf.toString()}"*');
-          buf.clear();
-        }
-      } else {
-        buf.writeCharCode(code);
-      }
-    }
-    if (buf.isNotEmpty) tokens.add('"${buf.toString()}"*');
-    if (tokens.isEmpty) return '';
-    return tokens.join(' OR ');
+  static Future<String> tokenizeForQuery(String query) {
+    return QueryMatcher.tokenizeForFtsQuery(query);
   }
 
   // ---------------------------------------------------------------------------
@@ -165,10 +108,10 @@ class SearchDao {
       'INSERT INTO card_fts(fact_id, title, tags, content, insight) VALUES (?, ?, ?, ?, ?)',
       [
         factId,
-        tokenizeForIndex(title),
-        tokenizeForIndex(tags),
-        tokenizeForIndex(content),
-        tokenizeForIndex(insight)
+        await tokenizeForIndex(title),
+        await tokenizeForIndex(tags),
+        await tokenizeForIndex(content),
+        await tokenizeForIndex(insight)
       ],
     );
   }
@@ -185,7 +128,7 @@ class SearchDao {
   /// Search cards via FTS5. Returns `fact_id`, snippets, and rank.
   Future<List<Map<String, dynamic>>> searchCards(String query,
       {int limit = 50}) async {
-    final ftsQuery = tokenizeForQuery(query);
+    final ftsQuery = await tokenizeForQuery(query);
     if (ftsQuery.isEmpty) return [];
     final results = await _db.customSelect(
       '''SELECT fact_id,
@@ -217,7 +160,11 @@ class SearchDao {
     await deletePkmFts(filePath);
     await _db.customStatement(
       'INSERT INTO pkm_fts(file_path, file_name, content) VALUES (?, ?, ?)',
-      [filePath, tokenizeForIndex(fileName), tokenizeForIndex(content)],
+      [
+        filePath,
+        await tokenizeForIndex(fileName),
+        await tokenizeForIndex(content)
+      ],
     );
   }
 
@@ -233,7 +180,7 @@ class SearchDao {
   /// Search PKM files via FTS5.
   Future<List<Map<String, dynamic>>> searchPkmFiles(String query,
       {int limit = 50}) async {
-    final ftsQuery = tokenizeForQuery(query);
+    final ftsQuery = await tokenizeForQuery(query);
     if (ftsQuery.isEmpty) return [];
     final results = await _db.customSelect(
       '''SELECT file_path,
@@ -254,5 +201,167 @@ class SearchDao {
         'rank': row.read<double>('rank'),
       };
     }).toList();
+  }
+
+  Future<void> upsertCharacterWorldFts({
+    required String characterId,
+    required String entryId,
+    required String keys,
+    required String comment,
+    required String content,
+  }) async {
+    await deleteCharacterWorldFts(characterId, entryId);
+    await _db.customStatement(
+      'INSERT INTO character_world_fts(character_id, entry_id, keys, comment, content) VALUES (?, ?, ?, ?, ?)',
+      [
+        characterId,
+        entryId,
+        await tokenizeForIndex(keys),
+        await tokenizeForIndex(comment),
+        await tokenizeForIndex(content),
+      ],
+    );
+  }
+
+  Future<void> deleteCharacterWorldFts(
+      String characterId, String entryId) async {
+    await _db.customStatement(
+      'DELETE FROM character_world_fts WHERE character_id = ? AND entry_id = ?',
+      [characterId, entryId],
+    );
+  }
+
+  Future<void> clearCharacterWorldFts(String characterId) async {
+    await _db.customStatement(
+      'DELETE FROM character_world_fts WHERE character_id = ?',
+      [characterId],
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> searchCharacterWorldEntries(
+    String characterId,
+    String query, {
+    int limit = 12,
+  }) async {
+    final ftsQuery = await tokenizeForQuery(query);
+    if (ftsQuery.isEmpty) return [];
+    final rows = await _db.customSelect(
+      '''SELECT entry_id, rank
+      FROM character_world_fts
+      WHERE character_id = ? AND character_world_fts MATCH ?
+      ORDER BY rank LIMIT ?''',
+      variables: [
+        Variable<String>(characterId),
+        Variable<String>(ftsQuery),
+        Variable<int>(limit),
+      ],
+    ).get();
+    return rows
+        .map((row) => {
+              'id': row.read<String>('entry_id'),
+              'rank': row.read<double>('rank'),
+            })
+        .toList();
+  }
+
+  Future<void> upsertCharacterTimelineFts({
+    required String characterId,
+    required String eventId,
+    required String source,
+    required String scene,
+    required String threadId,
+    required String ts,
+    required String eventType,
+    required String content,
+    required String factId,
+  }) async {
+    await deleteCharacterTimelineFts(characterId, eventId, source);
+    await _db.customStatement(
+      'INSERT INTO character_timeline_fts(character_id, event_id, source, scene, thread_id, ts, event_type, content, fact_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [
+        characterId,
+        eventId,
+        source,
+        scene,
+        threadId,
+        ts,
+        await tokenizeForIndex(eventType),
+        await tokenizeForIndex(content),
+        await tokenizeForIndex(factId),
+      ],
+    );
+  }
+
+  Future<void> deleteCharacterTimelineFts(
+    String characterId,
+    String eventId,
+    String source,
+  ) async {
+    await _db.customStatement(
+      'DELETE FROM character_timeline_fts WHERE character_id = ? AND event_id = ? AND source = ?',
+      [characterId, eventId, source],
+    );
+  }
+
+  Future<void> clearCharacterTimelineFts(String characterId,
+      {String? source}) async {
+    if (source == null) {
+      await _db.customStatement(
+        'DELETE FROM character_timeline_fts WHERE character_id = ?',
+        [characterId],
+      );
+    } else {
+      await _db.customStatement(
+        'DELETE FROM character_timeline_fts WHERE character_id = ? AND source = ?',
+        [characterId, source],
+      );
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> searchCharacterTimeline(
+    String characterId,
+    String query, {
+    int limit = 8,
+    String? scene,
+    String? threadId,
+    bool includeArchived = true,
+  }) async {
+    final ftsQuery = await tokenizeForQuery(query);
+    if (ftsQuery.isEmpty) return [];
+    final clauses = <String>[
+      'character_id = ?',
+      'character_timeline_fts MATCH ?',
+    ];
+    final variables = <Variable>[
+      Variable<String>(characterId),
+      Variable<String>(ftsQuery),
+    ];
+    if (scene != null && scene.isNotEmpty) {
+      clauses.add('scene = ?');
+      variables.add(Variable<String>(scene));
+    }
+    if (threadId != null && threadId.isNotEmpty) {
+      clauses.add('thread_id = ?');
+      variables.add(Variable<String>(threadId));
+    }
+    if (!includeArchived) {
+      clauses.add('source = ?');
+      variables.add(const Variable<String>('recent'));
+    }
+    variables.add(Variable<int>(limit));
+    final rows = await _db.customSelect(
+      '''SELECT event_id, source, rank
+      FROM character_timeline_fts
+      WHERE ${clauses.join(' AND ')}
+      ORDER BY rank LIMIT ?''',
+      variables: variables,
+    ).get();
+    return rows
+        .map((row) => {
+              'event_id': row.read<String>('event_id'),
+              'source': row.read<String>('source'),
+              'rank': row.read<double>('rank'),
+            })
+        .toList();
   }
 }

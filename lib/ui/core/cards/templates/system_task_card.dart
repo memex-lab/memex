@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:ui';
 import 'package:memex/utils/user_storage.dart';
 
 class SystemTaskCard extends StatefulWidget {
@@ -75,160 +74,157 @@ class _SystemTaskCardState extends State<SystemTaskCard>
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(24),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.8),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.5),
-                width: 1,
-              ),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.white.withValues(alpha: 0.6),
-                  const Color(0xFFF5F3FF).withValues(alpha: 0.4),
-                ],
-              ),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.92),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.5),
+              width: 1,
             ),
-            child: Row(
-              children: [
-                // Animated AI Icon
-                Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    AnimatedBuilder(
-                      animation: _spinController,
-                      builder: (context, child) {
-                        final isProcessing = widget.status == 'processing';
-                        return Transform.rotate(
-                          angle: isProcessing
-                              ? _spinController.value * 2 * 3.14159
-                              : 0,
-                          child: Container(
-                            width: 52,
-                            height: 52,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: SweepGradient(
-                                colors: [
-                                  isProcessing
-                                      ? const Color(0x00A855F7)
-                                      : Colors.transparent,
-                                  widget.status == 'failed'
-                                      ? Colors.red
-                                      : const Color(0xFFA855F7),
-                                  isProcessing
-                                      ? const Color(0x00A855F7)
-                                      : Colors.transparent,
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Center(
-                        child: Icon(
-                          widget.status == 'failed'
-                              ? Icons.error_outline
-                              : widget.status == 'completed'
-                                  ? Icons.check_circle_outline
-                                  : Icons.auto_awesome,
-                          color: widget.status == 'failed'
-                              ? Colors.red
-                              : const Color(0xFFA855F7),
-                          size: 24,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(width: 20),
-                // Text content with shimmer
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            widget.title,
-                            style: const TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF0A0A0A),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          if (widget.status == 'processing')
-                            AnimatedBuilder(
-                              animation: _pulseController,
-                              builder: (context, child) {
-                                return Opacity(
-                                  opacity: _pulseController.value,
-                                  child: Container(
-                                    width: 4,
-                                    height: 4,
-                                    decoration: const BoxDecoration(
-                                      color: Color(0xFFA855F7),
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      if (widget.status == 'processing')
-                        AnimatedBuilder(
-                          animation: _shimmerController,
-                          builder: (context, child) {
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _buildShimmerLine(widthRatio: 0.9),
-                                const SizedBox(height: 6),
-                                _buildShimmerLine(widthRatio: 0.6),
-                              ],
-                            );
-                          },
-                        ),
-                      if (widget.status == 'completed' ||
-                          widget.status == 'failed' ||
-                          widget.message.isNotEmpty)
-                        Text(
-                          widget.message,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: const Color(0xFF4A5565),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withValues(alpha: 0.88),
+                const Color(0xFFF5F3FF).withValues(alpha: 0.7),
               ],
             ),
+          ),
+          child: Row(
+            children: [
+              // Animated AI Icon
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  AnimatedBuilder(
+                    animation: _spinController,
+                    builder: (context, child) {
+                      final isProcessing = widget.status == 'processing';
+                      return Transform.rotate(
+                        angle: isProcessing
+                            ? _spinController.value * 2 * 3.14159
+                            : 0,
+                        child: Container(
+                          width: 52,
+                          height: 52,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: SweepGradient(
+                              colors: [
+                                isProcessing
+                                    ? const Color(0x00A855F7)
+                                    : Colors.transparent,
+                                widget.status == 'failed'
+                                    ? Colors.red
+                                    : const Color(0xFFA855F7),
+                                isProcessing
+                                    ? const Color(0x00A855F7)
+                                    : Colors.transparent,
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Icon(
+                        widget.status == 'failed'
+                            ? Icons.error_outline
+                            : widget.status == 'completed'
+                                ? Icons.check_circle_outline
+                                : Icons.auto_awesome,
+                        color: widget.status == 'failed'
+                            ? Colors.red
+                            : const Color(0xFFA855F7),
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 20),
+              // Text content with shimmer
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          widget.title,
+                          style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF0A0A0A),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        if (widget.status == 'processing')
+                          AnimatedBuilder(
+                            animation: _pulseController,
+                            builder: (context, child) {
+                              return Opacity(
+                                opacity: _pulseController.value,
+                                child: Container(
+                                  width: 4,
+                                  height: 4,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFFA855F7),
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    if (widget.status == 'processing')
+                      AnimatedBuilder(
+                        animation: _shimmerController,
+                        builder: (context, child) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildShimmerLine(widthRatio: 0.9),
+                              const SizedBox(height: 6),
+                              _buildShimmerLine(widthRatio: 0.6),
+                            ],
+                          );
+                        },
+                      ),
+                    if (widget.status == 'completed' ||
+                        widget.status == 'failed' ||
+                        widget.message.isNotEmpty)
+                      Text(
+                        widget.message,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: const Color(0xFF4A5565),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),

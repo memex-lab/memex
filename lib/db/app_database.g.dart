@@ -3274,9 +3274,25 @@ class $PersonaChatMessagesTable extends PersonaChatMessages
   late final GeneratedColumn<DateTime> timestamp = GeneratedColumn<DateTime>(
       'timestamp', aliasedName, false,
       type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _messageTypeMeta =
+      const VerificationMeta('messageType');
   @override
-  List<GeneratedColumn> get $columns =>
-      [id, characterId, isFromCharacter, content, factId, isRead, timestamp];
+  late final GeneratedColumn<String> messageType = GeneratedColumn<String>(
+      'message_type', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('chat'));
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        characterId,
+        isFromCharacter,
+        content,
+        factId,
+        isRead,
+        timestamp,
+        messageType
+      ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -3326,6 +3342,12 @@ class $PersonaChatMessagesTable extends PersonaChatMessages
     } else if (isInserting) {
       context.missing(_timestampMeta);
     }
+    if (data.containsKey('message_type')) {
+      context.handle(
+          _messageTypeMeta,
+          messageType.isAcceptableOrUnknown(
+              data['message_type']!, _messageTypeMeta));
+    }
     return context;
   }
 
@@ -3349,6 +3371,8 @@ class $PersonaChatMessagesTable extends PersonaChatMessages
           .read(DriftSqlType.bool, data['${effectivePrefix}is_read'])!,
       timestamp: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}timestamp'])!,
+      messageType: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}message_type'])!,
     );
   }
 
@@ -3367,6 +3391,9 @@ class PersonaChatMessage extends DataClass
   final String? factId;
   final bool isRead;
   final DateTime timestamp;
+
+  /// Message type: 'chat' (default) or 'action' (narrative/action description).
+  final String messageType;
   const PersonaChatMessage(
       {required this.id,
       required this.characterId,
@@ -3374,7 +3401,8 @@ class PersonaChatMessage extends DataClass
       required this.content,
       this.factId,
       required this.isRead,
-      required this.timestamp});
+      required this.timestamp,
+      required this.messageType});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -3387,6 +3415,7 @@ class PersonaChatMessage extends DataClass
     }
     map['is_read'] = Variable<bool>(isRead);
     map['timestamp'] = Variable<DateTime>(timestamp);
+    map['message_type'] = Variable<String>(messageType);
     return map;
   }
 
@@ -3400,6 +3429,7 @@ class PersonaChatMessage extends DataClass
           factId == null && nullToAbsent ? const Value.absent() : Value(factId),
       isRead: Value(isRead),
       timestamp: Value(timestamp),
+      messageType: Value(messageType),
     );
   }
 
@@ -3414,6 +3444,7 @@ class PersonaChatMessage extends DataClass
       factId: serializer.fromJson<String?>(json['factId']),
       isRead: serializer.fromJson<bool>(json['isRead']),
       timestamp: serializer.fromJson<DateTime>(json['timestamp']),
+      messageType: serializer.fromJson<String>(json['messageType']),
     );
   }
   @override
@@ -3427,6 +3458,7 @@ class PersonaChatMessage extends DataClass
       'factId': serializer.toJson<String?>(factId),
       'isRead': serializer.toJson<bool>(isRead),
       'timestamp': serializer.toJson<DateTime>(timestamp),
+      'messageType': serializer.toJson<String>(messageType),
     };
   }
 
@@ -3437,7 +3469,8 @@ class PersonaChatMessage extends DataClass
           String? content,
           Value<String?> factId = const Value.absent(),
           bool? isRead,
-          DateTime? timestamp}) =>
+          DateTime? timestamp,
+          String? messageType}) =>
       PersonaChatMessage(
         id: id ?? this.id,
         characterId: characterId ?? this.characterId,
@@ -3446,6 +3479,7 @@ class PersonaChatMessage extends DataClass
         factId: factId.present ? factId.value : this.factId,
         isRead: isRead ?? this.isRead,
         timestamp: timestamp ?? this.timestamp,
+        messageType: messageType ?? this.messageType,
       );
   PersonaChatMessage copyWithCompanion(PersonaChatMessagesCompanion data) {
     return PersonaChatMessage(
@@ -3459,6 +3493,8 @@ class PersonaChatMessage extends DataClass
       factId: data.factId.present ? data.factId.value : this.factId,
       isRead: data.isRead.present ? data.isRead.value : this.isRead,
       timestamp: data.timestamp.present ? data.timestamp.value : this.timestamp,
+      messageType:
+          data.messageType.present ? data.messageType.value : this.messageType,
     );
   }
 
@@ -3471,14 +3507,15 @@ class PersonaChatMessage extends DataClass
           ..write('content: $content, ')
           ..write('factId: $factId, ')
           ..write('isRead: $isRead, ')
-          ..write('timestamp: $timestamp')
+          ..write('timestamp: $timestamp, ')
+          ..write('messageType: $messageType')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
-      id, characterId, isFromCharacter, content, factId, isRead, timestamp);
+  int get hashCode => Object.hash(id, characterId, isFromCharacter, content,
+      factId, isRead, timestamp, messageType);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -3489,7 +3526,8 @@ class PersonaChatMessage extends DataClass
           other.content == this.content &&
           other.factId == this.factId &&
           other.isRead == this.isRead &&
-          other.timestamp == this.timestamp);
+          other.timestamp == this.timestamp &&
+          other.messageType == this.messageType);
 }
 
 class PersonaChatMessagesCompanion extends UpdateCompanion<PersonaChatMessage> {
@@ -3500,6 +3538,7 @@ class PersonaChatMessagesCompanion extends UpdateCompanion<PersonaChatMessage> {
   final Value<String?> factId;
   final Value<bool> isRead;
   final Value<DateTime> timestamp;
+  final Value<String> messageType;
   const PersonaChatMessagesCompanion({
     this.id = const Value.absent(),
     this.characterId = const Value.absent(),
@@ -3508,6 +3547,7 @@ class PersonaChatMessagesCompanion extends UpdateCompanion<PersonaChatMessage> {
     this.factId = const Value.absent(),
     this.isRead = const Value.absent(),
     this.timestamp = const Value.absent(),
+    this.messageType = const Value.absent(),
   });
   PersonaChatMessagesCompanion.insert({
     this.id = const Value.absent(),
@@ -3517,6 +3557,7 @@ class PersonaChatMessagesCompanion extends UpdateCompanion<PersonaChatMessage> {
     this.factId = const Value.absent(),
     this.isRead = const Value.absent(),
     required DateTime timestamp,
+    this.messageType = const Value.absent(),
   })  : characterId = Value(characterId),
         isFromCharacter = Value(isFromCharacter),
         content = Value(content),
@@ -3529,6 +3570,7 @@ class PersonaChatMessagesCompanion extends UpdateCompanion<PersonaChatMessage> {
     Expression<String>? factId,
     Expression<bool>? isRead,
     Expression<DateTime>? timestamp,
+    Expression<String>? messageType,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -3538,6 +3580,7 @@ class PersonaChatMessagesCompanion extends UpdateCompanion<PersonaChatMessage> {
       if (factId != null) 'fact_id': factId,
       if (isRead != null) 'is_read': isRead,
       if (timestamp != null) 'timestamp': timestamp,
+      if (messageType != null) 'message_type': messageType,
     });
   }
 
@@ -3548,7 +3591,8 @@ class PersonaChatMessagesCompanion extends UpdateCompanion<PersonaChatMessage> {
       Value<String>? content,
       Value<String?>? factId,
       Value<bool>? isRead,
-      Value<DateTime>? timestamp}) {
+      Value<DateTime>? timestamp,
+      Value<String>? messageType}) {
     return PersonaChatMessagesCompanion(
       id: id ?? this.id,
       characterId: characterId ?? this.characterId,
@@ -3557,6 +3601,7 @@ class PersonaChatMessagesCompanion extends UpdateCompanion<PersonaChatMessage> {
       factId: factId ?? this.factId,
       isRead: isRead ?? this.isRead,
       timestamp: timestamp ?? this.timestamp,
+      messageType: messageType ?? this.messageType,
     );
   }
 
@@ -3584,6 +3629,9 @@ class PersonaChatMessagesCompanion extends UpdateCompanion<PersonaChatMessage> {
     if (timestamp.present) {
       map['timestamp'] = Variable<DateTime>(timestamp.value);
     }
+    if (messageType.present) {
+      map['message_type'] = Variable<String>(messageType.value);
+    }
     return map;
   }
 
@@ -3596,7 +3644,8 @@ class PersonaChatMessagesCompanion extends UpdateCompanion<PersonaChatMessage> {
           ..write('content: $content, ')
           ..write('factId: $factId, ')
           ..write('isRead: $isRead, ')
-          ..write('timestamp: $timestamp')
+          ..write('timestamp: $timestamp, ')
+          ..write('messageType: $messageType')
           ..write(')'))
         .toString();
   }
@@ -5576,6 +5625,7 @@ typedef $$PersonaChatMessagesTableCreateCompanionBuilder
   Value<String?> factId,
   Value<bool> isRead,
   required DateTime timestamp,
+  Value<String> messageType,
 });
 typedef $$PersonaChatMessagesTableUpdateCompanionBuilder
     = PersonaChatMessagesCompanion Function({
@@ -5586,6 +5636,7 @@ typedef $$PersonaChatMessagesTableUpdateCompanionBuilder
   Value<String?> factId,
   Value<bool> isRead,
   Value<DateTime> timestamp,
+  Value<String> messageType,
 });
 
 class $$PersonaChatMessagesTableFilterComposer
@@ -5618,6 +5669,9 @@ class $$PersonaChatMessagesTableFilterComposer
 
   ColumnFilters<DateTime> get timestamp => $composableBuilder(
       column: $table.timestamp, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get messageType => $composableBuilder(
+      column: $table.messageType, builder: (column) => ColumnFilters(column));
 }
 
 class $$PersonaChatMessagesTableOrderingComposer
@@ -5650,6 +5704,9 @@ class $$PersonaChatMessagesTableOrderingComposer
 
   ColumnOrderings<DateTime> get timestamp => $composableBuilder(
       column: $table.timestamp, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get messageType => $composableBuilder(
+      column: $table.messageType, builder: (column) => ColumnOrderings(column));
 }
 
 class $$PersonaChatMessagesTableAnnotationComposer
@@ -5681,6 +5738,9 @@ class $$PersonaChatMessagesTableAnnotationComposer
 
   GeneratedColumn<DateTime> get timestamp =>
       $composableBuilder(column: $table.timestamp, builder: (column) => column);
+
+  GeneratedColumn<String> get messageType => $composableBuilder(
+      column: $table.messageType, builder: (column) => column);
 }
 
 class $$PersonaChatMessagesTableTableManager extends RootTableManager<
@@ -5720,6 +5780,7 @@ class $$PersonaChatMessagesTableTableManager extends RootTableManager<
             Value<String?> factId = const Value.absent(),
             Value<bool> isRead = const Value.absent(),
             Value<DateTime> timestamp = const Value.absent(),
+            Value<String> messageType = const Value.absent(),
           }) =>
               PersonaChatMessagesCompanion(
             id: id,
@@ -5729,6 +5790,7 @@ class $$PersonaChatMessagesTableTableManager extends RootTableManager<
             factId: factId,
             isRead: isRead,
             timestamp: timestamp,
+            messageType: messageType,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
@@ -5738,6 +5800,7 @@ class $$PersonaChatMessagesTableTableManager extends RootTableManager<
             Value<String?> factId = const Value.absent(),
             Value<bool> isRead = const Value.absent(),
             required DateTime timestamp,
+            Value<String> messageType = const Value.absent(),
           }) =>
               PersonaChatMessagesCompanion.insert(
             id: id,
@@ -5747,6 +5810,7 @@ class $$PersonaChatMessagesTableTableManager extends RootTableManager<
             factId: factId,
             isRead: isRead,
             timestamp: timestamp,
+            messageType: messageType,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

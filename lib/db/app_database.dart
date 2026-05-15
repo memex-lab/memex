@@ -1,6 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
-import 'package:flutter/foundation.dart' show visibleForTesting;
+import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 
 // Import tables
@@ -68,10 +68,15 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase._(String userId) : super(_openConnection(userId));
 
   @visibleForTesting
-  AppDatabase.forTesting(super.e);
+  static void setTestInstance(AppDatabase database) {
+    _instance = database;
+  }
+
+  @visibleForTesting
+  AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 14;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -168,6 +173,20 @@ class AppDatabase extends _$AppDatabase {
           if (from < 12) {
             await m.createTable(userNotifications);
             await _createUserNotificationIndices();
+          }
+          if (from < 13) {
+            // Create FTS5 virtual tables for character world and timeline search.
+            await searchDao.createCharacterFtsTables();
+          }
+          if (from < 14) {
+            // Add messageType column to persona_chat_messages.
+            try {
+              await customStatement(
+                  "ALTER TABLE persona_chat_messages ADD COLUMN message_type TEXT NOT NULL DEFAULT 'chat'");
+            } catch (e) {
+              _logger
+                  .info('message_type column may already exist, skipping: $e');
+            }
           }
         },
       );

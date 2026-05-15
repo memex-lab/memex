@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:memex/ui/core/cards/ui/glass_card.dart';
+import 'package:memex/utils/date_util.dart';
+import 'package:memex/utils/user_storage.dart';
 
 class TaskCard extends StatefulWidget {
   final Map<String, dynamic> data;
@@ -83,6 +86,10 @@ class _TaskCardState extends State<TaskCard> {
   Widget build(BuildContext context) {
     final String title = widget.data['title'] ?? 'Task';
     final bool hasSubtasks = _subtasks.isNotEmpty;
+    final dueDate = parseLocalDateTime(widget.data['due_date']);
+    final dueDateLabel = dueDate == null
+        ? widget.data['due_date']?.toString()
+        : DateFormat.yMd(UserStorage.l10n.localeName).add_Hm().format(dueDate);
 
     return GlassCard(
       onTap: widget.onTap,
@@ -122,7 +129,8 @@ class _TaskCardState extends State<TaskCard> {
                         decorationColor: const Color(0xFF99A1AF))),
               ),
               if (widget.data['priority'] == 'high')
-                const Icon(Icons.priority_high, size: 16, color: Color(0xFFF43F5E))
+                const Icon(Icons.priority_high,
+                    size: 16, color: Color(0xFFF43F5E))
             ],
           ),
           if (hasSubtasks) ...[
@@ -147,16 +155,18 @@ class _TaskCardState extends State<TaskCard> {
                                 ? Icons.check_box
                                 : Icons.check_box_outline_blank,
                             size: 18,
-                            color:
-                                done ? const Color(0xFF99A1AF) : const Color(0xFF4A5565)),
+                            color: done
+                                ? const Color(0xFF99A1AF)
+                                : const Color(0xFF4A5565)),
                       ),
                     ),
                     Expanded(
                       child: Text(task['title'] ?? '',
                           style: TextStyle(
                               fontSize: 13,
-                              color:
-                                  done ? const Color(0xFF99A1AF) : const Color(0xFF334155),
+                              color: done
+                                  ? const Color(0xFF99A1AF)
+                                  : const Color(0xFF334155),
                               decoration:
                                   done ? TextDecoration.lineThrough : null)),
                     ),
@@ -165,11 +175,14 @@ class _TaskCardState extends State<TaskCard> {
               );
             }),
           ] else ...[
-            if (widget.data['due_date'] != null)
+            if (dueDateLabel != null && dueDateLabel.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 8, left: 32),
-                child: Text("${widget.data['due_date']}",
-                    style: const TextStyle(fontSize: 11, color: Color(0xFF99A1AF))),
+                child: Text(
+                  dueDateLabel,
+                  style:
+                      const TextStyle(fontSize: 11, color: Color(0xFF99A1AF)),
+                ),
               )
           ]
         ],

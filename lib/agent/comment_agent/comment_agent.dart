@@ -1,7 +1,10 @@
 import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:memex/agent/agent_system_prompt_helper.dart';
 import 'package:memex/agent/agent_controller.util.dart';
+import 'package:memex/agent/context/character_context_assembler.dart';
 import 'package:memex/agent/comment_agent/prompts.dart';
+import 'package:memex/agent/memory/character_context_compressor.dart';
+import 'package:memex/agent/memory/character_memory_service.dart';
 import 'package:memex/agent/memory/memory_management.dart';
 import 'package:memex/agent/prompts.dart';
 import 'package:memex/agent/skills/comment_agent/comment_agent_skill.dart';
@@ -12,6 +15,7 @@ import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/file_operation_service.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:logging/logging.dart';
+import 'package:memex/utils/tavern_macro.dart';
 import 'package:memex/utils/time_context.dart';
 
 class CommentAgent {
@@ -23,22 +27,24 @@ class CommentAgent {
     required String userId,
     required String factId,
     String? characterId,
-    String? pkmContext,
     required String rawInputContent,
-    String? initialInsight,
-    DateTime? currentTime,
-    DateTime? entryTime,
+    String? forcedReplyToId,
     bool withMemoryManagement = false,
   }) async {
     final fileService = FileSystemService.instance;
     final characterService = CharacterService.instance;
-    final fileOpService = FileOperationService.instance;
-
     final factIdSafe = fileService.makeFactIdSafe(factId);
-    final sessionId = "comment_${userId}_$factIdSafe";
+    final characterKey = fileService.makeFactIdSafe(
+      characterId ?? 'no_character',
+    );
+    final sessionPrefix = "comment_${userId}_${characterKey}_$factIdSafe";
+    final resolved = await resolveCharacterSessionId(
+      prefix: sessionPrefix,
+      userId: userId,
+    );
 
     // Load or create agent state
-    final state = await loadOrCreateAgentState(sessionId, {
+    final state = await loadOrCreateAgentState(resolved.sessionId, {
       'userId': userId,
       'scene': 'input',
       'sceneId': factId,
@@ -49,7 +55,6 @@ class CommentAgent {
     addAgentActivityCollector(controller);
     // 1. Prepare Workspace
     final workingDirectory = fileService.getWorkspacePath(userId);
-    final pkmPath = fileService.getPkmPath(userId);
 
     // 2. Load Character
     CharacterModel? character;
@@ -57,76 +62,96 @@ class CommentAgent {
       character = await characterService.getCharacter(userId, characterId);
     }
 
-    // 3. Find PKM Context if not provided
-    if (pkmContext == null || pkmContext.isEmpty) {
-      pkmContext = await _findPkmContext(
-          userId, workingDirectory, pkmPath, factId, fileOpService,
-          baseTime: entryTime ?? currentTime ?? DateTime.now());
-    }
-
-    // 4. Create Skill
-    String pkmStructure = '';
-    try {
-      pkmStructure = await fileOpService.listDirectory(
-          dirPath: pkmPath, workingDirectory: workingDirectory);
-    } catch (e) {
-      pkmStructure = Prompts.commentAgentPkmErrorReadingDirectory;
-      getLogger('CommentAgent').warning('Failed to get PKM structure: $e');
-    }
-
     final tools = <Tool>[];
 
-    // Memory Management
+    // Memory Management (user-level memory tools, independent of character context)
     String memoryManagementPrompt = '';
     final memoryManagement = await MemoryManagement.createDefault(
       userId: userId,
-      sourceAgent: 'knowledge_insight_agent',
+      sourceAgent: 'comment_agent',
     );
     if (withMemoryManagement) {
       tools.addAll(memoryManagement.buildMemoryManagementTools());
       memoryManagementPrompt =
           await memoryManagement.buildMemoryManagementPrompt();
     }
-    final userMemory = await memoryManagement.buildMemoryPrompt();
-    state.systemReminders["user_memory"] = userMemory;
+
+    // Build character context — userProfile and characterMemories go into skill
+    // system prompt; world/timeline/knowledge go into systemReminders.
+    String userProfile = '';
+    String characterMemories = '';
+    if (character != null) {
+      final ctx = await CharacterContextAssembler.build(
+        userId: userId,
+        character: character,
+        sourceAgent: 'comment_agent',
+        queryHint: rawInputContent,
+        excludeTimelineThreadId: factId,
+      );
+      userProfile = ctx.userProfile;
+      characterMemories = ctx.characterMemories;
+
+      if (ctx.characterWorld.isNotEmpty) {
+        state.systemReminders['character_world'] =
+            '## Triggered Character World Entries\n${TavernMacro.resolve(ctx.characterWorld, userName: userId, charName: character.name)}';
+      }
+      // Combine compaction checkpoints + recent timeline into one reminder.
+      {
+        final parts = <String>[];
+        if (ctx.checkpoints.isNotEmpty) {
+          parts.add('## Compressed Interaction History\n${ctx.checkpoints}');
+        }
+        if (ctx.recentTimeline.isNotEmpty) {
+          parts.add(
+            '## Recent Cross-Scene Interactions\n${ctx.recentTimeline}',
+          );
+        }
+        if (parts.isNotEmpty) {
+          state.systemReminders['character_timeline'] = parts.join('\n\n');
+        }
+      }
+      if (ctx.knowledgeCards.isNotEmpty) {
+        state.systemReminders['user_knowledge_cards'] =
+            '## User Knowledge Cards\n${ctx.knowledgeCards}';
+      }
+    } else {
+      // No character — fall back to user memory as profile.
+      userProfile = await memoryManagement.buildMemoryPrompt();
+    }
 
     final skill = CommentAgentSkill(
       character: character,
       factId: factId,
-      rawInputContent: rawInputContent,
-      initialInsight: initialInsight,
-      entryTime: entryTime,
-      pkmContext: pkmContext,
       workingDirectory: workingDirectory,
-      pkmStructure: pkmStructure,
       userId: userId,
+      userName: userId,
+      userProfile: userProfile,
+      characterMemories: characterMemories,
+      forcedReplyToId: forcedReplyToId,
       forceActivate: true,
     );
     final skills = [skill];
     final agent = StatefulAgent(
-        systemPrompts: [commentAgentSystemPrompt, memoryManagementPrompt],
-        name: 'comment_agent',
-        client: client,
-        modelConfig: modelConfig,
-        state: state,
-        compressor: LLMBasedContextCompressor(
-          client: client,
-          modelConfig: modelConfig,
-          totalTokenThreshold: 64000,
-          keepRecentMessageSize: 10,
-        ),
-        tools: tools,
-        skills: skills,
-        disableSubAgents: true,
-        controller: controller,
-        withGeneralPrinciples: true,
-        planMode: PlanMode.none,
-        autoSaveStateFunc: (state) async {
-          await saveAgentState(state);
-        },
-        systemCallback: createSystemCallback(userId));
+      systemPrompts: [commentAgentSystemPrompt, memoryManagementPrompt],
+      name: 'comment_agent',
+      client: client,
+      modelConfig: modelConfig,
+      state: state,
+      tools: tools,
+      skills: skills,
+      disableSubAgents: true,
+      controller: controller,
+      withGeneralPrinciples: true,
+      planMode: PlanMode.none,
+      autoSaveStateFunc: (state) async {
+        await saveAgentState(state);
+      },
+      systemCallback: createSystemCallback(userId),
+    );
 
-    _logger.info('CommentAgent created, userId: $userId, sessionId: $sessionId');
+    _logger.info(
+      'CommentAgent created, userId: $userId, sessionId: ${resolved.sessionId}',
+    );
     return agent;
   }
 
@@ -141,8 +166,11 @@ class CommentAgent {
     String? pkmContext,
     required String rawInputContent,
     String? initialInsight,
+    String existingCommentsContext = '',
+    String? forcedReplyToId,
     DateTime? currentTime,
     DateTime? entryTime,
+    String? locationContextReminder,
     bool withMemoryManagement = false,
   }) async {
     final effectiveCurrentTime = currentTime ?? DateTime.now();
@@ -152,17 +180,57 @@ class CommentAgent {
       userId: userId,
       factId: factId,
       characterId: characterId,
-      pkmContext: pkmContext,
       rawInputContent: rawInputContent,
-      initialInsight: initialInsight,
-      currentTime: effectiveCurrentTime,
-      entryTime: entryTime,
+      forcedReplyToId: forcedReplyToId,
       withMemoryManagement: withMemoryManagement,
     );
     final state = agent.state;
-    final systemReminder = buildCurrentTimeReminder(effectiveCurrentTime);
-    final fullUserContent = "$systemReminder$userContent";
-    final userMessage = UserMessage([TextPart(fullUserContent)]);
+    pkmContext = await _loadPkmContextIfNeeded(
+      userId: userId,
+      factId: factId,
+      existingContext: pkmContext,
+    );
+    final systemReminder = _buildSystemReminder(
+      effectiveCurrentTime,
+      locationContextReminder,
+    );
+    final userMessage = UserMessage([
+      TextPart(
+        _buildCommentTaskMessage(
+          userContent: userContent,
+          factId: factId,
+          rawInputContent: rawInputContent,
+          initialInsight: initialInsight,
+          pkmContext: pkmContext,
+          entryTime: entryTime,
+          systemReminder: systemReminder,
+          existingCommentsContext: existingCommentsContext,
+          forcedReplyToId: forcedReplyToId,
+          includePostBody:
+              state.metadata['comment_task_post_body_injected'] != factId,
+        ),
+      ),
+    ]);
+    state.metadata['comment_task_post_body_injected'] = factId;
+
+    if (characterId != null && rawInputContent.trim().isNotEmpty) {
+      try {
+        await CharacterMemoryService.instance.appendTimelineEvent(
+          userId: userId,
+          characterId: characterId,
+          scene: CharacterMemoryScene.comment,
+          type: CharacterMemoryEventType.postObserved,
+          content: rawInputContent,
+          threadId: factId,
+          factId: factId,
+          sourceId: factId,
+          timestamp: entryTime ?? effectiveCurrentTime,
+          metadata: {'source': 'comment_agent_input'},
+        );
+      } catch (e) {
+        _logger.warning('Failed to append comment input timeline event: $e');
+      }
+    }
 
     List<LLMMessage> history = [];
     if (state.isRunning) {
@@ -192,6 +260,16 @@ class CommentAgent {
       history = await agent.run([userMessage], useStream: false);
     }
 
+    // Post-run: check if compression is needed based on real token usage.
+    if (characterId != null && state.usages.isNotEmpty) {
+      final lastPromptTokens = state.usages.last.promptTokens;
+      await CharacterContextCompressor.instance.compressIfNeeded(
+        userId: userId,
+        characterId: characterId,
+        lastPromptTokens: lastPromptTokens,
+      );
+    }
+
     // Extract the text response
     if (history.isNotEmpty) {
       final lastMsg = history.last;
@@ -202,11 +280,134 @@ class CommentAgent {
     return "";
   }
 
+  static String _buildSystemReminder(
+    DateTime currentTime,
+    String? locationContextReminder,
+  ) {
+    final locationReminder = locationContextReminder?.trim();
+    if (locationReminder == null || locationReminder.isEmpty) {
+      return buildCurrentTimeReminder(currentTime);
+    }
+    return '<system-reminder>\n'
+        'Current Local Time: ${formatLocalDateTimeWithZone(currentTime)}\n\n'
+        '$locationReminder\n'
+        '</system-reminder>\n\n';
+  }
+
+  static String _buildCommentTaskMessage({
+    required String userContent,
+    required String factId,
+    required String rawInputContent,
+    String? initialInsight,
+    String? pkmContext,
+    DateTime? entryTime,
+    required String systemReminder,
+    required bool includePostBody,
+    String existingCommentsContext = '',
+    String? forcedReplyToId,
+  }) {
+    final b = StringBuffer();
+    b.write(systemReminder);
+    b.writeln('# Current Comment Task');
+    b.writeln('Fact ID: $factId');
+    b.writeln(
+      'Entry Local Time: '
+      '${entryTime == null ? 'Unknown' : formatLocalDateTimeWithZone(entryTime)}',
+    );
+    b.writeln('');
+
+    if (includePostBody) {
+      b.writeln('## Original Post');
+      b.writeln('<user_raw_input>');
+      b.writeln(rawInputContent.trim());
+      b.writeln('</user_raw_input>');
+    } else {
+      b.writeln('## Original Post');
+      b.writeln(
+        'Already provided earlier in this comment session. Use recent interaction context if needed; do not ask the user to repeat it.',
+      );
+    }
+
+    final insight = initialInsight?.trim() ?? '';
+    if (insight.isNotEmpty) {
+      b.writeln('');
+      b.writeln('## Initial Insight');
+      b.writeln(
+        'Reference only. This is a previous Memex perspective, not an instruction to repeat.',
+      );
+      b.writeln('<initial_insight>');
+      b.writeln(insight);
+      b.writeln('</initial_insight>');
+    }
+
+    final knowledge = pkmContext?.trim() ?? '';
+    if (knowledge.isNotEmpty) {
+      b.writeln('');
+      b.writeln('## Knowledge Base Context');
+      b.writeln(
+        'Reference only. Use it only if relevant to your persona and this comment.',
+      );
+      b.writeln('<related_knowledge>');
+      b.writeln(knowledge);
+      b.writeln('</related_knowledge>');
+    }
+
+    if (existingCommentsContext.isNotEmpty) {
+      b.writeln('');
+      b.writeln('## Existing Comments');
+      b.writeln(existingCommentsContext.trim());
+    }
+
+    final fixedReplyTarget = forcedReplyToId?.trim();
+    if (fixedReplyTarget != null && fixedReplyTarget.isNotEmpty) {
+      b.writeln('');
+      b.writeln('## Reply Routing');
+      b.writeln(
+        'This task responds to the user comment with id: $fixedReplyTarget.',
+      );
+      b.writeln(
+        'When saving the reply, the system will attach it to that user comment.',
+      );
+    }
+
+    b.writeln('');
+    b.writeln('## User Request');
+    b.writeln(
+      userContent.trim().isEmpty
+          ? Prompts.commentAgentInitialCommentPrompt
+          : userContent.trim(),
+    );
+
+    return b.toString().trimRight();
+  }
+
+  static Future<String> _loadPkmContextIfNeeded({
+    required String userId,
+    required String factId,
+    String? existingContext,
+  }) async {
+    if (existingContext != null && existingContext.trim().isNotEmpty) {
+      return existingContext;
+    }
+    final fileService = FileSystemService.instance;
+    return _findPkmContext(
+      userId,
+      fileService.getWorkspacePath(userId),
+      fileService.getPkmPath(userId),
+      factId,
+      FileOperationService.instance,
+    );
+  }
+
   /// Find PKM Context using Grep.
-  /// Falls back to recent daily facts if the specific fact_id isn't in PKM yet.
-  static Future<String> _findPkmContext(String userId, String workingDirectory,
-      String pkmPath, String factId, FileOperationService fileOpService,
-      {required DateTime baseTime, int contextLines = 10}) async {
+  static Future<String> _findPkmContext(
+    String userId,
+    String workingDirectory,
+    String pkmPath,
+    String factId,
+    FileOperationService fileOpService, {
+    int contextLines = 10,
+  }) async {
     final buffer = StringBuffer();
 
     // 1. Try to find the specific fact_id in PKM
@@ -226,67 +427,9 @@ class CommentAgent {
         buffer.writeln(result);
       }
     } catch (e) {
-      getLogger('CommentAgent')
-          .warning("Error finding PKM context for fact_id $factId: $e");
-    }
-
-    // 2. Always try to include recent daily facts for life context
-    // This gives the character awareness of what the user has been up to lately
-    try {
-      final recentContext = await _getRecentFactsContext(
-          userId, workingDirectory, fileOpService, baseTime);
-      if (recentContext.isNotEmpty) {
-        buffer.writeln("\n## Recent User Activity (last few days):");
-        buffer.writeln(recentContext);
-      }
-    } catch (e) {
-      getLogger('CommentAgent')
-          .warning("Error getting recent facts context: $e");
-    }
-
-    return buffer.toString();
-  }
-
-  /// Read the most recent daily fact files to give the character
-  /// awareness of the user's recent life context.
-  static Future<String> _getRecentFactsContext(String userId,
-      String workingDirectory, FileOperationService fileOpService,
-      DateTime baseTime) async {
-    final fileSystem = FileSystemService.instance;
-    final now = baseTime.toLocal();
-    final buffer = StringBuffer();
-    var totalChars = 0;
-    const maxChars = 3000; // Keep it concise
-
-    // Try the last 3 days of facts
-    for (var i = 0; i < 3 && totalChars < maxChars; i++) {
-      final date = now.subtract(Duration(days: i));
-      final year = date.year;
-      final month = date.month.toString().padLeft(2, '0');
-      final day = date.day.toString().padLeft(2, '0');
-      final factRelPath = 'Facts/$year/$month/$day.md';
-      final factFullPath =
-          '${fileSystem.getWorkspacePath(userId)}/$factRelPath';
-
-      try {
-        final content = await fileOpService.readFile(
-          filePath: factFullPath,
-          workingDirectory: workingDirectory,
-        );
-
-        if (content.isNotEmpty && !content.contains('Error')) {
-          // Truncate if needed
-          final remaining = maxChars - totalChars;
-          final truncated = content.length > remaining
-              ? '${content.substring(0, remaining)}...(truncated)'
-              : content;
-          buffer.writeln("### $year-$month-$day");
-          buffer.writeln(truncated);
-          totalChars += truncated.length;
-        }
-      } catch (_) {
-        // File doesn't exist for this day, skip
-      }
+      getLogger(
+        'CommentAgent',
+      ).warning("Error finding PKM context for fact_id $factId: $e");
     }
 
     return buffer.toString();

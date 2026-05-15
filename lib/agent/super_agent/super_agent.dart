@@ -95,8 +95,9 @@ class SuperAgent {
       userId: userId,
       sourceAgent: name,
     );
-    final memoryManagementPrompt =
-        await memoryManagement.buildMemoryManagementPrompt();
+    final memorySystemPrompt = quickQuery
+        ? await memoryManagement.buildMemoryReadOnlyPrompt()
+        : await memoryManagement.buildSuperAgentMemoryManagementPrompt();
     if (!quickQuery) {
       final memoryManagementTools =
           memoryManagement.buildMemoryManagementTools();
@@ -126,7 +127,7 @@ class SuperAgent {
       }
     }
 
-    final systemPrompts = [superAgentSystemPrompt, memoryManagementPrompt];
+    final systemPrompts = [superAgentSystemPrompt, memorySystemPrompt];
     if (quickQuery) {
       systemPrompts.add(
         '## Quick Query Mode\n'

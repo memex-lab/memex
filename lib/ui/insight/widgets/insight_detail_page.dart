@@ -57,7 +57,8 @@ class _InsightDetailPageState extends State<InsightDetailPage> {
     });
 
     try {
-      final detailLoader = widget.detailLoader ?? _memexRouter.fetchInsightDetail;
+      final detailLoader =
+          widget.detailLoader ?? _memexRouter.fetchInsightDetail;
       final detail = await detailLoader(widget.id);
       if (!mounted) return;
       setState(() {

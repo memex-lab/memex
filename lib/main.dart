@@ -33,6 +33,7 @@ import 'package:memex/ui/main_screen/widgets/input_sheet.dart';
 import 'package:memex/ui/settings/widgets/model_config_list_page.dart';
 import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/data/services/event_bus_service.dart';
+import 'package:memex/data/services/local_task_executor.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/data/services/publish_timestamp_service.dart';
 import 'package:memex/data/services/health_service.dart';
@@ -49,6 +50,7 @@ import 'package:memex/ui/agent_activity/widgets/agent_activity_widget.dart';
 import 'package:memex/ui/main_screen/widgets/ai_core_button.dart';
 import 'package:memex/db/app_database.dart';
 import 'package:memex/data/services/local_server_service.dart';
+import 'package:memex/data/services/app_update_service.dart';
 import 'package:go_router/go_router.dart';
 import 'package:memex/routing/router.dart';
 import 'package:memex/data/services/onboarding_service.dart';
@@ -306,10 +308,16 @@ class _MemexAppState extends State<MemexApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused) {
+      unawaited(LocalTaskExecutor.instance
+          .recordGracefulShutdown(reason: 'app_lifecycle_paused'));
       _lastPausedTime = DateTime.now();
       _checkLockSettingsBeforeLocking();
     } else if (state == AppLifecycleState.resumed) {
+      unawaited(LocalTaskExecutor.instance.clearGracefulShutdownMarker());
       _checkGracePeriod();
+    } else if (state == AppLifecycleState.detached) {
+      unawaited(LocalTaskExecutor.instance
+          .recordGracefulShutdown(reason: 'app_lifecycle_detached'));
     }
   }
 
@@ -442,6 +450,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   final GlobalKey _mainStackKey = GlobalKey();
   bool _isInvalidConfigDialogShowing = false;
   bool _isErrorNotificationDialogShowing = false;
+  bool _earlyUpdateCheckStarted = false;
   late final ShareIntentHandler _shareIntentHandler;
   InputData? _sharedDraft;
 
@@ -496,6 +505,139 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     // Consume pending quick action (app icon long-press shortcut).
     QuickActionService.instance.attach();
     _consumeQuickActionIfNeeded();
+
+    _scheduleEarlyUpdateCheck();
+  }
+
+  void _scheduleEarlyUpdateCheck() {
+    final service = AppUpdateService.instance;
+    if (!service.isSupported || _earlyUpdateCheckStarted) return;
+    _earlyUpdateCheckStarted = true;
+    Future.delayed(const Duration(seconds: 3), () {
+      if (!mounted) return;
+      unawaited(_checkEarlyUpdateInBackground());
+    });
+  }
+
+  Future<void> _checkEarlyUpdateInBackground() async {
+    final service = AppUpdateService.instance;
+    if (!await service.shouldRunAutoCheck()) return;
+
+    try {
+      final settings = await service.loadSettings();
+      final result = await service.checkForUpdate(manual: false);
+      if (!mounted || result.status != AppUpdateCheckStatus.updateAvailable) {
+        return;
+      }
+
+      final update = result.update!;
+      if (settings.autoDownloadAndInstall) {
+        await _downloadAndInstallEarlyUpdate(update);
+      } else {
+        _showEarlyUpdateDialog(update);
+      }
+    } catch (e, st) {
+      _logger.warning('Early update check failed: $e', e, st);
+    }
+  }
+
+  void _showEarlyUpdateDialog(AppUpdateInfo update) {
+    final context = rootNavigatorKey.currentContext;
+    if (context == null) return;
+
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        final notes = update.releaseNotes.trim();
+        return AlertDialog(
+          title: Text(UserStorage.l10n.earlyUpdateDialogTitle),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  UserStorage.l10n.earlyUpdateFound(
+                    update.versionName,
+                    update.buildNumber,
+                  ),
+                ),
+                if (notes.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    UserStorage.l10n.earlyUpdateReleaseNotes,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    notes,
+                    maxLines: 8,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(UserStorage.l10n.cancel),
+            ),
+            FilledButton.icon(
+              onPressed: () {
+                Navigator.of(context).pop();
+                unawaited(_downloadAndInstallEarlyUpdate(update));
+              },
+              icon: const Icon(Icons.download, size: 18),
+              label: Text(UserStorage.l10n.earlyUpdateDownloadAndInstall),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _downloadAndInstallEarlyUpdate(AppUpdateInfo update) async {
+    final context = rootNavigatorKey.currentContext;
+    if (context != null) {
+      ToastHelper.showInfo(
+        context,
+        UserStorage.l10n.earlyUpdateDownloadingPercent(0),
+      );
+    }
+
+    try {
+      final download = await AppUpdateService.instance.downloadUpdate(update);
+      final install =
+          await AppUpdateService.instance.installUpdate(download.apkPath);
+      final currentContext = rootNavigatorKey.currentContext;
+      if (currentContext == null) return;
+
+      switch (install.status) {
+        case AppUpdateInstallStatus.started:
+          ToastHelper.showSuccess(
+            currentContext,
+            UserStorage.l10n.earlyUpdateInstallStarted,
+          );
+        case AppUpdateInstallStatus.permissionRequired:
+          ToastHelper.showInfo(
+            currentContext,
+            UserStorage.l10n.earlyUpdateInstallPermissionRequired,
+          );
+        case AppUpdateInstallStatus.unsupported:
+          break;
+      }
+    } catch (e) {
+      final currentContext = rootNavigatorKey.currentContext;
+      if (e is AppUpdateWifiRequiredException) {
+        ToastHelper.showInfo(
+          currentContext,
+          UserStorage.l10n.earlyUpdateSkippedMobile,
+        );
+      } else {
+        ToastHelper.showError(currentContext, e);
+      }
+    }
   }
 
   void _handleInvalidModelConfig(EventBusMessage message) {

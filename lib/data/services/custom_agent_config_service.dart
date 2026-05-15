@@ -131,6 +131,12 @@ String _userInputCompactXml(SystemEvent event) {
   if (payload is UserInputSubmittedPayload) {
     final inputTime = dateTimeFromUnixSeconds(payload.createdAtTs);
     buf.writeln('  <fact_id>${_xmlEscape(payload.factId)}</fact_id>');
+    if (payload.locationContextReminder != null &&
+        payload.locationContextReminder!.trim().isNotEmpty) {
+      buf.writeln('  <location_context>');
+      buf.writeln(_xmlEscape(payload.locationContextReminder!.trim()));
+      buf.writeln('  </location_context>');
+    }
     buf.writeln(
         '  <input_local_time>${_xmlEscape(formatLocalDateTimeWithZone(inputTime))}</input_local_time>');
     buf.writeln(

@@ -1,16 +1,16 @@
-/// Agent System Prompt Helper
-///
-/// Load agent custom prompt config from workspace/_user_id/_UserSettings/prompts/.
-/// Config file name is {agent_name}.conf, supporting:
-///
-/// 1. System Prompt:
-///    - Override mode: replace the entire system_prompt
-///    - Replace mode: replace specified strings in system_prompt (supports multiline)
-///
-/// 2. Tool:
-///    - Match tools by name, override description and/or parameters
-///
-/// Config format: see doc comments in Python agent_system_prompt_helper.py.
+// Agent System Prompt Helper
+//
+// Load agent custom prompt config from workspace/_user_id/_UserSettings/prompts/.
+// Config file name is {agent_name}.conf, supporting:
+//
+// 1. System Prompt:
+//    - Override mode: replace the entire system_prompt
+//    - Replace mode: replace specified strings in system_prompt (supports multiline)
+//
+// 2. Tool:
+//    - Match tools by name, override description and/or parameters
+//
+// Config format: see doc comments in Python agent_system_prompt_helper.py.
 
 import 'dart:convert';
 import 'dart:io';
@@ -67,15 +67,18 @@ AgentPromptConfig _parseConfig(String content) {
   final config = AgentPromptConfig();
   final lines = content.split('\n');
   var i = 0;
-  final p = _tagPrefix;
+  const p = _tagPrefix;
 
   while (i < lines.length) {
     final line = lines[i].trim();
 
     if (line == '$p[system_prompt:override]') {
       i++;
-      final (block, nextI) =
-          _extractBlock(lines, i, '$p[/system_prompt:override]');
+      final (block, nextI) = _extractBlock(
+        lines,
+        i,
+        '$p[/system_prompt:override]',
+      );
       i = nextI;
       config.systemPrompt.overrideContent = block;
     } else if (line == '$p[system_prompt:replace]') {
@@ -122,7 +125,8 @@ AgentPromptConfig _parseConfig(String content) {
           );
         } catch (e) {
           _logger.warning(
-              'Failed to parse tool override JSON for "$toolName": $e');
+            'Failed to parse tool override JSON for "$toolName": $e',
+          );
         }
       }
     } else {
@@ -139,7 +143,9 @@ String _getConfigPath(String userId, String agentName) {
 }
 
 Future<AgentPromptConfig?> loadAgentPromptConfig(
-    String userId, String agentName) async {
+  String userId,
+  String agentName,
+) async {
   final configPath = _getConfigPath(userId, agentName);
   final file = File(configPath);
   if (!await file.exists()) return null;
@@ -152,7 +158,7 @@ Future<AgentPromptConfig?> loadAgentPromptConfig(
   }
 }
 
-(SystemMessage?, List<Tool>, List<LLMMessage>) applyPromptConfig(
+SystemCallbackResult applyPromptConfig(
   AgentPromptConfig config,
   SystemMessage? systemMessage,
   List<Tool> tools,
@@ -186,12 +192,17 @@ Future<AgentPromptConfig?> loadAgentPromptConfig(
           parameters: override.parameters ?? newTools[idx].parameters,
           executable: newTools[idx].executable,
           namedParameters: newTools[idx].namedParameters,
+          parameterMode: newTools[idx].parameterMode,
         );
       }
     }
   }
 
-  return (newSystemMessage, newTools, newRequestMessages);
+  return SystemCallbackResult(
+    systemMessage: newSystemMessage,
+    tools: newTools,
+    requestMessages: newRequestMessages,
+  );
 }
 
 /// Create a systemCallback to pass to StatefulAgent.
@@ -199,11 +210,19 @@ Future<AgentPromptConfig?> loadAgentPromptConfig(
 ///
 /// Usage: StatefulAgent(..., systemCallback: createSystemCallback(userId))
 SystemCallback createSystemCallback(String userId) {
-  return (StatefulAgent agent, SystemMessage? systemMessage, List<Tool> tools,
-      List<LLMMessage> requestMessages) async {
+  return (
+    StatefulAgent agent,
+    SystemMessage? systemMessage,
+    List<Tool> tools,
+    List<LLMMessage> requestMessages,
+  ) async {
     final config = await loadAgentPromptConfig(userId, agent.name);
     if (config == null) {
-      return (systemMessage, tools, requestMessages);
+      return SystemCallbackResult(
+        systemMessage: systemMessage,
+        tools: tools,
+        requestMessages: requestMessages,
+      );
     }
     return applyPromptConfig(config, systemMessage, tools, requestMessages);
   };
@@ -226,13 +245,24 @@ SystemCallback createSystemCallbackWithWorkingDirectory(
       ? workingDirectory.substring(0, workingDirectory.length - 1)
       : workingDirectory;
 
-  return (StatefulAgent agent, SystemMessage? systemMessage, List<Tool> tools,
-      List<LLMMessage> requestMessages) async {
+  return (
+    StatefulAgent agent,
+    SystemMessage? systemMessage,
+    List<Tool> tools,
+    List<LLMMessage> requestMessages,
+  ) async {
     // 1. Apply user prompt config first (same as createSystemCallback).
     final config = await loadAgentPromptConfig(userId, agent.name);
     if (config != null) {
-      (systemMessage, tools, requestMessages) =
-          applyPromptConfig(config, systemMessage, tools, requestMessages);
+      final result = applyPromptConfig(
+        config,
+        systemMessage,
+        tools,
+        requestMessages,
+      );
+      systemMessage = result.systemMessage;
+      tools = result.tools;
+      requestMessages = result.requestMessages;
     }
 
     // 2. Mask workingDirectory in system message (skill paths appear here).
@@ -249,7 +279,11 @@ SystemCallback createSystemCallbackWithWorkingDirectory(
     // 4. Wrap RunJavaScript tool to resolve virtual paths back to absolute.
     tools = _wrapRunJavaScriptTool(tools, wd);
 
-    return (systemMessage, tools, requestMessages);
+    return SystemCallbackResult(
+      systemMessage: systemMessage,
+      tools: tools,
+      requestMessages: requestMessages,
+    );
   };
 }
 
@@ -288,8 +322,13 @@ List<LLMMessage> _maskMessagesWorkingDirectory(
         }
       }
       if (msgChanged) {
-        result.add(UserMessage(newContents,
-            timestamp: msg.timestamp, metadata: msg.metadata));
+        result.add(
+          UserMessage(
+            newContents,
+            timestamp: msg.timestamp,
+            metadata: msg.metadata,
+          ),
+        );
         changed = true;
       } else {
         result.add(msg);
@@ -317,17 +356,18 @@ List<Tool> _wrapRunJavaScriptTool(List<Tool> tools, String wd) {
     description: original.description,
     parameters: original.parameters,
     namedParameters: original.namedParameters,
-    executable: (String script_path, String? args, int? timeout_ms) {
+    parameterMode: original.parameterMode,
+    executable: (String scriptPath, String? args, int? timeoutMs) {
       // Resolve virtual path to absolute, same logic as FileToolFactory._resolvePath.
-      if (!script_path.startsWith(wd)) {
-        if (script_path.startsWith('/')) {
-          script_path =
-              script_path == '/' ? wd : path.join(wd, script_path.substring(1));
+      if (!scriptPath.startsWith(wd)) {
+        if (scriptPath.startsWith('/')) {
+          scriptPath =
+              scriptPath == '/' ? wd : path.join(wd, scriptPath.substring(1));
         } else {
-          script_path = path.join(wd, script_path);
+          scriptPath = path.join(wd, scriptPath);
         }
       }
-      return Function.apply(originalExec, [script_path, args, timeout_ms]);
+      return Function.apply(originalExec, [scriptPath, args, timeoutMs]);
     },
   );
 

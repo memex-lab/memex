@@ -17,6 +17,7 @@ class ModelConfigListPage extends StatefulWidget {
 
 class _ModelConfigListPageState extends State<ModelConfigListPage> {
   List<LLMConfig> _configs = [];
+  String _defaultConfigKey = LLMConfig.defaultClientKey;
   bool _isLoading = true;
 
   String _providerDisplayName(String type) {
@@ -68,16 +69,20 @@ class _ModelConfigListPageState extends State<ModelConfigListPage> {
 
   Future<void> _loadConfigs() async {
     setState(() => _isLoading = true);
-    final configs = await MemexRouter().getLLMConfigs();
+    final router = MemexRouter();
+    final configs = await router.getLLMConfigs();
+    final defaultConfigKey = await router.getDefaultLLMConfigKey();
+    if (!mounted) return;
     setState(() {
       _configs = configs;
+      _defaultConfigKey = defaultConfigKey;
       _isLoading = false;
     });
   }
 
   Future<List<String>> _getAgentsUsingConfig(String configKey) async {
     final usedByagents = <String>[];
-    for (var agentId in AgentDefinitions.displayNames.keys) {
+    for (var agentId in AgentDefinitions.configurableAgentIds) {
       final config = await MemexRouter().getAgentConfig(agentId);
       if (config.llmConfigKey == configKey) {
         usedByagents.add(AgentDefinitions.displayNames[agentId] ?? agentId);
@@ -86,9 +91,11 @@ class _ModelConfigListPageState extends State<ModelConfigListPage> {
     return usedByagents;
   }
 
+  bool _isDefaultConfig(LLMConfig config) => config.key == _defaultConfigKey;
+
   Future<bool> _confirmDeleteConfig(LLMConfig config) async {
     final l10n = UserStorage.l10n;
-    if (config.isDefault) {
+    if (_isDefaultConfig(config) || config.isDefault) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.cannotDeleteDefaultConfiguration)),
       );
@@ -150,6 +157,23 @@ class _ModelConfigListPageState extends State<ModelConfigListPage> {
     }
   }
 
+  Future<void> _setDefaultConfig(LLMConfig config) async {
+    final l10n = UserStorage.l10n;
+    try {
+      await MemexRouter().setDefaultLLMConfigKey(config.key);
+      await _loadConfigs();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.modelSetAsDefault(config.modelId))),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.saveConfigFailed(e.toString()))),
+      );
+    }
+  }
+
   void _editConfig(LLMConfig? config, {LLMConfig? duplicateSource}) async {
     final result = await Navigator.push<bool>(
       context,
@@ -157,6 +181,7 @@ class _ModelConfigListPageState extends State<ModelConfigListPage> {
         builder: (context) => ModelConfigEditPage(
           config: config,
           duplicateSource: duplicateSource,
+          isDefaultConfig: config != null && _isDefaultConfig(config),
         ),
       ),
     );
@@ -248,12 +273,14 @@ class _ModelConfigListPageState extends State<ModelConfigListPage> {
                     itemCount: _configs.length,
                     itemBuilder: (context, index) {
                       final config = _configs[index];
+                      final isDefaultConfig = _isDefaultConfig(config);
+                      final canDelete = !isDefaultConfig && !config.isDefault;
 
                       return Dismissible(
                         key: Key(config.key),
-                        direction: config.isDefault
-                            ? DismissDirection.none
-                            : DismissDirection.endToStart,
+                        direction: canDelete
+                            ? DismissDirection.endToStart
+                            : DismissDirection.none,
                         background: Container(
                           color: Colors.red,
                           alignment: Alignment.centerRight,
@@ -285,7 +312,7 @@ class _ModelConfigListPageState extends State<ModelConfigListPage> {
                                   maxLines: 1,
                                 ),
                               ),
-                              if (config.isDefault)
+                              if (isDefaultConfig)
                                 Container(
                                   margin: const EdgeInsets.only(left: 8),
                                   padding: const EdgeInsets.symmetric(
@@ -380,6 +407,8 @@ class _ModelConfigListPageState extends State<ModelConfigListPage> {
                             onSelected: (value) {
                               if (value == 'duplicate') {
                                 _duplicateConfig(config);
+                              } else if (value == 'set_default') {
+                                _setDefaultConfig(config);
                               } else if (value == 'delete') {
                                 _deleteConfig(config);
                               }
@@ -397,7 +426,21 @@ class _ModelConfigListPageState extends State<ModelConfigListPage> {
                                     ],
                                   ),
                                 ),
-                                if (!config.isDefault)
+                                if (!isDefaultConfig)
+                                  PopupMenuItem<String>(
+                                    value: 'set_default',
+                                    child: Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.star_outline,
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(l10n.setAsDefault),
+                                      ],
+                                    ),
+                                  ),
+                                if (canDelete)
                                   PopupMenuItem<String>(
                                     value: 'delete',
                                     child: Row(

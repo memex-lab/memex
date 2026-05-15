@@ -1,4 +1,5 @@
 import 'package:memex/data/services/file_system_service.dart';
+import 'package:memex/data/services/file_search_access_scope.dart';
 import 'package:path/path.dart' as p;
 import 'package:collection/collection.dart';
 
@@ -123,11 +124,61 @@ class FilePermissionManager {
     }
   }
 
+  FileSearchAccessScope buildSearchAccessScope(String searchRoot) {
+    final normalizedRoot = _normalize(searchRoot);
+    final excludedPaths = <String>[];
+    var canUseDirectorySearch = true;
+
+    for (final rule in _rules) {
+      if (rule.access != FileAccessType.none) {
+        continue;
+      }
+      if (!_isSameOrUnder(rule.path, normalizedRoot)) {
+        continue;
+      }
+      if (allowsRead(rule.path)) {
+        continue;
+      }
+
+      final hasReadableDescendant = _rules.any((other) =>
+          other.path != rule.path &&
+          _isSameOrUnder(other.path, rule.path) &&
+          _hasAccess(other.access, FileAccessType.read));
+      if (hasReadableDescendant) {
+        canUseDirectorySearch = false;
+        break;
+      }
+
+      final alreadyExcluded =
+          excludedPaths.any((excluded) => _isSameOrUnder(rule.path, excluded));
+      if (!alreadyExcluded) {
+        excludedPaths.add(rule.path);
+      }
+    }
+
+    return FileSearchAccessScope(
+      allowsRead: allowsRead,
+      excludedPaths: excludedPaths,
+      canUseDirectorySearch: canUseDirectorySearch,
+    );
+  }
+
   bool _hasAccess(FileAccessType granted, FileAccessType required) {
     if (granted == FileAccessType.none) return false;
     if (granted == FileAccessType.write) return true; // Write implies Read
     if (granted == FileAccessType.read && required == FileAccessType.read) {
       return true;
+    }
+    return false;
+  }
+
+  bool _isSameOrUnder(String childPath, String parentPath) {
+    final child = _normalize(childPath);
+    final parent = _normalize(parentPath);
+    if (child == parent) return true;
+    if (child.startsWith(parent)) {
+      final rest = child.substring(parent.length);
+      return rest.startsWith(p.separator) || parent == p.separator;
     }
     return false;
   }

@@ -1,4 +1,7 @@
+// ignore_for_file: non_constant_identifier_names
+
 import 'package:dart_agent_core/dart_agent_core.dart';
+import 'package:memex/agent/memory/character_memory_service.dart';
 import 'package:memex/domain/models/card_model.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:uuid/uuid.dart';
@@ -8,31 +11,37 @@ class CommentToolFactory {
   final String userId;
   final String cardId;
   final String? characterId;
+  final String? forcedReplyToId;
 
   CommentToolFactory({
     required this.userId,
     required this.cardId,
     this.characterId,
+    this.forcedReplyToId,
   });
 
   Tool buildSaveCommentTool() {
+    final fixedReplyTarget = _normalizedReplyToId(forcedReplyToId);
     return Tool(
       name: 'SaveComment',
-      description: 'Saves your comment to the current raw input or reply.',
+      description: fixedReplyTarget == null
+          ? 'Saves your comment to the current raw input or reply.'
+          : 'Saves your comment as a reply to the current user comment. '
+              'The reply_to_id parameter is fixed by the system for this task.',
       parameters: {
         'type': 'object',
         'properties': {
           'content': {
             'type': 'string',
-            'description': 'The content of your comment.'
+            'description': 'The content of your comment.',
           },
           'reply_to_id': {
             'type': 'string',
             'description':
-                'Optional. The ID of the comment you are replying to. Leave empty for a top-level comment.'
+                'Optional. The ID of the comment you are replying to. Leave empty for a top-level comment.',
           },
         },
-        'required': ['content']
+        'required': ['content'],
       },
       executable: (String content, String? reply_to_id) async {
         if (content.isEmpty) {
@@ -42,6 +51,9 @@ class CommentToolFactory {
         try {
           final fileSystemService = FileSystemService.instance;
           final commentId = const Uuid().v4();
+          final now = DateTime.now();
+          final resolvedReplyToId =
+              fixedReplyTarget ?? _normalizedReplyToId(reply_to_id);
 
           final updatedCardData = await fileSystemService.updateCardFile(
             userId,
@@ -51,9 +63,9 @@ class CommentToolFactory {
                 id: commentId,
                 content: content,
                 isAi: true,
-                timestamp: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+                timestamp: now.millisecondsSinceEpoch ~/ 1000,
                 characterId: characterId,
-                replyToId: reply_to_id,
+                replyToId: resolvedReplyToId,
               );
               return card.copyWith(comments: [...card.comments, newComment]);
             },
@@ -67,8 +79,10 @@ class CommentToolFactory {
           try {
             final cardPath = fileSystemService.getCardPath(userId, cardId);
             final workspacePath = fileSystemService.getWorkspacePath(userId);
-            final relativePath = fileSystemService.toRelativePath(cardPath,
-                rootPath: workspacePath);
+            final relativePath = fileSystemService.toRelativePath(
+              cardPath,
+              rootPath: workspacePath,
+            );
             await fileSystemService.eventLogService.logFileModified(
               userId: userId,
               filePath: relativePath,
@@ -77,11 +91,38 @@ class CommentToolFactory {
                 'card_id': cardId,
                 'comment_id': commentId,
                 'character_id': characterId,
-                'content': content
+                'content': content,
               },
             );
           } catch (e) {
             getLogger('CommentTool').warning('Failed to log event: $e');
+          }
+
+          if (characterId != null) {
+            try {
+              await CharacterMemoryService.instance.appendTimelineEvent(
+                userId: userId,
+                characterId: characterId!,
+                scene: CharacterMemoryScene.comment,
+                type: CharacterMemoryEventType.characterComment,
+                content: content,
+                threadId: cardId,
+                factId: cardId,
+                commentId: commentId,
+                replyToId: resolvedReplyToId,
+                sourceId: commentId,
+                timestamp: now,
+                metadata: {
+                  if (resolvedReplyToId != null)
+                    'reply_to_id': resolvedReplyToId,
+                  'source': 'comment_tool',
+                },
+              );
+            } catch (e) {
+              getLogger(
+                'CommentTool',
+              ).warning('Failed to append character timeline event: $e');
+            }
           }
 
           return AgentToolResult(
@@ -93,5 +134,10 @@ class CommentToolFactory {
         }
       },
     );
+  }
+
+  static String? _normalizedReplyToId(String? value) {
+    final trimmed = value?.trim();
+    return trimmed == null || trimmed.isEmpty ? null : trimmed;
   }
 }

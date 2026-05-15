@@ -1,0 +1,239 @@
+name: Android Daily Early
+
+on:
+  schedule:
+    # 02:42 Asia/Shanghai. Scheduled workflows run on the default branch.
+    - cron: "42 18 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  EARLY_RELEASES_TO_KEEP: "14"
+
+jobs:
+  build-android-early:
+    name: Build Android Early APKs
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Verify signing secrets
+        run: |
+          missing=0
+          for name in \
+            ANDROID_EARLY_KEYSTORE_BASE64 \
+            ANDROID_EARLY_KEY_ALIAS \
+            ANDROID_EARLY_KEY_PASSWORD \
+            ANDROID_EARLY_STORE_PASSWORD
+          do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing required secret: ${name}"
+              missing=1
+            fi
+          done
+          exit "$missing"
+        env:
+          ANDROID_EARLY_KEYSTORE_BASE64: ${{ secrets.ANDROID_EARLY_KEYSTORE_BASE64 }}
+          ANDROID_EARLY_KEY_ALIAS: ${{ secrets.ANDROID_EARLY_KEY_ALIAS }}
+          ANDROID_EARLY_KEY_PASSWORD: ${{ secrets.ANDROID_EARLY_KEY_PASSWORD }}
+          ANDROID_EARLY_STORE_PASSWORD: ${{ secrets.ANDROID_EARLY_STORE_PASSWORD }}
+
+      - name: Restore Early signing config
+        run: |
+          echo "$ANDROID_EARLY_KEYSTORE_BASE64" | base64 --decode > android/app/memex-early.jks
+          cat > android/key-early.properties <<EOF
+          storeFile=memex-early.jks
+          storePassword=$ANDROID_EARLY_STORE_PASSWORD
+          keyPassword=$ANDROID_EARLY_KEY_PASSWORD
+          keyAlias=$ANDROID_EARLY_KEY_ALIAS
+          EOF
+        env:
+          ANDROID_EARLY_KEYSTORE_BASE64: ${{ secrets.ANDROID_EARLY_KEYSTORE_BASE64 }}
+          ANDROID_EARLY_KEY_ALIAS: ${{ secrets.ANDROID_EARLY_KEY_ALIAS }}
+          ANDROID_EARLY_KEY_PASSWORD: ${{ secrets.ANDROID_EARLY_KEY_PASSWORD }}
+          ANDROID_EARLY_STORE_PASSWORD: ${{ secrets.ANDROID_EARLY_STORE_PASSWORD }}
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Prepare Early version
+        id: version
+        run: |
+          pubspec_version="$(grep '^version:' pubspec.yaml | awk '{print $2}')"
+          base_version="${pubspec_version%%+*}"
+          date_ymd="$(TZ=Asia/Shanghai date +'%Y%m%d')"
+          display_date="$(TZ=Asia/Shanghai date +'%Y-%m-%d')"
+          short_sha="${GITHUB_SHA::7}"
+          build_number="$(date +'%s')"
+          build_name="${base_version}-early.${date_ymd}.${short_sha}"
+
+          {
+            echo "date_ymd=${date_ymd}"
+            echo "display_date=${display_date}"
+            echo "short_sha=${short_sha}"
+            echo "build_name=${build_name}"
+            echo "build_number=${build_number}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build Global Early APK
+        run: >
+          flutter build apk --release --flavor globalEarly
+          --build-name "${{ steps.version.outputs.build_name }}"
+          --build-number "${{ steps.version.outputs.build_number }}"
+
+      - name: Build CN Early APK
+        run: >
+          flutter build apk --release --flavor cnEarly
+          --build-name "${{ steps.version.outputs.build_name }}"
+          --build-number "${{ steps.version.outputs.build_number }}"
+
+      - name: Collect APK artifacts
+        run: |
+          mkdir -p artifacts
+          cp build/app/outputs/flutter-apk/*.apk artifacts/
+          ls -lah artifacts
+
+      - name: Prepare release metadata
+        id: release
+        run: |
+          tag="android-early-${{ steps.version.outputs.date_ymd }}-${{ steps.version.outputs.short_sha }}"
+
+          {
+            echo "tag=${tag}"
+            echo "title=Android Early ${{ steps.version.outputs.display_date }} (${{ steps.version.outputs.short_sha }})"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Prepare release notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+          DISPLAY_DATE: ${{ steps.version.outputs.display_date }}
+          BUILD_NAME: ${{ steps.version.outputs.build_name }}
+          BUILD_NUMBER: ${{ steps.version.outputs.build_number }}
+        run: |
+          releases_json="$(gh release list \
+            --repo "$GITHUB_REPOSITORY" \
+            --limit 100 \
+            --json tagName,isPrerelease,isDraft,createdAt)"
+
+          previous_early_tag="$(echo "$releases_json" \
+            | jq -r \
+              --arg current "$RELEASE_TAG" \
+              '[.[] | select(.isPrerelease and (.isDraft | not) and (.tagName | startswith("android-early-")) and .tagName != $current)] | sort_by(.createdAt) | reverse | .[0].tagName // ""')"
+
+          previous_release_tag="$(echo "$releases_json" \
+            | jq -r \
+              --arg current "$RELEASE_TAG" \
+              '[.[] | select((.isPrerelease | not) and (.isDraft | not) and .tagName != $current)] | sort_by(.createdAt) | reverse | .[0].tagName // ""')"
+
+          cat > release_notes.md <<EOF
+          Android Early build from main.
+
+          - Commit: ${GITHUB_SHA}
+          - Date: ${DISPLAY_DATE} Asia/Shanghai
+          - Channel: Early
+          - Version: ${BUILD_NAME}+${BUILD_NUMBER}
+          - Packages:
+            - Global: com.memexlab.memex.early
+            - CN: com.memexlab.memex.cn.early
+
+          EOF
+
+          append_generated_notes() {
+            local heading="$1"
+            local previous_tag="$2"
+            local notes_file
+
+            {
+              echo "## ${heading}"
+              echo
+            } >> release_notes.md
+
+            if [ -z "$previous_tag" ]; then
+              echo "No previous GitHub release was found for this comparison." >> release_notes.md
+              echo >> release_notes.md
+              return
+            fi
+
+            echo "Compared with \`${previous_tag}\`." >> release_notes.md
+            echo >> release_notes.md
+
+            notes_file="$(mktemp)"
+            if gh api "repos/${GITHUB_REPOSITORY}/releases/generate-notes" \
+              -f tag_name="$RELEASE_TAG" \
+              -f target_commitish="$GITHUB_SHA" \
+              -f previous_tag_name="$previous_tag" \
+              --jq '.body' > "$notes_file"; then
+              if [ -s "$notes_file" ]; then
+                cat "$notes_file" >> release_notes.md
+              else
+                echo "No changes detected." >> release_notes.md
+              fi
+            else
+              echo "Failed to generate GitHub release notes automatically." >> release_notes.md
+              echo "Compare: https://github.com/${GITHUB_REPOSITORY}/compare/${previous_tag}...${GITHUB_SHA}" >> release_notes.md
+            fi
+
+            echo >> release_notes.md
+            rm -f "$notes_file"
+          }
+
+          append_generated_notes "Changes since previous Early prerelease" "$previous_early_tag"
+          append_generated_notes "Changes since latest Release" "$previous_release_tag"
+
+          cat >> release_notes.md <<EOF
+          Early builds use isolated Android application IDs and do not overwrite Stable app data.
+          EOF
+
+      - name: Publish prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete "${{ steps.release.outputs.tag }}" \
+            --repo "$GITHUB_REPOSITORY" \
+            --yes \
+            --cleanup-tag || true
+
+          gh release create "${{ steps.release.outputs.tag }}" \
+            artifacts/*.apk \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "${{ steps.release.outputs.title }}" \
+            --notes-file release_notes.md \
+            --prerelease
+
+      - name: Prune old Early prereleases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release list \
+            --repo "$GITHUB_REPOSITORY" \
+            --limit 100 \
+            --json tagName,isPrerelease,createdAt \
+            | jq -r \
+              --argjson keep "$EARLY_RELEASES_TO_KEEP" \
+              '[.[] | select(.isPrerelease and (.tagName | startswith("android-early-")))] | sort_by(.createdAt) | reverse | .[$keep:][] | .tagName' \
+            | while read -r tag; do
+                [ -n "$tag" ] || continue
+                gh release delete "$tag" \
+                  --repo "$GITHUB_REPOSITORY" \
+                  --yes \
+                  --cleanup-tag
+              done

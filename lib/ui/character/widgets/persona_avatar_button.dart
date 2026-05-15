@@ -7,7 +7,7 @@ import 'package:memex/domain/models/character_model.dart';
 import 'package:memex/db/app_database.dart';
 import 'package:memex/ui/character/widgets/persona_chat_screen.dart';
 import 'package:memex/ui/core/themes/app_colors.dart';
-import 'package:memex/ui/core/widgets/dicebear_avatar.dart';
+import 'package:memex/ui/core/widgets/character_avatar.dart';
 import 'package:memex/utils/user_storage.dart';
 
 /// Small avatar button in the timeline header.
@@ -75,11 +75,6 @@ class _PersonaAvatarButtonState extends State<PersonaAvatarButton> {
     );
   }
 
-  String _avatarSeed(CharacterModel char) {
-    if (char.avatar != null && char.avatar!.isNotEmpty) return char.avatar!;
-    return 'companion_${char.name}';
-  }
-
   @override
   Widget build(BuildContext context) {
     if (_character == null) return const SizedBox(width: 36, height: 36);
@@ -92,8 +87,9 @@ class _PersonaAvatarButtonState extends State<PersonaAvatarButton> {
         child: Stack(
           children: [
             Center(
-              child: DiceBearAvatar(
-                seed: _avatarSeed(_character!),
+              child: CharacterAvatar(
+                avatar: _character!.avatar,
+                name: _character!.name,
                 size: 30,
                 backgroundColor: AppColors.primary.withValues(alpha: 0.1),
               ),

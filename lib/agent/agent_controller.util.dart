@@ -247,7 +247,11 @@ void addAgentActivityCollector(AgentController controller) {
         agentName: info.name,
         agentId: info.id,
       );
-      await WakelockPlus.enable();
+      try {
+        await WakelockPlus.enable();
+      } catch (_) {
+        // Ignore in non-UI / test runtimes where plugin channel is unavailable.
+      }
     },
   );
 
@@ -281,7 +285,11 @@ void addAgentActivityCollector(AgentController controller) {
         agentName: info.name,
         agentId: info.id,
       );
-      await WakelockPlus.disable();
+      try {
+        await WakelockPlus.disable();
+      } catch (_) {
+        // Ignore in non-UI / test runtimes where plugin channel is unavailable.
+      }
     },
   );
 }

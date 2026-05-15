@@ -12,6 +12,7 @@ import 'package:memex/domain/models/llm_config.dart';
 import 'package:memex/domain/models/agent_definitions.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/data/services/file_system_service.dart';
+import 'package:memex/data/services/geocoding_service.dart';
 import 'package:memex/data/services/llm_call_record_service.dart';
 import 'package:memex/data/services/local_task_executor.dart';
 import 'package:memex/data/services/task_handlers/llm_error_utils.dart';
@@ -274,7 +275,16 @@ Future<AssetAnalysisResult?> _analyzeSingleAsset({
               'Gps Coordinates: ${lat.toStringAsFixed(6)}, ${lng.toStringAsFixed(6)}',
             );
 
-            address = await ExifUtils.reverseGeocode(lat, lng);
+            final geocoded = await GeocodingService.instance.reverseGeocode(
+              lat,
+              lng,
+            );
+            if (geocoded != null) {
+              final locationConfig =
+                  await UserStorage.getLocationContextConfig();
+              address = geocoded.fullAddress ??
+                  geocoded.summary(locationConfig.granularity);
+            }
             if (address != null) {
               var addressLine = 'Nearest Address (from GPS): $address';
 
@@ -445,9 +455,7 @@ Future<AssetAnalysisResult?> _analyzeSingleAsset({
         if (ocrText.isNotEmpty) {
           final assetFilename = path.basename(assetPath);
           final ocrFilename = '$assetFilename.ocr.txt';
-          final ocrFile = File(
-            path.join(path.dirname(assetPath), ocrFilename),
-          );
+          final ocrFile = File(path.join(path.dirname(assetPath), ocrFilename));
           await ocrFile.writeAsString(ocrText);
           _logger.info('Saved OCR result to: ${ocrFile.path}');
         }

@@ -1,11 +1,13 @@
 import 'dart:io';
 import 'dart:async';
+import 'dart:convert';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
 import 'package:logging/logging.dart';
 import 'package:memex/utils/logger.dart';
 import 'api_exception.dart';
 import 'base_file_service.dart';
+import 'file_search_access_scope.dart';
 import 'file_operation_utils.dart';
 
 /// Callback signature for file change notifications.
@@ -13,6 +15,20 @@ import 'file_operation_utils.dart';
 /// For 'moved', [oldFilePath] is the original path.
 typedef FileChangedCallback = void Function(String filePath, String changeType,
     {String? oldFilePath});
+
+class _GrepPatternOptions {
+  final String pattern;
+  final bool caseSensitive;
+  final bool multiLine;
+  final bool dotAll;
+
+  const _GrepPatternOptions({
+    required this.pattern,
+    required this.caseSensitive,
+    required this.multiLine,
+    required this.dotAll,
+  });
+}
 
 /// File operation service: wraps server file ops; params and results match server.
 class FileOperationService {
@@ -23,6 +39,7 @@ class FileOperationService {
   }
 
   final BaseFileService _baseService;
+  final String? _ripgrepExecutable;
   final Logger _logger = getLogger('FileOperationService');
 
   /// Track ongoing operations per file to prevent concurrent writes
@@ -32,11 +49,14 @@ class FileOperationService {
   FileChangedCallback? onFileChanged;
 
   FileOperationService._({BaseFileService? baseService})
-      : _baseService = baseService ?? BaseFileService();
+      : _baseService = baseService ?? BaseFileService(),
+        _ripgrepExecutable = null;
 
   @visibleForTesting
-  FileOperationService.forTesting({BaseFileService? baseService})
-      : _baseService = baseService ?? BaseFileService();
+  FileOperationService.forTesting(
+      {BaseFileService? baseService, String? ripgrepExecutable})
+      : _baseService = baseService ?? BaseFileService(),
+        _ripgrepExecutable = ripgrepExecutable;
 
   /// Execute operation with file lock to prevent concurrent writes to the same file
   ///
@@ -1026,6 +1046,7 @@ ${addLineNumbers(snippet, startLine: startLine)}''';
     bool multiline = false,
     bool r = true,
     bool Function(String path)? filter,
+    FileSearchAccessScope? accessScope,
   }) async {
     // Resolve search path
     if (searchPath != null) {
@@ -1057,21 +1078,39 @@ ${addLineNumbers(snippet, startLine: startLine)}''';
           _maskResult('path $searchPathStr does not exist', workingDirectory));
     }
 
-    RegExp regex;
-    try {
-      regex = RegExp(
-        pattern,
-        multiLine: multiline,
-        caseSensitive: !i,
-        dotAll: multiline,
-      );
-    } catch (e) {
-      throw ApiException(
-          _maskResult('Invalid regex pattern: $e', workingDirectory));
-    }
-
     // buildfiletypefiltermap
     final typeExtensions = _getFileTypeExtensions(type);
+    final effectiveFilter = _combineGrepFilters(filter, accessScope);
+
+    final ripgrepResult = await _tryGrepWithRipgrep(
+      pattern: pattern,
+      searchPath: searchPathStr,
+      includeGlob: include,
+      typeExtensions: typeExtensions,
+      accessScope: accessScope,
+      hasCustomFilter: filter != null,
+      outputMode: outputMode,
+      B: B,
+      A: A,
+      C: C,
+      showLineNumbers: n,
+      caseInsensitive: i,
+      headLimit: headLimit,
+      multiline: multiline,
+      r: r,
+      filter: effectiveFilter,
+      workingDirectory: workingDirectory,
+    );
+    if (ripgrepResult != null) {
+      return _maskResult(ripgrepResult, workingDirectory);
+    }
+
+    final regex = _compileGrepPattern(
+      pattern,
+      caseInsensitive: i,
+      multiline: multiline,
+      workingDirectory: workingDirectory,
+    );
 
     String result;
     switch (outputMode) {
@@ -1083,7 +1122,7 @@ ${addLineNumbers(snippet, startLine: startLine)}''';
           typeExtensions,
           headLimit,
           r: r,
-          filter: filter,
+          filter: effectiveFilter,
         );
         break;
       case 'content':
@@ -1098,7 +1137,7 @@ ${addLineNumbers(snippet, startLine: startLine)}''';
           n,
           headLimit,
           r: r,
-          filter: filter,
+          filter: effectiveFilter,
         );
         break;
       case 'count':
@@ -1109,7 +1148,7 @@ ${addLineNumbers(snippet, startLine: startLine)}''';
           typeExtensions,
           headLimit,
           r: r,
-          filter: filter,
+          filter: effectiveFilter,
         );
         break;
       default:
@@ -1118,6 +1157,661 @@ ${addLineNumbers(snippet, startLine: startLine)}''';
     }
 
     return _maskResult(result, workingDirectory);
+  }
+
+  bool Function(String path)? _combineGrepFilters(
+    bool Function(String path)? filter,
+    FileSearchAccessScope? accessScope,
+  ) {
+    if (filter == null) {
+      return accessScope?.allowsRead;
+    }
+    if (accessScope == null) {
+      return filter;
+    }
+    return (path) => filter(path) && accessScope.allowsRead(path);
+  }
+
+  Future<String?> _tryGrepWithRipgrep({
+    required String pattern,
+    required String searchPath,
+    required String? includeGlob,
+    required Set<String>? typeExtensions,
+    required FileSearchAccessScope? accessScope,
+    required bool hasCustomFilter,
+    required String outputMode,
+    required int? B,
+    required int? A,
+    required int? C,
+    required bool showLineNumbers,
+    required bool caseInsensitive,
+    required int? headLimit,
+    required bool multiline,
+    required bool r,
+    required bool Function(String path)? filter,
+    required String? workingDirectory,
+  }) async {
+    final executable = await _resolveRipgrepExecutable();
+    if (executable == null) {
+      return null;
+    }
+
+    final directoryArgs = await _buildRipgrepDirectoryArgs(
+      searchPath,
+      includeGlob,
+      typeExtensions,
+      accessScope,
+      r: r,
+      hasCustomFilter: hasCustomFilter,
+    );
+    if (directoryArgs != null) {
+      switch (outputMode) {
+        case 'files_with_matches':
+          return _grepFilesWithMatchesUsingRipgrep(
+            executable,
+            pattern,
+            [searchPath],
+            caseInsensitive: caseInsensitive,
+            multiline: multiline,
+            headLimit: headLimit,
+            workingDirectory: workingDirectory,
+            extraArgs: directoryArgs,
+            chunkTargets: false,
+          );
+        case 'content':
+          return _grepContentUsingRipgrep(
+            executable,
+            pattern,
+            [searchPath],
+            B: B,
+            A: A,
+            C: C,
+            showLineNumbers: showLineNumbers,
+            caseInsensitive: caseInsensitive,
+            headLimit: headLimit,
+            multiline: multiline,
+            workingDirectory: workingDirectory,
+            extraArgs: directoryArgs,
+            chunkTargets: false,
+          );
+        case 'count':
+          return _grepCountUsingRipgrep(
+            executable,
+            pattern,
+            [searchPath],
+            caseInsensitive: caseInsensitive,
+            multiline: multiline,
+            headLimit: headLimit,
+            workingDirectory: workingDirectory,
+            extraArgs: directoryArgs,
+            chunkTargets: false,
+          );
+      }
+    }
+
+    final files = await _collectGrepCandidateFiles(
+      searchPath,
+      includeGlob,
+      typeExtensions,
+      r: r,
+      filter: filter,
+    );
+    if (files.isEmpty) {
+      return outputMode == 'files_with_matches'
+          ? 'No files found'
+          : 'No matches found';
+    }
+
+    switch (outputMode) {
+      case 'files_with_matches':
+        return _grepFilesWithMatchesUsingRipgrep(
+          executable,
+          pattern,
+          files,
+          caseInsensitive: caseInsensitive,
+          multiline: multiline,
+          headLimit: headLimit,
+          workingDirectory: workingDirectory,
+        );
+      case 'content':
+        return _grepContentUsingRipgrep(
+          executable,
+          pattern,
+          files,
+          B: B,
+          A: A,
+          C: C,
+          showLineNumbers: showLineNumbers,
+          caseInsensitive: caseInsensitive,
+          headLimit: headLimit,
+          multiline: multiline,
+          workingDirectory: workingDirectory,
+        );
+      case 'count':
+        return _grepCountUsingRipgrep(
+          executable,
+          pattern,
+          files,
+          caseInsensitive: caseInsensitive,
+          multiline: multiline,
+          headLimit: headLimit,
+          workingDirectory: workingDirectory,
+        );
+      default:
+        return null;
+    }
+  }
+
+  @visibleForTesting
+  Future<List<String>?> buildRipgrepDirectoryArgsForTesting({
+    required String searchPath,
+    String? includeGlob,
+    Set<String>? typeExtensions,
+    FileSearchAccessScope? accessScope,
+    bool r = true,
+    bool hasCustomFilter = false,
+  }) {
+    return _buildRipgrepDirectoryArgs(
+      searchPath,
+      includeGlob,
+      typeExtensions,
+      accessScope,
+      r: r,
+      hasCustomFilter: hasCustomFilter,
+    );
+  }
+
+  Future<List<String>?> _buildRipgrepDirectoryArgs(
+    String searchPath,
+    String? includeGlob,
+    Set<String>? typeExtensions,
+    FileSearchAccessScope? accessScope, {
+    required bool r,
+    required bool hasCustomFilter,
+  }) async {
+    if (hasCustomFilter ||
+        accessScope == null ||
+        !accessScope.canUseDirectorySearch) {
+      return null;
+    }
+    if (!await _baseService.isDirectory(searchPath)) {
+      return null;
+    }
+
+    final args = <String>['--no-ignore'];
+    if (!r) {
+      args.addAll(['--max-depth', '1']);
+    }
+    if (includeGlob != null) {
+      args.addAll(['--glob', includeGlob]);
+    }
+    final typeGlob = _typeExtensionsToGlob(typeExtensions);
+    if (typeGlob != null) {
+      args.addAll(['--glob', typeGlob]);
+    }
+    for (final excludedPath in accessScope.excludedPaths) {
+      final relativePath = path.relative(excludedPath, from: searchPath);
+      if (relativePath.startsWith('..')) {
+        continue;
+      }
+      final posixPath = relativePath.replaceAll(path.separator, '/');
+      args.addAll(['--glob', '!$posixPath']);
+      args.addAll(['--glob', '!$posixPath/**']);
+    }
+    return args;
+  }
+
+  String? _typeExtensionsToGlob(Set<String>? typeExtensions) {
+    if (typeExtensions == null || typeExtensions.isEmpty) {
+      return null;
+    }
+    if (typeExtensions.length == 1) {
+      return '*.${typeExtensions.first}';
+    }
+    return '*.{${typeExtensions.join(',')}}';
+  }
+
+  Future<String?> _resolveRipgrepExecutable() async {
+    final executable = _ripgrepExecutable ?? 'rg';
+    try {
+      final result = await Process.run(
+        executable,
+        ['--version'],
+      ).timeout(const Duration(seconds: 1));
+      return result.exitCode == 0 ? executable : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<List<String>> _collectGrepCandidateFiles(
+    String searchPath,
+    String? includeGlob,
+    Set<String>? typeExtensions, {
+    required bool r,
+    required bool Function(String path)? filter,
+  }) async {
+    final files = <String>[];
+
+    Future<void> maybeAddFile(String filePath, String rootPath) async {
+      if (filter != null && !filter(filePath)) {
+        return;
+      }
+
+      final fileName = path.basename(filePath);
+      if (fileName.startsWith('.')) {
+        return;
+      }
+
+      if (includeGlob != null) {
+        final relativePath = path.relative(filePath, from: rootPath);
+        final posixPath = relativePath.replaceAll(path.separator, '/');
+        final globRegex = RegExp(_globToRegex(includeGlob));
+        if (!globRegex.hasMatch(posixPath) && !globRegex.hasMatch(fileName)) {
+          return;
+        }
+      }
+
+      if (typeExtensions != null) {
+        final ext = path.extension(fileName).toLowerCase();
+        if (ext.isNotEmpty && !typeExtensions.contains(ext.substring(1))) {
+          return;
+        }
+      }
+
+      files.add(filePath);
+    }
+
+    Future<void> walkDirectory(String rootPath, String currentPath) async {
+      try {
+        final dir = Directory(currentPath);
+        await for (final entity in dir.list(recursive: false)) {
+          try {
+            final stat = await entity.stat();
+            if (stat.type == FileSystemEntityType.directory) {
+              if (filter != null && !filter(entity.path)) {
+                continue;
+              }
+              final dirName = path.basename(entity.path);
+              if (!dirName.startsWith('.') && r) {
+                await walkDirectory(rootPath, entity.path);
+              }
+              continue;
+            }
+
+            if (stat.type == FileSystemEntityType.file) {
+              await maybeAddFile(entity.path, rootPath);
+            }
+          } catch (_) {
+            continue;
+          }
+        }
+      } catch (e) {
+        _logger.warning('Cannot access directory $currentPath: $e');
+      }
+    }
+
+    if (await _baseService.isFile(searchPath)) {
+      await maybeAddFile(searchPath, path.dirname(searchPath));
+      return files;
+    }
+
+    await walkDirectory(searchPath, searchPath);
+    return files;
+  }
+
+  Future<String> _grepFilesWithMatchesUsingRipgrep(
+    String executable,
+    String pattern,
+    List<String> files, {
+    required bool caseInsensitive,
+    required bool multiline,
+    required int? headLimit,
+    required String? workingDirectory,
+    List<String> extraArgs = const [],
+    bool chunkTargets = true,
+  }) async {
+    final output = <String>[];
+    final batches = chunkTargets ? _chunkFiles(files) : [files];
+    for (final batch in batches) {
+      final result = await _runRipgrep(
+        executable,
+        [
+          '--color',
+          'never',
+          '--files-with-matches',
+          if (caseInsensitive) '--ignore-case',
+          if (multiline) ...['--multiline', '--multiline-dotall'],
+          ...extraArgs,
+          '--',
+          pattern,
+          ...batch,
+        ],
+        workingDirectory,
+      );
+      if (result.exitCode == 1) {
+        continue;
+      }
+      _throwIfRipgrepFailed(result, workingDirectory);
+      output.addAll(_splitRipgrepOutput(result.stdout));
+    }
+
+    final uniqueFiles = output.toSet().toList();
+    final filesWithTime = await Future.wait(
+      uniqueFiles.map((file) async {
+        try {
+          final mtime = await _baseService.getModificationTime(file);
+          return MapEntry(file, mtime);
+        } catch (e) {
+          return MapEntry(file, DateTime.fromMillisecondsSinceEpoch(0));
+        }
+      }),
+    );
+
+    filesWithTime.sort((a, b) => b.value.compareTo(a.value));
+    var sortedFiles = filesWithTime.map((e) => e.key).toList();
+
+    const maxResults = 100;
+    final truncated = sortedFiles.length > maxResults;
+    sortedFiles = sortedFiles.take(maxResults).toList();
+
+    if (headLimit != null && headLimit > 0) {
+      sortedFiles = sortedFiles.take(headLimit).toList();
+    }
+
+    if (sortedFiles.isEmpty) {
+      return 'No files found';
+    }
+
+    final result =
+        'Found ${sortedFiles.length} file${sortedFiles.length > 1 ? 's' : ''}\n${sortedFiles.join('\n')}';
+    if (truncated && headLimit == null) {
+      return '$result\n(Results are truncated. Consider using a more specific path or pattern.)';
+    }
+    return result;
+  }
+
+  Future<String> _grepContentUsingRipgrep(
+    String executable,
+    String pattern,
+    List<String> files, {
+    required int? B,
+    required int? A,
+    required int? C,
+    required bool showLineNumbers,
+    required bool caseInsensitive,
+    required int? headLimit,
+    required bool multiline,
+    required String? workingDirectory,
+    List<String> extraArgs = const [],
+    bool chunkTargets = true,
+  }) async {
+    final outputLines = <String>[];
+    final batches = chunkTargets ? _chunkFiles(files) : [files];
+    for (final batch in batches) {
+      final result = await _runRipgrep(
+        executable,
+        [
+          '--json',
+          if (caseInsensitive) '--ignore-case',
+          if (multiline) ...['--multiline', '--multiline-dotall'],
+          if (C != null) ...['--context', '$C'],
+          if (C == null && B != null) ...['--before-context', '$B'],
+          if (C == null && A != null) ...['--after-context', '$A'],
+          ...extraArgs,
+          '--',
+          pattern,
+          ...batch,
+        ],
+        workingDirectory,
+      );
+      if (result.exitCode == 1) {
+        continue;
+      }
+      _throwIfRipgrepFailed(result, workingDirectory);
+
+      for (final line in _splitRipgrepOutput(result.stdout)) {
+        final event = jsonDecode(line);
+        if (event is! Map<String, dynamic>) {
+          continue;
+        }
+        final eventType = event['type'];
+        if (eventType != 'match' && eventType != 'context') {
+          continue;
+        }
+        final data = event['data'];
+        if (data is! Map<String, dynamic>) {
+          continue;
+        }
+        final filePath = _textFromRipgrepJson(data['path']);
+        final text = _textFromRipgrepJson(data['lines']);
+        final lineNumber = data['line_number'];
+        if (filePath == null || text == null || lineNumber is! int) {
+          continue;
+        }
+
+        final lines = _stripTrailingNewline(text).split('\n');
+        for (var i = 0; i < lines.length; i++) {
+          if (headLimit != null && outputLines.length >= headLimit) {
+            break;
+          }
+          final separator = eventType == 'context' ? '-' : ':';
+          final linePrefix =
+              showLineNumbers ? '${lineNumber + i}$separator' : '';
+          outputLines.add('$filePath:$linePrefix${lines[i]}');
+        }
+      }
+    }
+
+    if (outputLines.isEmpty) {
+      return 'No matches found';
+    }
+
+    final result = outputLines.join('\n');
+    if (headLimit != null && outputLines.length >= headLimit) {
+      return '$result\n(Output limited to first $headLimit lines)';
+    }
+    return result;
+  }
+
+  Future<String> _grepCountUsingRipgrep(
+    String executable,
+    String pattern,
+    List<String> files, {
+    required bool caseInsensitive,
+    required bool multiline,
+    required int? headLimit,
+    required String? workingDirectory,
+    List<String> extraArgs = const [],
+    bool chunkTargets = true,
+  }) async {
+    final output = <String>[];
+    final batches = chunkTargets ? _chunkFiles(files) : [files];
+    for (final batch in batches) {
+      final result = await _runRipgrep(
+        executable,
+        [
+          '--color',
+          'never',
+          '--with-filename',
+          '--count',
+          if (caseInsensitive) '--ignore-case',
+          if (multiline) ...['--multiline', '--multiline-dotall'],
+          ...extraArgs,
+          '--',
+          pattern,
+          ...batch,
+        ],
+        workingDirectory,
+      );
+      if (result.exitCode == 1) {
+        continue;
+      }
+      _throwIfRipgrepFailed(result, workingDirectory);
+      output.addAll(_splitRipgrepOutput(result.stdout));
+    }
+
+    if (headLimit != null && headLimit > 0 && output.length > headLimit) {
+      output.removeRange(headLimit, output.length);
+    }
+
+    if (output.isEmpty) {
+      return 'No matches found';
+    }
+
+    final result = output.join('\n');
+    if (headLimit != null && output.length >= headLimit) {
+      return '$result\n(Output limited to first $headLimit entries)';
+    }
+    return result;
+  }
+
+  Iterable<List<String>> _chunkFiles(List<String> files) sync* {
+    const batchSize = 200;
+    for (var i = 0; i < files.length; i += batchSize) {
+      yield files.sublist(
+        i,
+        (i + batchSize).clamp(0, files.length),
+      );
+    }
+  }
+
+  Future<ProcessResult> _runRipgrep(
+    String executable,
+    List<String> args,
+    String? workingDirectory,
+  ) async {
+    try {
+      return await Process.run(executable, args);
+    } on ProcessException catch (e) {
+      throw ApiException(
+          _maskResult('Error executing ripgrep: $e', workingDirectory));
+    } catch (e) {
+      throw ApiException(
+          _maskResult('Error executing ripgrep: $e', workingDirectory));
+    }
+  }
+
+  void _throwIfRipgrepFailed(
+    ProcessResult result,
+    String? workingDirectory,
+  ) {
+    if (result.exitCode == 0) {
+      return;
+    }
+
+    final error = result.stderr.toString().trim();
+    throw ApiException(_maskResult(
+      'Invalid ripgrep pattern or execution error: $error',
+      workingDirectory,
+    ));
+  }
+
+  List<String> _splitRipgrepOutput(dynamic output) {
+    final text = output is String ? output : output.toString();
+    return text
+        .split('\n')
+        .where((line) => line.isNotEmpty)
+        .toList(growable: true);
+  }
+
+  String? _textFromRipgrepJson(dynamic value) {
+    if (value is! Map<String, dynamic>) {
+      return null;
+    }
+    final text = value['text'];
+    if (text is String) {
+      return text;
+    }
+    final bytes = value['bytes'];
+    if (bytes is String) {
+      return utf8.decode(base64.decode(bytes));
+    }
+    return null;
+  }
+
+  String _stripTrailingNewline(String text) {
+    if (text.endsWith('\r\n')) {
+      return text.substring(0, text.length - 2);
+    }
+    if (text.endsWith('\n')) {
+      return text.substring(0, text.length - 1);
+    }
+    return text;
+  }
+
+  RegExp _compileGrepPattern(
+    String pattern, {
+    required bool caseInsensitive,
+    required bool multiline,
+    required String? workingDirectory,
+  }) {
+    final options = _resolveGrepPatternOptions(
+      pattern,
+      caseInsensitive: caseInsensitive,
+      multiline: multiline,
+    );
+
+    try {
+      return RegExp(
+        options.pattern,
+        multiLine: options.multiLine,
+        caseSensitive: options.caseSensitive,
+        dotAll: options.dotAll,
+      );
+    } catch (e) {
+      throw ApiException(
+          _maskResult('Invalid regex pattern: $e', workingDirectory));
+    }
+  }
+
+  _GrepPatternOptions _resolveGrepPatternOptions(
+    String pattern, {
+    required bool caseInsensitive,
+    required bool multiline,
+  }) {
+    var normalizedPattern = pattern;
+    var caseSensitive = !caseInsensitive;
+    var multiLine = multiline;
+    var dotAll = multiline;
+
+    final leadingFlags = RegExp(r'^\(\?([ims]+(?:-[ims]+)?|-[ims]+)\)');
+    while (true) {
+      final match = leadingFlags.firstMatch(normalizedPattern);
+      if (match == null) {
+        break;
+      }
+
+      var enabled = true;
+      for (final codePoint in match.group(1)!.runes) {
+        final flag = String.fromCharCode(codePoint);
+        if (flag == '-') {
+          enabled = false;
+          continue;
+        }
+
+        switch (flag) {
+          case 'i':
+            caseSensitive = !enabled;
+            break;
+          case 'm':
+            multiLine = enabled;
+            break;
+          case 's':
+            dotAll = enabled;
+            break;
+        }
+      }
+
+      normalizedPattern = normalizedPattern.substring(match.end);
+    }
+
+    return _GrepPatternOptions(
+      pattern: normalizedPattern,
+      caseSensitive: caseSensitive,
+      multiLine: multiLine,
+      dotAll: dotAll,
+    );
   }
 
   /// Files with matches (files_with_matches mode)
@@ -1242,7 +1936,7 @@ ${addLineNumbers(snippet, startLine: startLine)}''';
       filter: filter,
     );
 
-    if (headLimit != null && headLimit > 0) {
+    if (headLimit != null && headLimit > 0 && outputLines.length > headLimit) {
       outputLines.removeRange(headLimit, outputLines.length);
     }
 
@@ -1284,7 +1978,7 @@ ${addLineNumbers(snippet, startLine: startLine)}''';
       filter: filter,
     );
 
-    if (headLimit != null && headLimit > 0) {
+    if (headLimit != null && headLimit > 0 && countResults.length > headLimit) {
       countResults.removeRange(headLimit, countResults.length);
     }
 

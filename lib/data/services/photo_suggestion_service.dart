@@ -25,7 +25,7 @@ class PhotoSuggestionService {
     bool ignoreLastPublishTime = false,
   }) async {
     try {
-      _logger.info(
+      _logger.fine(
           'Fetching recent photos, platform: ${Platform.isAndroid ? "Android" : "iOS"}');
 
       // Check album permission (Android and iOS)
@@ -33,12 +33,10 @@ class PhotoSuggestionService {
       if (Platform.isAndroid) {
         // Android 13+ use photos, older use storage
         final photosStatus = await Permission.photos.status;
-        _logger.info('Android photos permission status: $photosStatus');
         if (photosStatus.isGranted) {
           permissionStatus = photosStatus;
         } else {
           final storageStatus = await Permission.storage.status;
-          _logger.info('Android storage permission status: $storageStatus');
           permissionStatus =
               storageStatus.isGranted ? storageStatus : photosStatus;
         }
@@ -46,28 +44,22 @@ class PhotoSuggestionService {
         // iOS: only NSPhotoLibraryUsageDescription in Info.plist; no ACCESS_MEDIA_LOCATION
         // photo_manager handles permission request on iOS
         permissionStatus = await Permission.photos.status;
-        _logger.info('iOS photos permission status: $permissionStatus');
       }
 
       if (!permissionStatus.isGranted) {
-        _logger.info('Permission not granted, requesting permission');
+        _logger.info('Photo permission not granted, requesting...');
         // If not granted, try request
         PermissionStatus result;
         if (Platform.isAndroid) {
           final photosResult = await Permission.photos.request();
-          _logger.info('Request photos permission result: $photosResult');
           result = photosResult.isGranted
               ? photosResult
               : await Permission.storage.request();
-          if (!photosResult.isGranted) {
-            _logger.info('Request storage permission result: $result');
-          }
         } else {
           result = await Permission.photos.request();
-          _logger.info('Request photos permission result: $result');
         }
         if (!result.isGranted) {
-          _logger.warning('Permission request failed, returning empty list');
+          _logger.warning('Photo permission denied');
           return [];
         }
       }
@@ -78,21 +70,15 @@ class PhotoSuggestionService {
           final mediaLocationStatus =
               await Permission.accessMediaLocation.status;
           if (!mediaLocationStatus.isGranted) {
-            _logger.info(
-                'Requesting ACCESS_MEDIA_LOCATION permission to preserve GPS info');
             await Permission.accessMediaLocation.request();
-            final mediaLocationStatus =
-                await Permission.accessMediaLocation.status;
-            _logger.info(
-                'ACCESS_MEDIA_LOCATION permission result: $mediaLocationStatus');
           }
         } catch (e) {
           // If permission not available (older Android), ignore
-          _logger.warning('ACCESS_MEDIA_LOCATION permission not available: $e');
+          _logger.fine('ACCESS_MEDIA_LOCATION not available: $e');
         }
       }
 
-      _logger.info('Permission check passed, fetching timestamp');
+      _logger.fine('Permission check passed, fetching timestamp');
 
       FilterOptionGroup filterOptions;
 
@@ -117,8 +103,7 @@ class PhotoSuggestionService {
         final queryDateTime =
             DateTime.fromMillisecondsSinceEpoch(queryTimestamp);
         final now = DateTime.now();
-        _logger.info(
-            'Query timestamp: $queryTimestamp, corresponding time: $queryDateTime');
+        _logger.fine('Query timestamp: $queryTimestamp, time: $queryDateTime');
 
         // Filter by time range in FilterOption
         filterOptions = FilterOptionGroup(
@@ -142,29 +127,26 @@ class PhotoSuggestionService {
       }
 
       // Get albums (filter applied, all-photos album)
-      _logger.info('Fetching album list (time filter applied)');
       final List<AssetPathEntity> albums = await PhotoManager.getAssetPathList(
         type: RequestType.image,
         hasAll: true,
         filterOption: filterOptions,
       );
-      _logger.info('Got ${albums.length} album(s)');
 
       if (albums.isEmpty) {
-        _logger.info('No albums found, returning empty list');
+        _logger.fine('No albums found');
         return [];
       }
 
       // Use first (all-photos) album
       final allPhotosAlbum = albums[0];
-      _logger.info('Using album: ${allPhotosAlbum.name}');
 
       // Get up to maxCount matching images via getAssetListPaged
       final result = await allPhotosAlbum.getAssetListPaged(
         page: 0,
         size: maxCount,
       );
-      _logger.info('Got ${result.length} matching image(s)');
+      _logger.info('Got ${result.length} recent photo(s)');
       return result;
     } catch (e, stackTrace) {
       _logger.severe('Failed to get album photos: $e', e, stackTrace);
@@ -179,7 +161,6 @@ class PhotoSuggestionService {
     int height = 200,
   }) async {
     try {
-      _logger.info('Fetching thumbnail, asset.id: ${asset.id}');
       final thumbnail = await asset.thumbnailDataWithSize(
         ThumbnailSize(width, height),
       );
@@ -188,7 +169,6 @@ class PhotoSuggestionService {
         return null;
       }
 
-      _logger.info('Thumbnail data size: ${thumbnail.length} bytes');
       // Save thumbnail to temp file
       final tempDir = Directory.systemTemp;
       if (!await tempDir.exists()) {
@@ -198,7 +178,6 @@ class PhotoSuggestionService {
       final safeAssetId = asset.id.replaceAll(RegExp(r'[/\\]'), '_');
       final tempFile = File('${tempDir.path}/thumbnail_$safeAssetId.jpg');
       await tempFile.writeAsBytes(thumbnail);
-      _logger.info('Thumbnail saved to: ${tempFile.path}');
       return tempFile;
     } catch (e, stackTrace) {
       _logger.severe('Failed to get thumbnail: $e', e, stackTrace);
@@ -243,16 +222,13 @@ class PhotoSuggestionService {
     int maxCount = 10,
     bool ignoreLastPublishTime = true,
   }) async {
-    _logger.info('Fetching and clustering recent photos...');
     final recentPhotos = await getRecentPhotos(
         maxCount: maxCount, ignoreLastPublishTime: ignoreLastPublishTime);
     if (recentPhotos.isEmpty) {
-      _logger.info('No recent photos found.');
       return [];
     }
 
-    _logger.info(
-        'Checking processing status of ${recentPhotos.length} photo(s)...');
+    _logger.info('Clustering ${recentPhotos.length} recent photo(s)...');
 
     // 1. Precompute hashes for batch check
     final List<
@@ -284,8 +260,8 @@ class PhotoSuggestionService {
     // If cache version mismatch, clear and start fresh
     final int currentVersion = cache['__version__'] as int? ?? 0;
     if (currentVersion != _cacheVersion) {
-      _logger.info(
-          'Cache version mismatch ($currentVersion vs $_cacheVersion), clearing cache.');
+      _logger.fine(
+          'Cache version mismatch ($currentVersion vs $_cacheVersion), clearing.');
       cache = {
         '__version__': _cacheVersion,
         'data': <String, dynamic>{}, // real data under 'data'
@@ -350,10 +326,9 @@ class PhotoSuggestionService {
             .toList();
 
     _logger.info(
-        'Remaining ${unprocessedInfoList.length} unprocessed photo(s) for clustering (of ${photoInfoList.length} total)');
+        '${unprocessedInfoList.length}/${photoInfoList.length} photo(s) unprocessed');
 
     if (unprocessedInfoList.isEmpty) {
-      _logger.info('All photos already processed, skipping further steps.');
       return [];
     }
 
@@ -433,14 +408,13 @@ class PhotoSuggestionService {
         labels = List<String>.from(cachedData['labels'] ?? []);
         fileModifiedTime = DateTime.fromMillisecondsSinceEpoch(
             cachedData['fileModifiedTime'] as int);
-        _logger.info('Cache hit for photo: $effectiveName ($rawHashStr)');
       } else {
         effectiveName = data['effectiveName'] as String;
         final latlng = data['latlng'];
         lat = latlng?.latitude;
         lng = latlng?.longitude;
 
-        _logger.info('Cache miss for photo: $effectiveName ($rawHashStr)');
+        _logger.fine('Cache miss: $effectiveName');
         final ocrResult = await _processImageOCR(xFile);
         ocrBlocks = ocrResult.ocrBlocks;
         labels = ocrResult.labels;
@@ -509,15 +483,12 @@ class PhotoSuggestionService {
     if (cacheChanged) {
       cache['__version__'] = _cacheVersion;
       await UserStorage.savePhotoSuggestionCache(cache);
-      _logger.info(
-          'Saved photo suggestion cache to UserStorage (version $_cacheVersion)');
     }
 
     final clustering = GlobalPhotoClustering();
-    _logger
-        .info('Starting global clustering for ${enhancedPhotos.length} photos');
     final clusters = clustering.performGlobalClustering(enhancedPhotos);
-    _logger.info('Completed generating ${clusters.length} cluster(s).');
+    _logger.info(
+        'Clustered ${enhancedPhotos.length} photos → ${clusters.length} cluster(s)');
     return clusters;
   }
 
@@ -527,16 +498,14 @@ class PhotoSuggestionService {
         List<String> labels,
         DateTime modifiedTime
       })> _processImageOCR(XFile xFile) async {
-    _logger
-        .info('--- Starting OCR + Labeling processing for ${xFile.name} ---');
+    _logger.info('--- Starting OCR + Labeling for ${xFile.name} ---');
     final textRecognizer =
         TextRecognizer(script: TextRecognitionScript.chinese);
     final imageLabeler = ImageLabeler(options: ImageLabelerOptions());
     try {
       final file = File(xFile.path);
       final stat = await file.stat();
-      _logger.info('Image Metadata for ${xFile.name}: '
-          'Modified: ${stat.modified}');
+      _logger.fine('Processing ${xFile.name}, modified: ${stat.modified}');
 
       final inputImage = InputImage.fromFilePath(xFile.path);
 
@@ -551,97 +520,6 @@ class PhotoSuggestionService {
       final List<String> labelNames = labels.map((l) => l.label).toList();
       final List<String> blockTexts =
           recognizedText.blocks.map((b) => b.text).toList();
-
-      // 1. Log image labels
-      if (labels.isNotEmpty) {
-        final labelStrings = labels
-            .map((l) =>
-                '${l.label} (${(l.confidence * 100).toStringAsFixed(1)}%)')
-            .join(', ');
-        _logger.info('Image Labels for ${xFile.name}: $labelStrings');
-      }
-
-      // 2. Process OCR Layout
-      final blocks = recognizedText.blocks.toList();
-
-      // Sort blocks top-to-bottom
-      blocks.sort((a, b) => a.boundingBox.top.compareTo(b.boundingBox.top));
-
-      // Group blocks into lines based on more resilient vertical overlap
-      final List<List<TextBlock>> lines = [];
-      for (final block in blocks) {
-        bool addedToLine = false;
-        final blockCenterY =
-            block.boundingBox.top + (block.boundingBox.height / 2);
-
-        for (final line in lines) {
-          // Calculate the average center Y of the current line
-          double sumCenterY = 0;
-          for (var b in line) {
-            sumCenterY += b.boundingBox.top + (b.boundingBox.height / 2);
-          }
-          final avgCenterY = sumCenterY / line.length;
-
-          // Using a dynamic threshold based on block height (e.g. half of the block height)
-          final threshold = block.boundingBox.height * 0.6;
-
-          if ((blockCenterY - avgCenterY).abs() <= threshold) {
-            line.add(block);
-            addedToLine = true;
-            break;
-          }
-        }
-        if (!addedToLine) {
-          lines.add([block]);
-        }
-      }
-
-      // Sort lines by their average Y position, then sort blocks within each line left-to-right
-      lines.sort((a, b) {
-        final avgYa =
-            a.map((blk) => blk.boundingBox.top).reduce((v1, v2) => v1 + v2) /
-                a.length;
-        final avgYb =
-            b.map((blk) => blk.boundingBox.top).reduce((v1, v2) => v1 + v2) /
-                b.length;
-        return avgYa.compareTo(avgYb);
-      });
-
-      // --- LLM Optimized Output ---
-      final StringBuffer llmBuffer = StringBuffer();
-      llmBuffer.writeln(
-          '====== LLM Optimized OCR Result for image (${xFile.name}) ======');
-
-      // First, find the maximum width to establish scale
-      double maxWidth = 1.0;
-      for (final block in blocks) {
-        if (block.boundingBox.right > maxWidth) {
-          maxWidth = block.boundingBox.right;
-        }
-      }
-
-      for (final line in lines) {
-        final List<String> cellTexts = [];
-        for (final block in line) {
-          // Calculate percentage bounds to provide granular 1D spatial info out of 100
-          final int startPercent =
-              ((block.boundingBox.left / maxWidth) * 100).clamp(0, 100).toInt();
-          final int endPercent = ((block.boundingBox.right / maxWidth) * 100)
-              .clamp(0, 100)
-              .toInt();
-
-          final String alignmentTag = '[$startPercent-$endPercent]';
-
-          cellTexts.add('$alignmentTag ${block.text.replaceAll('\n', ' ')}');
-        }
-        // Use a pipe or tab separator to clearly denote horizontal relationships to the LLM
-        llmBuffer.writeln(cellTexts.join(' | '));
-      }
-      llmBuffer.writeln(
-          '==================================================================');
-
-      final llmString = llmBuffer.toString();
-      _logger.info('LLM OCR Layout for image:\n$llmString');
 
       return (
         ocrBlocks: blockTexts,
@@ -658,7 +536,6 @@ class PhotoSuggestionService {
     } finally {
       textRecognizer.close();
       imageLabeler.close();
-      _logger.info('--- OCR + Labeling processing complete ---');
     }
   }
 }

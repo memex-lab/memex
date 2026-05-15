@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
@@ -26,9 +25,47 @@ class CharacterService {
   };
 
   final Logger _logger = getLogger('CharacterService');
-  final FileSystemService _fileSystem = FileSystemService.instance;
+  FileSystemService get _fileSystem => FileSystemService.instance;
 
   CharacterService._();
+
+  /// Resolve relative media paths (avatar, chatBackground) to absolute.
+  /// Absolute paths (legacy) and DiceBear seeds are returned as-is.
+  CharacterModel _resolveMediaPaths(CharacterModel character) {
+    final avatar = character.avatar;
+    final bg = character.chatBackground;
+    var resolved = character;
+    if (avatar != null && avatar.isNotEmpty && isRelativeAvatarPath(avatar)) {
+      final absolute = _fileSystem.toAbsolutePath(avatar);
+      resolved = resolved.copyWith(avatar: absolute);
+    }
+    if (bg != null && bg.isNotEmpty && _isRelativeMediaPath(bg)) {
+      final absolute = _fileSystem.toAbsolutePath(bg);
+      resolved = resolved.copyWith(chatBackground: absolute);
+    }
+    return resolved;
+  }
+
+  /// Returns true if the path looks like a relative file path (image/media).
+  static bool _isRelativeMediaPath(String path) {
+    if (path.startsWith('/')) return false;
+    final lower = path.toLowerCase();
+    return lower.endsWith('.png') ||
+        lower.endsWith('.jpg') ||
+        lower.endsWith('.jpeg') ||
+        lower.endsWith('.webp');
+  }
+
+  /// Returns true if the avatar value looks like a relative file path
+  /// (not a DiceBear seed, not already absolute).
+  static bool isRelativeAvatarPath(String avatar) {
+    if (avatar.startsWith('/')) return false; // already absolute
+    final lower = avatar.toLowerCase();
+    return lower.endsWith('.png') ||
+        lower.endsWith('.jpg') ||
+        lower.endsWith('.jpeg') ||
+        lower.endsWith('.webp');
+  }
 
   /// Get the Characters directory path for a user
   String getCharactersPath(String userId) {
@@ -185,7 +222,7 @@ class CharacterService {
           data['id'] = charId;
 
           final character = CharacterModel.fromJson(data);
-          characters.add(character);
+          characters.add(_resolveMediaPaths(character));
         } catch (e) {
           _logger.warning("Failed to load character from ${entity.path}: $e");
         }
@@ -228,14 +265,51 @@ class CharacterService {
       final data = jsonDecode(jsonEncode(doc));
       data['id'] = characterId;
 
-      final character = CharacterModel.fromJson(
-          data); // CharacterModel.fromJson defines its own defaults
-
-      return character;
+      final character = CharacterModel.fromJson(data);
+      return _resolveMediaPaths(character);
     } catch (e) {
       _logger.severe("Failed to load character $characterId: $e");
       return null;
     }
+  }
+
+  /// Path to the file that tracks the next available numeric character ID.
+  /// This prevents ID reuse after character deletion.
+  static const String _nextIdFile = '.next_id';
+
+  /// Read the next available ID from the tracker file.
+  /// If the file doesn't exist, scans existing files to bootstrap.
+  Future<int> _readNextId(String charsPath) async {
+    final file = File(p.join(charsPath, _nextIdFile));
+    if (await file.exists()) {
+      try {
+        return int.parse((await file.readAsString()).trim());
+      } catch (_) {
+        // Corrupted file — fall through to bootstrap
+      }
+    }
+
+    // Bootstrap: scan existing numeric IDs and pick max + 1
+    final dir = Directory(charsPath);
+    int maxId = 0;
+    await for (final entity in dir.list()) {
+      if (entity is File && !p.basename(entity.path).startsWith('.')) {
+        final name = p.basenameWithoutExtension(entity.path);
+        final parsed = int.tryParse(name);
+        if (parsed != null && parsed > maxId) {
+          maxId = parsed;
+        }
+      }
+    }
+    final nextId = maxId + 1;
+    await _writeNextId(charsPath, nextId);
+    return nextId;
+  }
+
+  /// Persist the next available ID.
+  Future<void> _writeNextId(String charsPath, int nextId) async {
+    final file = File(p.join(charsPath, _nextIdFile));
+    await file.writeAsString(nextId.toString());
   }
 
   /// Create new character
@@ -244,23 +318,11 @@ class CharacterService {
     required Map<String, dynamic> characterData,
   }) async {
     final charsPath = await _ensureCharactersDirectory(userId);
-    final dir = Directory(charsPath);
 
-    // Generate new ID (max + 1)
-    final existingIds = <int>{};
-    await for (final entity in dir.list()) {
-      if (entity is File && !p.basename(entity.path).startsWith('.')) {
-        final name = p.basenameWithoutExtension(entity.path);
-        try {
-          existingIds.add(int.parse(name));
-        } catch (_) {}
-      }
-    }
-
-    var newId = "1";
-    if (existingIds.isNotEmpty) {
-      newId = (existingIds.reduce(max) + 1).toString();
-    }
+    // Generate new ID using monotonically increasing counter (never reuses deleted IDs)
+    final nextId = await _readNextId(charsPath);
+    final newId = nextId.toString();
+    await _writeNextId(charsPath, nextId + 1);
 
     final charFile = p.join(charsPath, '$newId.yaml');
     final charDict = {
@@ -270,6 +332,16 @@ class CharacterService {
       "avatar": characterData['avatar'],
       "enabled": characterData['enabled'] ?? true,
       "memory": characterData['memory'] ?? [],
+      if (characterData['first_message'] != null)
+        "first_message": characterData['first_message'],
+      if (characterData['system_prompt_override'] != null)
+        "system_prompt_override": characterData['system_prompt_override'],
+      if (characterData['post_history_instructions'] != null)
+        "post_history_instructions": characterData['post_history_instructions'],
+      if (characterData['mes_example'] != null)
+        "mes_example": characterData['mes_example'],
+      if (characterData['chat_background'] != null)
+        "chat_background": characterData['chat_background'],
     };
 
     try {
@@ -326,6 +398,43 @@ class CharacterService {
       }
       if (updates.containsKey('interest_filter')) {
         charData['interest_filter'] = updates['interest_filter'];
+      }
+      if (updates.containsKey('first_message')) {
+        if (updates['first_message'] == null) {
+          charData.remove('first_message');
+        } else {
+          charData['first_message'] = updates['first_message'];
+        }
+      }
+      if (updates.containsKey('system_prompt_override')) {
+        if (updates['system_prompt_override'] == null) {
+          charData.remove('system_prompt_override');
+        } else {
+          charData['system_prompt_override'] =
+              updates['system_prompt_override'];
+        }
+      }
+      if (updates.containsKey('post_history_instructions')) {
+        if (updates['post_history_instructions'] == null) {
+          charData.remove('post_history_instructions');
+        } else {
+          charData['post_history_instructions'] =
+              updates['post_history_instructions'];
+        }
+      }
+      if (updates.containsKey('mes_example')) {
+        if (updates['mes_example'] == null) {
+          charData.remove('mes_example');
+        } else {
+          charData['mes_example'] = updates['mes_example'];
+        }
+      }
+      if (updates.containsKey('chat_background')) {
+        if (updates['chat_background'] == null) {
+          charData.remove('chat_background');
+        } else {
+          charData['chat_background'] = updates['chat_background'];
+        }
       }
 
       // Remove legacy fields if they exist (merged into persona already by backend logic usually, but cleanup is good)

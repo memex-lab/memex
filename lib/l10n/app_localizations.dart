@@ -434,6 +434,12 @@ abstract class AppLocalizations {
   /// **'All'**
   String get all;
 
+  /// No description provided for @schedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule'**
+  String get schedule;
+
   /// No description provided for @loadStatsFailed.
   ///
   /// In en, this message translates to:
@@ -452,6 +458,12 @@ abstract class AppLocalizations {
   /// **'Daily'**
   String get daily;
 
+  /// No description provided for @modelStatsByAgent.
+  ///
+  /// In en, this message translates to:
+  /// **'By agent'**
+  String get modelStatsByAgent;
+
   /// No description provided for @detail.
   ///
   /// In en, this message translates to:
@@ -464,6 +476,12 @@ abstract class AppLocalizations {
   /// **'Date'**
   String get date;
 
+  /// No description provided for @agent.
+  ///
+  /// In en, this message translates to:
+  /// **'Agent'**
+  String get agent;
+
   /// No description provided for @noData.
   ///
   /// In en, this message translates to:
@@ -475,6 +493,132 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Total calls'**
   String get totalCalls;
+
+  /// No description provided for @calls.
+  ///
+  /// In en, this message translates to:
+  /// **'Calls'**
+  String get calls;
+
+  /// No description provided for @callsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} calls'**
+  String callsCount(Object count);
+
+  /// No description provided for @selectDateRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Select date range'**
+  String get selectDateRange;
+
+  /// No description provided for @totalTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Total tokens'**
+  String get totalTokens;
+
+  /// No description provided for @cacheRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Cache rate'**
+  String get cacheRate;
+
+  /// No description provided for @promptTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompt tokens'**
+  String get promptTokens;
+
+  /// No description provided for @completionTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Completion tokens'**
+  String get completionTokens;
+
+  /// No description provided for @cachedTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Cached tokens'**
+  String get cachedTokens;
+
+  /// No description provided for @thoughtTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Thought tokens'**
+  String get thoughtTokens;
+
+  /// No description provided for @prompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompt'**
+  String get prompt;
+
+  /// No description provided for @completion.
+  ///
+  /// In en, this message translates to:
+  /// **'Completion'**
+  String get completion;
+
+  /// No description provided for @cached.
+  ///
+  /// In en, this message translates to:
+  /// **'Cached'**
+  String get cached;
+
+  /// No description provided for @thought.
+  ///
+  /// In en, this message translates to:
+  /// **'Thought'**
+  String get thought;
+
+  /// No description provided for @model.
+  ///
+  /// In en, this message translates to:
+  /// **'Model'**
+  String get model;
+
+  /// No description provided for @scene.
+  ///
+  /// In en, this message translates to:
+  /// **'Scene'**
+  String get scene;
+
+  /// No description provided for @sceneId.
+  ///
+  /// In en, this message translates to:
+  /// **'Scene ID'**
+  String get sceneId;
+
+  /// No description provided for @tokenUsage.
+  ///
+  /// In en, this message translates to:
+  /// **'Token usage'**
+  String get tokenUsage;
+
+  /// No description provided for @handler.
+  ///
+  /// In en, this message translates to:
+  /// **'Handler'**
+  String get handler;
+
+  /// No description provided for @modelBreakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Model breakdown'**
+  String get modelBreakdown;
+
+  /// No description provided for @callDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Call details'**
+  String get callDetails;
+
+  /// No description provided for @recordDetailsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Record details: {scene}'**
+  String recordDetailsTitle(Object scene);
 
   /// No description provided for @saveLlmConfigFailed.
   ///
@@ -1766,6 +1910,126 @@ abstract class AppLocalizations {
   /// **'This insight is still being generated or was updated. Refresh insights and try again later.'**
   String get insightUnavailableMessage;
 
+  /// No description provided for @scheduleAggregation.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule aggregation'**
+  String get scheduleAggregation;
+
+  /// No description provided for @noScheduleAggregation.
+  ///
+  /// In en, this message translates to:
+  /// **'No schedule aggregation'**
+  String get noScheduleAggregation;
+
+  /// No description provided for @scheduleAggregationEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap Update to organize schedules and todos from real temporal cards.'**
+  String get scheduleAggregationEmptyHint;
+
+  /// No description provided for @scheduleAggregationDirtyReason.
+  ///
+  /// In en, this message translates to:
+  /// **'New schedule-related content is available. Tap Update to reorganize.'**
+  String get scheduleAggregationDirtyReason;
+
+  /// No description provided for @scheduleAggregationLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load schedule data'**
+  String get scheduleAggregationLoadFailed;
+
+  /// No description provided for @scheduleAggregationRefreshFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to refresh schedule data'**
+  String get scheduleAggregationRefreshFailed;
+
+  /// No description provided for @scheduleTaskUpdateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update task'**
+  String get scheduleTaskUpdateFailed;
+
+  /// No description provided for @scheduleFeatured.
+  ///
+  /// In en, this message translates to:
+  /// **'Featured'**
+  String get scheduleFeatured;
+
+  /// No description provided for @scheduleThisWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'This week'**
+  String get scheduleThisWeek;
+
+  /// No description provided for @scheduleDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get scheduleDone;
+
+  /// No description provided for @scheduleTbd.
+  ///
+  /// In en, this message translates to:
+  /// **'TBD'**
+  String get scheduleTbd;
+
+  /// No description provided for @scheduleWeekOverview.
+  ///
+  /// In en, this message translates to:
+  /// **'This week'**
+  String get scheduleWeekOverview;
+
+  /// No description provided for @scheduleImportant.
+  ///
+  /// In en, this message translates to:
+  /// **'Important'**
+  String get scheduleImportant;
+
+  /// No description provided for @scheduleBriefingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule briefing'**
+  String get scheduleBriefingTitle;
+
+  /// No description provided for @scheduleBriefingNeedsUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs update'**
+  String get scheduleBriefingNeedsUpdate;
+
+  /// No description provided for @scheduleBriefingOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get scheduleBriefingOpen;
+
+  /// No description provided for @scheduleBriefingNoData.
+  ///
+  /// In en, this message translates to:
+  /// **'No schedule briefing yet'**
+  String get scheduleBriefingNoData;
+
+  /// No description provided for @scheduleBriefingUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated {time}'**
+  String scheduleBriefingUpdated(Object time);
+
+  /// No description provided for @scheduleBriefingDoneCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} done'**
+  String scheduleBriefingDoneCount(Object count);
+
+  /// No description provided for @scheduleBriefingConflictCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} conflicts'**
+  String scheduleBriefingConflictCount(Object count);
+
   /// No description provided for @updating.
   ///
   /// In en, this message translates to:
@@ -2216,6 +2480,12 @@ abstract class AppLocalizations {
   /// **'Related records'**
   String get relatedRecords;
 
+  /// No description provided for @reply.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply'**
+  String get reply;
+
   /// No description provided for @replySent.
   ///
   /// In en, this message translates to:
@@ -2437,6 +2707,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Default'**
   String get defaultLabel;
+
+  /// No description provided for @setAsDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Set as default'**
+  String get setAsDefault;
 
   /// No description provided for @missingApiKey.
   ///
@@ -2771,13 +3047,13 @@ abstract class AppLocalizations {
   /// No description provided for @discardChangesTitle.
   ///
   /// In en, this message translates to:
-  /// **'Discard unsaved changes?'**
+  /// **'Leave this page?'**
   String get discardChangesTitle;
 
   /// No description provided for @discardChangesMessage.
   ///
   /// In en, this message translates to:
-  /// **'You have unsaved changes. Are you sure you want to leave without saving?'**
+  /// **'If you made any changes, please save them before leaving.'**
   String get discardChangesMessage;
 
   /// No description provided for @discardButton.
@@ -3872,6 +4148,30 @@ abstract class AppLocalizations {
   /// **'Switch companion'**
   String get switchCompanion;
 
+  /// No description provided for @personaChatInputHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Type a message...'**
+  String get personaChatInputHint;
+
+  /// No description provided for @personaChatEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Send the first message to begin this companion chat'**
+  String get personaChatEmptyHint;
+
+  /// No description provided for @today.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get today;
+
+  /// No description provided for @yesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get yesterday;
+
   /// No description provided for @showInsightTextTitle.
   ///
   /// In en, this message translates to:
@@ -3938,6 +4238,126 @@ abstract class AppLocalizations {
   /// **'Untitled card'**
   String get untitledCard;
 
+  /// No description provided for @locationContextTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Location Context'**
+  String get locationContextTitle;
+
+  /// No description provided for @locationContextDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Current city and neighborhood context for agent chat'**
+  String get locationContextDescription;
+
+  /// No description provided for @locationContextAttachTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach current location to chat'**
+  String get locationContextAttachTitle;
+
+  /// No description provided for @locationContextAttachDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Uses device GPS and reverse geocoding to provide city, district, and neighborhood context to the agent.'**
+  String get locationContextAttachDesc;
+
+  /// No description provided for @reverseGeocodingProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Reverse geocoding provider'**
+  String get reverseGeocodingProvider;
+
+  /// No description provided for @amapProviderName.
+  ///
+  /// In en, this message translates to:
+  /// **'Amap'**
+  String get amapProviderName;
+
+  /// No description provided for @amapApiKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Amap API Key'**
+  String get amapApiKey;
+
+  /// No description provided for @amapGcj02Note.
+  ///
+  /// In en, this message translates to:
+  /// **'Amap uses GCJ-02 coordinates. Device GPS is converted before reverse geocoding.'**
+  String get amapGcj02Note;
+
+  /// No description provided for @contextGranularity.
+  ///
+  /// In en, this message translates to:
+  /// **'Context granularity'**
+  String get contextGranularity;
+
+  /// No description provided for @granularityCity.
+  ///
+  /// In en, this message translates to:
+  /// **'City'**
+  String get granularityCity;
+
+  /// No description provided for @granularityDistrict.
+  ///
+  /// In en, this message translates to:
+  /// **'District'**
+  String get granularityDistrict;
+
+  /// No description provided for @granularityNeighborhood.
+  ///
+  /// In en, this message translates to:
+  /// **'Neighborhood'**
+  String get granularityNeighborhood;
+
+  /// No description provided for @granularityStreet.
+  ///
+  /// In en, this message translates to:
+  /// **'Street'**
+  String get granularityStreet;
+
+  /// No description provided for @granularityFullAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Full address candidate'**
+  String get granularityFullAddress;
+
+  /// No description provided for @locationFreshness.
+  ///
+  /// In en, this message translates to:
+  /// **'Location freshness'**
+  String get locationFreshness;
+
+  /// No description provided for @minutesShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} minutes'**
+  String minutesShort(int minutes);
+
+  /// No description provided for @oneHour.
+  ///
+  /// In en, this message translates to:
+  /// **'1 hour'**
+  String get oneHour;
+
+  /// No description provided for @testCurrentLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Test current location'**
+  String get testCurrentLocation;
+
+  /// No description provided for @locationUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'location unavailable'**
+  String get locationUnavailable;
+
+  /// No description provided for @locationTestFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed: {error}'**
+  String locationTestFailed(String error);
+
   /// No description provided for @settingsSearchPlaceholder.
   ///
   /// In en, this message translates to:
@@ -3949,6 +4369,438 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No matching settings found'**
   String get settingsSearchEmpty;
+
+  /// No description provided for @importCharacterCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Import Character Card'**
+  String get importCharacterCard;
+
+  /// No description provided for @firstMessageLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'First Message'**
+  String get firstMessageLabel;
+
+  /// No description provided for @firstMessageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Greeting sent on first conversation (optional)'**
+  String get firstMessageHint;
+
+  /// No description provided for @systemPromptOverrideLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'System Prompt Override'**
+  String get systemPromptOverrideLabel;
+
+  /// No description provided for @systemPromptOverrideHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Override default system prompt (advanced, optional)'**
+  String get systemPromptOverrideHint;
+
+  /// No description provided for @postHistoryInstructionsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Post-History Instructions'**
+  String get postHistoryInstructionsLabel;
+
+  /// No description provided for @postHistoryInstructionsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Instructions injected after chat history, before reply (optional)'**
+  String get postHistoryInstructionsHint;
+
+  /// No description provided for @mesExampleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Message Examples'**
+  String get mesExampleLabel;
+
+  /// No description provided for @mesExampleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Example dialogues showing character style (optional)'**
+  String get mesExampleHint;
+
+  /// No description provided for @worldBookTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'World Book'**
+  String get worldBookTitle;
+
+  /// No description provided for @worldBookSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Background knowledge injected when keywords are triggered'**
+  String get worldBookSubtitle;
+
+  /// No description provided for @characterMemoryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Character Memory'**
+  String get characterMemoryTitle;
+
+  /// No description provided for @characterMemorySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Relationship dynamics and interaction memories between character and user'**
+  String get characterMemorySubtitle;
+
+  /// No description provided for @addTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get addTooltip;
+
+  /// No description provided for @constantBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Constant'**
+  String get constantBadge;
+
+  /// No description provided for @worldEntryFallbackName.
+  ///
+  /// In en, this message translates to:
+  /// **'Entry {index}'**
+  String worldEntryFallbackName(Object index);
+
+  /// No description provided for @keywordsPrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'Keywords: {keys}'**
+  String keywordsPrefix(Object keys);
+
+  /// No description provided for @memoryFallbackName.
+  ///
+  /// In en, this message translates to:
+  /// **'Memory {index}'**
+  String memoryFallbackName(Object index);
+
+  /// No description provided for @addWorldEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'Add World Book Entry'**
+  String get addWorldEntry;
+
+  /// No description provided for @editWorldEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit World Book Entry'**
+  String get editWorldEntry;
+
+  /// No description provided for @commentTitleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Comment / Title'**
+  String get commentTitleLabel;
+
+  /// No description provided for @entryDescriptionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Entry description (optional)'**
+  String get entryDescriptionHint;
+
+  /// No description provided for @triggerKeywordsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Trigger Keywords'**
+  String get triggerKeywordsLabel;
+
+  /// No description provided for @triggerKeywordsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Comma-separated, e.g.: magic, spell'**
+  String get triggerKeywordsHint;
+
+  /// No description provided for @contentLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Content'**
+  String get contentLabel;
+
+  /// No description provided for @worldEntryContentHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Background knowledge injected when keywords trigger'**
+  String get worldEntryContentHint;
+
+  /// No description provided for @enabledCheckbox.
+  ///
+  /// In en, this message translates to:
+  /// **'Enabled'**
+  String get enabledCheckbox;
+
+  /// No description provided for @addMemory.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Memory'**
+  String get addMemory;
+
+  /// No description provided for @editMemory.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Memory'**
+  String get editMemory;
+
+  /// No description provided for @memoryLabelField.
+  ///
+  /// In en, this message translates to:
+  /// **'Label'**
+  String get memoryLabelField;
+
+  /// No description provided for @memoryLabelHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Unique identifier, e.g.: name preference'**
+  String get memoryLabelHint;
+
+  /// No description provided for @memoryContentHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Memory content'**
+  String get memoryContentHint;
+
+  /// No description provided for @salienceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Salience: '**
+  String get salienceLabel;
+
+  /// No description provided for @labelCannotBeEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Label cannot be empty'**
+  String get labelCannotBeEmpty;
+
+  /// No description provided for @importSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} imported successfully'**
+  String importSuccess(Object name);
+
+  /// No description provided for @importFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Import failed: {error}'**
+  String importFailed(Object error);
+
+  /// No description provided for @supportedFormats.
+  ///
+  /// In en, this message translates to:
+  /// **'Supported Formats'**
+  String get supportedFormats;
+
+  /// No description provided for @tavernImportDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'• SillyTavern V2 character cards (.json)\n• PNG images with embedded cards (.png)\n\nFields like persona, world book, etc. will be automatically mapped to Memex character format.'**
+  String get tavernImportDescription;
+
+  /// No description provided for @pickCharacterFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick Character File'**
+  String get pickCharacterFile;
+
+  /// No description provided for @repickFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick Another File'**
+  String get repickFile;
+
+  /// No description provided for @personaSettingSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Persona'**
+  String get personaSettingSection;
+
+  /// No description provided for @systemPromptSection.
+  ///
+  /// In en, this message translates to:
+  /// **'System Prompt'**
+  String get systemPromptSection;
+
+  /// No description provided for @worldEntriesCount.
+  ///
+  /// In en, this message translates to:
+  /// **'World Book: {count} entries'**
+  String worldEntriesCount(Object count);
+
+  /// No description provided for @fileLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'File: {filename}'**
+  String fileLabel(Object filename);
+
+  /// No description provided for @conflictWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Character with same name already exists: {names}. Importing will create a new character without overwriting existing ones.'**
+  String conflictWarning(Object names);
+
+  /// No description provided for @setPrimaryCompanionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Set as Primary Companion'**
+  String get setPrimaryCompanionTitle;
+
+  /// No description provided for @setPrimaryCompanionSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatically set as your primary companion after import'**
+  String get setPrimaryCompanionSubtitle;
+
+  /// No description provided for @confirmImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Import'**
+  String get confirmImport;
+
+  /// No description provided for @chatBackground.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat Background'**
+  String get chatBackground;
+
+  /// No description provided for @chooseChatBackgroundImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose background image'**
+  String get chooseChatBackgroundImage;
+
+  /// No description provided for @earlyUpdateSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Early access updates'**
+  String get earlyUpdateSettingsTitle;
+
+  /// No description provided for @earlyUpdateSettingsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Check GitHub pre-releases for the matching Early APK, download it, and hand it to Android\'s installer.'**
+  String get earlyUpdateSettingsDesc;
+
+  /// No description provided for @earlyUpdateUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Early updates are only available in the Android Early build.'**
+  String get earlyUpdateUnsupported;
+
+  /// No description provided for @earlyUpdateAutoCheckTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto check for updates'**
+  String get earlyUpdateAutoCheckTitle;
+
+  /// No description provided for @earlyUpdateAutoCheckDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Check at startup at most once every 12 hours.'**
+  String get earlyUpdateAutoCheckDesc;
+
+  /// No description provided for @earlyUpdateWifiOnlyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Download on Wi-Fi only'**
+  String get earlyUpdateWifiOnlyTitle;
+
+  /// No description provided for @earlyUpdateWifiOnlyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip update downloads while using mobile data.'**
+  String get earlyUpdateWifiOnlyDesc;
+
+  /// No description provided for @earlyUpdateAutoInstallTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto download and install'**
+  String get earlyUpdateAutoInstallTitle;
+
+  /// No description provided for @earlyUpdateAutoInstallDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'When a new build is found, download it and open the Android installer automatically.'**
+  String get earlyUpdateAutoInstallDesc;
+
+  /// No description provided for @earlyUpdateCheckNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Check now'**
+  String get earlyUpdateCheckNow;
+
+  /// No description provided for @earlyUpdateChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking GitHub pre-releases...'**
+  String get earlyUpdateChecking;
+
+  /// No description provided for @earlyUpdateSkippedMobile.
+  ///
+  /// In en, this message translates to:
+  /// **'Skipped because Wi-Fi-only downloads are enabled.'**
+  String get earlyUpdateSkippedMobile;
+
+  /// No description provided for @earlyUpdateNoUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'You are already on the latest Early build.'**
+  String get earlyUpdateNoUpdate;
+
+  /// No description provided for @earlyUpdateFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Early build {version}+{build} is available.'**
+  String earlyUpdateFound(Object version, Object build);
+
+  /// No description provided for @earlyUpdateDownloadAndInstall.
+  ///
+  /// In en, this message translates to:
+  /// **'Download and install'**
+  String get earlyUpdateDownloadAndInstall;
+
+  /// No description provided for @earlyUpdateDownloadingPercent.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading update: {percent}%'**
+  String earlyUpdateDownloadingPercent(Object percent);
+
+  /// No description provided for @earlyUpdateInstallStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Android installer opened.'**
+  String get earlyUpdateInstallStarted;
+
+  /// No description provided for @earlyUpdateInstallPermissionRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow Memex to install unknown apps, then tap download and install again.'**
+  String get earlyUpdateInstallPermissionRequired;
+
+  /// No description provided for @earlyUpdateLastChecked.
+  ///
+  /// In en, this message translates to:
+  /// **'Last checked: {time}'**
+  String earlyUpdateLastChecked(Object time);
+
+  /// No description provided for @earlyUpdateCheckFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Update check failed: {error}'**
+  String earlyUpdateCheckFailed(Object error);
+
+  /// No description provided for @earlyUpdateDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Early update available'**
+  String get earlyUpdateDialogTitle;
+
+  /// No description provided for @earlyUpdateReleaseNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Release notes'**
+  String get earlyUpdateReleaseNotes;
 }
 
 class _AppLocalizationsDelegate

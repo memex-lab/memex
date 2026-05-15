@@ -15,8 +15,14 @@ import 'package:memex/ui/core/themes/app_colors.dart';
 class ModelConfigEditPage extends StatefulWidget {
   final LLMConfig? config;
   final LLMConfig? duplicateSource;
+  final bool isDefaultConfig;
 
-  const ModelConfigEditPage({super.key, this.config, this.duplicateSource});
+  const ModelConfigEditPage({
+    super.key,
+    this.config,
+    this.duplicateSource,
+    this.isDefaultConfig = false,
+  });
 
   @override
   State<ModelConfigEditPage> createState() => _ModelConfigEditPageState();
@@ -916,7 +922,8 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
 
   @override
   Widget build(BuildContext context) {
-    final isDefault = widget.config?.isDefault ?? false;
+    final isBuiltInDefault = widget.config?.isDefault ?? false;
+    final locksKey = isBuiltInDefault || widget.isDefaultConfig;
 
     return PopScope(
       canPop: !_hasChanges,
@@ -939,7 +946,7 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
                 : UserStorage.l10n.editConfiguration,
           ),
           actions: [
-            if (isDefault)
+            if (isBuiltInDefault)
               IconButton(
                 icon: const Icon(Icons.restore),
                 tooltip: UserStorage.l10n.resetToDefaults,
@@ -1010,7 +1017,7 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
                   helperText: UserStorage.l10n.keyIdHelper,
                   border: const OutlineInputBorder(),
                 ),
-                enabled: !isDefault, // Default keys cannot be changed
+                enabled: !locksKey,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return UserStorage.l10n.required;

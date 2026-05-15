@@ -407,6 +407,31 @@ While executing your primary directive, **silently observe** the conversation fo
 ''';
   }
 
+  Future<String> buildSuperAgentMemoryManagementPrompt() async {
+    final basePrompt = await buildMemoryManagementPrompt();
+    return '''$basePrompt
+
+## SuperAgent Memory Boundary (Conservative Mode)
+SuperAgent often searches and summarizes existing workspace history. Apply these extra rules when deciding whether to call `append_memories`:
+- Treat retrieved Facts, PKM files, chat history, existing memory, and event logs as read-only evidence. Do not convert them into new memories by themselves.
+- Only write memory when the current conversation introduces or explicitly confirms durable user profile information, or when the user explicitly asks you to remember/update memory.
+- Deduplicate against `<user_memory_context>`; do not rewrite or paraphrase information that is already known.
+''';
+  }
+
+  Future<String> buildMemoryReadOnlyPrompt() async {
+    return '''## Memory System Capabilities (Read-Only Context)
+You have access to the user's long-term memory context as **reference material only**.
+**Primary Directive**: Use the `<user_memory_context>` block to tailor your response to the user's preferences, active projects, and constraints.
+
+---
+### 🧠 Core Memory Logic
+1. **Recall Only**: Use the context provided in the `<user_memory_context>` block to answer the user's immediate request accurately and helpfully.
+2. **No Memory Updates**: You cannot and must not create, update, delete, or propose changes to memory in this mode.
+3. **Read-Only Task Boundary**: When searching, summarizing, listing, or comparing existing Facts/PKM/history/chat records, treat all retrieved information as read-only evidence for the answer, not as new memory candidates.
+''';
+  }
+
   Future<String> buildMemoryPrompt() async {
     return _runWithMemoryLock(() async {
       final mem = await _loadMemory();

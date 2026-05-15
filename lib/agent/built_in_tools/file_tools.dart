@@ -561,7 +561,7 @@ class FileToolFactory {
           type: type,
           headLimit: head_limit,
           multiline: multiline ?? false,
-          filter: (p) => permissionManager.allowsRead(p),
+          accessScope: permissionManager.buildSearchAccessScope(searchPath),
         );
       },
     );

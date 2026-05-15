@@ -1,12 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:logging/logging.dart';
+import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
-import 'package:flutter/foundation.dart' show visibleForTesting;
+import 'package:flutter/foundation.dart';
+import 'package:logging/logging.dart';
 import 'package:memex/db/app_database.dart';
-import 'package:memex/utils/logger.dart';
 import 'package:memex/domain/models/task_exceptions.dart';
+import 'package:memex/utils/logger.dart';
 
 /// Context for task execution
 class TaskContext {
@@ -98,6 +99,11 @@ class LocalTaskExecutor {
 
   // Polling interval
   static const Duration _pollInterval = Duration(seconds: 1);
+  static const String _crashGuardBucket = 'local_task_executor_crash_guard';
+  static const String _activeTaskMarkerKeyPrefix = 'active_task_marker:';
+  static const String _gracefulExitMarkerKey = 'graceful_exit_marker';
+  static const int crashLoopFailureThreshold = 2;
+  static const Duration crashLikeExitWindow = Duration(minutes: 10);
 
   /// Stream that emits true if there are any active (pending, processing, retrying) tasks in the DB.
   /// Useful for global UI loading indicators.
@@ -152,6 +158,11 @@ class LocalTaskExecutor {
     if (_isRunning) return;
     _currentUserId = userId; // Store for use in worker loop
 
+    // Detect whether the previous process exited while a task was running.
+    // This must happen before resetting stale tasks, otherwise we lose the only
+    // durable signal that a crash-like exit happened during task execution.
+    await _handlePreviousExecutionMarkers();
+
     // Reset any stale 'processing' tasks that might have been left over from a crash
     await _resetStaleTasks();
 
@@ -183,6 +194,32 @@ class LocalTaskExecutor {
     _isRunning = false;
     _pollTimer?.cancel();
     _logger.info('LocalTaskExecutor stopped');
+  }
+
+  Future<void> recordGracefulShutdown({String reason = 'unknown'}) async {
+    if (!AppDatabase.isInitialized) return;
+
+    final marker = _GracefulExitMarker(
+      markedAt: DateTime.now(),
+      reason: reason,
+    );
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    await _db.into(_db.kvStore).insertOnConflictUpdate(
+          KvStoreCompanion.insert(
+            key: _gracefulExitMarkerKey,
+            value: Value(jsonEncode(marker.toJson())),
+            bucket: const Value(_crashGuardBucket),
+            updatedAt: Value(now),
+          ),
+        );
+  }
+
+  Future<void> clearGracefulShutdownMarker() async {
+    if (!AppDatabase.isInitialized) return;
+
+    await (_db.delete(_db.kvStore)
+          ..where((kv) => kv.key.equals(_gracefulExitMarkerKey)))
+        .go();
   }
 
   // Max concurrent tasks
@@ -361,6 +398,7 @@ class LocalTaskExecutor {
       return (pendingCount.read(_db.tasks.id.count()) ?? 0) == 0;
     } catch (e) {
       _logger.warning('Failed to parse dependencies for task ${task.id}: $e');
+      await _failTask(task, 'Invalid task dependencies: $e');
       return false;
     }
   }
@@ -376,6 +414,7 @@ class LocalTaskExecutor {
           updatedAt: Value(now),
         ),
       );
+      await _markTaskExecutionStarted(task);
 
       final handler = _handlers[task.type];
       if (handler == null) {
@@ -388,12 +427,9 @@ class LocalTaskExecutor {
 
       final currentUserId = _currentUserId;
       if (currentUserId == null) {
-        _logger.severe(
-            'Task execution failed: No active user ID in LocalTaskExecutor');
-        // Should we fail the task? Yes, otherwise it hangs in processing if we don't update status.
-        // Or just return and let it stay processing until restart?
-        // Better to retry later.
-        return;
+        throw StateError(
+          'Task execution failed: no active user ID in LocalTaskExecutor',
+        );
       }
 
       await handler(
@@ -479,11 +515,252 @@ class LocalTaskExecutor {
         _logger.severe('Task ${task.id} permanently failed');
       }
     } finally {
+      await _clearTaskExecutionMarker(task.id);
+
       // Trigger poll to pick up next tasks immediately upon completion of one
       if (_isRunning) {
         _scheduleNextPoll(immediate: true);
       }
     }
+  }
+
+  Future<void> _handlePreviousExecutionMarkers() async {
+    try {
+      final markers = await _loadTaskExecutionMarkers();
+      if (markers.isEmpty) return;
+      final gracefulExitMarker = await _loadGracefulExitMarker();
+
+      for (final marker in markers) {
+        await _handlePreviousExecutionMarker(marker, gracefulExitMarker);
+      }
+      await _deleteGracefulExitMarker();
+    } catch (e, stack) {
+      _logger.severe(
+        'Failed to handle previous task execution markers',
+        e,
+        stack,
+      );
+    }
+  }
+
+  Future<void> _handlePreviousExecutionMarker(
+    _TaskExecutionMarker marker,
+    _GracefulExitMarker? gracefulExitMarker,
+  ) async {
+    final task = await (_db.select(
+      _db.tasks,
+    )..where((t) => t.id.equals(marker.taskId)))
+        .getSingleOrNull();
+    if (task == null || task.status != 'processing') {
+      await _deleteTaskExecutionMarker(marker.taskId);
+      return;
+    }
+
+    if (!marker.matchesTask(task)) {
+      _logger.warning(
+        'Ignoring stale crash guard marker for task ${marker.taskId}: task metadata changed',
+      );
+      await _deleteTaskExecutionMarker(marker.taskId);
+      return;
+    }
+
+    if (gracefulExitMarker != null &&
+        !gracefulExitMarker.markedAt.isBefore(marker.startedAt)) {
+      _logger.info(
+        'Ignoring crash guard marker for task ${marker.taskId}: previous app exit was graceful (${gracefulExitMarker.reason})',
+      );
+      await _deleteTaskExecutionMarker(marker.taskId);
+      return;
+    }
+
+    final now = DateTime.now();
+    if (now.difference(marker.startedAt) > crashLikeExitWindow) {
+      _logger.info(
+        'Ignoring old crash guard marker for task ${marker.taskId}; previous process likely stopped outside crash window',
+      );
+      await _deleteTaskExecutionMarker(marker.taskId);
+      return;
+    }
+
+    final updatedMarker = marker.copyWith(crashCount: marker.crashCount + 1);
+    if (updatedMarker.crashCount >= crashLoopFailureThreshold) {
+      await _failTask(
+        task,
+        'Task failed after ${updatedMarker.crashCount} crash-like exits while processing. '
+        'Marked failed to stop startup crash loop.',
+      );
+      await _deleteTaskExecutionMarker(marker.taskId);
+      _logger.severe(
+        'Task ${task.id} failed by crash loop guard after ${updatedMarker.crashCount} crash-like exits',
+      );
+      return;
+    }
+
+    await _saveTaskExecutionMarker(updatedMarker);
+    _logger.warning(
+      'Detected crash-like exit while processing task ${task.id}; crash count is ${updatedMarker.crashCount}',
+    );
+  }
+
+  Future<void> _markTaskExecutionStarted(Task task) async {
+    await clearGracefulShutdownMarker();
+    final existing = await _loadTaskExecutionMarker(task.id);
+    final marker = _TaskExecutionMarker.fromTask(
+      task,
+      crashCount: existing != null && existing.matchesTask(task)
+          ? existing.crashCount
+          : 0,
+    );
+    await _saveTaskExecutionMarker(marker);
+  }
+
+  Future<_TaskExecutionMarker?> _loadTaskExecutionMarker(String taskId) async {
+    final row = await (_db.select(
+      _db.kvStore,
+    )..where((kv) => kv.key.equals(_taskExecutionMarkerKey(taskId))))
+        .getSingleOrNull();
+    if (row?.value == null) return null;
+
+    try {
+      return _TaskExecutionMarker.fromJson(
+        jsonDecode(row!.value!) as Map<String, dynamic>,
+      );
+    } catch (e) {
+      _logger.warning('Failed to parse task execution marker: $e');
+      await _deleteTaskExecutionMarker(taskId);
+      return null;
+    }
+  }
+
+  Future<List<_TaskExecutionMarker>> _loadTaskExecutionMarkers() async {
+    final rows = await (_db.select(_db.kvStore)
+          ..where((kv) => kv.key.like('$_activeTaskMarkerKeyPrefix%')))
+        .get();
+    final markers = <_TaskExecutionMarker>[];
+
+    for (final row in rows) {
+      if (row.value == null) {
+        await _deleteTaskExecutionMarkerByKey(row.key);
+        continue;
+      }
+
+      try {
+        markers.add(
+          _TaskExecutionMarker.fromJson(
+            jsonDecode(row.value!) as Map<String, dynamic>,
+          ),
+        );
+      } catch (e) {
+        _logger.warning('Failed to parse task execution marker: $e');
+        await _deleteTaskExecutionMarkerByKey(row.key);
+      }
+    }
+
+    return markers;
+  }
+
+  Future<_GracefulExitMarker?> _loadGracefulExitMarker() async {
+    final row = await (_db.select(_db.kvStore)
+          ..where((kv) => kv.key.equals(_gracefulExitMarkerKey)))
+        .getSingleOrNull();
+    if (row?.value == null) return null;
+
+    try {
+      return _GracefulExitMarker.fromJson(
+        jsonDecode(row!.value!) as Map<String, dynamic>,
+      );
+    } catch (e) {
+      _logger.warning('Failed to parse graceful exit marker: $e');
+      await _deleteGracefulExitMarker();
+      return null;
+    }
+  }
+
+  Future<void> _deleteGracefulExitMarker() async {
+    await (_db.delete(_db.kvStore)
+          ..where((kv) => kv.key.equals(_gracefulExitMarkerKey)))
+        .go();
+  }
+
+  Future<void> _saveTaskExecutionMarker(_TaskExecutionMarker marker) async {
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    await _db.into(_db.kvStore).insertOnConflictUpdate(
+          KvStoreCompanion.insert(
+            key: _taskExecutionMarkerKey(marker.taskId),
+            value: Value(jsonEncode(marker.toJson())),
+            bucket: const Value(_crashGuardBucket),
+            updatedAt: Value(now),
+          ),
+        );
+  }
+
+  Future<void> _deleteTaskExecutionMarker(String taskId) {
+    return _deleteTaskExecutionMarkerByKey(_taskExecutionMarkerKey(taskId));
+  }
+
+  Future<void> _deleteTaskExecutionMarkerByKey(String key) async {
+    await (_db.delete(
+      _db.kvStore,
+    )..where((kv) => kv.key.equals(key)))
+        .go();
+  }
+
+  Future<void> _clearTaskExecutionMarker(String taskId) async {
+    final marker = await _loadTaskExecutionMarker(taskId);
+    if (marker == null || marker.taskId != taskId) return;
+    await _deleteTaskExecutionMarker(taskId);
+  }
+
+  String _taskExecutionMarkerKey(String taskId) {
+    return '$_activeTaskMarkerKeyPrefix$taskId';
+  }
+
+  Future<void> _failTask(Task task, String error) async {
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    await (_db.update(_db.tasks)..where((t) => t.id.equals(task.id))).write(
+      TasksCompanion(
+        status: const Value('failed'),
+        completedAt: Value(now),
+        updatedAt: Value(now),
+        error: Value(error),
+      ),
+    );
+  }
+
+  @visibleForTesting
+  Future<void> markTaskExecutionStartedForTesting(Task task) =>
+      _markTaskExecutionStarted(task);
+
+  @visibleForTesting
+  Future<KvStoreData?> getTaskExecutionMarkerForTesting([String? taskId]) {
+    if (taskId != null) {
+      return (_db.select(
+        _db.kvStore,
+      )..where((kv) => kv.key.equals(_taskExecutionMarkerKey(taskId))))
+          .getSingleOrNull();
+    }
+
+    return (_db.select(
+      _db.kvStore,
+    )
+          ..where((kv) => kv.key.like('$_activeTaskMarkerKeyPrefix%'))
+          ..limit(1))
+        .getSingleOrNull();
+  }
+
+  @visibleForTesting
+  Future<List<KvStoreData>> getTaskExecutionMarkersForTesting() {
+    return (_db.select(
+      _db.kvStore,
+    )..where((kv) => kv.key.like('$_activeTaskMarkerKeyPrefix%')))
+        .get();
+  }
+
+  @visibleForTesting
+  Future<KvStoreData?> getGracefulExitMarkerForTesting() {
+    return (_db.select(_db.kvStore)
+          ..where((kv) => kv.key.equals(_gracefulExitMarkerKey)))
+        .getSingleOrNull();
   }
 
   /// Check if a task of [taskType] with [bizId] has failed.
@@ -597,5 +874,106 @@ class LocalTaskExecutor {
 
     final result = await query.getSingleOrNull();
     return result?.read(_db.tasks.id);
+  }
+}
+
+class _TaskExecutionMarker {
+  _TaskExecutionMarker({
+    required this.taskId,
+    required this.taskType,
+    required this.payloadHash,
+    required this.startedAt,
+    required this.crashCount,
+    this.bizId,
+  });
+
+  final String taskId;
+  final String taskType;
+  final String? bizId;
+  final String payloadHash;
+  final DateTime startedAt;
+  final int crashCount;
+
+  factory _TaskExecutionMarker.fromTask(Task task, {required int crashCount}) {
+    return _TaskExecutionMarker(
+      taskId: task.id,
+      taskType: task.type,
+      bizId: task.bizId,
+      payloadHash: _payloadHashFor(task.payload),
+      startedAt: DateTime.now(),
+      crashCount: crashCount,
+    );
+  }
+
+  factory _TaskExecutionMarker.fromJson(Map<String, dynamic> json) {
+    return _TaskExecutionMarker(
+      taskId: json['task_id'] as String,
+      taskType: json['task_type'] as String,
+      bizId: json['biz_id'] as String?,
+      payloadHash: json['payload_hash'] as String,
+      startedAt: DateTime.fromMillisecondsSinceEpoch(
+        json['started_at_ms'] as int,
+      ),
+      crashCount: json['crash_count'] as int,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'task_id': taskId,
+      'task_type': taskType,
+      'biz_id': bizId,
+      'payload_hash': payloadHash,
+      'started_at_ms': startedAt.millisecondsSinceEpoch,
+      'crash_count': crashCount,
+    };
+  }
+
+  _TaskExecutionMarker copyWith({int? crashCount}) {
+    return _TaskExecutionMarker(
+      taskId: taskId,
+      taskType: taskType,
+      bizId: bizId,
+      payloadHash: payloadHash,
+      startedAt: startedAt,
+      crashCount: crashCount ?? this.crashCount,
+    );
+  }
+
+  bool matchesTask(Task task) {
+    return task.id == taskId &&
+        task.type == taskType &&
+        task.bizId == bizId &&
+        _payloadHashFor(task.payload) == payloadHash;
+  }
+
+  static String _payloadHashFor(String? payload) {
+    return sha256.convert(utf8.encode(payload ?? '')).toString();
+  }
+}
+
+class _GracefulExitMarker {
+  _GracefulExitMarker({
+    required this.markedAt,
+    required this.reason,
+  });
+
+  final DateTime markedAt;
+  final String reason;
+
+  factory _GracefulExitMarker.fromJson(Map<String, dynamic> json) {
+    return _GracefulExitMarker(
+      markedAt: DateTime.fromMillisecondsSinceEpoch(
+        json['marked_at_ms'] as int,
+      ),
+      reason: json['reason'] as String? ?? 'unknown',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'marked_at_ms': markedAt.millisecondsSinceEpoch,
+      'reason': reason,
+    };
   }
 }

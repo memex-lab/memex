@@ -1,265 +1,290 @@
-# AI 陪伴角色系统改造方案
+# Memex 角色系统设计文档
 
-## 一、现有问题
+更新时间：2026-05-11
 
-### 1. 角色定位模糊
-- PersonaAgent 是"角色设计师"（帮用户创建角色），不是角色本身
-- CommentAgent 是角色的"嘴"，但只能在卡片下面评论，没有独立对话能力
-- 两者割裂：设计角色的地方和角色说话的地方是分开的
+## 1. 概述
 
-### 2. 角色模型太简单
-- `CharacterModel` 的 persona 是一个大文本 blob，style_guide/example_dialogue/pkm_interest_filter 创建后就合并丢失了结构
-- 没有角色的"状态"概念（是否在线、上次互动时间、跟用户的亲密度等）
-- memory 字段存在但没有被系统性使用
+Memex 的角色系统让 AI 角色在两个场景中以统一人格与用户互动：
 
-### 3. 角色选择是随机的
-- comment_agent_handler 用 `Random(factId.hashCode)` 选角色
-- 已在本分支修复（CharacterSelectionService），但还没有用户主动选择"主要陪伴角色"的机制
+- **聊天（Companion Chat）**：用户主动找角色 1v1 对话，类似微信好友。
+- **评论（Comment）**：角色在用户的时间线卡片下自动发表评论。
 
-### 4. 没有独立的对话入口
-- 角色只能在卡片评论区"说话"
-- 用户无法主动找角色聊天
-- 角色无法主动发起对话
+两个场景共享同一套角色身份、记忆、历史，角色表现为"同一个人"。
 
----
+## 2. 角色模型（CharacterModel）
 
-## 二、目标体验
-
-用户打开 APP，右上角看到自己选的陪伴角色头像。
-红点提示有新消息。点进去是一个 1v1 聊天界面，像微信好友。
-
-角色会：
-- 用户发消息时快速回复（2-3秒内开始流式输出）
-- 用户发了新记录后，主动在聊天里说一句（"看到你今天去了XX，怎么样？"）
-- 记得之前聊过的内容，有连续感
-- 根据用户最近的生活状态调整语气和关注点
-
----
-
-## 三、架构设计
-
-### 3.1 角色模型改造
-
-```
-CharacterModel (改造后)
-├── id: String
-├── name: String
-├── tags: List<String>
-├── avatar: String?
-├── enabled: bool
-├── persona: String              # 角色人设 prompt（结构化 markdown）
-├── interestFilter: String       # 关注领域描述（从 persona 中独立出来）
-└── isPrimaryCompanion: bool     # 是否为用户选定的主要陪伴角色（新增）
-```
-
-persona 内部结构（markdown，不是代码字段）：
-```markdown
-## Identity
-你是用户的死党/闺蜜...
-
-## Personality
-直来直去，情绪饱满，喜欢用网络梗...
-
-## Boundaries
-不讲大道理，不说教，只负责陪伴和情绪宣泄...
-```
-
-不再在 persona 里混入 style_guide、example_dialogue、pkm_interest_filter。
-interestFilter 独立为字段，供 CharacterSelectionService 使用。
-example_dialogue 去掉 — 让 LLM 自己根据 persona 发挥，硬编码的对话示例反而限制了自然度。
-
-### 3.2 记忆系统
-
-存储位置：
-```
-workspace/Characters/
-  {id}.yaml                    # 角色配置
-  {id}_relationship.md         # 关系记忆
-  {id}_emotional_state.md      # 情绪快照
-```
-
-#### 层级 1：用户画像（Identity）
-- 来源：全局 `_System/memory/memory.json` 的 `archived_memory`
-- 已有，直接复用
-- 不需要改动
-
-#### 层级 2：最近生活上下文（Recent Context）
-- 来源：最近 2-3 天的 `Facts/{yyyy}/{mm}/{dd}.md` 原文
-- 读取时截断到 3000 字符
-- 不需要额外存储，每次对话时实时读取
-- 已在本分支的 CommentAgent._getRecentFactsContext 中实现
-
-#### 层级 3：关系记忆（Relationship）
-- 存储：`{id}_relationship.md`
-- 内容示例：
-  ```markdown
-  ## Ongoing Topics
-  - 在纠结要不要跳槽到新公司，已经拿到 offer 但还在犹豫
-  - 养了一只猫叫"团子"，经常提到
-
-  ## Key Moments
-  - 聊到跟父母的关系时比较敏感，不要主动提起
-  - 上次说拿到了新 offer，很兴奋但也焦虑
-
-  ## User Preferences
-  - 深夜聊天比较多，这时候情绪更真实
-  - 不喜欢被安慰"会好的"，更喜欢被倾听和调侃
-  ```
-- 更新时机：用户离开聊天界面时（`dispose`）
-- 更新方式：LLM 调用，输入 = 本次对话 + 旧 relationship.md → 输出新版本
-- 大小上限：2000 字符，超了让 LLM 压缩
-
-#### 层级 4：情绪快照（Emotional State）
-- 存储：`{id}_emotional_state.md`
-- 内容示例：
-  ```markdown
-  最近情绪偏低落，工作压力大。上次聊天时提到加班很累，语气疲惫。
-  当前需要：倾听和陪伴，不要给建议。
-  ```
-- 更新时机：跟关系记忆一起
-- 更新方式：覆盖式，只保留最新状态
-- 很短，200 字以内
-
-### 3.3 陪伴 Agent（CompanionAgent）
-
-新建 `lib/agent/companion_agent/`，不复用现有的 agent 框架。
-
-核心设计：**直接调 LLM，不走 StatefulAgent + Tool 体系。**
+存储路径：`workspace/_<userId>/Characters/<characterId>.yaml`
 
 ```dart
-class CompanionAgent {
-  /// 流式对话 — 用于用户主动聊天
-  static Stream<String> chat({
-    required LLMClient client,
-    required ModelConfig modelConfig,
-    required String userId,
-    required String characterId,
-    required String userMessage,
-    required List<ChatMessage> history,  // 最近 N 轮
-  }) async* {
-    // 1. 组装 context
-    final persona = await _loadPersona(userId, characterId);
-    final userProfile = await _loadUserProfile(userId);
-    final emotionalState = await _loadEmotionalState(userId, characterId);
-    final relationship = await _loadRelationship(userId, characterId);
-    final recentFacts = await _loadRecentFacts(userId);
-
-    // 2. 构建 messages
-    final messages = [
-      SystemMessage(_buildSystemPrompt(persona, userProfile, emotionalState, relationship, recentFacts)),
-      ...history.map((m) => m.toLLMMessage()),
-      UserMessage([TextPart(userMessage)]),
-    ];
-
-    // 3. 流式调用 LLM（无 tool calling）
-    yield* client.generateStream(messages, modelConfig: modelConfig)
-        .map((chunk) => chunk.textOutput ?? '');
-  }
-
-  /// 生成主动消息 — 用于角色看到用户新记录后主动说一句
-  static Future<String?> generateProactiveMessage({
-    required LLMClient client,
-    required ModelConfig modelConfig,
-    required String userId,
-    required String characterId,
-    required String newRecordContent,
-  }) async {
-    // 类似 chat，但 prompt 不同：要求角色基于新记录主动发起话题
-    // 返回 null 表示角色觉得这条记录不值得主动聊
-  }
-
-  /// 更新记忆 — 对话结束后调用
-  static Future<void> updateMemory({
-    required LLMClient client,
-    required ModelConfig modelConfig,
-    required String userId,
-    required String characterId,
-    required List<ChatMessage> conversation,
-  }) async {
-    // 1. 读旧的 relationship.md 和 emotional_state.md
-    // 2. 一次 LLM 调用，同时输出新的关系记忆和情绪快照
-    // 3. 写回文件
-  }
+class CharacterModel {
+  String id;
+  String name;
+  List<String> tags;
+  String persona;                    // 角色人设（markdown 结构）
+  bool enabled;
+  String? avatar;
+  bool isPrimaryCompanion;           // 用户选定的主要陪伴角色
+  String? interestFilter;            // 关注领域（供 CharacterSelectionService 使用）
+  String? firstMessage;              // 首次聊天时角色发送的开场白
+  String? systemPromptOverride;      // 角色级 system prompt 覆盖
+  String? postHistoryInstructions;   // 注入到历史之后的指令
+  String? mesExample;                // 风格示例对话
+  List<CharacterMemoryBlock> memory; // 旧字段，保留兼容但不再作为主要记忆来源
 }
 ```
 
-### 3.4 主动消息机制
+### persona 内部结构
 
-触发流程：
+```markdown
+## Identity
+角色的核心描述...
+
+## Personality
+性格特征...
+
+## Scenario
+场景设定...
 ```
-用户发新记录
-  → submitInput
-    → GlobalEventBus 发布 userInputSubmitted
-      → 现有: card_agent_task, pkm_agent_task, comment_agent_task
-      → 新增: companion_message_task（依赖 pkm_agent）
+
+## 3. 角色记忆系统
+
+### 3.1 存储路径
+
+```
+workspace/_<userId>/_System/character_memory/<characterId>/
+├── memory_entries.jsonl      # 长期稳定记忆（声明式事实）
+├── world_entries.jsonl       # 角色世界书（SillyTavern character_book）
+├── timeline.jsonl            # 跨场景统一事件流（最近原文）
+├── archived_timeline.jsonl   # 压缩归档的原始事件（HistorySearch 可查）
+├── checkpoints.jsonl         # 压缩后的阶段摘要
+└── indexes.json              # 迁移版本、游标、上次压缩时间
 ```
 
-companion_message_task 的逻辑：
-1. 读取用户选定的主要陪伴角色
-2. 调用 CompanionAgent.generateProactiveMessage()
-3. 如果返回非 null，存入 PersonaChatMessages 表（Drift）
-4. 通过 EventBus 通知 UI 更新红点
+### 3.2 记忆层级
 
-角色不是每条记录都主动说话。prompt 里会告诉角色：
-- 只在你觉得值得聊的时候才说话
-- 如果内容跟你的关注领域无关，保持沉默（返回空）
-- 不要每次都说话，频率大概 1/3 到 1/2
+| 层 | 文件 | 注入位置 | 说明 |
+|---|---|---|---|
+| 用户画像 | `_System/memory/memory.json` | Skill System Prompt | 全局用户 profile，由 MemoryManagement 维护 |
+| 角色长期记忆 | `memory_entries.jsonl` | Skill System Prompt | 全量注入，不做检索过滤。agent 通过 MemoryAdd/Replace/Remove 工具维护 |
+| 角色世界书 | `world_entries.jsonl` | systemReminders | 按 keys 关键词触发 + constant 条目常驻，硬性截断 2000 tokens |
+| 压缩摘要 | `checkpoints.jsonl` | User Message 前缀 | 作为 `[CONTEXT SUMMARY — REFERENCE ONLY]` 节点注入 |
+| 最近历史 | `timeline.jsonl` 尾部 | systemReminders | 全量保留（压缩后的 timeline 不再截断） |
+| 用户知识库 | PKM/Facts grep + FTS | systemReminders | 按 queryHint 检索，硬性截断 2000 tokens |
 
-### 3.5 UI 改动
+### 3.3 上下文注入分布
 
-#### 右上角角色头像
-- 在 timeline header 的 chat 按钮旁边加一个角色头像
-- 带未读红点（数字）
-- 点击进入聊天界面
+**System Prompt（Skill 层，稳定身份信息）：**
+- 角色 systemPromptOverride（如有）
+- 角色 persona + 行为规则
+- User Profile
+- Character Memory Entries（全量）
+- Style Examples（mesExample，如有）
+- Memory Update Guidance
 
-#### 聊天界面
-- 类似微信 1v1 聊天
-- 角色消息在左（带头像），用户消息在右
-- 流式输出（打字机效果）
-- 底部输入框
-- 角色的主动消息也显示在这里（带时间戳）
+**systemReminders（动态上下文，每次 run 前刷新）：**
+- Triggered Character World Entries
+- Recent Cross-Scene Interactions（timeline 尾部）
+- User Knowledge Cards
+- Post History Instructions（如有）
 
-#### 角色选择/管理
-- 保留现有的 CharacterConfigScreen（角色列表页）
-- 新增：用户可以长按某个角色设为"主要陪伴角色"
-- 角色模板：首次使用时展示模板选择页，用户选一个作为主要陪伴角色
+**User Message 前缀：**
+- Compaction Summary（压缩摘要 checkpoint）
 
-### 3.6 要删除/改造的现有代码
+## 4. 统一事件流（Timeline）
 
-| 现有代码 | 处理方式 |
-|---------|---------|
-| CommentAgent 在卡片下评论 | 保留，但同时把评论内容推送到聊天通道 |
-| comment_agent_handler 的随机选角色 | 已改为 CharacterSelectionService（本分支） |
-| PersonaAgent（角色设计师） | 保留，但降低优先级，后续可以让陪伴角色自己进化 persona |
-| CharacterModel.memory (CharacterMemoryBlock) | 废弃，改用 relationship.md + emotional_state.md |
-| defaultCharacters 里的 style_guide/example_dialogue | 合并进 persona，去掉独立字段 |
-| CharacterEditPage 的大文本框编辑 persona | 后续改为结构化表单，但不在本次范围 |
+### 4.1 事件类型
 
----
+```dart
+enum CharacterMemoryEventType {
+  userChatMessage,        // 用户在聊天中发的消息
+  characterChatMessage,   // 角色在聊天中的回复
+  postObserved,           // 角色观察到用户发的帖子（评论场景输入）
+  characterComment,       // 角色发表的评论
+  userCommentReply,       // 用户在评论区回复角色
+}
+```
 
-## 四、实施顺序
+### 4.2 写入时机
 
-### Phase 1：基础设施
-1. CharacterModel 加 `isPrimaryCompanion` 和 `interestFilter` 字段
-2. CharacterService 支持设置主要陪伴角色
-3. Drift 新增 PersonaChatMessages 表
-4. PersonaChatService（消息 CRUD + 未读计数）
+- `PersonaChatService.addUserMessage/addCharacterMessage` → 写入 chat 事件
+- `CommentToolFactory.SaveComment` → 写入 characterComment 事件
+- `CommentAgent.runAndGetResponse` → 写入 postObserved 事件
+- `postCommentEndpoint`（用户回复评论）→ 写入 userCommentReply 事件
 
-### Phase 2：CompanionAgent 核心
-5. CompanionAgent.chat() — 流式对话（无 tool calling）
-6. CompanionAgent.updateMemory() — 对话结束后更新记忆
-7. 记忆文件读写（relationship.md, emotional_state.md）
+### 4.3 FTS 索引
 
-### Phase 3：UI
-8. PersonaChatScreen（聊天界面）
-9. PersonaAvatarButton（右上角头像 + 红点）
-10. 集成到 TimelineScreen header
+三张 FTS5 虚拟表（schema version 13）：
+- `character_memory_fts` — 记忆条目检索
+- `character_world_fts` — 世界书条目检索
+- `character_timeline_fts` — 事件流检索（支持 scene/thread/archived 过滤）
 
-### Phase 4：主动消息（后续单独设计）
-11. CompanionAgent.generateProactiveMessage()
-12. companion_message_task handler
-13. 注册到 GlobalEventBus 的 userInputSubmitted 订阅
+## 5. 压缩系统
 
-### Phase 5：清理
-14. 默认角色模板重构（合并 style_guide 等）
-15. 废弃 CharacterMemoryBlock，迁移到文件记忆
+### 5.1 触发条件
+
+压缩在 agent run **完成后**触发，基于 API 返回的真实 `promptTokens`：
+- 软阈值：`promptTokens > contextWindow * 0.55`（默认 64000 * 0.55 = 35200）
+- 硬阈值：`promptTokens > contextWindow * 0.70`
+- 冷却：压缩失败后 10 分钟内不重复触发（除非超硬阈值）
+
+### 5.2 压缩流程
+
+1. **确定边界**：保留最近 40 条事件（`keepRecent`），找到安全切割点（保证最后一条用户消息在保留区）
+2. **Pre-trim**：去重近似行、截断超长 JSON metadata
+3. **LLM 摘要**：对被裁掉的事件生成结构化 checkpoint（Topic Continuity / Stable Facts / Relationship Changes / Emotional Trajectory / Open Threads）
+   - 预算：12000 字符（≈3000 tokens）
+   - 超长时自动请求 condense 重试
+   - 重试后仍超长则硬截断
+4. **归档**：旧事件写入 `archived_timeline.jsonl`，checkpoint 写入 `checkpoints.jsonl`，timeline 只保留最近部分
+5. **记忆提取**：从被压缩的原始事件中用 LLM 提取稳定事实写入 `memory_entries.jsonl`
+
+### 5.3 记忆大小控制
+
+- `memory_entries.jsonl`：写入时检查总字符数，超过 8000 字符时返回 WARNING 提醒 agent 合并/清理
+- `checkpoints.jsonl`：生成时通过 prompt 约束 + 重试 + 兜底截断控制在 12000 字符以内
+- `world_entries` / `knowledgeCards`：读取时硬性截断 2000 tokens
+- `timeline` / `userProfile`：不截断，完全依赖压缩系统控制总量
+
+## 6. Agent 架构
+
+### 6.1 CompanionAgent（聊天场景）
+
+```
+用户发消息 → persona_chat_screen
+  → CompanionAgent.chat()
+    → resolveCharacterSessionId() — 找到最新 session（中断则 resume，否则递增新建）
+    → CharacterContextAssembler.build() — 组装上下文快照
+    → CompanionAgentSkill — 构建 system prompt（persona + profile + memories + mesExample）
+    → state.systemReminders — 注入 world/timeline/knowledge/postHistoryInstructions
+    → StatefulAgent.run() — 执行（无内置压缩器）
+    → 成功后检查 promptTokens → compressIfNeeded()
+```
+
+### 6.2 CommentAgent（评论场景）
+
+```
+用户发记录 → GlobalEventBus → comment_agent_task
+  → CommentAgent.createAgent()
+    → resolveCharacterSessionId()
+    → CharacterContextAssembler.build()
+    → CommentAgentSkill — 构建 system prompt（persona + profile + memories）
+    → state.systemReminders — 注入 world/timeline/knowledge
+    → StatefulAgent 创建
+  → CommentAgent.runAndGetResponse()
+    → 构建结构化任务消息（factId + rawInput + insight + pkmContext）
+    → 注入 compaction summary 节点
+    → StatefulAgent.run()
+    → 成功后检查 promptTokens → compressIfNeeded()
+```
+
+### 6.3 Session 管理
+
+- Session ID 格式：`{agent}_{userId}_{characterId}_{N}`（递增序号）
+- `resolveCharacterSessionId`：扫描 state 目录，找最新 session
+  - 如果 `isRunning`（中断了）→ 返回该 session 用于 resume
+  - 如果已完成 → 返回 `N+1` 新 session
+- 每次 run 都是全新 session，不积累跨消息历史（历史由 timeline 系统提供）
+- `autoSaveStateFunc` 保留用于中断恢复和排查
+
+### 6.4 Agent 工具
+
+**聊天场景工具**（`CharacterToolsFactory.buildCompanionTools`）：
+- `MemoryRead` — 查看角色记忆（辅助精确操作）
+- `MemoryAdd` — 添加稳定记忆
+- `MemoryReplace` — 替换已有记忆
+- `MemoryRemove` — 删除记忆
+- `HistorySearch` — 搜索原始交互历史（recent + archived）
+
+**评论场景工具**（`CharacterToolsFactory.buildCommentTools`）：
+- `Read` / `Grep` — 文件读取（只读权限）
+- `SaveComment` — 保存评论（带 stopFlag）
+- `MemoryRead/Add/Replace/Remove` — 同上
+- `HistorySearch` — 同上
+
+## 7. SillyTavern 角色卡导入
+
+### 7.1 支持的格式
+
+- SillyTavern V2 JSON 角色卡
+- 内嵌角色卡的 PNG 图片（tEXt / iTXt chunk）
+
+### 7.2 字段映射
+
+| V2 字段 | 映射目标 | 运行时用途 |
+|---------|---------|-----------|
+| `name` | `CharacterModel.name` | 角色名 |
+| `description` | persona `## Identity` | System Prompt |
+| `personality` | persona `## Personality` | System Prompt |
+| `scenario` | persona `## Scenario` | System Prompt |
+| `first_mes` | `CharacterModel.firstMessage` | 首次聊天时作为角色消息发送给用户 |
+| `mes_example` | `CharacterModel.mesExample` | System Prompt 的 Style Examples 段 |
+| `system_prompt` | `CharacterModel.systemPromptOverride` | System Prompt 最前面注入 |
+| `post_history_instructions` | `CharacterModel.postHistoryInstructions` | systemReminders 注入 |
+| `tags` | `CharacterModel.tags` | UI 展示 |
+| `character_book` | `world_entries.jsonl` | 按 keys 触发注入到 systemReminders |
+| `creator_notes` | 不导入 | 纯元数据，不发送给模型 |
+| `alternate_greetings` | 不导入 | — |
+
+### 7.3 世界书条目
+
+```jsonl
+{"id":"card_book_0","keys":["keyword1","keyword2"],"content":"...","comment":"entry title","constant":false,"enabled":true,"source":"tavern_character_book"}
+```
+
+- `constant: true` → 常驻注入（不需要 key 触发）
+- `enabled: false` → 不会被触发
+- 触发逻辑：当前输入 queryHint 包含 keys 中的关键词，或 FTS 匹配
+
+### 7.4 导入入口
+
+- UI：角色配置页 AppBar 的下载图标 → `TavernImportScreen`
+- 路由：`/tavern-import`
+- 功能：文件选择 → 预览 → 冲突检测 → 可选设为主要陪伴角色 → 确认导入
+
+## 8. firstMessage 机制
+
+当用户首次打开与某角色的聊天（`PersonaChatMessages` 表中该角色无消息）：
+1. 检查 `character.firstMessage` 是否非空
+2. 调用 `PersonaChatService.addCharacterMessage` 写入开场白
+3. 该消息同时写入 `timeline.jsonl`（作为 `characterChatMessage` 事件）
+4. UI 展示为角色发送的第一条消息
+
+## 9. 迁移
+
+### 数据库迁移（schema version 13）
+
+`from < 13` 时创建 `character_memory_fts`、`character_world_fts`、`character_timeline_fts` 三张 FTS5 虚拟表。
+
+### 文件迁移（CharacterMemoryService.ensureMigrated）
+
+首次访问角色记忆时（`migration_version < 1`）：
+- 将旧的 `Characters/{characterId}_relationship.md` 和 `Characters/{characterId}_emotional_state.md` 重命名为 `.deprecated_YYYYMMDD` 后缀
+- 写入 `indexes.json` 的 `migration_version: 1`
+
+## 10. 代码文件索引
+
+| 文件 | 职责 |
+|------|------|
+| `lib/domain/models/character_model.dart` | 角色数据模型 |
+| `lib/data/services/character_service.dart` | 角色 CRUD、默认角色种子 |
+| `lib/agent/context/character_context_assembler.dart` | 统一上下文组装 |
+| `lib/agent/memory/character_memory_service.dart` | 统一记忆存储（timeline/memory/world/checkpoints） |
+| `lib/agent/memory/character_memory_updater.dart` | 压缩时从原始事件提取稳定记忆 |
+| `lib/agent/memory/character_context_compressor.dart` | Timeline 压缩（基于真实 promptTokens 触发） |
+| `lib/agent/context/compaction_summary_node.dart` | 构造压缩摘要注入节点 |
+| `lib/agent/context/user_knowledge_context_service.dart` | 用户知识库检索 |
+| `lib/agent/companion_agent/companion_agent.dart` | 聊天场景 agent |
+| `lib/agent/comment_agent/comment_agent.dart` | 评论场景 agent |
+| `lib/agent/skills/companion_agent/companion_agent_skill.dart` | 聊天 Skill（system prompt 构建） |
+| `lib/agent/skills/comment_agent/comment_agent_skill.dart` | 评论 Skill（system prompt 构建） |
+| `lib/agent/skills/comment_agent/tools/memory_tools.dart` | MemoryRead/Add/Replace/Remove/HistorySearch 工具 |
+| `lib/agent/skills/comment_agent/tools/comment_tools.dart` | SaveComment 工具 |
+| `lib/agent/skills/character_tools_factory.dart` | 统一工具工厂 |
+| `lib/agent/state_util.dart` | Agent state 管理 + resolveCharacterSessionId |
+| `lib/data/services/tavern_character_import_service.dart` | SillyTavern 角色卡导入 |
+| `lib/data/services/persona_chat_service.dart` | 聊天消息持久化 + timeline 事件写入 |
+| `lib/ui/character/widgets/persona_chat_screen.dart` | 聊天 UI |
+| `lib/ui/character/widgets/tavern_import_screen.dart` | 导入 UI |
+| `lib/ui/character/widgets/character_config_screen.dart` | 角色管理 UI |
+| `lib/db/daos/search_dao.dart` | FTS5 索引管理 |
+| `lib/db/app_database.dart` | Schema migration（version 13） |

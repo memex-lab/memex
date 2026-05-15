@@ -2,12 +2,15 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'dart:ui' show PlatformDispatcher;
 import 'package:google_fonts/google_fonts.dart';
+import 'package:memex/data/repositories/memex_router.dart';
+import 'package:memex/data/services/file_system_service.dart';
+import 'package:memex/data/services/media_service.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/utils/toast_helper.dart';
 
 import 'package:memex/ui/settings/widgets/data_storage_page.dart';
 import 'package:memex/ui/core/widgets/avatar_picker.dart';
-import 'package:memex/ui/core/widgets/dicebear_avatar.dart';
+import 'package:memex/ui/core/widgets/character_avatar.dart';
 import 'package:memex/ui/core/themes/app_colors.dart';
 
 /// User setup screen. Shown when user opens app for the first time or no local userId.
@@ -24,11 +27,13 @@ class UserSetupScreen extends StatefulWidget {
 }
 
 class _UserSetupScreenState extends State<UserSetupScreen> {
+  final MemexRouter _memexRouter = MemexRouter();
   final _formKey = GlobalKey<FormState>();
   final _userIdController = TextEditingController();
   bool _isSubmitting = false;
   String _selectedLang = 'en';
   String _selectedAvatar = UserStorage.defaultAvatarSeed;
+  String? _pendingAvatarImagePath;
   bool _hasPickedAvatar = false;
 
   @override
@@ -64,7 +69,7 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
   }
 
   Future<void> _loadExistingAvatar() async {
-    final avatar = await UserStorage.getUserAvatar();
+    final avatar = await _memexRouter.getUserAvatar();
     if (avatar != null && mounted) {
       setState(() {
         _selectedAvatar = avatar;
@@ -80,13 +85,6 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
     if (mounted) setState(() {});
   }
 
-  @override
-  void dispose() {
-    _userIdController.removeListener(_onNicknameChanged);
-    _userIdController.dispose();
-    super.dispose();
-  }
-
   Future<void> _handleSubmit() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -95,7 +93,6 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
 
     try {
       await UserStorage.saveUser(userId);
-      await UserStorage.saveUserAvatar(_selectedAvatar);
 
       if (mounted) {
         setState(() => _isSubmitting = false);
@@ -113,6 +110,9 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
             return;
           }
         }
+
+        final avatarToSave = await _resolveAvatarForSave(userId);
+        await _memexRouter.updateUserAvatar(avatarToSave);
 
         widget.onUserCreated();
       }
@@ -162,8 +162,9 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
                               ),
                             ],
                           ),
-                          child: DiceBearAvatar(
-                            seed: _selectedAvatar,
+                          child: CharacterAvatar(
+                            avatar: _selectedAvatar,
+                            name: _userIdController.text.trim(),
                             size: 94,
                           ),
                         ),
@@ -336,13 +337,48 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
   }
 
   void _showAvatarPicker() async {
-    final picked = await showAvatarPicker(context, _selectedAvatar);
+    final picked = await showAvatarPicker(
+      context,
+      _selectedAvatar,
+      onPickGallery: _pickUserAvatarFromGallery,
+    );
     if (picked != null && mounted) {
       setState(() {
         _selectedAvatar = picked;
         _hasPickedAvatar = true;
       });
     }
+  }
+
+  Future<String?> _pickUserAvatarFromGallery() async {
+    final pickedPath = await pickAvatarImageFromGallery();
+    if (pickedPath == null) return null;
+
+    _pendingAvatarImagePath = pickedPath;
+    return pickedPath;
+  }
+
+  Future<String> _resolveAvatarForSave(String userId) async {
+    final pendingAvatarImagePath = _pendingAvatarImagePath;
+    if (pendingAvatarImagePath == null || pendingAvatarImagePath.isEmpty) {
+      return _selectedAvatar;
+    }
+
+    final dataRoot = await UserStorage.resolveDataRoot(userId);
+    await FileSystemService.init(dataRoot);
+
+    final imported = await MediaService.instance.importImage(
+      userId: userId,
+      sourcePath: pendingAvatarImagePath,
+    );
+
+    if (mounted) {
+      setState(() {
+        _selectedAvatar = imported.relativePath;
+      });
+    }
+    _pendingAvatarImagePath = null;
+    return imported.relativePath;
   }
 
   Widget _buildLanguageSelector() {

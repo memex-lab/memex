@@ -25,6 +25,7 @@ Future<void> processWithPkmAgent({
   required String contentText,
   List<Map<String, dynamic>>? assetAnalyses,
   DateTime? inputDateTime,
+  String? locationContextReminder,
   bool dryRun = false,
 }) async {
   try {
@@ -53,6 +54,12 @@ Future<void> processWithPkmAgent({
     // Build asset info string
     // Build asset info string
     final assetInfo = formatAssetAnalysis(assetAnalyses);
+    final locationReminder = _formatLocationContextReminder(
+      locationContextReminder,
+    );
+    final contentWithLocation = locationReminder.isEmpty
+        ? contentText
+        : '$locationReminder$contentText';
 
     final currentTime = formatLocalDateTimeWithZone(dateTime);
 
@@ -61,7 +68,7 @@ Future<void> processWithPkmAgent({
     final instruction = Prompts.pkmAgentInstructionForNewPublishedContent(
       currentTime,
       factId,
-      contentText,
+      contentWithLocation,
       assetInfo,
     );
 
@@ -81,6 +88,12 @@ Future<void> processWithPkmAgent({
   }
 }
 
+String _formatLocationContextReminder(String? reminder) {
+  final trimmed = reminder?.trim();
+  if (trimmed == null || trimmed.isEmpty) return '';
+  return '<system-reminder>\n$trimmed\n</system-reminder>\n\n';
+}
+
 /// Task Handler implementation for `pkm_agent_task`.
 Future<void> handlePkmAgentImpl(
   String userId,
@@ -93,6 +106,8 @@ Future<void> handlePkmAgentImpl(
     // 1. Parse Payload
     final factId = payload['fact_id'] as String;
     final combinedText = payload['combined_text'] as String;
+    final locationContextReminder =
+        payload['location_context_reminder'] as String?;
 
     // Check for dry_run flag in payload, default to false
     final dryRun = payload['dry_run'] as bool? ?? false;
@@ -108,9 +123,12 @@ Future<void> handlePkmAgentImpl(
         combinedText: combinedText,
       );
       try {
-        final analysisResult = await LocalTaskExecutor.instance
-            .getTaskResultByBizId(
-                userId, 'handle_analyze_assets', context.bizId!);
+        final analysisResult =
+            await LocalTaskExecutor.instance.getTaskResultByBizId(
+          userId,
+          'handle_analyze_assets',
+          context.bizId!,
+        );
 
         if (analysisResult != null &&
             analysisResult.containsKey('asset_analyses')) {
@@ -130,6 +148,7 @@ Future<void> handlePkmAgentImpl(
       contentText: combinedText,
       assetAnalyses: assetAnalyses,
       inputDateTime: inputDateTime,
+      locationContextReminder: locationContextReminder,
       dryRun: dryRun,
     );
 

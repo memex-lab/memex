@@ -81,6 +81,7 @@
   "autoRefresh": "自动刷新",
   "lineCount": "行数: ",
   "all": "全部",
+  "schedule": "日程",
   "@loadStatsFailed": {
     "placeholders": {
       "error": {}
@@ -89,10 +90,43 @@
   "loadStatsFailed": "加载统计数据失败: {error}",
   "overview": "概览",
   "daily": "每日",
+  "modelStatsByAgent": "分模型统计",
   "detail": "详情",
   "date": "日期",
+  "agent": "Agent",
   "noData": "暂无数据",
   "totalCalls": "总调用次数",
+  "calls": "调用",
+  "@callsCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "callsCount": "{count} 次调用",
+  "selectDateRange": "选择日期范围",
+  "totalTokens": "总 Token",
+  "cacheRate": "缓存命中率",
+  "promptTokens": "Prompt Token",
+  "completionTokens": "Completion Token",
+  "cachedTokens": "Cached Token",
+  "thoughtTokens": "Thought Token",
+  "prompt": "Prompt",
+  "completion": "Completion",
+  "cached": "Cached",
+  "thought": "Thought",
+  "model": "模型",
+  "scene": "场景",
+  "sceneId": "场景 ID",
+  "tokenUsage": "Token 用量",
+  "handler": "处理器",
+  "modelBreakdown": "模型拆分",
+  "callDetails": "调用详情",
+  "@recordDetailsTitle": {
+    "placeholders": {
+      "scene": {}
+    }
+  },
+  "recordDetailsTitle": "记录详情: {scene}",
   "@saveLlmConfigFailed": {
     "placeholders": {
       "error": {}
@@ -471,6 +505,41 @@
   },
   "insightProcessingBacklogMessage": "还有 {count} 个后台任务正在处理，洞察可能会在完成后更新。",
   "insightUnavailableMessage": "这个洞察仍在生成中，或已被更新。请刷新洞察后稍后再试。",
+  "scheduleAggregation": "日程聚合",
+  "noScheduleAggregation": "暂无日程聚合",
+  "scheduleAggregationEmptyHint": "点击更新，从真实时间卡片里整理日程和待办。",
+  "scheduleAggregationDirtyReason": "有新的日程相关内容，点击更新后重新整理。",
+  "scheduleAggregationLoadFailed": "加载日程数据失败",
+  "scheduleAggregationRefreshFailed": "刷新日程数据失败",
+  "scheduleTaskUpdateFailed": "更新待办失败",
+  "scheduleFeatured": "重点",
+  "scheduleThisWeek": "本周",
+  "scheduleDone": "已完成",
+  "scheduleTbd": "待定",
+  "scheduleWeekOverview": "本周概览",
+  "scheduleImportant": "重要",
+  "scheduleBriefingTitle": "日程简报",
+  "scheduleBriefingNeedsUpdate": "待更新",
+  "scheduleBriefingOpen": "查看",
+  "scheduleBriefingNoData": "暂无日程简报",
+  "@scheduleBriefingUpdated": {
+    "placeholders": {
+      "time": {}
+    }
+  },
+  "scheduleBriefingUpdated": "{time} 更新",
+  "@scheduleBriefingDoneCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "scheduleBriefingDoneCount": "完成 {count}",
+  "@scheduleBriefingConflictCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "scheduleBriefingConflictCount": "冲突 {count}",
   "updating": "更新中...",
   "update": "更新",
   "enabled": "已启用",
@@ -571,6 +640,7 @@
   "relatedMemories": "相关回忆",
   "viewMore": "查看更多",
   "relatedRecords": "相关记录",
+  "reply": "回复",
   "replySent": "回复已发送",
   "insightTemplateGalleryTitle": "洞察卡片模板展示",
   "timelineTemplateGalleryTitle": "Timeline 卡片模板展示",
@@ -638,6 +708,7 @@
   },
   "confirmDeleteConfigMessage": "确定要删除「{key}」吗？",
   "defaultLabel": "默认",
+  "setAsDefault": "设为默认",
   "missingApiKey": "缺少 API Key",
   "invalidJsonInExtraField": "扩展字段 JSON 格式无效",
   "keyAlreadyExists": "该 Key 已存在",
@@ -693,8 +764,8 @@
   "warning": "配置未完成",
   "invalidConfigurationWarning": "当前配置尚未完成（例如：缺少 API Key 或 Model ID）。你可以先保存，稍后再补全配置。是否继续？",
   "invalidModelConfigDetailed": "智能体“{agentId}”需要有效的模型配置 (Key: “{configKey}”) 才能运行。请在设置中更新并补全对应的参数。",
-  "discardChangesTitle": "放弃未保存的修改？",
-  "discardChangesMessage": "您有未保存的修改。确定要放弃修改并离开吗？",
+  "discardChangesTitle": "离开此页面？",
+  "discardChangesMessage": "如果您做了更改，请先保存后再离开。",
   "discardButton": "放弃",
   "chooseLanguage": "选择语言",
   "chooseAvatar": "选择头像",
@@ -932,6 +1003,10 @@
   "chatModeLabel": "智能体",
 
   "switchCompanion": "切换角色",
+  "personaChatInputHint": "输入消息...",
+  "personaChatEmptyHint": "发出第一条消息，让这段陪伴开始",
+  "today": "今天",
+  "yesterday": "昨天",
 
   "showInsightTextTitle": "显示 Memex 洞察评论",
   "showInsightTextDesc": "是否在卡片详情的评论区显示 Memex 洞察评论。",
@@ -953,6 +1028,175 @@
   "cdnSignalsBoth": "有新回复和洞察",
   "untitledCard": "未命名卡片",
 
+  "locationContextTitle": "位置上下文",
+  "locationContextDescription": "为 Agent 对话提供当前城市与街区上下文",
+  "locationContextAttachTitle": "为对话附加当前位置",
+  "locationContextAttachDesc": "使用设备 GPS 和逆地理编码，为 Agent 提供城市、区县和街区上下文。",
+  "reverseGeocodingProvider": "逆地理编码服务商",
+  "amapProviderName": "高德地图",
+  "amapApiKey": "高德地图 API Key",
+  "amapGcj02Note": "高德地图使用 GCJ-02 坐标；设备 GPS 会先转换后再逆地理编码。",
+  "contextGranularity": "上下文粒度",
+  "granularityCity": "城市",
+  "granularityDistrict": "区县",
+  "granularityNeighborhood": "街区",
+  "granularityStreet": "街道",
+  "granularityFullAddress": "完整地址候选",
+  "locationFreshness": "位置新鲜度",
+  "minutesShort": "{minutes} 分钟",
+  "@minutesShort": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "oneHour": "1 小时",
+  "testCurrentLocation": "测试当前位置",
+  "locationUnavailable": "位置不可用",
+  "locationTestFailed": "失败：{error}",
+  "@locationTestFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
   "settingsSearchPlaceholder": "搜索设置项...",
-  "settingsSearchEmpty": "未找到匹配的设置项"
+  "settingsSearchEmpty": "未找到匹配的设置项",
+
+  "importCharacterCard": "导入角色卡",
+  "firstMessageLabel": "首条消息",
+  "firstMessageHint": "角色首次对话时发送的问候语（可选）",
+  "systemPromptOverrideLabel": "系统提示词覆盖",
+  "systemPromptOverrideHint": "覆盖默认系统提示词（高级，可选）",
+  "postHistoryInstructionsLabel": "历史后指令",
+  "postHistoryInstructionsHint": "在对话历史之后、回复之前注入的指令（可选）",
+  "mesExampleLabel": "对话示例",
+  "mesExampleHint": "角色对话风格示例（可选）",
+  "worldBookTitle": "世界书",
+  "worldBookSubtitle": "触发关键词时注入的背景知识",
+  "characterMemoryTitle": "角色记忆",
+  "characterMemorySubtitle": "角色与用户之间的关系动态和互动记忆",
+  "addTooltip": "添加",
+  "constantBadge": "常驻",
+  "@worldEntryFallbackName": {
+    "placeholders": {
+      "index": {}
+    }
+  },
+  "worldEntryFallbackName": "条目 {index}",
+  "@keywordsPrefix": {
+    "placeholders": {
+      "keys": {}
+    }
+  },
+  "keywordsPrefix": "关键词: {keys}",
+  "@memoryFallbackName": {
+    "placeholders": {
+      "index": {}
+    }
+  },
+  "memoryFallbackName": "记忆 {index}",
+  "addWorldEntry": "添加世界书条目",
+  "editWorldEntry": "编辑世界书条目",
+  "commentTitleLabel": "备注/标题",
+  "entryDescriptionHint": "条目说明（可选）",
+  "triggerKeywordsLabel": "触发关键词",
+  "triggerKeywordsHint": "逗号分隔，如: 魔法, 咒语",
+  "contentLabel": "内容",
+  "worldEntryContentHint": "当关键词触发时注入的背景知识",
+  "enabledCheckbox": "启用",
+  "addMemory": "添加记忆",
+  "editMemory": "编辑记忆",
+  "memoryLabelField": "标签",
+  "memoryLabelHint": "记忆的唯一标识，如: 称呼偏好",
+  "memoryContentHint": "记忆内容",
+  "salienceLabel": "重要性: ",
+  "labelCannotBeEmpty": "标签不能为空",
+  "@importSuccess": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "importSuccess": "{name} 导入成功",
+  "@importFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "importFailed": "导入失败: {error}",
+  "supportedFormats": "支持的格式",
+  "tavernImportDescription": "• SillyTavern V2 角色卡 (.json)\n• 内嵌角色卡的 PNG 图片 (.png)\n\n导入后会自动映射角色设定、世界书等字段到 Memex 角色格式。",
+  "pickCharacterFile": "选择角色卡文件",
+  "repickFile": "重新选择文件",
+  "personaSettingSection": "角色设定",
+  "systemPromptSection": "系统提示词",
+  "@worldEntriesCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "worldEntriesCount": "世界书: {count} 条",
+  "@fileLabel": {
+    "placeholders": {
+      "filename": {}
+    }
+  },
+  "fileLabel": "文件: {filename}",
+  "@conflictWarning": {
+    "placeholders": {
+      "names": {}
+    }
+  },
+  "conflictWarning": "已存在同名角色: {names}。继续导入将创建新角色，不会覆盖已有角色。",
+  "setPrimaryCompanionTitle": "设为主要陪伴角色",
+  "setPrimaryCompanionSubtitle": "导入后自动设为你的主要陪伴角色",
+  "confirmImport": "确认导入",
+  "chatBackground": "聊天背景",
+  "chooseChatBackgroundImage": "选择聊天背景图",
+  "earlyUpdateSettingsTitle": "Early 体验版更新",
+  "earlyUpdateSettingsDesc": "从 GitHub 预发布版本中检测匹配当前 Early 渠道的 APK，下载后交给 Android 系统安装器安装。",
+  "earlyUpdateUnsupported": "Early 更新仅支持 Android Early 包。",
+  "earlyUpdateAutoCheckTitle": "自动检测更新",
+  "earlyUpdateAutoCheckDesc": "启动时检测，每 12 小时最多一次。",
+  "earlyUpdateWifiOnlyTitle": "仅在 Wi-Fi 下载",
+  "earlyUpdateWifiOnlyDesc": "使用移动数据时跳过更新下载。",
+  "earlyUpdateAutoInstallTitle": "自动下载并安装",
+  "earlyUpdateAutoInstallDesc": "发现新版本后自动下载，并打开 Android 系统安装器。",
+  "earlyUpdateCheckNow": "立即检查",
+  "earlyUpdateChecking": "正在检查 GitHub 预发布版本...",
+  "earlyUpdateSkippedMobile": "已跳过：当前开启了仅 Wi-Fi 下载。",
+  "earlyUpdateNoUpdate": "当前已经是最新 Early 版本。",
+  "@earlyUpdateFound": {
+    "placeholders": {
+      "version": {},
+      "build": {}
+    }
+  },
+  "earlyUpdateFound": "发现 Early 版本 {version}+{build}。",
+  "earlyUpdateDownloadAndInstall": "下载并安装",
+  "@earlyUpdateDownloadingPercent": {
+    "placeholders": {
+      "percent": {}
+    }
+  },
+  "earlyUpdateDownloadingPercent": "正在下载更新：{percent}%",
+  "earlyUpdateInstallStarted": "已打开 Android 系统安装器。",
+  "earlyUpdateInstallPermissionRequired": "请允许 Memex 安装未知来源应用，然后再次点击下载并安装。",
+  "@earlyUpdateLastChecked": {
+    "placeholders": {
+      "time": {}
+    }
+  },
+  "earlyUpdateLastChecked": "上次检查：{time}",
+  "@earlyUpdateCheckFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "earlyUpdateCheckFailed": "检查更新失败：{error}",
+  "earlyUpdateDialogTitle": "发现 Early 更新",
+  "earlyUpdateReleaseNotes": "更新说明"
 }

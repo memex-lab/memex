@@ -6,10 +6,13 @@ enum EventBusMessageType {
   cardAdded('card_added'),
   cardDetailUpdated('card_detail_updated'),
   newInsight('new_insight'),
+  scheduleAggregationDirty('schedule_aggregation_dirty'),
+  scheduleAggregationUpdated('schedule_aggregation_updated'),
   newSystemAction('new_system_action'),
   attachmentsChanged('attachments_changed'),
   invalidModelConfig('invalid_model_config'),
   errorNotification('error_notification'),
+  personaChatMessageAdded('persona_chat_message_added'),
   unknown('unknown');
 
   final String value;
@@ -45,6 +48,10 @@ abstract class EventBusMessage {
         return CardDetailUpdatedMessage.fromJson(json);
       case EventBusMessageType.newInsight:
         return NewInsightMessage.fromJson(json);
+      case EventBusMessageType.scheduleAggregationDirty:
+        return ScheduleAggregationDirtyMessage.fromJson(json);
+      case EventBusMessageType.scheduleAggregationUpdated:
+        return ScheduleAggregationUpdatedMessage.fromJson(json);
       case EventBusMessageType.newSystemAction:
         return NewSystemActionMessage.fromJson(json);
       case EventBusMessageType.attachmentsChanged:
@@ -53,6 +60,8 @@ abstract class EventBusMessage {
         return InvalidModelConfigMessage.fromJson(json);
       case EventBusMessageType.errorNotification:
         return ErrorNotificationMessage.fromJson(json);
+      case EventBusMessageType.personaChatMessageAdded:
+        return PersonaChatMessageAddedMessage.fromJson(json);
       default:
         return UnknownMessage.fromJson(json);
     }
@@ -246,6 +255,58 @@ class NewInsightMessage extends EventBusMessage {
   }
 }
 
+/// Schedule aggregation dirty-state changed.
+class ScheduleAggregationDirtyMessage extends EventBusMessage {
+  final bool isDirty;
+  final String? reason;
+  final List<String> cardIds;
+
+  ScheduleAggregationDirtyMessage({
+    required this.isDirty,
+    this.reason,
+    this.cardIds = const [],
+  }) : super(
+          type: EventBusMessageType.scheduleAggregationDirty,
+          data: {
+            'is_dirty': isDirty,
+            if (reason != null) 'reason': reason,
+            if (cardIds.isNotEmpty) 'card_ids': cardIds,
+          },
+        );
+
+  factory ScheduleAggregationDirtyMessage.fromJson(Map<String, dynamic> json) {
+    final data = json['data'] as Map<String, dynamic>;
+    return ScheduleAggregationDirtyMessage(
+      isDirty: data['is_dirty'] as bool? ?? false,
+      reason: data['reason'] as String?,
+      cardIds: (data['card_ids'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
+    );
+  }
+}
+
+/// Schedule Aggregation Updated Message
+class ScheduleAggregationUpdatedMessage extends EventBusMessage {
+  final String aggregationId;
+
+  ScheduleAggregationUpdatedMessage({
+    required this.aggregationId,
+  }) : super(
+          type: EventBusMessageType.scheduleAggregationUpdated,
+          data: {'aggregation_id': aggregationId},
+        );
+
+  factory ScheduleAggregationUpdatedMessage.fromJson(
+      Map<String, dynamic> json) {
+    final data = json['data'] as Map<String, dynamic>;
+    return ScheduleAggregationUpdatedMessage(
+      aggregationId: data['aggregation_id'] as String,
+    );
+  }
+}
+
 /// Unknown message type
 class UnknownMessage extends EventBusMessage {
   UnknownMessage({required super.data})
@@ -337,6 +398,25 @@ class AttachmentsChangedMessage extends EventBusMessage {
     final data = json['data'] as Map<String, dynamic>? ?? {};
     return AttachmentsChangedMessage(
       factId: data['fact_id'] as String?,
+    );
+  }
+}
+
+/// Notifies persona chat screen that a new message was added mid-turn
+/// (e.g. an action message written by a tool during agent execution).
+class PersonaChatMessageAddedMessage extends EventBusMessage {
+  final String characterId;
+
+  PersonaChatMessageAddedMessage({required this.characterId})
+      : super(
+          type: EventBusMessageType.personaChatMessageAdded,
+          data: {'character_id': characterId},
+        );
+
+  factory PersonaChatMessageAddedMessage.fromJson(Map<String, dynamic> json) {
+    final data = json['data'] as Map<String, dynamic>? ?? {};
+    return PersonaChatMessageAddedMessage(
+      characterId: data['character_id'] as String? ?? '',
     );
   }
 }

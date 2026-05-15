@@ -158,4 +158,7 @@ class PersonaChatMessages extends Table {
   TextColumn get factId => text().nullable()();
   BoolColumn get isRead => boolean().withDefault(const Constant(false))();
   DateTimeColumn get timestamp => dateTime()();
+
+  /// Message type: 'chat' (default) or 'action' (narrative/action description).
+  TextColumn get messageType => text().withDefault(const Constant('chat'))();
 }

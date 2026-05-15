@@ -72,9 +72,9 @@
 		<key>NSFaceIDUsageDescription</key>
 		<string>Need Face ID to unlock the app</string>
 		<key>NSLocationWhenInUseUsageDescription</key>
-		<string>Memex reads location data from your photos to create place-based timeline cards, and lets you pick a location on the map when editing a record. For example, a photo taken at a restaurant automatically gets tagged with the venue so you can browse records by place.</string>
+		<string>Memex uses your current location to add city and neighborhood context to agent chats, reads location data from photos to create place-based timeline cards, and lets you pick a location on the map when editing a record.</string>
 		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-		<string>Memex reads location data from your photos to create place-based timeline cards, and lets you pick a location on the map when editing a record. For example, a photo taken at a restaurant automatically gets tagged with the venue so you can browse records by place.</string>
+		<string>Memex uses your current location to add city and neighborhood context to agent chats, reads location data from photos to create place-based timeline cards, and lets you pick a location on the map when editing a record.</string>
 		<key>NSCalendarsUsageDescription</key>
 		<string>Need calendar access to read and add your schedule</string>
 		<key>NSCalendarsFullAccessUsageDescription</key>

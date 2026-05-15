@@ -18,15 +18,20 @@ class SystemEvent<T> {
 class SystemEventTypes {
   static const String userInputSubmitted = 'user_input_submitted';
   static const String cardCommentPosted = 'card_comment_posted';
+  static const String cardUiConfigUpdated = 'card_ui_config_updated';
   static const String knowledgeInsightRefreshRequested =
       'knowledge_insight_refresh_requested';
+  static const String scheduleAggregationRequested =
+      'schedule_aggregation_requested';
   static const String clarificationAnswered = 'clarification_answered';
   static const String dataChanged = 'data_changed';
 
   static const List<String> allTypes = [
     userInputSubmitted,
     cardCommentPosted,
+    cardUiConfigUpdated,
     knowledgeInsightRefreshRequested,
+    scheduleAggregationRequested,
     clarificationAnswered,
     dataChanged,
   ];
@@ -42,6 +47,7 @@ class UserInputSubmittedPayload {
     required this.markdownEntry,
     required this.createdAtTs,
     required this.pkmCreatedAtTs,
+    this.locationContextReminder,
   });
 
   final String factId;
@@ -50,6 +56,7 @@ class UserInputSubmittedPayload {
   final String markdownEntry;
   final int createdAtTs;
   final double pkmCreatedAtTs;
+  final String? locationContextReminder;
 
   Map<String, dynamic> toJson() => {
         'fact_id': factId,
@@ -58,6 +65,8 @@ class UserInputSubmittedPayload {
         'markdown_entry': markdownEntry,
         'created_at_ts': createdAtTs,
         'pkm_created_at_ts': pkmCreatedAtTs,
+        if (locationContextReminder != null)
+          'location_context_reminder': locationContextReminder,
       };
 }
 
@@ -68,6 +77,7 @@ class CardCommentPostedPayload {
     required this.commentId,
     this.createdAtTs,
     this.replyToId,
+    this.locationContextReminder,
   });
 
   final String cardId;
@@ -75,6 +85,7 @@ class CardCommentPostedPayload {
   final String commentId;
   final int? createdAtTs;
   final String? replyToId;
+  final String? locationContextReminder;
 
   Map<String, dynamic> toJson() => {
         'card_id': cardId,
@@ -82,6 +93,8 @@ class CardCommentPostedPayload {
         'comment_id': commentId,
         if (createdAtTs != null) 'created_at_ts': createdAtTs,
         if (replyToId != null) 'reply_to_id': replyToId,
+        if (locationContextReminder != null)
+          'location_context_reminder': locationContextReminder,
       };
 }
 
@@ -144,4 +157,31 @@ class DataChangeRecord {
   /// Post-change snapshot. Null on [DataChangeOp.delete]. Non-null
   /// otherwise.
   final Map<String, dynamic>? after;
+}
+
+class CardUiConfigUpdatedPayload {
+  CardUiConfigUpdatedPayload({
+    required this.cardId,
+    required this.configIndex,
+    required this.templateId,
+    required this.updates,
+    required this.previousData,
+    required this.updatedData,
+  });
+
+  final String cardId;
+  final int configIndex;
+  final String templateId;
+  final Map<String, dynamic> updates;
+  final Map<String, dynamic> previousData;
+  final Map<String, dynamic> updatedData;
+
+  Map<String, dynamic> toJson() => {
+        'card_id': cardId,
+        'config_index': configIndex,
+        'template_id': templateId,
+        'updates': updates,
+        'previous_data': previousData,
+        'updated_data': updatedData,
+      };
 }

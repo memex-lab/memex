@@ -260,7 +260,6 @@ class _LocalImageState extends State<LocalImage> {
       // 4. check cache
       if (await cacheFile.exists()) {
         // cache hit
-        _logger.info('Cache hit for image: $originalPath');
         if (mounted) {
           setState(() {
             _imageFile = cacheFile;

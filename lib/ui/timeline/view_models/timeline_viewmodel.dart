@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 
+import 'package:memex/domain/models/system_card_constants.dart';
 import 'package:memex/domain/models/timeline_card_model.dart';
 import 'package:memex/domain/models/tag_model.dart';
 import 'package:memex/domain/models/card_detail_model.dart';
@@ -61,7 +62,7 @@ class TimelineViewModel extends ChangeNotifier {
     return cardsResult.when(
       onOk: (list) async {
         _currentPage = 1;
-        cards = list;
+        cards = await _withScheduleBriefingCard(list);
         hasMore = list.length >= pageLimit;
         errorMessage = null;
         _startPollingIfNeeded();
@@ -71,10 +72,10 @@ class TimelineViewModel extends ChangeNotifier {
         notifyListeners();
         return const Ok.v();
       },
-      onError: (e, st) {
+      onError: (error, stackTrace) {
         errorMessage = UserStorage.l10n.timelineLoadFailedRetry;
         notifyListeners();
-        return Error<void>(e, st);
+        return Error<void>(error, stackTrace);
       },
     );
   }
@@ -93,6 +94,14 @@ class TimelineViewModel extends ChangeNotifier {
     eventBus.addHandler(EventBusMessageType.cardAdded, _handleCardAdded);
     eventBus.addHandler(
         EventBusMessageType.attachmentsChanged, _handleAttachmentsChanged);
+    eventBus.addHandler(
+      EventBusMessageType.scheduleAggregationDirty,
+      _handleScheduleBriefingChanged,
+    );
+    eventBus.addHandler(
+      EventBusMessageType.scheduleAggregationUpdated,
+      _handleScheduleBriefingChanged,
+    );
     eventBus.connect();
   }
 
@@ -184,6 +193,10 @@ class TimelineViewModel extends ChangeNotifier {
         await CardAttachmentService.instance.getPendingAttachments();
     pendingAttachmentCount = pending.length;
     notifyListeners();
+  }
+
+  void _handleScheduleBriefingChanged(EventBusMessage message) {
+    unawaited(_refreshScheduleBriefingCard());
   }
 
   void _startPollingIfNeeded() {
@@ -298,6 +311,35 @@ class TimelineViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<List<TimelineCardModel>> _withScheduleBriefingCard(
+    List<TimelineCardModel> list,
+  ) async {
+    final withoutBriefing =
+        list.where((card) => card.id != scheduleBriefingCardId).toList();
+    if (!_shouldShowScheduleBriefing) return withoutBriefing;
+
+    final briefingResult = await _router.fetchScheduleBriefingCard();
+    return briefingResult.when(
+      onOk: (briefing) {
+        if (briefing == null) return withoutBriefing;
+        return [briefing, ...withoutBriefing];
+      },
+      onError: (e, st) {
+        _logger.warning('Failed to load schedule briefing card: $e');
+        return withoutBriefing;
+      },
+    );
+  }
+
+  Future<void> _refreshScheduleBriefingCard() async {
+    if (!_shouldShowScheduleBriefing) return;
+    cards = await _withScheduleBriefingCard(cards);
+    notifyListeners();
+  }
+
+  bool get _shouldShowScheduleBriefing =>
+      viewMode == TimelineViewMode.timeline && activeFilter == 'all';
+
   Future<void> loadMore() async {
     if (isLoading || !hasMore) return;
     isLoading = true;
@@ -336,6 +378,14 @@ class TimelineViewModel extends ChangeNotifier {
       eventBus.removeHandler(EventBusMessageType.cardAdded, _handleCardAdded);
       eventBus.removeHandler(
           EventBusMessageType.attachmentsChanged, _handleAttachmentsChanged);
+      eventBus.removeHandler(
+        EventBusMessageType.scheduleAggregationDirty,
+        _handleScheduleBriefingChanged,
+      );
+      eventBus.removeHandler(
+        EventBusMessageType.scheduleAggregationUpdated,
+        _handleScheduleBriefingChanged,
+      );
     }
     super.dispose();
   }

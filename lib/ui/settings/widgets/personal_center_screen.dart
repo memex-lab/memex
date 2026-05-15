@@ -15,7 +15,8 @@ import 'package:memex/ui/settings/widgets/settings_search_screen.dart';
 import 'package:memex/ui/settings/view_models/settings_search_viewmodel.dart';
 import 'package:memex/utils/permission_utils.dart';
 import 'package:memex/ui/core/widgets/avatar_picker.dart';
-import 'package:memex/ui/core/widgets/dicebear_avatar.dart';
+import 'package:memex/ui/core/widgets/character_avatar.dart';
+import 'package:memex/data/services/media_service.dart';
 
 /// Personal center screen
 class PersonalCenterScreen extends StatefulWidget {
@@ -54,7 +55,7 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
 
   Future<void> _loadUserInfo() async {
     final userId = await UserStorage.getUserId();
-    final avatar = await UserStorage.getUserAvatar();
+    final avatar = await _memexRouter.getUserAvatar();
     if (mounted) {
       setState(() {
         _userId = userId ?? UserStorage.l10n.notSet;
@@ -68,11 +69,28 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
     final picked = await showAvatarPicker(
       context,
       _userAvatar ?? UserStorage.defaultAvatarSeed,
+      onPickGallery: _pickUserAvatarFromGallery,
     );
     if (picked != null && mounted) {
-      await UserStorage.saveUserAvatar(picked);
-      setState(() => _userAvatar = picked);
+      await _memexRouter.updateUserAvatar(picked);
+      final resolvedAvatar = await _memexRouter.getUserAvatar();
+      if (!mounted) return;
+      setState(() => _userAvatar = resolvedAvatar);
     }
+  }
+
+  Future<String?> _pickUserAvatarFromGallery() async {
+    final userId = await UserStorage.getUserId();
+    if (userId == null) return null;
+
+    final pickedPath = await pickAvatarImageFromGallery();
+    if (pickedPath == null) return null;
+
+    final imported = await MediaService.instance.importImage(
+      userId: userId,
+      sourcePath: pickedPath,
+    );
+    return imported.relativePath;
   }
 
   Future<void> _clearToken() async {
@@ -810,9 +828,10 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
                                   color: Color(0xFFEEF2FF),
                                   shape: BoxShape.circle,
                                 ),
-                                child: DiceBearAvatar(
-                                  seed: _userAvatar ??
+                                child: CharacterAvatar(
+                                  avatar: _userAvatar ??
                                       UserStorage.defaultAvatarSeed,
+                                  name: _userId ?? '',
                                   size: 80,
                                 ),
                               ),

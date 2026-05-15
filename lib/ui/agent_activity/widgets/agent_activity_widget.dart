@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:intl/intl.dart';
@@ -128,84 +127,78 @@ class _AgentActivityWidgetState extends State<AgentActivityWidget>
 
     return GestureDetector(
       onTap: _hasRunningAgent ? () => _showDetail(context) : null,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              color: Colors.white.withValues(alpha: 0.75),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.5),
-                width: 0.5,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF6366F1).withValues(alpha: 0.08),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          color: Colors.white.withValues(alpha: 0.88),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.5),
+            width: 0.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF6366F1).withValues(alpha: 0.08),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Animated writing icon (alternates between two frames)
-                AnimatedBuilder(
-                  animation: _bounceController,
-                  builder: (context, child) {
-                    final frame = _bounceController.value < 0.5
-                        ? 'assets/icons/processing_1.png'
-                        : 'assets/icons/processing_2.png';
-                    return Image.asset(
-                      frame,
-                      width: 36,
-                      height: 36,
-                    );
-                  },
-                ),
-                const SizedBox(width: 8),
-                // Text
-                Flexible(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        UserStorage.l10n.agentProcessing,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Color(0xFF1E293B),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      Text(
-                        UserStorage.l10n.keepAppOpen,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: const Color(0xFF64748B).withValues(alpha: 0.8),
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Animated writing icon (alternates between two frames)
+            AnimatedBuilder(
+              animation: _bounceController,
+              builder: (context, child) {
+                final frame = _bounceController.value < 0.5
+                    ? 'assets/icons/processing_1.png'
+                    : 'assets/icons/processing_2.png';
+                return Image.asset(
+                  frame,
+                  width: 36,
+                  height: 36,
+                );
+              },
+            ),
+            const SizedBox(width: 8),
+            // Text
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    UserStorage.l10n.agentProcessing,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Color(0xFF1E293B),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                if (_hasRunningAgent) ...[
-                  const SizedBox(width: 6),
-                  const Icon(
-                    Icons.chevron_right_rounded,
-                    size: 16,
-                    color: Color(0xFF94A3B8),
+                  Text(
+                    UserStorage.l10n.keepAppOpen,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: const Color(0xFF64748B).withValues(alpha: 0.8),
+                      fontSize: 11,
+                    ),
                   ),
                 ],
-              ],
+              ),
             ),
-          ),
+            if (_hasRunningAgent) ...[
+              const SizedBox(width: 6),
+              const Icon(
+                Icons.chevron_right_rounded,
+                size: 16,
+                color: Color(0xFF94A3B8),
+              ),
+            ],
+          ],
         ),
       ),
     );

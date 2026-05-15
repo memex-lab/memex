@@ -112,6 +112,24 @@ Memex requires an LLM API key to power its AI features. On first launch:
 3. Enter your API key and base URL
 4. Each agent can be configured with a different model independently
 
+### Configure Location Context
+
+Memex can optionally attach your current city, district, and neighborhood context to agent conversations. This uses device GPS only; IP-based location is not used.
+
+1. Open Personal center → Settings → Location.
+2. Turn on "Attach current location to chat".
+3. Choose a reverse geocoding provider:
+   - OpenStreetMap / Nominatim works without an API key.
+   - Amap requires an API key.
+4. To use Amap, create an application in the [Amap Open Platform](https://lbs.amap.com/), enable the Web Service API, copy the key, and paste it into the Amap API Key field.
+5. Choose the context granularity and freshness window.
+
+For local live tests of Amap reverse geocoding, pass the key through an environment variable instead of committing it:
+
+```bash
+AMAP_GEOCODING_TEST_KEY=your_key flutter test test/data/services/geocoding_service_test.dart
+```
+
 ## 🧩 Custom Agent System
 
 Memex isn't just a recording app — it's a platform that lets you build your own AI agents on your phone.

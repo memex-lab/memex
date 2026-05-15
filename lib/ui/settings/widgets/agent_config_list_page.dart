@@ -16,19 +16,14 @@ class AgentConfigListPage extends StatefulWidget {
 }
 
 class _AgentConfigListPageState extends State<AgentConfigListPage> {
+  static const String _defaultSelectionValue = '__memex_default_llm_config__';
+
   List<LLMConfig> _llmConfigs = [];
   Map<String, AgentConfig> _agentConfigs = {};
+  String _defaultConfigKey = LLMConfig.defaultClientKey;
   bool _isLoading = true;
 
-  final List<String> _agentIds = [
-    AgentDefinitions.pkmAgent,
-    AgentDefinitions.cardAgent,
-    AgentDefinitions.profileAgent,
-    AgentDefinitions.knowledgeInsightAgent,
-    AgentDefinitions.commentAgent,
-    AgentDefinitions.chatAgent,
-    AgentDefinitions.analyzeAssets,
-  ];
+  final List<String> _agentIds = AgentDefinitions.configurableAgentIds;
 
   @override
   void initState() {
@@ -39,16 +34,19 @@ class _AgentConfigListPageState extends State<AgentConfigListPage> {
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
-      final configs = await MemexRouter().getLLMConfigs();
+      final router = MemexRouter();
+      final configs = await router.getLLMConfigs();
+      final defaultConfigKey = await router.getDefaultLLMConfigKey();
       final agentConfigs = <String, AgentConfig>{};
 
       for (var agentId in _agentIds) {
-        agentConfigs[agentId] = await MemexRouter().getAgentConfig(agentId);
+        agentConfigs[agentId] = await router.getAgentConfig(agentId);
       }
 
       if (mounted) {
         setState(() {
           _llmConfigs = configs;
+          _defaultConfigKey = defaultConfigKey;
           _agentConfigs = agentConfigs;
           _isLoading = false;
         });
@@ -106,7 +104,9 @@ class _AgentConfigListPageState extends State<AgentConfigListPage> {
   }
 
   LLMConfig? _effectiveConfig(String? selectedKey) =>
-      _findConfig(selectedKey) ?? _findConfig(LLMConfig.defaultClientKey);
+      _findConfig(selectedKey) ??
+      _findConfig(_defaultConfigKey) ??
+      _findConfig(LLMConfig.defaultClientKey);
 
   bool _isKnownMultimodalConfig(LLMConfig config) =>
       LLMConfig.isKnownMultimodal(config.type, config.modelId);
@@ -201,7 +201,12 @@ class _AgentConfigListPageState extends State<AgentConfigListPage> {
                 final currentConfig =
                     _agentConfigs[agentId] ?? const AgentConfig();
                 final selectedKey = currentConfig.llmConfigKey;
+                final selectedConfig = _findConfig(selectedKey);
+                final usesDefault =
+                    selectedKey == null || selectedConfig == null;
                 final effectiveConfig = _effectiveConfig(selectedKey);
+                final dropdownValue =
+                    usesDefault ? _defaultSelectionValue : selectedKey;
 
                 return Container(
                   margin: const EdgeInsets.only(bottom: 12),
@@ -236,7 +241,7 @@ class _AgentConfigListPageState extends State<AgentConfigListPage> {
                           color: AppColors.textTertiary,
                         ),
                       ),
-                      if (selectedKey == null && effectiveConfig != null) ...[
+                      if (usesDefault && effectiveConfig != null) ...[
                         const SizedBox(height: 4),
                         Text(
                           '$_defaultModelPrefix: ${effectiveConfig.key} / ${effectiveConfig.modelId}',
@@ -250,13 +255,26 @@ class _AgentConfigListPageState extends State<AgentConfigListPage> {
                       const SizedBox(height: 12),
                       DropdownButtonFormField<String>(
                         key: ValueKey(
-                          'agent-model-$agentId-${selectedKey ?? ''}',
+                          'agent-model-$agentId-$dropdownValue-$_defaultConfigKey',
                         ),
-                        initialValue: selectedKey,
+                        initialValue: dropdownValue,
                         isExpanded: true,
                         decoration: _dropdownDecoration(),
                         hint: const Text(''),
                         items: [
+                          DropdownMenuItem<String>(
+                            value: _defaultSelectionValue,
+                            child: Text(
+                              effectiveConfig == null
+                                  ? UserStorage.l10n.defaultLabel
+                                  : '$_defaultModelPrefix: ${effectiveConfig.key} / ${effectiveConfig.modelId}',
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ),
                           ..._llmConfigs.map((config) {
                             return DropdownMenuItem<String>(
                               value: config.key,
@@ -300,8 +318,12 @@ class _AgentConfigListPageState extends State<AgentConfigListPage> {
                           }),
                         ],
                         onChanged: (String? newValue) {
-                          if (newValue != selectedKey) {
-                            _updateAgentModelConfig(agentId, newValue);
+                          final effectiveValue =
+                              newValue == _defaultSelectionValue
+                                  ? null
+                                  : newValue;
+                          if (effectiveValue != selectedKey) {
+                            _updateAgentModelConfig(agentId, effectiveValue);
                           }
                         },
                       ),
