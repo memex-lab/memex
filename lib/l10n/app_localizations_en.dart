@@ -2391,6 +2391,48 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get locationDebugGps => 'GPS';
+
+  @override
+  String get locationDebugReverseGeocode => 'Reverse geocode';
+
+  @override
+  String get locationDebugProvider => 'Provider';
+
+  @override
+  String get locationDebugAgentContext => 'Agent context';
+
+  @override
+  String get locationDebugSource => 'Source';
+
+  @override
+  String get locationDebugAddressSummary => 'Address summary';
+
+  @override
+  String get locationDebugFullAddress => 'Full address';
+
+  @override
+  String get locationDebugCoordinates => 'Coordinates';
+
+  @override
+  String get locationDebugAccuracy => 'Accuracy';
+
+  @override
+  String get locationDebugReason => 'Reason';
+
+  @override
+  String get locationDebugOk => 'OK';
+
+  @override
+  String get locationDebugUnavailable => 'unavailable';
+
+  @override
+  String get locationDebugInjected => 'injected';
+
+  @override
+  String get locationDebugNotInjected => 'not injected';
+
+  @override
   String get settingsSearchPlaceholder => 'Search settings...';
 
   @override

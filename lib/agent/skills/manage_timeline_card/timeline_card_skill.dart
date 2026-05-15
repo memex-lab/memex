@@ -118,7 +118,7 @@ class TimelineCardSkill extends Skill {
             'address': {
               'type': 'string',
               'description':
-                  'Location information, set when raw input contains location-related information. Do not be too specific. Use the format "City · Specific Location" (e.g., Beijing · Chaoyang Park) if possible, otherwise just the specific location name is fine.'
+                  'Location information for where the card happened. If raw input explicitly names a place, use that. If raw input describes an immediate present-time event, check-in, photo capture, or daily activity and current_location_context is available, use its location_summary or full_address_candidate as a conservative default. Do not use current_location_context for memories, plans, remote events, or when raw input names a conflicting place. Do not be too specific. Use the format "City · Specific Location" (e.g., Beijing · Chaoyang Park) if possible, otherwise just the specific location name is fine.'
             },
             'user_mark_address': {
               'type': 'string',

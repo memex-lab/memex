@@ -1084,6 +1084,20 @@
       }
     }
   },
+  "locationDebugGps": "GPS",
+  "locationDebugReverseGeocode": "Reverse geocode",
+  "locationDebugProvider": "Provider",
+  "locationDebugAgentContext": "Agent context",
+  "locationDebugSource": "Source",
+  "locationDebugAddressSummary": "Address summary",
+  "locationDebugFullAddress": "Full address",
+  "locationDebugCoordinates": "Coordinates",
+  "locationDebugAccuracy": "Accuracy",
+  "locationDebugReason": "Reason",
+  "locationDebugOk": "OK",
+  "locationDebugUnavailable": "unavailable",
+  "locationDebugInjected": "injected",
+  "locationDebugNotInjected": "not injected",
 
   "settingsSearchPlaceholder": "Search settings...",
   "settingsSearchEmpty": "No matching settings found",

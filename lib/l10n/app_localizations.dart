@@ -4358,6 +4358,90 @@ abstract class AppLocalizations {
   /// **'Failed: {error}'**
   String locationTestFailed(String error);
 
+  /// No description provided for @locationDebugGps.
+  ///
+  /// In en, this message translates to:
+  /// **'GPS'**
+  String get locationDebugGps;
+
+  /// No description provided for @locationDebugReverseGeocode.
+  ///
+  /// In en, this message translates to:
+  /// **'Reverse geocode'**
+  String get locationDebugReverseGeocode;
+
+  /// No description provided for @locationDebugProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider'**
+  String get locationDebugProvider;
+
+  /// No description provided for @locationDebugAgentContext.
+  ///
+  /// In en, this message translates to:
+  /// **'Agent context'**
+  String get locationDebugAgentContext;
+
+  /// No description provided for @locationDebugSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Source'**
+  String get locationDebugSource;
+
+  /// No description provided for @locationDebugAddressSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Address summary'**
+  String get locationDebugAddressSummary;
+
+  /// No description provided for @locationDebugFullAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Full address'**
+  String get locationDebugFullAddress;
+
+  /// No description provided for @locationDebugCoordinates.
+  ///
+  /// In en, this message translates to:
+  /// **'Coordinates'**
+  String get locationDebugCoordinates;
+
+  /// No description provided for @locationDebugAccuracy.
+  ///
+  /// In en, this message translates to:
+  /// **'Accuracy'**
+  String get locationDebugAccuracy;
+
+  /// No description provided for @locationDebugReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason'**
+  String get locationDebugReason;
+
+  /// No description provided for @locationDebugOk.
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get locationDebugOk;
+
+  /// No description provided for @locationDebugUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'unavailable'**
+  String get locationDebugUnavailable;
+
+  /// No description provided for @locationDebugInjected.
+  ///
+  /// In en, this message translates to:
+  /// **'injected'**
+  String get locationDebugInjected;
+
+  /// No description provided for @locationDebugNotInjected.
+  ///
+  /// In en, this message translates to:
+  /// **'not injected'**
+  String get locationDebugNotInjected;
+
   /// No description provided for @settingsSearchPlaceholder.
   ///
   /// In en, this message translates to:

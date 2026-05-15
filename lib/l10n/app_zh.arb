@@ -1062,6 +1062,20 @@
       }
     }
   },
+  "locationDebugGps": "GPS",
+  "locationDebugReverseGeocode": "逆地理编码",
+  "locationDebugProvider": "服务商",
+  "locationDebugAgentContext": "Agent 上下文",
+  "locationDebugSource": "来源",
+  "locationDebugAddressSummary": "地址摘要",
+  "locationDebugFullAddress": "完整地址",
+  "locationDebugCoordinates": "坐标",
+  "locationDebugAccuracy": "精度",
+  "locationDebugReason": "原因",
+  "locationDebugOk": "成功",
+  "locationDebugUnavailable": "不可用",
+  "locationDebugInjected": "已注入",
+  "locationDebugNotInjected": "未注入",
 
   "settingsSearchPlaceholder": "搜索设置项...",
   "settingsSearchEmpty": "未找到匹配的设置项",

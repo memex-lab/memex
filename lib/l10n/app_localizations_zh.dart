@@ -2304,6 +2304,48 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get locationDebugGps => 'GPS';
+
+  @override
+  String get locationDebugReverseGeocode => '逆地理编码';
+
+  @override
+  String get locationDebugProvider => '服务商';
+
+  @override
+  String get locationDebugAgentContext => 'Agent 上下文';
+
+  @override
+  String get locationDebugSource => '来源';
+
+  @override
+  String get locationDebugAddressSummary => '地址摘要';
+
+  @override
+  String get locationDebugFullAddress => '完整地址';
+
+  @override
+  String get locationDebugCoordinates => '坐标';
+
+  @override
+  String get locationDebugAccuracy => '精度';
+
+  @override
+  String get locationDebugReason => '原因';
+
+  @override
+  String get locationDebugOk => '成功';
+
+  @override
+  String get locationDebugUnavailable => '不可用';
+
+  @override
+  String get locationDebugInjected => '已注入';
+
+  @override
+  String get locationDebugNotInjected => '未注入';
+
+  @override
   String get settingsSearchPlaceholder => '搜索设置项...';
 
   @override

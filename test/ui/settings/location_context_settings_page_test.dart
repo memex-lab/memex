@@ -34,7 +34,7 @@ void main() {
     await tester.scrollUntilVisible(
       find.text('Test current location'),
       300,
-      scrollable: find.byType(Scrollable),
+      scrollable: find.byType(Scrollable).first,
     );
     await tester.pumpAndSettle();
   }
@@ -150,6 +150,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(receivedForceRefresh, isTrue);
+    expect(find.textContaining('GPS: fresh'), findsOneWidget);
+    expect(find.textContaining('Reverse geocode: OK'), findsOneWidget);
+    expect(find.textContaining('Agent context: injected'), findsOneWidget);
     expect(
       find.textContaining('Shanghai · Huangpu · People Square'),
       findsOneWidget,
@@ -181,8 +184,52 @@ void main() {
     await tester.tap(find.text('Test current location'));
     await tester.pumpAndSettle();
 
+    expect(find.textContaining('GPS: unavailable'), findsOneWidget);
+    expect(find.textContaining('Reverse geocode: unavailable'), findsOneWidget);
     expect(
-      find.textContaining('unavailable: location permission denied'),
+      find.textContaining('Reason: location permission denied'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('test button explains GPS-only reverse geocode failure', (
+    WidgetTester tester,
+  ) async {
+    await pumpLocationSettingsPage(
+      tester,
+      config: const LocationContextConfig(
+        enabled: true,
+        provider: GeocodingProvider.amap,
+        granularity: LocationContextGranularity.neighborhood,
+      ),
+      loadCurrentContext: ({bool forceRefresh = false}) async {
+        return CurrentLocationContext(
+          status: 'fresh',
+          latitude: 31.230416,
+          longitude: 121.473701,
+          accuracyMeters: 8.5,
+          source: 'device_gps',
+          updatedAt: DateTime.utc(2026, 5, 15, 10),
+          granularity: LocationContextGranularity.neighborhood,
+          reason: 'reverse geocode unavailable (amap): amap api key is empty',
+        );
+      },
+    );
+
+    await scrollToTestButton(tester);
+    await tester.tap(find.text('Test current location'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('GPS: fresh'), findsOneWidget);
+    expect(find.textContaining('Provider: Amap'), findsOneWidget);
+    expect(find.textContaining('Reverse geocode: unavailable'), findsOneWidget);
+    expect(find.textContaining('Agent context: not injected'), findsOneWidget);
+    expect(
+      find.textContaining('Coordinates: 31.230416, 121.473701'),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('Reason: reverse geocode unavailable (amap)'),
       findsOneWidget,
     );
   });
