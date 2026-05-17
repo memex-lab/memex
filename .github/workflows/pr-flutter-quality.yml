@@ -1,0 +1,101 @@
+name: PR Flutter Quality
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-flutter-quality-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  flutter-quality:
+    name: Flutter Analyze and Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out PR code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Prepare base worktree
+        run: |
+          git fetch --no-tags origin "${{ github.event.pull_request.base.sha }}"
+          git worktree add ../memex-base "${{ github.event.pull_request.base.sha }}"
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Show Flutter version
+        run: flutter --version
+
+      - name: Install base Flutter dependencies
+        working-directory: ../memex-base
+        run: flutter pub get
+
+      - name: Install PR Flutter dependencies
+        run: flutter pub get
+
+      - name: Analyze base and PR code
+        shell: bash
+        run: |
+          set +e
+          (
+            cd ../memex-base
+            flutter analyze --no-pub --no-fatal-infos --no-fatal-warnings --no-congratulate \
+              --write "$RUNNER_TEMP/flutter-analyze-base.txt"
+          )
+          base_status="$?"
+
+          flutter analyze --no-pub --no-fatal-infos --no-fatal-warnings --no-congratulate \
+            --write "$RUNNER_TEMP/flutter-analyze-head.txt"
+          head_status="$?"
+
+          echo "Base analyzer exit code: ${base_status}"
+          echo "PR analyzer exit code: ${head_status}"
+          exit 0
+
+      - name: Check analyzer baseline
+        run: >
+          python3 scripts/compare_flutter_analyze.py
+          --base "$RUNNER_TEMP/flutter-analyze-base.txt"
+          --head "$RUNNER_TEMP/flutter-analyze-head.txt"
+          --summary "$GITHUB_STEP_SUMMARY"
+
+      - name: Run base and PR Flutter tests
+        shell: bash
+        run: |
+          set +e
+          (
+            cd ../memex-base
+            flutter test --no-pub
+          ) | tee "$RUNNER_TEMP/flutter-test-base.txt"
+          base_status="${PIPESTATUS[0]}"
+
+          flutter test --no-pub | tee "$RUNNER_TEMP/flutter-test-head.txt"
+          head_status="${PIPESTATUS[0]}"
+
+          echo "Base test exit code: ${base_status}"
+          echo "PR test exit code: ${head_status}"
+          exit 0
+
+      - name: Check test baseline
+        run: >
+          python3 scripts/compare_flutter_test_failures.py
+          --base "$RUNNER_TEMP/flutter-test-base.txt"
+          --head "$RUNNER_TEMP/flutter-test-head.txt"
+          --summary "$GITHUB_STEP_SUMMARY"
