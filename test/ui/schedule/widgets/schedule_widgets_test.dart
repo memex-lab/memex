@@ -90,10 +90,7 @@ void main() {
 
         expect(tappedCards, contains('event-dentist'));
 
-        await tester.scrollUntilVisible(
-          find.text('Done grocery order'),
-          240,
-        );
+        await tester.scrollUntilVisible(find.text('Done grocery order'), 240);
         await tester.pumpAndSettle();
         expect(find.text('Done grocery order'), findsOneWidget);
       },
@@ -271,6 +268,28 @@ void main() {
         findsOneWidget,
       );
     });
+
+    testWidgets('renders fresh output from a task-scoped run', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildHost(
+          MagazineNarrativeTab(
+            aggregation: _complexAggregation(
+              heroTitle: 'Run-scoped refresh result',
+              editorialIntro: 'Fresh schedule output from a task-scoped run.',
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Run-scoped refresh result'), findsOneWidget);
+      expect(
+        find.text('Fresh schedule output from a task-scoped run.'),
+        findsOneWidget,
+      );
+    });
   });
 
   group('ScheduleBriefingCard', () {
@@ -324,7 +343,11 @@ void main() {
   });
 }
 
-ScheduleAggregationModel _complexAggregation({bool longText = false}) {
+ScheduleAggregationModel _complexAggregation({
+  bool longText = false,
+  String heroTitle = 'Visa renewal',
+  String editorialIntro = 'A heavy week with travel prep and home tasks.',
+}) {
   final location = longText
       ? 'Very long cross-city conference room name with building, floor, wing, and entrance instructions'
       : 'Clinic room 4';
@@ -340,14 +363,14 @@ ScheduleAggregationModel _complexAggregation({bool longText = false}) {
       cardId: 'event-visa',
       title: longText
           ? 'Very long cross-city visa renewal preparation and paperwork deadline'
-          : 'Visa renewal',
+          : heroTitle,
       description: 'Bring photos, passport, and printed forms.',
       startTime: DateTime(2026, 5, 15, 9, 30),
       endTime: DateTime(2026, 5, 15, 11),
       location: location,
       priority: 3,
     ),
-    editorialIntro: 'A heavy week with travel prep and home tasks.',
+    editorialIntro: editorialIntro,
     quoteBlocks: [
       QuoteBlock(
         title: 'Deadline pressure',

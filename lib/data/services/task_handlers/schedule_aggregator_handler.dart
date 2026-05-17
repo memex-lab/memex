@@ -13,10 +13,14 @@ Future<void> handleScheduleAggregation(
   TaskContext context,
 ) async {
   _logger.info(
-      'Executing handleScheduleAggregation for task ${context.taskId}, bizId: ${context.bizId}');
+    'Executing handleScheduleAggregation for task ${context.taskId}, bizId: ${context.bizId}',
+  );
 
   try {
-    await ScheduleAggregatorAgent.updateScheduleAggregation();
+    await ScheduleAggregatorAgent.updateScheduleAggregation(
+      userId: userId,
+      runId: context.taskId,
+    );
   } catch (e) {
     _logger.severe('Schedule aggregation failed: $e');
     rethrow;
