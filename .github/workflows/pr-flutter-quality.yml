@@ -76,5 +76,26 @@ jobs:
           --head "$RUNNER_TEMP/flutter-analyze-head.txt"
           --summary "$GITHUB_STEP_SUMMARY"
 
-      - name: Run Flutter tests
-        run: flutter test --no-pub
+      - name: Run base and PR Flutter tests
+        shell: bash
+        run: |
+          set +e
+          (
+            cd ../memex-base
+            flutter test --no-pub
+          ) | tee "$RUNNER_TEMP/flutter-test-base.txt"
+          base_status="${PIPESTATUS[0]}"
+
+          flutter test --no-pub | tee "$RUNNER_TEMP/flutter-test-head.txt"
+          head_status="${PIPESTATUS[0]}"
+
+          echo "Base test exit code: ${base_status}"
+          echo "PR test exit code: ${head_status}"
+          exit 0
+
+      - name: Check test baseline
+        run: >
+          python3 scripts/compare_flutter_test_failures.py
+          --base "$RUNNER_TEMP/flutter-test-base.txt"
+          --head "$RUNNER_TEMP/flutter-test-head.txt"
+          --summary "$GITHUB_STEP_SUMMARY"

@@ -27,8 +27,9 @@ Ordinary application code should not be primarily classified by directory-based
 risk rules. Code quality is handled by a separate normal `pull_request` CI job
 because that job executes PR code and must run without secrets and with minimal
 permissions. This repository uses `.github/workflows/pr-flutter-quality.yml` for
-that check, with `scripts/compare_flutter_analyze.py` comparing base and PR
-analyzer output as a baseline.
+that check, with `scripts/compare_flutter_analyze.py` and
+`scripts/compare_flutter_test_failures.py` comparing base and PR analyzer/test
+output as a baseline.
 
 Recommended quality gates:
 
@@ -36,7 +37,8 @@ Recommended quality gates:
 - If the repository still has historical analyzer debt, maintain a baseline and
   require the PR to introduce no new analyzer issues. The long-term target
   should still be fully green.
-- `flutter test --no-pub`: require tests to pass.
+- `flutter test --no-pub`: prefer all tests to pass. If `main` temporarily has
+  historical failures, require the PR to introduce no new failing test.
 - Add compile/build checks when the PR touches platform, flavor, release, or
   build-pipeline behavior.
 

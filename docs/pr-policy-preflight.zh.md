@@ -19,14 +19,16 @@ policy、lint 配置、secrets、签名材料和无法安全 review 的内容。
 普通业务代码不应主要依赖目录规则判定风险。代码质量由单独的普通 `pull_request`
 CI 负责，因为这类 job 会执行 PR 代码，必须运行在无 secrets、低权限的环境里。当前
 仓库使用 `.github/workflows/pr-flutter-quality.yml` 承担这部分检查，并通过
-`scripts/compare_flutter_analyze.py` 对 base 与 PR 的 analyzer 输出做 baseline 对比。
+`scripts/compare_flutter_analyze.py` 和 `scripts/compare_flutter_test_failures.py`
+对 base 与 PR 的 analyzer/test 输出做 baseline 对比。
 
 推荐质量门禁：
 
 - `flutter analyze --no-pub`：优先要求全绿。
 - 如果仓库暂时存在历史 analyzer 问题，则维护 baseline，只要求 PR 不新增 analyzer
   issue；长期目标仍然是全绿。
-- `flutter test --no-pub`：要求通过。
+- `flutter test --no-pub`：优先要求全过；如果 main 暂时有历史失败，则要求 PR 不新增
+  失败测试。
 - 涉及平台、flavor、release 或构建链路时，再补充对应 compile/build。
 
 后续真正接入低风险快速通道时，建议同时满足：
