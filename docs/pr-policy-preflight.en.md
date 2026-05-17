@@ -8,6 +8,9 @@ changed files, and diff content.
 In the current shadow phase, Preflight only reports a decision. Its decision is
 not a merge blocker yet.
 
+Human-facing Markdown output is bilingual. JSON keeps stable English field names
+and includes Chinese labels/messages such as `decision_zh` and `message_zh`.
+
 ## Decision Levels
 
 ### `reject`

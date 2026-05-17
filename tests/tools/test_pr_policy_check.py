@@ -6,6 +6,8 @@ from scripts.pr_policy_check import (
     DECISION_LOW_RISK,
     DECISION_REJECT,
     evaluate_policy,
+    result_to_dict,
+    result_to_markdown,
 )
 
 
@@ -33,6 +35,7 @@ class PolicyPreflightTest(unittest.TestCase):
 
         self.assertEqual(result.decision, DECISION_REJECT)
         self.assertFalse(result.compliant)
+        self.assertTrue(result.findings[0].message_zh)
 
     def test_generated_file_without_source_rejects(self):
         result = run_policy([ChangedFile(status="M", path="lib/db/app_database.g.dart")])
@@ -84,6 +87,16 @@ class PolicyPreflightTest(unittest.TestCase):
 
         self.assertEqual(result.decision, DECISION_LOW_RISK)
         self.assertTrue(any(finding.rule_id == "missing-test-signal" for finding in result.findings))
+
+    def test_outputs_include_bilingual_labels(self):
+        result = run_policy([ChangedFile(status="M", path=".github/workflows/build.yml")])
+        data = result_to_dict(result)
+        markdown = result_to_markdown(result)
+
+        self.assertEqual(data["decision_zh"], "高风险")
+        self.assertTrue(data["findings"][0]["message_zh"])
+        self.assertIn("Decision / 判定", markdown)
+        self.assertIn("Findings / 规则命中", markdown)
 
 
 if __name__ == "__main__":

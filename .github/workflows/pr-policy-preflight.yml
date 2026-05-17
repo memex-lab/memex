@@ -59,9 +59,11 @@ jobs:
             cat preflight.md >> "$GITHUB_STEP_SUMMARY"
           else
             {
-              echo "# PR Policy Preflight"
+              echo "# PR Policy Preflight / PR 规则预检"
               echo
               echo "Preflight did not produce a Markdown report."
+              echo
+              echo "Preflight 未生成 Markdown 报告。"
               echo
               echo "Script exit code: \`${status}\`"
             } >> "$GITHUB_STEP_SUMMARY"
@@ -78,9 +80,11 @@ jobs:
         run: |
           if [ ! -f preflight.md ]; then
             {
-              echo "# PR Policy Preflight"
+              echo "# PR Policy Preflight / PR 规则预检"
               echo
               echo "Preflight did not produce a report."
+              echo
+              echo "Preflight 未生成报告。"
             } > preflight.md
           fi
 
@@ -90,23 +94,26 @@ jobs:
             cat preflight.md
             echo
             echo "_Shadow mode: this result is informational and does not block merge._"
+            echo
+            echo "_Shadow mode：当前结果仅供参考，不会阻塞合并。_"
           } > preflight-comment.md
 
           existing_comment_id="$(gh api \
             "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" \
             --jq ".[] | select(.body | contains(\"${MARKER}\")) | .id" \
             | head -n 1)"
+          comment_body="$(cat preflight-comment.md)"
 
           if [ -n "$existing_comment_id" ]; then
             gh api \
               --method PATCH \
               "repos/${GITHUB_REPOSITORY}/issues/comments/${existing_comment_id}" \
-              -f body=@preflight-comment.md
+              -f body="$comment_body"
           else
             gh api \
               --method POST \
               "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" \
-              -f body=@preflight-comment.md
+              -f body="$comment_body"
           fi
 
       - name: Upload preflight result
