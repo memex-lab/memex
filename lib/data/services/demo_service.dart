@@ -53,7 +53,6 @@ class DemoService extends ChangeNotifier {
 
   // Track IDs for cross-referencing
   String? _introFactId;
-  String? _userRecordFactId;
 
   /// Start the demo: write intro card, then show welcome overlay.
   /// Skips automatically for existing users who upgrade (they have legacy
@@ -302,7 +301,6 @@ class DemoService extends ChangeNotifier {
   Future<void> handleDemoSubmit(
       String userId, String factId, String combinedText) async {
     try {
-      _userRecordFactId = factId;
       final fs = FileSystemService.instance;
       final eventBus = EventBusService.instance;
 

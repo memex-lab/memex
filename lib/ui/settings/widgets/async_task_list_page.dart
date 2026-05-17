@@ -340,7 +340,7 @@ class _AsyncTaskListPageState extends State<AsyncTaskListPage> {
                                       const SizedBox(width: 4),
                                       Text(
                                         UserStorage.l10n
-                                            .durationLabel(durationStr!),
+                                            .durationLabel(durationStr),
                                         style: TextStyle(
                                           fontSize: 12,
                                           color: Colors.grey[500],

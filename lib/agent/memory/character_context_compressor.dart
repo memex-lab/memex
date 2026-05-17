@@ -233,7 +233,11 @@ class CharacterContextCompressor {
         modelConfig: resources.modelConfig,
       );
       var out = res.textOutput?.trim() ?? '';
-      if (out.isEmpty) return existingSummary.isNotEmpty ? existingSummary : '';
+      if (out.isEmpty) {
+        return existingSummary.isNotEmpty
+            ? existingSummary
+            : _buildFallbackSummary(newEvents);
+      }
 
       // If output exceeds budget, ask for a tighter version.
       if (out.length > _summaryCharBudget) {
@@ -268,7 +272,16 @@ class CharacterContextCompressor {
       return out;
     } catch (e) {
       _logger.warning('LLM summary generation failed: $e');
-      return existingSummary.isNotEmpty ? existingSummary : '';
+      return existingSummary.isNotEmpty
+          ? existingSummary
+          : _buildFallbackSummary(newEvents);
     }
+  }
+
+  String _buildFallbackSummary(List<String> events) {
+    final rendered = CharacterContextAssembler.renderTimeline(events).trim();
+    if (rendered.isEmpty) return 'Archived timeline events.';
+    if (rendered.length <= _summaryCharBudget) return rendered;
+    return '${rendered.substring(0, _summaryCharBudget)}...';
   }
 }

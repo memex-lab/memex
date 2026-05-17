@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:drift/native.dart';
 import 'package:flutter/widgets.dart';
@@ -13,6 +15,83 @@ import 'package:memex/db/app_database.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:test/test.dart';
+
+Map<String, dynamic> _tavernCard(String name) => {
+      'spec': 'chara_card_v2',
+      'spec_version': '2.0',
+      'data': {
+        'name': name,
+        'description': '$name description',
+        'personality': 'Helpful and concise.',
+        'scenario': 'A small import fixture.',
+        'first_mes': 'Hello.',
+        'tags': ['fixture'],
+        'character_book': {
+          'entries': [
+            {
+              'keys': ['fixture'],
+              'content': '$name world entry',
+              'enabled': true,
+            },
+          ],
+        },
+      },
+    };
+
+Future<String> _writeTavernJsonFixture(
+  Directory dir,
+  Map<String, dynamic> card,
+) async {
+  final file = File('${dir.path}/tavern_card.json');
+  await file.writeAsString(jsonEncode(card));
+  return file.path;
+}
+
+Future<String> _writeTavernPngFixture(
+  Directory dir,
+  Map<String, dynamic> card,
+) async {
+  final file = File('${dir.path}/tavern_card.png');
+  await file.writeAsBytes(_buildTavernPngBytes(card));
+  return file.path;
+}
+
+Uint8List _buildTavernPngBytes(Map<String, dynamic> card) {
+  final encodedCard = base64.encode(utf8.encode(jsonEncode(card)));
+  final textChunk = <int>[
+    ...latin1.encode('chara'),
+    0,
+    ...latin1.encode(encodedCard),
+  ];
+  return Uint8List.fromList([
+    137,
+    80,
+    78,
+    71,
+    13,
+    10,
+    26,
+    10,
+    ..._pngChunk('tEXt', textChunk),
+    ..._pngChunk('IEND', const []),
+  ]);
+}
+
+List<int> _pngChunk(String type, List<int> data) {
+  final length = data.length;
+  return [
+    (length >> 24) & 0xff,
+    (length >> 16) & 0xff,
+    (length >> 8) & 0xff,
+    length & 0xff,
+    ...ascii.encode(type),
+    ...data,
+    0,
+    0,
+    0,
+    0,
+  ];
+}
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -346,15 +425,14 @@ void main() {
 
     test('tavern import: json+png preview/import/conflict and invalid format',
         () async {
-      const jsonPath =
-          '/Users/ming/Downloads/main_error-6074f660fee4_spec_v2.json';
-      const pngPath =
-          '/Users/ming/Downloads/main_xin-yan-e02eb8dd63ad_spec_v2.png';
-
-      expect(await File(jsonPath).exists(), isTrue,
-          reason: 'Missing test fixture JSON card file');
-      expect(await File(pngPath).exists(), isTrue,
-          reason: 'Missing test fixture PNG card file');
+      final jsonPath = await _writeTavernJsonFixture(
+        tempRoot,
+        _tavernCard('Json Fixture'),
+      );
+      final pngPath = await _writeTavernPngFixture(
+        tempRoot,
+        _tavernCard('Png Fixture'),
+      );
 
       final svc = TavernCharacterImportService.instance;
 

@@ -6,14 +6,9 @@ import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/api_exception.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
-import 'package:memex/domain/models/llm_config.dart';
-import 'package:memex/agent/persona_agent/persona_agent.dart';
-import 'package:dart_agent_core/dart_agent_core.dart';
-import 'package:uuid/uuid.dart';
 
 final _logger = getLogger('ChatEndpoint');
 final _fileSystemService = FileSystemService.instance;
-const _uuid = Uuid();
 
 /// Get chat session list
 ///
@@ -234,89 +229,6 @@ Future<bool> deleteChatSessionEndpoint(String sessionId) async {
 File _getSessionFilePath(String userId, String sessionId) {
   final sessionsPath = _fileSystemService.getChatSessionsPath(userId);
   return File(p.join(sessionsPath, '$sessionId.yaml'));
-}
-
-Future<String> _createSession(
-  String userId,
-  String? agentName,
-  List<Map<String, dynamic>> initialContent,
-) async {
-  // Generate sessionId as agentName_uuid format
-  final uuidStr = _uuid.v4();
-  final sessionId = agentName != null && agentName.isNotEmpty
-      ? '${agentName}_$uuidStr'
-      : uuidStr;
-  final now = DateTime.now();
-
-  // Generate title from first message text
-  String? title;
-  for (final item in initialContent) {
-    if (item['type'] == 'text' && item['text'] != null) {
-      final text = item['text'] as String;
-      title = text.length > 50 ? text.substring(0, 50) : text;
-      break;
-    }
-  }
-
-  final sessionData = {
-    'session_id': sessionId,
-    'agent_name': agentName,
-    'title': title ?? 'New chat',
-    'created_at': now.toIso8601String(),
-    'updated_at': now.toIso8601String(),
-    'messages': <dynamic>[],
-  };
-
-  final sessionFile = _getSessionFilePath(userId, sessionId);
-  final parentDir = sessionFile.parent;
-  await parentDir.create(recursive: true);
-
-  await _fileSystemService.writeYamlFile(sessionFile.path, sessionData);
-  _logger.info('Created chat session $sessionId for user $userId');
-
-  return sessionId;
-}
-
-Future<void> _addMessageToSession(
-  String userId,
-  String sessionId,
-  String role,
-  List<Map<String, dynamic>> content,
-) async {
-  final sessionFile = _getSessionFilePath(userId, sessionId);
-  if (!await sessionFile.exists()) {
-    throw ApiException('Session not found: $sessionId');
-  }
-
-  final fileContent = await sessionFile.readAsString();
-  final doc = loadYaml(fileContent);
-  final sessionData = jsonDecode(jsonEncode(doc)) as Map<String, dynamic>;
-
-  final messageDict = {
-    'role': role,
-    'content': content,
-    'timestamp': DateTime.now().toIso8601String(),
-  };
-
-  final messages = (sessionData['messages'] as List<dynamic>? ?? [])
-    ..add(messageDict);
-  sessionData['messages'] = messages;
-  sessionData['updated_at'] = DateTime.now().toIso8601String();
-
-  // If this is the first user message, update title
-  if ((sessionData['title'] as String? ?? '') == 'New chat' && role == 'user') {
-    for (final item in content) {
-      if (item['type'] == 'text' && item['text'] != null) {
-        final text = item['text'] as String;
-        final title = text.length > 50 ? text.substring(0, 50) : text;
-        sessionData['title'] = title;
-        break;
-      }
-    }
-  }
-
-  await _fileSystemService.writeYamlFile(sessionFile.path, sessionData);
-  _logger.info('Added message to session $sessionId');
 }
 
 Future<List<Map<String, dynamic>>> _getSessionMessages(

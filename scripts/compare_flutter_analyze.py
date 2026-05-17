@@ -18,6 +18,22 @@ ISSUE_RE = re.compile(
     r"(?P<path>.*?):(?P<line>\d+):(?P<column>\d+)\s+•\s+"
     r"(?P<code>[A-Za-z0-9_]+)\s*$"
 )
+WRITE_ISSUE_RE = re.compile(
+    r"^\[(?P<severity>info|warning|error)\]\s+"
+    r"(?P<message>.*?)\s+"
+    r"\((?P<path>.*?):(?P<line>\d+):(?P<column>\d+)\)\s*$"
+)
+
+PATH_MARKERS = ("/lib/", "/test/", "/scripts/", "/android/", "/ios/")
+
+
+def normalize_path(path: str) -> str:
+    if not Path(path).is_absolute():
+        return path
+    for marker in PATH_MARKERS:
+        if marker in path:
+            return path[path.index(marker) + 1 :]
+    return Path(path).name
 
 
 @dataclass(frozen=True)
@@ -41,13 +57,15 @@ def parse_report(text: str) -> list[AnalyzerIssue]:
     for line in text.splitlines():
         match = ISSUE_RE.match(line)
         if not match:
+            match = WRITE_ISSUE_RE.match(line)
+        if not match:
             continue
         issues.append(
             AnalyzerIssue(
                 severity=match.group("severity"),
                 message=match.group("message"),
-                path=match.group("path"),
-                code=match.group("code"),
+                path=normalize_path(match.group("path")),
+                code=match.groupdict().get("code") or "analyzer",
                 line=int(match.group("line")),
                 column=int(match.group("column")),
             )

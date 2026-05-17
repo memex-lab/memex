@@ -411,32 +411,6 @@ class RadialMenuState extends State<RadialMenu> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildItem(String label, bool isHovered, double radius) {
-    return CustomPaint(
-      painter: _CurvedItemPainter(
-        color: isHovered
-            ? TimelineTheme.colors.primary // Indigo Active
-            : Colors.white.withOpacity(0.9), // White Default
-        isHovered: isHovered,
-        curvatureRadius: radius,
-        textColor: isHovered ? Colors.white : TimelineTheme.colors.textPrimary,
-      ),
-      child: Container(
-        width: 80,
-        height: 60,
-        alignment: Alignment.center,
-        child: Text(
-          label,
-          style: TimelineTheme.typography.body.copyWith(
-            color: isHovered ? Colors.white : TimelineTheme.colors.textPrimary,
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildCancelButton(bool isHovered, double radius) {
     return CustomPaint(
       painter: _CurvedItemPainter(

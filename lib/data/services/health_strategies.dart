@@ -305,22 +305,22 @@ class HealthKitFetcher implements HealthDataFetcher {
           result[key]!['_intervals'] as List<Map<String, int>>;
       intervals.sort((a, b) => a['start']!.compareTo(b['start']!));
 
-      int totalSleepMs = 0;
       int? mergedStart;
       int? mergedEnd;
 
       List<Map<String, dynamic>> sessions = [];
 
       void commitSession() {
-        if (mergedStart != null && mergedEnd != null) {
-          totalSleepMs += (mergedEnd! - mergedStart!);
-          DateTime startDt = DateTime.fromMillisecondsSinceEpoch(mergedStart!);
-          DateTime endDt = DateTime.fromMillisecondsSinceEpoch(mergedEnd!);
+        final start = mergedStart;
+        final end = mergedEnd;
+        if (start != null && end != null) {
+          DateTime startDt = DateTime.fromMillisecondsSinceEpoch(start);
+          DateTime endDt = DateTime.fromMillisecondsSinceEpoch(end);
 
           sessions.add({
             'bedtime': formatTime(startDt),
             'wake_time': formatTime(endDt),
-            'duration_mins': (mergedEnd! - mergedStart!) ~/ 60000,
+            'duration_mins': (end - start) ~/ 60000,
           });
         }
       }
@@ -330,9 +330,12 @@ class HealthKitFetcher implements HealthDataFetcher {
           mergedStart = interval['start'];
           mergedEnd = interval['end'];
         } else {
-          if (interval['start']! <= mergedEnd!) {
+          final currentEnd = mergedEnd;
+          if (currentEnd == null) {
+            mergedEnd = interval['end'];
+          } else if (interval['start']! <= currentEnd) {
             // Overlapping, extend end if needed
-            if (interval['end']! > mergedEnd!) {
+            if (interval['end']! > currentEnd) {
               mergedEnd = interval['end'];
             }
           } else {

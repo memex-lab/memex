@@ -14,16 +14,17 @@ import 'package:memex/agent/memory/character_memory_service.dart';
 import 'package:memex/domain/models/card_model.dart';
 import 'package:memex/data/services/agent_activity_service.dart';
 
+bool get _hasLiveAgentEnv =>
+    (Platform.environment['OPENAI_BASE_URL'] ?? '').isNotEmpty &&
+    (Platform.environment['OPENAI_API_KEY'] ?? '').isNotEmpty;
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
   group('Live Agent Evaluation', () {
     test('companion + comment agent live run with env config', () async {
-      final baseUrl = Platform.environment['OPENAI_BASE_URL'] ?? '';
-      final apiKey = Platform.environment['OPENAI_API_KEY'] ?? '';
-      if (baseUrl.isEmpty || apiKey.isEmpty) {
-        fail('OPENAI_BASE_URL / OPENAI_API_KEY not set in test process env');
-      }
+      final baseUrl = Platform.environment['OPENAI_BASE_URL']!;
+      final apiKey = Platform.environment['OPENAI_API_KEY']!;
 
       SharedPreferences.setMockInitialValues({});
       await UserStorage.initL10n();
@@ -184,6 +185,11 @@ Natural, concise, empathetic. Avoid lecturing.
       print('=== Agent Eval: Comment Tool Output ===\n$commentRunOutput\n');
       // ignore: avoid_print
       print('=== Agent Eval: Saved AI Comment ===\n$latestComment\n');
-    }, timeout: const Timeout(Duration(minutes: 8)));
+    },
+        tags: const ['live'],
+        skip: _hasLiveAgentEnv
+            ? false
+            : 'OPENAI_BASE_URL / OPENAI_API_KEY not set in test process env',
+        timeout: const Timeout(Duration(minutes: 8)));
   });
 }

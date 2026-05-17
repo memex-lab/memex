@@ -55,6 +55,9 @@ jobs:
           git fetch --no-tags origin "${{ github.event.pull_request.base.sha }}"
           git worktree add ../memex-base "${{ github.event.pull_request.base.sha }}"
 
+      - name: Run preflight script unit tests
+        run: python3 scripts/compare_flutter_analyze_test.py
+
       - name: Set up Java
         uses: actions/setup-java@v4
         with:

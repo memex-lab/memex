@@ -31,7 +31,6 @@ class AssetHeaderGallery extends StatefulWidget {
 class _AssetHeaderGalleryState extends State<AssetHeaderGallery> {
   late PageController _pageController;
   late TransformationController _transformationController;
-  int _currentIndex = 0;
 
   // Interaction States
   int _pointerCount = 0;
@@ -114,7 +113,6 @@ class _AssetHeaderGalleryState extends State<AssetHeaderGallery> {
             itemCount: widget.assets.length,
             onPageChanged: (index) {
               setState(() {
-                _currentIndex = index;
                 // Reset zoom when page changes
                 _isZoomed = false;
                 _isInteractingWithViewer = false;

@@ -7,6 +7,7 @@ import 'package:memex/utils/user_storage.dart';
 /// Helper class for managing agent responseId and hashCode caching
 class AgentCacheHelper {
   static final Logger _logger = Logger('AgentCacheHelper');
+  static bool responseCacheEnabled = false;
 
   /// Per-agentType "creation in progress" Future; ensures only one cache creation per agentType at a time
   static final Map<String, Future<void>> _creationLocks = {};
@@ -35,8 +36,7 @@ class AgentCacheHelper {
     if (!client.baseUrl.startsWith("https://ark.cn-beijing.volces.com")) {
       return null;
     }
-    if (true) {
-      //disable all cache
+    if (!responseCacheEnabled) {
       return null;
     }
     // Create a temporary agent to calculate current systemPrompt and tools hashCode
@@ -66,9 +66,7 @@ class AgentCacheHelper {
     // Check if responseId exists and is valid
     bool responseIdValid = false;
     if (cachedResponseId != null) {
-      if (client is ResponsesClient) {
-        responseIdValid = await client.checkResponseId(cachedResponseId);
-      }
+      responseIdValid = await client.checkResponseId(cachedResponseId);
     }
 
     // Check if hashCode matches
