@@ -9,6 +9,7 @@ import 'package:memex/agent/built_in_tools/search_event_logs_tool.dart';
 import 'package:memex/agent/memory/memory_management.dart';
 import 'package:memex/agent/security/file_permission_manager.dart';
 import 'package:memex/agent/insight_agent/prompt.dart';
+import 'package:memex/agent/insight_agent/knowledge_insight_run_context.dart';
 import 'package:memex/agent/skills/knowledge_insight/knowledge_insight_skill.dart';
 import 'package:memex/agent/common_tools.dart';
 import 'package:memex/agent/state_util.dart';
@@ -23,29 +24,22 @@ import 'package:memex/utils/user_storage.dart';
 final _logger = getLogger('KnowledgeInsightAgent');
 
 class KnowledgeInsightAgent {
+  static const Duration interruptedRunResumeTtl = Duration(hours: 6);
+
   static Future<StatefulAgent> _createAgent({
     required LLMClient client,
     required ModelConfig modelConfig,
     required String userId,
+    required AgentState state,
   }) async {
     final fileService = FileSystemService.instance;
-
-    final sessionId = "knowledge_insight_$userId";
-
-    // Load or create agent state
-    final state = await loadOrCreateAgentState(sessionId, {
-      'userId': userId,
-      'scene': 'insight',
-      'sceneId': sessionId,
-    });
+    final sessionId = state.sessionId;
 
     final controller = AgentController();
     addAgentLogger(controller);
     addAgentActivityCollector(controller);
 
-    final skills = [
-      KnowledgeInsightSkill(forceActivate: true),
-    ];
+    final skills = [KnowledgeInsightSkill(forceActivate: true)];
 
     final pkmPath = '${fileService.getWorkspacePath(userId)}/PKM';
     final pkmDir = Directory(pkmPath);
@@ -56,27 +50,29 @@ class KnowledgeInsightAgent {
     // Get working directory (Workspace Root)
     final workingDirectory = fileService.getWorkspacePath(userId);
 
-    // Configure File Permission Manager
-    // KnowledgeInsightAgent has access to:
-    // - Read: / (Global context for analysis)
-    // - Write: /Cards (Generate insight cards)
-    // - Write: /Facts (Update/Link facts)
+    // KnowledgeInsightAgent reads durable workspace data and only writes
+    // generated insight cards through the insight skill.
     final permissionManager = FilePermissionManager(userId, [
       PermissionRule(
-          rootPath: fileService.getWorkspacePath(userId),
-          access: FileAccessType.read),
+        rootPath: fileService.getWorkspacePath(userId),
+        access: FileAccessType.read,
+      ),
       PermissionRule(
-          rootPath: fileService.getCardsPath(userId),
-          access: FileAccessType.read),
+        rootPath: fileService.getCardsPath(userId),
+        access: FileAccessType.read,
+      ),
       PermissionRule(
-          rootPath: fileService.getFactsPath(userId),
-          access: FileAccessType.read),
+        rootPath: fileService.getFactsPath(userId),
+        access: FileAccessType.read,
+      ),
       PermissionRule(
-          rootPath: fileService.getPkmPath(userId),
-          access: FileAccessType.read),
+        rootPath: fileService.getPkmPath(userId),
+        access: FileAccessType.read,
+      ),
       PermissionRule(
-          rootPath: fileService.getKnowledgeInsightsPath(userId),
-          access: FileAccessType.write),
+        rootPath: fileService.getKnowledgeInsightsPath(userId),
+        access: FileAccessType.write,
+      ),
     ]);
 
     final fileToolFactory = FileToolFactory(
@@ -99,79 +95,122 @@ class KnowledgeInsightAgent {
       userId: userId,
       sourceAgent: 'knowledge_insight_agent',
     );
-    final memoryManagementPrompt =
-        await memoryManagement.buildMemoryManagementPrompt();
-    final memoryManagementTools = memoryManagement.buildMemoryManagementTools();
-    tools.addAll(memoryManagementTools);
+    final memoryReadOnlyPrompt =
+        await memoryManagement.buildMemoryReadOnlyPrompt();
 
     final userMemory = await memoryManagement.buildMemoryPrompt();
     state.systemReminders["user_memory"] = userMemory;
 
     final agent = StatefulAgent(
-        name: 'knowledge_insight_agent',
+      name: 'knowledge_insight_agent',
+      client: client,
+      modelConfig: modelConfig,
+      state: state,
+      compressor: LLMBasedContextCompressor(
         client: client,
         modelConfig: modelConfig,
-        state: state,
-        compressor: LLMBasedContextCompressor(
-          client: client,
-          modelConfig: modelConfig,
-          totalTokenThreshold: 64000,
-          keepRecentMessageSize: 10,
-        ),
-        tools: tools,
-        skills: skills,
-        systemPrompts: [
-          knowledgeInsightAgentSystemPrompt,
-          memoryManagementPrompt
-        ],
-        disableSubAgents: false,
-        controller: controller,
-        withGeneralPrinciples: true,
-        planMode: PlanMode.auto,
-        systemCallback: createSystemCallback(userId),
-        autoSaveStateFunc: (state) async {
-          await saveAgentState(state);
-        });
+        totalTokenThreshold: 64000,
+        keepRecentMessageSize: 10,
+      ),
+      tools: tools,
+      skills: skills,
+      systemPrompts: [knowledgeInsightAgentSystemPrompt, memoryReadOnlyPrompt],
+      disableSubAgents: false,
+      controller: controller,
+      withGeneralPrinciples: true,
+      planMode: PlanMode.auto,
+      systemCallback: createSystemCallback(userId),
+      autoSaveStateFunc: (state) async {
+        await saveAgentState(state);
+      },
+    );
 
     _logger.info(
-        'KnowledgeInsightAgent created, userId: $userId, sessionId: $sessionId');
+      'KnowledgeInsightAgent created, userId: $userId, sessionId: $sessionId',
+    );
     return agent;
   }
 
-  static Future<bool> updateKnowledgeInsight() async {
-    final userId = await UserStorage.getUserId();
-    if (userId == null) {
+  static Future<bool> updateKnowledgeInsight({
+    String? userId,
+    String? runId,
+    Duration resumeTtl = interruptedRunResumeTtl,
+  }) async {
+    final effectiveUserId = userId ?? await UserStorage.getUserId();
+    if (effectiveUserId == null) {
       throw Exception('User not logged in, cannot refresh knowledge insight');
     }
+
+    final now = DateTime.now();
+    final effectiveRunId = _normalizeRunId(runId, now);
+    final sessionId = _buildSessionId(effectiveUserId, effectiveRunId);
+
     final resources = await UserStorage.getAgentLLMResources(
-        AgentDefinitions.knowledgeInsightAgent,
-        defaultClientKey: LLMConfig.defaultClientKey);
+      AgentDefinitions.knowledgeInsightAgent,
+      defaultClientKey: LLMConfig.defaultClientKey,
+    );
     final client = resources.client;
     final modelConfig = resources.modelConfig;
-    final sessionId = "knowledge_insight_$userId";
-    final state = await loadOrCreateAgentState(sessionId, {
-      'userId': userId,
-      'scene': 'insight',
-      'sceneId': userId,
-    });
+
+    var state = await _loadOrCreateRunState(
+      userId: effectiveUserId,
+      runId: effectiveRunId,
+      sessionId: sessionId,
+      now: now,
+    );
+
+    if (!state.isRunning && state.history.messages.isNotEmpty) {
+      _logger.info(
+        'KnowledgeInsightAgent completed state residue, sessionId:$sessionId, delete state and restart',
+      );
+      await deleteAgentState(effectiveUserId, sessionId);
+      state = await _loadOrCreateRunState(
+        userId: effectiveUserId,
+        runId: effectiveRunId,
+        sessionId: sessionId,
+        now: now,
+      );
+    } else if (state.isRunning &&
+        !_shouldResumeInterruptedRun(state, now, resumeTtl)) {
+      _logger.info(
+        'KnowledgeInsightAgent stale interrupted run, sessionId:$sessionId, delete state and restart',
+      );
+      await deleteAgentState(effectiveUserId, sessionId);
+      state = await _loadOrCreateRunState(
+        userId: effectiveUserId,
+        runId: effectiveRunId,
+        sessionId: sessionId,
+        now: now,
+      );
+    }
+
     final agent = await _createAgent(
       client: client,
       modelConfig: modelConfig,
-      userId: userId,
+      userId: effectiveUserId,
+      state: state,
     );
     List<LLMMessage> result = [];
     try {
       if (state.isRunning) {
-        _logger
-            .info("KnowledgeInsightAgent resume, sessionId:${state.sessionId}");
+        _logger.info(
+          "KnowledgeInsightAgent resume, sessionId:${state.sessionId}",
+        );
         result = await agent.resume();
       } else {
         _logger.info("KnowledgeInsightAgent run, sessionId:${state.sessionId}");
 
         // Check if there are existing cards to determine if this is the first run
         final fileSystem = FileSystemService.instance;
-        final existingCards =
-            await fileSystem.listKnowledgeInsightCards(userId);
+        final existingCards = await fileSystem.listKnowledgeInsightCards(
+          effectiveUserId,
+        );
+
+        final runContext = await buildKnowledgeInsightRunContext(
+          userId: effectiveUserId,
+          runId: effectiveRunId,
+          now: now,
+        );
 
         String inputMessage = "Please update knowledge insights.";
 
@@ -182,9 +221,10 @@ class KnowledgeInsightAgent {
 
         final messages = [
           UserMessage([
-            TextPart(buildCurrentTimeReminder(DateTime.now())),
+            TextPart(buildCurrentTimeReminder(now)),
+            TextPart(runContext),
             TextPart(inputMessage),
-          ])
+          ]),
         ];
         _logger.info("KnowledgeInsightAgent start");
 
@@ -192,12 +232,13 @@ class KnowledgeInsightAgent {
         try {
           final fileSystem = FileSystemService.instance;
           await fileSystem.eventLogService.logEvent(
-            userId: userId,
+            userId: effectiveUserId,
             eventType: 'agent_execution',
             description: 'Knowledge Insight Agent started',
             metadata: {
               'agent_name': 'knowledge_insight_agent',
               'session_id': sessionId,
+              'run_id': effectiveRunId,
               'input': inputMessage,
             },
           );
@@ -206,68 +247,148 @@ class KnowledgeInsightAgent {
         }
 
         result = await agent.run(messages);
-
-        // After agent run, check for insight updates and create summary timeline card
-        final updatesTracker =
-            agent.state.metadata['insight_updates'] as Map<String, dynamic>?;
-        if (updatesTracker != null) {
-          final addedCards =
-              List<Map<String, dynamic>>.from(updatesTracker['added'] ?? []);
-          final updatedCards =
-              List<Map<String, dynamic>>.from(updatesTracker['updated'] ?? []);
-
-          if (addedCards.isNotEmpty || updatedCards.isNotEmpty) {
-            try {
-              final timestampSec =
-                  DateTime.now().millisecondsSinceEpoch ~/ 1000;
-              final dateStr = DateFormat('yyyy/MM/dd').format(DateTime.now());
-              final factId =
-                  '$dateStr.md#ts_${DateTime.now().millisecondsSinceEpoch}';
-
-              final cardData = CardData(
-                factId: factId,
-                title: UserStorage.l10n.knowledgeNewDiscovery,
-                timestamp: timestampSec,
-                status: 'completed',
-                tags: ['insight'],
-                uiConfigs: [
-                  UiConfig(
-                    templateId: 'insight_summary',
-                    data: {
-                      'added_insight_cards': addedCards,
-                      'updated_insight_cards': updatedCards,
-                    },
-                  ),
-                ],
-              );
-
-              final fileService = FileSystemService.instance;
-              await fileService.safeWriteCardFile(userId, factId, cardData);
-              _logger.info(
-                  'Created insight summary card: ${addedCards.length} added, ${updatedCards.length} updated');
-            } catch (e) {
-              _logger.warning('Failed to create insight summary card: $e');
-            }
-
-            // Clear tracker to avoid regenerating on resume
-            agent.state.metadata['insight_updates'] = {
-              'added': [],
-              'updated': []
-            };
-            await saveAgentState(agent.state);
-          }
-        }
       }
+
+      await _createInsightSummaryCardIfNeeded(agent.state, effectiveUserId);
+      await deleteAgentState(effectiveUserId, sessionId);
     } on AgentException catch (e) {
       if (e.code == AgentExceptionCode.loopDetection) {
-        await deleteAgentState(userId, sessionId);
+        await deleteAgentState(effectiveUserId, sessionId);
         _logger.info(
-            "KnowledgeInsightAgent loop detection, sessionId:${state.sessionId}, delete state");
+          "KnowledgeInsightAgent loop detection, sessionId:${state.sessionId}, delete state",
+        );
       }
       rethrow;
     }
     _logger.info(
-        "KnowledgeInsightAgent done, sessionId:${state.sessionId}, result messages length:${result.length}");
+      "KnowledgeInsightAgent done, sessionId:${state.sessionId}, result messages length:${result.length}",
+    );
     return true;
+  }
+
+  static Future<AgentState> _loadOrCreateRunState({
+    required String userId,
+    required String runId,
+    required String sessionId,
+    required DateTime now,
+  }) async {
+    final state = await loadOrCreateAgentState(sessionId, {
+      'userId': userId,
+      'scene': 'insight',
+      'sceneId': runId,
+      'run_id': runId,
+      'run_started_at': now.toIso8601String(),
+    });
+    _ensureRunMetadata(state: state, userId: userId, runId: runId, now: now);
+    return state;
+  }
+
+  static void _ensureRunMetadata({
+    required AgentState state,
+    required String userId,
+    required String runId,
+    required DateTime now,
+  }) {
+    state.metadata['userId'] = userId;
+    state.metadata['scene'] = 'insight';
+    state.metadata['sceneId'] = runId;
+    state.metadata['run_id'] = runId;
+    state.metadata.putIfAbsent('run_started_at', () => now.toIso8601String());
+  }
+
+  static bool _shouldResumeInterruptedRun(
+    AgentState state,
+    DateTime now,
+    Duration ttl,
+  ) {
+    if (!state.isRunning) return false;
+    final startedAtValue = state.metadata['run_started_at']?.toString();
+    final startedAt =
+        startedAtValue == null ? null : DateTime.tryParse(startedAtValue);
+    if (startedAt == null) {
+      return true;
+    }
+    final age = now.difference(startedAt);
+    return age.isNegative || age <= ttl;
+  }
+
+  static String _normalizeRunId(String? runId, DateTime now) {
+    final normalized = runId?.trim();
+    if (normalized != null && normalized.isNotEmpty) {
+      return normalized;
+    }
+    return 'manual_${now.microsecondsSinceEpoch}';
+  }
+
+  static String _buildSessionId(String userId, String runId) {
+    return 'knowledge_insight_${_safeSessionPart(userId)}_${_safeSessionPart(runId)}';
+  }
+
+  static String _safeSessionPart(String value) {
+    final safe = value
+        .trim()
+        .replaceAll(RegExp(r'[^A-Za-z0-9_-]+'), '_')
+        .replaceAll(RegExp(r'_+'), '_');
+    if (safe.isEmpty) {
+      return 'unknown';
+    }
+    if (safe.length <= 96) {
+      return safe;
+    }
+    return safe.substring(safe.length - 96);
+  }
+
+  static Future<void> _createInsightSummaryCardIfNeeded(
+    AgentState state,
+    String userId,
+  ) async {
+    final updatesTracker =
+        state.metadata['insight_updates'] as Map<String, dynamic>?;
+    if (updatesTracker == null) {
+      return;
+    }
+
+    final addedCards = List<Map<String, dynamic>>.from(
+      updatesTracker['added'] ?? [],
+    );
+    final updatedCards = List<Map<String, dynamic>>.from(
+      updatesTracker['updated'] ?? [],
+    );
+
+    if (addedCards.isEmpty && updatedCards.isEmpty) {
+      return;
+    }
+
+    try {
+      final now = DateTime.now();
+      final timestampSec = now.millisecondsSinceEpoch ~/ 1000;
+      final dateStr = DateFormat('yyyy/MM/dd').format(now);
+      final factId = '$dateStr.md#ts_${now.millisecondsSinceEpoch}';
+
+      final cardData = CardData(
+        factId: factId,
+        title: UserStorage.l10n.knowledgeNewDiscovery,
+        timestamp: timestampSec,
+        status: 'completed',
+        tags: ['insight'],
+        uiConfigs: [
+          UiConfig(
+            templateId: 'insight_summary',
+            data: {
+              'added_insight_cards': addedCards,
+              'updated_insight_cards': updatedCards,
+            },
+          ),
+        ],
+      );
+
+      final fileService = FileSystemService.instance;
+      await fileService.safeWriteCardFile(userId, factId, cardData);
+      _logger.info(
+        'Created insight summary card: ${addedCards.length} added, ${updatedCards.length} updated',
+      );
+    } catch (e) {
+      _logger.warning('Failed to create insight summary card: $e');
+    }
   }
 }

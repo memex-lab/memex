@@ -14,17 +14,20 @@ Future<void> handleKnowledgeInsight(
   TaskContext context,
 ) async {
   _logger.info(
-      'Executing handleKnowledgeInsight for task ${context.taskId}, bizId: ${context.bizId}');
+    'Executing handleKnowledgeInsight for task ${context.taskId}, bizId: ${context.bizId}',
+  );
 
   try {
-    await KnowledgeInsightAgent.updateKnowledgeInsight();
+    await KnowledgeInsightAgent.updateKnowledgeInsight(
+      userId: userId,
+      runId: context.taskId,
+    );
   } finally {
     // Always notify UI that the refresh operation is done (success or failure).
     // On failure, handleGenericAgentFailure also emits ErrorNotificationMessage
     // for the error toast, but we need NewInsightMessage to stop the loading state.
-    EventBusService.instance.emitEvent(NewInsightMessage(
-      insightId: context.bizId ?? context.taskId,
-      html: '',
-    ));
+    EventBusService.instance.emitEvent(
+      NewInsightMessage(insightId: context.bizId ?? context.taskId, html: ''),
+    );
   }
 }
