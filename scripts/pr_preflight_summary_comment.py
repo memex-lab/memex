@@ -68,6 +68,11 @@ TARGETS = [
 ]
 
 
+class NoRedirectHandler(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):  # noqa: ANN001
+        return None
+
+
 class GitHubClient:
     def __init__(self, *, repo: str, token: str) -> None:
         self.repo = repo
@@ -108,8 +113,26 @@ class GitHubClient:
         return json.loads(raw.decode("utf-8"))
 
     def request_bytes(self, url: str) -> bytes:
+        opener = urllib.request.build_opener(NoRedirectHandler)
         request = urllib.request.Request(url, headers=self._headers(), method="GET")
-        with urllib.request.urlopen(request, timeout=60) as response:
+        try:
+            response = opener.open(request, timeout=60)
+        except urllib.error.HTTPError as exc:
+            if exc.code not in {301, 302, 303, 307, 308}:
+                raise
+            redirect_url = exc.headers.get("Location")
+            if not redirect_url:
+                raise
+            # Artifact downloads redirect to a short-lived object-storage URL.
+            # Fetch the signed URL without GitHub's Authorization header.
+            request = urllib.request.Request(
+                urllib.parse.urljoin(url, redirect_url),
+                headers={"User-Agent": "memex-pr-preflight-summary"},
+                method="GET",
+            )
+            with urllib.request.urlopen(request, timeout=60) as response:
+                return response.read()
+        with response:
             return response.read()
 
     def workflow_runs(self, target: Target, *, max_pages: int = 3) -> list[dict[str, Any]]:
