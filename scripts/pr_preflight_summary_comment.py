@@ -73,6 +73,19 @@ class NoRedirectHandler(urllib.request.HTTPRedirectHandler):
         return None
 
 
+class GitHubApiError(RuntimeError):
+    def __init__(self, *, method: str, path: str, status: int, body: str) -> None:
+        self.method = method
+        self.path = path
+        self.status = status
+        self.body = body.strip()
+        super().__init__(self.__str__())
+
+    def __str__(self) -> str:
+        details = f": {self.body}" if self.body else ""
+        return f"GitHub API {self.method} {self.path} failed with HTTP {self.status}{details}"
+
+
 class GitHubClient:
     def __init__(self, *, repo: str, token: str) -> None:
         self.repo = repo
@@ -106,8 +119,17 @@ class GitHubClient:
         if data is not None:
             headers["Content-Type"] = "application/json"
         request = urllib.request.Request(url, data=body, headers=headers, method=method)
-        with urllib.request.urlopen(request, timeout=30) as response:
-            raw = response.read()
+        try:
+            with urllib.request.urlopen(request, timeout=30) as response:
+                raw = response.read()
+        except urllib.error.HTTPError as exc:
+            error_body = exc.read().decode("utf-8", errors="replace")
+            raise GitHubApiError(
+                method=method,
+                path=path,
+                status=exc.code,
+                body=error_body,
+            ) from exc
         if not raw:
             return None
         return json.loads(raw.decode("utf-8"))
@@ -422,7 +444,12 @@ def main(argv: list[str] | None = None) -> int:
         print(body)
         return 0
 
-    client.upsert_comment(pr_number=pr_number, body=body)
+    try:
+        client.upsert_comment(pr_number=pr_number, body=body)
+    except GitHubApiError as exc:
+        print(f"::warning::Could not update combined preflight comment for PR #{pr_number}. {exc}")
+        return 0
+
     print(f"Updated combined preflight comment for PR #{pr_number}.")
     return 0
 
