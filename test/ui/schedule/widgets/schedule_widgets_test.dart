@@ -128,6 +128,126 @@ void main() {
       );
     });
 
+    testWidgets('recomputes relative day labels from day dates', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildHost(
+          MagazineNarrativeTab(
+            referenceDate: DateTime(2026, 5, 16, 8),
+            aggregation: ScheduleAggregationModel(
+              id: 'agg_relative_labels',
+              generatedAt: DateTime(2026, 5, 15, 18),
+              timeRange: TimeRange(
+                from: DateTime(2026, 5, 15),
+                to: DateTime(2026, 5, 22),
+              ),
+              timeline: [
+                TimelineDay(
+                  dayLabel: 'Tomorrow',
+                  dayDate: DateTime(2026, 5, 16),
+                  items: [
+                    TimelineItem(
+                      cardId: 'event-today',
+                      title: 'Today event',
+                      startTime: DateTime(2026, 5, 16, 10),
+                    ),
+                  ],
+                ),
+                TimelineDay(
+                  dayLabel: 'Today',
+                  dayDate: DateTime(2026, 5, 17),
+                  items: [
+                    TimelineItem(
+                      cardId: 'event-tomorrow',
+                      title: 'Tomorrow event',
+                      startTime: DateTime(2026, 5, 17, 10),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('TODAY'), findsOneWidget);
+      expect(find.text('TOMORROW'), findsOneWidget);
+    });
+
+    testWidgets('renders stale relative, custom, and undated section labels', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(420, 1200));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final staleFutureDate = DateTime(2026, 5, 20);
+      final staleFutureLabel = DateFormat.MMMEd(
+        UserStorage.l10n.localeName,
+      ).format(staleFutureDate).toUpperCase();
+      final undatedItemLabel = DateFormat.MMMd(
+        UserStorage.l10n.localeName,
+      ).add_Hm().format(DateTime(2026, 5, 22, 16));
+
+      await tester.pumpWidget(
+        buildHost(
+          MagazineNarrativeTab(
+            referenceDate: DateTime(2026, 5, 16, 8),
+            aggregation: ScheduleAggregationModel(
+              id: 'agg_mixed_day_labels',
+              generatedAt: DateTime(2026, 5, 15, 18),
+              timeRange: TimeRange(
+                from: DateTime(2026, 5, 15),
+                to: DateTime(2026, 5, 23),
+              ),
+              timeline: [
+                TimelineDay(
+                  dayLabel: 'Tomorrow',
+                  dayDate: staleFutureDate,
+                  items: [
+                    TimelineItem(
+                      cardId: 'event-future-relative',
+                      title: 'Future stale relative label',
+                      startTime: DateTime(2026, 5, 20, 10),
+                    ),
+                  ],
+                ),
+                TimelineDay(
+                  dayLabel: 'Launch day',
+                  dayDate: DateTime(2026, 5, 21),
+                  items: [
+                    TimelineItem(
+                      cardId: 'event-custom',
+                      title: 'Custom label event',
+                      startTime: DateTime(2026, 5, 21, 11),
+                    ),
+                  ],
+                ),
+                TimelineDay(
+                  dayLabel: '',
+                  items: [
+                    TimelineItem(
+                      cardId: 'event-undated-section',
+                      title: 'Undated section event',
+                      startTime: DateTime(2026, 5, 22, 16),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text(staleFutureLabel), findsOneWidget);
+      expect(find.text('TOMORROW'), findsNothing);
+      expect(find.text('LAUNCH DAY'), findsOneWidget);
+      expect(find.text('THIS WEEK'), findsOneWidget);
+      expect(find.text(undatedItemLabel), findsOneWidget);
+    });
+
     testWidgets('handles narrow screens with long hero metadata', (
       tester,
     ) async {

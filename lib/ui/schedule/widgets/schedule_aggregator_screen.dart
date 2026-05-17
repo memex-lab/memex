@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -31,12 +33,56 @@ class _ScheduleAggregatorScreenBody extends StatefulWidget {
 }
 
 class _ScheduleAggregatorScreenState
-    extends State<_ScheduleAggregatorScreenBody> {
+    extends State<_ScheduleAggregatorScreenBody>
+    with WidgetsBindingObserver {
+  DateTime _relativeDate = DateTime.now();
+  Timer? _dayRefreshTimer;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _scheduleNextDayRefresh();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ScheduleAggregatorViewModel>().ensureFresh();
+    });
+  }
+
+  @override
+  void dispose() {
+    _dayRefreshTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    _syncRelativeDate();
+    _scheduleNextDayRefresh();
+  }
+
+  void _scheduleNextDayRefresh() {
+    _dayRefreshTimer?.cancel();
+    final now = DateTime.now();
+    final nextDay = DateTime(now.year, now.month, now.day + 1);
+    final delay = nextDay.difference(now) + const Duration(seconds: 1);
+    _dayRefreshTimer = Timer(delay, () {
+      if (!mounted) return;
+      _syncRelativeDate();
+      _scheduleNextDayRefresh();
+    });
+  }
+
+  void _syncRelativeDate() {
+    final now = DateTime.now();
+    if (_relativeDate.year == now.year &&
+        _relativeDate.month == now.month &&
+        _relativeDate.day == now.day) {
+      return;
+    }
+    setState(() {
+      _relativeDate = now;
     });
   }
 
@@ -101,6 +147,7 @@ class _ScheduleAggregatorScreenState
                     onRefresh: _onReload,
                     child: MagazineNarrativeTab(
                       aggregation: vm.aggregation!,
+                      referenceDate: _relativeDate,
                       onTapCardId: _navigateToCard,
                       itemStatuses: itemStatuses,
                       onToggleTask: _toggleTaskCompletion,

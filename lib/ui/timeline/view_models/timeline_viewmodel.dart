@@ -10,6 +10,7 @@ import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/data/services/card_attachment_service.dart';
 import 'package:memex/ui/card_attachments/card_attachment_data.dart';
+import 'package:memex/ui/timeline/models/schedule_briefing_merge.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/result.dart';
 import 'package:memex/utils/user_storage.dart';
@@ -62,8 +63,12 @@ class TimelineViewModel extends ChangeNotifier {
     return cardsResult.when(
       onOk: (list) async {
         _currentPage = 1;
-        cards = await _withScheduleBriefingCard(list);
-        hasMore = list.length >= pageLimit;
+        final loadedHasMore = list.length >= pageLimit;
+        cards = await _withScheduleBriefingCard(
+          list,
+          hasMoreAfterList: loadedHasMore,
+        );
+        hasMore = loadedHasMore;
         errorMessage = null;
         _startPollingIfNeeded();
         // Load attachments for all cards in parallel
@@ -300,8 +305,12 @@ class TimelineViewModel extends ChangeNotifier {
     result.when(
       onOk: (newCards) async {
         _currentPage++;
-        cards.addAll(newCards);
-        hasMore = newCards.length >= pageLimit;
+        final loadedHasMore = newCards.length >= pageLimit;
+        cards = await _withScheduleBriefingCard(
+          [...cards, ...newCards],
+          hasMoreAfterList: loadedHasMore,
+        );
+        hasMore = loadedHasMore;
         _startPollingIfNeeded();
         await _loadAttachmentsForCards(newCards);
       },
@@ -312,8 +321,9 @@ class TimelineViewModel extends ChangeNotifier {
   }
 
   Future<List<TimelineCardModel>> _withScheduleBriefingCard(
-    List<TimelineCardModel> list,
-  ) async {
+    List<TimelineCardModel> list, {
+    required bool hasMoreAfterList,
+  }) async {
     final withoutBriefing =
         list.where((card) => card.id != scheduleBriefingCardId).toList();
     if (!_shouldShowScheduleBriefing) return withoutBriefing;
@@ -321,8 +331,11 @@ class TimelineViewModel extends ChangeNotifier {
     final briefingResult = await _router.fetchScheduleBriefingCard();
     return briefingResult.when(
       onOk: (briefing) {
-        if (briefing == null) return withoutBriefing;
-        return [briefing, ...withoutBriefing];
+        return mergeScheduleBriefingInTimelineOrder(
+          cards: withoutBriefing,
+          briefing: briefing,
+          hasMore: hasMoreAfterList,
+        );
       },
       onError: (e, st) {
         _logger.warning('Failed to load schedule briefing card: $e');
@@ -333,7 +346,10 @@ class TimelineViewModel extends ChangeNotifier {
 
   Future<void> _refreshScheduleBriefingCard() async {
     if (!_shouldShowScheduleBriefing) return;
-    cards = await _withScheduleBriefingCard(cards);
+    cards = await _withScheduleBriefingCard(
+      cards,
+      hasMoreAfterList: hasMore,
+    );
     notifyListeners();
   }
 
@@ -352,8 +368,12 @@ class TimelineViewModel extends ChangeNotifier {
     result.when(
       onOk: (newCards) async {
         _currentPage++;
-        cards.addAll(newCards);
-        hasMore = newCards.length >= pageLimit;
+        final loadedHasMore = newCards.length >= pageLimit;
+        cards = await _withScheduleBriefingCard(
+          [...cards, ...newCards],
+          hasMoreAfterList: loadedHasMore,
+        );
+        hasMore = loadedHasMore;
         await _loadAttachmentsForCards(newCards);
       },
       onError: (_, __) {},

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:memex/utils/user_storage.dart';
 
 import '../../../../domain/models/schedule_aggregation_model.dart';
+import '../../models/schedule_day_label.dart';
 import '../../models/schedule_item.dart';
 import '../../../core/cards/ui/glass_card.dart';
 
@@ -13,6 +14,7 @@ class MagazineNarrativeTab extends StatefulWidget {
   final void Function(String cardId)? onTapCardId;
   final Map<String, ScheduleItemStatus> itemStatuses;
   final void Function(String cardId)? onToggleTask;
+  final DateTime? referenceDate;
 
   const MagazineNarrativeTab({
     super.key,
@@ -20,6 +22,7 @@ class MagazineNarrativeTab extends StatefulWidget {
     this.onTapCardId,
     this.itemStatuses = const {},
     this.onToggleTask,
+    this.referenceDate,
   });
 
   @override
@@ -65,7 +68,7 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildSectionTitle(entry.$2.dayLabel.toUpperCase()),
+              _buildSectionTitle(_resolveDayLabel(entry.$2).toUpperCase()),
               const SizedBox(height: 10),
               ...entry.$2.items.map(
                 (item) =>
@@ -594,6 +597,20 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
     return DateFormat.MMMd(
       UserStorage.l10n.localeName,
     ).add_Hm().format(startTime);
+  }
+
+  String _resolveDayLabel(TimelineDay day) {
+    return resolveScheduleDayLabel(
+      day,
+      referenceDate: widget.referenceDate ?? DateTime.now(),
+      labels: ScheduleDayLabelStrings(
+        yesterday: UserStorage.l10n.yesterday,
+        today: UserStorage.l10n.today,
+        tomorrow: UserStorage.l10n.tomorrow,
+        thisWeek: UserStorage.l10n.scheduleThisWeek,
+        localeName: UserStorage.l10n.localeName,
+      ),
+    );
   }
 
   bool _isTaskItem(TimelineItem item) {

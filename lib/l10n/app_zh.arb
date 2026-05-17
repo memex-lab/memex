@@ -1046,6 +1046,7 @@
   "personaChatInputHint": "输入消息...",
   "personaChatEmptyHint": "发出第一条消息，让这段陪伴开始",
   "today": "今天",
+  "tomorrow": "明天",
   "yesterday": "昨天",
 
   "showInsightTextTitle": "显示 Memex 洞察评论",
