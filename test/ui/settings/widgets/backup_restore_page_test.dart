@@ -88,17 +88,18 @@ void main() {
     await _pumpBackupPage(
       tester,
       listStoredBackups: () async => List<BackupSnapshot>.of(snapshots),
-      createAutoBackup: ({
-        String trigger = 'automatic',
-        bool force = false,
-        void Function(String status)? onProgress,
-      }) async {
-        expect(trigger, 'manual');
-        expect(force, isTrue);
-        onProgress?.call('Compressing...');
-        snapshots.add(snapshot);
-        return snapshot;
-      },
+      createAutoBackup:
+          ({
+            String trigger = 'automatic',
+            bool force = false,
+            void Function(String status)? onProgress,
+          }) async {
+            expect(trigger, 'manual');
+            expect(force, isTrue);
+            onProgress?.call('Compressing...');
+            snapshots.add(snapshot);
+            return snapshot;
+          },
     );
 
     await tester.tap(find.text(UserStorage.l10n.createSnapshotNow));
@@ -113,6 +114,45 @@ void main() {
       find.text(UserStorage.l10n.autoBackupCreated(snapshot.name)),
       findsOneWidget,
     );
+  });
+
+  testWidgets('manual snapshot refresh does not rescan estimated source size', (
+    tester,
+  ) async {
+    var estimateCalls = 0;
+    final snapshot = BackupSnapshot(
+      id: 'manual',
+      name: 'memex_auto_2026-05-15T11-30-00.memex',
+      createdAt: DateTime(2026, 5, 15, 11, 30),
+      sizeBytes: 8,
+      filePath: '/tmp/memex_auto_2026-05-15T11-30-00.memex',
+    );
+    final snapshots = <BackupSnapshot>[];
+
+    await _pumpBackupPage(
+      tester,
+      estimateBackupSize: () async {
+        estimateCalls += 1;
+        return 42;
+      },
+      listStoredBackups: () async => List<BackupSnapshot>.of(snapshots),
+      createAutoBackup:
+          ({
+            String trigger = 'automatic',
+            bool force = false,
+            void Function(String status)? onProgress,
+          }) async {
+            snapshots.add(snapshot);
+            return snapshot;
+          },
+    );
+
+    expect(estimateCalls, 1);
+
+    await tester.tap(find.text(UserStorage.l10n.createSnapshotNow));
+    await _scrollUntilVisible(tester, find.text(snapshot.name));
+
+    expect(estimateCalls, 1);
   });
 
   testWidgets('shows Android backup location picker menu', (tester) async {
@@ -135,6 +175,7 @@ void main() {
 Future<void> _pumpBackupPage(
   WidgetTester tester, {
   bool isAndroid = false,
+  Future<int> Function()? estimateBackupSize,
   Future<List<BackupSnapshot>> Function()? listStoredBackups,
   AutoBackupCreator? createAutoBackup,
 }) async {
@@ -144,7 +185,7 @@ Future<void> _pumpBackupPage(
       supportedLocales: AppLocalizations.supportedLocales,
       home: BackupRestorePage(
         isAndroidOverride: isAndroid,
-        estimateBackupSize: () async => 0,
+        estimateBackupSize: estimateBackupSize ?? () async => 0,
         currentBackupLocationLabel: () async => '/tmp/Backups',
         listStoredBackups: listStoredBackups ?? () async => const [],
         createAutoBackup: createAutoBackup,

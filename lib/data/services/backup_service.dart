@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
-import 'package:archive/archive.dart';
+import 'package:archive/archive_io.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
@@ -225,46 +226,18 @@ class BackupService {
         ? outputPath
         : path.join(targetDir.path, '.$fileName.tmp');
 
-    final archive = Archive();
-    final manifestEntries = <Map<String, dynamic>>[];
-
-    // 1. Add workspace files
+    // 1. Prepare source metadata on the main isolate. The expensive file
+    // reads and zip compression run below in a background isolate.
     onProgress?.call('Packing workspace...');
-    await _addDirectoryToArchive(
-      archive,
-      workspacePath,
-      'workspace',
-      manifestEntries: manifestEntries,
-      excludedRootPaths: [
-        path.join(workspacePath, 'Backups'),
-        if (outputDirectory != null) outputDirectory,
-      ],
-    );
 
-    // 2. Add Drift DB file
-    onProgress?.call('Packing database...');
     final dbName = 'memex_local_$userId.sqlite';
     // drift_flutter stores DB in app support directory on iOS, app documents on Android
     final possibleDbPaths = [
       path.join(appDir.path, dbName),
       path.join((await getApplicationSupportDirectory()).path, dbName),
     ];
-    for (final dbPath in possibleDbPaths) {
-      final dbFile = File(dbPath);
-      if (await dbFile.exists()) {
-        final bytes = await dbFile.readAsBytes();
-        _addBytesToArchive(
-          archive,
-          'db/$dbName',
-          bytes,
-          manifestEntries: manifestEntries,
-        );
-        _logger.info('Added DB file: $dbPath (${bytes.length} bytes)');
-        break;
-      }
-    }
 
-    // 3. Add SharedPreferences settings — backup ALL non-internal keys
+    // 2. Add SharedPreferences settings — backup ALL non-internal keys
     onProgress?.call('Packing settings...');
     final prefs = await SharedPreferences.getInstance();
     final settings = <String, dynamic>{};
@@ -276,32 +249,40 @@ class BackupService {
         settings[key] = value;
       }
     }
-    _addBytesToArchive(
-      archive,
-      'settings.json',
-      utf8.encode(jsonEncode(settings)),
-      manifestEntries: manifestEntries,
-    );
 
-    // 4. Add manifest last so it covers every payload entry.
-    final manifest = await _createManifest(
-      createdAt: createdAt,
-      userId: userId,
-      entries: manifestEntries,
-    );
-    _addBytesToArchive(
-      archive,
-      _backupManifestFileName,
-      utf8.encode(jsonEncode(manifest.toJson())),
-    );
+    var appVersion = 'unknown';
+    var buildNumber = '';
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      appVersion = packageInfo.version;
+      buildNumber = packageInfo.buildNumber;
+    } catch (_) {}
 
-    // 5. Write zip. Automatic path writes use temp + rename in the same dir.
+    // 3. Write zip in a background isolate. Automatic path writes use temp +
+    // rename in the same dir.
     onProgress?.call('Compressing...');
-    final zipData = ZipEncoder().encode(archive);
-    final tempFile = File(tempOutputPath);
-    await tempFile.writeAsBytes(zipData, flush: true);
+    final archiveResult = await Isolate.run(
+      () => _writeBackupArchive(
+        workspacePath: workspacePath,
+        excludedWorkspaceRootPaths: [
+          path.join(workspacePath, 'Backups'),
+          if (outputDirectory != null) outputDirectory,
+        ],
+        dbPaths: possibleDbPaths,
+        dbName: dbName,
+        settingsBytes: utf8.encode(jsonEncode(settings)),
+        tempOutputPath: tempOutputPath,
+        createdAt: createdAt,
+        userId: userId,
+        appVersion: appVersion,
+        buildNumber: buildNumber,
+        flavor: AppFlavor.name,
+        platform: Platform.operatingSystem,
+      ),
+    );
 
     if (outputDirectory != null) {
+      final tempFile = File(tempOutputPath);
       final outputFile = File(outputPath);
       if (await outputFile.exists()) {
         await outputFile.delete();
@@ -309,7 +290,10 @@ class BackupService {
       await tempFile.rename(outputPath);
     }
 
-    _logger.info('Backup created: $outputPath (${zipData.length} bytes)');
+    _logger.info(
+      'Backup created: $outputPath '
+      '(${archiveResult.sizeBytes} bytes, ${archiveResult.fileCount} files)',
+    );
     return outputPath;
   }
 
@@ -692,53 +676,6 @@ class BackupService {
     return stats.totalSize;
   }
 
-  /// Recursively add a directory to the archive.
-  static Future<void> _addDirectoryToArchive(
-    Archive archive,
-    String dirPath,
-    String archivePrefix, {
-    required List<Map<String, dynamic>> manifestEntries,
-    List<String> excludedRootPaths = const [],
-  }) async {
-    final dir = Directory(dirPath);
-    if (!await dir.exists()) return;
-
-    await for (final entity in dir.list(recursive: true, followLinks: false)) {
-      if (entity is! File) continue;
-      if (excludedRootPaths.any((root) => _isPathWithin(root, entity.path))) {
-        continue;
-      }
-
-      final relativePath = path.relative(entity.path, from: dirPath);
-      final archivePath = '$archivePrefix/$relativePath';
-      try {
-        final bytes = await entity.readAsBytes();
-        _addBytesToArchive(
-          archive,
-          archivePath,
-          bytes,
-          manifestEntries: manifestEntries,
-        );
-      } catch (e) {
-        _logger.warning('Skipping file ${entity.path}: $e');
-      }
-    }
-  }
-
-  static void _addBytesToArchive(
-    Archive archive,
-    String archivePath,
-    List<int> bytes, {
-    List<Map<String, dynamic>>? manifestEntries,
-  }) {
-    archive.addFile(ArchiveFile(archivePath, bytes.length, bytes));
-    manifestEntries?.add({
-      'path': archivePath,
-      'size': bytes.length,
-      'sha256': sha256.convert(bytes).toString(),
-    });
-  }
-
   static void _validateManifest(Archive archive) {
     final manifestFile = _findArchiveFile(archive, _backupManifestFileName);
     if (manifestFile == null) {
@@ -1065,33 +1002,6 @@ class BackupService {
     );
   }
 
-  static Future<BackupManifest> _createManifest({
-    required DateTime createdAt,
-    required String userId,
-    required List<Map<String, dynamic>> entries,
-  }) async {
-    var appVersion = 'unknown';
-    var buildNumber = '';
-    try {
-      final packageInfo = await PackageInfo.fromPlatform();
-      appVersion = packageInfo.version;
-      buildNumber = packageInfo.buildNumber;
-    } catch (_) {}
-
-    return BackupManifest(
-      format: _backupFormat,
-      formatVersion: 1,
-      backupSchemaVersion: _currentBackupSchemaVersion,
-      createdAt: createdAt.toUtc(),
-      userId: userId,
-      appVersion: appVersion,
-      buildNumber: buildNumber,
-      flavor: AppFlavor.name,
-      platform: Platform.operatingSystem,
-      entries: List<Map<String, dynamic>>.unmodifiable(entries),
-    );
-  }
-
   static Archive _decodeBackup(List<int> bytes) {
     try {
       return ZipDecoder().decodeBytes(bytes);
@@ -1124,6 +1034,157 @@ class BackupService {
   }
 }
 
+Future<_BackupArchiveResult> _writeBackupArchive({
+  required String workspacePath,
+  required List<String> excludedWorkspaceRootPaths,
+  required List<String> dbPaths,
+  required String dbName,
+  required List<int> settingsBytes,
+  required String tempOutputPath,
+  required DateTime createdAt,
+  required String userId,
+  required String appVersion,
+  required String buildNumber,
+  required String flavor,
+  required String platform,
+}) async {
+  final manifestEntries = <Map<String, dynamic>>[];
+  final encoder = ZipFileEncoder();
+  var fileCount = 0;
+
+  try {
+    encoder.create(tempOutputPath, level: ZipFileEncoder.gzip);
+
+    fileCount += await _addDirectoryToBackupArchive(
+      encoder,
+      workspacePath,
+      'workspace',
+      manifestEntries: manifestEntries,
+      excludedRootPaths: excludedWorkspaceRootPaths,
+    );
+
+    for (final dbPath in dbPaths) {
+      final dbFile = File(dbPath);
+      if (!await dbFile.exists()) continue;
+      await _addFileToBackupArchive(
+        encoder,
+        dbFile,
+        'db/$dbName',
+        manifestEntries,
+      );
+      fileCount += 1;
+      break;
+    }
+
+    _addBytesToBackupArchive(
+      encoder,
+      'settings.json',
+      settingsBytes,
+      manifestEntries: manifestEntries,
+    );
+    fileCount += 1;
+
+    final manifest = BackupManifest(
+      format: _backupFormat,
+      formatVersion: 1,
+      backupSchemaVersion: _currentBackupSchemaVersion,
+      createdAt: createdAt.toUtc(),
+      userId: userId,
+      appVersion: appVersion,
+      buildNumber: buildNumber,
+      flavor: flavor,
+      platform: platform,
+      entries: List<Map<String, dynamic>>.unmodifiable(manifestEntries),
+    );
+    _addBytesToBackupArchive(
+      encoder,
+      _backupManifestFileName,
+      utf8.encode(jsonEncode(manifest.toJson())),
+    );
+    fileCount += 1;
+
+    await encoder.close();
+  } catch (_) {
+    try {
+      await encoder.close();
+    } catch (_) {}
+    final tempFile = File(tempOutputPath);
+    if (await tempFile.exists()) {
+      await tempFile.delete();
+    }
+    rethrow;
+  }
+
+  final sizeBytes = await File(tempOutputPath).length();
+  return _BackupArchiveResult(sizeBytes: sizeBytes, fileCount: fileCount);
+}
+
+Future<int> _addDirectoryToBackupArchive(
+  ZipFileEncoder encoder,
+  String dirPath,
+  String archivePrefix, {
+  required List<Map<String, dynamic>> manifestEntries,
+  List<String> excludedRootPaths = const [],
+}) async {
+  final dir = Directory(dirPath);
+  if (!await dir.exists()) return 0;
+
+  var fileCount = 0;
+  await for (final entity in dir.list(recursive: true, followLinks: false)) {
+    if (entity is! File) continue;
+    if (excludedRootPaths.any(
+      (root) => BackupService._isPathWithin(root, entity.path),
+    )) {
+      continue;
+    }
+
+    final relativePath = path.relative(entity.path, from: dirPath);
+    final archivePath = '$archivePrefix/$relativePath';
+    try {
+      await _addFileToBackupArchive(
+        encoder,
+        entity,
+        archivePath,
+        manifestEntries,
+      );
+      fileCount += 1;
+    } catch (e) {
+      BackupService._logger.warning('Skipping file ${entity.path}: $e');
+    }
+  }
+
+  return fileCount;
+}
+
+Future<void> _addFileToBackupArchive(
+  ZipFileEncoder encoder,
+  File file,
+  String archivePath,
+  List<Map<String, dynamic>> manifestEntries,
+) async {
+  final bytes = await file.readAsBytes();
+  _addBytesToBackupArchive(
+    encoder,
+    archivePath,
+    bytes,
+    manifestEntries: manifestEntries,
+  );
+}
+
+void _addBytesToBackupArchive(
+  ZipFileEncoder encoder,
+  String archivePath,
+  List<int> bytes, {
+  List<Map<String, dynamic>>? manifestEntries,
+}) {
+  encoder.addArchiveFile(ArchiveFile(archivePath, bytes.length, bytes));
+  manifestEntries?.add({
+    'path': archivePath,
+    'size': bytes.length,
+    'sha256': sha256.convert(bytes).toString(),
+  });
+}
+
 class _BackupSourceStats {
   final int totalSize;
   final int fileCount;
@@ -1133,5 +1194,15 @@ class _BackupSourceStats {
     required this.totalSize,
     required this.fileCount,
     required this.latestModifiedMs,
+  });
+}
+
+class _BackupArchiveResult {
+  final int sizeBytes;
+  final int fileCount;
+
+  const _BackupArchiveResult({
+    required this.sizeBytes,
+    required this.fileCount,
   });
 }

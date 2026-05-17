@@ -12,11 +12,12 @@ import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/toast_helper.dart';
 import 'package:memex/utils/user_storage.dart';
 
-typedef AutoBackupCreator = Future<BackupSnapshot?> Function({
-  String trigger,
-  bool force,
-  void Function(String status)? onProgress,
-});
+typedef AutoBackupCreator =
+    Future<BackupSnapshot?> Function({
+      String trigger,
+      bool force,
+      void Function(String status)? onProgress,
+    });
 
 class BackupRestorePage extends StatefulWidget {
   final bool? isAndroidOverride;
@@ -63,12 +64,15 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
     _loadPageData();
   }
 
-  Future<void> _loadPageData() async {
+  Future<void> _loadPageData({bool includeEstimatedSize = true}) async {
     final userId = await UserStorage.getUserId();
-    final size =
-        await (widget.estimateBackupSize ?? BackupService.estimateBackupSize)();
-    final location = await (widget.currentBackupLocationLabel ??
-        BackupService.currentBackupLocationLabel)();
+    final size = includeEstimatedSize
+        ? await (widget.estimateBackupSize ??
+              BackupService.estimateBackupSize)()
+        : null;
+    final location =
+        await (widget.currentBackupLocationLabel ??
+            BackupService.currentBackupLocationLabel)();
     final snapshots =
         await (widget.listStoredBackups ?? BackupService.listStoredBackups)();
     final autoEnabled = userId != null && userId.isNotEmpty
@@ -80,7 +84,9 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
 
     if (mounted) {
       setState(() {
-        _estimatedSize = _formatBytes(size);
+        if (size != null) {
+          _estimatedSize = _formatBytes(size);
+        }
         _backupLocation = location;
         _storedBackups = snapshots;
         _autoBackupEnabled = autoEnabled;
@@ -165,7 +171,7 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
           if (mounted) setState(() => _statusText = status);
         },
       );
-      await _loadPageData();
+      await _loadPageData(includeEstimatedSize: false);
 
       if (!mounted) return;
       setState(() {
@@ -395,7 +401,8 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
 
   @override
   Widget build(BuildContext context) {
-    final isBusy = _isBackingUp ||
+    final isBusy =
+        _isBackingUp ||
         _isRestoring ||
         _isCreatingSnapshot ||
         _isPickingLocation;
