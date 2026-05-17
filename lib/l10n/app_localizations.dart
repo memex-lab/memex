@@ -63,7 +63,7 @@ import 'app_localizations_zh.dart';
 /// property.
 abstract class AppLocalizations {
   AppLocalizations(String locale)
-      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -86,16 +86,16 @@ abstract class AppLocalizations {
   /// of delegates is preferred or required.
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
       <LocalizationsDelegate<dynamic>>[
-    delegate,
-    GlobalMaterialLocalizations.delegate,
-    GlobalCupertinoLocalizations.delegate,
-    GlobalWidgetsLocalizations.delegate,
-  ];
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('zh')
+    Locale('zh'),
   ];
 
   /// No description provided for @timesLabel.
@@ -5000,6 +5000,24 @@ abstract class AppLocalizations {
   /// **'Downloading update: {percent}%'**
   String earlyUpdateDownloadingPercent(Object percent);
 
+  /// No description provided for @earlyUpdateInstallDownloadedPackage.
+  ///
+  /// In en, this message translates to:
+  /// **'Install downloaded package'**
+  String get earlyUpdateInstallDownloadedPackage;
+
+  /// No description provided for @earlyUpdateClearDownloadedPackage.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear downloaded package'**
+  String get earlyUpdateClearDownloadedPackage;
+
+  /// No description provided for @earlyUpdateClearDownloadedPackageSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded update package cleared.'**
+  String get earlyUpdateClearDownloadedPackageSuccess;
+
   /// No description provided for @earlyUpdateInstallStarted.
   ///
   /// In en, this message translates to:
@@ -5064,8 +5082,9 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   }
 
   throw FlutterError(
-      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-      'an issue with the localizations generation tool. Please file an issue '
-      'on GitHub with a reproducible sample app and the gen-l10n configuration '
-      'that was used.');
+    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+    'an issue with the localizations generation tool. Please file an issue '
+    'on GitHub with a reproducible sample app and the gen-l10n configuration '
+    'that was used.',
+  );
 }

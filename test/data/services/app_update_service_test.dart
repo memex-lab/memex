@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:memex/data/services/app_update_service.dart';
+import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -39,10 +40,8 @@ void main() {
         isEarlyChannel: isSupported,
         flavorName: flavorName,
       ),
-      packageVersionLoader: () async => AppPackageVersion(
-        versionName: '1.0.29',
-        buildNumber: currentBuild,
-      ),
+      packageVersionLoader: () async =>
+          AppPackageVersion(versionName: '1.0.29', buildNumber: currentBuild),
       updateDirectoryProvider: () async => tempDir,
       clock: () => DateTime(2026, 5, 15, 10),
     );
@@ -148,52 +147,56 @@ void main() {
   });
 
   group('check/download/install flow', () {
-    test('still checks releases on mobile data when Wi-Fi-only is enabled',
-        () async {
-      platform.wifiConnected = false;
-      final service = buildService(
-        client: MockClient((_) async {
-          return http.Response(
-            jsonEncode([
-              release(
-                assetName: 'memex_globalEarly_1.0.30_113.apk',
-                downloadUrl: 'https://example.com/global.apk',
-              ),
-            ]),
-            200,
-          );
-        }),
-      );
+    test(
+      'still checks releases on mobile data when Wi-Fi-only is enabled',
+      () async {
+        platform.wifiConnected = false;
+        final service = buildService(
+          client: MockClient((_) async {
+            return http.Response(
+              jsonEncode([
+                release(
+                  assetName: 'memex_globalEarly_1.0.30_113.apk',
+                  downloadUrl: 'https://example.com/global.apk',
+                ),
+              ]),
+              200,
+            );
+          }),
+        );
 
-      final result = await service.checkForUpdate(manual: true);
+        final result = await service.checkForUpdate(manual: true);
 
-      expect(result.status, AppUpdateCheckStatus.updateAvailable);
-      final settings = await service.loadSettings();
-      expect(settings.lastCheckAt, DateTime(2026, 5, 15, 10));
-    });
+        expect(result.status, AppUpdateCheckStatus.updateAvailable);
+        final settings = await service.loadSettings();
+        expect(settings.lastCheckAt, DateTime(2026, 5, 15, 10));
+      },
+    );
 
-    test('blocks APK download on mobile data when Wi-Fi-only is enabled',
-        () async {
-      platform.wifiConnected = false;
-      final service = buildService(
-        client: MockClient((_) async => throw StateError('should not fetch')),
-      );
-      const update = AppUpdateInfo(
-        releaseName: 'Early',
-        tagName: 'v1.0.30+113',
-        versionName: '1.0.30',
-        buildNumber: 113,
-        assetName: 'memex_globalEarly_1.0.30_113.apk',
-        sizeBytes: 4,
-        downloadUrl: 'https://example.com/global.apk',
-        releaseNotes: '',
-      );
+    test(
+      'blocks APK download on mobile data when Wi-Fi-only is enabled',
+      () async {
+        platform.wifiConnected = false;
+        final service = buildService(
+          client: MockClient((_) async => throw StateError('should not fetch')),
+        );
+        const update = AppUpdateInfo(
+          releaseName: 'Early',
+          tagName: 'v1.0.30+113',
+          versionName: '1.0.30',
+          buildNumber: 113,
+          assetName: 'memex_globalEarly_1.0.30_113.apk',
+          sizeBytes: 4,
+          downloadUrl: 'https://example.com/global.apk',
+          releaseNotes: '',
+        );
 
-      expect(
-        () => service.downloadUpdate(update),
-        throwsA(isA<AppUpdateWifiRequiredException>()),
-      );
-    });
+        expect(
+          () => service.downloadUpdate(update),
+          throwsA(isA<AppUpdateWifiRequiredException>()),
+        );
+      },
+    );
 
     test('detects an available update from GitHub pre-releases', () async {
       final service = buildService(
@@ -219,55 +222,137 @@ void main() {
       expect(settings.lastCheckAt, DateTime(2026, 5, 15, 10));
     });
 
-    test('downloads APK and delegates install to Android platform channel',
-        () async {
+    test(
+      'downloads APK and delegates install to Android platform channel',
+      () async {
+        final service = buildService(
+          client: MockClient((request) async {
+            expect(request.url.toString(), 'https://example.com/global.apk');
+            return http.Response.bytes(
+              [1, 2, 3, 4],
+              200,
+              headers: {'content-length': '4'},
+            );
+          }),
+        );
+        const update = AppUpdateInfo(
+          releaseName: 'Early',
+          tagName: 'v1.0.30+113',
+          versionName: '1.0.30',
+          buildNumber: 113,
+          assetName: 'memex_globalEarly_1.0.30_113.apk',
+          sizeBytes: 4,
+          downloadUrl: 'https://example.com/global.apk',
+          releaseNotes: '',
+        );
+        final progress = <int>[];
+
+        final download = await service.downloadUpdate(
+          update,
+          onProgress: (received, total) => progress.add(received),
+        );
+        final install = await service.installUpdate(download.apkPath);
+
+        expect(await File(download.apkPath).readAsBytes(), [1, 2, 3, 4]);
+        expect(progress, contains(4));
+        expect(install.status, AppUpdateInstallStatus.started);
+        expect(platform.installedApkPath, download.apkPath);
+      },
+    );
+
+    test('reuses a complete downloaded APK without fetching again', () async {
+      final apk = File(p.join(tempDir.path, _testUpdate.assetName));
+      await apk.writeAsBytes([1, 2, 3, 4]);
+      platform.wifiConnected = false;
       final service = buildService(
-        client: MockClient((request) async {
-          expect(request.url.toString(), 'https://example.com/global.apk');
-          return http.Response.bytes(
-            [1, 2, 3, 4],
-            200,
-            headers: {'content-length': '4'},
-          );
-        }),
-      );
-      const update = AppUpdateInfo(
-        releaseName: 'Early',
-        tagName: 'v1.0.30+113',
-        versionName: '1.0.30',
-        buildNumber: 113,
-        assetName: 'memex_globalEarly_1.0.30_113.apk',
-        sizeBytes: 4,
-        downloadUrl: 'https://example.com/global.apk',
-        releaseNotes: '',
+        client: MockClient((_) async => throw StateError('should not fetch')),
       );
       final progress = <int>[];
 
       final download = await service.downloadUpdate(
-        update,
-        onProgress: (received, total) => progress.add(received),
+        _testUpdate,
+        onProgress: (received, _) => progress.add(received),
       );
-      final install = await service.installUpdate(download.apkPath);
 
+      expect(download.reusedExistingFile, isTrue);
+      expect(download.apkPath, apk.path);
+      expect(progress, [4]);
       expect(await File(download.apkPath).readAsBytes(), [1, 2, 3, 4]);
-      expect(progress, contains(4));
-      expect(install.status, AppUpdateInstallStatus.started);
-      expect(platform.installedApkPath, download.apkPath);
     });
 
-    test('opens unknown-app settings when install permission is missing',
-        () async {
-      platform.canInstall = false;
+    test(
+      'redownloads when cached APK size does not match asset size',
+      () async {
+        final apk = File(p.join(tempDir.path, _testUpdate.assetName));
+        await apk.writeAsBytes([9]);
+        var fetched = false;
+        final service = buildService(
+          client: MockClient((request) async {
+            fetched = true;
+            expect(request.url.toString(), _testUpdate.downloadUrl);
+            return http.Response.bytes(
+              [1, 2, 3, 4],
+              200,
+              headers: {'content-length': '4'},
+            );
+          }),
+        );
+
+        final download = await service.downloadUpdate(_testUpdate);
+
+        expect(fetched, isTrue);
+        expect(download.reusedExistingFile, isFalse);
+        expect(await File(download.apkPath).readAsBytes(), [1, 2, 3, 4]);
+      },
+    );
+
+    test('reports and clears downloaded update cache files', () async {
+      await File(
+        p.join(tempDir.path, 'memex_globalEarly_1.0.30_113.apk'),
+      ).writeAsBytes([1]);
+      await File(
+        p.join(tempDir.path, 'memex_globalEarly_1.0.30_113.apk.part'),
+      ).writeAsBytes([2, 3]);
+      await File(p.join(tempDir.path, 'notes.txt')).writeAsString('keep');
       final service = buildService();
 
-      final result = await service.installUpdate('/tmp/memex.apk');
+      final before = await service.getDownloadedUpdateCacheInfo();
+      final deleted = await service.clearDownloadedUpdates();
+      final after = await service.getDownloadedUpdateCacheInfo();
 
-      expect(result.status, AppUpdateInstallStatus.permissionRequired);
-      expect(platform.openedInstallSettings, isTrue);
-      expect(platform.installedApkPath, isNull);
+      expect(before.fileCount, 2);
+      expect(before.totalBytes, 3);
+      expect(deleted, 2);
+      expect(after.hasFiles, isFalse);
+      expect(await File(p.join(tempDir.path, 'notes.txt')).exists(), isTrue);
     });
+
+    test(
+      'opens unknown-app settings when install permission is missing',
+      () async {
+        platform.canInstall = false;
+        final service = buildService();
+
+        final result = await service.installUpdate('/tmp/memex.apk');
+
+        expect(result.status, AppUpdateInstallStatus.permissionRequired);
+        expect(platform.openedInstallSettings, isTrue);
+        expect(platform.installedApkPath, isNull);
+      },
+    );
   });
 }
+
+const _testUpdate = AppUpdateInfo(
+  releaseName: 'Early',
+  tagName: 'v1.0.30+113',
+  versionName: '1.0.30',
+  buildNumber: 113,
+  assetName: 'memex_globalEarly_1.0.30_113.apk',
+  sizeBytes: 4,
+  downloadUrl: 'https://example.com/global.apk',
+  releaseNotes: '',
+);
 
 Map<String, dynamic> release({
   bool prerelease = true,
@@ -283,11 +368,7 @@ Map<String, dynamic> release({
     'body': body,
     'published_at': '2026-05-15T00:00:00Z',
     'assets': [
-      {
-        'name': assetName,
-        'size': 1234,
-        'browser_download_url': downloadUrl,
-      }
+      {'name': assetName, 'size': 1234, 'browser_download_url': downloadUrl},
     ],
   };
 }

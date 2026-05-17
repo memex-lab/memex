@@ -36,12 +36,11 @@ class AppUpdateSettings {
   }
 
   Map<String, dynamic> toJson() => {
-        'auto_check_enabled': autoCheckEnabled,
-        'wifi_only_downloads': wifiOnlyDownloads,
-        'auto_download_and_install': autoDownloadAndInstall,
-        if (lastCheckAt != null)
-          'last_check_at': lastCheckAt!.toIso8601String(),
-      };
+    'auto_check_enabled': autoCheckEnabled,
+    'wifi_only_downloads': wifiOnlyDownloads,
+    'auto_download_and_install': autoDownloadAndInstall,
+    if (lastCheckAt != null) 'last_check_at': lastCheckAt!.toIso8601String(),
+  };
 
   AppUpdateSettings copyWith({
     bool? autoCheckEnabled,
@@ -120,32 +119,41 @@ class AppUpdateCheckResult {
   const AppUpdateCheckResult._(this.status, [this.update]);
 
   const AppUpdateCheckResult.unsupported()
-      : this._(AppUpdateCheckStatus.unsupported);
+    : this._(AppUpdateCheckStatus.unsupported);
 
   const AppUpdateCheckResult.skippedNotWifi()
-      : this._(AppUpdateCheckStatus.skippedNotWifi);
+    : this._(AppUpdateCheckStatus.skippedNotWifi);
 
   const AppUpdateCheckResult.noUpdate() : this._(AppUpdateCheckStatus.noUpdate);
 
   const AppUpdateCheckResult.updateAvailable(AppUpdateInfo update)
-      : this._(AppUpdateCheckStatus.updateAvailable, update);
+    : this._(AppUpdateCheckStatus.updateAvailable, update);
 }
 
 class AppUpdateDownloadResult {
   final AppUpdateInfo update;
   final String apkPath;
+  final bool reusedExistingFile;
 
   const AppUpdateDownloadResult({
     required this.update,
     required this.apkPath,
+    this.reusedExistingFile = false,
   });
 }
 
-enum AppUpdateInstallStatus {
-  started,
-  permissionRequired,
-  unsupported,
+class AppUpdateCacheInfo {
+  final int fileCount;
+  final int totalBytes;
+
+  const AppUpdateCacheInfo({required this.fileCount, required this.totalBytes});
+
+  static const empty = AppUpdateCacheInfo(fileCount: 0, totalBytes: 0);
+
+  bool get hasFiles => fileCount > 0;
 }
+
+enum AppUpdateInstallStatus { started, permissionRequired, unsupported }
 
 class AppUpdateInstallResult {
   final AppUpdateInstallStatus status;
@@ -197,8 +205,9 @@ abstract class AppUpdatePlatform {
 }
 
 class MethodChannelAppUpdatePlatform implements AppUpdatePlatform {
-  static const MethodChannel _channel =
-      MethodChannel('com.memexlab.memex/app_update');
+  static const MethodChannel _channel = MethodChannel(
+    'com.memexlab.memex/app_update',
+  );
 
   const MethodChannelAppUpdatePlatform();
 
@@ -262,14 +271,14 @@ class AppUpdateService {
     PackageVersionLoader? packageVersionLoader,
     UpdateDirectoryProvider? updateDirectoryProvider,
     Clock? clock,
-  })  : _httpClient = httpClient ?? http.Client(),
-        _platform = platform ?? const MethodChannelAppUpdatePlatform(),
-        _settingsStore = settingsStore ?? AppUpdateSettingsStore(),
-        _environment = environment ?? AppUpdateEnvironment.current(),
-        _packageVersionLoader = packageVersionLoader ?? _loadPackageVersion,
-        _updateDirectoryProvider =
-            updateDirectoryProvider ?? _defaultUpdateDirectory,
-        _clock = clock ?? DateTime.now;
+  }) : _httpClient = httpClient ?? http.Client(),
+       _platform = platform ?? const MethodChannelAppUpdatePlatform(),
+       _settingsStore = settingsStore ?? AppUpdateSettingsStore(),
+       _environment = environment ?? AppUpdateEnvironment.current(),
+       _packageVersionLoader = packageVersionLoader ?? _loadPackageVersion,
+       _updateDirectoryProvider =
+           updateDirectoryProvider ?? _defaultUpdateDirectory,
+       _clock = clock ?? DateTime.now;
 
   static final AppUpdateService instance = AppUpdateService();
   static const String releasesUrl =
@@ -336,18 +345,37 @@ class AppUpdateService {
     AppUpdateInfo update, {
     void Function(int receivedBytes, int totalBytes)? onProgress,
   }) async {
+    final dir = await _updateDirectoryProvider();
+    final fileName = _safeFileName(update.assetName);
+    final targetFile = File(path.join(dir.path, fileName));
+    if (await _isReusableDownloadedApk(targetFile, update)) {
+      final cachedBytes = await targetFile.length();
+      final totalBytes = update.sizeBytes > 0 ? update.sizeBytes : cachedBytes;
+      onProgress?.call(totalBytes, totalBytes);
+      _logger.info(
+        'Reusing downloaded APK for ${update.displayVersion}: '
+        '${targetFile.path}',
+      );
+      return AppUpdateDownloadResult(
+        update: update,
+        apkPath: targetFile.path,
+        reusedExistingFile: true,
+      );
+    }
+
+    if (await targetFile.exists()) {
+      await targetFile.delete();
+    }
+
     final settings = await loadSettings();
     if (settings.wifiOnlyDownloads && !await _platform.isWifiConnected()) {
       throw const AppUpdateWifiRequiredException();
     }
 
-    final dir = await _updateDirectoryProvider();
     if (!await dir.exists()) {
       await dir.create(recursive: true);
     }
 
-    final fileName = _safeFileName(update.assetName);
-    final targetFile = File(path.join(dir.path, fileName));
     final tempFile = File('${targetFile.path}.part');
     if (await tempFile.exists()) {
       await tempFile.delete();
@@ -381,10 +409,47 @@ class AppUpdateService {
     }
     await tempFile.rename(targetFile.path);
 
-    return AppUpdateDownloadResult(
-      update: update,
-      apkPath: targetFile.path,
-    );
+    return AppUpdateDownloadResult(update: update, apkPath: targetFile.path);
+  }
+
+  Future<bool> hasDownloadedUpdate(AppUpdateInfo update) async {
+    final dir = await _updateDirectoryProvider();
+    final fileName = _safeFileName(update.assetName);
+    final targetFile = File(path.join(dir.path, fileName));
+    return _isReusableDownloadedApk(targetFile, update);
+  }
+
+  Future<AppUpdateCacheInfo> getDownloadedUpdateCacheInfo() async {
+    final dir = await _updateDirectoryProvider();
+    if (!await dir.exists()) {
+      return AppUpdateCacheInfo.empty;
+    }
+
+    var fileCount = 0;
+    var totalBytes = 0;
+    await for (final entity in dir.list(followLinks: false)) {
+      if (entity is! File || !_isUpdateCacheFile(entity)) continue;
+      final stat = await entity.stat();
+      if (stat.type != FileSystemEntityType.file) continue;
+      fileCount += 1;
+      totalBytes += stat.size;
+    }
+    return AppUpdateCacheInfo(fileCount: fileCount, totalBytes: totalBytes);
+  }
+
+  Future<int> clearDownloadedUpdates() async {
+    final dir = await _updateDirectoryProvider();
+    if (!await dir.exists()) {
+      return 0;
+    }
+
+    var deletedCount = 0;
+    await for (final entity in dir.list(followLinks: false)) {
+      if (entity is! File || !_isUpdateCacheFile(entity)) continue;
+      await entity.delete();
+      deletedCount += 1;
+    }
+    return deletedCount;
   }
 
   Future<AppUpdateInstallResult> installUpdate(String apkPath) async {
@@ -405,8 +470,10 @@ class AppUpdateService {
   }
 
   Future<List<Map<String, dynamic>>> _fetchReleases() async {
-    final response =
-        await _httpClient.get(Uri.parse(releasesUrl), headers: _githubHeaders);
+    final response = await _httpClient.get(
+      Uri.parse(releasesUrl),
+      headers: _githubHeaders,
+    );
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw HttpException(
         'GitHub releases request failed: HTTP ${response.statusCode}',
@@ -450,7 +517,8 @@ class AppUpdateService {
         if (downloadUrl.isEmpty) continue;
 
         final releaseNotes = release['body'] as String? ?? '';
-        final buildNumber = _parseBuildNumber(name) ??
+        final buildNumber =
+            _parseBuildNumber(name) ??
             _parseBuildNumber(releaseNotes) ??
             _parseBuildNumber(tagName);
         if (buildNumber == null || buildNumber <= currentBuildNumber) {
@@ -461,7 +529,8 @@ class AppUpdateService {
           AppUpdateInfo(
             releaseName: release['name'] as String? ?? name,
             tagName: tagName,
-            versionName: _parseVersionName(name) ??
+            versionName:
+                _parseVersionName(name) ??
                 _parseVersionName(releaseNotes) ??
                 _parseVersionName(tagName) ??
                 (tagName.isEmpty ? null : tagName) ??
@@ -471,8 +540,9 @@ class AppUpdateService {
             sizeBytes: (asset['size'] as num?)?.toInt() ?? 0,
             downloadUrl: downloadUrl,
             releaseNotes: releaseNotes,
-            publishedAt:
-                DateTime.tryParse(release['published_at'] as String? ?? ''),
+            publishedAt: DateTime.tryParse(
+              release['published_at'] as String? ?? '',
+            ),
           ),
         );
       }
@@ -499,10 +569,40 @@ class AppUpdateService {
     return Directory(path.join(cacheDir.path, 'updates'));
   }
 
+  Future<bool> _isReusableDownloadedApk(File file, AppUpdateInfo update) async {
+    try {
+      if (!await file.exists()) return false;
+      if (!file.path.toLowerCase().endsWith('.apk')) return false;
+
+      final stat = await file.stat();
+      if (stat.type != FileSystemEntityType.file || stat.size <= 0) {
+        return false;
+      }
+
+      if (update.sizeBytes > 0 && stat.size != update.sizeBytes) {
+        _logger.info(
+          'Discarding cached APK with unexpected size for '
+          '${update.displayVersion}: expected ${update.sizeBytes}, '
+          'found ${stat.size}',
+        );
+        return false;
+      }
+      return true;
+    } catch (e, st) {
+      _logger.warning('Failed to inspect cached APK: ${file.path}', e, st);
+      return false;
+    }
+  }
+
+  static bool _isUpdateCacheFile(File file) {
+    final lowerPath = file.path.toLowerCase();
+    return lowerPath.endsWith('.apk') || lowerPath.endsWith('.apk.part');
+  }
+
   static Map<String, String> get _githubHeaders => const {
-        'Accept': 'application/vnd.github+json',
-        'User-Agent': 'Memex-Early-Updater',
-      };
+    'Accept': 'application/vnd.github+json',
+    'User-Agent': 'Memex-Early-Updater',
+  };
 
   static String _normalize(String value) {
     return value.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
@@ -521,15 +621,18 @@ class AppUpdateService {
   }
 
   static int? _parseBuildNumber(String value) {
-    final versionLineMatch =
-        RegExp(r'Version:\s*[^\s+]+\+(\d+)', caseSensitive: false)
-            .firstMatch(value.trim());
+    final versionLineMatch = RegExp(
+      r'Version:\s*[^\s+]+\+(\d+)',
+      caseSensitive: false,
+    ).firstMatch(value.trim());
     if (versionLineMatch != null) {
       return int.tryParse(versionLineMatch.group(1)!);
     }
 
-    final assetMatch =
-        RegExp(r'_(\d+)\.apk$', caseSensitive: false).firstMatch(value.trim());
+    final assetMatch = RegExp(
+      r'_(\d+)\.apk$',
+      caseSensitive: false,
+    ).firstMatch(value.trim());
     if (assetMatch != null) {
       return int.tryParse(assetMatch.group(1)!);
     }
@@ -542,9 +645,10 @@ class AppUpdateService {
   }
 
   static String? _parseVersionName(String value) {
-    final versionLineMatch =
-        RegExp(r'Version:\s*([^\s+]+)\+\d+', caseSensitive: false)
-            .firstMatch(value.trim());
+    final versionLineMatch = RegExp(
+      r'Version:\s*([^\s+]+)\+\d+',
+      caseSensitive: false,
+    ).firstMatch(value.trim());
     if (versionLineMatch != null) {
       return versionLineMatch.group(1);
     }
@@ -557,8 +661,9 @@ class AppUpdateService {
       return assetMatch.group(1);
     }
 
-    final tagMatch =
-        RegExp(r'v?(\d+(?:\.\d+){1,3})(?:[+_-]\d+)?').firstMatch(value);
+    final tagMatch = RegExp(
+      r'v?(\d+(?:\.\d+){1,3})(?:[+_-]\d+)?',
+    ).firstMatch(value);
     return tagMatch?.group(1);
   }
 

@@ -2654,6 +2654,15 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get earlyUpdateInstallDownloadedPackage => '安装已下载包';
+
+  @override
+  String get earlyUpdateClearDownloadedPackage => '清除下载包';
+
+  @override
+  String get earlyUpdateClearDownloadedPackageSuccess => '已清除下载包。';
+
+  @override
   String get earlyUpdateInstallStarted => '已打开 Android 系统安装器。';
 
   @override

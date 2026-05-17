@@ -23,8 +23,11 @@ class EarlyUpdateSettingsCard extends StatefulWidget {
 class _EarlyUpdateSettingsCardState extends State<EarlyUpdateSettingsCard> {
   AppUpdateSettings? _settings;
   AppUpdateInfo? _availableUpdate;
+  AppUpdateCacheInfo _cacheInfo = AppUpdateCacheInfo.empty;
+  bool _availableUpdateDownloaded = false;
   bool _checking = false;
   bool _downloading = false;
+  bool _clearingCache = false;
   int _downloadPercent = 0;
   String? _statusText;
 
@@ -37,9 +40,11 @@ class _EarlyUpdateSettingsCardState extends State<EarlyUpdateSettingsCard> {
   Future<void> _loadSettings() async {
     if (!widget.forceVisible && !widget.service.isSupported) return;
     final settings = await widget.service.loadSettings();
+    final cacheInfo = await widget.service.getDownloadedUpdateCacheInfo();
     if (!mounted) return;
     setState(() {
       _settings = settings;
+      _cacheInfo = cacheInfo;
       _statusText = _lastCheckedText(settings);
     });
   }
@@ -51,7 +56,7 @@ class _EarlyUpdateSettingsCardState extends State<EarlyUpdateSettingsCard> {
   }
 
   Future<void> _checkNow() async {
-    if (_checking || _downloading) return;
+    if (_checking || _downloading || _clearingCache) return;
     setState(() {
       _checking = true;
       _statusText = UserStorage.l10n.earlyUpdateChecking;
@@ -59,20 +64,33 @@ class _EarlyUpdateSettingsCardState extends State<EarlyUpdateSettingsCard> {
 
     try {
       final result = await widget.service.checkForUpdate(manual: true);
-      if (!mounted) return;
       final latestSettings = await widget.service.loadSettings();
+      final latestCacheInfo =
+          await widget.service.getDownloadedUpdateCacheInfo();
+      var availableUpdateDownloaded = false;
+      if (result.status == AppUpdateCheckStatus.updateAvailable) {
+        availableUpdateDownloaded = await widget.service.hasDownloadedUpdate(
+          result.update!,
+        );
+      }
+      if (!mounted) return;
       setState(() {
         _checking = false;
         _settings = latestSettings;
+        _cacheInfo = latestCacheInfo;
+        _availableUpdateDownloaded = availableUpdateDownloaded;
         switch (result.status) {
           case AppUpdateCheckStatus.unsupported:
             _availableUpdate = null;
+            _availableUpdateDownloaded = false;
             _statusText = UserStorage.l10n.earlyUpdateUnsupported;
           case AppUpdateCheckStatus.skippedNotWifi:
             _availableUpdate = null;
+            _availableUpdateDownloaded = false;
             _statusText = UserStorage.l10n.earlyUpdateSkippedMobile;
           case AppUpdateCheckStatus.noUpdate:
             _availableUpdate = null;
+            _availableUpdateDownloaded = false;
             _statusText = UserStorage.l10n.earlyUpdateNoUpdate;
           case AppUpdateCheckStatus.updateAvailable:
             _availableUpdate = result.update;
@@ -87,6 +105,7 @@ class _EarlyUpdateSettingsCardState extends State<EarlyUpdateSettingsCard> {
       if (!mounted) return;
       setState(() {
         _checking = false;
+        _availableUpdateDownloaded = false;
         _statusText = UserStorage.l10n.earlyUpdateCheckFailed(e);
       });
     }
@@ -94,7 +113,7 @@ class _EarlyUpdateSettingsCardState extends State<EarlyUpdateSettingsCard> {
 
   Future<void> _downloadAndInstall() async {
     final update = _availableUpdate;
-    if (update == null || _downloading) return;
+    if (update == null || _downloading || _clearingCache) return;
 
     setState(() {
       _downloading = true;
@@ -111,17 +130,22 @@ class _EarlyUpdateSettingsCardState extends State<EarlyUpdateSettingsCard> {
               ((receivedBytes / totalBytes) * 100).clamp(0, 100).round();
           setState(() {
             _downloadPercent = percent;
-            _statusText =
-                UserStorage.l10n.earlyUpdateDownloadingPercent(percent);
+            _statusText = UserStorage.l10n.earlyUpdateDownloadingPercent(
+              percent,
+            );
           });
         },
       );
 
+      final latestCacheInfo =
+          await widget.service.getDownloadedUpdateCacheInfo();
       final install = await widget.service.installUpdate(download.apkPath);
       if (!mounted) return;
       setState(() {
         _downloading = false;
         _downloadPercent = 100;
+        _cacheInfo = latestCacheInfo;
+        _availableUpdateDownloaded = true;
         _statusText = switch (install.status) {
           AppUpdateInstallStatus.started =>
             UserStorage.l10n.earlyUpdateInstallStarted,
@@ -142,10 +166,41 @@ class _EarlyUpdateSettingsCardState extends State<EarlyUpdateSettingsCard> {
       });
       if (e is AppUpdateWifiRequiredException) {
         ToastHelper.showInfo(
-            context, UserStorage.l10n.earlyUpdateSkippedMobile);
+          context,
+          UserStorage.l10n.earlyUpdateSkippedMobile,
+        );
       } else {
         ToastHelper.showError(context, e);
       }
+    }
+  }
+
+  Future<void> _clearDownloadedPackage() async {
+    if (_checking || _downloading || _clearingCache) return;
+
+    setState(() => _clearingCache = true);
+    try {
+      await widget.service.clearDownloadedUpdates();
+      final latestCacheInfo =
+          await widget.service.getDownloadedUpdateCacheInfo();
+      if (!mounted) return;
+      setState(() {
+        _clearingCache = false;
+        _cacheInfo = latestCacheInfo;
+        _availableUpdateDownloaded = false;
+        _statusText = UserStorage.l10n.earlyUpdateClearDownloadedPackageSuccess;
+      });
+      ToastHelper.showSuccess(
+        context,
+        UserStorage.l10n.earlyUpdateClearDownloadedPackageSuccess,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _clearingCache = false;
+        _statusText = UserStorage.l10n.earlyUpdateCheckFailed(e);
+      });
+      ToastHelper.showError(context, e);
     }
   }
 
@@ -234,9 +289,8 @@ class _EarlyUpdateSettingsCardState extends State<EarlyUpdateSettingsCard> {
             title: UserStorage.l10n.earlyUpdateAutoInstallTitle,
             subtitle: UserStorage.l10n.earlyUpdateAutoInstallDesc,
             value: settings.autoDownloadAndInstall,
-            onChanged: (value) => _saveSettings(
-              settings.copyWith(autoDownloadAndInstall: value),
-            ),
+            onChanged: (value) =>
+                _saveSettings(settings.copyWith(autoDownloadAndInstall: value)),
           ),
           if (_statusText != null) ...[
             const SizedBox(height: 12),
@@ -263,7 +317,9 @@ class _EarlyUpdateSettingsCardState extends State<EarlyUpdateSettingsCard> {
             runSpacing: 10,
             children: [
               OutlinedButton.icon(
-                onPressed: _checking || _downloading ? null : _checkNow,
+                onPressed: _checking || _downloading || _clearingCache
+                    ? null
+                    : _checkNow,
                 icon: _checking
                     ? const SizedBox(
                         width: 16,
@@ -275,10 +331,36 @@ class _EarlyUpdateSettingsCardState extends State<EarlyUpdateSettingsCard> {
               ),
               if (_availableUpdate != null)
                 FilledButton.icon(
-                  onPressed:
-                      _checking || _downloading ? null : _downloadAndInstall,
-                  icon: const Icon(Icons.download, size: 18),
-                  label: Text(UserStorage.l10n.earlyUpdateDownloadAndInstall),
+                  onPressed: _checking || _downloading || _clearingCache
+                      ? null
+                      : _downloadAndInstall,
+                  icon: Icon(
+                    _availableUpdateDownloaded
+                        ? Icons.install_mobile
+                        : Icons.download,
+                    size: 18,
+                  ),
+                  label: Text(
+                    _availableUpdateDownloaded
+                        ? UserStorage.l10n.earlyUpdateInstallDownloadedPackage
+                        : UserStorage.l10n.earlyUpdateDownloadAndInstall,
+                  ),
+                ),
+              if (_cacheInfo.hasFiles)
+                OutlinedButton.icon(
+                  onPressed: _checking || _downloading || _clearingCache
+                      ? null
+                      : _clearDownloadedPackage,
+                  icon: _clearingCache
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.delete_outline, size: 18),
+                  label: Text(
+                    UserStorage.l10n.earlyUpdateClearDownloadedPackage,
+                  ),
                 ),
             ],
           ),
@@ -326,15 +408,11 @@ class _EarlyUpdateSettingsCardState extends State<EarlyUpdateSettingsCard> {
         padding: const EdgeInsets.only(top: 2),
         child: Text(
           subtitle,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[600],
-            height: 1.35,
-          ),
+          style: TextStyle(fontSize: 12, color: Colors.grey[600], height: 1.35),
         ),
       ),
       value: value,
-      onChanged: _checking || _downloading ? null : onChanged,
+      onChanged: _checking || _downloading || _clearingCache ? null : onChanged,
     );
   }
 }

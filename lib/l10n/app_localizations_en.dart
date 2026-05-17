@@ -2759,6 +2759,17 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get earlyUpdateInstallDownloadedPackage =>
+      'Install downloaded package';
+
+  @override
+  String get earlyUpdateClearDownloadedPackage => 'Clear downloaded package';
+
+  @override
+  String get earlyUpdateClearDownloadedPackageSuccess =>
+      'Downloaded update package cleared.';
+
+  @override
   String get earlyUpdateInstallStarted => 'Android installer opened.';
 
   @override

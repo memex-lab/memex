@@ -1237,6 +1237,9 @@
     }
   },
   "earlyUpdateDownloadingPercent": "正在下载更新：{percent}%",
+  "earlyUpdateInstallDownloadedPackage": "安装已下载包",
+  "earlyUpdateClearDownloadedPackage": "清除下载包",
+  "earlyUpdateClearDownloadedPackageSuccess": "已清除下载包。",
   "earlyUpdateInstallStarted": "已打开 Android 系统安装器。",
   "earlyUpdateInstallPermissionRequired": "请允许 Memex 安装未知来源应用，然后再次点击下载并安装。",
   "@earlyUpdateLastChecked": {

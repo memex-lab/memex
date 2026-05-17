@@ -32,13 +32,16 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('renders defaults and persists Wi-Fi-only toggle',
-      (tester) async {
+  testWidgets('renders defaults and persists Wi-Fi-only toggle', (
+    tester,
+  ) async {
     final service = FakeWidgetUpdateService();
     await pumpCard(tester, service);
 
     expect(
-        find.text(UserStorage.l10n.earlyUpdateSettingsTitle), findsOneWidget);
+      find.text(UserStorage.l10n.earlyUpdateSettingsTitle),
+      findsOneWidget,
+    );
     expect(find.byType(Switch), findsNWidgets(3));
 
     await tester.tap(find.byType(Switch).at(1));
@@ -48,8 +51,9 @@ void main() {
     expect(settings.wifiOnlyDownloads, isFalse);
   });
 
-  testWidgets('manual check reveals update and download opens installer',
-      (tester) async {
+  testWidgets('manual check reveals update and download opens installer', (
+    tester,
+  ) async {
     final service = FakeWidgetUpdateService(update: testUpdate);
     await pumpCard(tester, service);
 
@@ -60,8 +64,10 @@ void main() {
       find.text(UserStorage.l10n.earlyUpdateFound('1.0.30', 113)),
       findsOneWidget,
     );
-    expect(find.text(UserStorage.l10n.earlyUpdateDownloadAndInstall),
-        findsOneWidget);
+    expect(
+      find.text(UserStorage.l10n.earlyUpdateDownloadAndInstall),
+      findsOneWidget,
+    );
 
     await tester.tap(find.text(UserStorage.l10n.earlyUpdateDownloadAndInstall));
     await tester.pump();
@@ -71,6 +77,44 @@ void main() {
     expect(
       find.text(UserStorage.l10n.earlyUpdateInstallStarted),
       findsOneWidget,
+    );
+  });
+
+  testWidgets('can install cached update package and clear cache', (
+    tester,
+  ) async {
+    final service = FakeWidgetUpdateService(
+      update: testUpdate,
+      cacheInfo: const AppUpdateCacheInfo(fileCount: 1, totalBytes: 4),
+      downloadedUpdateAvailable: true,
+    );
+    await pumpCard(tester, service);
+
+    await tester.tap(find.text(UserStorage.l10n.earlyUpdateCheckNow));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(UserStorage.l10n.earlyUpdateInstallDownloadedPackage),
+      findsOneWidget,
+    );
+    expect(
+      find.text(UserStorage.l10n.earlyUpdateClearDownloadedPackage),
+      findsOneWidget,
+    );
+
+    await tester.tap(
+      find.text(UserStorage.l10n.earlyUpdateClearDownloadedPackage),
+    );
+    await tester.pumpAndSettle();
+
+    expect(service.cacheCleared, isTrue);
+    expect(
+      find.text(UserStorage.l10n.earlyUpdateClearDownloadedPackageSuccess),
+      findsWidgets,
+    );
+    expect(
+      find.text(UserStorage.l10n.earlyUpdateClearDownloadedPackage),
+      findsNothing,
     );
   });
 }
@@ -87,18 +131,25 @@ const testUpdate = AppUpdateInfo(
 );
 
 class FakeWidgetUpdateService extends AppUpdateService {
-  FakeWidgetUpdateService({this.update})
-      : super(
-          environment: const AppUpdateEnvironment(
-            isAndroid: true,
-            isEarlyChannel: true,
-            flavorName: 'globalEarly',
-          ),
-        );
+  FakeWidgetUpdateService({
+    this.update,
+    AppUpdateCacheInfo? cacheInfo,
+    this.downloadedUpdateAvailable = false,
+  }) : cacheInfo = cacheInfo ?? AppUpdateCacheInfo.empty,
+       super(
+         environment: const AppUpdateEnvironment(
+           isAndroid: true,
+           isEarlyChannel: true,
+           flavorName: 'globalEarly',
+         ),
+       );
 
   final AppUpdateInfo? update;
+  AppUpdateCacheInfo cacheInfo;
+  bool downloadedUpdateAvailable;
   AppUpdateSettings settings = const AppUpdateSettings();
   bool installStarted = false;
+  bool cacheCleared = false;
 
   @override
   bool get isSupported => true;
@@ -129,6 +180,8 @@ class FakeWidgetUpdateService extends AppUpdateService {
     void Function(int receivedBytes, int totalBytes)? onProgress,
   }) async {
     onProgress?.call(4, 4);
+    cacheInfo = const AppUpdateCacheInfo(fileCount: 1, totalBytes: 4);
+    downloadedUpdateAvailable = true;
     return AppUpdateDownloadResult(update: update, apkPath: '/tmp/memex.apk');
   }
 
@@ -136,5 +189,24 @@ class FakeWidgetUpdateService extends AppUpdateService {
   Future<AppUpdateInstallResult> installUpdate(String apkPath) async {
     installStarted = true;
     return const AppUpdateInstallResult(AppUpdateInstallStatus.started);
+  }
+
+  @override
+  Future<bool> hasDownloadedUpdate(AppUpdateInfo update) async {
+    return downloadedUpdateAvailable;
+  }
+
+  @override
+  Future<AppUpdateCacheInfo> getDownloadedUpdateCacheInfo() async {
+    return cacheInfo;
+  }
+
+  @override
+  Future<int> clearDownloadedUpdates() async {
+    cacheCleared = true;
+    final deletedCount = cacheInfo.fileCount;
+    cacheInfo = AppUpdateCacheInfo.empty;
+    downloadedUpdateAvailable = false;
+    return deletedCount;
   }
 }

@@ -1259,6 +1259,9 @@
     }
   },
   "earlyUpdateDownloadingPercent": "Downloading update: {percent}%",
+  "earlyUpdateInstallDownloadedPackage": "Install downloaded package",
+  "earlyUpdateClearDownloadedPackage": "Clear downloaded package",
+  "earlyUpdateClearDownloadedPackageSuccess": "Downloaded update package cleared.",
   "earlyUpdateInstallStarted": "Android installer opened.",
   "earlyUpdateInstallPermissionRequired": "Allow Memex to install unknown apps, then tap download and install again.",
   "@earlyUpdateLastChecked": {
