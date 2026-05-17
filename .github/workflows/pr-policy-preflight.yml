@@ -92,10 +92,6 @@ jobs:
             echo "$MARKER"
             echo
             cat preflight.md
-            echo
-            echo "_Shadow mode: this result is informational and does not block merge._"
-            echo
-            echo "_Shadow mode：当前结果仅供参考，不会阻塞合并。_"
           } > preflight-comment.md
 
           existing_comment_id="$(gh api \

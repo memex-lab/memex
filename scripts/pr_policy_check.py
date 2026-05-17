@@ -2,8 +2,8 @@
 """Deterministic PR policy preflight for Memex.
 
 This script is intentionally boring: it reads git metadata and diffs, applies
-path/content rules, and emits machine-readable JSON. It does not execute PR
-code, run Flutter, or call an AI model.
+governance/content rules, and emits machine-readable JSON. It does not execute
+PR code, run Flutter, or call an AI model.
 """
 
 from __future__ import annotations
@@ -88,16 +88,7 @@ POLICY_CONTROL_PATTERNS = [
 
 HIGH_RISK_PATH_RULES: list[tuple[str, list[str], int, str, str]] = [
     ("github-config", [".github/**"], 55, "GitHub configuration or workflow changed.", "GitHub 配置或 workflow 发生变化。"),
-    ("android-platform", ["android/**"], 35, "Android platform, signing, flavor, or permission area changed.", "Android 平台、签名、flavor 或权限相关区域发生变化。"),
-    ("ios-platform", ["ios/**"], 35, "iOS platform, signing, entitlement, or permission area changed.", "iOS 平台、签名、entitlement 或权限相关区域发生变化。"),
-    ("dependency-config", ["pubspec.yaml", "pubspec.lock"], 30, "Dart/Flutter dependency configuration changed.", "Dart/Flutter 依赖配置发生变化。"),
     ("analysis-config", ["analysis_options.yaml"], 25, "Analyzer or lint configuration changed.", "Analyzer 或 lint 配置发生变化。"),
-    ("app-entrypoint", ["lib/main.dart", "lib/dependencies.dart", "lib/router.dart"], 40, "App entrypoint, dependency registration, or router changed.", "App 入口、依赖注册或路由发生变化。"),
-    ("user-storage", ["lib/utils/user_storage.dart"], 45, "User settings, identity, locale, storage, or LLM configuration boundary changed.", "用户设置、身份、语言、存储或 LLM 配置边界发生变化。"),
-    ("filesystem-storage", ["lib/data/services/file_system_service.dart", "lib/data/services/backup_service.dart"], 45, "Local workspace storage or backup boundary changed.", "本地 workspace 存储或备份边界发生变化。"),
-    ("event-task-pipeline", ["lib/data/services/global_event_bus.dart", "lib/data/services/local_task_executor.dart", "lib/data/services/event_bus_service.dart", "lib/data/services/task_handlers/**"], 45, "Event bus, persistent task, or background handler changed.", "事件总线、持久任务或后台处理器发生变化。"),
-    ("agent-system", ["lib/agent/**"], 45, "Agent, skill, prompt, tool, or file permission area changed.", "Agent、skill、prompt、tool 或文件权限区域发生变化。"),
-    ("timeline-rendering", ["lib/ui/**/timeline*_screen.dart", "lib/**/native_card_factory*.dart", "lib/**/native_widget_factory*.dart", "lib/**/card_attachment_factory*.dart"], 40, "Timeline orchestration or card rendering changed.", "Timeline 编排或卡片渲染发生变化。"),
     ("review-policy", POLICY_CONTROL_PATTERNS, 35, "Review policy, preflight script, or control file changed.", "Review policy、preflight 脚本或控制文件发生变化。"),
 ]
 
@@ -336,10 +327,10 @@ def evaluate_policy(
                 )
             else:
                 add(
-                    "high",
+                    "warn",
                     "generated-file",
-                    "Generated Dart file changed; maintainer should verify regeneration.",
-                    "Generated Dart 文件发生变化，maintainer 应确认 codegen 是有意且正确的。",
+                    "Generated Dart file changed with its matching source file.",
+                    "Generated Dart 文件和对应源文件一起发生变化。",
                     file.path,
                     30,
                 )
@@ -361,17 +352,17 @@ def evaluate_policy(
         single_file_lines = file.additions + file.deletions
         if single_file_lines > max_single_file_lines_low_risk:
             add(
-                "high",
+                "warn",
                 "large-single-file-change",
-                f"Single file changed {single_file_lines} lines, above low-risk threshold {max_single_file_lines_low_risk}.",
-                f"单个文件变更 {single_file_lines} 行，超过低风险阈值 {max_single_file_lines_low_risk}。",
+                f"Single file changed {single_file_lines} lines, above the review-attention threshold {max_single_file_lines_low_risk}.",
+                f"单个文件变更 {single_file_lines} 行，超过 review 关注阈值 {max_single_file_lines_low_risk}。",
                 file.path,
                 25,
             )
 
     if "lib/l10n/app_en.arb" in paths and "lib/l10n/app_zh.arb" not in paths:
         add(
-            "high",
+            "warn",
             "l10n-pair-mismatch",
             "English ARB changed without matching Chinese ARB update.",
             "英文 ARB 发生变化，但中文 ARB 没有同步变化。",
@@ -380,7 +371,7 @@ def evaluate_policy(
         )
     if "lib/l10n/app_zh.arb" in paths and "lib/l10n/app_en.arb" not in paths:
         add(
-            "high",
+            "warn",
             "l10n-pair-mismatch",
             "Chinese ARB changed without matching English ARB update.",
             "中文 ARB 发生变化，但英文 ARB 没有同步变化。",
@@ -391,18 +382,18 @@ def evaluate_policy(
     total_lines = sum(file.additions + file.deletions for file in changed_files)
     if len(changed_files) > max_files_low_risk:
         add(
-            "high",
+            "warn",
             "too-many-files",
-            f"PR changes {len(changed_files)} files, above low-risk threshold {max_files_low_risk}.",
-            f"PR 修改了 {len(changed_files)} 个文件，超过低风险阈值 {max_files_low_risk}。",
+            f"PR changes {len(changed_files)} files, above the review-attention threshold {max_files_low_risk}.",
+            f"PR 修改了 {len(changed_files)} 个文件，超过 review 关注阈值 {max_files_low_risk}。",
             score=20,
         )
     if total_lines > max_lines_low_risk:
         add(
-            "high",
+            "warn",
             "too-many-lines",
-            f"PR changes {total_lines} lines, above low-risk threshold {max_lines_low_risk}.",
-            f"PR 修改了 {total_lines} 行，超过低风险阈值 {max_lines_low_risk}。",
+            f"PR changes {total_lines} lines, above the review-attention threshold {max_lines_low_risk}.",
+            f"PR 修改了 {total_lines} 行，超过 review 关注阈值 {max_lines_low_risk}。",
             score=20,
         )
     if diff_truncated:
@@ -439,7 +430,7 @@ def evaluate_policy(
         if path_matches(path, SENSITIVE_KEYWORD_SCAN_PATTERNS):
             for pattern, score, message, message_zh in HIGH_RISK_KEYWORDS:
                 if re.search(pattern, added_text, flags=re.IGNORECASE):
-                    add("high", "sensitive-keyword", message, message_zh, path, score)
+                    add("warn", "sensitive-keyword", message, message_zh, path, score)
 
     reject = any(finding.severity == "reject" for finding in findings)
     high = any(finding.severity == "high" for finding in findings)
@@ -512,23 +503,40 @@ def result_to_markdown(result: PreflightResult) -> str:
     lines = [
         "# PR Policy Preflight / PR 规则预检",
         "",
-        f"- Decision / 判定: `{status}` / `{status_zh}`",
-        f"- Risk score / 风险分: `{result.risk_score}`",
-        f"- Changed files / 变更文件数: `{result.metrics['changed_files']}`",
-        f"- Changed lines / 变更行数: `{result.metrics['total_changed_lines']}`",
-        f"- Diff truncated / Diff 是否截断: `{str(result.metrics['diff_truncated']).lower()}`",
+        "## 中文",
         "",
+        f"- 判定：`{status_zh}`",
+        f"- 变更文件数：`{result.metrics['changed_files']}`",
+        f"- 变更行数：`{result.metrics['total_changed_lines']}`",
+        f"- Diff 是否截断：`{str(result.metrics['diff_truncated']).lower()}`",
     ]
     if result.findings:
-        lines.append("## Findings / 规则命中")
+        lines.extend(["", "### 规则命中"])
         for finding in result.findings:
             path = f" `{finding.path}`" if finding.path else ""
             severity_zh = severity_label_zh(finding.severity)
-            lines.append(f"- `{finding.severity}` / `{severity_zh}` `{finding.rule_id}`{path}")
-            lines.append(f"  - EN: {finding.message}")
-            lines.append(f"  - 中文: {finding.message_zh}")
+            lines.append(f"- `{severity_zh}` `{finding.rule_id}`{path}: {finding.message_zh}")
     else:
-        lines.append("No deterministic policy findings. / 未发现确定性规则问题。")
+        lines.extend(["", "未发现确定性规则问题。"])
+
+    lines.extend(
+        [
+            "",
+            "## English",
+            "",
+            f"- Decision: `{status}`",
+            f"- Changed files: `{result.metrics['changed_files']}`",
+            f"- Changed lines: `{result.metrics['total_changed_lines']}`",
+            f"- Diff truncated: `{str(result.metrics['diff_truncated']).lower()}`",
+        ]
+    )
+    if result.findings:
+        lines.extend(["", "### Findings"])
+        for finding in result.findings:
+            path = f" `{finding.path}`" if finding.path else ""
+            lines.append(f"- `{finding.severity}` `{finding.rule_id}`{path}: {finding.message}")
+    else:
+        lines.extend(["", "No deterministic policy findings."])
     return "\n".join(lines) + "\n"
 
 
@@ -614,12 +622,17 @@ def main(argv: list[str] | None = None) -> int:
             [
                 "# PR Policy Preflight / PR 规则预检",
                 "",
-                "- Decision / 判定: `REJECT` / `打回`",
-                "- Risk score / 风险分: `100`",
+                "## 中文",
                 "",
-                "Preflight failed to collect or evaluate PR context.",
+                "- 判定：`打回`",
                 "",
                 "Preflight 无法采集或评估 PR context。",
+                "",
+                "## English",
+                "",
+                "- Decision: `REJECT`",
+                "",
+                "Preflight failed to collect or evaluate PR context.",
                 "",
                 f"Error: `{exc}`",
                 "",

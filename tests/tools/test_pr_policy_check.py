@@ -42,7 +42,7 @@ class PolicyPreflightTest(unittest.TestCase):
 
         self.assertEqual(result.decision, DECISION_REJECT)
 
-    def test_generated_file_with_source_is_high_risk(self):
+    def test_generated_file_with_source_warns_only(self):
         result = run_policy(
             [
                 ChangedFile(status="M", path="lib/db/app_database.dart"),
@@ -50,7 +50,7 @@ class PolicyPreflightTest(unittest.TestCase):
             ]
         )
 
-        self.assertEqual(result.decision, DECISION_HIGH_RISK)
+        self.assertEqual(result.decision, DECISION_LOW_RISK)
         self.assertTrue(result.compliant)
 
     def test_docs_only_is_low_risk(self):
@@ -74,10 +74,19 @@ class PolicyPreflightTest(unittest.TestCase):
 
         self.assertEqual(result.decision, DECISION_REJECT)
 
-    def test_single_l10n_file_is_high_risk(self):
+    def test_single_l10n_file_warns_only(self):
         result = run_policy([ChangedFile(status="M", path="lib/l10n/app_en.arb")])
 
-        self.assertEqual(result.decision, DECISION_HIGH_RISK)
+        self.assertEqual(result.decision, DECISION_LOW_RISK)
+        self.assertTrue(any(finding.rule_id == "l10n-pair-mismatch" for finding in result.findings))
+
+    def test_app_code_path_is_not_high_risk_by_directory(self):
+        result = run_policy(
+            [ChangedFile(status="M", path="lib/main.dart", additions=4)],
+            pr_body="Test plan: flutter analyze && flutter test",
+        )
+
+        self.assertEqual(result.decision, DECISION_LOW_RISK)
 
     def test_production_change_without_test_signal_warns_only(self):
         result = run_policy(
@@ -95,8 +104,12 @@ class PolicyPreflightTest(unittest.TestCase):
 
         self.assertEqual(data["decision_zh"], "高风险")
         self.assertTrue(data["findings"][0]["message_zh"])
-        self.assertIn("Decision / 判定", markdown)
-        self.assertIn("Findings / 规则命中", markdown)
+        self.assertIn("## 中文", markdown)
+        self.assertIn("### 规则命中", markdown)
+        self.assertIn("## English", markdown)
+        self.assertIn("### Findings", markdown)
+        self.assertNotIn("Risk score", markdown)
+        self.assertNotIn("风险分", markdown)
 
 
 if __name__ == "__main__":
