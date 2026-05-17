@@ -27,7 +27,8 @@ Ordinary application code should not be primarily classified by directory-based
 risk rules. Code quality is handled by a separate normal `pull_request` CI job
 because that job executes PR code and must run without secrets and with minimal
 permissions. This repository uses `.github/workflows/pr-flutter-quality.yml` for
-that check.
+that check, with `scripts/compare_flutter_analyze.py` comparing base and PR
+analyzer output as a baseline.
 
 Recommended quality gates:
 

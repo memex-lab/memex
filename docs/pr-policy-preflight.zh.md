@@ -18,7 +18,8 @@ policy、lint 配置、secrets、签名材料和无法安全 review 的内容。
 
 普通业务代码不应主要依赖目录规则判定风险。代码质量由单独的普通 `pull_request`
 CI 负责，因为这类 job 会执行 PR 代码，必须运行在无 secrets、低权限的环境里。当前
-仓库使用 `.github/workflows/pr-flutter-quality.yml` 承担这部分检查。
+仓库使用 `.github/workflows/pr-flutter-quality.yml` 承担这部分检查，并通过
+`scripts/compare_flutter_analyze.py` 对 base 与 PR 的 analyzer 输出做 baseline 对比。
 
 推荐质量门禁：
 
