@@ -29,6 +29,11 @@ class AppFlavor {
   static bool get isStable => _channel == AppChannelType.stable;
   static bool get isEarly => _channel == AppChannelType.early;
   static bool get isDev => _channel == AppChannelType.dev;
+  static String? get homeBadgeLabel => switch (_channel) {
+        AppChannelType.stable => null,
+        AppChannelType.early => 'EARLY',
+        AppChannelType.dev => 'DEV',
+      };
   static String get name => switch ((_current, _channel)) {
         (AppFlavorType.cn, AppChannelType.dev) => 'cnDev',
         (AppFlavorType.global, AppChannelType.dev) => 'globalDev',

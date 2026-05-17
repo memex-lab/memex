@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'package:memex/domain/models/timeline_card_model.dart';
 import 'package:memex/db/app_database.dart';
@@ -28,6 +27,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:memex/ui/settings/widgets/model_config_list_page.dart';
 import 'package:memex/ui/settings/widgets/system_authorization_page.dart';
 import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
+import 'package:memex/ui/core/widgets/memex_brand_title.dart';
 import 'package:memex/ui/core/widgets/character_avatar.dart';
 import 'package:memex/ui/character/widgets/persona_avatar_button.dart';
 import 'package:memex/ui/schedule/widgets/schedule_aggregator_screen.dart';
@@ -339,30 +339,14 @@ class TimelineScreenState extends State<TimelineScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  RichText(
-                    text: TextSpan(
-                      children: [
-                        TextSpan(
-                          text: 'Meme',
-                          style: GoogleFonts.bricolageGrotesque(
-                            fontSize: 32,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.41,
-                            height: 22 / 32,
-                            color: const Color(0xFF0A0A0A),
-                          ),
-                        ),
-                        TextSpan(
-                          text: 'x',
-                          style: GoogleFonts.bricolageGrotesque(
-                            fontSize: 32,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.41,
-                            height: 22 / 32,
-                            color: const Color(0xFF5B6CFF),
-                          ),
-                        ),
-                      ],
+                  const Flexible(
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: MemexBrandTitle(),
+                      ),
                     ),
                   ),
                   // 4 buttons: chat, notification, companion, user avatar

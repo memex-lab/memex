@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:memex/ui/knowledge/view_models/knowledge_base_viewmodel.dart';
 import 'package:memex/ui/knowledge/widgets/knowledge/knowledge_file_card.dart';
 import 'package:memex/ui/knowledge/widgets/knowledge_search_delegate.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'knowledge_directory_page.dart';
 import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
+import 'package:memex/ui/core/widgets/memex_brand_title.dart';
 
 /// Knowledge base page. Receives [viewModel] from parent (Compass-style).
 class KnowledgeBaseScreen extends StatefulWidget {
@@ -48,30 +48,7 @@ class KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
           backgroundColor: const Color(
               0xFFF7F8FA), // Match Timeline, Insights and bottom nav background
           appBar: AppBar(
-            title: RichText(
-              text: TextSpan(
-                children: [
-                  TextSpan(
-                    text: 'Meme',
-                    style: GoogleFonts.bricolageGrotesque(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.4,
-                      color: const Color(0xFF0A0A0A),
-                    ),
-                  ),
-                  TextSpan(
-                    text: 'x',
-                    style: GoogleFonts.bricolageGrotesque(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.4,
-                      color: const Color(0xFF5B6CFF),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            title: const MemexBrandTitle(),
             backgroundColor: const Color(0xFFF7F8FA),
             surfaceTintColor: const Color(0xFFF7F8FA),
             elevation: 0,
