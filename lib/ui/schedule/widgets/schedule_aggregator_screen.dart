@@ -122,12 +122,7 @@ class _ScheduleAggregatorScreenState
         builder: (context, constraints) {
           return ListView(
             physics: const AlwaysScrollableScrollPhysics(),
-            children: [
-              SizedBox(
-                height: constraints.maxHeight,
-                child: child,
-              ),
-            ],
+            children: [SizedBox(height: constraints.maxHeight, child: child)],
           );
         },
       ),
@@ -135,9 +130,7 @@ class _ScheduleAggregatorScreenState
   }
 
   Widget _buildLoadingState() {
-    return const Center(
-      child: CircularProgressIndicator(),
-    );
+    return const Center(child: CircularProgressIndicator());
   }
 
   Widget _buildEmptyState(String? error) {
@@ -193,7 +186,7 @@ class _ScheduleAggregatorScreenState
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -202,24 +195,34 @@ class _ScheduleAggregatorScreenState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  UserStorage.l10n.scheduleAggregation,
-                  maxLines: 2,
+                  UserStorage.l10n.schedule,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.bricolageGrotesque(
-                    fontSize: 28,
+                    fontSize: 26,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 0,
                     color: AppColors.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  _buildDateSubtitle(),
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textTertiary,
-                    fontWeight: FontWeight.w500,
-                  ),
+                Consumer<ScheduleAggregatorViewModel>(
+                  builder: (context, vm, child) {
+                    final label = _buildUpdatedSubtitle(vm);
+                    if (label.isEmpty) return const SizedBox.shrink();
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 3),
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textTertiary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ],
             ),
@@ -231,8 +234,10 @@ class _ScheduleAggregatorScreenState
               return GestureDetector(
                 onTap: vm.isLoading ? null : _onUpdate,
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       colors: [Color(0xFF5B6CFF), Color(0xFF8B5CF6)],
@@ -257,8 +262,9 @@ class _ScheduleAggregatorScreenState
                               height: 16,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor:
-                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 6),
@@ -272,8 +278,11 @@ class _ScheduleAggregatorScreenState
                             ),
                           ]
                         : [
-                            const Icon(Icons.auto_awesome,
-                                size: 16, color: Colors.white),
+                            const Icon(
+                              Icons.auto_awesome,
+                              size: 16,
+                              color: Colors.white,
+                            ),
                             const SizedBox(width: 6),
                             Text(
                               UserStorage.l10n.update,
@@ -295,55 +304,62 @@ class _ScheduleAggregatorScreenState
   }
 
   Widget _buildDirtyBanner(String? reason) {
+    final message = reason == null || reason.isEmpty
+        ? UserStorage.l10n.scheduleAggregationDirtyReason
+        : reason;
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: const Color(0xFFFFF8E7),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFFFD166)),
-        ),
-        child: Row(
-          children: [
-            const Icon(
-              Icons.update,
-              size: 18,
-              color: Color(0xFF9A6A00),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                reason == null || reason.isEmpty
-                    ? UserStorage.l10n.scheduleAggregationDirtyReason
-                    : reason,
-                style: const TextStyle(
-                  fontSize: 13,
-                  height: 1.35,
-                  color: Color(0xFF765000),
-                  fontWeight: FontWeight.w600,
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+      child: Tooltip(
+        message: message,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFF8E7),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: const Color(0xFFFFD166)),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.update, size: 16, color: Color(0xFF9A6A00)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  UserStorage.l10n.scheduleBriefingNeedsUpdate,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF765000),
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: 8),
-            TextButton(
-              onPressed: _onUpdate,
-              style: TextButton.styleFrom(
-                minimumSize: const Size(0, 32),
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                foregroundColor: const Color(0xFF765000),
+              const SizedBox(width: 8),
+              TextButton(
+                onPressed: _onUpdate,
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(0, 30),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  foregroundColor: const Color(0xFF765000),
+                ),
+                child: Text(UserStorage.l10n.update),
               ),
-              child: Text(UserStorage.l10n.update),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  String _buildDateSubtitle() {
-    final now = DateTime.now();
-    return DateFormat.yMMMMEEEEd(UserStorage.l10n.localeName).format(now);
+  String _buildUpdatedSubtitle(ScheduleAggregatorViewModel vm) {
+    final generatedAt = vm.aggregation?.generatedAt;
+    if (generatedAt == null) return '';
+    final time = DateFormat.Md(
+      UserStorage.l10n.localeName,
+    ).add_Hm().format(generatedAt);
+    return UserStorage.l10n.scheduleBriefingUpdated(time);
   }
 }

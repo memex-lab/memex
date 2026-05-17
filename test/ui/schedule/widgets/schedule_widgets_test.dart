@@ -29,89 +29,108 @@ void main() {
 
   group('MagazineNarrativeTab', () {
     testWidgets(
-        'renders complex LLM schedule output and task toggle affordance',
-        (tester) async {
-      final tappedCards = <String>[];
-      final toggledTasks = <String>[];
+      'renders complex LLM schedule output and task toggle affordance',
+      (tester) async {
+        final tappedCards = <String>[];
+        final toggledTasks = <String>[];
 
-      await tester.pumpWidget(
-        buildHost(
-          MagazineNarrativeTab(
-            aggregation: _complexAggregation(),
-            itemStatuses: const {
-              'task-clean': ScheduleItemStatus.completed,
-            },
-            onTapCardId: tappedCards.add,
-            onToggleTask: toggledTasks.add,
+        await tester.pumpWidget(
+          buildHost(
+            MagazineNarrativeTab(
+              aggregation: _complexAggregation(),
+              itemStatuses: const {'task-clean': ScheduleItemStatus.completed},
+              onTapCardId: tappedCards.add,
+              onToggleTask: toggledTasks.add,
+            ),
           ),
-        ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Visa renewal'), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('schedule_overview_lens')),
+          findsNothing,
+        );
+        expect(find.byKey(const ValueKey('schedule_lens_day_0')), findsNothing);
+        expect(find.byKey(const ValueKey('schedule_lens_done')), findsNothing);
+        expect(
+          find.text('A heavy week with travel prep and home tasks.'),
+          findsOneWidget,
+        );
+        expect(find.text('Deadline pressure'), findsOneWidget);
+
+        await tester.ensureVisible(
+          find.text('Two fixed events overlap with the cleaning window.'),
+        );
+        await tester.pumpAndSettle();
+        expect(
+          find.text('Two fixed events overlap with the cleaning window.'),
+          findsOneWidget,
+        );
+
+        await tester.ensureVisible(find.text('Clean the apartment'));
+        await tester.pumpAndSettle();
+        expect(find.text('Clean the apartment'), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('schedule_task_toggle_task-clean')),
+          findsOneWidget,
+        );
+        expect(find.byIcon(Icons.check), findsWidgets);
+
+        await tester.tap(
+          find.byKey(const ValueKey('schedule_task_toggle_task-clean')),
+        );
+        await tester.pump();
+
+        expect(toggledTasks, ['task-clean']);
+
+        expect(find.text('Dentist appointment'), findsOneWidget);
+        await tester.tap(find.text('Dentist appointment'));
+        await tester.pump();
+
+        expect(tappedCards, contains('event-dentist'));
+
+        await tester.scrollUntilVisible(
+          find.text('Done grocery order'),
+          240,
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Done grocery order'), findsOneWidget);
+      },
+    );
+
+    testWidgets('omits anchor lens and keeps same-day times compact', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildHost(MagazineNarrativeTab(aggregation: _complexAggregation())),
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Visa renewal'), findsOneWidget);
       expect(
-          find.byKey(const ValueKey('schedule_overview_lens')), findsOneWidget);
-      expect(find.byKey(const ValueKey('schedule_lens_day_0')), findsOneWidget);
-      expect(find.byKey(const ValueKey('schedule_lens_conflicts')),
-          findsOneWidget);
-      expect(find.byKey(const ValueKey('schedule_lens_done')), findsOneWidget);
-
-      Future<void> tapLens(Key key) async {
-        final finder = find.byKey(key);
-        await tester.ensureVisible(finder);
-        await tester.pumpAndSettle();
-        await tester.tap(finder);
-        await tester.pumpAndSettle();
-      }
-
-      await tapLens(const ValueKey('schedule_lens_done'));
-      expect(find.text('Done grocery order'), findsOneWidget);
-
-      await tapLens(const ValueKey('schedule_lens_conflicts'));
-      expect(find.text('Two fixed events overlap with the cleaning window.'),
-          findsOneWidget);
-
-      await tapLens(const ValueKey('schedule_lens_day_0'));
-      expect(find.text('Clean the apartment'), findsOneWidget);
-      expect(find.byKey(const ValueKey('schedule_task_toggle_task-clean')),
-          findsOneWidget);
-      expect(find.byIcon(Icons.check), findsWidgets);
-
-      await tester
-          .tap(find.byKey(const ValueKey('schedule_task_toggle_task-clean')));
-      await tester.pump();
-
-      expect(toggledTasks, ['task-clean']);
-
-      expect(find.text('Dentist appointment'), findsOneWidget);
-      await tester.tap(find.text('Dentist appointment'));
-      await tester.pump();
-
-      expect(tappedCards, contains('event-dentist'));
-
-      await tapLens(const ValueKey('schedule_lens_done'));
-      expect(find.text('Done grocery order'), findsOneWidget);
-    });
-
-    testWidgets('overview lens jumps to timeline days', (tester) async {
-      await tester.pumpWidget(
-        buildHost(
-          MagazineNarrativeTab(
-            aggregation: _complexAggregation(),
-          ),
-        ),
+        find.byKey(const ValueKey('schedule_overview_lens')),
+        findsNothing,
       );
-      await tester.pumpAndSettle();
 
-      await tester.tap(find.byKey(const ValueKey('schedule_lens_day_0')));
+      await tester.ensureVisible(find.text('Clean the apartment'));
       await tester.pumpAndSettle();
 
       expect(find.text('Clean the apartment'), findsOneWidget);
       expect(find.text('Dentist appointment'), findsOneWidget);
+      expect(find.text('10:00'), findsOneWidget);
+      expect(
+        find.text(
+          DateFormat.MMMd(
+            UserStorage.l10n.localeName,
+          ).add_Hm().format(DateTime(2026, 5, 15, 10)),
+        ),
+        findsNothing,
+      );
     });
 
-    testWidgets('handles narrow screens with long hero metadata',
-        (tester) async {
+    testWidgets('handles narrow screens with long hero metadata', (
+      tester,
+    ) async {
       await tester.binding.setSurfaceSize(const Size(360, 720));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -135,15 +154,17 @@ void main() {
   });
 
   group('ScheduleBriefingCard', () {
-    testWidgets('formats generated and item times from offset timestamps',
-        (tester) async {
+    testWidgets('formats generated and item times from offset timestamps', (
+      tester,
+    ) async {
       final generatedAt = DateTime.parse('2026-05-14T17:39:22+08:00').toLocal();
       final itemStart = DateTime.parse('2026-05-15T10:00:00+08:00').toLocal();
-      final generatedLabel = DateFormat.Md(UserStorage.l10n.localeName)
-          .add_Hm()
-          .format(generatedAt);
-      final itemLabel =
-          DateFormat.Md(UserStorage.l10n.localeName).add_Hm().format(itemStart);
+      final generatedLabel = DateFormat.Md(
+        UserStorage.l10n.localeName,
+      ).add_Hm().format(generatedAt);
+      final itemLabel = DateFormat.Md(
+        UserStorage.l10n.localeName,
+      ).add_Hm().format(itemStart);
 
       await tester.pumpWidget(
         buildHost(
@@ -175,8 +196,10 @@ void main() {
       expect(find.text(itemLabel), findsOneWidget);
       expect(find.textContaining('+08:00'), findsNothing);
       expect(find.textContaining('2026-05-15T10:00'), findsNothing);
-      expect(find.text(UserStorage.l10n.scheduleBriefingConflictCount(1)),
-          findsOneWidget);
+      expect(
+        find.text(UserStorage.l10n.scheduleBriefingConflictCount(1)),
+        findsOneWidget,
+      );
     });
   });
 }

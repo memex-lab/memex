@@ -6,7 +6,6 @@ import 'package:memex/utils/user_storage.dart';
 import '../../../../domain/models/schedule_aggregation_model.dart';
 import '../../models/schedule_item.dart';
 import '../../../core/cards/ui/glass_card.dart';
-import '../../../core/themes/app_colors.dart';
 
 /// Magazine Narrative Tab renders the AI-curated schedule aggregation.
 class MagazineNarrativeTab extends StatefulWidget {
@@ -28,57 +27,6 @@ class MagazineNarrativeTab extends StatefulWidget {
 }
 
 class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
-  final _scrollController = ScrollController();
-  final _conflictsKey = GlobalKey();
-  final _completedKey = GlobalKey();
-  final Map<int, GlobalKey> _dayKeys = {};
-
-  GlobalKey _dayKey(int index) {
-    return _dayKeys.putIfAbsent(index, GlobalKey.new);
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _scrollToKey(
-    GlobalKey key, {
-    double fallbackFraction = 0,
-  }) async {
-    final context = key.currentContext;
-    if (context != null) {
-      await Scrollable.ensureVisible(
-        context,
-        duration: const Duration(milliseconds: 280),
-        curve: Curves.easeOutCubic,
-        alignment: 0.08,
-      );
-      return;
-    }
-    if (!_scrollController.hasClients) return;
-
-    final position = _scrollController.position;
-    final targetOffset = position.maxScrollExtent * fallbackFraction;
-    await _scrollController.animateTo(
-      targetOffset.clamp(position.minScrollExtent, position.maxScrollExtent),
-      duration: const Duration(milliseconds: 280),
-      curve: Curves.easeOutCubic,
-    );
-
-    if (!mounted) return;
-    final resolvedContext = key.currentContext;
-    if (resolvedContext == null) return;
-    if (!resolvedContext.mounted) return;
-    await Scrollable.ensureVisible(
-      resolvedContext,
-      duration: const Duration(milliseconds: 160),
-      curve: Curves.easeOutCubic,
-      alignment: 0.08,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return _buildAgentMode(widget.aggregation);
@@ -93,215 +41,72 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
       // Hero card
       if (agg.heroItem != null) ...[
         _buildAgentHeroCard(agg.heroItem!),
-        const SizedBox(height: 28),
+        const SizedBox(height: 16),
       ],
 
-      // Editorial intro
-      if (agg.editorialIntro.isNotEmpty) ...[
-        _buildAgentEditorialIntro(agg.editorialIntro),
-        const SizedBox(height: 28),
-      ],
-
-      // Quote blocks
-      if (agg.quoteBlocks.isNotEmpty) ...[
-        ...agg.quoteBlocks.map(_buildAgentQuoteBlock),
-        const SizedBox(height: 28),
+      // Overview and reminders
+      if (agg.editorialIntro.isNotEmpty || agg.quoteBlocks.isNotEmpty) ...[
+        _buildAgentSummaryPanel(agg),
+        const SizedBox(height: 18),
       ],
 
       // Conflicts
       if (agg.conflicts.isNotEmpty) ...[
-        KeyedSubtree(
-          key: _conflictsKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: agg.conflicts.map(_buildAgentConflict).toList(),
-          ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: agg.conflicts.map(_buildAgentConflict).toList(),
         ),
-        const SizedBox(height: 28),
+        const SizedBox(height: 18),
       ],
 
       // Timeline
       if (agg.timeline.isNotEmpty)
         for (final entry in agg.timeline.indexed) ...[
-          KeyedSubtree(
-            key: _dayKey(entry.$1),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildSectionTitle(entry.$2.dayLabel.toUpperCase()),
-                const SizedBox(height: 16),
-                ...entry.$2.items.map(_buildAgentTimelineCard),
-                const SizedBox(height: 28),
-              ],
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSectionTitle(entry.$2.dayLabel.toUpperCase()),
+              const SizedBox(height: 10),
+              ...entry.$2.items.map(
+                (item) =>
+                    _buildAgentTimelineCard(item, dayDate: entry.$2.dayDate),
+              ),
+              const SizedBox(height: 20),
+            ],
           ),
         ],
 
       if (agg.completed.isNotEmpty) ...[
-        KeyedSubtree(
-          key: _completedKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildSectionTitle(
-                UserStorage.l10n.scheduleDone.toUpperCase(),
-              ),
-              const SizedBox(height: 16),
-              ...agg.completed.map(_buildAgentDoneCard),
-            ],
-          ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSectionTitle(UserStorage.l10n.scheduleDone.toUpperCase()),
+            const SizedBox(height: 10),
+            ...agg.completed.map(_buildAgentDoneCard),
+          ],
         ),
       ],
     ];
 
     return CustomScrollView(
       key: const ValueKey('schedule_magazine_list'),
-      controller: _scrollController,
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-          sliver: SliverList.list(
-            children: [
-              _buildMagazineHeader(),
-            ],
-          ),
-        ),
-        SliverPersistentHeader(
-          pinned: true,
-          delegate: _ScheduleLensHeaderDelegate(
-            child: _buildOverviewLens(agg),
-          ),
-        ),
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(20, 24, 20, 220),
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 220),
           sliver: SliverList.list(children: bodyItems),
         ),
       ],
     );
   }
 
-  Widget _buildOverviewLens(ScheduleAggregationModel agg) {
-    final chips = <Widget>[
-      _buildLensChip(
-        key: const ValueKey('schedule_lens_updated'),
-        icon: Icons.auto_awesome,
-        label: UserStorage.l10n.scheduleBriefingUpdated(
-          DateFormat.Md(UserStorage.l10n.localeName).add_Hm().format(
-                agg.generatedAt,
-              ),
-        ),
-      ),
-      for (final entry in agg.timeline.indexed)
-        _buildLensChip(
-          key: ValueKey('schedule_lens_day_${entry.$1}'),
-          icon: Icons.view_agenda_outlined,
-          label: '${_dayChipLabel(entry.$2)} · ${entry.$2.items.length}',
-          onTap: () => _scrollToKey(
-            _dayKey(entry.$1),
-            fallbackFraction: (0.64 + entry.$1 * 0.08).clamp(0.64, 0.92),
-          ),
-        ),
-      if (agg.conflicts.isNotEmpty)
-        _buildLensChip(
-          key: const ValueKey('schedule_lens_conflicts'),
-          icon: Icons.warning_amber_rounded,
-          label: UserStorage.l10n.scheduleBriefingConflictCount(
-            agg.conflicts.length,
-          ),
-          onTap: () => _scrollToKey(_conflictsKey, fallbackFraction: 0.5),
-          accentColor: const Color(0xFFB45309),
-          backgroundColor: const Color(0xFFFFF7ED),
-        ),
-      if (agg.completed.isNotEmpty)
-        _buildLensChip(
-          key: const ValueKey('schedule_lens_done'),
-          icon: Icons.check_circle_outline,
-          label: UserStorage.l10n.scheduleBriefingDoneCount(
-            agg.completed.length,
-          ),
-          onTap: () => _scrollToKey(_completedKey, fallbackFraction: 1),
-          accentColor: const Color(0xFF047857),
-          backgroundColor: const Color(0xFFECFDF5),
-        ),
-    ];
-
-    return SingleChildScrollView(
-      key: const ValueKey('schedule_overview_lens'),
-      scrollDirection: Axis.horizontal,
-      physics: const BouncingScrollPhysics(),
-      child: Row(
-        children: [
-          for (final entry in chips.indexed) ...[
-            if (entry.$1 > 0) const SizedBox(width: 8),
-            entry.$2,
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLensChip({
-    required Key key,
-    required IconData icon,
-    required String label,
-    VoidCallback? onTap,
-    Color accentColor = const Color(0xFF334155),
-    Color backgroundColor = const Color(0xFFF8FAFC),
-  }) {
-    return Material(
-      key: key,
-      color: backgroundColor,
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Container(
-          height: 36,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: accentColor.withValues(alpha: 0.12)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 15, color: accentColor),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: accentColor,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  String _dayChipLabel(TimelineDay day) {
-    if (day.dayLabel.trim().isNotEmpty) {
-      return day.dayLabel.trim();
-    }
-    if (day.dayDate != null) {
-      return DateFormat.E(UserStorage.l10n.localeName).format(day.dayDate!);
-    }
-    return UserStorage.l10n.scheduleThisWeek;
-  }
-
   Widget _buildAgentHeroCard(HeroItem item) {
     return GestureDetector(
       onTap: () => widget.onTapCardId?.call(item.cardId),
       child: Container(
-        height: 280,
+        height: 188,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
           gradient: const LinearGradient(
             colors: [Color(0xFF172554), Color(0xFF0F766E)],
             begin: Alignment.topLeft,
@@ -313,7 +118,7 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
             Positioned.fill(
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: Colors.white.withValues(alpha: 0.08),
                   ),
@@ -321,14 +126,16 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(8),
@@ -343,32 +150,33 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 10),
                   Text(
                     item.title,
                     style: GoogleFonts.inter(
-                      fontSize: 26,
+                      fontSize: 21,
                       fontWeight: FontWeight.w700,
                       height: 1.2,
-                      letterSpacing: -0.3,
+                      letterSpacing: 0,
                       color: Colors.white,
                     ),
-                    maxLines: 3,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 12),
-                  if (item.description != null)
+                  if (item.description != null) ...[
+                    const SizedBox(height: 6),
                     Text(
                       item.description!,
                       style: TextStyle(
-                        fontSize: 14,
-                        height: 1.5,
+                        fontSize: 13,
+                        height: 1.4,
                         color: Colors.white.withValues(alpha: 0.7),
                       ),
-                      maxLines: 2,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                  const SizedBox(height: 16),
+                  ],
+                  const SizedBox(height: 10),
                   Row(
                     children: [
                       Icon(
@@ -380,9 +188,9 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
                       Flexible(
                         child: Text(
                           item.startTime != null
-                              ? DateFormat.MMMEd(UserStorage.l10n.localeName)
-                                  .add_Hm()
-                                  .format(item.startTime!)
+                              ? DateFormat.MMMEd(
+                                  UserStorage.l10n.localeName,
+                                ).add_Hm().format(item.startTime!)
                               : UserStorage.l10n.scheduleTbd,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -423,83 +231,103 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
     );
   }
 
-  Widget _buildAgentEditorialIntro(String text) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          UserStorage.l10n.scheduleWeekOverview,
-          style: GoogleFonts.inter(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: const Color(0xFF0A0A0A),
-          ),
-        ),
-        const SizedBox(height: 10),
-        Text(
-          text,
-          style: const TextStyle(
-            fontSize: 15,
-            height: 1.7,
-            color: Color(0xFF4A5565),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAgentQuoteBlock(QuoteBlock block) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFEF3C7),
-        borderRadius: BorderRadius.circular(16),
-        border: Border(
-          left: BorderSide(
-            color: block.priority == 'high'
-                ? const Color(0xFFF59E0B)
-                : const Color(0xFF99A1AF),
-            width: 4,
-          ),
-        ),
-      ),
+  Widget _buildAgentSummaryPanel(ScheduleAggregationModel agg) {
+    return GlassCard(
+      borderRadius: 14,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(
-                Icons.access_time_filled,
-                size: 16,
-                color: block.priority == 'high'
-                    ? const Color(0xFFD97706)
-                    : const Color(0xFF99A1AF),
+          if (agg.editorialIntro.isNotEmpty) ...[
+            Text(
+              UserStorage.l10n.scheduleWeekOverview,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0,
+                color: const Color(0xFF0A0A0A),
               ),
-              const SizedBox(width: 8),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              agg.editorialIntro,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 13,
+                height: 1.35,
+                color: Color(0xFF4A5565),
+              ),
+            ),
+          ],
+          if (agg.editorialIntro.isNotEmpty && agg.quoteBlocks.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            const Divider(height: 1, color: Color(0xFFE2E8F0)),
+            const SizedBox(height: 10),
+          ],
+          for (final entry in agg.quoteBlocks.indexed) ...[
+            if (entry.$1 > 0) const SizedBox(height: 8),
+            _buildAgentReminderRow(entry.$2),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAgentReminderRow(QuoteBlock block) {
+    final isHighPriority = block.priority == 'high';
+    final accentColor =
+        isHighPriority ? const Color(0xFFD97706) : const Color(0xFF64748B);
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 24,
+          height: 24,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: accentColor.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            isHighPriority
+                ? Icons.priority_high_rounded
+                : Icons.access_time_rounded,
+            size: 14,
+            color: accentColor,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               Text(
                 block.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: GoogleFonts.inter(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: accentColor,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                block.content,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
                   fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: block.priority == 'high'
-                      ? const Color(0xFFD97706)
-                      : const Color(0xFF99A1AF),
+                  height: 1.3,
+                  color: Color(0xFF4A5565),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          Text(
-            block.content,
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF92400E),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -519,10 +347,7 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
           Expanded(
             child: Text(
               conflict.description,
-              style: const TextStyle(
-                fontSize: 14,
-                color: Color(0xFFB91C1C),
-              ),
+              style: const TextStyle(fontSize: 14, color: Color(0xFFB91C1C)),
             ),
           ),
         ],
@@ -530,7 +355,7 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
     );
   }
 
-  Widget _buildAgentTimelineCard(TimelineItem item) {
+  Widget _buildAgentTimelineCard(TimelineItem item, {DateTime? dayDate}) {
     final status =
         widget.itemStatuses[item.cardId] ?? _parseStatus(item.status);
     final isCompleted = status == ScheduleItemStatus.completed;
@@ -569,17 +394,14 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
                     ],
                   ),
                 ),
-                Container(
-                  width: 2,
-                  height: 60,
-                  color: const Color(0xFFE2E8F0),
-                ),
+                Container(width: 2, height: 60, color: const Color(0xFFE2E8F0)),
               ],
             ),
             const SizedBox(width: 14),
             Expanded(
               child: GlassCard(
-                padding: const EdgeInsets.all(16),
+                borderRadius: 14,
+                padding: const EdgeInsets.all(14),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -607,7 +429,9 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
                         if (item.priority == 3 && !isCompleted)
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: const Color(0xFFFEF3C7),
                               borderRadius: BorderRadius.circular(4),
@@ -626,9 +450,7 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
                     if (item.startTime != null) ...[
                       const SizedBox(height: 6),
                       Text(
-                        DateFormat.MMMEd(UserStorage.l10n.localeName)
-                            .add_Hm()
-                            .format(item.startTime!),
+                        _formatTimelineItemTime(item.startTime!, dayDate),
                         style: const TextStyle(
                           fontSize: 12,
                           color: Color(0xFF99A1AF),
@@ -678,6 +500,7 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
               child: Opacity(
                 opacity: 0.5,
                 child: GlassCard(
+                  borderRadius: 14,
                   padding: const EdgeInsets.all(12),
                   child: Row(
                     children: [
@@ -699,8 +522,9 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
                       ),
                       if (item.completedAt != null)
                         Text(
-                          DateFormat.MMMd(UserStorage.l10n.localeName)
-                              .format(item.completedAt!),
+                          DateFormat.MMMd(
+                            UserStorage.l10n.localeName,
+                          ).format(item.completedAt!),
                           style: const TextStyle(
                             fontSize: 11,
                             color: Color(0xFF99A1AF),
@@ -713,37 +537,6 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildMagazineHeader() {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            UserStorage.l10n.scheduleThisWeek.toUpperCase(),
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              letterSpacing: 1.5,
-              color: const Color(0xFF99A1AF),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            DateFormat.MMMMd(UserStorage.l10n.localeName)
-                .format(DateTime.now()),
-            style: GoogleFonts.inter(
-              fontSize: 32,
-              fontWeight: FontWeight.w700,
-              letterSpacing: -0.5,
-              color: const Color(0xFF0A0A0A),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -767,11 +560,7 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
           ),
         ),
         child: isCompleted
-            ? const Icon(
-                Icons.check,
-                size: 13,
-                color: Colors.white,
-              )
+            ? const Icon(Icons.check, size: 13, color: Colors.white)
             : null,
       ),
     );
@@ -790,14 +579,21 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
           ),
         ),
         const SizedBox(width: 12),
-        const Expanded(
-          child: Divider(
-            color: Color(0xFFE2E8F0),
-            height: 1,
-          ),
-        ),
+        const Expanded(child: Divider(color: Color(0xFFE2E8F0), height: 1)),
       ],
     );
+  }
+
+  String _formatTimelineItemTime(DateTime startTime, DateTime? dayDate) {
+    if (dayDate != null &&
+        startTime.year == dayDate.year &&
+        startTime.month == dayDate.month &&
+        startTime.day == dayDate.day) {
+      return DateFormat.Hm(UserStorage.l10n.localeName).format(startTime);
+    }
+    return DateFormat.MMMd(
+      UserStorage.l10n.localeName,
+    ).add_Hm().format(startTime);
   }
 
   bool _isTaskItem(TimelineItem item) {
@@ -816,50 +612,5 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
       'overdue' => ScheduleItemStatus.overdue,
       _ => ScheduleItemStatus.pending,
     };
-  }
-}
-
-class _ScheduleLensHeaderDelegate extends SliverPersistentHeaderDelegate {
-  final Widget child;
-
-  _ScheduleLensHeaderDelegate({required this.child});
-
-  static const double _height = 60;
-
-  @override
-  double get minExtent => _height;
-
-  @override
-  double get maxExtent => _height;
-
-  @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        boxShadow: overlapsContent
-            ? [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ]
-            : null,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
-        child: child,
-      ),
-    );
-  }
-
-  @override
-  bool shouldRebuild(covariant _ScheduleLensHeaderDelegate oldDelegate) {
-    return oldDelegate.child != child;
   }
 }
