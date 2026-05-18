@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:memex/agent/agent_controller.util.dart';
 import 'package:memex/agent/card_agent/prompts.dart';
 import 'package:memex/agent/memory/memory_management.dart';
@@ -9,6 +11,74 @@ import 'package:memex/data/services/file_system_service.dart';
 import 'package:logging/logging.dart';
 import 'package:memex/agent/agent_cache_helper.dart';
 import 'package:memex/utils/user_storage.dart';
+
+class CardRunCompletionEvidence {
+  final String factId;
+  final bool requireSaveToolCall;
+  final bool hasMatchingSuccessfulSaveToolCall;
+  final bool cardExists;
+  final String? cardPath;
+  final String? persistedFactId;
+  final String? status;
+  final bool hasTitle;
+  final bool hasUiConfigs;
+  final String? failureReason;
+
+  const CardRunCompletionEvidence({
+    required this.factId,
+    required this.requireSaveToolCall,
+    required this.hasMatchingSuccessfulSaveToolCall,
+    required this.cardExists,
+    this.cardPath,
+    this.persistedFactId,
+    this.status,
+    required this.hasTitle,
+    required this.hasUiConfigs,
+    this.failureReason,
+  });
+
+  bool get isComplete {
+    final saveToolSatisfied =
+        !requireSaveToolCall || hasMatchingSuccessfulSaveToolCall;
+    return saveToolSatisfied &&
+        cardExists &&
+        persistedFactId == factId &&
+        status == 'completed' &&
+        hasTitle &&
+        hasUiConfigs;
+  }
+
+  List<String> get missingRequirements {
+    final missing = <String>[];
+    if (requireSaveToolCall && !hasMatchingSuccessfulSaveToolCall) {
+      missing.add('matching_successful_save_timeline_card_tool_call');
+    }
+    if (!cardExists) missing.add('card_file_exists');
+    if (persistedFactId != factId) missing.add('persisted_fact_id_matches');
+    if (status != 'completed') missing.add('status_completed');
+    if (!hasTitle) missing.add('title_present');
+    if (!hasUiConfigs) missing.add('ui_configs_present');
+    return missing;
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'fact_id': factId,
+      'require_save_tool_call': requireSaveToolCall,
+      'has_matching_successful_save_tool_call':
+          hasMatchingSuccessfulSaveToolCall,
+      'card_exists': cardExists,
+      'card_path': cardPath,
+      'persisted_fact_id': persistedFactId,
+      'status': status,
+      'has_title': hasTitle,
+      'has_ui_configs': hasUiConfigs,
+      'failure_reason': failureReason,
+      'is_complete': isComplete,
+      'missing_requirements': missingRequirements,
+    };
+  }
+}
 
 class CardAgent {
   static final Logger _logger = Logger('CardAgent');
@@ -75,7 +145,7 @@ class CardAgent {
 
   /// Static method to run the agent with user message
   /// This method handles responseId caching and agent initialization internally
-  static Future<void> runWithContent({
+  static Future<CardRunCompletionEvidence> runWithContent({
     required LLMClient client,
     required ModelConfig modelConfig,
     required String userId,
@@ -177,11 +247,20 @@ $instruction
 
       if (runCount > maxRetries) break;
 
-      final check = _checkCardRunComplete(agent.state.history.messages);
-      if (check) break;
+      final completionEvidence = await inspectCardRunCompletion(
+        userId: userId,
+        factId: factId,
+        messages: agent.state.history.messages,
+      );
+      if (completionEvidence.isComplete) {
+        _logger.info(
+            'Card Agent completed for $factId: ${completionEvidence.toJson()}');
+        return completionEvidence;
+      }
 
       final reminderText =
-          '- Call save_timeline_card to save the Timeline Card (this call is required to complete the task)';
+          '- Call save_timeline_card to save the Timeline Card (this call is required to complete the task)\n'
+          '- Current persisted card check failed: ${completionEvidence.missingRequirements.join(', ')}';
       messagesToRun = [
         UserMessage([
           TextPart(
@@ -189,14 +268,63 @@ $instruction
         ])
       ];
     }
+
+    final completionEvidence = await inspectCardRunCompletion(
+      userId: userId,
+      factId: factId,
+      messages: agent.state.history.messages,
+    );
+    if (completionEvidence.isComplete) {
+      _logger.info(
+          'Card Agent completed for $factId: ${completionEvidence.toJson()}');
+      return completionEvidence;
+    }
+    throw StateError(
+      'Card Agent did not produce a completed card for $factId. '
+      'Evidence: ${jsonEncode(completionEvidence.toJson())}',
+    );
   }
 
-  /// Returns true if history contains a successful save_timeline_card call.
-  static bool _checkCardRunComplete(List<LLMMessage> messages) {
+  /// Inspect both tool history and the persisted card file before considering
+  /// the Card Agent task complete.
+  static Future<CardRunCompletionEvidence> inspectCardRunCompletion({
+    required String userId,
+    required String factId,
+    List<LLMMessage> messages = const [],
+    bool requireSaveToolCall = true,
+  }) async {
+    final fileSystem = FileSystemService.instance;
+    final card = await fileSystem.readCardFile(userId, factId);
+    final cardPath = fileSystem.getCardPath(userId, factId);
+    return CardRunCompletionEvidence(
+      factId: factId,
+      requireSaveToolCall: requireSaveToolCall,
+      hasMatchingSuccessfulSaveToolCall:
+          _hasMatchingSuccessfulSaveToolCall(messages, factId),
+      cardExists: card != null,
+      cardPath: cardPath,
+      persistedFactId: card?.factId,
+      status: card?.status,
+      hasTitle: (card?.title?.trim().isNotEmpty ?? false),
+      hasUiConfigs: card?.uiConfigs.isNotEmpty ?? false,
+      failureReason: card?.failureReason,
+    );
+  }
+
+  static bool _hasMatchingSuccessfulSaveToolCall(
+    List<LLMMessage> messages,
+    String factId,
+  ) {
     for (final msg in messages) {
       if (msg is! FunctionExecutionResultMessage) continue;
       for (final r in msg.results) {
-        if (!r.isError && r.name == 'save_timeline_card') return true;
+        if (r.isError || r.name != 'save_timeline_card') continue;
+        try {
+          final arguments = jsonDecode(r.arguments) as Map<String, dynamic>;
+          if (arguments['fact_id'] == factId) return true;
+        } catch (_) {
+          // Ignore malformed historical arguments.
+        }
       }
     }
     return false;

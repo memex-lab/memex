@@ -32,7 +32,7 @@ CardData applyRuleBasedTemplate({
   final title = _deriveTitle(pureText);
 
   return card.copyWith(
-    status: 'processing',
+    status: 'completed',
     title: title.isEmpty ? null : title,
     uiConfigs: [UiConfig(templateId: templateId, data: data)],
   );
