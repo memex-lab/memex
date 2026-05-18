@@ -18,6 +18,60 @@ import 'package:memex/utils/command.dart';
 
 enum TimelineViewMode { timeline, insight }
 
+/// Upserts a card into a timeline list by stable card id.
+///
+/// New local submissions and card-added events can describe the same fact, so
+/// the in-memory list must be idempotent even when multiple sources race.
+@visibleForTesting
+List<TimelineCardModel> upsertTimelineCardById(
+  List<TimelineCardModel> cards,
+  TimelineCardModel card,
+) {
+  return [card, ...cards.where((existing) => existing.id != card.id)];
+}
+
+/// Replaces all existing copies of [updatedCard] while preserving the first
+/// loaded position. If the card is not currently visible, the list is unchanged.
+@visibleForTesting
+List<TimelineCardModel> replaceTimelineCardById(
+  List<TimelineCardModel> cards,
+  TimelineCardModel updatedCard,
+) {
+  var inserted = false;
+  var found = false;
+  final next = <TimelineCardModel>[];
+
+  for (final card in cards) {
+    if (card.id != updatedCard.id) {
+      next.add(card);
+      continue;
+    }
+
+    found = true;
+    if (!inserted) {
+      next.add(updatedCard);
+      inserted = true;
+    }
+  }
+
+  return found ? next : cards;
+}
+
+/// Keeps the first occurrence of each card id, preserving timeline order.
+@visibleForTesting
+List<TimelineCardModel> dedupeTimelineCardsById(List<TimelineCardModel> cards) {
+  final seen = <String>{};
+  final next = <TimelineCardModel>[];
+
+  for (final card in cards) {
+    if (seen.add(card.id)) {
+      next.add(card);
+    }
+  }
+
+  return next;
+}
+
 /// ViewModel for the Timeline page. Holds cards, tags, loading state, and
 /// delegates data access to [MemexRouter]. Call [init] once after creation.
 class TimelineViewModel extends ChangeNotifier {
@@ -255,7 +309,7 @@ class TimelineViewModel extends ChangeNotifier {
   }
 
   void addCard(TimelineCardModel card) {
-    cards.insert(0, card);
+    cards = upsertTimelineCardById(cards, card);
     isSubmitting = false;
     if (card.status == 'processing') {
       _startPollingIfNeeded();
@@ -264,10 +318,7 @@ class TimelineViewModel extends ChangeNotifier {
   }
 
   void updateCard(TimelineCardModel updatedCard) {
-    final index = cards.indexWhere((c) => c.id == updatedCard.id);
-    if (index != -1) {
-      cards[index] = updatedCard;
-    }
+    cards = replaceTimelineCardById(cards, updatedCard);
     _checkAndStopPollingIfNeeded();
     notifyListeners();
   }
@@ -324,8 +375,9 @@ class TimelineViewModel extends ChangeNotifier {
     List<TimelineCardModel> list, {
     required bool hasMoreAfterList,
   }) async {
-    final withoutBriefing =
-        list.where((card) => card.id != scheduleBriefingCardId).toList();
+    final withoutBriefing = dedupeTimelineCardsById(
+      list,
+    ).where((card) => card.id != scheduleBriefingCardId).toList();
     if (!_shouldShowScheduleBriefing) return withoutBriefing;
 
     final briefingResult = await _router.fetchScheduleBriefingCard();

@@ -1041,7 +1041,8 @@ class TimelineScreenState extends State<TimelineScreen> {
           final card = entry.card;
           final cardIndex = entry.cardIndex;
           final isDemoTarget = _isDemoTargetCard(vm.cards, cardIndex);
-          return _TimelineEntryItem(
+          return TimelineEntryItem(
+            key: ValueKey(card.id),
             card: card,
             isDemoTarget: isDemoTarget,
             attachments: vm.attachments[card.id] ?? const [],
@@ -1124,13 +1125,14 @@ bool _isDemoTargetCard(List<TimelineCardModel> cards, int index) {
   return index == firstUserCardIndex;
 }
 
-class _TimelineEntryItem extends StatefulWidget {
+class TimelineEntryItem extends StatefulWidget {
   final TimelineCardModel card;
   final VoidCallback onTap;
   final bool isDemoTarget;
   final List<CardAttachmentData> attachments;
 
-  const _TimelineEntryItem({
+  const TimelineEntryItem({
+    super.key,
     required this.card,
     required this.onTap,
     required this.attachments,
@@ -1138,10 +1140,10 @@ class _TimelineEntryItem extends StatefulWidget {
   });
 
   @override
-  State<_TimelineEntryItem> createState() => _TimelineEntryItemState();
+  State<TimelineEntryItem> createState() => _TimelineEntryItemState();
 }
 
-class _TimelineEntryItemState extends State<_TimelineEntryItem> {
+class _TimelineEntryItemState extends State<TimelineEntryItem> {
   bool _isClassicMode = false;
 
   void _toggleClassicMode() {
