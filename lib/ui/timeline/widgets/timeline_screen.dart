@@ -898,24 +898,6 @@ class TimelineScreenState extends State<TimelineScreen> {
       return const Center(child: AgentLogoLoading());
     }
 
-    if (vm.isSubmitting) {
-      if (vm.cards.isEmpty) {
-        return const Center(child: AgentLogoLoading());
-      } else {
-        return Stack(
-          children: [
-            _buildTimelineContent(vm),
-            Container(
-              color: Colors.white.withOpacity(0.7),
-              child: const Center(
-                child: AgentLogoLoading(),
-              ),
-            ),
-          ],
-        );
-      }
-    }
-
     return _buildTimelineContent(vm);
   }
 
