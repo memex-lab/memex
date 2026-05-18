@@ -46,4 +46,47 @@ void main() {
     expect(merged['fact-b']!.single.id, 'system_action_a2');
     expect(merged['fact-c'], isEmpty);
   });
+
+  test('mergeAttachmentsForFacts is stable for the same sort key', () {
+    const later = SystemAction(
+      id: 'a2',
+      actionType: 'calendar',
+      actionData: '{}',
+      status: 'pending',
+      factId: 'fact-a',
+      createdAt: 1,
+      updatedAt: 1,
+    );
+    const earlier = SystemAction(
+      id: 'a1',
+      actionType: 'calendar',
+      actionData: '{}',
+      status: 'pending',
+      factId: 'fact-a',
+      createdAt: 1,
+      updatedAt: 1,
+    );
+
+    final merged = mergeAttachmentsForFacts(
+      factIds: ['fact-a'],
+      actions: [later, earlier],
+      requests: const [],
+    );
+
+    expect(merged['fact-a']!.map((item) => item.id), [
+      'system_action_a1',
+      'system_action_a2',
+    ]);
+  });
+
+  test('mergeAttachmentsForFacts returns an empty map for no facts', () {
+    expect(
+      mergeAttachmentsForFacts(
+        factIds: const [],
+        actions: const [],
+        requests: const [],
+      ),
+      isEmpty,
+    );
+  });
 }

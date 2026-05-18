@@ -232,7 +232,11 @@ Map<String, List<CardAttachmentData>> mergeAttachmentsForFacts({
     );
   }
   for (final attachments in map.values) {
-    attachments.sort((a, b) => a.sortKey.compareTo(b.sortKey));
+    attachments.sort((a, b) {
+      final byKey = a.sortKey.compareTo(b.sortKey);
+      if (byKey != 0) return byKey;
+      return a.id.compareTo(b.id);
+    });
   }
   return map;
 }
