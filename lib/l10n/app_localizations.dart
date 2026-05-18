@@ -3404,6 +3404,36 @@ abstract class AppLocalizations {
   /// **'Restore this backup'**
   String get restoreThisBackup;
 
+  /// No description provided for @deleteThisBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this backup'**
+  String get deleteThisBackup;
+
+  /// No description provided for @confirmDeleteBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete backup?'**
+  String get confirmDeleteBackup;
+
+  /// No description provided for @confirmDeleteBackupMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {fileName}? This removes the stored backup file and cannot be undone.'**
+  String confirmDeleteBackupMessage(Object fileName);
+
+  /// No description provided for @backupDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup deleted: {fileName}'**
+  String backupDeleted(Object fileName);
+
+  /// No description provided for @backupDeleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not delete backup: {error}'**
+  String backupDeleteFailed(Object error);
+
   /// No description provided for @creatingSafetySnapshot.
   ///
   /// In en, this message translates to:

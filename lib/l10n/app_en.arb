@@ -846,6 +846,26 @@
   "noStoredBackups": "Automatic backups will appear here after the first snapshot.",
   "refresh": "Refresh",
   "restoreThisBackup": "Restore this backup",
+  "deleteThisBackup": "Delete this backup",
+  "confirmDeleteBackup": "Delete backup?",
+  "@confirmDeleteBackupMessage": {
+    "placeholders": {
+      "fileName": {}
+    }
+  },
+  "confirmDeleteBackupMessage": "Delete {fileName}? This removes the stored backup file and cannot be undone.",
+  "@backupDeleted": {
+    "placeholders": {
+      "fileName": {}
+    }
+  },
+  "backupDeleted": "Backup deleted: {fileName}",
+  "@backupDeleteFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "backupDeleteFailed": "Could not delete backup: {error}",
   "creatingSafetySnapshot": "Creating safety snapshot...",
   "@autoBackupCreated": {
     "placeholders": {

@@ -575,6 +575,31 @@ class BackupService {
     }
   }
 
+  /// Delete a stored automatic/safety backup snapshot.
+  static Future<void> deleteStoredBackup(BackupSnapshot snapshot) async {
+    if (snapshot.isAndroidDocument) {
+      await _deleteAndroidDocument(snapshot.documentUri!);
+      return;
+    }
+
+    final filePath = snapshot.filePath;
+    if (filePath == null || filePath.isEmpty) {
+      throw Exception('Backup snapshot has no deletable source');
+    }
+
+    final normalizedPath = _normalizeFilePath(filePath);
+    if (!isMemexBackupFile(normalizedPath)) {
+      throw const InvalidBackupFileException(
+        'Invalid backup file. Please select a .memex file.',
+      );
+    }
+
+    final file = File(normalizedPath);
+    if (await file.exists()) {
+      await file.delete();
+    }
+  }
+
   /// List automatic/safety backups from both the platform default directory and
   /// the user's Android SAF directory, if configured.
   static Future<List<BackupSnapshot>> listStoredBackups() async {
@@ -926,13 +951,17 @@ class BackupService {
       final documentUri = snapshot.documentUri;
       if (documentUri == null) continue;
       try {
-        await _backupStorageChannel.invokeMethod<void>('deleteDocument', {
-          'documentUri': documentUri,
-        });
+        await _deleteAndroidDocument(documentUri);
       } catch (e) {
         _logger.warning('Failed to delete old Android backup $documentUri: $e');
       }
     }
+  }
+
+  static Future<void> _deleteAndroidDocument(String documentUri) async {
+    await _backupStorageChannel.invokeMethod<void>('deleteDocument', {
+      'documentUri': documentUri,
+    });
   }
 
   static Future<BackupFileInfo> inspectBackup(String backupFilePath) async {

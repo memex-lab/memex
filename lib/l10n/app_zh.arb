@@ -846,6 +846,26 @@
   "noStoredBackups": "创建第一个自动快照后会显示在这里。",
   "refresh": "刷新",
   "restoreThisBackup": "恢复此备份",
+  "deleteThisBackup": "删除此备份",
+  "confirmDeleteBackup": "删除备份？",
+  "@confirmDeleteBackupMessage": {
+    "placeholders": {
+      "fileName": {}
+    }
+  },
+  "confirmDeleteBackupMessage": "删除 {fileName}？这会移除已保存的备份文件，且无法撤销。",
+  "@backupDeleted": {
+    "placeholders": {
+      "fileName": {}
+    }
+  },
+  "backupDeleted": "备份已删除：{fileName}",
+  "@backupDeleteFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "backupDeleteFailed": "无法删除备份：{error}",
   "creatingSafetySnapshot": "正在创建安全快照...",
   "@autoBackupCreated": {
     "placeholders": {

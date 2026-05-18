@@ -1797,6 +1797,27 @@ class AppLocalizationsZh extends AppLocalizations {
   String get restoreThisBackup => '恢复此备份';
 
   @override
+  String get deleteThisBackup => '删除此备份';
+
+  @override
+  String get confirmDeleteBackup => '删除备份？';
+
+  @override
+  String confirmDeleteBackupMessage(Object fileName) {
+    return '删除 $fileName？这会移除已保存的备份文件，且无法撤销。';
+  }
+
+  @override
+  String backupDeleted(Object fileName) {
+    return '备份已删除：$fileName';
+  }
+
+  @override
+  String backupDeleteFailed(Object error) {
+    return '无法删除备份：$error';
+  }
+
+  @override
   String get creatingSafetySnapshot => '正在创建安全快照...';
 
   @override

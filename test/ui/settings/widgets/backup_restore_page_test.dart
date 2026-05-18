@@ -73,6 +73,90 @@ void main() {
     },
   );
 
+  testWidgets('deletes one backup from a mixed history after confirmation', (
+    tester,
+  ) async {
+    const oldAutoName = 'memex_auto_2026-05-14T10-00-00.memex';
+    const latestAutoName = 'memex_auto_2026-05-15T10-00-00.memex';
+    const safetyName = 'memex_safety_before_restore_2026-05-15T10-05-00.memex';
+    final oldAutoSnapshot = BackupSnapshot(
+      id: 'old-auto',
+      name: oldAutoName,
+      createdAt: DateTime(2026, 5, 14, 10),
+      sizeBytes: 3,
+      filePath: '/tmp/$oldAutoName',
+    );
+    final latestAutoSnapshot = BackupSnapshot(
+      id: 'android-latest-auto',
+      name: latestAutoName,
+      createdAt: DateTime(2026, 5, 15, 10),
+      sizeBytes: 5 * 1024 * 1024,
+      documentUri: 'content://backups/latest',
+    );
+    final safetySnapshot = BackupSnapshot(
+      id: 'local-safety',
+      name: safetyName,
+      createdAt: DateTime(2026, 5, 15, 10, 5),
+      sizeBytes: 8,
+      filePath: '/tmp/$safetyName',
+    );
+    final snapshots = <BackupSnapshot>[
+      safetySnapshot,
+      latestAutoSnapshot,
+      oldAutoSnapshot,
+    ];
+    final deletedIds = <String>[];
+
+    await _pumpBackupPage(
+      tester,
+      listStoredBackups: () async => List<BackupSnapshot>.of(snapshots),
+      deleteStoredBackup: (snapshot) async {
+        deletedIds.add(snapshot.id);
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+        snapshots.removeWhere((item) => item.id == snapshot.id);
+      },
+    );
+
+    await _scrollUntilVisible(tester, find.text(oldAutoName));
+    await tester.tap(find.byKey(const ValueKey('backup-delete-old-auto')));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text(UserStorage.l10n.confirmDeleteBackup), findsOneWidget);
+    expect(
+      find.text(UserStorage.l10n.confirmDeleteBackupMessage(oldAutoName)),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text(UserStorage.l10n.cancel));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(deletedIds, isEmpty);
+    expect(find.text(oldAutoName), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('backup-delete-old-auto')));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.text(UserStorage.l10n.delete));
+    await tester.pump();
+    await tester.runAsync(() async {
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+    });
+    await tester.pumpAndSettle();
+
+    expect(deletedIds, ['old-auto']);
+    expect(find.text(oldAutoName), findsNothing);
+    expect(find.text(latestAutoName), findsOneWidget);
+    expect(find.text(safetyName), findsOneWidget);
+
+    await _scrollUntilVisible(
+      tester,
+      find.text(UserStorage.l10n.backupDeleted(oldAutoName)),
+    );
+    expect(
+      find.text(UserStorage.l10n.backupDeleted(oldAutoName)),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('manual snapshot button refreshes list and status', (
     tester,
   ) async {
@@ -178,6 +262,7 @@ Future<void> _pumpBackupPage(
   Future<int> Function()? estimateBackupSize,
   Future<List<BackupSnapshot>> Function()? listStoredBackups,
   AutoBackupCreator? createAutoBackup,
+  StoredBackupDeleter? deleteStoredBackup,
 }) async {
   await tester.pumpWidget(
     MaterialApp(
@@ -189,6 +274,7 @@ Future<void> _pumpBackupPage(
         currentBackupLocationLabel: () async => '/tmp/Backups',
         listStoredBackups: listStoredBackups ?? () async => const [],
         createAutoBackup: createAutoBackup,
+        deleteStoredBackup: deleteStoredBackup,
       ),
     ),
   );

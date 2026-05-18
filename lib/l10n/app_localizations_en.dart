@@ -1860,6 +1860,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get restoreThisBackup => 'Restore this backup';
 
   @override
+  String get deleteThisBackup => 'Delete this backup';
+
+  @override
+  String get confirmDeleteBackup => 'Delete backup?';
+
+  @override
+  String confirmDeleteBackupMessage(Object fileName) {
+    return 'Delete $fileName? This removes the stored backup file and cannot be undone.';
+  }
+
+  @override
+  String backupDeleted(Object fileName) {
+    return 'Backup deleted: $fileName';
+  }
+
+  @override
+  String backupDeleteFailed(Object error) {
+    return 'Could not delete backup: $error';
+  }
+
+  @override
   String get creatingSafetySnapshot => 'Creating safety snapshot...';
 
   @override
