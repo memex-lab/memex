@@ -62,6 +62,137 @@ void main() {
       expect(_text(result), contains('fact id: 2026/05/18.md#ts_999'));
     });
 
+    test('save_timeline_card accepts JSON-encoded list arguments', () async {
+      final tool = TimelineCardSkill(
+        forceActivate: true,
+        stopAfterSuccessSaveCard: true,
+      ).tools!.singleWhere((tool) => tool.name == 'save_timeline_card');
+      final date = DateTime(2026, 5, 18);
+      const factId = '2026/05/18.md#ts_3';
+      await FileSystemService.instance.appendToDailyFactFile(
+        userId,
+        date,
+        '## <id:ts_3> 11:35:17 "{}"\n\nMorning Memex project notes.',
+      );
+
+      final result = await _runToolCall(
+        tool: tool,
+        arguments: {
+          'fact_id': factId,
+          'title': 'Memex project notes',
+          'ui_configs': jsonEncode([
+            {
+              'template_id': 'article',
+              'data': {
+                'title': 'Memex project notes',
+                'body': 'Morning Memex project notes.',
+              },
+            },
+          ]),
+          'tags': jsonEncode([
+            {'name': 'Project'},
+            {'name': 'Emotion'},
+          ]),
+        },
+        metadata: {'userId': userId},
+      );
+
+      final card = await FileSystemService.instance.readCardFile(
+        userId,
+        factId,
+      );
+
+      expect(result.isError, isFalse);
+      expect(card?.title, 'Memex project notes');
+      expect(card?.uiConfigs.single.templateId, 'article');
+      expect(card?.tags, ['Project', 'Emotion']);
+    });
+
+    test('save_timeline_card still accepts native list arguments', () async {
+      final tool = TimelineCardSkill(
+        forceActivate: true,
+        stopAfterSuccessSaveCard: true,
+      ).tools!.singleWhere((tool) => tool.name == 'save_timeline_card');
+      final date = DateTime(2026, 5, 18);
+      const factId = '2026/05/18.md#ts_4';
+      await FileSystemService.instance.appendToDailyFactFile(
+        userId,
+        date,
+        '## <id:ts_4> 11:42:00 "{}"\n\nNative list tool args.',
+      );
+
+      final result = await _runToolCall(
+        tool: tool,
+        arguments: {
+          'fact_id': factId,
+          'title': 'Native list args',
+          'ui_configs': [
+            {
+              'template_id': 'article',
+              'data': {'body': 'Native list tool args.'},
+            },
+          ],
+          'tags': [
+            {'name': 'Knowledge'},
+          ],
+        },
+        metadata: {'userId': userId},
+      );
+
+      final card = await FileSystemService.instance.readCardFile(
+        userId,
+        factId,
+      );
+
+      expect(result.isError, isFalse);
+      expect(card?.uiConfigs.single.templateId, 'article');
+      expect(card?.tags, ['Knowledge']);
+    });
+
+    test('save_timeline_card rejects malformed JSON list strings', () async {
+      final tool = TimelineCardSkill(
+        forceActivate: true,
+        stopAfterSuccessSaveCard: true,
+      ).tools!.singleWhere((tool) => tool.name == 'save_timeline_card');
+
+      final result = await _runToolCall(
+        tool: tool,
+        arguments: {
+          'fact_id': '2026/05/18.md#ts_5',
+          'title': 'Malformed list args',
+          'ui_configs': '[{"template_id":"article"',
+        },
+        metadata: {'userId': userId},
+      );
+
+      expect(result.isError, isTrue);
+      expect(_text(result), contains('ui_configs must be valid JSON'));
+    });
+
+    test('save_timeline_card rejects JSON strings that are not arrays',
+        () async {
+      final tool = TimelineCardSkill(
+        forceActivate: true,
+        stopAfterSuccessSaveCard: true,
+      ).tools!.singleWhere((tool) => tool.name == 'save_timeline_card');
+
+      final result = await _runToolCall(
+        tool: tool,
+        arguments: {
+          'fact_id': '2026/05/18.md#ts_6',
+          'title': 'Wrong list shape',
+          'ui_configs': jsonEncode({
+            'template_id': 'article',
+            'data': {'body': 'This should have been wrapped in a list.'},
+          }),
+        },
+        metadata: {'userId': userId},
+      );
+
+      expect(result.isError, isTrue);
+      expect(_text(result), contains('ui_configs must be an array'));
+    });
+
     test('SaveComment invalid input is marked as a tool error', () async {
       final tool = CommentToolFactory(
         userId: userId,

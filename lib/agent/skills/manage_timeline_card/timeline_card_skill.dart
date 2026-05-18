@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:logging/logging.dart';
 import 'package:memex/agent/prompts.dart';
@@ -156,11 +158,11 @@ class TimelineCardSkill extends Skill {
         },
         executable: (String fact_id,
             String title,
-            List ui_configs,
+            dynamic ui_configs,
             String? address,
             String? user_mark_address,
             String? content_creation_date,
-            List? tags) async {
+            dynamic tags) async {
           final fileService = FileSystemService.instance;
 
           // Access context
@@ -181,13 +183,16 @@ class TimelineCardSkill extends Skill {
             if (title.isEmpty) {
               throw ArgumentError("title is required");
             }
+            final uiConfigsList =
+                _normalizeListArgument(ui_configs, 'ui_configs');
+
             // ui_configs: must be array, each element must be dict with valid template_id and data
-            if (ui_configs.isEmpty) {
+            if (uiConfigsList.isEmpty) {
               throw ArgumentError("ui_configs must be provided and non-empty.");
             }
             final List<Map<String, dynamic>> finalUiConfigs = [];
-            for (var i = 0; i < ui_configs.length; i++) {
-              final raw = ui_configs[i];
+            for (var i = 0; i < uiConfigsList.length; i++) {
+              final raw = uiConfigsList[i];
               if (raw is! Map) {
                 throw ArgumentError(
                     "ui_configs[$i] must be an object (Map), got ${raw.runtimeType}.");
@@ -245,8 +250,10 @@ class TimelineCardSkill extends Skill {
             final tagNames = <String>[];
             final newTagsToCreate = <Map<String, dynamic>>[];
 
-            if (tags != null) {
-              for (var tagObj in tags) {
+            final tagsList =
+                tags == null ? null : _normalizeListArgument(tags, 'tags');
+            if (tagsList != null) {
+              for (var tagObj in tagsList) {
                 final extractMap = Map<String, dynamic>.from(tagObj as Map);
                 var tagName = (extractMap['name'] as String?)?.trim() ?? '';
 
@@ -382,5 +389,30 @@ class TimelineCardSkill extends Skill {
         },
       ),
     ];
+  }
+
+  static List<dynamic> _normalizeListArgument(dynamic value, String name) {
+    if (value is List) {
+      return value;
+    }
+    if (value is String) {
+      final trimmed = value.trim();
+      if (trimmed.isEmpty) {
+        throw ArgumentError('$name must be a non-empty array.');
+      }
+      try {
+        final decoded = jsonDecode(trimmed);
+        if (decoded is List) {
+          return decoded;
+        }
+        throw ArgumentError(
+            '$name must be an array or a JSON-encoded array string.');
+      } on FormatException catch (e) {
+        throw ArgumentError('$name must be valid JSON when passed as a string: '
+            '${e.message}');
+      }
+    }
+    throw ArgumentError(
+        '$name must be an array or a JSON-encoded array string, got ${value.runtimeType}.');
   }
 }
