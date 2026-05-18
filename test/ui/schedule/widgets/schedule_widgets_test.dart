@@ -125,6 +125,52 @@ void main() {
       );
     });
 
+    testWidgets(
+      'renders grouped subtasks and toggles them without navigating',
+      (tester) async {
+        await tester.binding.setSurfaceSize(const Size(420, 1000));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        final tappedCards = <String>[];
+        final toggledSubtasks = <String>[];
+
+        await tester.pumpWidget(
+          buildHost(
+            MagazineNarrativeTab(
+              aggregation: _subtaskAggregation(),
+              onTapCardId: tappedCards.add,
+              onToggleSubtask: (cardId, index) {
+                toggledSubtasks.add('$cardId:$index');
+              },
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Visa checklist'), findsOneWidget);
+        expect(find.text('1/5'), findsOneWidget);
+        expect(find.text('Fill application'), findsOneWidget);
+        expect(find.text('Print confirmation'), findsOneWidget);
+        expect(find.text('Book appointment'), findsOneWidget);
+        expect(find.text('Collect passport photos'), findsNothing);
+
+        await tester.tap(
+          find.byKey(const ValueKey('schedule_subtask_toggle_task-visa_1')),
+        );
+        await tester.pump();
+
+        expect(toggledSubtasks, ['task-visa:1']);
+        expect(tappedCards, isEmpty);
+
+        await tester.tap(
+          find.byKey(const ValueKey('schedule_subtasks_expand_task-visa')),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Collect passport photos'), findsOneWidget);
+        expect(find.text('Buy mailing envelope'), findsOneWidget);
+      },
+    );
+
     testWidgets('recomputes relative day labels from day dates', (
       tester,
     ) async {
@@ -269,9 +315,7 @@ void main() {
       );
     });
 
-    testWidgets('renders fresh output from a task-scoped run', (
-      tester,
-    ) async {
+    testWidgets('renders fresh output from a task-scoped run', (tester) async {
       await tester.pumpWidget(
         buildHost(
           MagazineNarrativeTab(
@@ -341,6 +385,42 @@ void main() {
       );
     });
   });
+}
+
+ScheduleAggregationModel _subtaskAggregation() {
+  return ScheduleAggregationModel(
+    id: 'agg_subtasks',
+    generatedAt: DateTime(2026, 5, 14, 18),
+    timeRange: TimeRange(
+      from: DateTime(2026, 5, 14),
+      to: DateTime(2026, 5, 21),
+    ),
+    timeline: [
+      TimelineDay(
+        dayLabel: 'Friday',
+        dayDate: DateTime(2026, 5, 15),
+        items: [
+          TimelineItem(
+            cardId: 'task-visa',
+            title: 'Visa checklist',
+            type: 'task',
+            status: 'pending',
+            startTime: DateTime(2026, 5, 15, 10),
+            subtasks: const [
+              ScheduleSubtask(
+                title: 'Collect passport photos',
+                completed: true,
+              ),
+              ScheduleSubtask(title: 'Fill application'),
+              ScheduleSubtask(title: 'Print confirmation'),
+              ScheduleSubtask(title: 'Book appointment'),
+              ScheduleSubtask(title: 'Buy mailing envelope'),
+            ],
+          ),
+        ],
+      ),
+    ],
+  );
 }
 
 ScheduleAggregationModel _complexAggregation({

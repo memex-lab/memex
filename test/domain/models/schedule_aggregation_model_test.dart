@@ -8,10 +8,7 @@ void main() {
         'id': 'schedule_agg_2026_04_23',
         'generated_at': '2026-04-23T08:00:00Z',
         'version': 1,
-        'time_range': {
-          'from': '2026-04-21',
-          'to': '2026-04-30',
-        },
+        'time_range': {'from': '2026-04-21', 'to': '2026-04-30'},
         'hero_item': {
           'card_id': '2026/04/25.md#ts_1',
           'title': 'Q3 产品发布会',
@@ -77,6 +74,7 @@ void main() {
       expect(model.timeline.first.dayLabel, 'Today');
       expect(model.timeline.first.items.length, 1);
       expect(model.timeline.first.items.first.title, '设计评审');
+      expect(model.timeline.first.items.first.subtasks, isEmpty);
       expect(model.completed.length, 1);
       expect(model.completed.first.title, '架构评审');
       expect(model.conflicts.length, 1);
@@ -87,10 +85,7 @@ void main() {
       final yaml = {
         'id': 'schedule_agg_2026_04_23',
         'generated_at': '2026-04-23T08:00:00Z',
-        'time_range': {
-          'from': '2026-04-21',
-          'to': '2026-04-30',
-        },
+        'time_range': {'from': '2026-04-21', 'to': '2026-04-30'},
       };
 
       final model = ScheduleAggregationModel.fromYaml(yaml);
@@ -112,80 +107,88 @@ void main() {
       expect(model.timeline, isEmpty);
     });
 
-    test('parses LLM-style scalar variants and ignores malformed list entries',
-        () {
-      final model = ScheduleAggregationModel.fromYaml({
-        'id': 20260426,
-        'generated_at': DateTime.utc(2026, 4, 26, 1),
-        'version': '2',
-        'time_range': {
-          'from': DateTime(2026, 4, 26),
-          'to': '2026-05-03',
-        },
-        'hero_item': {
-          'id': 42,
-          'title': 123,
-          'priority': 'urgent',
-        },
-        'quote_blocks': [
-          {
-            'title': '风险',
-            'content': 88,
-            'priority': 'high',
-            'related_card_id': 42,
-          },
-          'not a map',
-        ],
-        'timeline': [
-          {
-            'day_label': 'Today',
-            'day_date': '2026-04-26',
-            'items': [
-              {
-                'id': 101,
-                'title': '确认材料',
-                'status': 'done',
-                'type': 'task',
-                'priority': 'low',
-              },
-              false,
-            ],
-          },
-          7,
-        ],
-        'completed': [
-          {
-            'id': 102,
-            'title': '完成彩排',
-            'completed_at': 'invalid datetime',
-          },
-        ],
-        'conflicts': [
-          {
-            'description': 404,
-            'item_ids': [101, '42'],
-          },
-        ],
-      });
+    test(
+      'parses LLM-style scalar variants and ignores malformed list entries',
+      () {
+        final model = ScheduleAggregationModel.fromYaml({
+          'id': 20260426,
+          'generated_at': DateTime.utc(2026, 4, 26, 1),
+          'version': '2',
+          'time_range': {'from': DateTime(2026, 4, 26), 'to': '2026-05-03'},
+          'hero_item': {'id': 42, 'title': 123, 'priority': 'urgent'},
+          'quote_blocks': [
+            {
+              'title': '风险',
+              'content': 88,
+              'priority': 'high',
+              'related_card_id': 42,
+            },
+            'not a map',
+          ],
+          'timeline': [
+            {
+              'day_label': 'Today',
+              'day_date': '2026-04-26',
+              'items': [
+                {
+                  'id': 101,
+                  'title': '确认材料',
+                  'status': 'done',
+                  'type': 'task',
+                  'priority': 'low',
+                  'subtasks': [
+                    {'title': '打印材料', 'completed': 'yes'},
+                    {'title': ' ', 'completed': true},
+                    {'title': '带证件', 'completed': 0},
+                    'bad entry',
+                  ],
+                },
+                false,
+              ],
+            },
+            7,
+          ],
+          'completed': [
+            {'id': 102, 'title': '完成彩排', 'completed_at': 'invalid datetime'},
+          ],
+          'conflicts': [
+            {
+              'description': 404,
+              'item_ids': [101, '42'],
+            },
+          ],
+        });
 
-      expect(model.id, '20260426');
-      expect(model.generatedAt.toUtc(), DateTime.utc(2026, 4, 26, 1));
-      expect(model.version, 2);
-      expect(model.heroItem?.cardId, '42');
-      expect(model.heroItem?.title, '123');
-      expect(model.heroItem?.priority, 3);
-      expect(model.quoteBlocks, hasLength(1));
-      expect(model.quoteBlocks.single.content, '88');
-      expect(model.quoteBlocks.single.relatedCardId, '42');
-      expect(model.timeline, hasLength(1));
-      expect(model.timeline.single.items, hasLength(1));
-      expect(model.timeline.single.items.single.cardId, '101');
-      expect(model.timeline.single.items.single.priority, 1);
-      expect(model.completed.single.cardId, '102');
-      expect(model.completed.single.completedAt, isNull);
-      expect(model.conflicts.single.description, '404');
-      expect(model.conflicts.single.itemIds, ['101', '42']);
-    });
+        expect(model.id, '20260426');
+        expect(model.generatedAt.toUtc(), DateTime.utc(2026, 4, 26, 1));
+        expect(model.version, 2);
+        expect(model.heroItem?.cardId, '42');
+        expect(model.heroItem?.title, '123');
+        expect(model.heroItem?.priority, 3);
+        expect(model.quoteBlocks, hasLength(1));
+        expect(model.quoteBlocks.single.content, '88');
+        expect(model.quoteBlocks.single.relatedCardId, '42');
+        expect(model.timeline, hasLength(1));
+        expect(model.timeline.single.items, hasLength(1));
+        expect(model.timeline.single.items.single.cardId, '101');
+        expect(model.timeline.single.items.single.priority, 1);
+        expect(model.timeline.single.items.single.subtasks, hasLength(2));
+        expect(model.timeline.single.items.single.subtasks.first.title, '打印材料');
+        expect(
+          model.timeline.single.items.single.subtasks.first.completed,
+          isTrue,
+        );
+        expect(model.timeline.single.items.single.subtasks.last.title, '带证件');
+        expect(
+          model.timeline.single.items.single.subtasks.last.completed,
+          isFalse,
+        );
+        expect(model.completed.single.cardId, '102');
+        expect(model.completed.single.completedAt, isNull);
+        expect(model.conflicts.single.description, '404');
+        expect(model.conflicts.single.itemIds, ['101', '42']);
+      },
+    );
 
     test('round-trip serialization preserves data', () {
       final original = ScheduleAggregationModel(
@@ -221,16 +224,14 @@ void main() {
                 title: 'Meeting',
                 status: 'pending',
                 type: 'event',
+                subtasks: const [
+                  ScheduleSubtask(title: 'Draft', completed: true),
+                ],
               ),
             ],
           ),
         ],
-        completed: [
-          CompletedItem(
-            cardId: 'done_1',
-            title: 'Finished task',
-          ),
-        ],
+        completed: [CompletedItem(cardId: 'done_1', title: 'Finished task')],
       );
 
       final json = original.toJson();
@@ -241,6 +242,14 @@ void main() {
       expect(restored.heroItem?.title, original.heroItem?.title);
       expect(restored.quoteBlocks.length, original.quoteBlocks.length);
       expect(restored.timeline.length, original.timeline.length);
+      expect(
+        restored.timeline.single.items.single.subtasks.single.title,
+        'Draft',
+      );
+      expect(
+        restored.timeline.single.items.single.subtasks.single.completed,
+        isTrue,
+      );
       expect(restored.completed.length, original.completed.length);
     });
 
@@ -248,10 +257,7 @@ void main() {
       final model = ScheduleAggregationModel.fromYaml({
         'id': 'schedule_agg_2026_05_14',
         'generated_at': '2026-05-14T17:39:22+08:00',
-        'time_range': {
-          'from': '2026-05-14',
-          'to': '2026-05-21',
-        },
+        'time_range': {'from': '2026-05-14', 'to': '2026-05-21'},
         'hero_item': {
           'card_id': '2026/05/14.md#ts_1',
           'title': 'Clean Apartment',
@@ -273,8 +279,9 @@ void main() {
         ],
       });
 
-      final expectedLocal =
-          DateTime.parse('2026-05-15T10:00:00+08:00').toLocal();
+      final expectedLocal = DateTime.parse(
+        '2026-05-15T10:00:00+08:00',
+      ).toLocal();
       expect(model.heroItem!.startTime, expectedLocal);
       expect(model.timeline.single.items.single.startTime, expectedLocal);
     });
@@ -288,10 +295,7 @@ void main() {
     });
 
     test('handles null datetime fields', () {
-      final yaml = {
-        'card_id': 'c1',
-        'title': 'Test',
-      };
+      final yaml = {'card_id': 'c1', 'title': 'Test'};
       final hero = HeroItem.fromYaml(yaml);
       expect(hero.startTime, isNull);
       expect(hero.endTime, isNull);

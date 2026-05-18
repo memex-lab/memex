@@ -13,7 +13,9 @@ class MagazineNarrativeTab extends StatefulWidget {
   final ScheduleAggregationModel aggregation;
   final void Function(String cardId)? onTapCardId;
   final Map<String, ScheduleItemStatus> itemStatuses;
+  final Map<String, List<ScheduleSubtask>> itemSubtasks;
   final void Function(String cardId)? onToggleTask;
+  final void Function(String cardId, int subtaskIndex)? onToggleSubtask;
   final DateTime? referenceDate;
 
   const MagazineNarrativeTab({
@@ -21,7 +23,9 @@ class MagazineNarrativeTab extends StatefulWidget {
     required this.aggregation,
     this.onTapCardId,
     this.itemStatuses = const {},
+    this.itemSubtasks = const {},
     this.onToggleTask,
+    this.onToggleSubtask,
     this.referenceDate,
   });
 
@@ -30,6 +34,9 @@ class MagazineNarrativeTab extends StatefulWidget {
 }
 
 class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
+  static const int _collapsedSubtaskCount = 3;
+  final Set<String> _expandedTaskIds = {};
+
   @override
   Widget build(BuildContext context) {
     return _buildAgentMode(widget.aggregation);
@@ -279,8 +286,9 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
 
   Widget _buildAgentReminderRow(QuoteBlock block) {
     final isHighPriority = block.priority == 'high';
-    final accentColor =
-        isHighPriority ? const Color(0xFFD97706) : const Color(0xFF64748B);
+    final accentColor = isHighPriority
+        ? const Color(0xFFD97706)
+        : const Color(0xFF64748B);
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -359,10 +367,12 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
   }
 
   Widget _buildAgentTimelineCard(TimelineItem item, {DateTime? dayDate}) {
-    final status =
-        widget.itemStatuses[item.cardId] ?? _parseStatus(item.status);
-    final isCompleted = status == ScheduleItemStatus.completed;
     final isTask = _isTaskItem(item);
+    final subtasks = isTask
+        ? _resolveSubtasks(item)
+        : const <ScheduleSubtask>[];
+    final status = _resolveStatus(item, subtasks);
+    final isCompleted = status == ScheduleItemStatus.completed;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
@@ -380,18 +390,19 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
                     color: isCompleted
                         ? const Color(0xFF99A1AF)
                         : item.priority == 3
-                            ? const Color(0xFFF43F5E)
-                            : const Color(0xFF5B6CFF),
+                        ? const Color(0xFFF43F5E)
+                        : const Color(0xFF5B6CFF),
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.white, width: 2),
                     boxShadow: [
                       BoxShadow(
-                        color: (isCompleted
-                                ? const Color(0xFF99A1AF)
-                                : item.priority == 3
+                        color:
+                            (isCompleted
+                                    ? const Color(0xFF99A1AF)
+                                    : item.priority == 3
                                     ? const Color(0xFFF43F5E)
                                     : const Color(0xFF5B6CFF))
-                            .withValues(alpha: 0.3),
+                                .withValues(alpha: 0.3),
                         blurRadius: 6,
                       ),
                     ],
@@ -411,7 +422,7 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
                     Row(
                       children: [
                         if (isTask) ...[
-                          _buildTaskCompletionCircle(item.cardId, isCompleted),
+                          _buildTaskCompletionCircle(item.cardId, status),
                           const SizedBox(width: 10),
                         ],
                         Expanded(
@@ -471,6 +482,12 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
+                    ],
+                    if (isTask && subtasks.isNotEmpty) ...[
+                      const SizedBox(height: 10),
+                      _buildSubtaskProgress(item.cardId, subtasks, status),
+                      const SizedBox(height: 8),
+                      _buildSubtaskList(item.cardId, subtasks, isCompleted),
                     ],
                   ],
                 ),
@@ -544,7 +561,9 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
     );
   }
 
-  Widget _buildTaskCompletionCircle(String cardId, bool isCompleted) {
+  Widget _buildTaskCompletionCircle(String cardId, ScheduleItemStatus status) {
+    final isCompleted = status == ScheduleItemStatus.completed;
+    final isInProgress = status == ScheduleItemStatus.inProgress;
     return GestureDetector(
       key: ValueKey('schedule_task_toggle_$cardId'),
       onTap: () => widget.onToggleTask?.call(cardId),
@@ -557,14 +576,152 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
           shape: BoxShape.circle,
           color: isCompleted ? const Color(0xFF5B6CFF) : Colors.transparent,
           border: Border.all(
-            color:
-                isCompleted ? const Color(0xFF5B6CFF) : const Color(0xFFCBD5E1),
+            color: isCompleted
+                ? const Color(0xFF5B6CFF)
+                : const Color(0xFFCBD5E1),
             width: 2,
           ),
         ),
         child: isCompleted
             ? const Icon(Icons.check, size: 13, color: Colors.white)
+            : isInProgress
+            ? Container(
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF5B6CFF),
+                  shape: BoxShape.circle,
+                ),
+              )
             : null,
+      ),
+    );
+  }
+
+  Widget _buildSubtaskProgress(
+    String cardId,
+    List<ScheduleSubtask> subtasks,
+    ScheduleItemStatus status,
+  ) {
+    final completed = subtasks.where((subtask) => subtask.completed).length;
+    final progress = subtasks.isEmpty ? 0.0 : completed / subtasks.length;
+    final canExpand = subtasks.length > _collapsedSubtaskCount;
+    final isExpanded = _expandedTaskIds.contains(cardId);
+
+    return Row(
+      children: [
+        Expanded(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              minHeight: 4,
+              value: progress,
+              backgroundColor: const Color(0xFFE2E8F0),
+              valueColor: AlwaysStoppedAnimation<Color>(
+                status == ScheduleItemStatus.completed
+                    ? const Color(0xFF99A1AF)
+                    : const Color(0xFF5B6CFF),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          '$completed/${subtasks.length}',
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF64748B),
+          ),
+        ),
+        if (canExpand) ...[
+          const SizedBox(width: 4),
+          GestureDetector(
+            key: ValueKey('schedule_subtasks_expand_$cardId'),
+            onTap: () {
+              setState(() {
+                if (isExpanded) {
+                  _expandedTaskIds.remove(cardId);
+                } else {
+                  _expandedTaskIds.add(cardId);
+                }
+              });
+            },
+            behavior: HitTestBehavior.opaque,
+            child: Padding(
+              padding: const EdgeInsets.all(3),
+              child: Icon(
+                isExpanded
+                    ? Icons.keyboard_arrow_up_rounded
+                    : Icons.keyboard_arrow_down_rounded,
+                size: 18,
+                color: const Color(0xFF64748B),
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildSubtaskList(
+    String cardId,
+    List<ScheduleSubtask> subtasks,
+    bool parentCompleted,
+  ) {
+    final visibleSubtasks = _visibleSubtasks(cardId, subtasks);
+    return Column(
+      children: [
+        for (final entry in visibleSubtasks)
+          _buildSubtaskRow(cardId, entry, parentCompleted),
+      ],
+    );
+  }
+
+  Widget _buildSubtaskRow(
+    String cardId,
+    _IndexedSubtask entry,
+    bool parentCompleted,
+  ) {
+    final subtask = entry.subtask;
+    final isCompleted = parentCompleted || subtask.completed;
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Row(
+        children: [
+          GestureDetector(
+            key: ValueKey('schedule_subtask_toggle_${cardId}_${entry.index}'),
+            onTap: () => widget.onToggleSubtask?.call(cardId, entry.index),
+            behavior: HitTestBehavior.opaque,
+            child: Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Icon(
+                isCompleted
+                    ? Icons.check_box_rounded
+                    : Icons.check_box_outline_blank_rounded,
+                size: 18,
+                color: isCompleted
+                    ? const Color(0xFF99A1AF)
+                    : const Color(0xFF64748B),
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              subtask.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12,
+                height: 1.3,
+                color: isCompleted
+                    ? const Color(0xFF99A1AF)
+                    : const Color(0xFF334155),
+                decoration: isCompleted ? TextDecoration.lineThrough : null,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -618,16 +775,54 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
     return type == 'task' || type == 'todo';
   }
 
+  List<ScheduleSubtask> _resolveSubtasks(TimelineItem item) {
+    return widget.itemSubtasks[item.cardId] ?? item.subtasks;
+  }
+
+  ScheduleItemStatus _resolveStatus(
+    TimelineItem item,
+    List<ScheduleSubtask> subtasks,
+  ) {
+    final status =
+        widget.itemStatuses[item.cardId] ?? _parseStatus(item.status);
+    if (!_isTaskItem(item)) return status;
+    return ScheduleItem.deriveTodoStatus(subtasks, fallback: status);
+  }
+
+  List<_IndexedSubtask> _visibleSubtasks(
+    String cardId,
+    List<ScheduleSubtask> subtasks,
+  ) {
+    final indexed = [
+      for (final entry in subtasks.indexed)
+        _IndexedSubtask(index: entry.$1, subtask: entry.$2),
+    ];
+    if (_expandedTaskIds.contains(cardId) ||
+        indexed.length <= _collapsedSubtaskCount) {
+      return indexed;
+    }
+
+    final pending = indexed.where((entry) => !entry.subtask.completed);
+    final completed = indexed.where((entry) => entry.subtask.completed);
+    return [...pending, ...completed].take(_collapsedSubtaskCount).toList();
+  }
+
   ScheduleItemStatus _parseStatus(String value) {
     final normalized = value.toLowerCase().trim().replaceAll('-', '_');
     return switch (normalized) {
       'completed' || 'done' => ScheduleItemStatus.completed,
       'in_progress' ||
       'inprogress' ||
-      'active' =>
-        ScheduleItemStatus.inProgress,
+      'active' => ScheduleItemStatus.inProgress,
       'overdue' => ScheduleItemStatus.overdue,
       _ => ScheduleItemStatus.pending,
     };
   }
+}
+
+class _IndexedSubtask {
+  final int index;
+  final ScheduleSubtask subtask;
+
+  const _IndexedSubtask({required this.index, required this.subtask});
 }

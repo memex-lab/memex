@@ -22,6 +22,7 @@ class ScheduleItem {
   final int? priority; // 1-3, 3 = highest
   final String sourceType;
   final List<RelatedEvent> relatedEvents;
+  final List<ScheduleSubtask> subtasks;
 
   ScheduleItem({
     required this.id,
@@ -37,6 +38,7 @@ class ScheduleItem {
     this.priority,
     this.sourceType = 'event',
     this.relatedEvents = const [],
+    this.subtasks = const [],
   });
 
   ScheduleItem copyWith({
@@ -50,6 +52,7 @@ class ScheduleItem {
     List<String>? tags,
     int? priority,
     String? sourceType,
+    List<ScheduleSubtask>? subtasks,
     bool clearCompletedAt = false,
   }) {
     return ScheduleItem(
@@ -66,6 +69,7 @@ class ScheduleItem {
       priority: priority ?? this.priority,
       sourceType: sourceType ?? this.sourceType,
       relatedEvents: relatedEvents,
+      subtasks: subtasks ?? this.subtasks,
     );
   }
 
@@ -93,26 +97,30 @@ class ScheduleItem {
               priority: _normalizePriority(item.priority),
               sourceType: item.sourceType,
               relatedEvents: item.relatedEvents,
+              subtasks: item.subtasks,
             );
       final existing = itemsById[id];
-      itemsById[id] =
-          existing == null ? normalized : _merge(existing, normalized);
+      itemsById[id] = existing == null
+          ? normalized
+          : _merge(existing, normalized);
     }
 
     if (aggregation.heroItem != null) {
       final hero = aggregation.heroItem!;
-      upsert(ScheduleItem(
-        id: hero.cardId,
-        title: hero.title,
-        type: ScheduleItemType.event,
-        status: ScheduleItemStatus.pending,
-        startTime: hero.startTime,
-        endTime: hero.endTime,
-        location: hero.location,
-        description: hero.description,
-        priority: _normalizePriority(hero.priority),
-        sourceType: 'event',
-      ));
+      upsert(
+        ScheduleItem(
+          id: hero.cardId,
+          title: hero.title,
+          type: ScheduleItemType.event,
+          status: ScheduleItemStatus.pending,
+          startTime: hero.startTime,
+          endTime: hero.endTime,
+          location: hero.location,
+          description: hero.description,
+          priority: _normalizePriority(hero.priority),
+          sourceType: 'event',
+        ),
+      );
     }
 
     for (final day in aggregation.timeline) {
@@ -130,14 +138,16 @@ class ScheduleItem {
           completedAt: completedItem.completedAt,
         );
       } else {
-        upsert(ScheduleItem(
-          id: id,
-          title: completedItem.title,
-          type: ScheduleItemType.todo,
-          status: ScheduleItemStatus.completed,
-          completedAt: completedItem.completedAt,
-          sourceType: 'task',
-        ));
+        upsert(
+          ScheduleItem(
+            id: id,
+            title: completedItem.title,
+            type: ScheduleItemType.todo,
+            status: ScheduleItemStatus.completed,
+            completedAt: completedItem.completedAt,
+            sourceType: 'task',
+          ),
+        );
       }
     }
 
@@ -155,33 +165,43 @@ class ScheduleItem {
     return items;
   }
 
-  static ScheduleItem _fromTimelineItem(
-    TimelineItem item,
-    DateTime? dayDate,
-  ) {
+  static ScheduleItem _fromTimelineItem(TimelineItem item, DateTime? dayDate) {
     final sourceType = item.type;
     final itemType = _parseType(sourceType);
     final startTime = item.startTime ?? dayDate;
+    final parsedStatus = _parseStatus(item.status);
     return ScheduleItem(
       id: item.cardId,
       title: item.title,
       type: itemType,
-      status: _parseStatus(item.status),
+      status: itemType == ScheduleItemType.todo
+          ? deriveTodoStatus(item.subtasks, fallback: parsedStatus)
+          : parsedStatus,
       startTime: startTime,
       description: item.description,
       priority: _normalizePriority(item.priority),
       sourceType: sourceType,
+      subtasks: item.subtasks,
     );
   }
 
   static ScheduleItem _merge(ScheduleItem base, ScheduleItem incoming) {
-    final status = _higherPriorityStatus(base.status, incoming.status);
-    final type =
-        incoming.type == ScheduleItemType.todo ? incoming.type : base.type;
+    final type = incoming.type == ScheduleItemType.todo
+        ? incoming.type
+        : base.type;
+    final subtasks = base.subtasks.isNotEmpty
+        ? base.subtasks
+        : incoming.subtasks;
+    final status = type == ScheduleItemType.todo
+        ? deriveTodoStatus(
+            subtasks,
+            fallback: _higherPriorityStatus(base.status, incoming.status),
+          )
+        : _higherPriorityStatus(base.status, incoming.status);
     final sourceType =
         base.sourceType == 'event' && incoming.sourceType != 'event'
-            ? incoming.sourceType
-            : base.sourceType;
+        ? incoming.sourceType
+        : base.sourceType;
     return base.copyWith(
       type: type,
       status: status,
@@ -193,7 +213,30 @@ class ScheduleItem {
       tags: base.tags.isNotEmpty ? base.tags : incoming.tags,
       priority: _normalizePriority(base.priority ?? incoming.priority),
       sourceType: sourceType,
+      subtasks: subtasks,
     );
+  }
+
+  static ScheduleItemStatus deriveTodoStatus(
+    List<ScheduleSubtask> subtasks, {
+    required ScheduleItemStatus fallback,
+  }) {
+    if (fallback == ScheduleItemStatus.completed || subtasks.isEmpty) {
+      return fallback;
+    }
+
+    final completedCount = subtasks
+        .where((subtask) => subtask.completed)
+        .length;
+    if (completedCount == subtasks.length) {
+      return ScheduleItemStatus.completed;
+    }
+    if (completedCount > 0) {
+      return ScheduleItemStatus.inProgress;
+    }
+    return fallback == ScheduleItemStatus.overdue
+        ? ScheduleItemStatus.overdue
+        : ScheduleItemStatus.pending;
   }
 
   static ScheduleItemType _parseType(String value) {
@@ -210,8 +253,7 @@ class ScheduleItem {
       'completed' || 'done' => ScheduleItemStatus.completed,
       'in_progress' ||
       'inprogress' ||
-      'active' =>
-        ScheduleItemStatus.inProgress,
+      'active' => ScheduleItemStatus.inProgress,
       'overdue' => ScheduleItemStatus.overdue,
       _ => ScheduleItemStatus.pending,
     };

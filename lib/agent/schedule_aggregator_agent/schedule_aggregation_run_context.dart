@@ -51,6 +51,7 @@ Future<String> buildScheduleAggregationRunContext({
       'Start from schedule_cards for the current refresh window, then inspect source cards with Read or BatchRead when details are needed.',
       'Use save_schedule_aggregation to persist exactly one current aggregation result.',
       'Preserve completed task status only when task is_completed is true; card processing status does not mean task completion.',
+      'When a task card has subtasks, preserve those subtasks on the timeline item; do not invent subtasks for independent cards.',
     ],
   };
 

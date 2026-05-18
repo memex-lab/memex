@@ -115,6 +115,13 @@ class _ScheduleAggregatorScreenState
     vm.toggleCompletion(vm.items[index]);
   }
 
+  void _toggleSubtask(String cardId, int subtaskIndex) {
+    final vm = context.read<ScheduleAggregatorViewModel>();
+    final index = vm.items.indexWhere((item) => item.id == cardId);
+    if (index < 0) return;
+    vm.toggleSubtask(vm.items[index], subtaskIndex);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -139,8 +146,13 @@ class _ScheduleAggregatorScreenState
                     return _buildRefreshableState(_buildEmptyState(vm.error));
                   }
 
+                  final items = vm.items;
                   final itemStatuses = {
-                    for (final item in vm.items) item.id: item.status,
+                    for (final item in items) item.id: item.status,
+                  };
+                  final itemSubtasks = {
+                    for (final item in items)
+                      if (item.subtasks.isNotEmpty) item.id: item.subtasks,
                   };
 
                   return RefreshIndicator(
@@ -151,6 +163,8 @@ class _ScheduleAggregatorScreenState
                       onTapCardId: _navigateToCard,
                       itemStatuses: itemStatuses,
                       onToggleTask: _toggleTaskCompletion,
+                      itemSubtasks: itemSubtasks,
+                      onToggleSubtask: _toggleSubtask,
                     ),
                   );
                 },

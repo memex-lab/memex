@@ -771,6 +771,9 @@ timeline:
         type: "event" | "task" | "routine" | "duration" | "procedure"
         priority: 1-3 (optional)
         description: "Brief description" (optional)
+        subtasks: (task cards only, optional; preserve source subtasks, do not invent)
+          - title: "Subtask title"
+            completed: true | false
 completed:
   - card_id: "original card fact_id"
     title: "Completed item title"
@@ -785,6 +788,7 @@ conflicts:
 - Hero Item: The single most important upcoming event (not necessarily the closest). Choose based on priority, impact, and user context.
 - Quote Blocks: Urgent deadlines, time conflicts, or important reminders. Max 2 items.
 - Timeline: Group by day. Max 7 days. Preserve original card IDs for navigation.
+- Task Subtasks: If a source task card has `subtasks`, include them on that task's timeline item with each original title and completion state. Do not split one task card into multiple timeline cards, and do not invent subtasks for cards that do not have them.
 - Completed: Separate section, faded but acknowledged.
 - Conflicts: Detect overlapping events and highlight them.
 

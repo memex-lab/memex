@@ -32,8 +32,9 @@ class ScheduleAggregationModel {
       id: _parseString(yaml['id']),
       generatedAt: _parseDateTime(yaml['generated_at']),
       version: _parseInt(yaml['version']) ?? 1,
-      timeRange:
-          TimeRange.fromYaml(yaml['time_range'] as Map<String, dynamic>? ?? {}),
+      timeRange: TimeRange.fromYaml(
+        yaml['time_range'] as Map<String, dynamic>? ?? {},
+      ),
       heroItem: yaml['hero_item'] != null
           ? HeroItem.fromYaml(yaml['hero_item'] as Map<String, dynamic>)
           : null,
@@ -46,24 +47,26 @@ class ScheduleAggregationModel {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'generated_at': generatedAt.toIso8601String(),
-        'version': version,
-        'time_range': timeRange.toJson(),
-        if (heroItem != null) 'hero_item': heroItem!.toJson(),
-        'editorial_intro': editorialIntro,
-        'quote_blocks': quoteBlocks.map((e) => e.toJson()).toList(),
-        'timeline': timeline.map((e) => e.toJson()).toList(),
-        'completed': completed.map((e) => e.toJson()).toList(),
-        'conflicts': conflicts.map((e) => e.toJson()).toList(),
-      };
+    'id': id,
+    'generated_at': generatedAt.toIso8601String(),
+    'version': version,
+    'time_range': timeRange.toJson(),
+    if (heroItem != null) 'hero_item': heroItem!.toJson(),
+    'editorial_intro': editorialIntro,
+    'quote_blocks': quoteBlocks.map((e) => e.toJson()).toList(),
+    'timeline': timeline.map((e) => e.toJson()).toList(),
+    'completed': completed.map((e) => e.toJson()).toList(),
+    'conflicts': conflicts.map((e) => e.toJson()).toList(),
+  };
 
   static DateTime _parseDateTime(dynamic value) {
     return _parseDateTimeNullable(value) ?? DateTime.now();
   }
 
   static List<T> _parseList<T>(
-      dynamic value, T Function(Map<String, dynamic>) parser) {
+    dynamic value,
+    T Function(Map<String, dynamic>) parser,
+  ) {
     if (value == null) return [];
     if (value is! List) return [];
     return value
@@ -87,9 +90,9 @@ class TimeRange {
   }
 
   Map<String, dynamic> toJson() => {
-        'from': _formatDate(from),
-        'to': _formatDate(to),
-      };
+    'from': _formatDate(from),
+    'to': _formatDate(to),
+  };
 
   static DateTime _parseDate(dynamic value) {
     if (value == null) return DateTime.now();
@@ -135,14 +138,14 @@ class HeroItem {
   }
 
   Map<String, dynamic> toJson() => {
-        'card_id': cardId,
-        'title': title,
-        if (description != null) 'description': description,
-        if (startTime != null) 'start_time': startTime!.toIso8601String(),
-        if (endTime != null) 'end_time': endTime!.toIso8601String(),
-        if (location != null) 'location': location,
-        if (priority != null) 'priority': priority,
-      };
+    'card_id': cardId,
+    'title': title,
+    if (description != null) 'description': description,
+    if (startTime != null) 'start_time': startTime!.toIso8601String(),
+    if (endTime != null) 'end_time': endTime!.toIso8601String(),
+    if (location != null) 'location': location,
+    if (priority != null) 'priority': priority,
+  };
 }
 
 class QuoteBlock {
@@ -168,11 +171,11 @@ class QuoteBlock {
   }
 
   Map<String, dynamic> toJson() => {
-        'title': title,
-        'content': content,
-        'priority': priority,
-        if (relatedCardId != null) 'related_card_id': relatedCardId,
-      };
+    'title': title,
+    'content': content,
+    'priority': priority,
+    if (relatedCardId != null) 'related_card_id': relatedCardId,
+  };
 }
 
 class TimelineDay {
@@ -180,11 +183,7 @@ class TimelineDay {
   final DateTime? dayDate;
   final List<TimelineItem> items;
 
-  TimelineDay({
-    required this.dayLabel,
-    this.dayDate,
-    this.items = const [],
-  });
+  TimelineDay({required this.dayLabel, this.dayDate, this.items = const []});
 
   factory TimelineDay.fromYaml(Map<String, dynamic> yaml) {
     return TimelineDay(
@@ -195,10 +194,10 @@ class TimelineDay {
   }
 
   Map<String, dynamic> toJson() => {
-        'day_label': dayLabel,
-        if (dayDate != null) 'day_date': _formatDate(dayDate!),
-        'items': items.map((e) => e.toJson()).toList(),
-      };
+    'day_label': dayLabel,
+    if (dayDate != null) 'day_date': _formatDate(dayDate!),
+    'items': items.map((e) => e.toJson()).toList(),
+  };
 
   static String _formatDate(DateTime date) {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
@@ -213,6 +212,7 @@ class TimelineItem {
   final String type;
   final int? priority;
   final String? description;
+  final List<ScheduleSubtask> subtasks;
 
   TimelineItem({
     required this.cardId,
@@ -222,6 +222,7 @@ class TimelineItem {
     this.type = 'event',
     this.priority,
     this.description,
+    this.subtasks = const [],
   });
 
   factory TimelineItem.fromYaml(Map<String, dynamic> yaml) {
@@ -233,18 +234,47 @@ class TimelineItem {
       type: _parseString(yaml['type'], fallback: 'event'),
       priority: _parseInt(yaml['priority']),
       description: _parseNullableString(yaml['description']),
+      subtasks: _parseList(
+        yaml['subtasks'],
+        ScheduleSubtask.fromYaml,
+      ).where((subtask) => subtask.title.trim().isNotEmpty).toList(),
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'card_id': cardId,
-        'title': title,
-        'status': status,
-        if (startTime != null) 'start_time': startTime!.toIso8601String(),
-        'type': type,
-        if (priority != null) 'priority': priority,
-        if (description != null) 'description': description,
-      };
+    'card_id': cardId,
+    'title': title,
+    'status': status,
+    if (startTime != null) 'start_time': startTime!.toIso8601String(),
+    'type': type,
+    if (priority != null) 'priority': priority,
+    if (description != null) 'description': description,
+    if (subtasks.isNotEmpty)
+      'subtasks': subtasks.map((e) => e.toJson()).toList(),
+  };
+}
+
+class ScheduleSubtask {
+  final String title;
+  final bool completed;
+
+  const ScheduleSubtask({required this.title, this.completed = false});
+
+  factory ScheduleSubtask.fromYaml(Map<String, dynamic> yaml) {
+    return ScheduleSubtask(
+      title: _parseString(yaml['title']),
+      completed: _parseBool(yaml['completed']) ?? false,
+    );
+  }
+
+  ScheduleSubtask copyWith({String? title, bool? completed}) {
+    return ScheduleSubtask(
+      title: title ?? this.title,
+      completed: completed ?? this.completed,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {'title': title, 'completed': completed};
 }
 
 class CompletedItem {
@@ -252,11 +282,7 @@ class CompletedItem {
   final String title;
   final DateTime? completedAt;
 
-  CompletedItem({
-    required this.cardId,
-    required this.title,
-    this.completedAt,
-  });
+  CompletedItem({required this.cardId, required this.title, this.completedAt});
 
   factory CompletedItem.fromYaml(Map<String, dynamic> yaml) {
     return CompletedItem(
@@ -267,25 +293,23 @@ class CompletedItem {
   }
 
   Map<String, dynamic> toJson() => {
-        'card_id': cardId,
-        'title': title,
-        if (completedAt != null) 'completed_at': completedAt!.toIso8601String(),
-      };
+    'card_id': cardId,
+    'title': title,
+    if (completedAt != null) 'completed_at': completedAt!.toIso8601String(),
+  };
 }
 
 class Conflict {
   final String description;
   final List<String> itemIds;
 
-  Conflict({
-    required this.description,
-    this.itemIds = const [],
-  });
+  Conflict({required this.description, this.itemIds = const []});
 
   factory Conflict.fromYaml(Map<String, dynamic> yaml) {
     return Conflict(
       description: _parseString(yaml['description']),
-      itemIds: (yaml['item_ids'] as List?)
+      itemIds:
+          (yaml['item_ids'] as List?)
               ?.map((item) => item.toString())
               .toList() ??
           [],
@@ -293,9 +317,9 @@ class Conflict {
   }
 
   Map<String, dynamic> toJson() => {
-        'description': description,
-        'item_ids': itemIds,
-      };
+    'description': description,
+    'item_ids': itemIds,
+  };
 }
 
 DateTime? _parseDateTimeNullable(dynamic value) {
@@ -334,6 +358,20 @@ int? _parseInt(dynamic value) {
       'high' || 'urgent' || '重要' || '高' => 3,
       'medium' || 'normal' || '中' => 2,
       'low' || '低' => 1,
+      _ => null,
+    };
+  }
+  return null;
+}
+
+bool? _parseBool(dynamic value) {
+  if (value == null) return null;
+  if (value is bool) return value;
+  if (value is num) return value != 0;
+  if (value is String) {
+    return switch (value.toLowerCase().trim()) {
+      'true' || 'yes' || 'y' || '1' || 'done' || 'completed' => true,
+      'false' || 'no' || 'n' || '0' || 'pending' || 'todo' => false,
       _ => null,
     };
   }

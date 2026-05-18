@@ -12,6 +12,7 @@ void main() {
         type: ScheduleItemType.todo,
         status: ScheduleItemStatus.pending,
         priority: 2,
+        subtasks: const [ScheduleSubtask(title: 'Draft')],
       );
 
       final updated = item.copyWith(
@@ -24,6 +25,7 @@ void main() {
       expect(updated.status, ScheduleItemStatus.completed);
       expect(updated.completedAt, isNotNull);
       expect(updated.priority, 2);
+      expect(updated.subtasks.single.title, 'Draft');
       // Original should be unchanged
       expect(item.status, ScheduleItemStatus.pending);
     });
@@ -107,6 +109,11 @@ timeline:
         start_time: "2026-04-26T10:00:00+08:00"
         type: task
         priority: normal
+        subtasks:
+          - title: "检查环境变量"
+            completed: true
+          - title: "确认灰度开关"
+            completed: false
 completed:
   - card_id: "2026/04/25.md#ts_88"
     title: "完成彩排"
@@ -116,15 +123,14 @@ conflicts:
     item_ids: [2026/04/26.md#ts_100, 42]
 ''');
 
-      final aggregation = ScheduleAggregationModel.fromYaml(
-        _yamlToMap(yaml),
-      );
+      final aggregation = ScheduleAggregationModel.fromYaml(_yamlToMap(yaml));
       final items = ScheduleItem.fromAggregation(aggregation);
 
       expect(items, hasLength(3));
 
-      final launch =
-          items.singleWhere((item) => item.id == '2026/04/26.md#ts_100');
+      final launch = items.singleWhere(
+        (item) => item.id == '2026/04/26.md#ts_100',
+      );
       expect(launch.type, ScheduleItemType.event);
       expect(launch.priority, 3);
       expect(launch.location, '总部大礼堂');
@@ -134,9 +140,12 @@ conflicts:
       expect(checklist.type, ScheduleItemType.todo);
       expect(checklist.status, ScheduleItemStatus.inProgress);
       expect(checklist.priority, 2);
+      expect(checklist.subtasks, hasLength(2));
+      expect(checklist.subtasks.first.completed, isTrue);
 
-      final rehearsal =
-          items.singleWhere((item) => item.id == '2026/04/25.md#ts_88');
+      final rehearsal = items.singleWhere(
+        (item) => item.id == '2026/04/25.md#ts_88',
+      );
       expect(rehearsal.status, ScheduleItemStatus.completed);
       expect(rehearsal.completedAt?.toUtc(), DateTime.utc(2026, 4, 25, 11, 30));
       expect(aggregation.conflicts.single.itemIds, [
@@ -147,7 +156,8 @@ conflicts:
 
     test('keeps timeline task fields when hero points to the same card', () {
       final aggregation = ScheduleAggregationModel.fromYaml(
-        _yamlToMap(loadYaml('''
+        _yamlToMap(
+          loadYaml('''
 id: schedule_agg_2026_04_26
 generated_at: "2026-04-26T08:00:00+08:00"
 time_range:
@@ -169,7 +179,8 @@ timeline:
         status: " in-progress "
         type: task
         priority: 2
-''')),
+'''),
+        ),
       );
 
       final item = ScheduleItem.fromAggregation(aggregation).single;
@@ -184,7 +195,8 @@ timeline:
 
     test('completed section wins over duplicate pending timeline items', () {
       final aggregation = ScheduleAggregationModel.fromYaml(
-        _yamlToMap(loadYaml('''
+        _yamlToMap(
+          loadYaml('''
 id: schedule_agg_2026_04_26
 generated_at: "2026-04-26T08:00:00+08:00"
 time_range:
@@ -202,7 +214,8 @@ completed:
   - card_id: "task-done"
     title: "同步发布稿"
     completed_at: "2026-04-26T11:20:00+08:00"
-''')),
+'''),
+        ),
       );
 
       final item = ScheduleItem.fromAggregation(aggregation).single;
@@ -210,6 +223,29 @@ completed:
       expect(item.type, ScheduleItemType.todo);
       expect(item.status, ScheduleItemStatus.completed);
       expect(item.completedAt?.toUtc(), DateTime.utc(2026, 4, 26, 3, 20));
+    });
+
+    test('derives task status from subtask progress conservatively', () {
+      final pending = ScheduleItem.deriveTodoStatus(const [
+        ScheduleSubtask(title: 'A'),
+        ScheduleSubtask(title: 'B'),
+      ], fallback: ScheduleItemStatus.overdue);
+      final partial = ScheduleItem.deriveTodoStatus(const [
+        ScheduleSubtask(title: 'A', completed: true),
+        ScheduleSubtask(title: 'B'),
+      ], fallback: ScheduleItemStatus.pending);
+      final completed = ScheduleItem.deriveTodoStatus(const [
+        ScheduleSubtask(title: 'A', completed: true),
+        ScheduleSubtask(title: 'B', completed: true),
+      ], fallback: ScheduleItemStatus.pending);
+      final parentCompletedWins = ScheduleItem.deriveTodoStatus(const [
+        ScheduleSubtask(title: 'A'),
+      ], fallback: ScheduleItemStatus.completed);
+
+      expect(pending, ScheduleItemStatus.overdue);
+      expect(partial, ScheduleItemStatus.inProgress);
+      expect(completed, ScheduleItemStatus.completed);
+      expect(parentCompletedWins, ScheduleItemStatus.completed);
     });
 
     test('assigns stable fallback ids and sorts undated items by title', () {

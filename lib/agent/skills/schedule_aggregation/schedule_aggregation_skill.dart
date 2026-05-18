@@ -141,7 +141,7 @@ Tool buildGetScheduleCardsTool() {
   return Tool(
     name: 'get_schedule_cards',
     description:
-        'Query temporal cards (events, tasks, routines, durations, procedures) within a date range. Returns structured card data including title, normalized start_time, status, and template type. Task due_date is exposed as start_time when start_time is absent.',
+        'Query temporal cards (events, tasks, routines, durations, procedures) within a date range. Returns structured card data including title, normalized start_time, status, template type, and task subtasks. Task due_date is exposed as start_time when start_time is absent.',
     parameters: {
       'type': 'object',
       'properties': {

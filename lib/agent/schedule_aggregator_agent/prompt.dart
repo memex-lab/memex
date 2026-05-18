@@ -27,6 +27,8 @@ You are the Schedule Aggregator, a specialized agent with the `update_schedule_a
   card processing status. For task cards, only `is_completed: true` means the
   user's task is done. If `is_completed` is absent or false, keep the task
   pending even if the AI card generation has finished.
+- If a task card includes `subtasks`, preserve them in the timeline output as
+  the task's `subtasks` list. Do not invent subtasks for unrelated cards.
 
 ## Language Consistency Rule (CRITICAL)
 - Respect User Language: If user's input is Chinese, output MUST be Chinese
