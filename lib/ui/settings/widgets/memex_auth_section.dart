@@ -157,7 +157,7 @@ class _MemexAuthSectionState extends State<MemexAuthSection> {
         children: [
           Row(
             children: [
-              Icon(Icons.info_outline, color: Colors.orange, size: 20),
+              const Icon(Icons.info_outline, color: Colors.orange, size: 20),
               const SizedBox(width: 8),
               Text(
                 _isLoginMode
