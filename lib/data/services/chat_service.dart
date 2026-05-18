@@ -61,17 +61,20 @@ class ChatService {
     }
 
     String finalSessionId = sessionId ?? '';
+    final userMessageTime = DateTime.now();
 
     // 1. Session Management
     try {
       if (finalSessionId.isEmpty) {
         finalSessionId = await _createSession(
-            userId,
-            agentName,
-            [
-              {'type': 'text', 'text': message},
-            ],
-            isQuickQuery: isQuickQuery);
+          userId,
+          agentName,
+          [
+            {'type': 'text', 'text': message},
+          ],
+          isQuickQuery: isQuickQuery,
+          createdAt: userMessageTime,
+        );
       }
 
       // Notify UI of the active session ID immediately
@@ -87,6 +90,7 @@ class ChatService {
         ],
         refs: refs,
         isQuickQuery: isQuickQuery,
+        timestamp: userMessageTime,
       );
 
       // Log chat event
@@ -101,6 +105,8 @@ class ChatService {
             'scene_id': sceneId,
             'session_id': finalSessionId,
             'message': message,
+            'message_local_time': formatLocalDateTimeWithZone(userMessageTime),
+            'message_unix_seconds': unixSecondsFromDateTime(userMessageTime),
             'has_refs': refs != null && refs.isNotEmpty,
             'is_quick_query': isQuickQuery,
           },
@@ -336,7 +342,8 @@ When the user disputes content you generated (such as Cards, PKM entries, or Ass
 
     userMessages.add(
       UserMessage([
-        TextPart(buildCurrentTimeReminder(DateTime.now())),
+        TextPart(buildCurrentTimeReminder(userMessageTime)),
+        TextPart(buildMessageTimePrefix(userMessageTime)),
         TextPart(message),
       ]),
     );
@@ -452,6 +459,7 @@ When the user disputes content you generated (such as Cards, PKM entries, or Ass
       }
 
       // Save AI response with usage stats
+      final responseTime = DateTime.now();
       final sessionTotalUsage = await _addMessageToSession(
         userId,
         sessionId,
@@ -468,6 +476,7 @@ When the user disputes content you generated (such as Cards, PKM entries, or Ass
           'total_tokens': totalTokens,
           'total_cost': totalCost,
         },
+        timestamp: responseTime,
       );
 
       // Emit Token Usage (Cumulative if available, else current turn)
@@ -611,12 +620,13 @@ When the user disputes content you generated (such as Cards, PKM entries, or Ass
     String? agentName,
     List<Map<String, dynamic>> initialContent, {
     bool isQuickQuery = false,
+    DateTime? createdAt,
   }) async {
     final uuidStr = _uuid.v4();
     final sessionId = agentName != null && agentName.isNotEmpty
         ? '${agentName}_$uuidStr'
         : uuidStr;
-    final now = DateTime.now();
+    final now = createdAt ?? DateTime.now();
 
     String? title;
     for (final item in initialContent) {
@@ -632,7 +642,11 @@ When the user disputes content you generated (such as Cards, PKM entries, or Ass
       'agent_name': agentName,
       'title': title ?? 'New Chat',
       'created_at': now.toIso8601String(),
+      'created_at_local': formatLocalDateTimeWithZone(now),
+      'created_at_unix_seconds': unixSecondsFromDateTime(now),
       'updated_at': now.toIso8601String(),
+      'updated_at_local': formatLocalDateTimeWithZone(now),
+      'updated_at_unix_seconds': unixSecondsFromDateTime(now),
       'is_quick_query': isQuickQuery,
       'messages': <dynamic>[],
     };
@@ -653,6 +667,7 @@ When the user disputes content you generated (such as Cards, PKM entries, or Ass
     Map<String, dynamic>? usage,
     List<Map<String, String>>? refs,
     bool? isQuickQuery,
+    DateTime? timestamp,
   }) async {
     final sessionFile = _getSessionFilePath(userId, sessionId);
     if (!await sessionFile.exists()) return null;
@@ -660,16 +675,22 @@ When the user disputes content you generated (such as Cards, PKM entries, or Ass
     final fileContent = await sessionFile.readAsString();
     final doc = loadYaml(fileContent);
     final sessionData = jsonDecode(jsonEncode(doc)) as Map<String, dynamic>;
+    _backfillSessionTimeContext(sessionData);
 
+    final messageTime = timestamp ?? DateTime.now();
     final messageDict = {
       'role': role,
       'content': content,
       if (usage != null) 'usage': usage,
       if (refs != null) 'refs': refs,
-      'timestamp': DateTime.now().toIso8601String(),
+      'timestamp': messageTime.toIso8601String(),
+      'local_time': formatLocalDateTimeWithZone(messageTime),
+      'unix_seconds': unixSecondsFromDateTime(messageTime),
     };
 
     final messages = (sessionData['messages'] as List<dynamic>? ?? [])
+        .map(_backfillMessageTimeContext)
+        .toList()
       ..add(messageDict);
     sessionData['messages'] = messages;
 
@@ -704,7 +725,10 @@ When the user disputes content you generated (such as Cards, PKM entries, or Ass
       sessionData['is_quick_query'] = isQuickQuery;
     }
 
-    sessionData['updated_at'] = DateTime.now().toIso8601String();
+    final updatedAt = DateTime.now();
+    sessionData['updated_at'] = updatedAt.toIso8601String();
+    sessionData['updated_at_local'] = formatLocalDateTimeWithZone(updatedAt);
+    sessionData['updated_at_unix_seconds'] = unixSecondsFromDateTime(updatedAt);
 
     await _fileService.writeYamlFile(sessionFile.path, sessionData);
     return sessionData['total_usage'] as Map<String, dynamic>?;
@@ -713,5 +737,46 @@ When the user disputes content you generated (such as Cards, PKM entries, or Ass
   File _getSessionFilePath(String userId, String sessionId) {
     final sessionsPath = _fileService.getChatSessionsPath(userId);
     return File(p.join(sessionsPath, '$sessionId.yaml'));
+  }
+
+  void _backfillSessionTimeContext(Map<String, dynamic> sessionData) {
+    final createdAt = tryParseDateTime(sessionData['created_at']);
+    if (createdAt != null) {
+      sessionData['created_at_local'] ??= formatLocalDateTimeWithZone(
+        createdAt,
+      );
+      sessionData['created_at_unix_seconds'] ??= unixSecondsFromDateTime(
+        createdAt,
+      );
+    }
+
+    final updatedAt = tryParseDateTime(sessionData['updated_at']);
+    if (updatedAt != null) {
+      sessionData['updated_at_local'] ??= formatLocalDateTimeWithZone(
+        updatedAt,
+      );
+      sessionData['updated_at_unix_seconds'] ??= unixSecondsFromDateTime(
+        updatedAt,
+      );
+    }
+  }
+
+  dynamic _backfillMessageTimeContext(dynamic message) {
+    if (message is! Map<String, dynamic>) {
+      return message;
+    }
+
+    final parsed = tryParseDateTime(message['timestamp']);
+    if (parsed == null) {
+      return message;
+    }
+
+    return {
+      ...message,
+      'local_time':
+          message['local_time'] ?? formatLocalDateTimeWithZone(parsed),
+      'unix_seconds':
+          message['unix_seconds'] ?? unixSecondsFromDateTime(parsed),
+    };
   }
 }

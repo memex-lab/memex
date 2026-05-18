@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:path/path.dart' as path;
 import 'package:logging/logging.dart';
 import 'package:memex/utils/logger.dart';
+import 'package:memex/utils/time_context.dart';
 
 import 'package:synchronized/synchronized.dart';
 
@@ -72,6 +73,8 @@ class EventLogService {
           'event_type': eventType,
           'description': description,
           'event_time': now.toIso8601String(),
+          'event_time_local': formatLocalDateTimeWithZone(now),
+          'event_time_unix_seconds': unixSecondsFromDateTime(now),
           'user_id': userId,
           if (filePath != null) 'file_path': filePath,
           if (metadata != null) 'metadata': metadata,

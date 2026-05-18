@@ -7,8 +7,30 @@ DateTime? tryParseUnixSeconds(dynamic value) {
   return null;
 }
 
+DateTime? tryParseDateTime(dynamic value) {
+  if (value is DateTime) {
+    return value;
+  }
+  if (value is String && value.trim().isNotEmpty) {
+    return DateTime.tryParse(value);
+  }
+  return null;
+}
+
 DateTime dateTimeFromUnixSeconds(dynamic value, {DateTime? fallback}) {
   return tryParseUnixSeconds(value) ?? fallback ?? DateTime.now();
+}
+
+int unixSecondsFromDateTime(DateTime dateTime) {
+  return dateTime.millisecondsSinceEpoch ~/ 1000;
+}
+
+int? unixSecondsFromDateTimeOrNull(dynamic value) {
+  final dateTime = tryParseDateTime(value);
+  if (dateTime == null) {
+    return null;
+  }
+  return unixSecondsFromDateTime(dateTime);
 }
 
 String formatTimeZoneOffset(Duration offset) {
@@ -24,6 +46,14 @@ String formatLocalDateTimeWithZone(DateTime dateTime) {
   final formatted = DateFormat('yyyy-MM-dd HH:mm:ss').format(local);
   return '$formatted ${formatTimeZoneOffset(local.timeZoneOffset)} '
       '(${local.timeZoneName})';
+}
+
+String? formatLocalDateTimeWithZoneOrNull(dynamic value) {
+  final dateTime = tryParseDateTime(value);
+  if (dateTime == null) {
+    return null;
+  }
+  return formatLocalDateTimeWithZone(dateTime);
 }
 
 String buildCurrentTimeReminder(DateTime dateTime) {

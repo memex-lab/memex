@@ -14,9 +14,9 @@ import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/domain/models/agent_definitions.dart';
 import 'package:memex/domain/models/card_model.dart';
 import 'package:memex/domain/models/custom_agent_config.dart';
-import 'package:memex/domain/models/event_bus_message.dart';
 import 'package:memex/domain/models/llm_config.dart';
 import 'package:memex/utils/logger.dart';
+import 'package:memex/utils/time_context.dart';
 import 'package:memex/utils/user_storage.dart';
 
 final Logger _logger = getLogger('CustomAgentTaskHandler');
@@ -78,14 +78,17 @@ const _audioExtensions = {
 /// in serialized event content. Matches both Chinese and English labels:
 ///   `![图片](fs://xxx)` / `![image](fs://xxx)` → image
 ///   `[音频](fs://xxx)` / `[audio](fs://xxx)` → audio
-final _mediaRefPattern =
-    RegExp(r'(?:!\[(?:图片|image)\]|\[(?:音频|audio)\])\(fs://([^)]+)\)');
+final _mediaRefPattern = RegExp(
+  r'(?:!\[(?:图片|image)\]|\[(?:音频|audio)\])\(fs://([^)]+)\)',
+);
 
 /// Extract media references from the event XML string and build multimodal
 /// [UserContentPart] list. This is generic — works for any event type whose
 /// serialized content contains `![image](fs://file)` or `[audio](fs://file)`.
 Future<List<UserContentPart>> _buildAssetPartsFromXml(
-    String userId, String eventXml) async {
+  String userId,
+  String eventXml,
+) async {
   final matches = _mediaRefPattern.allMatches(eventXml);
   if (matches.isEmpty) return const [];
 
@@ -134,7 +137,8 @@ Future<void> _handleCustomAgentTask(
 ) async {
   final agentName = config.agentName;
   _logger.info(
-      'Running custom agent "$agentName" for event ${payload['event_type']}');
+    'Running custom agent "$agentName" for event ${payload['event_type']}',
+  );
 
   final agentIdForLLM = config.llmConfigKey ?? AgentDefinitions.chatAgent;
   final resources = await UserStorage.getAgentLLMResources(
@@ -153,8 +157,10 @@ Future<void> _handleCustomAgentTask(
     'sceneId': nowStr,
   });
 
-  final skillAbsPath = FileSystemService.instance
-      .resolveSkillPath(userId, config.skillDirectoryPath);
+  final skillAbsPath = FileSystemService.instance.resolveSkillPath(
+    userId,
+    config.skillDirectoryPath,
+  );
 
   final workingDirAbsPath = await FileSystemService.instance
       .resolveWorkingDirectory(userId, config.workingDirectory);
@@ -258,14 +264,19 @@ Future<void> _createChatSession({
   // Don't overwrite if it already exists (e.g. retry scenario).
   if (sessionFile.existsSync()) return;
 
-  final now = DateTime.now().toIso8601String();
+  final now = DateTime.now();
+  final nowIso = now.toIso8601String();
+  final nowLocal = formatLocalDateTimeWithZone(now);
+  final nowUnixSeconds = unixSecondsFromDateTime(now);
   final messages = <Map<String, dynamic>>[
     {
       'role': 'user',
       'content': [
         {'type': 'text', 'text': userText},
       ],
-      'timestamp': now,
+      'timestamp': nowIso,
+      'local_time': nowLocal,
+      'unix_seconds': nowUnixSeconds,
     },
     if (aiResponse != null)
       {
@@ -273,7 +284,9 @@ Future<void> _createChatSession({
         'content': [
           {'type': 'text', 'text': aiResponse},
         ],
-        'timestamp': now,
+        'timestamp': nowIso,
+        'local_time': nowLocal,
+        'unix_seconds': nowUnixSeconds,
       },
   ];
 
@@ -281,16 +294,21 @@ Future<void> _createChatSession({
     'session_id': sessionId,
     'agent_name': agentName,
     'title': agentName,
-    'created_at': now,
-    'updated_at': now,
+    'created_at': nowIso,
+    'created_at_local': nowLocal,
+    'created_at_unix_seconds': nowUnixSeconds,
+    'updated_at': nowIso,
+    'updated_at_local': nowLocal,
+    'updated_at_unix_seconds': nowUnixSeconds,
     'messages': messages,
     'is_custom_agent': true,
   };
 
   try {
     await fs.writeYamlFile(sessionFile.path, sessionData);
-    _logger
-        .info('Created chat session for custom agent "$agentName": $sessionId');
+    _logger.info(
+      'Created chat session for custom agent "$agentName": $sessionId',
+    );
   } catch (e) {
     _logger.warning('Failed to create chat session file: $e');
   }
@@ -347,13 +365,15 @@ Future<void> _createResultCard({
   }
 
   // Notify the timeline UI.
-  EventBusService.instance.emitEvent(CardAddedMessage(
-    id: factId,
-    html: '',
-    timestamp: timestampSec,
-    tags: [agentName],
-    status: status,
-    title: title,
-    uiConfigs: [uiConfig],
-  ));
+  EventBusService.instance.emitEvent(
+    CardAddedMessage(
+      id: factId,
+      html: '',
+      timestamp: timestampSec,
+      tags: [agentName],
+      status: status,
+      title: title,
+      uiConfigs: [uiConfig],
+    ),
+  );
 }

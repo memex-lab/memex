@@ -4,6 +4,7 @@ import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/api_exception.dart';
+import 'package:memex/utils/time_context.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
@@ -111,8 +112,16 @@ Future<List<Map<String, dynamic>>> fetchChatSessionsEndpoint({
           'title': sessionData['title'] as String? ?? 'New chat',
           'created_at': sessionData['created_at'] as String? ??
               DateTime.now().toIso8601String(),
+          'created_at_local': sessionData['created_at_local'] as String? ??
+              formatLocalDateTimeWithZoneOrNull(sessionData['created_at']),
+          'created_at_unix_seconds': sessionData['created_at_unix_seconds'] ??
+              unixSecondsFromDateTimeOrNull(sessionData['created_at']),
           'updated_at': sessionData['updated_at'] as String? ??
               DateTime.now().toIso8601String(),
+          'updated_at_local': sessionData['updated_at_local'] as String? ??
+              formatLocalDateTimeWithZoneOrNull(sessionData['updated_at']),
+          'updated_at_unix_seconds': sessionData['updated_at_unix_seconds'] ??
+              unixSecondsFromDateTimeOrNull(sessionData['updated_at']),
           'message_count': messages.length,
           'last_message_preview': lastMessagePreview,
           'is_quick_query': sessionData['is_quick_query'] == true,
@@ -143,7 +152,8 @@ Future<List<Map<String, dynamic>>> fetchChatSessionsEndpoint({
 /// Returns:
 ///   Map<String, dynamic>: session detail (session_id, agent_name, title, created_at, updated_at, messages)
 Future<Map<String, dynamic>> fetchChatSessionDetailEndpoint(
-    String sessionId) async {
+  String sessionId,
+) async {
   _logger.info('fetchChatSessionDetail called: sessionId=$sessionId');
 
   try {
@@ -173,8 +183,16 @@ Future<Map<String, dynamic>> fetchChatSessionDetailEndpoint(
       'title': sessionData['title'] as String? ?? 'New chat',
       'created_at': sessionData['created_at'] as String? ??
           DateTime.now().toIso8601String(),
+      'created_at_local': sessionData['created_at_local'] as String? ??
+          formatLocalDateTimeWithZoneOrNull(sessionData['created_at']),
+      'created_at_unix_seconds': sessionData['created_at_unix_seconds'] ??
+          unixSecondsFromDateTimeOrNull(sessionData['created_at']),
       'updated_at': sessionData['updated_at'] as String? ??
           DateTime.now().toIso8601String(),
+      'updated_at_local': sessionData['updated_at_local'] as String? ??
+          formatLocalDateTimeWithZoneOrNull(sessionData['updated_at']),
+      'updated_at_unix_seconds': sessionData['updated_at_unix_seconds'] ??
+          unixSecondsFromDateTimeOrNull(sessionData['updated_at']),
       'messages': messages,
       if (sessionData['total_usage'] != null)
         'total_usage': sessionData['total_usage'],
@@ -247,8 +265,20 @@ Future<List<Map<String, dynamic>>> _getSessionMessages(
   final messages = sessionData['messages'] as List<dynamic>? ?? [];
   return messages.map((msg) {
     if (msg is Map<String, dynamic>) {
-      return msg;
+      return _withLocalTimestampFallback(msg);
     }
     return <String, dynamic>{};
   }).toList();
+}
+
+Map<String, dynamic> _withLocalTimestampFallback(Map<String, dynamic> msg) {
+  final result = Map<String, dynamic>.from(msg);
+  if (result['local_time'] == null) {
+    final parsed = tryParseDateTime(result['timestamp']);
+    if (parsed != null) {
+      result['local_time'] = formatLocalDateTimeWithZone(parsed);
+      result['unix_seconds'] ??= unixSecondsFromDateTime(parsed);
+    }
+  }
+  return result;
 }
