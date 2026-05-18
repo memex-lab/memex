@@ -8,8 +8,17 @@ import 'package:memex/utils/user_storage.dart';
 
 class AgentActivityWidget extends StatefulWidget {
   final GlobalKey<NavigatorState>? navigatorKey;
+  final bool forceVisible;
+  final TaskActivitySnapshot initialTaskSnapshot;
+  final Stream<TaskActivitySnapshot>? taskActivitySnapshotStream;
 
-  const AgentActivityWidget({super.key, this.navigatorKey});
+  const AgentActivityWidget({
+    super.key,
+    this.navigatorKey,
+    this.forceVisible = false,
+    this.initialTaskSnapshot = const TaskActivitySnapshot.empty(),
+    this.taskActivitySnapshotStream,
+  });
 
   @override
   State<AgentActivityWidget> createState() => _AgentActivityWidgetState();
@@ -21,8 +30,9 @@ class _AgentActivityWidgetState extends State<AgentActivityWidget>
   AgentActivityService? _service;
   LocalTaskExecutor? _executor;
   StreamSubscription<AgentActivityMessageModel>? _subscription;
-  StreamSubscription<bool>? _taskSubscription;
-  bool _hasActiveTasks = false;
+  StreamSubscription<TaskActivitySnapshot>? _taskSubscription;
+  Timer? _historyLoadTimer;
+  TaskActivitySnapshot _taskSnapshot = const TaskActivitySnapshot.empty();
 
   late AnimationController _bounceController;
 
@@ -33,7 +43,9 @@ class _AgentActivityWidgetState extends State<AgentActivityWidget>
   }
 
   bool get _isActive {
-    return _hasRunningAgent || _hasActiveTasks;
+    return widget.forceVisible ||
+        _hasRunningAgent ||
+        _taskSnapshot.hasActiveTasks;
   }
 
   @override
@@ -43,15 +55,14 @@ class _AgentActivityWidgetState extends State<AgentActivityWidget>
       vsync: this,
       duration: const Duration(milliseconds: 400),
     )..repeat(reverse: true);
+    _taskSnapshot = widget.initialTaskSnapshot;
 
     try {
       _service = AgentActivityService.instance;
       _executor = LocalTaskExecutor.instance;
-      if (_executor?.hasActiveTasksStream != null) {
-        _subscribeToService();
-      }
+      _subscribeToService();
     } catch (_) {
-      Future.delayed(const Duration(seconds: 3), () {
+      _historyLoadTimer = Timer(const Duration(seconds: 3), () {
         if (mounted) _initService();
       });
       return;
@@ -72,16 +83,16 @@ class _AgentActivityWidgetState extends State<AgentActivityWidget>
     });
 
     try {
-      _taskSubscription = _executor?.hasActiveTasksStream.listen((hasTasks) {
+      final taskStream = widget.taskActivitySnapshotStream ??
+          _executor?.taskActivitySnapshotStream;
+      _taskSubscription = taskStream?.listen((snapshot) {
         if (mounted) {
-          setState(() {
-            _hasActiveTasks = hasTasks;
-          });
+          setState(() => _taskSnapshot = snapshot);
         }
       });
     } catch (_) {}
 
-    Future.delayed(const Duration(seconds: 3), () {
+    _historyLoadTimer = Timer(const Duration(seconds: 3), () {
       if (mounted) _loadLatestFromDb();
     });
   }
@@ -99,6 +110,7 @@ class _AgentActivityWidgetState extends State<AgentActivityWidget>
   void dispose() {
     _subscription?.cancel();
     _taskSubscription?.cancel();
+    _historyLoadTimer?.cancel();
     _bounceController.dispose();
     super.dispose();
   }
@@ -114,7 +126,11 @@ class _AgentActivityWidgetState extends State<AgentActivityWidget>
         context: targetContext,
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
-        builder: (context) => _DetailSheet(initialMessage: _latestMessage),
+        builder: (context) => _DetailSheet(
+          initialMessage: _latestMessage,
+          initialTaskSnapshot: _taskSnapshot,
+          taskActivitySnapshotStream: widget.taskActivitySnapshotStream,
+        ),
       );
     } finally {
       if (mounted) _isDetailShowing = false;
@@ -126,7 +142,7 @@ class _AgentActivityWidgetState extends State<AgentActivityWidget>
     if (!_isActive) return const SizedBox.shrink();
 
     return GestureDetector(
-      onTap: _hasRunningAgent ? () => _showDetail(context) : null,
+      onTap: () => _showDetail(context),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
@@ -154,11 +170,7 @@ class _AgentActivityWidgetState extends State<AgentActivityWidget>
                 final frame = _bounceController.value < 0.5
                     ? 'assets/icons/processing_1.png'
                     : 'assets/icons/processing_2.png';
-                return Image.asset(
-                  frame,
-                  width: 36,
-                  height: 36,
-                );
+                return Image.asset(frame, width: 36, height: 36);
               },
             ),
             const SizedBox(width: 8),
@@ -179,7 +191,11 @@ class _AgentActivityWidgetState extends State<AgentActivityWidget>
                     ),
                   ),
                   Text(
-                    UserStorage.l10n.keepAppOpen,
+                    _taskSnapshot.hasActiveTasks
+                        ? UserStorage.l10n.insightProcessingBacklogMessage(
+                            _taskSnapshot.total,
+                          )
+                        : UserStorage.l10n.keepAppOpen,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -190,14 +206,12 @@ class _AgentActivityWidgetState extends State<AgentActivityWidget>
                 ],
               ),
             ),
-            if (_hasRunningAgent) ...[
-              const SizedBox(width: 6),
-              const Icon(
-                Icons.chevron_right_rounded,
-                size: 16,
-                color: Color(0xFF94A3B8),
-              ),
-            ],
+            const SizedBox(width: 6),
+            const Icon(
+              Icons.chevron_right_rounded,
+              size: 16,
+              color: Color(0xFF94A3B8),
+            ),
           ],
         ),
       ),
@@ -207,7 +221,14 @@ class _AgentActivityWidgetState extends State<AgentActivityWidget>
 
 class _DetailSheet extends StatefulWidget {
   final AgentActivityMessageModel? initialMessage;
-  const _DetailSheet({this.initialMessage});
+  final TaskActivitySnapshot initialTaskSnapshot;
+  final Stream<TaskActivitySnapshot>? taskActivitySnapshotStream;
+
+  const _DetailSheet({
+    this.initialMessage,
+    this.initialTaskSnapshot = const TaskActivitySnapshot.empty(),
+    this.taskActivitySnapshotStream,
+  });
 
   @override
   State<_DetailSheet> createState() => _DetailSheetState();
@@ -216,8 +237,11 @@ class _DetailSheet extends StatefulWidget {
 class _DetailSheetState extends State<_DetailSheet>
     with SingleTickerProviderStateMixin {
   AgentActivityMessageModel? _message;
-  StreamSubscription? _subscription;
+  TaskActivitySnapshot _taskSnapshot = const TaskActivitySnapshot.empty();
+  StreamSubscription<AgentActivityMessageModel>? _subscription;
+  StreamSubscription<TaskActivitySnapshot>? _taskSubscription;
   AgentActivityService? _service;
+  LocalTaskExecutor? _executor;
 
   late AnimationController _pulseController;
 
@@ -229,11 +253,18 @@ class _DetailSheetState extends State<_DetailSheet>
       duration: const Duration(milliseconds: 400),
     )..repeat(reverse: true);
     _message = widget.initialMessage;
+    _taskSnapshot = widget.initialTaskSnapshot;
     try {
       _service = AgentActivityService.instance;
+      _executor = LocalTaskExecutor.instance;
     } catch (_) {}
     _loadHistory();
     _subscription = _service?.messageStream.listen(_handleNewMessage);
+    try {
+      final taskStream = widget.taskActivitySnapshotStream ??
+          _executor?.taskActivitySnapshotStream;
+      _taskSubscription = taskStream?.listen(_handleTaskSnapshot);
+    } catch (_) {}
   }
 
   Future<void> _loadHistory() async {
@@ -250,9 +281,15 @@ class _DetailSheetState extends State<_DetailSheet>
     setState(() => _message = newMessage);
   }
 
+  void _handleTaskSnapshot(TaskActivitySnapshot snapshot) {
+    if (!mounted) return;
+    setState(() => _taskSnapshot = snapshot);
+  }
+
   @override
   void dispose() {
     _subscription?.cancel();
+    _taskSubscription?.cancel();
     _pulseController.dispose();
     super.dispose();
   }
@@ -294,11 +331,7 @@ class _DetailSheetState extends State<_DetailSheet>
                         final frame = _pulseController.value < 0.5
                             ? 'assets/icons/processing_1.png'
                             : 'assets/icons/processing_2.png';
-                        return Image.asset(
-                          frame,
-                          width: 38,
-                          height: 38,
-                        );
+                        return Image.asset(frame, width: 38, height: 38);
                       },
                     ),
                     const SizedBox(width: 10),
@@ -324,11 +357,7 @@ class _DetailSheetState extends State<_DetailSheet>
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
               child: _message == null
-                  ? Center(
-                      child: Text(UserStorage.l10n.noAgentActivityYet,
-                          style: const TextStyle(
-                              color: Color(0xFF64748B), fontSize: 16)),
-                    )
+                  ? _buildWaitingState()
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -340,18 +369,22 @@ class _DetailSheetState extends State<_DetailSheet>
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(UserStorage.l10n.processingEllipsis,
-                                      style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                          color: Color(0xFF1E293B))),
+                                  Text(
+                                    UserStorage.l10n.processingEllipsis,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF1E293B),
+                                    ),
+                                  ),
                                   const SizedBox(height: 2),
                                   Text(
                                     '${DateFormat('HH:mm:ss').format(_message!.timestamp)} • ${_message!.agentName}',
                                     style: const TextStyle(
-                                        fontSize: 12,
-                                        color: Color(0xFF64748B),
-                                        fontWeight: FontWeight.w500),
+                                      fontSize: 12,
+                                      color: Color(0xFF64748B),
+                                      fontWeight: FontWeight.w500,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -368,8 +401,9 @@ class _DetailSheetState extends State<_DetailSheet>
                             decoration: BoxDecoration(
                               color: const Color(0xFFF7F8FA),
                               borderRadius: BorderRadius.circular(12),
-                              border:
-                                  Border.all(color: const Color(0xFFE2E8F0)),
+                              border: Border.all(
+                                color: const Color(0xFFE2E8F0),
+                              ),
                             ),
                             child: SingleChildScrollView(
                               child: MarkdownBody(
@@ -377,14 +411,16 @@ class _DetailSheetState extends State<_DetailSheet>
                                 selectable: true,
                                 styleSheet: MarkdownStyleSheet(
                                   p: const TextStyle(
-                                      fontSize: 14,
-                                      color: Color(0xFF334155),
-                                      height: 1.6),
+                                    fontSize: 14,
+                                    color: Color(0xFF334155),
+                                    height: 1.6,
+                                  ),
                                   code: const TextStyle(
-                                      fontSize: 13,
-                                      color: Color(0xFF475569),
-                                      backgroundColor: Color(0xFFE2E8F0),
-                                      fontFamily: 'monospace'),
+                                    fontSize: 13,
+                                    color: Color(0xFF475569),
+                                    backgroundColor: Color(0xFFE2E8F0),
+                                    fontFamily: 'monospace',
+                                  ),
                                   codeblockDecoration: BoxDecoration(
                                     color: const Color(0xFF1E293B),
                                     borderRadius: BorderRadius.circular(8),
@@ -404,22 +440,80 @@ class _DetailSheetState extends State<_DetailSheet>
                                   width: 16,
                                   height: 16,
                                   child: CircularProgressIndicator(
-                                      strokeWidth: 2, color: Color(0xFF6366F1)),
+                                    strokeWidth: 2,
+                                    color: Color(0xFF6366F1),
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
-                                Text(UserStorage.l10n.keepAppOpen,
-                                    style: const TextStyle(
-                                        fontSize: 14,
-                                        color: Color(0xFF64748B),
-                                        fontStyle: FontStyle.italic)),
+                                Text(
+                                  UserStorage.l10n.keepAppOpen,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Color(0xFF64748B),
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
+                        _buildTaskSummary(),
                       ],
                     ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildWaitingState() {
+    final statusText = _taskSnapshot.hasActiveTasks
+        ? UserStorage.l10n.insightProcessingBacklogMessage(_taskSnapshot.total)
+        : UserStorage.l10n.noAgentActivityYet;
+
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(
+            width: 22,
+            height: 22,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: Color(0xFF6366F1),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            UserStorage.l10n.processingEllipsis,
+            style: const TextStyle(
+              color: Color(0xFF1E293B),
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            statusText,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Color(0xFF64748B), fontSize: 14),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTaskSummary() {
+    if (!_taskSnapshot.hasActiveTasks) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 16),
+      child: Text(
+        UserStorage.l10n.insightProcessingBacklogMessage(_taskSnapshot.total),
+        style: const TextStyle(
+          color: Color(0xFF64748B),
+          fontSize: 13,
+          height: 1.4,
+        ),
       ),
     );
   }

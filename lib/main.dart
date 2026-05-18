@@ -1441,6 +1441,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
     // Show loading in timeline
     if (mounted) context.read<TimelineViewModel>().setSubmitting(true);
+    await WidgetsBinding.instance.endOfFrame;
 
     try {
       // Call API
@@ -1554,7 +1555,11 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                 left: 0,
                 right: 0,
                 child: Center(
-                  child: AgentActivityWidget(navigatorKey: null),
+                  child: AgentActivityWidget(
+                    navigatorKey: null,
+                    forceVisible:
+                        context.watch<TimelineViewModel>().isSubmitting,
+                  ),
                 ),
               ),
 

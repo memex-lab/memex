@@ -107,10 +107,18 @@ class LocalTaskExecutor {
 
   /// Stream that emits true if there are any active (pending, processing, retrying) tasks in the DB.
   /// Useful for global UI loading indicators.
-  Stream<bool> get hasActiveTasksStream {
+  Stream<TaskActivitySnapshot> get taskActivitySnapshotStream {
     final query = _db.select(_db.tasks)
       ..where((t) => t.status.isIn(['pending', 'processing', 'retrying']));
-    return query.watch().map((tasks) => tasks.isNotEmpty).distinct();
+    return query.watch().map(_snapshotFromTasks).distinct();
+  }
+
+  /// Stream that emits true if there are any active (pending, processing, retrying) tasks in the DB.
+  /// Useful for global UI loading indicators.
+  Stream<bool> get hasActiveTasksStream {
+    return taskActivitySnapshotStream
+        .map((snapshot) => snapshot.hasActiveTasks)
+        .distinct();
   }
 
   Future<TaskActivitySnapshot> getTaskActivitySnapshot() async {
