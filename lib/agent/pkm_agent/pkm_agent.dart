@@ -413,14 +413,38 @@ $instruction
 
     while (true) {
       runCount++;
-      if (runCount == 1 && wasRunning) {
+      final shouldResume = runCount == 1 && wasRunning;
+      if (shouldResume) {
         _logger.info(
             "PkmAgent resume (attempt $runCount/${maxRetries + 1}), sessionId:${agent.state.sessionId}");
-        await agent.resume(useStream: false);
       } else {
         _logger.info(
             "PkmAgent run (attempt $runCount/${maxRetries + 1}), sessionId:${agent.state.sessionId}");
-        await agent.run(messagesToRun, useStream: false);
+      }
+
+      try {
+        if (shouldResume) {
+          await agent.resume(useStream: false);
+        } else {
+          await agent.run(messagesToRun, useStream: false);
+        }
+      } on AgentException catch (e) {
+        if (e.code == AgentExceptionCode.loopDetection) {
+          final factId = agent.state.metadata['factId'] as String?;
+          if (factId != null) {
+            final check = inspectPkmRunCompletion(
+              messages: agent.state.history.messages,
+              factId: factId,
+            );
+            if (check.isComplete) {
+              _logger.info(
+                'PKM agent hit loop detection after valid completion evidence for $factId: ${check.toJson()}',
+              );
+              break;
+            }
+          }
+        }
+        rethrow;
       }
 
       if (runCount == 1) {
@@ -468,7 +492,8 @@ $instruction
             '<system-reminder>The PKM task is incomplete. Complete one valid path before finishing:\n'
             '1. Persistent organization path: complete all missing steps below.\n'
             '$reminderText\n'
-            '2. Non-persistent skip path: if the user explicitly asked not to save, persist, write long-term memory, or modify existing knowledge, call skip_pkm_organization with the reason and evidence instead of writing P.A.R.A. files.</system-reminder>',
+            '2. Non-persistent skip path: if the user explicitly asked not to save, persist, write long-term memory, or modify existing knowledge, call skip_pkm_organization with the reason and evidence instead of writing P.A.R.A. files.\n'
+            '3. Clarification path: if missing or conflicting details block a safe PKM update, create one deduped clarification request and then stop.</system-reminder>',
           ),
         ])
       ];
@@ -530,10 +555,12 @@ $instruction
     bool wrotePara = false;
     bool updatedInsight = false;
     bool skippedPkm = false;
+    bool clarificationRequested = false;
     bool successfulPkmMutation = false;
     String? skipReason;
     String? skipTemporalScope;
     String? skipEvidence;
+    String? clarificationDedupeKey;
 
     for (final msg in messages) {
       if (msg is! FunctionExecutionResultMessage) continue;
@@ -559,6 +586,11 @@ $instruction
           skipTemporalScope = args['temporal_scope'] as String?;
           skipEvidence = args['evidence'] as String?;
         }
+        if (r.name == 'create_clarification_request') {
+          clarificationRequested = true;
+          final args = _decodeToolArguments(r.arguments);
+          clarificationDedupeKey = args['dedupe_key'] as String?;
+        }
       }
     }
 
@@ -566,10 +598,12 @@ $instruction
       wrotePara: wrotePara,
       updatedInsight: updatedInsight,
       skippedPkm: skippedPkm,
+      clarificationRequested: clarificationRequested,
       successfulPkmMutation: successfulPkmMutation,
       skipReason: skipReason,
       skipTemporalScope: skipTemporalScope,
       skipEvidence: skipEvidence,
+      clarificationDedupeKey: clarificationDedupeKey,
     );
   }
 
@@ -657,33 +691,45 @@ class PkmRunCompletionEvidence {
     required this.wrotePara,
     required this.updatedInsight,
     required this.skippedPkm,
+    required this.clarificationRequested,
     required this.successfulPkmMutation,
     this.skipReason,
     this.skipTemporalScope,
     this.skipEvidence,
+    this.clarificationDedupeKey,
   });
 
   final bool wrotePara;
   final bool updatedInsight;
   final bool skippedPkm;
+  final bool clarificationRequested;
   final bool successfulPkmMutation;
   final String? skipReason;
   final String? skipTemporalScope;
   final String? skipEvidence;
+  final String? clarificationDedupeKey;
 
   bool get isComplete =>
-      (wrotePara && updatedInsight) || (skippedPkm && !successfulPkmMutation);
+      (wrotePara && updatedInsight) ||
+      (skippedPkm && !successfulPkmMutation) ||
+      (clarificationRequested && !successfulPkmMutation);
 
   List<String> get missingRequirements {
     if (isComplete) return const [];
     if (skippedPkm && successfulPkmMutation) {
       return const ['skip_without_successful_pkm_mutation'];
     }
+    if (clarificationRequested && successfulPkmMutation) {
+      return const ['clarification_without_persistent_completion'];
+    }
 
     final missing = <String>[];
     if (!wrotePara) missing.add('wrote_para_with_fact_id');
     if (!updatedInsight) missing.add('updated_timeline_card_insight');
     if (!skippedPkm) missing.add('skip_pkm_organization');
+    if (!clarificationRequested) {
+      missing.add('create_clarification_request');
+    }
     return missing;
   }
 
@@ -692,10 +738,13 @@ class PkmRunCompletionEvidence {
         'wrote_para': wrotePara,
         'updated_insight': updatedInsight,
         'skipped_pkm': skippedPkm,
+        'clarification_requested': clarificationRequested,
         'successful_pkm_mutation': successfulPkmMutation,
         'missing_requirements': missingRequirements,
         if (skipReason != null) 'skip_reason': skipReason,
         if (skipTemporalScope != null) 'skip_temporal_scope': skipTemporalScope,
         if (skipEvidence != null) 'skip_evidence': skipEvidence,
+        if (clarificationDedupeKey != null)
+          'clarification_dedupe_key': clarificationDedupeKey,
       };
 }

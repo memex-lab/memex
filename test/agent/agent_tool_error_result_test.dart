@@ -4,12 +4,15 @@ import 'dart:io';
 
 import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:dio/dio.dart';
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:memex/agent/built_in_tools/search_event_logs_tool.dart';
+import 'package:memex/agent/skills/ask_clarification/ask_clarification_skill.dart';
 import 'package:memex/agent/skills/comment_agent/tools/comment_tools.dart';
 import 'package:memex/agent/skills/comment_agent/tools/memory_tools.dart';
 import 'package:memex/agent/skills/manage_timeline_card/timeline_card_skill.dart';
 import 'package:memex/data/services/file_system_service.dart';
+import 'package:memex/db/app_database.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -17,10 +20,14 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('agent tool error results', () {
+    late AppDatabase db;
     late Directory tempRoot;
     late String userId;
 
     setUp(() async {
+      db = AppDatabase.forTesting(NativeDatabase.memory());
+      AppDatabase.setTestInstance(db);
+
       SharedPreferences.setMockInitialValues({});
       await UserStorage.initL10n();
       userId = 'tool_error_${DateTime.now().microsecondsSinceEpoch}';
@@ -34,6 +41,7 @@ void main() {
       if (await tempRoot.exists()) {
         await tempRoot.delete(recursive: true);
       }
+      await db.close();
     });
 
     test('save_timeline_card missing fact is marked as a tool error', () async {
@@ -209,6 +217,44 @@ void main() {
 
       expect(result.isError, isTrue);
       expect(_text(result), contains('ui_configs must be an array'));
+    });
+
+    test('create_clarification_request reports dedupe reuse status', () async {
+      final tool = AskClarificationSkill(forceActivate: true)
+          .tools!
+          .singleWhere((tool) => tool.name == 'create_clarification_request');
+      const dedupeKey = 'reminder:missing_time';
+      final arguments = {
+        'question': '需要提醒你的具体时间是什么？',
+        'response_type': 'short_text',
+        'evidence_fact_ids': ['2026/05/18.md#ts_1'],
+        'dedupe_key': dedupeKey,
+      };
+
+      final first = await _runToolCall(
+        tool: tool,
+        arguments: arguments,
+        metadata: {
+          'userId': userId,
+          'factId': '2026/05/18.md#ts_1',
+          'agentName': 'pkm_agent',
+        },
+      );
+      final second = await _runToolCall(
+        tool: tool,
+        arguments: arguments,
+        metadata: {
+          'userId': userId,
+          'factId': '2026/05/18.md#ts_1',
+          'agentName': 'pkm_agent',
+        },
+      );
+
+      expect(first.isError, isFalse);
+      expect(second.isError, isFalse);
+      expect(_text(first), contains('created=true'));
+      expect(_text(second), contains('created=false'));
+      expect(_text(second), contains('dedupe_key=$dedupeKey'));
     });
 
     test('SaveComment invalid input is marked as a tool error', () async {

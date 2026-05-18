@@ -29,6 +29,24 @@ class ClarificationResponseType {
   static const shortText = 'short_text';
 }
 
+class ClarificationRequestCreateResult {
+  const ClarificationRequestCreateResult({
+    required this.id,
+    required this.created,
+    this.dedupeKey,
+  });
+
+  final String id;
+  final bool created;
+  final String? dedupeKey;
+
+  Map<String, dynamic> toJson() => {
+        'request_id': id,
+        'created': created,
+        if (dedupeKey != null) 'dedupe_key': dedupeKey,
+      };
+}
+
 class ClarificationRequestService {
   static final ClarificationRequestService instance =
       ClarificationRequestService._internal();
@@ -195,6 +213,45 @@ class ClarificationRequestService {
     String? factId,
     int? expiresAt,
   }) async {
+    final result = await createRequestWithResult(
+      id: id,
+      question: question,
+      responseType: responseType,
+      options: options,
+      entityType: entityType,
+      entityLabel: entityLabel,
+      evidenceFactIds: evidenceFactIds,
+      reason: reason,
+      impact: impact,
+      confidence: confidence,
+      proposedMemory: proposedMemory,
+      resolutionTarget: resolutionTarget,
+      sourceAgent: sourceAgent,
+      dedupeKey: dedupeKey,
+      factId: factId,
+      expiresAt: expiresAt,
+    );
+    return result.id;
+  }
+
+  Future<ClarificationRequestCreateResult> createRequestWithResult({
+    String? id,
+    required String question,
+    required String responseType,
+    List<Map<String, dynamic>>? options,
+    String? entityType,
+    String? entityLabel,
+    List<String>? evidenceFactIds,
+    String? reason,
+    String? impact,
+    double? confidence,
+    String? proposedMemory,
+    String? resolutionTarget,
+    String? sourceAgent,
+    String? dedupeKey,
+    String? factId,
+    int? expiresAt,
+  }) async {
     final trimmedDedupeKey = dedupeKey?.trim();
     if (trimmedDedupeKey != null && trimmedDedupeKey.isNotEmpty) {
       final existing = await (_db.select(_db.clarificationRequests)
@@ -210,7 +267,11 @@ class ClarificationRequestService {
       if (existing != null) {
         _logger.info(
             'Reusing active clarification request ${existing.id} for $trimmedDedupeKey');
-        return existing.id;
+        return ClarificationRequestCreateResult(
+          id: existing.id,
+          created: false,
+          dedupeKey: trimmedDedupeKey,
+        );
       }
     }
 
@@ -247,7 +308,11 @@ class ClarificationRequestService {
         );
 
     _logger.info('Created clarification request $requestId');
-    return requestId;
+    return ClarificationRequestCreateResult(
+      id: requestId,
+      created: true,
+      dedupeKey: trimmedDedupeKey,
+    );
   }
 
   Stream<List<ClarificationRequest>> watchPending() {

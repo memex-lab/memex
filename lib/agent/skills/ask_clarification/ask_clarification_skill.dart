@@ -171,8 +171,8 @@ ${UserStorage.l10n.userLanguageInstruction}
                         .millisecondsSinceEpoch ~/
                     1000;
 
-            final requestId =
-                await ClarificationRequestService.instance.createRequest(
+            final result = await ClarificationRequestService.instance
+                .createRequestWithResult(
               question: question,
               responseType: responseType,
               options: normalizedOptions.isEmpty ? null : normalizedOptions,
@@ -190,8 +190,14 @@ ${UserStorage.l10n.userLanguageInstruction}
               expiresAt: expiresAt,
             );
 
+            final status = result.created ? 'created' : 'existing';
             return AgentToolResult(
-              content: TextPart('Clarification request created: $requestId'),
+              content: TextPart(
+                'Clarification request $status: '
+                'request_id=${result.id}; '
+                'created=${result.created}; '
+                'dedupe_key=${result.dedupeKey ?? '-'}',
+              ),
             );
           } catch (e, st) {
             _logger.severe('Failed to create clarification request', e, st);

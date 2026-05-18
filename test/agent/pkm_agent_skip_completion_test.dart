@@ -140,6 +140,34 @@ void main() {
       expect(evidence.toJson()['skipped_pkm'], isTrue);
     });
 
+    test(
+      'clarification request is a valid completion path without PKM writes',
+      () {
+        final evidence = PkmAgent.inspectPkmRunCompletion(
+          factId: factId,
+          messages: [
+            _toolResultMessage(
+              name: 'create_clarification_request',
+              arguments: {
+                'question': '周末具体是周六还是周日？',
+                'response_type': 'single_choice',
+                'evidence_fact_ids': [factId],
+                'dedupe_key': 'weekend:reminder_time',
+              },
+            ),
+          ],
+        );
+
+        expect(evidence.wrotePara, isFalse);
+        expect(evidence.updatedInsight, isFalse);
+        expect(evidence.clarificationRequested, isTrue);
+        expect(evidence.clarificationDedupeKey, 'weekend:reminder_time');
+        expect(evidence.isComplete, isTrue);
+        expect(evidence.missingRequirements, isEmpty);
+        expect(evidence.toJson()['clarification_requested'], isTrue);
+      },
+    );
+
     test('skip is not accepted after a successful PKM mutation', () {
       final evidence = PkmAgent.inspectPkmRunCompletion(
         factId: factId,
@@ -168,6 +196,37 @@ void main() {
       expect(
         evidence.missingRequirements,
         contains('skip_without_successful_pkm_mutation'),
+      );
+    });
+
+    test('clarification alone is not accepted after a PKM mutation', () {
+      final evidence = PkmAgent.inspectPkmRunCompletion(
+        factId: factId,
+        messages: [
+          _toolResultMessage(
+            name: 'Write',
+            arguments: {
+              'file_path': '/Projects/导出灰度提醒设置.md',
+              'content': 'accidental write',
+            },
+          ),
+          _toolResultMessage(
+            name: 'create_clarification_request',
+            arguments: {
+              'question': '要提醒的具体时间是什么？',
+              'response_type': 'short_text',
+              'dedupe_key': 'reminder:time',
+            },
+          ),
+        ],
+      );
+
+      expect(evidence.clarificationRequested, isTrue);
+      expect(evidence.successfulPkmMutation, isTrue);
+      expect(evidence.isComplete, isFalse);
+      expect(
+        evidence.missingRequirements,
+        contains('clarification_without_persistent_completion'),
       );
     });
 
@@ -205,6 +264,8 @@ void main() {
       expect(prompt, contains('skip_pkm_organization'));
       expect(prompt, contains('explicitly asks not to persist'));
       expect(prompt, contains('Use this only for explicit'));
+      expect(prompt, contains('Information-Insufficient Inputs'));
+      expect(prompt, contains('ask_clarification'));
       expect(prompt, isNot(contains('不要写成长记忆')));
       expect(prompt, isNot(contains('不要影响某某项目/规则')));
     });
