@@ -8,7 +8,7 @@
         android:shortcutLongLabel="@string/shortcut_quick_note_long">
         <intent
             android:action="android.intent.action.RUN"
-            android:targetPackage="com.memexlab.memex"
+            android:targetPackage="com.memexlab.memex.dev"
             android:targetClass="com.memexlab.memex.MainActivity">
             <extra android:name="some unique action key" android:value="quick_note" />
         </intent>

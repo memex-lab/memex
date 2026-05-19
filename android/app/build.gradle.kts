@@ -86,13 +86,14 @@ android {
     val globalDevApplicationId = "com.memexlab.memex.dev"
     val cnDevApplicationId = "com.memexlab.memex.cn.dev"
 
+    // Static shortcut targetPackage must be a literal in each flavor overlay.
+    // Android persists @string references as resource IDs in ShortcutInfo intents.
     flavorDimensions += "market"
     productFlavors {
         create("global") {
             dimension = "market"
             applicationId = globalApplicationId
             manifestPlaceholders["appLabel"] = "Memex"
-            resValue("string", "quick_action_target_package", globalApplicationId)
             if (hasGlobalKeystore) {
                 signingConfig = signingConfigs.getByName("globalRelease")
             }
@@ -101,7 +102,6 @@ android {
             dimension = "market"
             applicationId = cnApplicationId
             manifestPlaceholders["appLabel"] = "Memex"
-            resValue("string", "quick_action_target_package", cnApplicationId)
             if (hasCnKeystore) {
                 signingConfig = signingConfigs.getByName("cnRelease")
             }
@@ -110,11 +110,6 @@ android {
             dimension = "market"
             applicationId = globalEarlyApplicationId
             manifestPlaceholders["appLabel"] = "Memex Early"
-            resValue(
-                "string",
-                "quick_action_target_package",
-                globalEarlyApplicationId,
-            )
             if (hasEarlyKeystore) {
                 signingConfig = signingConfigs.getByName("earlyRelease")
             }
@@ -123,7 +118,6 @@ android {
             dimension = "market"
             applicationId = cnEarlyApplicationId
             manifestPlaceholders["appLabel"] = "Memex Early CN"
-            resValue("string", "quick_action_target_package", cnEarlyApplicationId)
             if (hasEarlyKeystore) {
                 signingConfig = signingConfigs.getByName("earlyRelease")
             }
@@ -132,13 +126,11 @@ android {
             dimension = "market"
             applicationId = globalDevApplicationId
             manifestPlaceholders["appLabel"] = "Memex Dev"
-            resValue("string", "quick_action_target_package", globalDevApplicationId)
         }
         create("cnDev") {
             dimension = "market"
             applicationId = cnDevApplicationId
             manifestPlaceholders["appLabel"] = "Memex Dev CN"
-            resValue("string", "quick_action_target_package", cnDevApplicationId)
         }
     }
 
