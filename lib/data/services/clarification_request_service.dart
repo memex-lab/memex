@@ -329,6 +329,25 @@ class ClarificationRequestService {
     return query.get();
   }
 
+  /// Dismiss all pending clarification requests (batch operation).
+  Future<int> dismissAllPending() async {
+    try {
+      final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+      final count = await (_db.update(_db.clarificationRequests)
+            ..where((t) => t.status.equals(ClarificationRequestStatus.pending)))
+          .write(ClarificationRequestsCompanion(
+        status: const Value(ClarificationRequestStatus.dismissed),
+        updatedAt: Value(now),
+      ));
+      _logger
+          .info('Dismissed all pending clarification requests (count=$count)');
+      return count;
+    } catch (e) {
+      _logger.severe('Failed to dismiss all pending requests: $e');
+      return 0;
+    }
+  }
+
   Future<List<ClarificationRequest>> getVisibleForFact(String factId) async {
     // Skip if factId itself is a global Ask — those are rendered as their own
     // timeline card, not as attachments.

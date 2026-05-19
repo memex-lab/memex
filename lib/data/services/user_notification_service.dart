@@ -209,6 +209,33 @@ class UserNotificationService {
     }
   }
 
+  /// Dismiss all notifications for a user, optionally filtered by type.
+  Future<int> dismissAll({
+    required String userId,
+    String? notificationType,
+  }) async {
+    if (!AppDatabase.isInitialized) return 0;
+
+    try {
+      final stmt = _db.delete(_db.userNotifications)
+        ..where((t) {
+          var condition = t.userId.equals(userId);
+          if (notificationType != null) {
+            condition = condition & t.notificationType.equals(notificationType);
+          }
+          return condition;
+        });
+      final count = await stmt.go();
+      _logger.info(
+        'DismissAll userId=$userId, type=$notificationType (deleted=$count)',
+      );
+      return count;
+    } catch (e) {
+      _logger.severe('Failed to dismissAll for userId=$userId: $e');
+      return 0;
+    }
+  }
+
   /// Check if a [SqliteException] is a constraint violation.
   bool _isConstraintError(SqliteException e) {
     // extendedResultCode 2067 = SQLITE_CONSTRAINT_UNIQUE

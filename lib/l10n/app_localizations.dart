@@ -5449,6 +5449,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Release notes'**
   String get earlyUpdateReleaseNotes;
+
+  /// No description provided for @dismissAllNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all'**
+  String get dismissAllNotifications;
+
+  /// No description provided for @dismissByType.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear by type'**
+  String get dismissByType;
+
+  /// No description provided for @dismissTypeSystemAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminders & events'**
+  String get dismissTypeSystemAction;
+
+  /// No description provided for @dismissTypeClarification.
+  ///
+  /// In en, this message translates to:
+  /// **'Clarifications'**
+  String get dismissTypeClarification;
+
+  /// No description provided for @dismissTypeCardUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Card updates'**
+  String get dismissTypeCardUpdate;
+
+  /// No description provided for @dismissAllConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all notifications?'**
+  String get dismissAllConfirm;
+
+  /// No description provided for @dismissTypeConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all {type} notifications?'**
+  String dismissTypeConfirm(Object type);
+
+  /// No description provided for @dismissedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} cleared'**
+  String dismissedCount(Object count);
 }
 
 class _AppLocalizationsDelegate

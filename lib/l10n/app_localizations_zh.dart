@@ -2910,4 +2910,32 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get earlyUpdateReleaseNotes => '更新说明';
+
+  @override
+  String get dismissAllNotifications => '清除全部';
+
+  @override
+  String get dismissByType => '按类型清除';
+
+  @override
+  String get dismissTypeSystemAction => '日程提醒';
+
+  @override
+  String get dismissTypeClarification => '澄清确认';
+
+  @override
+  String get dismissTypeCardUpdate => '卡片更新';
+
+  @override
+  String get dismissAllConfirm => '确定清除全部通知？';
+
+  @override
+  String dismissTypeConfirm(Object type) {
+    return '确定清除所有$type通知？';
+  }
+
+  @override
+  String dismissedCount(Object count) {
+    return '已清除 $count 条';
+  }
 }

@@ -37,6 +37,29 @@ class CardAttachmentService {
     EventBusService.instance.emitEvent(AttachmentsChangedMessage());
   }
 
+  /// Dismiss all pending items of a specific type, or all types if null.
+  /// Returns the total number of items dismissed.
+  Future<int> dismissAllPending({String? type}) async {
+    int total = 0;
+    final userId = await UserStorage.getUserId();
+
+    if (type == null || type == CardAttachmentType.systemAction) {
+      total += await SystemActionService.instance.rejectAllPending();
+    }
+    if (type == null || type == CardAttachmentType.clarificationRequest) {
+      total += await ClarificationRequestService.instance.dismissAllPending();
+    }
+    if ((type == null || type == CardAttachmentType.cardDetailNotification) &&
+        userId != null) {
+      total += await UserNotificationService.instance.dismissAll(
+        userId: userId,
+        notificationType: 'card_detail_update',
+      );
+    }
+
+    return total;
+  }
+
   /// Fetches all pending attachments (for the action center / notification badge).
   Future<List<CardAttachmentData>> getPendingAttachments() async {
     final userId = await UserStorage.getUserId();
@@ -154,7 +177,7 @@ class CardAttachmentService {
                 'fact_id': r.subjectKey,
                 'updated_at': r.updatedAt,
               },
-              sortKey: 30,
+              sortKey: 200,
             ))
         .toList();
   }

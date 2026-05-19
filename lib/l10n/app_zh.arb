@@ -1350,5 +1350,24 @@
   },
   "earlyUpdateCheckFailed": "检查更新失败：{error}",
   "earlyUpdateDialogTitle": "发现 Early 更新",
-  "earlyUpdateReleaseNotes": "更新说明"
+  "earlyUpdateReleaseNotes": "更新说明",
+
+  "dismissAllNotifications": "清除全部",
+  "dismissByType": "按类型清除",
+  "dismissTypeSystemAction": "日程提醒",
+  "dismissTypeClarification": "澄清确认",
+  "dismissTypeCardUpdate": "卡片更新",
+  "dismissAllConfirm": "确定清除全部通知？",
+  "dismissTypeConfirm": "确定清除所有{type}通知？",
+  "@dismissTypeConfirm": {
+    "placeholders": {
+      "type": {}
+    }
+  },
+  "dismissedCount": "已清除 {count} 条",
+  "@dismissedCount": {
+    "placeholders": {
+      "count": {}
+    }
+  }
 }

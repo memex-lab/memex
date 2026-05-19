@@ -3022,4 +3022,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get earlyUpdateReleaseNotes => 'Release notes';
+
+  @override
+  String get dismissAllNotifications => 'Clear all';
+
+  @override
+  String get dismissByType => 'Clear by type';
+
+  @override
+  String get dismissTypeSystemAction => 'Reminders & events';
+
+  @override
+  String get dismissTypeClarification => 'Clarifications';
+
+  @override
+  String get dismissTypeCardUpdate => 'Card updates';
+
+  @override
+  String get dismissAllConfirm => 'Clear all notifications?';
+
+  @override
+  String dismissTypeConfirm(Object type) {
+    return 'Clear all $type notifications?';
+  }
+
+  @override
+  String dismissedCount(Object count) {
+    return '$count cleared';
+  }
 }

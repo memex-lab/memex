@@ -1387,5 +1387,24 @@
   },
   "earlyUpdateCheckFailed": "Update check failed: {error}",
   "earlyUpdateDialogTitle": "Early update available",
-  "earlyUpdateReleaseNotes": "Release notes"
+  "earlyUpdateReleaseNotes": "Release notes",
+
+  "dismissAllNotifications": "Clear all",
+  "dismissByType": "Clear by type",
+  "dismissTypeSystemAction": "Reminders & events",
+  "dismissTypeClarification": "Clarifications",
+  "dismissTypeCardUpdate": "Card updates",
+  "dismissAllConfirm": "Clear all notifications?",
+  "dismissTypeConfirm": "Clear all {type} notifications?",
+  "@dismissTypeConfirm": {
+    "placeholders": {
+      "type": {}
+    }
+  },
+  "dismissedCount": "{count} cleared",
+  "@dismissedCount": {
+    "placeholders": {
+      "count": {}
+    }
+  }
 }

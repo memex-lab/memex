@@ -91,6 +91,24 @@ class SystemActionService {
         .get();
   }
 
+  /// Reject all pending actions (batch dismiss).
+  Future<int> rejectAllPending() async {
+    try {
+      final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+      final count = await (_db.update(_db.systemActions)
+            ..where((t) => t.status.equals('pending')))
+          .write(SystemActionsCompanion(
+        status: const Value('rejected'),
+        updatedAt: Value(now),
+      ));
+      _logger.info('Rejected all pending system actions (count=$count)');
+      return count;
+    } catch (e) {
+      _logger.severe('Failed to reject all pending actions: $e');
+      return 0;
+    }
+  }
+
   /// Gets recent actions for agent context.
   Future<List<SystemAction>> getRecentActions({int limit = 20}) async {
     try {
