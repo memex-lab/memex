@@ -15,6 +15,7 @@
   <a href="https://github.com/memex-lab/memex/releases"><img src="https://img.shields.io/github/v/release/memex-lab/memex?style=flat-square&label=release" alt="Release"></a>
   <a href="https://discord.gg/TJGpXwn85F"><img src="https://img.shields.io/badge/discord-join-5865F2?style=flat-square&logo=discord&logoColor=white" alt="Discord"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue?style=flat-square" alt="License"></a>
+  <a href="https://github.com/memex-lab/memex/stargazers"><img src="https://img.shields.io/github/stars/memex-lab/memex?style=flat-square&color=f5a623" alt="Stars"></a>
 </p>
 
 <p align="center">
@@ -26,32 +27,33 @@
 
 ## What is Memex?
 
-Memex is an open-source, local-first AI journal for iOS and Android. It takes a different approach from traditional journaling apps — instead of asking you to sit down and write polished entries, Memex lets you capture life in fragments (text, photos, voice) and uses a multi-agent AI system to organize them into structured timeline cards, extract knowledge, and surface insights across your records.
-
-Under the hood, Memex's multi-agent intelligence is powered by a fully open Custom Agent System — you can use the same engine to orchestrate and run your own agents. If you're curious about building autonomous workflows on your phone, [jump straight to the details](#-custom-agent-system).
+Memex is an open-source, local-first AI journal for iOS and Android. It takes a different approach from traditional journaling apps — instead of asking you to sit down and write polished entries, Memex lets you capture life in fragments (text, photos, voice) and uses a multi-agent AI system to organize them into structured cards, builds your knowledge base, discovers insights, and provides companionship through AI characters.
 
 **What "local-first" means here:** Your records, cards, and knowledge all stay on your device. There is no Memex account and no Memex server storing your journal. You bring your own LLM provider (OpenAI, Claude, Gemini, etc.), and your prompts go directly from your phone to that provider — we never see your data.
 
-<div align="center">
-  <img src="https://github.com/user-attachments/assets/2a1c1c29-9925-4b9d-aea4-863b5666d5c5" width="300" />
-</div>
+> [!IMPORTANT]
+> **Star Us** — you'll get notified of every new release on GitHub ⭐
+>
+> [![Star Us](https://github.com/user-attachments/assets/5af4e4ac-f6dd-4f51-aec7-3c14c781f651)](https://github.com/memex-lab/memex)
 
 ## Features
 
-### 🎙️ Multi-Modal Recording
-- Capture text, images, and voice in a single input flow
-- Long-press to record audio, release to send
-- Automatic EXIF extraction (timestamp, GPS location) from photos
-- On-device OCR and image labeling via Google ML Kit
-
 ### 🤖 AI-Powered Organization
-- Multi-agent architecture: each agent handles a specific domain (recording organization, card generation, insights, comments, memory summarization, media analysis)
+- Multi-agent architecture: each agent handles a specific domain (recording organization, card generation, insights, comments, memory summarization, media analysis, companion chat, schedule aggregation)
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/1117efb2-e52d-465f-bf66-b21aa323b942" width="800" />
+</div>
+
 - Automatically generates the most fitting card for each type of record:
   - Life & productivity (task, routine, event, duration, progress) — record todos, habits, schedules and goals
   - Knowledge & media (article, snippet, quote, link, conversation) — capture notes, references and dialogues
   - People & places (person, place) — record contacts and locations with map preview
   - Data & metrics (metric, rating, transaction, spec sheet) — record measurements, reviews and expenses
   - Visual (gallery) — preserve moments through photos
+
+https://github.com/user-attachments/assets/4da8225e-945c-474c-8540-dc4d7af64a28
+
 - Auto-tagging, entity extraction, and cross-reference linking
 - Conversational AI assistant for discussing any card or topic
 
@@ -62,6 +64,15 @@ Under the hood, Memex's multi-agent intelligence is powered by a fully open Cust
   - Narrative (highlight, contrast, summary) — surface key conclusions, before/after comparisons, and periodic reviews
   - Spatial & temporal (map, route, timeline) — reconstruct where and when things happened
   - Gallery — visual memory from your photos
+
+https://github.com/user-attachments/assets/5048a9b1-47b2-462a-99f3-6a178e183861
+
+### 🤝 AI Companion
+- Create AI characters with unique personalities that accompany your journaling
+- **Auto-commentary**: Characters react to your new timeline cards — like a friend who's always paying attention
+- **1v1 chat**: Have real conversations with your character, who remembers your life context from cards and knowledge
+- **Persistent memory**: Characters maintain long-term memory across both comment and chat scenes — they grow with you
+- **SillyTavern compatible**: Import character cards (V2 JSON + PNG) with persona, world book, and example dialogues
 
 ### 📝 Pure Text & Data Freedom
 - **Effortless Archiving**: After AI organization, all your records naturally settle into a series of interconnected Markdown files, making one-click diary and document archiving a breeze.
@@ -150,25 +161,9 @@ Every built-in agent in Memex (knowledge extraction, card generation, insight di
 - 🔁 **Auto-retry with configurable limits** — Async agents automatically retry on failure, with a configurable max retry count.
 
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/66fc612f-dfd9-472c-b447-8eef4bcebfb8" width="300" />
-  <p><em>Agent configuration UI</em></p>
+  <img src="https://github.com/user-attachments/assets/8391695f-f4a3-4124-b40c-e4a944d355fb" width="800" />
+  <p><em>Custom Agent System</em></p>
 </div>
-
-### How It Works
-
-```
-System Event (user input, card created, insight generated, ...)
-    ↓
-Event Bus dispatches to subscribed agents
-    ↓
-Agent loads SKILL.md + system prompt
-    ↓
-LLM processes the event with available tools
-    ↓
-Agent executes actions (file I/O, JavaScript, fetch, ...)
-    ↓
-Continues to downstream dependent agents and presents results to the user
-```
 
 Every agent you create is a first-class citizen — it plugs into the same event bus, uses the same tool system, and has the same capabilities as the built-in agents. The only limit is your imagination.
 
