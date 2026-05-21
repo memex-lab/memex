@@ -1666,6 +1666,24 @@ class AppLocalizationsZh extends AppLocalizations {
   String get advancedSettings => '高级设置';
 
   @override
+  String get testConnectionSuccess => '连接成功';
+
+  @override
+  String get testConnectionFailed => '连接失败';
+
+  @override
+  String get testTypeText => '文本';
+
+  @override
+  String get testTypeVision => '视觉';
+
+  @override
+  String get testButton => '测试';
+
+  @override
+  String get testing => '测试中...';
+
+  @override
   String get proxyUrlOptional => '代理 URL (可选)';
 
   @override

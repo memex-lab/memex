@@ -7,6 +7,7 @@ import 'package:memex/utils/user_storage.dart';
 import 'package:memex/data/services/openai_auth_service.dart';
 import 'package:memex/data/services/gemini_auth_service.dart';
 import 'package:memex/data/services/model_list_service.dart';
+import 'package:memex/data/services/model_test_service.dart';
 import 'package:memex/utils/toast_helper.dart';
 import 'package:memex/ui/core/widgets/searchable_dropdown.dart';
 import 'package:memex/config/app_config.dart';
@@ -60,6 +61,11 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
 
   List<String> _fetchedModels = [];
   bool _isFetchingModels = false;
+
+  // Model test state
+  bool _isTesting = false;
+  ModelTestResult? _testResult;
+  ModelTestType _testType = ModelTestType.text;
 
   @override
   void initState() {
@@ -657,6 +663,62 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
     }
   }
 
+  /// Build a temporary LLMConfig from current form state and run a connectivity test.
+  Future<void> _testConnection() async {
+    if (_isTesting) return;
+
+    // Build config from current form values
+    Map<String, dynamic> extraMap = {};
+    try {
+      if (_extraController.text.isNotEmpty) {
+        extraMap = jsonDecode(_extraController.text);
+      }
+    } catch (_) {}
+
+    if (_selectedType == LLMConfig.typeBedrockClaude) {
+      extraMap['accessKeyId'] = _bedrockAccessKeyController.text;
+      extraMap['secretAccessKey'] = _bedrockSecretKeyController.text;
+      extraMap['region'] = _bedrockRegionController.text.isNotEmpty
+          ? _bedrockRegionController.text
+          : 'us-west-2';
+    }
+
+    final testConfig = LLMConfig(
+      key: _keyController.text,
+      type: _selectedType,
+      modelId: _modelIdController.text,
+      apiKey: _selectedType == LLMConfig.typeBedrockClaude
+          ? ''
+          : _apiKeyController.text,
+      baseUrl: _selectedType == LLMConfig.typeBedrockClaude
+          ? ''
+          : _baseUrlController.text,
+      proxyUrl:
+          _proxyUrlController.text.isEmpty ? null : _proxyUrlController.text,
+      extra: extraMap,
+      temperature: double.tryParse(_temperatureController.text),
+      maxTokens: int.tryParse(_maxTokensController.text),
+      topP: double.tryParse(_topPController.text),
+    );
+
+    setState(() {
+      _isTesting = true;
+      _testResult = null;
+    });
+
+    final result = await ModelTestService.testConfig(
+      testConfig,
+      testType: _testType,
+    );
+
+    if (mounted) {
+      setState(() {
+        _isTesting = false;
+        _testResult = result;
+      });
+    }
+  }
+
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
@@ -920,6 +982,232 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
       ),
     );
     return confirmed ?? false;
+  }
+
+  Widget _buildTestConnectionSection() {
+    final bool canTest =
+        _selectedType.isNotEmpty && _modelIdController.text.trim().isNotEmpty;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: _testResult == null
+            ? const Color(0xFFF8FAFC)
+            : _testResult!.success
+                ? const Color(0xFFF0FDF4)
+                : const Color(0xFFFEF2F2),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: _testResult == null
+              ? Colors.grey.shade200
+              : _testResult!.success
+                  ? const Color(0xFF86EFAC)
+                  : const Color(0xFFFCA5A5),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Single row: chips + test button
+          Row(
+            children: [
+              _buildTestTypeChip(
+                label: UserStorage.l10n.testTypeText,
+                icon: Icons.text_fields_rounded,
+                selected: _testType == ModelTestType.text,
+                onTap: _isTesting
+                    ? null
+                    : () => setState(() {
+                          _testType = ModelTestType.text;
+                          _testResult = null;
+                        }),
+              ),
+              const SizedBox(width: 6),
+              _buildTestTypeChip(
+                label: UserStorage.l10n.testTypeVision,
+                icon: Icons.image_rounded,
+                selected: _testType == ModelTestType.vision,
+                onTap: _isTesting
+                    ? null
+                    : () => setState(() {
+                          _testType = ModelTestType.vision;
+                          _testResult = null;
+                        }),
+              ),
+              const Spacer(),
+              SizedBox(
+                height: 32,
+                child: FilledButton.icon(
+                  onPressed: canTest && !_isTesting ? _testConnection : null,
+                  icon: _isTesting
+                      ? const SizedBox(
+                          width: 12,
+                          height: 12,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.play_arrow_rounded, size: 16),
+                  label: Text(
+                    _isTesting
+                        ? UserStorage.l10n.testing
+                        : UserStorage.l10n.testButton,
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    disabledBackgroundColor: Colors.grey.shade300,
+                    disabledForegroundColor: Colors.grey.shade500,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          // Results
+          if (_testResult != null) ...[
+            const SizedBox(height: 10),
+            // Status + response time
+            Row(
+              children: [
+                Icon(
+                  _testResult!.success
+                      ? Icons.check_circle_rounded
+                      : Icons.cancel_rounded,
+                  size: 14,
+                  color: _testResult!.success
+                      ? const Color(0xFF16A34A)
+                      : const Color(0xFFDC2626),
+                ),
+                const SizedBox(width: 5),
+                Text(
+                  _testResult!.success
+                      ? UserStorage.l10n.testConnectionSuccess
+                      : UserStorage.l10n.testConnectionFailed,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: _testResult!.success
+                        ? const Color(0xFF16A34A)
+                        : const Color(0xFFDC2626),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Icon(
+                  Icons.timer_outlined,
+                  size: 12,
+                  color: AppColors.textTertiary,
+                ),
+                const SizedBox(width: 2),
+                Text(
+                  '${_testResult!.responseTime.inMilliseconds}ms',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textTertiary,
+                  ),
+                ),
+              ],
+            ),
+            // Response text or error
+            if (_testResult!.success && _testResult!.responseText != null) ...[
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: const Color(0xFFBBF7D0)),
+                ),
+                child: Text(
+                  _testResult!.responseText!,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF166534),
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ],
+            if (!_testResult!.success && _testResult!.error != null) ...[
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: const Color(0xFFFECACA)),
+                ),
+                child: Text(
+                  _testResult!.error!,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF991B1B),
+                    height: 1.4,
+                  ),
+                  maxLines: 5,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTestTypeChip({
+    required String label,
+    required IconData icon,
+    required bool selected,
+    VoidCallback? onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected
+              ? AppColors.primary.withValues(alpha: 0.1)
+              : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: selected
+                ? AppColors.primary.withValues(alpha: 0.4)
+                : Colors.grey.shade300,
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 14,
+              color: selected ? AppColors.primary : AppColors.textTertiary,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                color: selected ? AppColors.primary : AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -1439,6 +1727,10 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
                     ),
                   ),
                 ),
+              const SizedBox(height: 24),
+
+              // Connection Test
+              _buildTestConnectionSection(),
               const SizedBox(height: 24),
 
               // Advanced Settings

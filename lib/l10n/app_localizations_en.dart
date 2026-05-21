@@ -1714,6 +1714,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get advancedSettings => 'Advanced Settings';
 
   @override
+  String get testConnectionSuccess => 'Connection Successful';
+
+  @override
+  String get testConnectionFailed => 'Connection Failed';
+
+  @override
+  String get testTypeText => 'Text';
+
+  @override
+  String get testTypeVision => 'Vision';
+
+  @override
+  String get testButton => 'Test';
+
+  @override
+  String get testing => 'Testing...';
+
+  @override
   String get proxyUrlOptional => 'Proxy URL (Optional)';
 
   @override

@@ -527,23 +527,13 @@ class UserStorage {
     }
   }
 
-  /// Get both the LLMClient and ModelConfig for an agent.
-  /// This centralized method handles client creation and model configuration mapping.
-  /// [defaultClientKey] specifies which default config to use if the agent hasn't selected one.
+  /// Build an [LLMClient] and [ModelConfig] directly from an [LLMConfig].
+  ///
+  /// This is the core factory used by [getAgentLLMResources] and can also be
+  /// called standalone (e.g. for model connectivity tests with unsaved configs).
+  /// Throws on invalid config or missing credentials.
   static Future<({LLMClient client, ModelConfig modelConfig})>
-      getAgentLLMResources(String agentId, {String? defaultClientKey}) async {
-    final llmConfig =
-        await getAgentLLMConfig(agentId, defaultClientKey: defaultClientKey);
-
-    if (!llmConfig.isValid) {
-      EventBusService.instance.emitEvent(InvalidModelConfigMessage(
-        agentId: AgentDefinitions.displayNames[agentId] ?? agentId,
-        configKey: llmConfig.key,
-      ));
-      throw InvalidModelConfigException(
-          'The LLM configuration for $agentId is invalid.');
-    }
-
+      buildLLMResources(LLMConfig llmConfig) async {
     // Use proxy URL from LLM config if set
     String? proxyUrl = llmConfig.proxyUrl;
 
@@ -552,8 +542,7 @@ class UserStorage {
       case LLMConfig.typeGemini:
         final effectiveApiKey = llmConfig.getEffectiveApiKey();
         if (effectiveApiKey.isEmpty) {
-          throw InvalidModelConfigException(
-              'LLM API Key is empty for agent: $agentId');
+          throw InvalidModelConfigException('LLM API Key is empty');
         }
         client = GeminiClient(
           apiKey: effectiveApiKey,
@@ -572,8 +561,7 @@ class UserStorage {
       case LLMConfig.typeResponses:
         final effectiveApiKey = llmConfig.getEffectiveApiKey();
         if (effectiveApiKey.isEmpty) {
-          throw InvalidModelConfigException(
-              'LLM API Key is empty for agent: $agentId');
+          throw InvalidModelConfigException('LLM API Key is empty');
         }
         client = ResponsesClient(
           apiKey: effectiveApiKey,
@@ -584,8 +572,7 @@ class UserStorage {
       case LLMConfig.typeChatCompletion:
         final effectiveApiKey = llmConfig.getEffectiveApiKey();
         if (effectiveApiKey.isEmpty) {
-          throw InvalidModelConfigException(
-              'LLM API Key is empty for agent: $agentId');
+          throw InvalidModelConfigException('LLM API Key is empty');
         }
         client = OpenAIClient(
           apiKey: effectiveApiKey,
@@ -596,8 +583,7 @@ class UserStorage {
       case LLMConfig.typeClaude:
         final effectiveApiKey = llmConfig.getEffectiveApiKey();
         if (effectiveApiKey.isEmpty) {
-          throw InvalidModelConfigException(
-              'LLM API Key is empty for agent: $agentId');
+          throw InvalidModelConfigException('LLM API Key is empty');
         }
         client = ClaudeClient(
           apiKey: effectiveApiKey,
@@ -608,7 +594,6 @@ class UserStorage {
         );
         break;
       case LLMConfig.typeBedrockClaude:
-        // Bedrock uses AWS credentials from extra
         final extra = llmConfig.extra;
         final accessKeyId = extra['accessKeyId'] as String? ?? '';
         final secretAccessKey = extra['secretAccessKey'] as String? ?? '';
@@ -685,6 +670,26 @@ class UserStorage {
     );
 
     return (client: client, modelConfig: modelConfig);
+  }
+
+  /// Get both the LLMClient and ModelConfig for an agent.
+  /// This centralized method handles client creation and model configuration mapping.
+  /// [defaultClientKey] specifies which default config to use if the agent hasn't selected one.
+  static Future<({LLMClient client, ModelConfig modelConfig})>
+      getAgentLLMResources(String agentId, {String? defaultClientKey}) async {
+    final llmConfig =
+        await getAgentLLMConfig(agentId, defaultClientKey: defaultClientKey);
+
+    if (!llmConfig.isValid) {
+      EventBusService.instance.emitEvent(InvalidModelConfigMessage(
+        agentId: AgentDefinitions.displayNames[agentId] ?? agentId,
+        configKey: llmConfig.key,
+      ));
+      throw InvalidModelConfigException(
+          'The LLM configuration for $agentId is invalid.');
+    }
+
+    return buildLLMResources(llmConfig);
   }
 
   /// Get photo suggestion cache
@@ -878,8 +883,7 @@ class UserStorage {
     return prefs.getBool(_keyAutoBackupEnabledPrefix + userId) ?? false;
   }
 
-  static Future<void> setAutoBackupEnabled(
-      String userId, bool enabled) async {
+  static Future<void> setAutoBackupEnabled(String userId, bool enabled) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_keyAutoBackupEnabledPrefix + userId, enabled);
   }
@@ -925,7 +929,8 @@ class UserStorage {
   }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_keyAndroidBackupTreeUriPrefix + userId, treeUri);
-    await prefs.setString(_keyAndroidBackupTreeNamePrefix + userId, displayName);
+    await prefs.setString(
+        _keyAndroidBackupTreeNamePrefix + userId, displayName);
   }
 
   static Future<void> clearAndroidBackupTree(String userId) async {

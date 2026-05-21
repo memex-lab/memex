@@ -3158,6 +3158,42 @@ abstract class AppLocalizations {
   /// **'Advanced Settings'**
   String get advancedSettings;
 
+  /// No description provided for @testConnectionSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection Successful'**
+  String get testConnectionSuccess;
+
+  /// No description provided for @testConnectionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection Failed'**
+  String get testConnectionFailed;
+
+  /// No description provided for @testTypeText.
+  ///
+  /// In en, this message translates to:
+  /// **'Text'**
+  String get testTypeText;
+
+  /// No description provided for @testTypeVision.
+  ///
+  /// In en, this message translates to:
+  /// **'Vision'**
+  String get testTypeVision;
+
+  /// No description provided for @testButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Test'**
+  String get testButton;
+
+  /// No description provided for @testing.
+  ///
+  /// In en, this message translates to:
+  /// **'Testing...'**
+  String get testing;
+
   /// No description provided for @proxyUrlOptional.
   ///
   /// In en, this message translates to:
