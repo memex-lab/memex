@@ -11,18 +11,18 @@ import '../../../utils/user_storage.dart';
 
 class ScheduleAggregationSkill extends Skill {
   ScheduleAggregationSkill({super.forceActivate})
-      : super(
-          name: "update_schedule_aggregation",
-          description:
-              "Analyzes user's temporal cards (events, tasks, routines) and generates a magazine-style schedule aggregation.",
-          systemPrompt: Prompts.scheduleAggregatorSkillPrompt(
-            UserStorage.l10n.scheduleAggregatorLanguageInstruction,
-          ),
-          tools: [
-            buildGetScheduleCardsTool(),
-            buildSaveScheduleAggregationTool(),
-          ],
-        );
+    : super(
+        name: "update_schedule_aggregation",
+        description:
+            "Analyzes user's temporal cards (events, tasks, routines) and generates a magazine-style schedule aggregation.",
+        systemPrompt: Prompts.scheduleAggregatorSkillPrompt(
+          UserStorage.l10n.scheduleAggregatorLanguageInstruction,
+        ),
+        tools: [
+          buildGetScheduleCardsTool(),
+          buildSaveScheduleAggregationTool(),
+        ],
+      );
 }
 
 const scheduleTemporalTemplateIds = {
@@ -77,6 +77,7 @@ Future<Map<String, dynamic>> queryScheduleCardsForRange({
       final templateId = uiConfig.templateId;
       final data = uiConfig.data;
       final startTime = scheduleStartTimeForCard(templateId, data);
+      final status = deriveScheduleCardStatus(templateId, data);
 
       if (!_isCardInScheduleRange(
         templateId: templateId,
@@ -93,13 +94,13 @@ Future<Map<String, dynamic>> queryScheduleCardsForRange({
         'title': cardData.title,
         'template_id': templateId,
         'timestamp': cardData.timestamp,
-        'status': deriveScheduleCardStatus(templateId, data),
+        'status': status,
         'tags': cardData.tags,
         'start_time': startTime,
         'end_time': data['end_time'],
         'location': data['location'],
         'is_completed': templateId == 'task'
-            ? _parseScheduleBool(data['is_completed']) == true
+            ? status == 'completed'
             : data['is_completed'],
         'priority': data['priority'],
         'due_date': data['due_date'],
@@ -295,9 +296,10 @@ bool _isCardInScheduleRange({
   final start = switch (templateId) {
     'event' => _parseScheduleDateTime(data['start_time']) ?? fallback,
     'task' => _parseScheduleDateTime(data['due_date']) ?? fallback,
-    _ => _parseScheduleDateTime(data['start_time']) ??
-        _parseScheduleDateTime(data['due_date']) ??
-        fallback,
+    _ =>
+      _parseScheduleDateTime(data['start_time']) ??
+          _parseScheduleDateTime(data['due_date']) ??
+          fallback,
   };
 
   final end = _parseScheduleDateTime(data['end_time']) ?? start;
@@ -343,12 +345,31 @@ DateTime _resultScheduleDate(Map<String, dynamic> result) {
 
 String deriveScheduleCardStatus(String templateId, Map<String, dynamic> data) {
   if (templateId == 'task') {
-    return _parseScheduleBool(data['is_completed']) == true
-        ? 'completed'
-        : 'pending';
+    if (_deriveTaskCompleted(data)) return 'completed';
+    if (_hasCompletedSubtask(data['subtasks'])) return 'in_progress';
+    return 'pending';
   }
 
   return 'pending';
+}
+
+bool _deriveTaskCompleted(Map<String, dynamic> data) {
+  if (_parseScheduleBool(data['is_completed']) == true) return true;
+  final subtasks = data['subtasks'];
+  return subtasks is List &&
+      subtasks.isNotEmpty &&
+      subtasks.every(
+        (subtask) =>
+            subtask is Map && _parseScheduleBool(subtask['completed']) == true,
+      );
+}
+
+bool _hasCompletedSubtask(dynamic value) {
+  return value is List &&
+      value.any(
+        (subtask) =>
+            subtask is Map && _parseScheduleBool(subtask['completed']) == true,
+      );
 }
 
 bool? _parseScheduleBool(dynamic value) {
@@ -369,10 +390,10 @@ int _countAggregationItems(Map<String, dynamic> yamlData) {
   final heroCount = yamlData['hero_item'] == null ? 0 : 1;
   final timelineCount =
       (yamlData['timeline'] as List?)?.whereType<Map>().fold<int>(
-                0,
-                (count, day) => count + ((day['items'] as List?)?.length ?? 0),
-              ) ??
-          0;
+        0,
+        (count, day) => count + ((day['items'] as List?)?.length ?? 0),
+      ) ??
+      0;
   final completedCount = (yamlData['completed'] as List?)?.length ?? 0;
   return heroCount + timelineCount + completedCount;
 }

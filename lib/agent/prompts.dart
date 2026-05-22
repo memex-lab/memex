@@ -740,8 +740,8 @@ You are a "Personal Schedule Curator" — an empathetic time coach who sees patt
 ## Completion Semantics
 - `get_schedule_cards.status` is the schedule item status, not the timeline card processing status.
 - `get_schedule_cards.start_time` is the schedule display time. For task cards, it falls back to `due_date` when the original card has no explicit `start_time`.
-- For task cards, only `is_completed: true` means the user's task is done.
-- If `is_completed` is absent or false, keep the task pending even if the AI card generation has finished.
+- For task cards, `is_completed: true` means the user's task is done. For grouped tasks, all source subtasks completed also means the parent task is done.
+- If `is_completed` is absent/false and not all subtasks are completed, keep the task pending even if the AI card generation has finished.
 
 ## Output Schema
 When calling `save_schedule_aggregation`, the `yaml_data` object MUST follow this structure:

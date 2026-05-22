@@ -10,7 +10,7 @@ class TaskCard extends StatefulWidget {
   final String? cardId;
   final int? configIndex;
   final Function(String cardId, int configIndex, Map<String, dynamic> data)?
-      onUpdate;
+  onUpdate;
 
   const TaskCard({
     super.key,
@@ -44,13 +44,25 @@ class _TaskCardState extends State<TaskCard> {
   }
 
   void _initializeState() {
-    _isCompleted = widget.data['is_completed'] ?? false;
-    _subtasks = List.from(widget.data['subtasks'] ?? []);
+    _subtasks = (widget.data['subtasks'] as List? ?? const [])
+        .whereType<Map>()
+        .map((task) => Map<String, dynamic>.from(task))
+        .toList();
+    _isCompleted =
+        _parseCompletedBool(widget.data['is_completed']) ||
+        (_subtasks.isNotEmpty &&
+            _subtasks.every((task) => _parseCompletedBool(task['completed'])));
+    if (_isCompleted && _subtasks.isNotEmpty) {
+      _subtasks = _setSubtasksCompletion(_subtasks, completed: true);
+    }
   }
 
   void _toggleCompletion() {
     setState(() {
       _isCompleted = !_isCompleted;
+      if (_subtasks.isNotEmpty) {
+        _subtasks = _setSubtasksCompletion(_subtasks, completed: _isCompleted);
+      }
     });
     _updateData();
   }
@@ -58,11 +70,11 @@ class _TaskCardState extends State<TaskCard> {
   void _toggleSubtask(int index) {
     setState(() {
       final task = Map<String, dynamic>.from(_subtasks[index]);
-      task['completed'] = !(task['completed'] ?? false);
+      task['completed'] = !_parseCompletedBool(task['completed']);
       _subtasks[index] = task;
-
-      // Optional: Auto-update parent completion if all subtasks are done
-      // For now, keeping them independent as per typical todo list behavior
+      _isCompleted =
+          _subtasks.isNotEmpty &&
+          _subtasks.every((task) => _parseCompletedBool(task['completed']));
     });
     _updateData();
   }
@@ -71,14 +83,10 @@ class _TaskCardState extends State<TaskCard> {
     if (widget.cardId != null &&
         widget.configIndex != null &&
         widget.onUpdate != null) {
-      widget.onUpdate!(
-        widget.cardId!,
-        widget.configIndex!,
-        {
-          'is_completed': _isCompleted,
-          'subtasks': _subtasks,
-        },
-      );
+      widget.onUpdate!(widget.cardId!, widget.configIndex!, {
+        'is_completed': _isCompleted,
+        'subtasks': _subtasks,
+      });
     }
   }
 
@@ -101,17 +109,23 @@ class _TaskCardState extends State<TaskCard> {
           Row(
             children: [
               GestureDetector(
+                key: widget.cardId == null
+                    ? null
+                    : ValueKey('task_card_toggle_${widget.cardId}'),
                 onTap: _toggleCompletion,
                 child: Container(
                   width: 20,
                   height: 20,
                   decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border:
-                          Border.all(color: const Color(0xFF5B6CFF), width: 2),
-                      color: _isCompleted
-                          ? const Color(0xFF5B6CFF)
-                          : Colors.transparent),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: const Color(0xFF5B6CFF),
+                      width: 2,
+                    ),
+                    color: _isCompleted
+                        ? const Color(0xFF5B6CFF)
+                        : Colors.transparent,
+                  ),
                   child: _isCompleted
                       ? const Icon(Icons.check, size: 12, color: Colors.white)
                       : null,
@@ -119,18 +133,25 @@ class _TaskCardState extends State<TaskCard> {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(title,
-                    style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF0A0A0A),
-                        decoration:
-                            _isCompleted ? TextDecoration.lineThrough : null,
-                        decorationColor: const Color(0xFF99A1AF))),
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF0A0A0A),
+                    decoration: _isCompleted
+                        ? TextDecoration.lineThrough
+                        : null,
+                    decorationColor: const Color(0xFF99A1AF),
+                  ),
+                ),
               ),
               if (widget.data['priority'] == 'high')
-                const Icon(Icons.priority_high,
-                    size: 16, color: Color(0xFFF43F5E))
+                const Icon(
+                  Icons.priority_high,
+                  size: 16,
+                  color: Color(0xFFF43F5E),
+                ),
             ],
           ),
           if (hasSubtasks) ...[
@@ -140,35 +161,43 @@ class _TaskCardState extends State<TaskCard> {
             ..._subtasks.asMap().entries.map((entry) {
               final int index = entry.key;
               final Map<String, dynamic> task = entry.value;
-              final bool done = task['completed'] ?? false;
+              final bool done = _parseCompletedBool(task['completed']);
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4),
                 child: Row(
                   children: [
                     GestureDetector(
+                      key: widget.cardId == null
+                          ? null
+                          : ValueKey(
+                              'task_card_subtask_${widget.cardId}_$index',
+                            ),
                       onTap: () => _toggleSubtask(index),
                       behavior: HitTestBehavior.opaque,
                       child: Padding(
                         padding: const EdgeInsets.only(right: 8.0),
                         child: Icon(
-                            done
-                                ? Icons.check_box
-                                : Icons.check_box_outline_blank,
-                            size: 18,
-                            color: done
-                                ? const Color(0xFF99A1AF)
-                                : const Color(0xFF4A5565)),
+                          done
+                              ? Icons.check_box
+                              : Icons.check_box_outline_blank,
+                          size: 18,
+                          color: done
+                              ? const Color(0xFF99A1AF)
+                              : const Color(0xFF4A5565),
+                        ),
                       ),
                     ),
                     Expanded(
-                      child: Text(task['title'] ?? '',
-                          style: TextStyle(
-                              fontSize: 13,
-                              color: done
-                                  ? const Color(0xFF99A1AF)
-                                  : const Color(0xFF334155),
-                              decoration:
-                                  done ? TextDecoration.lineThrough : null)),
+                      child: Text(
+                        task['title'] ?? '',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: done
+                              ? const Color(0xFF99A1AF)
+                              : const Color(0xFF334155),
+                          decoration: done ? TextDecoration.lineThrough : null,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -180,13 +209,39 @@ class _TaskCardState extends State<TaskCard> {
                 padding: const EdgeInsets.only(top: 8, left: 32),
                 child: Text(
                   dueDateLabel,
-                  style:
-                      const TextStyle(fontSize: 11, color: Color(0xFF99A1AF)),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF99A1AF),
+                  ),
                 ),
-              )
-          ]
+              ),
+          ],
         ],
       ),
     );
   }
+}
+
+List<Map<String, dynamic>> _setSubtasksCompletion(
+  List<dynamic> subtasks, {
+  required bool completed,
+}) {
+  return subtasks
+      .whereType<Map>()
+      .map(
+        (task) => {...Map<String, dynamic>.from(task), 'completed': completed},
+      )
+      .toList();
+}
+
+bool _parseCompletedBool(dynamic value) {
+  if (value is bool) return value;
+  if (value is num) return value != 0;
+  if (value is String) {
+    return switch (value.toLowerCase().trim()) {
+      'true' || 'yes' || 'y' || '1' || 'done' || 'completed' => true,
+      _ => false,
+    };
+  }
+  return false;
 }

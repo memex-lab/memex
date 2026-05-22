@@ -7,6 +7,7 @@ import 'package:memex/agent/agent_system_prompt_helper.dart';
 import 'package:memex/agent/schedule_refresh_router_agent/prompt.dart';
 import 'package:memex/agent/skills/schedule_aggregation/schedule_aggregation_skill.dart';
 import 'package:memex/agent/state_util.dart';
+import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/global_event_bus.dart';
 import 'package:memex/data/services/schedule_refresh_state_service.dart';
 import 'package:memex/domain/models/card_model.dart';
@@ -19,6 +20,7 @@ final _logger = getLogger('ScheduleRefreshRouterAgent');
 enum ScheduleRefreshRouteAction {
   skipped,
   markedDirty,
+  updatedExistingTask,
   requestedRefresh,
 }
 
@@ -66,6 +68,10 @@ class ScheduleRefreshRouterAgent {
       _buildMarkDirtyTool(
         userId: userId,
         defaultFactId: factId,
+        onDecision: (decision) => toolDecision = decision,
+      ),
+      _buildMarkExistingTaskCompletedTool(
+        userId: userId,
         onDecision: (decision) => toolDecision = decision,
       ),
       _buildRequestRefreshTool(
@@ -141,6 +147,65 @@ class ScheduleRefreshRouterAgent {
   }
 }
 
+Future<bool> markExistingScheduleTaskCompleted({
+  required String userId,
+  required String cardId,
+  String? subtaskTitle,
+}) async {
+  final fileSystem = FileSystemService.instance;
+  final trimmedSubtaskTitle = subtaskTitle?.trim();
+  var didUpdate = false;
+
+  final updatedCard = await fileSystem.updateCardFile(userId, cardId, (card) {
+    final taskIndex = card.uiConfigs.indexWhere(
+      (config) => config.templateId == 'task',
+    );
+    if (taskIndex < 0) {
+      throw StateError('No task ui_config found for $cardId');
+    }
+
+    final config = card.uiConfigs[taskIndex];
+    final data = Map<String, dynamic>.from(config.data);
+    final rawSubtasks = data['subtasks'];
+
+    if (rawSubtasks is List && rawSubtasks.isNotEmpty) {
+      final subtasks = _normalizeTaskSubtasks(rawSubtasks);
+      if (subtasks.isEmpty) {
+        throw StateError('Malformed subtasks for $cardId');
+      }
+
+      if (trimmedSubtaskTitle == null || trimmedSubtaskTitle.isEmpty) {
+        data['subtasks'] = _setSubtasksCompleted(subtasks);
+        data['is_completed'] = true;
+      } else {
+        final index = _findSubtaskIndex(subtasks, trimmedSubtaskTitle);
+        if (index < 0) {
+          throw StateError(
+            'No matching subtask "$trimmedSubtaskTitle" found for $cardId',
+          );
+        }
+        subtasks[index] = {...subtasks[index], 'completed': true};
+        data['subtasks'] = subtasks;
+        data['is_completed'] = subtasks.every(
+          (subtask) => _parseTaskCompleted(subtask['completed']),
+        );
+      }
+    } else {
+      data['is_completed'] = true;
+    }
+
+    final updatedConfigs = card.uiConfigs.toList();
+    updatedConfigs[taskIndex] = UiConfig(
+      templateId: config.templateId,
+      data: data,
+    );
+    didUpdate = true;
+    return card.copyWith(uiConfigs: updatedConfigs);
+  });
+
+  return didUpdate && updatedCard != null;
+}
+
 Future<ScheduleRefreshRouteResult> ensureScheduleRelevantDecision({
   required String userId,
   required String factId,
@@ -152,9 +217,7 @@ Future<ScheduleRefreshRouteResult> ensureScheduleRelevantDecision({
     return decision;
   }
 
-  _logger.info(
-    'Schedule refresh skip overridden for temporal card $factId',
-  );
+  _logger.info('Schedule refresh skip overridden for temporal card $factId');
   return fallbackScheduleRefreshDecision(
     userId: userId,
     factId: factId,
@@ -212,10 +275,12 @@ Map<String, dynamic> buildScheduleRefreshRouterContext({
       'status': cardData.status,
       'tags': cardData.tags,
       'ui_configs': cardData.uiConfigs
-          .map((config) => {
-                'template_id': config.templateId,
-                'data': _compactValue(config.data),
-              })
+          .map(
+            (config) => {
+              'template_id': config.templateId,
+              'data': _compactValue(config.data),
+            },
+          )
           .toList(),
     },
     'recent_schedule_context': recentScheduleContext,
@@ -283,11 +348,7 @@ Tool _buildMarkDirtyTool({
       },
       'required': ['reason'],
     },
-    executable: (
-      String reason,
-      List<dynamic>? cardIds,
-      num? confidence,
-    ) async {
+    executable: (String reason, List<dynamic>? cardIds, num? confidence) async {
       final ids = _normalizeCardIds(cardIds, defaultFactId);
       await ScheduleRefreshStateService.instance.markDirty(
         userId: userId,
@@ -303,6 +364,70 @@ Tool _buildMarkDirtyTool({
       onDecision(decision);
       return 'Schedule marked dirty: $reason';
     },
+  );
+}
+
+Tool _buildMarkExistingTaskCompletedTool({
+  required String userId,
+  required void Function(ScheduleRefreshRouteResult decision) onDecision,
+}) {
+  return Tool(
+    name: 'mark_existing_task_completed',
+    description:
+        'Mark an existing todo/task card or one exact subtask as completed. Use only when the user explicitly says it is done and the target clearly matches recent schedule context.',
+    parameters: {
+      'type': 'object',
+      'properties': {
+        'card_id': {
+          'type': 'string',
+          'description': 'Existing task card ID from recent_schedule_context.',
+        },
+        'subtask_title': {
+          'type': 'string',
+          'description':
+              'Exact subtask title from recent_schedule_context when only one subtask was completed. Omit to complete the whole task.',
+        },
+        'reason': {
+          'type': 'string',
+          'description': 'Short user-facing reason.',
+        },
+        'confidence': {
+          'type': 'number',
+          'description': 'Confidence from 0 to 1.',
+        },
+      },
+      'required': ['card_id', 'reason'],
+    },
+    executable:
+        (
+          String cardId,
+          String? subtaskTitle,
+          String reason,
+          num? confidence,
+        ) async {
+          final updated = await markExistingScheduleTaskCompleted(
+            userId: userId,
+            cardId: cardId,
+            subtaskTitle: subtaskTitle,
+          );
+          if (!updated) {
+            throw StateError('Failed to update existing task $cardId');
+          }
+
+          await ScheduleRefreshStateService.instance.markDirty(
+            userId: userId,
+            reason: reason,
+            cardIds: [cardId],
+          );
+          final decision = ScheduleRefreshRouteResult(
+            action: ScheduleRefreshRouteAction.updatedExistingTask,
+            reason: reason,
+            cardIds: [cardId],
+            confidence: confidence?.toDouble(),
+          );
+          onDecision(decision);
+          return 'Marked existing task completed: $cardId';
+        },
   );
 }
 
@@ -333,11 +458,7 @@ Tool _buildRequestRefreshTool({
       },
       'required': ['reason'],
     },
-    executable: (
-      String reason,
-      List<dynamic>? cardIds,
-      num? confidence,
-    ) async {
+    executable: (String reason, List<dynamic>? cardIds, num? confidence) async {
       final ids = _normalizeCardIds(cardIds, defaultFactId);
       await ScheduleRefreshStateService.instance.markDirty(
         userId: userId,
@@ -350,10 +471,7 @@ Tool _buildRequestRefreshTool({
         event: SystemEvent(
           type: SystemEventTypes.scheduleAggregationRequested,
           source: 'schedule_refresh_router_agent',
-          payload: {
-            'reason': reason,
-            'card_ids': ids,
-          },
+          payload: {'reason': reason, 'card_ids': ids},
         ),
       );
       final decision = ScheduleRefreshRouteResult(
@@ -374,6 +492,48 @@ List<String> _normalizeCardIds(List<dynamic>? cardIds, String defaultFactId) {
     ...?cardIds?.map((e) => e.toString()).where((id) => id.isNotEmpty),
   };
   return ids.toList();
+}
+
+List<Map<String, dynamic>> _normalizeTaskSubtasks(List<dynamic> rawSubtasks) {
+  return rawSubtasks
+      .whereType<Map>()
+      .map((subtask) => Map<String, dynamic>.from(subtask))
+      .where(
+        (subtask) => (subtask['title']?.toString().trim() ?? '').isNotEmpty,
+      )
+      .toList();
+}
+
+List<Map<String, dynamic>> _setSubtasksCompleted(
+  List<Map<String, dynamic>> subtasks,
+) {
+  return subtasks.map((subtask) => {...subtask, 'completed': true}).toList();
+}
+
+int _findSubtaskIndex(
+  List<Map<String, dynamic>> subtasks,
+  String subtaskTitle,
+) {
+  final target = _normalizeTaskTitle(subtaskTitle);
+  return subtasks.indexWhere(
+    (subtask) => _normalizeTaskTitle(subtask['title']) == target,
+  );
+}
+
+String _normalizeTaskTitle(dynamic value) {
+  return value?.toString().trim().toLowerCase() ?? '';
+}
+
+bool _parseTaskCompleted(dynamic value) {
+  if (value is bool) return value;
+  if (value is num) return value != 0;
+  if (value is String) {
+    return switch (value.toLowerCase().trim()) {
+      'true' || 'yes' || 'y' || '1' || 'done' || 'completed' => true,
+      _ => false,
+    };
+  }
+  return false;
 }
 
 String _safeSessionPart(String value) {

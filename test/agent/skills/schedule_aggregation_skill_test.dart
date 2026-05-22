@@ -59,7 +59,7 @@ void main() {
       );
     });
 
-    test('uses only task is_completed to mark schedule tasks completed', () {
+    test('uses task completion fields to mark schedule tasks completed', () {
       expect(
         deriveScheduleCardStatus(
           'task',
@@ -87,6 +87,33 @@ void main() {
           <String, dynamic>{'is_completed': 0},
         ),
         'pending',
+      );
+    });
+
+    test('derives grouped task status from subtasks', () {
+      expect(
+        deriveScheduleCardStatus(
+          'task',
+          <String, dynamic>{
+            'subtasks': [
+              {'title': 'A', 'completed': true},
+              {'title': 'B', 'completed': true},
+            ],
+          },
+        ),
+        'completed',
+      );
+      expect(
+        deriveScheduleCardStatus(
+          'task',
+          <String, dynamic>{
+            'subtasks': [
+              {'title': 'A', 'completed': true},
+              {'title': 'B', 'completed': false},
+            ],
+          },
+        ),
+        'in_progress',
       );
     });
 
