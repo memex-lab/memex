@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:memex/domain/models/agent_config.dart';
 import 'package:memex/domain/models/agent_definitions.dart';
 import 'package:memex/domain/models/llm_config.dart';
@@ -58,6 +59,21 @@ void main() {
       const config = AgentConfig(llmConfigKey: 'custom');
 
       expect(config.copyWith(llmConfigKey: null).llmConfigKey, isNull);
+    });
+
+    test('DeepSeek builds an OpenAI-compatible chat client', () async {
+      const config = LLMConfig(
+        key: 'deepseek',
+        type: LLMConfig.typeDeepSeek,
+        modelId: 'deepseek-v4-flash',
+        apiKey: 'sk-test',
+        baseUrl: 'https://api.deepseek.com',
+      );
+
+      final resources = await UserStorage.buildLLMResources(config);
+
+      expect(resources.client, isA<OpenAIClient>());
+      expect(resources.modelConfig.model, 'deepseek-v4-flash');
     });
   });
 }

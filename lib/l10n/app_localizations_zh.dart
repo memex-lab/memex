@@ -1620,6 +1620,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get providerZhipu => 'Zhipu GLM (智谱)';
 
   @override
+  String get providerDeepSeek => 'DeepSeek (官方 API)';
+
+  @override
   String get providerMinimax => 'MiniMax';
 
   @override

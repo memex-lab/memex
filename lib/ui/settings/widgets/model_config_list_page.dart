@@ -45,6 +45,8 @@ class _ModelConfigListPageState extends State<ModelConfigListPage> {
         return l10n.providerSeed;
       case LLMConfig.typeZhipu:
         return l10n.providerZhipu;
+      case LLMConfig.typeDeepSeek:
+        return l10n.providerDeepSeek;
       case LLMConfig.typeMinimax:
         return l10n.providerMinimax;
       case LLMConfig.typeOpenRouter:

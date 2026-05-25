@@ -1007,6 +1007,8 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
           return l10n.providerSeed;
         case LLMConfig.typeZhipu:
           return l10n.providerZhipu;
+        case LLMConfig.typeDeepSeek:
+          return l10n.providerDeepSeek;
         case LLMConfig.typeMimo:
           return l10n.providerMimo;
         case LLMConfig.typeOpenRouter:
@@ -1040,6 +1042,7 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
         LLMConfig.typeQwen,
         LLMConfig.typeSeed,
         LLMConfig.typeZhipu,
+        LLMConfig.typeDeepSeek,
         LLMConfig.typeMimo,
         LLMConfig.typeOpenRouter,
         LLMConfig.typeOllama,
@@ -1088,7 +1091,7 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
 
     return DropdownButtonFormField<String>(
       isExpanded: true,
-      value: _selectedType.isEmpty ? null : _selectedType,
+      initialValue: _selectedType.isEmpty ? null : _selectedType,
       hint: Text(l10n.select),
       decoration: InputDecoration(
         labelText: l10n.clientLabel,

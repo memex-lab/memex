@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:memex/config/app_flavor.dart';
 import 'package:memex/domain/models/llm_config.dart';
 import 'package:memex/l10n/app_localizations.dart';
 import 'package:memex/ui/settings/widgets/model_config_edit_page.dart';
@@ -8,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   setUpAll(() async {
+    AppFlavor.init('global');
     SharedPreferences.setMockInitialValues({});
     await UserStorage.initL10n();
   });
@@ -169,6 +171,31 @@ void main() {
       final configs = await UserStorage.getLLMConfigs();
       expect(configs.length, 4);
       expect(configs.any((c) => c.key == 'myconfig_copy_2'), isTrue);
+    });
+  });
+
+  group('ModelConfigEditPage provider selection', () {
+    testWidgets('renders DeepSeek configuration with official defaults',
+        (tester) async {
+      AppFlavor.init('global');
+      const deepSeekConfig = LLMConfig(
+        key: 'deepseek',
+        type: LLMConfig.typeDeepSeek,
+        modelId: 'deepseek-v4-flash',
+        apiKey: 'sk-test',
+        baseUrl: 'https://api.deepseek.com',
+      );
+
+      await tester.pumpWidget(
+        buildTestableWidget(
+          const ModelConfigEditPage(duplicateSource: deepSeekConfig),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.textContaining('DeepSeek'), findsWidgets);
+      expect(find.text('https://api.deepseek.com'), findsOneWidget);
+      expect(find.text('deepseek-v4-flash'), findsOneWidget);
     });
   });
 }

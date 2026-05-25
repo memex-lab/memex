@@ -629,6 +629,7 @@ class UserStorage {
       case LLMConfig.typeKimi:
       case LLMConfig.typeQwen:
       case LLMConfig.typeZhipu:
+      case LLMConfig.typeDeepSeek:
       case LLMConfig.typeOpenRouter:
       case LLMConfig.typeOllama:
       case LLMConfig.typeMemex:

@@ -16,6 +16,7 @@ class LLMConfig {
   static const String typeQwen = 'qwen';
   static const String typeSeed = 'seed';
   static const String typeZhipu = 'zhipu';
+  static const String typeDeepSeek = 'deepseek';
   static const String typeMinimax = 'minimax';
   static const String typeOpenRouter = 'openrouter';
   static const String typeOllama = 'ollama';
@@ -49,6 +50,8 @@ class LLMConfig {
         return 'Volcengine';
       case typeZhipu:
         return 'Zhipu';
+      case typeDeepSeek:
+        return 'DeepSeek';
       case typeMinimax:
         return 'MiniMax';
       case typeMimo:
@@ -71,6 +74,7 @@ class LLMConfig {
       case typeKimi:
       case typeQwen:
       case typeZhipu:
+      case typeDeepSeek:
       case typeOpenRouter:
       case typeOllama:
       case typeMemex:
@@ -110,6 +114,8 @@ class LLMConfig {
         return 'Volcengine';
       case typeZhipu:
         return 'Zhipu GLM';
+      case typeDeepSeek:
+        return 'DeepSeek';
       case typeMinimax:
         return 'MiniMax';
       case typeOpenRouter:
@@ -158,6 +164,8 @@ class LLMConfig {
         return const {'doubao-seed-2-0-pro-260215', 'doubao-seed-1-8-251228'};
       case typeZhipu:
         return const {'glm-5v-turbo', 'glm-4.6v'};
+      case typeDeepSeek:
+        return const {'deepseek-v4-flash', 'deepseek-v4-pro'};
       case typeMimo:
         return const {'mimo-v2-pro'};
       case typeOpenRouter:
@@ -254,6 +262,8 @@ class LLMConfig {
         return const ['doubao-seed-1-8-251228', 'doubao-1.5-pro-256k'];
       case typeZhipu:
         return const ['glm-5v-turbo', 'glm-4.6v'];
+      case typeDeepSeek:
+        return const ['deepseek-v4-flash', 'deepseek-v4-pro'];
       case typeMinimax:
         return const ['MiniMax-M2.5', 'MiniMax-M1'];
       case typeOpenRouter:
@@ -303,6 +313,7 @@ class LLMConfig {
       case typeQwen:
       case typeSeed:
       case typeZhipu:
+      case typeDeepSeek:
       case typeMinimax:
       case typeMimo:
       case typeOpenRouter:
@@ -403,6 +414,8 @@ class LLMConfig {
         return 'https://ark.cn-beijing.volces.com/api/v3';
       case typeZhipu:
         return 'https://open.bigmodel.cn/api/paas/v4';
+      case typeDeepSeek:
+        return 'https://api.deepseek.com';
       case typeMinimax:
         return 'https://api.minimaxi.com/anthropic';
       case typeOpenRouter:
@@ -485,6 +498,7 @@ class LLMConfig {
             type == typeQwen ||
             type == typeSeed ||
             type == typeZhipu ||
+            type == typeDeepSeek ||
             type == typeMinimax ||
             type == typeMimo ||
             type == typeOpenRouter ||
@@ -502,6 +516,7 @@ class LLMConfig {
       typeQwen,
       typeSeed,
       typeZhipu,
+      typeDeepSeek,
       typeMinimax,
       typeOpenRouter,
       typeOllama,

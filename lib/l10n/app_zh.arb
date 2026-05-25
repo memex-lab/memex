@@ -778,6 +778,7 @@
   "providerQwen": "Aliyun (阿里云)",
   "providerSeed": "Volcengine (火山引擎)",
   "providerZhipu": "Zhipu GLM (智谱)",
+  "providerDeepSeek": "DeepSeek (官方 API)",
   "providerMinimax": "MiniMax",
   "providerOpenRouter": "OpenRouter",
   "providerOllama": "Ollama (本地)",

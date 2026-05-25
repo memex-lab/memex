@@ -1668,6 +1668,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get providerZhipu => 'Zhipu GLM';
 
   @override
+  String get providerDeepSeek => 'DeepSeek';
+
+  @override
   String get providerMinimax => 'MiniMax';
 
   @override

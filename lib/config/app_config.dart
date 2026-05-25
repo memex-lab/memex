@@ -43,6 +43,7 @@ class AppConfig {
     LLMConfig.typeQwen,
     LLMConfig.typeSeed,
     LLMConfig.typeZhipu,
+    LLMConfig.typeDeepSeek,
     LLMConfig.typeMimo,
     // Aggregators
     LLMConfig.typeOpenRouter,
@@ -59,6 +60,7 @@ class AppConfig {
     LLMConfig.typeQwen,
     LLMConfig.typeSeed,
     LLMConfig.typeZhipu,
+    LLMConfig.typeDeepSeek,
     LLMConfig.typeMimo,
     // Aggregators
     LLMConfig.typeOllama,

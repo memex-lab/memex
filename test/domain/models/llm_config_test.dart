@@ -67,4 +67,53 @@ void main() {
       expect(duplicated.key, 'config-v1.2_test_copy');
     });
   });
+
+  group('DeepSeek provider', () {
+    test('uses official OpenAI-compatible API defaults', () {
+      expect(LLMConfig.typeDeepSeek, 'deepseek');
+      expect(LLMConfig.providerDisplayName(LLMConfig.typeDeepSeek), 'DeepSeek');
+      expect(LLMConfig.displayName(LLMConfig.typeDeepSeek), 'DeepSeek');
+      expect(
+        LLMConfig.underlyingClientType(LLMConfig.typeDeepSeek),
+        LLMConfig.typeChatCompletion,
+      );
+      expect(
+        LLMConfig.defaultBaseUrl(LLMConfig.typeDeepSeek),
+        'https://api.deepseek.com',
+      );
+      expect(LLMConfig.supportsModelListing(LLMConfig.typeDeepSeek), isTrue);
+      expect(
+        LLMConfig.modelsEndpoint(
+          LLMConfig.typeDeepSeek,
+          'https://api.deepseek.com',
+        ),
+        'https://api.deepseek.com/models',
+      );
+    });
+
+    test('recommends current official model IDs', () {
+      expect(LLMConfig.recommendedModels(LLMConfig.typeDeepSeek), [
+        'deepseek-v4-flash',
+        'deepseek-v4-pro',
+      ]);
+      expect(LLMConfig.featuredModels(LLMConfig.typeDeepSeek), {
+        'deepseek-v4-flash',
+        'deepseek-v4-pro',
+      });
+    });
+
+    test('requires an API key and base URL', () {
+      const validConfig = LLMConfig(
+        key: 'deepseek',
+        type: LLMConfig.typeDeepSeek,
+        modelId: 'deepseek-v4-flash',
+        apiKey: 'sk-test',
+        baseUrl: 'https://api.deepseek.com',
+      );
+
+      expect(validConfig.isValid, isTrue);
+      expect(validConfig.copyWith(apiKey: '').isValid, isFalse);
+      expect(validConfig.copyWith(baseUrl: '').isValid, isFalse);
+    });
+  });
 }

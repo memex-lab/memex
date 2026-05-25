@@ -3074,6 +3074,12 @@ abstract class AppLocalizations {
   /// **'Zhipu GLM'**
   String get providerZhipu;
 
+  /// No description provided for @providerDeepSeek.
+  ///
+  /// In en, this message translates to:
+  /// **'DeepSeek'**
+  String get providerDeepSeek;
+
   /// No description provided for @providerMinimax.
   ///
   /// In en, this message translates to:
