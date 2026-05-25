@@ -1,0 +1,42 @@
+{
+  "id": "card_neg_pure_punctuation",
+  "description": "Pure punctuation — minimal compact card is acceptable; no hallucinated meaning.",
+  "trials_per_run": 2,
+  "timeout_seconds": 240,
+  "metadata": {
+    "failure_bucket": "decline_trivial"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "...",
+    "fixture_dir": "tasks/negative/neg_pure_punctuation/workspace"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "completed": true,
+      "template_ids": [
+        "compact",
+        "snapshot",
+        "snippet"
+      ],
+      "title_substrings": [],
+      "must_contain_in_card": []
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "card_completion"
+    },
+    {
+      "name": "card_template_choice",
+      "config": {
+        "expected_template_ids": [
+          "compact",
+          "snapshot",
+          "snippet"
+        ]
+      }
+    }
+  ]
+}

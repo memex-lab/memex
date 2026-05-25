@@ -1,0 +1,6 @@
+{
+  "name": "card_agent_capability",
+  "agent_name": "card_agent",
+  "kind": "capability",
+  "task_pass_threshold": 1.0
+}

@@ -1,0 +1,50 @@
+{
+  "id": "card_metric_sleep_hours",
+  "description": "A bare numeric reading with unit should land on metric.",
+  "trials_per_run": 2,
+  "timeout_seconds": 240,
+  "metadata": {
+    "failure_bucket": "template_metric"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "Slept 6.5 hours last night.",
+    "fixture_dir": "tasks/positive/metric_sleep_hours/workspace"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "completed": true,
+      "template_ids": [
+        "metric"
+      ],
+      "title_substrings": [
+        "sleep"
+      ],
+      "must_contain_in_card": [
+        "6.5"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "card_completion"
+    },
+    {
+      "name": "card_template_choice",
+      "config": {
+        "expected_template_ids": [
+          "metric"
+        ]
+      }
+    },
+    {
+      "name": "card_must_contain",
+      "config": {
+        "substrings": [
+          "6.5"
+        ]
+      }
+    }
+  ]
+}

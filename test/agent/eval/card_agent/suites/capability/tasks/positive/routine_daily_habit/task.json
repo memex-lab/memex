@@ -1,0 +1,54 @@
+{
+  "id": "card_routine_daily_habit",
+  "description": "A new daily habit should land on routine (task is also acceptable).",
+  "trials_per_run": 2,
+  "timeout_seconds": 240,
+  "metadata": {
+    "failure_bucket": "template_routine"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "Started doing 10 minutes of mobility every morning to fix my back.",
+    "fixture_dir": "tasks/positive/routine_daily_habit/workspace"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "completed": true,
+      "template_ids": [
+        "routine",
+        "task"
+      ],
+      "title_substrings": [
+        "mobility"
+      ],
+      "must_contain_in_card": [
+        "mobility",
+        "back"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "card_completion"
+    },
+    {
+      "name": "card_template_choice",
+      "config": {
+        "expected_template_ids": [
+          "routine",
+          "task"
+        ]
+      }
+    },
+    {
+      "name": "card_must_contain",
+      "config": {
+        "substrings": [
+          "mobility",
+          "back"
+        ]
+      }
+    }
+  ]
+}

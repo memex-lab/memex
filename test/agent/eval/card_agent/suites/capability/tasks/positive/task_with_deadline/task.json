@@ -1,0 +1,53 @@
+{
+  "id": "card_task_with_deadline",
+  "description": "A task with an explicit deadline should land on task.",
+  "trials_per_run": 2,
+  "timeout_seconds": 240,
+  "metadata": {
+    "failure_bucket": "template_task"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "Submit monthly report to Lily by Friday.",
+    "fixture_dir": "tasks/positive/task_with_deadline/workspace"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "completed": true,
+      "template_ids": [
+        "task"
+      ],
+      "title_substrings": [
+        "submit",
+        "monthly report"
+      ],
+      "must_contain_in_card": [
+        "monthly report",
+        "lily"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "card_completion"
+    },
+    {
+      "name": "card_template_choice",
+      "config": {
+        "expected_template_ids": [
+          "task"
+        ]
+      }
+    },
+    {
+      "name": "card_must_contain",
+      "config": {
+        "substrings": [
+          "monthly report",
+          "lily"
+        ]
+      }
+    }
+  ]
+}

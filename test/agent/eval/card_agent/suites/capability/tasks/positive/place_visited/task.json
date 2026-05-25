@@ -1,0 +1,52 @@
+{
+  "id": "card_place_visited",
+  "description": "Visiting a notable place with a recommendation should land on place.",
+  "trials_per_run": 2,
+  "timeout_seconds": 240,
+  "metadata": {
+    "failure_bucket": "template_place"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "Visited Blue Bottle Coffee in Roppongi — quiet, good wifi, recommend for solo work.",
+    "fixture_dir": "tasks/positive/place_visited/workspace"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "completed": true,
+      "template_ids": [
+        "place"
+      ],
+      "title_substrings": [
+        "blue bottle"
+      ],
+      "must_contain_in_card": [
+        "blue bottle",
+        "roppongi"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "card_completion"
+    },
+    {
+      "name": "card_template_choice",
+      "config": {
+        "expected_template_ids": [
+          "place"
+        ]
+      }
+    },
+    {
+      "name": "card_must_contain",
+      "config": {
+        "substrings": [
+          "blue bottle",
+          "roppongi"
+        ]
+      }
+    }
+  ]
+}

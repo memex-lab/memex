@@ -1,0 +1,55 @@
+{
+  "id": "card_amb_event_or_task",
+  "description": "Has a date but is also an actionable item — either event or task is acceptable.",
+  "trials_per_run": 2,
+  "timeout_seconds": 240,
+  "metadata": {
+    "failure_bucket": "ambiguous_event_vs_task"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "Doctor's appointment Friday afternoon at the clinic.",
+    "fixture_dir": "tasks/ambiguous/amb_event_or_task/workspace"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "completed": true,
+      "template_ids": [
+        "event",
+        "task"
+      ],
+      "title_substrings": [
+        "doctor",
+        "appointment"
+      ],
+      "must_contain_in_card": [
+        "doctor",
+        "clinic"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "card_completion"
+    },
+    {
+      "name": "card_template_choice",
+      "config": {
+        "expected_template_ids": [
+          "event",
+          "task"
+        ]
+      }
+    },
+    {
+      "name": "card_must_contain",
+      "config": {
+        "substrings": [
+          "doctor",
+          "clinic"
+        ]
+      }
+    }
+  ]
+}

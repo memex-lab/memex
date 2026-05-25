@@ -1,0 +1,50 @@
+{
+  "id": "card_link_bookmark_short",
+  "description": "A bare URL with no description should still land on the link template.",
+  "trials_per_run": 2,
+  "timeout_seconds": 240,
+  "metadata": {
+    "failure_bucket": "template_link"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "https://www.theverge.com/news/694028/openai-claude-rivals",
+    "fixture_dir": "tasks/positive/link_bookmark_short/workspace"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "completed": true,
+      "template_ids": [
+        "link",
+        "article"
+      ],
+      "title_substrings": [],
+      "must_contain_in_card": [
+        "theverge.com/news/694028/openai-claude-rivals"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "card_completion"
+    },
+    {
+      "name": "card_template_choice",
+      "config": {
+        "expected_template_ids": [
+          "link",
+          "article"
+        ]
+      }
+    },
+    {
+      "name": "card_must_contain",
+      "config": {
+        "substrings": [
+          "theverge.com/news/694028/openai-claude-rivals"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "id": "card_mood_short_one_liner",
+  "description": "A short emotional one-liner should land on mood (or compact).",
+  "trials_per_run": 2,
+  "timeout_seconds": 240,
+  "metadata": {
+    "failure_bucket": "template_mood"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "Frustrated today. Too many meetings, no time to actually code.",
+    "fixture_dir": "tasks/positive/mood_short_one_liner/workspace"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "completed": true,
+      "template_ids": [
+        "mood",
+        "compact"
+      ],
+      "title_substrings": [
+        "frustrated",
+        "meetings"
+      ],
+      "must_contain_in_card": []
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "card_completion"
+    },
+    {
+      "name": "card_template_choice",
+      "config": {
+        "expected_template_ids": [
+          "mood",
+          "compact"
+        ]
+      }
+    }
+  ]
+}

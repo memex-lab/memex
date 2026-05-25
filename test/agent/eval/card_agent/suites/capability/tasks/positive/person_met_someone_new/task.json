@@ -1,0 +1,54 @@
+{
+  "id": "card_person_met_someone_new",
+  "description": "Meeting a new person with role / company should land on person.",
+  "trials_per_run": 2,
+  "timeout_seconds": 240,
+  "metadata": {
+    "failure_bucket": "template_person"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "Met Sarah Chen at the AI meetup. She's a researcher at DeepMind working on RLHF.",
+    "fixture_dir": "tasks/positive/person_met_someone_new/workspace"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "completed": true,
+      "template_ids": [
+        "person",
+        "compact"
+      ],
+      "title_substrings": [
+        "sarah chen"
+      ],
+      "must_contain_in_card": [
+        "sarah chen",
+        "deepmind"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "card_completion"
+    },
+    {
+      "name": "card_template_choice",
+      "config": {
+        "expected_template_ids": [
+          "person",
+          "compact"
+        ]
+      }
+    },
+    {
+      "name": "card_must_contain",
+      "config": {
+        "substrings": [
+          "sarah chen",
+          "deepmind"
+        ]
+      }
+    }
+  ]
+}

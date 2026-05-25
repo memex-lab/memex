@@ -1,0 +1,52 @@
+{
+  "id": "card_rating_movie",
+  "description": "A rating with score should land on rating.",
+  "trials_per_run": 2,
+  "timeout_seconds": 240,
+  "metadata": {
+    "failure_bucket": "template_rating"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "Watched Dune 2 — 4.5/5. Visually stunning, pacing was slow in the middle.",
+    "fixture_dir": "tasks/positive/rating_movie/workspace"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "completed": true,
+      "template_ids": [
+        "rating"
+      ],
+      "title_substrings": [
+        "dune"
+      ],
+      "must_contain_in_card": [
+        "dune",
+        "pacing"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "card_completion"
+    },
+    {
+      "name": "card_template_choice",
+      "config": {
+        "expected_template_ids": [
+          "rating"
+        ]
+      }
+    },
+    {
+      "name": "card_must_contain",
+      "config": {
+        "substrings": [
+          "dune",
+          "pacing"
+        ]
+      }
+    }
+  ]
+}

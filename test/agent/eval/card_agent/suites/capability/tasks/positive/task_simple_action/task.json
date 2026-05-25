@@ -1,0 +1,51 @@
+{
+  "id": "card_task_simple_action",
+  "description": "A simple actionable item without a hard deadline should still land on task.",
+  "trials_per_run": 2,
+  "timeout_seconds": 240,
+  "metadata": {
+    "failure_bucket": "template_task"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "Buy birthday card for mom this weekend.",
+    "fixture_dir": "tasks/positive/task_simple_action/workspace"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "completed": true,
+      "template_ids": [
+        "task"
+      ],
+      "title_substrings": [
+        "birthday card",
+        "mom"
+      ],
+      "must_contain_in_card": [
+        "weekend"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "card_completion"
+    },
+    {
+      "name": "card_template_choice",
+      "config": {
+        "expected_template_ids": [
+          "task"
+        ]
+      }
+    },
+    {
+      "name": "card_must_contain",
+      "config": {
+        "substrings": [
+          "weekend"
+        ]
+      }
+    }
+  ]
+}
