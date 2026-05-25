@@ -19,12 +19,13 @@ class UserStatsOverviewCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final summary = snapshot?.summary;
     final daily = snapshot?.daily ?? const <UserStatsDailyPoint>[];
+    final hasSnapshot = summary != null;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         key: const ValueKey('user_stats_overview_card'),
-        onTap: isLoading ? null : onTap,
+        onTap: hasSnapshot ? onTap : null,
         borderRadius: BorderRadius.circular(12),
         child: Container(
           width: double.infinity,
@@ -41,7 +42,7 @@ class UserStatsOverviewCard extends StatelessWidget {
               ),
             ],
           ),
-          child: isLoading || summary == null
+          child: !hasSnapshot
               ? const _OverviewLoading()
               : Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -74,10 +75,22 @@ class UserStatsOverviewCard extends StatelessWidget {
                             ),
                           ),
                         ),
-                        const Icon(
-                          Icons.chevron_right_rounded,
-                          color: Color(0xFF9CA3AF),
-                        ),
+                        if (isLoading)
+                          const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Color(0xFF9CA3AF),
+                              ),
+                            ),
+                          )
+                        else
+                          const Icon(
+                            Icons.chevron_right_rounded,
+                            color: Color(0xFF9CA3AF),
+                          ),
                       ],
                     ),
                     const SizedBox(height: 12),

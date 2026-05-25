@@ -21,14 +21,20 @@ class InsightViewModel extends ChangeNotifier {
     required MemexRouter router,
     UserStatsFetcher? userStatsFetcher,
   })  : _router = router,
-        _userStatsFetcher =
-            userStatsFetcher ?? ((range) => router.fetchUserStats(range: range)) {
-    EventBusService.instance
-        .addHandler(EventBusMessageType.newInsight, _handleNewInsightEvent);
-    EventBusService.instance
-        .addHandler(EventBusMessageType.cardAdded, _handleActivityChangedEvent);
+        _userStatsFetcher = userStatsFetcher ??
+            ((range) => router.fetchUserStats(range: range)) {
     EventBusService.instance.addHandler(
-        EventBusMessageType.cardUpdated, _handleActivityChangedEvent);
+      EventBusMessageType.newInsight,
+      _handleNewInsightEvent,
+    );
+    EventBusService.instance.addHandler(
+      EventBusMessageType.cardAdded,
+      _handleActivityChangedEvent,
+    );
+    EventBusService.instance.addHandler(
+      EventBusMessageType.cardUpdated,
+      _handleActivityChangedEvent,
+    );
   }
 
   final MemexRouter _router;
@@ -128,7 +134,7 @@ class InsightViewModel extends ChangeNotifier {
   }
 
   Future<void> refreshStatsForVisibleInsightPage() {
-    return loadStats(notify: selectedSection == InsightSection.stats);
+    return loadStats();
   }
 
   void setStatsMetric(UserStatsMetric metric) {
@@ -139,7 +145,8 @@ class InsightViewModel extends ChangeNotifier {
 
   void setStatsPresetDays(int days) {
     final nextRange = UserStatsDateRange.lastDays(days);
-    if (statsRange.start == nextRange.start && statsRange.end == nextRange.end) {
+    if (statsRange.start == nextRange.start &&
+        statsRange.end == nextRange.end) {
       return;
     }
     statsRange = nextRange;
@@ -243,12 +250,18 @@ class InsightViewModel extends ChangeNotifier {
 
   @override
   void dispose() {
-    EventBusService.instance
-        .removeHandler(EventBusMessageType.newInsight, _handleNewInsightEvent);
     EventBusService.instance.removeHandler(
-        EventBusMessageType.cardAdded, _handleActivityChangedEvent);
+      EventBusMessageType.newInsight,
+      _handleNewInsightEvent,
+    );
     EventBusService.instance.removeHandler(
-        EventBusMessageType.cardUpdated, _handleActivityChangedEvent);
+      EventBusMessageType.cardAdded,
+      _handleActivityChangedEvent,
+    );
+    EventBusService.instance.removeHandler(
+      EventBusMessageType.cardUpdated,
+      _handleActivityChangedEvent,
+    );
     super.dispose();
   }
 }

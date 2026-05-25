@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -68,9 +69,7 @@ void main() {
     vm.dispose();
   });
 
-  testWidgets('reloads fresh stats when opening stats section', (
-    tester,
-  ) async {
+  testWidgets('reloads fresh stats when opening stats section', (tester) async {
     final vm = _buildViewModel(statsReloadSnapshot: _singleInputSnapshot());
     vm.statsSnapshot = UserStatsSnapshot.empty(vm.statsRange);
 
@@ -90,6 +89,71 @@ void main() {
       ),
       findsOneWidget,
     );
+
+    vm.dispose();
+  });
+
+  testWidgets('refreshes overview stats when insight tab becomes visible', (
+    tester,
+  ) async {
+    final statsCompleter = Completer<Result<UserStatsSnapshot>>();
+    final vm = _buildViewModelWithFetcher((_) => statsCompleter.future);
+    vm.statsSnapshot = null;
+
+    await tester.pumpWidget(
+      _wrap(InsightScreen(viewModel: vm, isEmbedded: true)),
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(
+      find.byKey(const ValueKey('user_stats_overview_card')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('user_stats_overview_card')),
+        matching: find.text('Activity stats'),
+      ),
+      findsNothing,
+    );
+
+    final refresh = vm.refreshStatsForVisibleInsightPage();
+    await tester.pump();
+
+    statsCompleter.complete(Ok(_snapshot()));
+    await refresh;
+    await tester.pump();
+
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('user_stats_overview_card')),
+        matching: find.text('Activity stats'),
+      ),
+      findsOneWidget,
+    );
+
+    vm.dispose();
+  });
+
+  testWidgets('keeps populated overview visible while stats refresh', (
+    tester,
+  ) async {
+    final vm = _buildViewModel();
+    vm.isStatsLoading = true;
+
+    await tester.pumpWidget(
+      _wrap(InsightScreen(viewModel: vm, isEmbedded: true)),
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('user_stats_overview_card')),
+        matching: find.text('Activity stats'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
     vm.dispose();
   });
@@ -142,9 +206,15 @@ void main() {
 }
 
 InsightViewModel _buildViewModel({UserStatsSnapshot? statsReloadSnapshot}) {
+  return _buildViewModelWithFetcher(
+    (_) async => Ok(statsReloadSnapshot ?? _snapshot()),
+  );
+}
+
+InsightViewModel _buildViewModelWithFetcher(UserStatsFetcher userStatsFetcher) {
   final vm = InsightViewModel(
     router: MemexRouter(),
-    userStatsFetcher: (_) async => Ok(statsReloadSnapshot ?? _snapshot()),
+    userStatsFetcher: userStatsFetcher,
   );
   vm.isLoading = false;
   vm.insights = [
