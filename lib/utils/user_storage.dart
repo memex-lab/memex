@@ -213,7 +213,9 @@ class UserStorage {
   static Future<String?> getUserId() async {
     try {
       final prefs = await sharedPrefs();
-      return prefs.getString(_keyUserId);
+      final userId = prefs.getString(_keyUserId);
+      if (userId == null || userId.trim().isEmpty) return null;
+      return userId;
     } catch (e) {
       return null;
     }

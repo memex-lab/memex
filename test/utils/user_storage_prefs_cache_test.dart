@@ -20,4 +20,9 @@ void main() {
     SharedPreferences.setMockInitialValues({'user_id': 'next-user'});
     expect(await UserStorage.getUserId(), 'next-user');
   });
+
+  test('getUserId treats blank values as logged out', () async {
+    SharedPreferences.setMockInitialValues({'user_id': '   '});
+    expect(await UserStorage.getUserId(), isNull);
+  });
 }
