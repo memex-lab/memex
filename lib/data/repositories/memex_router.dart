@@ -12,7 +12,7 @@ import 'package:memex/domain/models/calendar_model.dart';
 import 'package:memex/data/repositories/hydrate_card.dart';
 import 'package:memex/data/services/task_handlers/knowledge_insight_handler.dart';
 import 'package:memex/data/services/task_handlers/schedule_aggregator_handler.dart';
-import 'package:memex/data/services/task_handlers/schedule_refresh_router_handler.dart';
+import 'package:memex/data/services/task_handlers/post_card_router_handler.dart';
 import 'package:memex/data/services/task_handlers/clarification_resolution_handler.dart';
 import 'package:memex/data/services/table_change_notifier.dart';
 import 'package:memex/data/services/card_attachment_service.dart';
@@ -47,6 +47,9 @@ import 'package:memex/data/repositories/reprocess_pending_cards.dart';
 import 'package:memex/data/services/task_handlers/analyze_assets_handler.dart';
 import 'package:memex/data/services/task_handlers/card_agent_handler.dart';
 import 'package:memex/data/services/task_handlers/pkm_agent_handler.dart';
+import 'package:memex/data/services/task_handlers/system_action_handler.dart';
+import 'package:memex/data/services/task_handlers/ask_clarification_handler.dart';
+import 'package:memex/data/services/task_handlers/task_completion_handler.dart';
 import 'package:memex/data/services/task_handlers/fts_index_handler.dart';
 import 'package:memex/data/services/task_handlers/llm_error_utils.dart';
 import 'package:memex/data/services/task_handlers/comment_agent_handler.dart';
@@ -171,8 +174,20 @@ class MemexRouter {
         handleScheduleAggregation,
       );
       LocalTaskExecutor.instance.registerHandler(
-        'schedule_refresh_router_task',
-        handleScheduleRefreshRouter,
+        'post_card_router_task',
+        handlePostCardRouter,
+      );
+      LocalTaskExecutor.instance.registerHandler(
+        'system_action_task',
+        handleSystemActionTask,
+      );
+      LocalTaskExecutor.instance.registerHandler(
+        'ask_clarification_task',
+        handleAskClarificationTask,
+      );
+      LocalTaskExecutor.instance.registerHandler(
+        'task_completion_task',
+        handleTaskCompletionTask,
       );
       LocalTaskExecutor.instance.registerHandler(
         'clarification_resolution_task',
@@ -190,7 +205,10 @@ class MemexRouter {
         'comment_agent_task',
         'knowledge_insight_task',
         'schedule_aggregator_task',
-        'schedule_refresh_router_task',
+        'post_card_router_task',
+        'system_action_task',
+        'ask_clarification_task',
+        'task_completion_task',
         'clarification_resolution_task',
         'reprocess_cards_task',
         'reprocess_comments_task',
@@ -310,9 +328,9 @@ class MemexRouter {
     eventBus.subscribe(
       eventType: SystemEventTypes.userInputSubmitted,
       subscription: EventTaskSubscription(
-        subscriptionId: 'schedule_refresh_router',
-        taskType: 'schedule_refresh_router_task',
-        dependsOn: const ['card_agent'],
+        subscriptionId: 'post_card_router',
+        taskType: 'post_card_router_task',
+        dependsOn: const ['analyze_assets'],
         priority: -1,
         payloadBuilder: (_, event) {
           final p = event.payload as UserInputSubmittedPayload;

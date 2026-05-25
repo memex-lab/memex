@@ -141,7 +141,7 @@ void main() {
     });
 
     test(
-      'clarification request is a valid completion path without PKM writes',
+      'clarification request is treated as a regular tool call without bespoke completion',
       () {
         final evidence = PkmAgent.inspectPkmRunCompletion(
           factId: factId,
@@ -158,13 +158,21 @@ void main() {
           ],
         );
 
+        // PkmAgent no longer owns clarification — it's handled by
+        // AskClarificationAgent. So a clarification tool call alone is not a
+        // valid completion path here; PARA + insight (or skip) is required.
         expect(evidence.wrotePara, isFalse);
         expect(evidence.updatedInsight, isFalse);
-        expect(evidence.clarificationRequested, isTrue);
-        expect(evidence.clarificationDedupeKey, 'weekend:reminder_time');
-        expect(evidence.isComplete, isTrue);
-        expect(evidence.missingRequirements, isEmpty);
-        expect(evidence.toJson()['clarification_requested'], isTrue);
+        expect(evidence.skippedPkm, isFalse);
+        expect(evidence.isComplete, isFalse);
+        expect(
+          evidence.missingRequirements,
+          containsAll([
+            'wrote_para_with_fact_id',
+            'updated_timeline_card_insight',
+            'skip_pkm_organization',
+          ]),
+        );
       },
     );
 
@@ -199,36 +207,46 @@ void main() {
       );
     });
 
-    test('clarification alone is not accepted after a PKM mutation', () {
-      final evidence = PkmAgent.inspectPkmRunCompletion(
-        factId: factId,
-        messages: [
-          _toolResultMessage(
-            name: 'Write',
-            arguments: {
-              'file_path': '/Projects/导出灰度提醒设置.md',
-              'content': 'accidental write',
-            },
-          ),
-          _toolResultMessage(
-            name: 'create_clarification_request',
-            arguments: {
-              'question': '要提醒的具体时间是什么？',
-              'response_type': 'short_text',
-              'dedupe_key': 'reminder:time',
-            },
-          ),
-        ],
-      );
+    test(
+      'clarification tool call is no longer a special completion path after a PKM mutation',
+      () {
+        final evidence = PkmAgent.inspectPkmRunCompletion(
+          factId: factId,
+          messages: [
+            _toolResultMessage(
+              name: 'Write',
+              arguments: {
+                'file_path': '/Projects/导出灰度提醒设置.md',
+                'content': 'accidental write',
+              },
+            ),
+            _toolResultMessage(
+              name: 'create_clarification_request',
+              arguments: {
+                'question': '要提醒的具体时间是什么？',
+                'response_type': 'short_text',
+                'dedupe_key': 'reminder:time',
+              },
+            ),
+          ],
+        );
 
-      expect(evidence.clarificationRequested, isTrue);
-      expect(evidence.successfulPkmMutation, isTrue);
-      expect(evidence.isComplete, isFalse);
-      expect(
-        evidence.missingRequirements,
-        contains('clarification_without_persistent_completion'),
-      );
-    });
+        // The PARA write succeeded but the insight tool was never called.
+        // Without insight, the persistent path is incomplete and the only
+        // remaining completion path (skip) is also missing. Clarification is
+        // no longer tracked here.
+        expect(evidence.wrotePara, isFalse);
+        expect(evidence.successfulPkmMutation, isTrue);
+        expect(evidence.isComplete, isFalse);
+        expect(
+          evidence.missingRequirements,
+          containsAll([
+            'wrote_para_with_fact_id',
+            'updated_timeline_card_insight',
+          ]),
+        );
+      },
+    );
 
     test('failed skip tool result is ignored', () {
       final evidence = PkmAgent.inspectPkmRunCompletion(
@@ -264,8 +282,14 @@ void main() {
       expect(prompt, contains('skip_pkm_organization'));
       expect(prompt, contains('explicitly asks not to persist'));
       expect(prompt, contains('Use this only for explicit'));
-      expect(prompt, contains('Information-Insufficient Inputs'));
-      expect(prompt, contains('ask_clarification'));
+      // Clarification responsibility now lives in AskClarificationAgent.
+      expect(prompt, isNot(contains('Information-Insufficient Inputs')));
+      expect(prompt, isNot(contains('ask_clarification')));
+      expect(
+        prompt,
+        contains(
+            'Do not ask users for additional information or clarification.'),
+      );
       expect(prompt, isNot(contains('不要写成长记忆')));
       expect(prompt, isNot(contains('不要影响某某项目/规则')));
     });

@@ -4,8 +4,11 @@ class AgentDefinitions {
   static const String profileAgent = 'profile_agent';
   static const String knowledgeInsightAgent = 'knowledge_insight_agent';
   static const String scheduleAggregatorAgent = 'schedule_aggregator_agent';
-  static const String scheduleRefreshRouterAgent =
-      'schedule_refresh_router_agent';
+  static const String postCardRouterAgent = 'post_card_router_agent';
+
+  static const String systemActionAgent = 'system_action_agent';
+  static const String askClarificationAgent = 'ask_clarification_agent';
+  static const String taskCompletionAgent = 'task_completion_agent';
   static const String commentAgent = 'comment_agent';
   static const String chatAgent = 'chat_agent';
   static const String companionAgent = 'companion_agent';
@@ -19,7 +22,10 @@ class AgentDefinitions {
     profileAgent: 'Memory summary',
     knowledgeInsightAgent: 'Insights',
     scheduleAggregatorAgent: 'Schedule',
-    scheduleRefreshRouterAgent: 'Schedule Router',
+    postCardRouterAgent: 'Post-Card Router',
+    systemActionAgent: 'System Actions',
+    askClarificationAgent: 'Ask Clarification',
+    taskCompletionAgent: 'Task Completion',
     commentAgent: 'Comments',
     chatAgent: 'Chat',
     companionAgent: 'Companion',
