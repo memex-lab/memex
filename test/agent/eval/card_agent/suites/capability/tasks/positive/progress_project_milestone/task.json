@@ -1,0 +1,54 @@
+{
+  "id": "card_progress_project_milestone",
+  "description": "Progress update on an ongoing project should land on progress.",
+  "trials_per_run": 2,
+  "timeout_seconds": 240,
+  "metadata": {
+    "failure_bucket": "template_progress"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "Eval framework PR is now at 80% complete — only the Langfuse exporter and docs left.",
+    "fixture_dir": "tasks/positive/progress_project_milestone/workspace"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "completed": true,
+      "template_ids": [
+        "progress",
+        "task"
+      ],
+      "title_substrings": [
+        "eval framework"
+      ],
+      "must_contain_in_card": [
+        "eval framework",
+        "langfuse"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "card_completion"
+    },
+    {
+      "name": "card_template_choice",
+      "config": {
+        "expected_template_ids": [
+          "progress",
+          "task"
+        ]
+      }
+    },
+    {
+      "name": "card_must_contain",
+      "config": {
+        "substrings": [
+          "eval framework",
+          "langfuse"
+        ]
+      }
+    }
+  ]
+}

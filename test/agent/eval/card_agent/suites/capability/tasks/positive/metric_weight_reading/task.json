@@ -1,0 +1,52 @@
+{
+  "id": "card_metric_weight_reading",
+  "description": "A measurement reading should land on metric.",
+  "trials_per_run": 2,
+  "timeout_seconds": 240,
+  "metadata": {
+    "failure_bucket": "template_metric"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "Weight this morning: 72.3 kg. Down 0.5 kg from last week.",
+    "fixture_dir": "tasks/positive/metric_weight_reading/workspace"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "completed": true,
+      "template_ids": [
+        "metric"
+      ],
+      "title_substrings": [
+        "weight"
+      ],
+      "must_contain_in_card": [
+        "72.3",
+        "kg"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "card_completion"
+    },
+    {
+      "name": "card_template_choice",
+      "config": {
+        "expected_template_ids": [
+          "metric"
+        ]
+      }
+    },
+    {
+      "name": "card_must_contain",
+      "config": {
+        "substrings": [
+          "72.3",
+          "kg"
+        ]
+      }
+    }
+  ]
+}

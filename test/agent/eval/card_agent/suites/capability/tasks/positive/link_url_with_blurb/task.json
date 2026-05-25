@@ -1,0 +1,54 @@
+{
+  "id": "card_link_url_with_blurb",
+  "description": "URL plus a one-line description should land on the link template, with the URL captured in the card.",
+  "trials_per_run": 2,
+  "timeout_seconds": 240,
+  "metadata": {
+    "failure_bucket": "template_link"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "Worth reading later: https://example.com/articles/2024-trends — a survey of consumer AI products.",
+    "fixture_dir": "tasks/positive/link_url_with_blurb/workspace"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "completed": true,
+      "template_ids": [
+        "link",
+        "article"
+      ],
+      "title_substrings": [
+        "consumer ai",
+        "trends",
+        "ai products"
+      ],
+      "must_contain_in_card": [
+        "example.com/articles/2024-trends"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "card_completion"
+    },
+    {
+      "name": "card_template_choice",
+      "config": {
+        "expected_template_ids": [
+          "link",
+          "article"
+        ]
+      }
+    },
+    {
+      "name": "card_must_contain",
+      "config": {
+        "substrings": [
+          "example.com/articles/2024-trends"
+        ]
+      }
+    }
+  ]
+}

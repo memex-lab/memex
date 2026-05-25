@@ -1,0 +1,53 @@
+{
+  "id": "card_event_multi_day",
+  "description": "A multi-day event with a date range should land on event.",
+  "trials_per_run": 2,
+  "timeout_seconds": 240,
+  "metadata": {
+    "failure_bucket": "template_event"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "AI Dev Conf 2026, June 12–14, San Francisco. Registered.",
+    "fixture_dir": "tasks/positive/event_multi_day/workspace"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "completed": true,
+      "template_ids": [
+        "event"
+      ],
+      "title_substrings": [
+        "ai dev conf",
+        "2026"
+      ],
+      "must_contain_in_card": [
+        "ai dev conf",
+        "san francisco"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "card_completion"
+    },
+    {
+      "name": "card_template_choice",
+      "config": {
+        "expected_template_ids": [
+          "event"
+        ]
+      }
+    },
+    {
+      "name": "card_must_contain",
+      "config": {
+        "substrings": [
+          "ai dev conf",
+          "san francisco"
+        ]
+      }
+    }
+  ]
+}

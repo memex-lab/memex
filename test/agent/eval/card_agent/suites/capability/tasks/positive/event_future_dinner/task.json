@@ -1,0 +1,54 @@
+{
+  "id": "card_event_future_dinner",
+  "description": "A future scheduled event with time and location should land on event.",
+  "trials_per_run": 2,
+  "timeout_seconds": 240,
+  "metadata": {
+    "failure_bucket": "template_event"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "Dinner with Lao Li tomorrow 7pm at Joy City Chaoyang.",
+    "fixture_dir": "tasks/positive/event_future_dinner/workspace"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "completed": true,
+      "template_ids": [
+        "event"
+      ],
+      "title_substrings": [
+        "dinner",
+        "lao li",
+        "joy city"
+      ],
+      "must_contain_in_card": [
+        "7",
+        "joy city"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "card_completion"
+    },
+    {
+      "name": "card_template_choice",
+      "config": {
+        "expected_template_ids": [
+          "event"
+        ]
+      }
+    },
+    {
+      "name": "card_must_contain",
+      "config": {
+        "substrings": [
+          "7",
+          "joy city"
+        ]
+      }
+    }
+  ]
+}

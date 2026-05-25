@@ -1,0 +1,45 @@
+{
+  "id": "card_amb_mood_or_metric",
+  "description": "A subjective rating that's also a number — multiple templates are reasonable.",
+  "trials_per_run": 2,
+  "timeout_seconds": 240,
+  "metadata": {
+    "failure_bucket": "ambiguous_mood_vs_metric"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "Energy level 3/10 today. Drained.",
+    "fixture_dir": "tasks/ambiguous/amb_mood_or_metric/workspace"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "completed": true,
+      "template_ids": [
+        "mood",
+        "metric",
+        "rating"
+      ],
+      "title_substrings": [
+        "energy",
+        "drained"
+      ],
+      "must_contain_in_card": []
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "card_completion"
+    },
+    {
+      "name": "card_template_choice",
+      "config": {
+        "expected_template_ids": [
+          "mood",
+          "metric",
+          "rating"
+        ]
+      }
+    }
+  ]
+}

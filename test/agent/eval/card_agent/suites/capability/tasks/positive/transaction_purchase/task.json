@@ -1,0 +1,50 @@
+{
+  "id": "card_transaction_purchase",
+  "description": "A purchase with price should land on transaction.",
+  "trials_per_run": 2,
+  "timeout_seconds": 240,
+  "metadata": {
+    "failure_bucket": "template_transaction"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "Bought new noise-cancelling headphones for $349 at the Apple Store.",
+    "fixture_dir": "tasks/positive/transaction_purchase/workspace"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "completed": true,
+      "template_ids": [
+        "transaction"
+      ],
+      "title_substrings": [
+        "headphones"
+      ],
+      "must_contain_in_card": [
+        "349"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "card_completion"
+    },
+    {
+      "name": "card_template_choice",
+      "config": {
+        "expected_template_ids": [
+          "transaction"
+        ]
+      }
+    },
+    {
+      "name": "card_must_contain",
+      "config": {
+        "substrings": [
+          "349"
+        ]
+      }
+    }
+  ]
+}

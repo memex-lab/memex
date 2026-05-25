@@ -1,0 +1,52 @@
+{
+  "id": "card_amb_multi_ts_same_day",
+  "description": "Daily fact already has ts_1 and ts_2 from earlier today; agent should only operate on ts_3.",
+  "trials_per_run": 2,
+  "timeout_seconds": 240,
+  "metadata": {
+    "failure_bucket": "multi_ts_same_day"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_3",
+    "content": "Finally finished the q2 budget review.",
+    "fixture_dir": "tasks/ambiguous/amb_multi_ts_same_day/workspace"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "completed": true,
+      "template_ids": [
+        "task",
+        "progress"
+      ],
+      "title_substrings": [
+        "q2 budget"
+      ],
+      "must_contain_in_card": [
+        "q2 budget"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "card_completion"
+    },
+    {
+      "name": "card_template_choice",
+      "config": {
+        "expected_template_ids": [
+          "task",
+          "progress"
+        ]
+      }
+    },
+    {
+      "name": "card_must_contain",
+      "config": {
+        "substrings": [
+          "q2 budget"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "id": "card_quote_from_book",
+  "description": "A book quote with attribution should land on quote (or snippet).",
+  "trials_per_run": 2,
+  "timeout_seconds": 240,
+  "metadata": {
+    "failure_bucket": "template_quote"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "From Three Body Problem: \"Weakness and ignorance are not barriers to survival, but arrogance is.\"",
+    "fixture_dir": "tasks/positive/quote_from_book/workspace"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "completed": true,
+      "template_ids": [
+        "quote",
+        "snippet"
+      ],
+      "title_substrings": [
+        "three body problem"
+      ],
+      "must_contain_in_card": [
+        "weakness and ignorance"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "card_completion"
+    },
+    {
+      "name": "card_template_choice",
+      "config": {
+        "expected_template_ids": [
+          "quote",
+          "snippet"
+        ]
+      }
+    },
+    {
+      "name": "card_must_contain",
+      "config": {
+        "substrings": [
+          "weakness and ignorance"
+        ]
+      }
+    }
+  ]
+}
