@@ -501,11 +501,10 @@ class _EarlyUpdateSettingsCardState extends State<EarlyUpdateSettingsCard> {
   }
 
   Widget _buildShell({required Widget child}) {
-    return Container(
-      padding: const EdgeInsets.all(20),
+    final borderRadius = BorderRadius.circular(16);
+    return DecoratedBox(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: borderRadius,
         boxShadow: [
           BoxShadow(
             color: AppColors.textSecondary.withValues(alpha: 0.08),
@@ -514,7 +513,15 @@ class _EarlyUpdateSettingsCardState extends State<EarlyUpdateSettingsCard> {
           ),
         ],
       ),
-      child: child,
+      child: Material(
+        color: Colors.white,
+        borderRadius: borderRadius,
+        clipBehavior: Clip.antiAlias,
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: child,
+        ),
+      ),
     );
   }
 
