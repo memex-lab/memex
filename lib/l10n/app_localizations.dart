@@ -3476,6 +3476,78 @@ abstract class AppLocalizations {
   /// **'Failure Reason'**
   String get failureReason;
 
+  /// No description provided for @cardGenerationFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Card generation failed'**
+  String get cardGenerationFailedTitle;
+
+  /// No description provided for @cardGenerationFailedDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Your original record is saved. You can regenerate the card without creating a duplicate record.'**
+  String get cardGenerationFailedDescription;
+
+  /// No description provided for @regenerateCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Regenerate Card'**
+  String get regenerateCard;
+
+  /// No description provided for @cardRegenerationStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Card regeneration started'**
+  String get cardRegenerationStarted;
+
+  /// No description provided for @cardRegenerationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to start card regeneration'**
+  String get cardRegenerationFailed;
+
+  /// No description provided for @cardRegeneratingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Regenerating card'**
+  String get cardRegeneratingTitle;
+
+  /// No description provided for @cardRegeneratingDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Memex is rebuilding this card from the saved original record.'**
+  String get cardRegeneratingDescription;
+
+  /// No description provided for @failedCardsRetryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 card failed to generate} other{{count} cards failed to generate}}'**
+  String failedCardsRetryTitle(num count);
+
+  /// No description provided for @failedCardsRetryDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Original records are saved. Retry all failed card generations from the saved records.'**
+  String get failedCardsRetryDescription;
+
+  /// No description provided for @retryAllFailedCards.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry All'**
+  String get retryAllFailedCards;
+
+  /// No description provided for @failedCardsRetryStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Started regenerating {count} failed cards'**
+  String failedCardsRetryStarted(Object count);
+
+  /// No description provided for @failedCardsRetryPartial.
+  ///
+  /// In en, this message translates to:
+  /// **'Started {retried} retries. {failed} cards need attention.'**
+  String failedCardsRetryPartial(Object retried, Object failed);
+
   /// No description provided for @unknownError.
   ///
   /// In en, this message translates to:

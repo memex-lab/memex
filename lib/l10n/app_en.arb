@@ -860,6 +860,36 @@
   "failedStatus": "Failed",
   "viewDetails": "View Details",
   "failureReason": "Failure Reason",
+  "cardGenerationFailedTitle": "Card generation failed",
+  "cardGenerationFailedDescription": "Your original record is saved. You can regenerate the card without creating a duplicate record.",
+  "regenerateCard": "Regenerate Card",
+  "cardRegenerationStarted": "Card regeneration started",
+  "cardRegenerationFailed": "Failed to start card regeneration",
+  "cardRegeneratingTitle": "Regenerating card",
+  "cardRegeneratingDescription": "Memex is rebuilding this card from the saved original record.",
+  "failedCardsRetryTitle": "{count, plural, =1{1 card failed to generate} other{{count} cards failed to generate}}",
+  "@failedCardsRetryTitle": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "failedCardsRetryDescription": "Original records are saved. Retry all failed card generations from the saved records.",
+  "retryAllFailedCards": "Retry All",
+  "failedCardsRetryStarted": "Started regenerating {count} failed cards",
+  "@failedCardsRetryStarted": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "failedCardsRetryPartial": "Started {retried} retries. {failed} cards need attention.",
+  "@failedCardsRetryPartial": {
+    "placeholders": {
+      "retried": {},
+      "failed": {}
+    }
+  },
   "unknownError": "Unknown error occurred",
   "enableFitness": "Enable Fitness",
   "fitnessBannerMessage": "Allow fitness access to track your health and activity data.",

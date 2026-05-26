@@ -1882,6 +1882,57 @@ class AppLocalizationsEn extends AppLocalizations {
   String get failureReason => 'Failure Reason';
 
   @override
+  String get cardGenerationFailedTitle => 'Card generation failed';
+
+  @override
+  String get cardGenerationFailedDescription =>
+      'Your original record is saved. You can regenerate the card without creating a duplicate record.';
+
+  @override
+  String get regenerateCard => 'Regenerate Card';
+
+  @override
+  String get cardRegenerationStarted => 'Card regeneration started';
+
+  @override
+  String get cardRegenerationFailed => 'Failed to start card regeneration';
+
+  @override
+  String get cardRegeneratingTitle => 'Regenerating card';
+
+  @override
+  String get cardRegeneratingDescription =>
+      'Memex is rebuilding this card from the saved original record.';
+
+  @override
+  String failedCardsRetryTitle(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count cards failed to generate',
+      one: '1 card failed to generate',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get failedCardsRetryDescription =>
+      'Original records are saved. Retry all failed card generations from the saved records.';
+
+  @override
+  String get retryAllFailedCards => 'Retry All';
+
+  @override
+  String failedCardsRetryStarted(Object count) {
+    return 'Started regenerating $count failed cards';
+  }
+
+  @override
+  String failedCardsRetryPartial(Object retried, Object failed) {
+    return 'Started $retried retries. $failed cards need attention.';
+  }
+
+  @override
   String get unknownError => 'Unknown error occurred';
 
   @override

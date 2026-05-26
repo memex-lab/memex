@@ -65,8 +65,10 @@ Future<CardDetailModel> getCardDetail(String cardId) async {
     }
 
     // Read raw fact content
-    final factInfo =
-        await _fileSystemService.extractFactContentFromFile(userId, factId);
+    final factInfo = await _fileSystemService.extractFactContentFromFile(
+      userId,
+      factId,
+    );
     var rawContent = factInfo?.content ?? '';
     final originalRawContent = rawContent;
 
@@ -96,8 +98,10 @@ Future<CardDetailModel> getCardDetail(String cardId) async {
     CharacterInfo? characterInfo;
     if (characterId != null && characterId.isNotEmpty) {
       try {
-        final character =
-            await CharacterService.instance.getCharacter(userId, characterId);
+        final character = await CharacterService.instance.getCharacter(
+          userId,
+          characterId,
+        );
         if (character != null) {
           characterInfo = CharacterInfo(
             id: character.id,
@@ -121,8 +125,9 @@ Future<CardDetailModel> getCardDetail(String cardId) async {
         }
 
         // Parse date from fact_id
-        final match = RegExp(r'(\d{4})/(\d{2})/(\d{2})\.md#ts_\d+$')
-            .firstMatch(relatedId);
+        final match = RegExp(
+          r'(\d{4})/(\d{2})/(\d{2})\.md#ts_\d+$',
+        ).firstMatch(relatedId);
         if (match == null) {
           _logger.warning('Invalid fact_id format in related_fact: $relatedId');
           continue;
@@ -134,8 +139,10 @@ Future<CardDetailModel> getCardDetail(String cardId) async {
         final dateStr = '$year-$month-$day';
 
         // Read related card title
-        final relatedCardData =
-            await _fileSystemService.readCardFile(userId, relatedId);
+        final relatedCardData = await _fileSystemService.readCardFile(
+          userId,
+          relatedId,
+        );
 
         // Skip if related card was deleted (physical delete; readCardFile returns null)
         if (relatedCardData == null) {
@@ -154,16 +161,20 @@ Future<CardDetailModel> getCardDetail(String cardId) async {
         final relatedRawContent = relatedFactInfo?.content ?? '';
 
         final relatedProcessed = await _parseAssetsAndCleanContent(
-            userId, relatedRawContent,
-            maxContentLength: 60);
+          userId,
+          relatedRawContent,
+          maxContentLength: 60,
+        );
 
-        relatedCards.add(RelatedCard(
-          id: relatedCardId,
-          title: relatedTitle,
-          date: dateStr,
-          rawContent: relatedProcessed['content'] as String,
-          assets: relatedProcessed['assets'] as List<AssetData>,
-        ));
+        relatedCards.add(
+          RelatedCard(
+            id: relatedCardId,
+            title: relatedTitle,
+            date: dateStr,
+            rawContent: relatedProcessed['content'] as String,
+            assets: relatedProcessed['assets'] as List<AssetData>,
+          ),
+        );
       } catch (e) {
         _logger.warning('Failed to process related fact $relatedId: $e');
         continue;
@@ -183,8 +194,10 @@ Future<CardDetailModel> getCardDetail(String cardId) async {
         CharacterInfo? commentCharacter;
         if (commentData.isAi && commentData.characterId != null) {
           try {
-            final commentChar = await CharacterService.instance
-                .getCharacter(userId, commentData.characterId!);
+            final commentChar = await CharacterService.instance.getCharacter(
+              userId,
+              commentData.characterId!,
+            );
             if (commentChar != null) {
               commentCharacter = CharacterInfo(
                 id: commentChar.id,
@@ -195,18 +208,21 @@ Future<CardDetailModel> getCardDetail(String cardId) async {
             }
           } catch (e) {
             _logger.warning(
-                'Failed to load comment character ${commentData.characterId}: $e');
+              'Failed to load comment character ${commentData.characterId}: $e',
+            );
           }
         }
 
-        comments.add(Comment(
-          id: commentData.id,
-          content: commentData.content,
-          isAi: commentData.isAi,
-          timestamp: commentData.timestamp,
-          character: commentCharacter,
-          replyToId: commentData.replyToId,
-        ));
+        comments.add(
+          Comment(
+            id: commentData.id,
+            content: commentData.content,
+            isAi: commentData.isAi,
+            timestamp: commentData.timestamp,
+            character: commentCharacter,
+            replyToId: commentData.replyToId,
+          ),
+        );
       } catch (e) {
         _logger.warning('Failed to process comment: $e');
         continue;
@@ -276,17 +292,19 @@ Future<CardDetailModel> getCardDetail(String cardId) async {
           final model = call['model'] as String? ?? '';
           final sem = TokenUsageUtils.resolveFromUsageRecord(usage);
           final effPrompt = TokenUsageUtils.effectivePromptTokensOrNull(
-              promptTokens: promptTokens,
-              cachedTokens: cachedTokens,
-              cachedTokensIncludedInPrompt: sem);
+            promptTokens: promptTokens,
+            cachedTokens: cachedTokens,
+            cachedTokensIncludedInPrompt: sem,
+          );
 
           final cost = TokenUsageUtils.calculateCost(
-              model: model,
-              promptTokens: promptTokens,
-              completionTokens: completionTokens,
-              cachedTokens: cachedTokens,
-              thoughtTokens: thoughtTokens,
-              cachedTokensIncludedInPrompt: sem)['total']!;
+            model: model,
+            promptTokens: promptTokens,
+            completionTokens: completionTokens,
+            cachedTokens: cachedTokens,
+            thoughtTokens: thoughtTokens,
+            cachedTokensIncludedInPrompt: sem,
+          )['total']!;
 
           totalCalls++;
           totalPromptTokens += promptTokens;
@@ -309,7 +327,8 @@ Future<CardDetailModel> getCardDetail(String cardId) async {
             cachedTokens: (prev?.cachedTokens ?? 0) + cachedTokens,
             effectivePromptTokens:
                 (prev?.effectivePromptTokens ?? 0) + (effPrompt ?? 0),
-            cachedTokensForRate: (prev?.cachedTokensForRate ?? 0) +
+            cachedTokensForRate:
+                (prev?.cachedTokensForRate ?? 0) +
                 (effPrompt != null ? cachedTokens : 0),
             thoughtTokens: (prev?.thoughtTokens ?? 0) + thoughtTokens,
             totalTokens: (prev?.totalTokens ?? 0) + tokens,
@@ -349,9 +368,10 @@ Future<CardDetailModel> getCardDetail(String cardId) async {
     return CardDetailModel(
       id: cardId,
       title: title,
-      timestamp:
-          DateTime.fromMillisecondsSinceEpoch(timestamp * 1000, isUtc: true)
-              .toLocal(),
+      timestamp: DateTime.fromMillisecondsSinceEpoch(
+        timestamp * 1000,
+        isUtc: true,
+      ).toLocal(),
       address: address,
       lat: locationInfo?['lat'] != null
           ? (locationInfo!['lat'] as num?)?.toDouble()
@@ -372,6 +392,8 @@ Future<CardDetailModel> getCardDetail(String cardId) async {
       assets: assets,
       llmStats: llmStats,
       uiConfigs: renderResult.uiConfigs,
+      status: renderResult.status,
+      failureReason: cardData.failureReason,
     );
   } catch (e) {
     _logger.severe('Failed to get card detail $cardId: $e');
@@ -465,9 +487,14 @@ Future<bool> updateCardTimeEndpoint(String cardId, int timestamp) async {
 /// Returns:
 ///   bool: success
 Future<bool> updateCardLocationEndpoint(
-    String cardId, double lat, double lng, String name) async {
+  String cardId,
+  double lat,
+  double lng,
+  String name,
+) async {
   _logger.info(
-      'updateCardLocation called: cardId=$cardId, lat=$lat, lng=$lng, name=$name');
+    'updateCardLocation called: cardId=$cardId, lat=$lat, lng=$lng, name=$name',
+  );
 
   try {
     final userId = await UserStorage.getUserId();
@@ -538,8 +565,10 @@ String _extractToolAnalysis(String analysisContent) {
 
 /// Parse assets and clean rawContent
 Future<Map<String, dynamic>> _parseAssetsAndCleanContent(
-    String userId, String rawContent,
-    {int? maxContentLength}) async {
+  String userId,
+  String rawContent, {
+  int? maxContentLength,
+}) async {
   final assets = <AssetData>[];
   var cleanedContent = rawContent;
 
@@ -559,11 +588,10 @@ Future<Map<String, dynamic>> _parseAssetsAndCleanContent(
       if (await imgFileObj.exists()) {
         // In local mode, convert to local HTTP URL
         final url = await FileSystemService.convertFsToLocalHttp(
-            'fs://$imgFile', userId);
-        assets.add(AssetData(
-          type: 'image',
-          url: url,
-        ));
+          'fs://$imgFile',
+          userId,
+        );
+        assets.add(AssetData(type: 'image', url: url));
       }
     }
 
@@ -580,19 +608,19 @@ Future<Map<String, dynamic>> _parseAssetsAndCleanContent(
         if (await audioFileObj.exists()) {
           // In local mode, convert to local HTTP URL
           final url = await FileSystemService.convertFsToLocalHttp(
-              'fs://$audioFile', userId);
-          assets.add(AssetData(
-            type: 'audio',
-            url: url,
-          ));
+            'fs://$audioFile',
+            userId,
+          );
+          assets.add(AssetData(type: 'audio', url: url));
         }
       }
     }
   }
 
   // Remove all image/audio placeholders from rawContent
-  final assetPattern =
-      RegExp(r'((?:!\[(?:图片|image)\]|\[(?:音频|audio)\])\(fs://[^)]+\))');
+  final assetPattern = RegExp(
+    r'((?:!\[(?:图片|image)\]|\[(?:音频|audio)\])\(fs://[^)]+\))',
+  );
   cleanedContent = cleanedContent.replaceAll(assetPattern, '');
 
   // Collapse 3+ newlines to 2, trim
@@ -603,8 +631,5 @@ Future<Map<String, dynamic>> _parseAssetsAndCleanContent(
     cleanedContent = '${cleanedContent.substring(0, maxContentLength)}...';
   }
 
-  return {
-    'assets': assets,
-    'content': cleanedContent,
-  };
+  return {'assets': assets, 'content': cleanedContent};
 }

@@ -17,10 +17,7 @@ class UiConfig {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'template_id': templateId,
-      'data': data,
-    };
+    return {'template_id': templateId, 'data': data};
   }
 }
 
@@ -125,8 +122,9 @@ class CardData {
       }
     }
     if (uiConfigsList.isEmpty && json['ui_config'] is Map) {
-      uiConfigsList.add(UiConfig.fromJson(
-          Map<String, dynamic>.from(json['ui_config'] as Map)));
+      uiConfigsList.add(
+        UiConfig.fromJson(Map<String, dynamic>.from(json['ui_config'] as Map)),
+      );
     }
 
     final commentsRaw = json['comments'];
@@ -150,7 +148,8 @@ class CardData {
     CardInsight? insightData;
     if (json['insight'] is Map) {
       insightData = CardInsight.fromJson(
-          Map<String, dynamic>.from(json['insight'] as Map));
+        Map<String, dynamic>.from(json['insight'] as Map),
+      );
     }
 
     return CardData(
@@ -209,6 +208,7 @@ class CardData {
     CardInsight? insight,
     bool? deleted,
     String? failureReason,
+    bool clearFailureReason = false,
   }) {
     return CardData(
       factId: factId ?? this.factId,
@@ -224,7 +224,9 @@ class CardData {
       comments: comments ?? this.comments,
       insight: insight ?? this.insight,
       deleted: deleted ?? this.deleted,
-      failureReason: failureReason ?? this.failureReason,
+      failureReason: clearFailureReason
+          ? null
+          : failureReason ?? this.failureReason,
     );
   }
 }

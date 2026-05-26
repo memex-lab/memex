@@ -14,6 +14,8 @@ class CardDetailModel {
   final List<AssetData> assets;
   final LLMStats? llmStats;
   final List<UiConfig> uiConfigs;
+  final String status;
+  final String? failureReason;
 
   CardDetailModel({
     required this.id,
@@ -28,6 +30,8 @@ class CardDetailModel {
     required this.assets,
     this.llmStats,
     this.uiConfigs = const [],
+    this.status = 'completed',
+    this.failureReason,
   });
 
   factory CardDetailModel.fromJson(Map<String, dynamic> json) {
@@ -66,8 +70,8 @@ class CardDetailModel {
       rawContent: json['raw_content'] as String? ?? '',
       insight:
           json['insight'] != null && json['insight'] is Map<String, dynamic>
-              ? InsightData.fromJson(json['insight'] as Map<String, dynamic>)
-              : InsightData.fromJson({}),
+          ? InsightData.fromJson(json['insight'] as Map<String, dynamic>)
+          : InsightData.fromJson({}),
       assets: (json['assets'] as List<dynamic>? ?? const [])
           .where((asset) => asset != null && asset is Map<String, dynamic>)
           .map((asset) => AssetData.fromJson(asset as Map<String, dynamic>))
@@ -76,6 +80,8 @@ class CardDetailModel {
           ? LLMStats.fromJson(json['llm_stats'] as Map<String, dynamic>)
           : null,
       uiConfigs: configs,
+      status: json['status'] as String? ?? 'completed',
+      failureReason: json['failure_reason'] as String?,
     );
   }
 
@@ -92,6 +98,9 @@ class CardDetailModel {
     List<AssetData>? assets,
     LLMStats? llmStats,
     List<UiConfig>? uiConfigs,
+    String? status,
+    String? failureReason,
+    bool clearFailureReason = false,
   }) {
     return CardDetailModel(
       id: id ?? this.id,
@@ -106,6 +115,10 @@ class CardDetailModel {
       assets: assets ?? this.assets,
       llmStats: llmStats ?? this.llmStats,
       uiConfigs: uiConfigs ?? this.uiConfigs,
+      status: status ?? this.status,
+      failureReason: clearFailureReason
+          ? null
+          : failureReason ?? this.failureReason,
     );
   }
 }
@@ -237,10 +250,7 @@ class AssetData {
   final String type; // 'image' | 'audio'
   final String url;
 
-  AssetData({
-    required this.type,
-    required this.url,
-  });
+  AssetData({required this.type, required this.url});
 
   factory AssetData.fromJson(Map<String, dynamic> json) {
     return AssetData(
@@ -250,10 +260,7 @@ class AssetData {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'type': type,
-      'url': url,
-    };
+    return {'type': type, 'url': url};
   }
 
   bool get isImage => type == 'image';
@@ -294,10 +301,10 @@ class LLMStats {
 
   factory LLMStats.fromJson(Map<String, dynamic> json) {
     final byAgentData = json['by_agent'] as Map<String, dynamic>? ?? {};
-    final byAgent = byAgentData.map((key, value) => MapEntry(
-          key,
-          AgentStats.fromJson(value as Map<String, dynamic>),
-        ));
+    final byAgent = byAgentData.map(
+      (key, value) =>
+          MapEntry(key, AgentStats.fromJson(value as Map<String, dynamic>)),
+    );
 
     return LLMStats(
       totalCalls: json['total_calls'] as int? ?? 0,

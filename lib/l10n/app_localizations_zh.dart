@@ -1830,6 +1830,48 @@ class AppLocalizationsZh extends AppLocalizations {
   String get failureReason => '失败原因';
 
   @override
+  String get cardGenerationFailedTitle => '卡片生成失败';
+
+  @override
+  String get cardGenerationFailedDescription => '原始记录已保存，可以重新生成卡片，不会重复创建记录。';
+
+  @override
+  String get regenerateCard => '重新生成卡片';
+
+  @override
+  String get cardRegenerationStarted => '已开始重新生成卡片';
+
+  @override
+  String get cardRegenerationFailed => '未能开始重新生成卡片';
+
+  @override
+  String get cardRegeneratingTitle => '正在重新生成卡片';
+
+  @override
+  String get cardRegeneratingDescription => 'Memex 正在根据已保存的原始记录重建这张卡片。';
+
+  @override
+  String failedCardsRetryTitle(num count) {
+    return '$count 张卡片生成失败';
+  }
+
+  @override
+  String get failedCardsRetryDescription => '原始记录都已保存。可以从已保存的记录重新生成这些卡片。';
+
+  @override
+  String get retryAllFailedCards => '全部重试';
+
+  @override
+  String failedCardsRetryStarted(Object count) {
+    return '已开始重新生成 $count 张失败卡片';
+  }
+
+  @override
+  String failedCardsRetryPartial(Object retried, Object failed) {
+    return '已开始 $retried 个重试，$failed 张卡片需要处理。';
+  }
+
+  @override
   String get unknownError => '发生未知错误';
 
   @override

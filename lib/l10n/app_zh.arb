@@ -845,6 +845,36 @@
   "failedStatus": "处理失败",
   "viewDetails": "查看详情",
   "failureReason": "失败原因",
+  "cardGenerationFailedTitle": "卡片生成失败",
+  "cardGenerationFailedDescription": "原始记录已保存，可以重新生成卡片，不会重复创建记录。",
+  "regenerateCard": "重新生成卡片",
+  "cardRegenerationStarted": "已开始重新生成卡片",
+  "cardRegenerationFailed": "未能开始重新生成卡片",
+  "cardRegeneratingTitle": "正在重新生成卡片",
+  "cardRegeneratingDescription": "Memex 正在根据已保存的原始记录重建这张卡片。",
+  "failedCardsRetryTitle": "{count} 张卡片生成失败",
+  "@failedCardsRetryTitle": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "failedCardsRetryDescription": "原始记录都已保存。可以从已保存的记录重新生成这些卡片。",
+  "retryAllFailedCards": "全部重试",
+  "failedCardsRetryStarted": "已开始重新生成 {count} 张失败卡片",
+  "@failedCardsRetryStarted": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "failedCardsRetryPartial": "已开始 {retried} 个重试，{failed} 张卡片需要处理。",
+  "@failedCardsRetryPartial": {
+    "placeholders": {
+      "retried": {},
+      "failed": {}
+    }
+  },
   "unknownError": "发生未知错误",
   "enableFitness": "开启健身权限",
   "fitnessBannerMessage": "允许访问健身数据以记录你的健康和运动信息。",

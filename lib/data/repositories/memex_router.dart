@@ -44,6 +44,8 @@ import 'package:memex/data/services/global_event_bus.dart';
 import 'package:memex/data/repositories/submit_input.dart'
     as submit_input_endpoint;
 import 'package:memex/data/repositories/reprocess_pending_cards.dart';
+import 'package:memex/data/repositories/retry_failed_cards.dart'
+    as retry_failed_cards_endpoint;
 import 'package:memex/data/services/task_handlers/analyze_assets_handler.dart';
 import 'package:memex/data/services/task_handlers/card_agent_handler.dart';
 import 'package:memex/data/services/task_handlers/pkm_agent_handler.dart';
@@ -71,6 +73,7 @@ import 'package:memex/data/repositories/character.dart';
 import 'package:memex/data/repositories/health.dart' as health_endpoint;
 import 'package:memex/data/repositories/pkm.dart' as pkm_endpoint;
 import 'package:memex/domain/models/knowledge_insight_card.dart';
+import 'package:memex/domain/models/card_generation_retry_result.dart';
 import 'package:memex/data/repositories/get_knowledge_insight_detail.dart';
 import 'package:memex/data/repositories/chat.dart' as chat_endpoint;
 import 'package:memex/data/services/llm_call_record_service.dart';
@@ -245,7 +248,7 @@ class MemexRouter {
   }
 
   String?
-      _targetUserIdForInit; // Track the user ID we are currently initializing for
+  _targetUserIdForInit; // Track the user ID we are currently initializing for
 
   void _registerEventSubscriptions() {
     final eventBus = GlobalEventBus.instance;
@@ -453,8 +456,10 @@ class MemexRouter {
 
   void scheduleAutoBackupCheck({required String trigger}) {
     unawaited(
-      maybeRunAutoBackup(trigger: trigger)
-          .catchError((Object e, StackTrace st) {
+      maybeRunAutoBackup(trigger: trigger).catchError((
+        Object e,
+        StackTrace st,
+      ) {
         _logger.warning('Automatic backup check failed: $e', e, st);
         return null;
       }),
@@ -664,6 +669,30 @@ class MemexRouter {
     await _ensureInitialized();
     _logger.info('LocalMode: fetchCardDetail called: cardId=$cardId');
     return getCardDetail(cardId);
+  }
+
+  Future<int> countFailedCardGenerations() async {
+    await _ensureInitialized();
+    return retry_failed_cards_endpoint.countFailedCardGenerations();
+  }
+
+  Future<bool> retryCardGeneration(String cardId) async {
+    await _ensureInitialized();
+    _logger.info('LocalMode: retryCardGeneration called: cardId=$cardId');
+    try {
+      return await retry_failed_cards_endpoint.retryFailedCardGeneration(
+        cardId,
+      );
+    } catch (e) {
+      _logger.severe('Failed to retry card generation for $cardId: $e');
+      return false;
+    }
+  }
+
+  Future<CardGenerationRetryResult> retryAllFailedCardGenerations() async {
+    await _ensureInitialized();
+    _logger.info('LocalMode: retryAllFailedCardGenerations called');
+    return retry_failed_cards_endpoint.retryAllFailedCardGenerations();
   }
 
   Future<Map<String, dynamic>> postComment(
@@ -1005,8 +1034,8 @@ class MemexRouter {
             id,
           );
           if (cardData != null) {
-            final currentSortOrder =
-                (cardData['sort_order'] as num? ?? 0).toInt();
+            final currentSortOrder = (cardData['sort_order'] as num? ?? 0)
+                .toInt();
             if (currentSortOrder != i) {
               cardData['sort_order'] = i;
               await fileSystemService.writeKnowledgeInsightCard(
@@ -1503,7 +1532,8 @@ class MemexRouter {
     }
 
     final lower = avatar.toLowerCase();
-    final isRelativeImagePath = !avatar.startsWith('/') &&
+    final isRelativeImagePath =
+        !avatar.startsWith('/') &&
         (lower.endsWith('.png') ||
             lower.endsWith('.jpg') ||
             lower.endsWith('.jpeg') ||
@@ -1566,38 +1596,38 @@ class MemexRouter {
   Future<void> resetAllAgentConfigs() => UserStorage.resetAllAgentConfigs();
 
   Future<Result<void>> updateKnowledgeInsights() => runResultVoid(() async {
-        await _ensureInitialized();
-        final userId = await UserStorage.getUserId();
-        if (userId == null) {
-          throw Exception('User not logged in');
-        }
+    await _ensureInitialized();
+    final userId = await UserStorage.getUserId();
+    if (userId == null) {
+      throw Exception('User not logged in');
+    }
 
-        await GlobalEventBus.instance.publish(
-          userId: userId,
-          event: SystemEvent(
-            type: SystemEventTypes.knowledgeInsightRefreshRequested,
-            source: 'memex_router.updateKnowledgeInsights',
-            payload: const {},
-          ),
-        );
-      });
+    await GlobalEventBus.instance.publish(
+      userId: userId,
+      event: SystemEvent(
+        type: SystemEventTypes.knowledgeInsightRefreshRequested,
+        source: 'memex_router.updateKnowledgeInsights',
+        payload: const {},
+      ),
+    );
+  });
 
   Future<Result<void>> refreshScheduleAggregation() => runResultVoid(() async {
-        await _ensureInitialized();
-        final userId = await UserStorage.getUserId();
-        if (userId == null) {
-          throw Exception('User not logged in');
-        }
+    await _ensureInitialized();
+    final userId = await UserStorage.getUserId();
+    if (userId == null) {
+      throw Exception('User not logged in');
+    }
 
-        await GlobalEventBus.instance.publish(
-          userId: userId,
-          event: SystemEvent(
-            type: SystemEventTypes.scheduleAggregationRequested,
-            source: 'memex_router.refreshScheduleAggregation',
-            payload: const {},
-          ),
-        );
-      });
+    await GlobalEventBus.instance.publish(
+      userId: userId,
+      event: SystemEvent(
+        type: SystemEventTypes.scheduleAggregationRequested,
+        source: 'memex_router.refreshScheduleAggregation',
+        payload: const {},
+      ),
+    );
+  });
 
   Future<List<Task>> getTasks({int limit = 10, int offset = 0}) =>
       LocalTaskExecutor.instance.getTasks(limit: limit, offset: offset);
