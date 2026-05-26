@@ -1,0 +1,57 @@
+{
+  "id": "pkm_xc_habit_is_project_followup",
+  "description": "PT progress note. Mobility.md already has prior PT entries; agent should append there, not create a 'PT Recovery.md'.",
+  "trials_per_run": 2,
+  "timeout_seconds": 300,
+  "metadata": {
+    "failure_bucket": "specific_subfile_pressure"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "Did my third week of PT for the shoulder. Range of motion noticeably better — I can do overhead press without pain now.",
+    "fixture_dir": "tasks/cross_context/habit_actually_project_followup/workspace",
+    "base_fixture": "_starter_pkm"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "is_complete": true,
+      "wrote_para": true,
+      "updated_insight": true,
+      "buckets": [
+        "Areas/Health/"
+      ],
+      "files": [
+        "Areas/Health/Mobility.md"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "pkm_completion"
+    },
+    {
+      "name": "pkm_routed_correctly",
+      "config": {
+        "expected_buckets": [
+          "Areas/Health/"
+        ],
+        "expected_files": [
+          "Areas/Health/Mobility.md"
+        ]
+      }
+    },
+    {
+      "name": "pkm_no_overwrite",
+      "config": {
+        "seed_marker": "fact_pkm_health_mobility_001"
+      }
+    },
+    {
+      "name": "pkm_insight_quality"
+    },
+    {
+      "name": "pkm_append_coherence"
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "id": "pkm_starter_mixed_finance_career",
+  "description": "Finance review + career update. Agent should split into the two existing Areas subdirectories.",
+  "trials_per_run": 2,
+  "timeout_seconds": 300,
+  "metadata": {
+    "failure_bucket": "mixed_signal"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "Reviewed Q1 spending — surprised it was that high. In other news, 1:1 with Maya went well, she's optimistic about the IC5 promo timeline.",
+    "fixture_dir": "tasks/starter_mixed/mixed_finance_career/workspace",
+    "base_fixture": "_starter_pkm"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "is_complete": true,
+      "wrote_para": true,
+      "updated_insight": true,
+      "buckets": [
+        "Areas/Finance/",
+        "Areas/Career/"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "pkm_completion"
+    },
+    {
+      "name": "pkm_routed_correctly",
+      "config": {
+        "expected_buckets": [
+          "Areas/Finance/",
+          "Areas/Career/"
+        ]
+      }
+    },
+    {
+      "name": "pkm_insight_quality"
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "id": "pkm_novelist_into_chapter03",
+  "description": "Chapter 03 is in progress with an explicit 'audio first or transcript first' open question. Agent must resolve into that file, not a separate 'craft notes'.",
+  "trials_per_run": 2,
+  "timeout_seconds": 300,
+  "metadata": {
+    "failure_bucket": "route_into_inprogress_chapter"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "Decided: in Chapter 03, Mira hears the echo as audio first, transcript later. Audio is more cinematic and the transcript scene is what carries the emotional reveal anyway. Moving forward with that.",
+    "fixture_dir": "tasks/novelist/into_chapter_inprogress/workspace",
+    "base_fixture": "_novelist_pkm"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "is_complete": true,
+      "wrote_para": true,
+      "updated_insight": true,
+      "buckets": [
+        "Projects/Novel - Echo Chamber/"
+      ],
+      "files": [
+        "Projects/Novel - Echo Chamber/Chapter 03 - The Apology.md"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "pkm_completion"
+    },
+    {
+      "name": "pkm_routed_correctly",
+      "config": {
+        "expected_buckets": [
+          "Projects/Novel - Echo Chamber/"
+        ],
+        "expected_files": [
+          "Projects/Novel - Echo Chamber/Chapter 03 - The Apology.md"
+        ]
+      }
+    },
+    {
+      "name": "pkm_no_overwrite",
+      "config": {
+        "seed_marker": "fact_pkm_novel_ch03_001"
+      }
+    },
+    {
+      "name": "pkm_insight_quality"
+    },
+    {
+      "name": "pkm_append_coherence"
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "id": "pkm_bilingual_zh_input_zh_file",
+  "description": "Bilingual PKM uses Chinese-named files under Areas/健康/. A Chinese sleep entry must land in 睡眠.md, not a new English Sleep.md file.",
+  "trials_per_run": 2,
+  "timeout_seconds": 300,
+  "metadata": {
+    "failure_bucket": "route_into_chinese_named_file"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "昨晚没忍住又刷手机到一点多，睡了大概五个小时。今天上午两个会就明显困了。",
+    "fixture_dir": "tasks/bilingual/zh_input_zh_file/workspace",
+    "base_fixture": "_bilingual_pkm"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "is_complete": true,
+      "wrote_para": true,
+      "updated_insight": true,
+      "buckets": [
+        "Areas/健康/",
+        "Areas/Health/"
+      ],
+      "files": [
+        "Areas/健康/睡眠.md"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "pkm_completion"
+    },
+    {
+      "name": "pkm_routed_correctly",
+      "config": {
+        "expected_buckets": [
+          "Areas/健康/",
+          "Areas/Health/"
+        ],
+        "expected_files": [
+          "Areas/健康/睡眠.md"
+        ]
+      }
+    },
+    {
+      "name": "pkm_no_overwrite",
+      "config": {
+        "seed_marker": "fact_pkm_zh_sleep_001"
+      }
+    },
+    {
+      "name": "pkm_insight_quality"
+    },
+    {
+      "name": "pkm_append_coherence"
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "id": "pkm_bilingual_zh_book_into_zh_file",
+  "description": "Chinese book reading note matches an existing Chinese-named book file. Must extend it, not create '置身事内 - 第三章.md'.",
+  "trials_per_run": 2,
+  "timeout_seconds": 300,
+  "metadata": {
+    "failure_bucket": "route_into_chinese_book_file"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "今天读了《置身事内》第三章，关于地方政府的财政压力，把2008年之后的转变讲得比我之前看的二手材料更清楚。",
+    "fixture_dir": "tasks/bilingual/zh_book_into_zh_book_file/workspace",
+    "base_fixture": "_bilingual_pkm"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "is_complete": true,
+      "wrote_para": true,
+      "updated_insight": true,
+      "buckets": [
+        "Resources/Books/"
+      ],
+      "files": [
+        "Resources/Books/置身事内.md"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "pkm_completion"
+    },
+    {
+      "name": "pkm_routed_correctly",
+      "config": {
+        "expected_buckets": [
+          "Resources/Books/"
+        ],
+        "expected_files": [
+          "Resources/Books/置身事内.md"
+        ]
+      }
+    },
+    {
+      "name": "pkm_no_overwrite",
+      "config": {
+        "seed_marker": "fact_pkm_book_zsn_001"
+      }
+    },
+    {
+      "name": "pkm_insight_quality"
+    },
+    {
+      "name": "pkm_append_coherence"
+    }
+  ]
+}

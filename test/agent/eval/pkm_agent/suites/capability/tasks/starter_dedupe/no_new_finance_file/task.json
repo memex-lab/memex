@@ -1,0 +1,57 @@
+{
+  "id": "pkm_starter_dedupe_no_new_finance",
+  "description": "Starter has Areas/Finance/Monthly Spending.md. Agent must NOT create 'May Review.md'.",
+  "trials_per_run": 2,
+  "timeout_seconds": 300,
+  "metadata": {
+    "failure_bucket": "no_redundant_file"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "May spending close: $4.0k, coffee cap held at $145. Eating out drifted up again.",
+    "fixture_dir": "tasks/starter_dedupe/no_new_finance_file/workspace",
+    "base_fixture": "_starter_pkm"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "is_complete": true,
+      "wrote_para": true,
+      "updated_insight": true,
+      "buckets": [
+        "Areas/Finance/"
+      ],
+      "files": [
+        "Areas/Finance/Monthly Spending.md"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "pkm_completion"
+    },
+    {
+      "name": "pkm_routed_correctly",
+      "config": {
+        "expected_buckets": [
+          "Areas/Finance/"
+        ],
+        "expected_files": [
+          "Areas/Finance/Monthly Spending.md"
+        ]
+      }
+    },
+    {
+      "name": "pkm_no_overwrite",
+      "config": {
+        "seed_marker": "fact_pkm_fin_spend_001"
+      }
+    },
+    {
+      "name": "pkm_insight_quality"
+    },
+    {
+      "name": "pkm_append_coherence"
+    }
+  ]
+}

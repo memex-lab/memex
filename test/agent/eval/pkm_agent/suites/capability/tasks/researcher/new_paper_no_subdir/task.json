@@ -1,0 +1,42 @@
+{
+  "id": "pkm_researcher_new_paper_no_subdir",
+  "description": "Researcher has paper subdirectories for Sparse Attention/, State Space Models/, Mixture of Experts/. New paper (Hyena) doesn't cleanly fit any of them — agent must decide whether to extend an existing genre or create a new one. Either is acceptable as long as it lands under Resources/Papers/.",
+  "trials_per_run": 2,
+  "timeout_seconds": 300,
+  "metadata": {
+    "failure_bucket": "new_paper_genre"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "Read Hyena Hierarchy paper today. Subquadratic with implicit long convolutions, complementary to Mamba. Probably doesn't fit cleanly in either Sparse Attention/ or State Space Models/ — it's its own family.",
+    "fixture_dir": "tasks/researcher/new_paper_no_subdir/workspace",
+    "base_fixture": "_researcher_pkm"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "is_complete": true,
+      "wrote_para": true,
+      "updated_insight": true,
+      "buckets": [
+        "Resources/Papers/"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "pkm_completion"
+    },
+    {
+      "name": "pkm_routed_correctly",
+      "config": {
+        "expected_buckets": [
+          "Resources/Papers/"
+        ]
+      }
+    },
+    {
+      "name": "pkm_insight_quality"
+    }
+  ]
+}

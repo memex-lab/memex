@@ -1,0 +1,59 @@
+{
+  "id": "pkm_xc_looks_like_health_is_thesis",
+  "description": "Same content as researcher/into_paper_subdir_mamba but tests a stricter routing decision: ideal target is the existing paper file. Either Projects/Thesis or Resources/Papers/.../Mamba-2.md is acceptable; we credit full match for the paper file.",
+  "trials_per_run": 2,
+  "timeout_seconds": 300,
+  "metadata": {
+    "failure_bucket": "cross_ref_paper_to_thesis"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "Reread Mamba-2 §3 today. The duality with structured masked attention finally clicked.",
+    "fixture_dir": "tasks/cross_context/looks_like_health_is_thesis/workspace",
+    "base_fixture": "_researcher_pkm"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "is_complete": true,
+      "wrote_para": true,
+      "updated_insight": true,
+      "buckets": [
+        "Projects/",
+        "Resources/Papers/State Space Models/"
+      ],
+      "files": [
+        "Resources/Papers/State Space Models/Mamba-2.md"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "pkm_completion"
+    },
+    {
+      "name": "pkm_routed_correctly",
+      "config": {
+        "expected_buckets": [
+          "Projects/",
+          "Resources/Papers/State Space Models/"
+        ],
+        "expected_files": [
+          "Resources/Papers/State Space Models/Mamba-2.md"
+        ]
+      }
+    },
+    {
+      "name": "pkm_no_overwrite",
+      "config": {
+        "seed_marker": "fact_pkm_paper_mamba2_001"
+      }
+    },
+    {
+      "name": "pkm_insight_quality"
+    },
+    {
+      "name": "pkm_append_coherence"
+    }
+  ]
+}

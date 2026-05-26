@@ -1,0 +1,26 @@
+{
+  "id": "pkm_skip_emoji_only",
+  "description": "Emoji-only input — agent should skip.",
+  "trials_per_run": 2,
+  "timeout_seconds": 300,
+  "metadata": {
+    "failure_bucket": "skip_trivial"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "🎉🎉🎉",
+    "fixture_dir": "tasks/skip/emoji_only/workspace"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "is_complete": true,
+      "skipped_pkm": true
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "pkm_completion"
+    }
+  ]
+}

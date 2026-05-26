@@ -1,0 +1,44 @@
+{
+  "id": "pkm_low_signal_headcount",
+  "description": "Buried in standup chitchat is a meaningful headcount update. Agent should capture that, not the weather chat.",
+  "trials_per_run": 2,
+  "timeout_seconds": 300,
+  "metadata": {
+    "failure_bucket": "low_signal_high_noise"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "Standup was quick. Sara mentioned weather is nice. Btw the hiring manager confirmed we're getting two new SWE headcount starting July.",
+    "fixture_dir": "tasks/low_signal/buried_headcount/workspace",
+    "base_fixture": "_starter_pkm"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "is_complete": true,
+      "wrote_para": true,
+      "updated_insight": true,
+      "buckets": [
+        "Areas/Career/",
+        "Projects/"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "pkm_completion"
+    },
+    {
+      "name": "pkm_routed_correctly",
+      "config": {
+        "expected_buckets": [
+          "Areas/Career/",
+          "Projects/"
+        ]
+      }
+    },
+    {
+      "name": "pkm_insight_quality"
+    }
+  ]
+}

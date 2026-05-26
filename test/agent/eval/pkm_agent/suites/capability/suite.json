@@ -1,0 +1,6 @@
+{
+  "name": "pkm_agent_capability",
+  "agent_name": "pkm_agent",
+  "kind": "capability",
+  "task_pass_threshold": 1.0
+}

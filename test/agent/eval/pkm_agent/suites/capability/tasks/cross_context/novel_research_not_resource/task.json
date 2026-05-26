@@ -1,0 +1,59 @@
+{
+  "id": "pkm_xc_novel_research_not_resource",
+  "description": "Memory-science research note for the novel. Already has Resources/Reference - Memory Science.md — the cleanest place to land. Pinning it tests whether the agent reads the existing structure before deciding.",
+  "trials_per_run": 2,
+  "timeout_seconds": 300,
+  "metadata": {
+    "failure_bucket": "research_note_split_routing"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "Looked up Schiller's reconsolidation paradigm — the rats-and-fear experiments. This is exactly the metaphor I want for the climax of Echo Chamber. The echo service IS reconsolidation at scale.",
+    "fixture_dir": "tasks/cross_context/novel_research_not_resource/workspace",
+    "base_fixture": "_novelist_pkm"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "is_complete": true,
+      "wrote_para": true,
+      "updated_insight": true,
+      "buckets": [
+        "Resources/",
+        "Projects/Novel - Echo Chamber/"
+      ],
+      "files": [
+        "Resources/Reference - Memory Science.md"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "pkm_completion"
+    },
+    {
+      "name": "pkm_routed_correctly",
+      "config": {
+        "expected_buckets": [
+          "Resources/",
+          "Projects/Novel - Echo Chamber/"
+        ],
+        "expected_files": [
+          "Resources/Reference - Memory Science.md"
+        ]
+      }
+    },
+    {
+      "name": "pkm_no_overwrite",
+      "config": {
+        "seed_marker": "fact_pkm_refmem_001"
+      }
+    },
+    {
+      "name": "pkm_insight_quality"
+    },
+    {
+      "name": "pkm_append_coherence"
+    }
+  ]
+}

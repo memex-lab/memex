@@ -1,0 +1,50 @@
+{
+  "id": "pkm_starter_route_into_archives_book",
+  "description": "Starter has Resources/Books/Reading Backlog.md listing 'Working in Public — paused'. Finishing it should remove from backlog and either move to Archives or write a new completed-book note in Resources/Books/.",
+  "trials_per_run": 2,
+  "timeout_seconds": 300,
+  "metadata": {
+    "failure_bucket": "route_finished_book"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "Finished Working in Public — finally done. Best chapter was the one on intrinsic vs extrinsic motivation for OSS maintainers.",
+    "fixture_dir": "tasks/starter_route/into_archives_finished_book/workspace",
+    "base_fixture": "_starter_pkm"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "is_complete": true,
+      "wrote_para": true,
+      "updated_insight": true,
+      "buckets": [
+        "Archives/",
+        "Resources/Books/"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "pkm_completion"
+    },
+    {
+      "name": "pkm_routed_correctly",
+      "config": {
+        "expected_buckets": [
+          "Archives/",
+          "Resources/Books/"
+        ]
+      }
+    },
+    {
+      "name": "pkm_no_overwrite",
+      "config": {
+        "seed_marker": "fact_pkm_books_backlog_001"
+      }
+    },
+    {
+      "name": "pkm_insight_quality"
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "id": "pkm_fresh_first_book_note",
+  "description": "Fresh PKM tree, first reading note. Should land under Resources/.",
+  "trials_per_run": 2,
+  "timeout_seconds": 300,
+  "metadata": {
+    "failure_bucket": "fresh_user_first_fact"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "Reading Atomic Habits. The framing about 'systems vs goals' is hitting hard.",
+    "fixture_dir": "tasks/fresh/first_book_note/workspace"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "is_complete": true,
+      "wrote_para": true,
+      "updated_insight": true,
+      "buckets": [
+        "Resources/"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "pkm_completion"
+    },
+    {
+      "name": "pkm_routed_correctly",
+      "config": {
+        "expected_buckets": [
+          "Resources/"
+        ]
+      }
+    },
+    {
+      "name": "pkm_insight_quality"
+    }
+  ]
+}

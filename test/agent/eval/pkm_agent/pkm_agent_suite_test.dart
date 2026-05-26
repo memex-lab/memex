@@ -8,17 +8,26 @@ import 'environment.dart';
 import 'harness.dart';
 import 'tasks.dart';
 
-/// Card Agent capability eval. Loads `suites/capability/` via the
+/// PKM Agent capability eval. Loads `suites/capability/` via the
 /// framework's `loadEvalSuiteFromDir`, runs the production
-/// `processWithCardAgent` codepath end-to-end, and scores each trial
+/// `PkmAgent.runWithContent` codepath end-to-end, and scores each trial
 /// with the registered graders.
+///
+/// The eval intentionally uses two different models:
+///   - `EVAL_MODEL` runs the agent under test (default: sonnet-4.6, the
+///     production model). This is what we are actually grading.
+///   - `EVAL_JUDGE_MODEL` runs the LLM-as-judge graders (default: opus-4.7).
+///     A stronger model judging a weaker one is recommended by Anthropic
+///     Step 5 — keeps judge bias from inflating the grade.
 ///
 /// Run:
 ///
 ///     export OPENAI_BASE_URL='https://shark.ai/api/v1'
 ///     export OPENAI_API_KEY='sk-...'
-///     export EVAL_MODEL='anthropic/claude-sonnet-4.6'  # optional
-///     flutter test test/agent/eval/card_agent/card_agent_suite_test.dart -r expanded
+///     # optional model overrides (defaults: sonnet-4.6 / opus-4.7)
+///     export EVAL_MODEL='anthropic/claude-sonnet-4.6'
+///     export EVAL_JUDGE_MODEL='anthropic/claude-opus-4.7'
+///     flutter test test/agent/eval/pkm_agent/pkm_agent_suite_test.dart -r expanded
 ///
 /// Reports land in `.state_dir/.eval_reports/`, traces in
 /// `.state_dir/.eval_traces/` (under the gitignored `.state_dir/` so eval
@@ -30,15 +39,16 @@ bool get _hasLiveEnv =>
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
-  late CardAgentEvalRuntime runtime;
+  late PkmAgentEvalRuntime runtime;
 
   setUpAll(() async {
     if (!_hasLiveEnv) return;
-    runtime = await CardAgentEvalRuntime.setUp(
+    runtime = await PkmAgentEvalRuntime.setUp(
       baseUrl: Platform.environment['OPENAI_BASE_URL']!,
       apiKey: Platform.environment['OPENAI_API_KEY']!,
       modelId:
           Platform.environment['EVAL_MODEL'] ?? 'anthropic/claude-sonnet-4.6',
+      judgeModelId: Platform.environment['EVAL_JUDGE_MODEL'],
     );
   });
 
@@ -48,39 +58,36 @@ void main() {
   });
 
   test(
-    'card_agent_capability suite',
+    'pkm_agent_capability suite',
     () async {
       final tracesDir = Directory('.state_dir/.eval_traces')
         ..createSync(recursive: true);
       final reportsDir = Directory('.state_dir/.eval_reports')
         ..createSync(recursive: true);
       final tracesFile = File(
-        '${tracesDir.path}/card_agent_${DateTime.now().millisecondsSinceEpoch}.jsonl',
+        '${tracesDir.path}/pkm_agent_${DateTime.now().millisecondsSinceEpoch}.jsonl',
       );
 
-      final suiteDir = Directory(defaultCardAgentSuiteDir());
-      final suite = buildCardAgentSuite(suiteDir: suiteDir.path);
+      final suiteDir = Directory(defaultPkmAgentSuiteDir());
+      final suite = buildPkmAgentSuite(suiteDir: suiteDir.path);
 
       final runner = EvalRunner(
-        environment: CardAgentEvalEnvironment(suiteDir: suiteDir),
-        harnessFactory: const CardAgentHarnessFactory(),
+        environment:
+            PkmAgentEvalEnvironment(suiteDir: suiteDir, judge: runtime.judge),
+        harnessFactory: const PkmAgentHarnessFactory(),
         exporters: [JsonlTraceExporter(tracesFile)],
         reportStore: FileReportStore(reportsDir),
       );
 
       final report = await runner.runSuite(
-        runName: 'card_agent_${DateTime.now().millisecondsSinceEpoch}',
+        runName: 'pkm_agent_${DateTime.now().millisecondsSinceEpoch}',
         suite: suite,
-        concurrency: 6,
+        concurrency: 4,
       );
 
       // ignore: avoid_print
       print(report.toMarkdownSummary());
 
-      // For a capability suite we don't fail the test on a single trial
-      // miss — capability is meant to track how good the agent is, not
-      // whether it's perfect. We do fail if every trial errored
-      // (harness / setup bug, not an agent quality issue).
       expect(report.trials, isNotEmpty);
       final allErrored =
           report.trials.every((r) => r.trial.status == TrialStatus.errored);

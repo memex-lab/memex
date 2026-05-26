@@ -1,0 +1,57 @@
+{
+  "id": "pkm_starter_route_into_proj_eval",
+  "description": "Starter has Projects/Eval Framework Q2.md. Continued progress note must extend that file.",
+  "trials_per_run": 2,
+  "timeout_seconds": 300,
+  "metadata": {
+    "failure_bucket": "route_into_existing_project"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "Eval framework: pkm_agent suite is up — 20 tasks defined, baseline at 100% on sonnet-4.6 looks too easy, need harder cases.",
+    "fixture_dir": "tasks/starter_route/into_projects_eval_framework/workspace",
+    "base_fixture": "_starter_pkm"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "is_complete": true,
+      "wrote_para": true,
+      "updated_insight": true,
+      "buckets": [
+        "Projects/"
+      ],
+      "files": [
+        "Projects/Eval Framework Q2.md"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "pkm_completion"
+    },
+    {
+      "name": "pkm_routed_correctly",
+      "config": {
+        "expected_buckets": [
+          "Projects/"
+        ],
+        "expected_files": [
+          "Projects/Eval Framework Q2.md"
+        ]
+      }
+    },
+    {
+      "name": "pkm_no_overwrite",
+      "config": {
+        "seed_marker": "fact_pkm_proj_eval_001"
+      }
+    },
+    {
+      "name": "pkm_insight_quality"
+    },
+    {
+      "name": "pkm_append_coherence"
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "id": "pkm_starter_amb_finished_paused",
+  "description": "Starter has Projects/Mandarin Learning (paused).md. Cancelling for good means Archives/ — but updating the existing Projects/ file with a 'cancelled' marker is also defensible.",
+  "trials_per_run": 2,
+  "timeout_seconds": 300,
+  "metadata": {
+    "failure_bucket": "amb_paused_to_archive"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "Decided to formally cancel the Mandarin Learning project. Won't pick it back up before next year.",
+    "fixture_dir": "tasks/starter_amb/amb_finished_paused_project/workspace",
+    "base_fixture": "_starter_pkm"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "is_complete": true,
+      "wrote_para": true,
+      "updated_insight": true,
+      "buckets": [
+        "Archives/",
+        "Projects/"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "pkm_completion"
+    },
+    {
+      "name": "pkm_routed_correctly",
+      "config": {
+        "expected_buckets": [
+          "Archives/",
+          "Projects/"
+        ]
+      }
+    },
+    {
+      "name": "pkm_insight_quality"
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "id": "pkm_starter_mixed_health_book",
+  "description": "Habit log + book reading note. Agent should split: append to Areas/Health/Mobility.md AND Resources/Books/DDIA*.md.",
+  "trials_per_run": 2,
+  "timeout_seconds": 300,
+  "metadata": {
+    "failure_bucket": "mixed_signal"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "Did 30min mobility this morning. Also finished DDIA chapter 6 on partitioning — the consistent hashing section was clarifying.",
+    "fixture_dir": "tasks/starter_mixed/mixed_health_book/workspace",
+    "base_fixture": "_starter_pkm"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "is_complete": true,
+      "wrote_para": true,
+      "updated_insight": true,
+      "buckets": [
+        "Areas/Health/",
+        "Resources/Books/"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "pkm_completion"
+    },
+    {
+      "name": "pkm_routed_correctly",
+      "config": {
+        "expected_buckets": [
+          "Areas/Health/",
+          "Resources/Books/"
+        ]
+      }
+    },
+    {
+      "name": "pkm_insight_quality"
+    }
+  ]
+}

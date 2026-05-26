@@ -1,0 +1,57 @@
+{
+  "id": "pkm_bilingual_en_input_en_file",
+  "description": "Bilingual user has both English and Chinese files. English career update should land in the English career file.",
+  "trials_per_run": 2,
+  "timeout_seconds": 300,
+  "metadata": {
+    "failure_bucket": "route_into_english_career_file"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "Wrote up the indexing redesign design doc — it's getting circulated to 4 reviewers. Maya wants to use it as a promo-packet artifact.",
+    "fixture_dir": "tasks/bilingual/en_input_en_file/workspace",
+    "base_fixture": "_bilingual_pkm"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "is_complete": true,
+      "wrote_para": true,
+      "updated_insight": true,
+      "buckets": [
+        "Areas/Career/"
+      ],
+      "files": [
+        "Areas/Career/Promo Prep.md"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "pkm_completion"
+    },
+    {
+      "name": "pkm_routed_correctly",
+      "config": {
+        "expected_buckets": [
+          "Areas/Career/"
+        ],
+        "expected_files": [
+          "Areas/Career/Promo Prep.md"
+        ]
+      }
+    },
+    {
+      "name": "pkm_no_overwrite",
+      "config": {
+        "seed_marker": "fact_pkm_promo_001"
+      }
+    },
+    {
+      "name": "pkm_insight_quality"
+    },
+    {
+      "name": "pkm_append_coherence"
+    }
+  ]
+}

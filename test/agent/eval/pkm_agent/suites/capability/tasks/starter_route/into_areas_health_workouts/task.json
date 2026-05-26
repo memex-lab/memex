@@ -1,0 +1,59 @@
+{
+  "id": "pkm_starter_route_into_health_workouts",
+  "description": "Starter has Areas/Health/{Sleep,Workouts,Mobility}. A new strength entry should append to Workouts.md, not 'Strength.md'.",
+  "trials_per_run": 2,
+  "timeout_seconds": 300,
+  "metadata": {
+    "failure_bucket": "route_into_existing_subfile"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "Bench 70kg x5, new PR. Followed with shoulder mobility work for 10 min.",
+    "fixture_dir": "tasks/starter_route/into_areas_health_workouts/workspace",
+    "base_fixture": "_starter_pkm"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "is_complete": true,
+      "wrote_para": true,
+      "updated_insight": true,
+      "buckets": [
+        "Areas/Health/",
+        "Areas/Health"
+      ],
+      "files": [
+        "Areas/Health/Workouts.md"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "pkm_completion"
+    },
+    {
+      "name": "pkm_routed_correctly",
+      "config": {
+        "expected_buckets": [
+          "Areas/Health/",
+          "Areas/Health"
+        ],
+        "expected_files": [
+          "Areas/Health/Workouts.md"
+        ]
+      }
+    },
+    {
+      "name": "pkm_no_overwrite",
+      "config": {
+        "seed_marker": "fact_pkm_health_workouts_001"
+      }
+    },
+    {
+      "name": "pkm_insight_quality"
+    },
+    {
+      "name": "pkm_append_coherence"
+    }
+  ]
+}

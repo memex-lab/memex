@@ -1,0 +1,57 @@
+{
+  "id": "pkm_novelist_into_craft",
+  "description": "General craft note (not novel-specific) belongs in Resources/Writing Craft.md, not a Saunders Quotes.md sibling.",
+  "trials_per_run": 2,
+  "timeout_seconds": 300,
+  "metadata": {
+    "failure_bucket": "route_into_existing_resource"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "Watched a Saunders interview today. He said: 'plot is character under pressure'. Going to put that on a sticky note. It's the simplest version of the thing I keep trying to articulate.",
+    "fixture_dir": "tasks/novelist/into_craft_resource/workspace",
+    "base_fixture": "_novelist_pkm"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "is_complete": true,
+      "wrote_para": true,
+      "updated_insight": true,
+      "buckets": [
+        "Resources/"
+      ],
+      "files": [
+        "Resources/Writing Craft.md"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "pkm_completion"
+    },
+    {
+      "name": "pkm_routed_correctly",
+      "config": {
+        "expected_buckets": [
+          "Resources/"
+        ],
+        "expected_files": [
+          "Resources/Writing Craft.md"
+        ]
+      }
+    },
+    {
+      "name": "pkm_no_overwrite",
+      "config": {
+        "seed_marker": "fact_pkm_craft_001"
+      }
+    },
+    {
+      "name": "pkm_insight_quality"
+    },
+    {
+      "name": "pkm_append_coherence"
+    }
+  ]
+}

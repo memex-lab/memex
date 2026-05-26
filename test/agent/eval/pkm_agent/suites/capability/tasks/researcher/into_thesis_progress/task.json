@@ -1,0 +1,57 @@
+{
+  "id": "pkm_researcher_into_thesis_progress",
+  "description": "Researcher has Projects/Thesis Q3 - Sparse Attention.md with a 'no-router baseline' open task in the working log. Agent should append a progress entry there, not start a separate Ablation Notes.md.",
+  "trials_per_run": 2,
+  "timeout_seconds": 300,
+  "metadata": {
+    "failure_bucket": "route_into_existing_project"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "Got the no-router baseline running on PG-19. Loss converges within 10% of the routed model — that's a much closer gap than I expected. Going to need this for the §3 ablations.",
+    "fixture_dir": "tasks/researcher/into_thesis_progress/workspace",
+    "base_fixture": "_researcher_pkm"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "is_complete": true,
+      "wrote_para": true,
+      "updated_insight": true,
+      "buckets": [
+        "Projects/"
+      ],
+      "files": [
+        "Projects/Thesis Q3 - Sparse Attention.md"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "pkm_completion"
+    },
+    {
+      "name": "pkm_routed_correctly",
+      "config": {
+        "expected_buckets": [
+          "Projects/"
+        ],
+        "expected_files": [
+          "Projects/Thesis Q3 - Sparse Attention.md"
+        ]
+      }
+    },
+    {
+      "name": "pkm_no_overwrite",
+      "config": {
+        "seed_marker": "fact_pkm_thesis_001"
+      }
+    },
+    {
+      "name": "pkm_insight_quality"
+    },
+    {
+      "name": "pkm_append_coherence"
+    }
+  ]
+}

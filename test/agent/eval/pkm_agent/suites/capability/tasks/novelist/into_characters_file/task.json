@@ -1,0 +1,57 @@
+{
+  "id": "pkm_novelist_into_characters",
+  "description": "Master character list lives in Characters.md ('new entries go at the bottom'). Agent must append there, not create a new 'Ms Aldea.md'.",
+  "trials_per_run": 2,
+  "timeout_seconds": 300,
+  "metadata": {
+    "failure_bucket": "route_into_existing_chars_file"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "New character idea: Mira's old librarian mentor, Ms Aldea — she runs an unofficial archive of pre-echo memories. Could appear in Chapter 06 as the source of the Hana tapes. Quiet, suspicious of the echo service.",
+    "fixture_dir": "tasks/novelist/into_characters_file/workspace",
+    "base_fixture": "_novelist_pkm"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "is_complete": true,
+      "wrote_para": true,
+      "updated_insight": true,
+      "buckets": [
+        "Projects/Novel - Echo Chamber/"
+      ],
+      "files": [
+        "Projects/Novel - Echo Chamber/Characters.md"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "pkm_completion"
+    },
+    {
+      "name": "pkm_routed_correctly",
+      "config": {
+        "expected_buckets": [
+          "Projects/Novel - Echo Chamber/"
+        ],
+        "expected_files": [
+          "Projects/Novel - Echo Chamber/Characters.md"
+        ]
+      }
+    },
+    {
+      "name": "pkm_no_overwrite",
+      "config": {
+        "seed_marker": "fact_pkm_novel_chars_001"
+      }
+    },
+    {
+      "name": "pkm_insight_quality"
+    },
+    {
+      "name": "pkm_append_coherence"
+    }
+  ]
+}

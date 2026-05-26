@@ -1,0 +1,59 @@
+{
+  "id": "pkm_starter_route_into_books_ddia",
+  "description": "Starter has Resources/Books/DDIA*.md. New DDIA chapter notes must extend that file, not create a new one.",
+  "trials_per_run": 2,
+  "timeout_seconds": 300,
+  "metadata": {
+    "failure_bucket": "route_into_existing_book_file"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "DDIA chapter 5 on replication: leader-based vs leaderless trade-offs are subtle. The sloppy quorums section was the highlight.",
+    "fixture_dir": "tasks/starter_route/into_resources_books_ddia/workspace",
+    "base_fixture": "_starter_pkm"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "is_complete": true,
+      "wrote_para": true,
+      "updated_insight": true,
+      "buckets": [
+        "Resources/Books/",
+        "Resources/Books"
+      ],
+      "files": [
+        "Resources/Books/DDIA - Designing Data-Intensive Applications.md"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "pkm_completion"
+    },
+    {
+      "name": "pkm_routed_correctly",
+      "config": {
+        "expected_buckets": [
+          "Resources/Books/",
+          "Resources/Books"
+        ],
+        "expected_files": [
+          "Resources/Books/DDIA - Designing Data-Intensive Applications.md"
+        ]
+      }
+    },
+    {
+      "name": "pkm_no_overwrite",
+      "config": {
+        "seed_marker": "fact_pkm_books_ddia_001"
+      }
+    },
+    {
+      "name": "pkm_insight_quality"
+    },
+    {
+      "name": "pkm_append_coherence"
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "id": "pkm_low_signal_prescription",
+  "description": "Mostly chitchat with one actionable (refill prescription). Agent should pull the signal out, not log all the noise.",
+  "trials_per_run": 2,
+  "timeout_seconds": 300,
+  "metadata": {
+    "failure_bucket": "low_signal_high_noise"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "Coffee was fine, bus was late as usual. Friend texted about dinner Saturday. Oh and I really need to remember to refill my prescription before Friday — running low.",
+    "fixture_dir": "tasks/low_signal/buried_prescription/workspace",
+    "base_fixture": "_starter_pkm"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "is_complete": true,
+      "wrote_para": true,
+      "updated_insight": true,
+      "buckets": [
+        "Areas/Health/",
+        "Areas/Health",
+        "Inbox",
+        "Projects/"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "pkm_completion"
+    },
+    {
+      "name": "pkm_routed_correctly",
+      "config": {
+        "expected_buckets": [
+          "Areas/Health/",
+          "Areas/Health",
+          "Inbox",
+          "Projects/"
+        ]
+      }
+    },
+    {
+      "name": "pkm_insight_quality"
+    }
+  ]
+}

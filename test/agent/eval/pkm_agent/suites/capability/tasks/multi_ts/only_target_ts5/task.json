@@ -1,0 +1,44 @@
+{
+  "id": "pkm_multi_ts_only_target_ts5",
+  "description": "Daily fact has 4 prior ts entries (standup, coffee, lunch, error report). Agent must only act on ts_5.",
+  "trials_per_run": 2,
+  "timeout_seconds": 300,
+  "metadata": {
+    "failure_bucket": "multi_ts_isolation"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_5",
+    "content": "Finally finished the Q2 budget review. Took longer than expected.",
+    "fixture_dir": "tasks/multi_ts/only_target_ts5/workspace",
+    "base_fixture": "_starter_pkm"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "is_complete": true,
+      "wrote_para": true,
+      "updated_insight": true,
+      "buckets": [
+        "Projects/",
+        "Areas/Finance/"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "pkm_completion"
+    },
+    {
+      "name": "pkm_routed_correctly",
+      "config": {
+        "expected_buckets": [
+          "Projects/",
+          "Areas/Finance/"
+        ]
+      }
+    },
+    {
+      "name": "pkm_insight_quality"
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "id": "pkm_starter_amb_one_off_health",
+  "description": "Health-related but a one-off medical event. Could go into Areas/Health/Mobility.md (PT continuation) or a new note. Either is acceptable.",
+  "trials_per_run": 2,
+  "timeout_seconds": 300,
+  "metadata": {
+    "failure_bucket": "amb_health_one_off"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "Got an X-ray on my left shoulder today. Doc says no fracture, just inflammation. PT for 4 weeks.",
+    "fixture_dir": "tasks/starter_amb/amb_one_off_health/workspace",
+    "base_fixture": "_starter_pkm"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "is_complete": true,
+      "wrote_para": true,
+      "updated_insight": true,
+      "buckets": [
+        "Areas/Health/",
+        "Areas/Health"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "pkm_completion"
+    },
+    {
+      "name": "pkm_routed_correctly",
+      "config": {
+        "expected_buckets": [
+          "Areas/Health/",
+          "Areas/Health"
+        ]
+      }
+    },
+    {
+      "name": "pkm_insight_quality"
+    }
+  ]
+}

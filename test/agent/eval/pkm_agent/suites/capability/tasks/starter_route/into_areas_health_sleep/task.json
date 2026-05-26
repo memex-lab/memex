@@ -1,0 +1,59 @@
+{
+  "id": "pkm_starter_route_into_health_sleep",
+  "description": "Starter has Areas/Health/Sleep.md with prior entries. New sleep fact must land there specifically — not in a sibling file. partial credit (0.5) if agent stays in Areas/Health/ but creates a new file.",
+  "trials_per_run": 2,
+  "timeout_seconds": 300,
+  "metadata": {
+    "failure_bucket": "route_into_existing_subfile"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "Slept 5.5h, energy crashed at 2pm. Same pattern as last week's bad nights — phone in bed.",
+    "fixture_dir": "tasks/starter_route/into_areas_health_sleep/workspace",
+    "base_fixture": "_starter_pkm"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "is_complete": true,
+      "wrote_para": true,
+      "updated_insight": true,
+      "buckets": [
+        "Areas/Health/",
+        "Areas/Health"
+      ],
+      "files": [
+        "Areas/Health/Sleep.md"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "pkm_completion"
+    },
+    {
+      "name": "pkm_routed_correctly",
+      "config": {
+        "expected_buckets": [
+          "Areas/Health/",
+          "Areas/Health"
+        ],
+        "expected_files": [
+          "Areas/Health/Sleep.md"
+        ]
+      }
+    },
+    {
+      "name": "pkm_no_overwrite",
+      "config": {
+        "seed_marker": "fact_pkm_health_sleep_001"
+      }
+    },
+    {
+      "name": "pkm_insight_quality"
+    },
+    {
+      "name": "pkm_append_coherence"
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "id": "pkm_researcher_into_paper_mamba",
+  "description": "Researcher PKM has Resources/Papers/State Space Models/{Mamba,Mamba-2}.md. New Mamba-2 reading note must land in Mamba-2.md, NOT generic 'SSM.md' or sibling new file.",
+  "trials_per_run": 2,
+  "timeout_seconds": 300,
+  "metadata": {
+    "failure_bucket": "route_into_existing_paper"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "Reread Mamba-2 §3 today. The duality with structured masked attention finally clicked — they're literally the same thing under a change of basis. Should cite this in §2.1 of the thesis.",
+    "fixture_dir": "tasks/researcher/into_paper_subdir_mamba/workspace",
+    "base_fixture": "_researcher_pkm"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "is_complete": true,
+      "wrote_para": true,
+      "updated_insight": true,
+      "buckets": [
+        "Resources/Papers/State Space Models/"
+      ],
+      "files": [
+        "Resources/Papers/State Space Models/Mamba-2.md"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "pkm_completion"
+    },
+    {
+      "name": "pkm_routed_correctly",
+      "config": {
+        "expected_buckets": [
+          "Resources/Papers/State Space Models/"
+        ],
+        "expected_files": [
+          "Resources/Papers/State Space Models/Mamba-2.md"
+        ]
+      }
+    },
+    {
+      "name": "pkm_no_overwrite",
+      "config": {
+        "seed_marker": "fact_pkm_paper_mamba2_001"
+      }
+    },
+    {
+      "name": "pkm_insight_quality"
+    },
+    {
+      "name": "pkm_append_coherence"
+    }
+  ]
+}

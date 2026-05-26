@@ -1,0 +1,59 @@
+{
+  "id": "pkm_starter_dedupe_no_new_health",
+  "description": "Starter has Areas/Health/Mobility.md. Agent must extend it, not create 'Stretching.md'.",
+  "trials_per_run": 2,
+  "timeout_seconds": 300,
+  "metadata": {
+    "failure_bucket": "no_redundant_file"
+  },
+  "input": {
+    "fact_id": "2026/05/25.md#ts_1",
+    "content": "Tried a new ankle mobility drill from PT — felt great after sitting all day.",
+    "fixture_dir": "tasks/starter_dedupe/no_new_health_file/workspace",
+    "base_fixture": "_starter_pkm"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "is_complete": true,
+      "wrote_para": true,
+      "updated_insight": true,
+      "buckets": [
+        "Areas/Health/",
+        "Areas/Health"
+      ],
+      "files": [
+        "Areas/Health/Mobility.md"
+      ]
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "pkm_completion"
+    },
+    {
+      "name": "pkm_routed_correctly",
+      "config": {
+        "expected_buckets": [
+          "Areas/Health/",
+          "Areas/Health"
+        ],
+        "expected_files": [
+          "Areas/Health/Mobility.md"
+        ]
+      }
+    },
+    {
+      "name": "pkm_no_overwrite",
+      "config": {
+        "seed_marker": "fact_pkm_health_mobility_001"
+      }
+    },
+    {
+      "name": "pkm_insight_quality"
+    },
+    {
+      "name": "pkm_append_coherence"
+    }
+  ]
+}
