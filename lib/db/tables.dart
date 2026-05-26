@@ -78,7 +78,7 @@ class SystemActions extends Table {
   TextColumn get actionData =>
       text().nullable()(); // JSON payload (title, start_time, etc.)
   TextColumn get status =>
-      text()(); // 'pending', 'completed', 'failed', 'rejected'
+      text()(); // 'pending', 'completed', 'failed', 'dismissed', 'rejected'
   TextColumn get factId => text().nullable()(); // Associated fact_id
   IntColumn get createdAt => integer().nullable()(); // Seconds since epoch
   IntColumn get updatedAt => integer().nullable()(); // Seconds since epoch

@@ -6,6 +6,7 @@ import 'package:memex/data/services/schedule_refresh_state_service.dart';
 import 'package:memex/domain/models/schedule_refresh_state.dart';
 
 const int defaultScheduleAggregationCardLimit = 80;
+const Duration _dirtyFactWindowLookahead = Duration(days: 7);
 
 class ScheduleAggregationWindow {
   const ScheduleAggregationWindow({
@@ -60,9 +61,14 @@ Future<ScheduleAggregationRunPlan> buildScheduleAggregationRunPlan({
   final fileSystem = FileSystemService.instance;
   final generatedAt = now ?? DateTime.now();
   final refreshState = await ScheduleRefreshStateService.instance.read(userId);
+  final dirtyScheduleDates = await _collectOutOfBandDirtyScheduleDates(
+    userId: userId,
+    cardIds: refreshState.cardIds,
+  );
   final window = resolveScheduleAggregationWindow(
     generatedAt: generatedAt,
     refreshState: refreshState,
+    dirtyScheduleDates: dirtyScheduleDates,
   );
 
   final scheduleCards = await queryScheduleCardsForRange(
@@ -88,6 +94,7 @@ Future<ScheduleAggregationRunPlan> buildScheduleAggregationRunPlan({
 ScheduleAggregationWindow resolveScheduleAggregationWindow({
   required DateTime generatedAt,
   required ScheduleRefreshState refreshState,
+  List<DateTime> dirtyScheduleDates = const [],
 }) {
   final dirtyDates = <DateTime>[];
   final sourceCardIds = <String>[];
@@ -97,22 +104,34 @@ ScheduleAggregationWindow resolveScheduleAggregationWindow({
     dirtyDates.add(cardDate);
     sourceCardIds.add(cardId);
   }
+  dirtyDates.addAll(dirtyScheduleDates);
 
   if (dirtyDates.isNotEmpty) {
     dirtyDates.sort();
     final first = _startOfDay(dirtyDates.first);
     final last = _endOfDay(dirtyDates.last);
+    var to = last.add(_dirtyFactWindowLookahead);
+    final recentBoundary =
+        generatedAt.subtract(defaultScheduleAggregationLookback);
+    if (!last.isBefore(recentBoundary)) {
+      final defaultTo = generatedAt.add(defaultScheduleAggregationLookahead);
+      if (to.isBefore(defaultTo)) {
+        to = defaultTo;
+      }
+    }
     return ScheduleAggregationWindow(
-      from: first.subtract(const Duration(days: 3)),
-      to: last.add(const Duration(days: 7)),
-      source: 'dirty_card_dates',
+      from: first.subtract(defaultScheduleAggregationLookback),
+      to: to,
+      source: dirtyScheduleDates.isNotEmpty
+          ? 'dirty_schedule_dates'
+          : 'dirty_card_dates',
       sourceCardIds: sourceCardIds,
     );
   }
 
   return ScheduleAggregationWindow(
-    from: generatedAt.subtract(const Duration(days: 3)),
-    to: generatedAt.add(const Duration(days: 7)),
+    from: generatedAt.subtract(defaultScheduleAggregationLookback),
+    to: generatedAt.add(defaultScheduleAggregationLookahead),
     source: 'generated_at_window',
   );
 }
@@ -193,6 +212,7 @@ Future<String> buildScheduleAggregationRunContext({
       'Use save_schedule_aggregation to persist exactly one current aggregation result.',
       'Preserve completed task status only when task is_completed is true; card processing status does not mean task completion.',
       'When a task card has subtasks, preserve those subtasks on the timeline item; do not invent subtasks for independent cards.',
+      'Long-term non-task reference items without a concrete day/start time are display-limited; keep existing display_until values and do not renew them.',
     ],
   };
 
@@ -248,6 +268,51 @@ Map<String, dynamic> _compactDay(dynamic value) {
 String? _itemId(dynamic value) {
   if (value is! Map) return null;
   return value['card_id']?.toString();
+}
+
+Future<List<DateTime>> _collectOutOfBandDirtyScheduleDates({
+  required String userId,
+  required List<String> cardIds,
+}) async {
+  if (cardIds.isEmpty) return const [];
+
+  final fileSystem = FileSystemService.instance;
+  final dates = <DateTime>[];
+  for (final cardId in cardIds) {
+    final factDate = _parseFactIdDate(cardId);
+    final card = await fileSystem.readCardFile(userId, cardId);
+    if (card == null) continue;
+
+    for (final config in card.uiConfigs) {
+      if (!scheduleTemporalTemplateIds.contains(config.templateId)) {
+        continue;
+      }
+      final scheduleDate = scheduleExplicitDateForCard(
+        config.templateId,
+        config.data,
+      );
+      if (scheduleDate == null) continue;
+      if (_isOutOfBandScheduleDate(
+        scheduleDate: scheduleDate,
+        factDate: factDate,
+      )) {
+        dates.add(scheduleDate);
+      }
+    }
+  }
+  return dates;
+}
+
+bool _isOutOfBandScheduleDate({
+  required DateTime scheduleDate,
+  required DateTime? factDate,
+}) {
+  if (factDate == null) return true;
+
+  final from =
+      _startOfDay(factDate).subtract(defaultScheduleAggregationLookback);
+  final to = _endOfDay(factDate).add(_dirtyFactWindowLookahead);
+  return scheduleDate.isBefore(from) || scheduleDate.isAfter(to);
 }
 
 String _truncate(String value, int maxLength) {

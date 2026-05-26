@@ -27,6 +27,7 @@ Your capability includes extracting user intents for scheduling calendar events 
 
 ## Execution Rules
 1. **Explicit Consent**: ONLY perform actions when explicitly requested by the user. Do NOT hallucinate or guess intents that are not clearly expressed.
+   Diagnostic or memo inputs about Memex/app behavior are not consent. If the user is reporting a bug, asking why something disappeared, or saying they will investigate later, do not create/cancel/modify calendar or reminder actions unless this turn explicitly asks for that action.
 2. **Calendar Events Construction**: Extract a `title`, `start_time` (essential), and optional `end_time`, `location`, or `notes`.
 3. **Reminders Construction**: Extract a `title` and an optional `due_date` or `notes`.
 4. **Time Calculation**: Relative times (like "tomorrow 3 PM", "next Monday") MUST be calculated accurately based on the provided Current User Time context.
@@ -77,11 +78,11 @@ The current time is provided dynamically in your agent's state/reminders. Always
         },
         executable: (
           String title,
-          String start_time,
-          String? end_time,
+          String startTime,
+          String? endTime,
           String? notes,
           String? location,
-          bool? all_day,
+          bool? allDay,
         ) async {
           try {
             final context = AgentCallToolContext.current!;
@@ -90,11 +91,11 @@ The current time is provided dynamically in your agent's state/reminders. Always
 
             final actionData = {
               "title": title,
-              "start_time": start_time,
-              "end_time": end_time,
+              "start_time": startTime,
+              "end_time": endTime,
               "notes": notes,
               "location": location,
-              "all_day": all_day ?? false,
+              "all_day": allDay ?? false,
             };
 
             await SystemActionService.instance.createAction(
@@ -138,7 +139,7 @@ The current time is provided dynamically in your agent's state/reminders. Always
         },
         executable: (
           String title,
-          String? due_date,
+          String? dueDate,
           String? notes,
         ) async {
           try {
@@ -148,7 +149,7 @@ The current time is provided dynamically in your agent's state/reminders. Always
 
             final actionData = {
               "title": title,
-              "due_date": due_date,
+              "due_date": dueDate,
               "notes": notes,
             };
 
@@ -172,7 +173,7 @@ The current time is provided dynamically in your agent's state/reminders. Always
       Tool(
         name: 'get_recent_actions',
         description:
-            "Retrieves a list of the 20 most recent calendar events and reminders, regardless of their status (pending, completed, rejected). Use this to find the action_id before cancelling an action.",
+            "Retrieves a list of the 20 most recent calendar events and reminders, regardless of their status (pending, completed, dismissed, rejected). Use this to find the action_id before cancelling an action.",
         parameters: {"type": "object", "properties": {}},
         executable: () async {
           try {
@@ -210,18 +211,18 @@ The current time is provided dynamically in your agent's state/reminders. Always
           },
           "required": ["action_id"]
         },
-        executable: (String action_id) async {
+        executable: (String actionId) async {
           try {
             final success =
-                await SystemActionService.instance.cancelAction(action_id);
+                await SystemActionService.instance.cancelAction(actionId);
 
             if (success) {
               return AgentToolResult(
                 content: TextPart(
-                    "Successfully cancelled action with ID: $action_id"),
+                    "Successfully cancelled action with ID: $actionId"),
               );
             }
-            throw StateError("Action with ID $action_id not found.");
+            throw StateError("Action with ID $actionId not found.");
           } catch (e, st) {
             _logger.severe("Failed to cancel_action", e, st);
             rethrow;

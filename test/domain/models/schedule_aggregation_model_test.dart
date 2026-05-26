@@ -39,6 +39,8 @@ void main() {
                 'start_time': '2026-04-23T14:00:00Z',
                 'type': 'event',
                 'priority': 2,
+                'display_first_seen_at': '2026-04-23',
+                'display_until': '2026-04-30',
               },
             ],
           },
@@ -75,6 +77,14 @@ void main() {
       expect(model.timeline.first.items.length, 1);
       expect(model.timeline.first.items.first.title, '设计评审');
       expect(model.timeline.first.items.first.subtasks, isEmpty);
+      expect(
+        model.timeline.first.items.first.displayFirstSeenAt,
+        DateTime(2026, 4, 23),
+      );
+      expect(
+        model.timeline.first.items.first.displayUntil,
+        DateTime(2026, 4, 30),
+      );
       expect(model.completed.length, 1);
       expect(model.completed.first.title, '架构评审');
       expect(model.conflicts.length, 1);
@@ -224,6 +234,8 @@ void main() {
                 title: 'Meeting',
                 status: 'pending',
                 type: 'event',
+                displayFirstSeenAt: DateTime(2026, 4, 23),
+                displayUntil: DateTime(2026, 4, 30),
                 subtasks: const [
                   ScheduleSubtask(title: 'Draft', completed: true),
                 ],
@@ -249,6 +261,14 @@ void main() {
       expect(
         restored.timeline.single.items.single.subtasks.single.completed,
         isTrue,
+      );
+      expect(
+        restored.timeline.single.items.single.displayFirstSeenAt,
+        DateTime(2026, 4, 23),
+      );
+      expect(
+        restored.timeline.single.items.single.displayUntil,
+        DateTime(2026, 4, 30),
       );
       expect(restored.completed.length, original.completed.length);
     });

@@ -83,6 +83,19 @@ class SystemActionService {
         .get();
   }
 
+  /// Gets schedule-relevant actions that should still be visible.
+  ///
+  /// `dismissed` only means hidden from the action center; it is intentionally
+  /// still visible in source-card attachments and schedule aggregation.
+  Future<List<SystemAction>> getVisibleForSchedule() async {
+    return (_db.select(_db.systemActions)
+          ..where((t) =>
+              t.status.isNotIn(['rejected']) &
+              t.actionType.isIn(['calendar', 'reminder']))
+          ..orderBy([(t) => OrderingTerm.asc(t.createdAt)]))
+        .get();
+  }
+
   /// Gets all pending actions.
   Future<List<SystemAction>> getPending() async {
     return (_db.select(_db.systemActions)
@@ -105,6 +118,24 @@ class SystemActionService {
       return count;
     } catch (e) {
       _logger.severe('Failed to reject all pending actions: $e');
+      return 0;
+    }
+  }
+
+  /// Hide all pending actions from the action center without rejecting them.
+  Future<int> dismissPendingFromActionCenter() async {
+    try {
+      final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+      final count = await (_db.update(_db.systemActions)
+            ..where((t) => t.status.equals('pending')))
+          .write(SystemActionsCompanion(
+        status: const Value('dismissed'),
+        updatedAt: Value(now),
+      ));
+      _logger.info('Dismissed all pending system actions (count=$count)');
+      return count;
+    } catch (e) {
+      _logger.severe('Failed to dismiss pending actions: $e');
       return 0;
     }
   }

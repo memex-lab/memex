@@ -2,8 +2,10 @@ import 'dart:convert';
 
 import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:memex/agent/prompts.dart';
+import 'package:memex/agent/skills/schedule_aggregation/schedule_aggregation_retention.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/schedule_refresh_state_service.dart';
+import 'package:memex/data/services/system_action_service.dart';
 import 'package:memex/db/app_database.dart';
 import 'package:memex/utils/logger.dart';
 
@@ -11,18 +13,18 @@ import '../../../utils/user_storage.dart';
 
 class ScheduleAggregationSkill extends Skill {
   ScheduleAggregationSkill({super.forceActivate})
-    : super(
-        name: "update_schedule_aggregation",
-        description:
-            "Analyzes user's temporal cards (events, tasks, routines) and generates a magazine-style schedule aggregation.",
-        systemPrompt: Prompts.scheduleAggregatorSkillPrompt(
-          UserStorage.l10n.scheduleAggregatorLanguageInstruction,
-        ),
-        tools: [
-          buildGetScheduleCardsTool(),
-          buildSaveScheduleAggregationTool(),
-        ],
-      );
+      : super(
+          name: "update_schedule_aggregation",
+          description:
+              "Analyzes user's temporal cards (events, tasks, routines) and generates a magazine-style schedule aggregation.",
+          systemPrompt: Prompts.scheduleAggregatorSkillPrompt(
+            UserStorage.l10n.scheduleAggregatorLanguageInstruction,
+          ),
+          tools: [
+            buildGetScheduleCardsTool(),
+            buildSaveScheduleAggregationTool(),
+          ],
+        );
 }
 
 const scheduleTemporalTemplateIds = {
@@ -32,6 +34,9 @@ const scheduleTemporalTemplateIds = {
   'duration',
   'procedure',
 };
+
+const defaultScheduleAggregationLookback = Duration(days: 3);
+const defaultScheduleAggregationLookahead = Duration(days: 30);
 
 dynamic scheduleStartTimeForCard(String templateId, Map<String, dynamic> data) {
   final startTime = _nonEmptyScheduleValue(data['start_time']);
@@ -52,8 +57,9 @@ Future<Map<String, dynamic>> queryScheduleCardsForRange({
   final logger = getLogger('ScheduleAggregationSkill');
   final fileSystem = FileSystemService.instance;
   final now = DateTime.now();
-  final effectiveFrom = from ?? now.subtract(const Duration(days: 3));
-  final effectiveTo = to ?? now.add(const Duration(days: 7));
+  final effectiveFrom =
+      from ?? now.subtract(defaultScheduleAggregationLookback);
+  final effectiveTo = to ?? now.add(defaultScheduleAggregationLookahead);
 
   final db = AppDatabase.instance;
   if (await db.cardDao.isCacheEmpty()) {
@@ -78,6 +84,7 @@ Future<Map<String, dynamic>> queryScheduleCardsForRange({
       final data = uiConfig.data;
       final startTime = scheduleStartTimeForCard(templateId, data);
       final status = deriveScheduleCardStatus(templateId, data);
+      final dateSource = scheduleDateSourceForCard(templateId, data);
 
       if (!_isCardInScheduleRange(
         templateId: templateId,
@@ -97,11 +104,12 @@ Future<Map<String, dynamic>> queryScheduleCardsForRange({
         'status': status,
         'tags': cardData.tags,
         'start_time': startTime,
+        'date_source': dateSource,
+        'is_unscheduled': dateSource == 'created_at_fallback',
         'end_time': data['end_time'],
         'location': data['location'],
-        'is_completed': templateId == 'task'
-            ? status == 'completed'
-            : data['is_completed'],
+        'is_completed':
+            templateId == 'task' ? status == 'completed' : data['is_completed'],
         'priority': data['priority'],
         'due_date': data['due_date'],
         'subtasks': data['subtasks'],
@@ -114,6 +122,23 @@ Future<Map<String, dynamic>> queryScheduleCardsForRange({
       results.add(result);
     } catch (e) {
       logger.warning('Error processing card ${cached.factId}: $e');
+    }
+  }
+
+  final actions = await SystemActionService.instance.getVisibleForSchedule();
+  for (final action in actions) {
+    try {
+      final actionResult = scheduleResultForSystemAction(action);
+      if (actionResult == null) continue;
+      if (!_isResultInScheduleRange(actionResult, effectiveFrom, effectiveTo)) {
+        continue;
+      }
+      if (_duplicatesExistingScheduleResult(results, actionResult)) {
+        continue;
+      }
+      results.add(actionResult);
+    } catch (e) {
+      logger.warning('Error processing system action ${action.id}: $e');
     }
   }
 
@@ -151,7 +176,7 @@ Tool buildGetScheduleCardsTool() {
         'to_date': {
           'type': 'string',
           'description':
-              'End date in ISO format (e.g., 2026-04-30). Defaults to 7 days from now.',
+              'End date in ISO format (e.g., 2026-04-30). Defaults to 30 days from now.',
         },
       },
     },
@@ -163,11 +188,11 @@ Tool buildGetScheduleCardsTool() {
       final now = DateTime.now();
       final defaultFrom = _parseBoundaryDate(
         metadata['schedule_window_from']?.toString(),
-        fallback: now.subtract(const Duration(days: 3)),
+        fallback: now.subtract(defaultScheduleAggregationLookback),
       );
       final defaultTo = _parseBoundaryDate(
         metadata['schedule_window_to']?.toString(),
-        fallback: now.add(const Duration(days: 7)),
+        fallback: now.add(defaultScheduleAggregationLookahead),
       );
       final from = _parseBoundaryDate(fromDate, fallback: defaultFrom);
       final to = _parseBoundaryDate(
@@ -234,10 +259,22 @@ Tool buildSaveScheduleAggregationTool() {
           yamlData['version'] = 1;
         }
 
+        final normalizedYamlData = await normalizeScheduleAggregationForCards(
+          userId: userId,
+          yamlData: yamlData,
+        );
+        final previousAggregations = await fileSystem.listScheduleAggregations(
+          userId,
+        );
+        final retainedYamlData = applyScheduleDisplayRetention(
+          yamlData: normalizedYamlData,
+          previousAggregations: previousAggregations,
+        );
+
         await fileSystem.writeScheduleAggregation(
           userId,
           aggregationId,
-          yamlData,
+          retainedYamlData,
         );
         await ScheduleRefreshStateService.instance.clearDirty(
           userId: userId,
@@ -252,7 +289,7 @@ Tool buildSaveScheduleAggregationTool() {
             description: 'Agent created schedule aggregation',
             metadata: {
               'aggregation_id': aggregationId,
-              'card_count': _countAggregationItems(yamlData),
+              'card_count': _countAggregationItems(retainedYamlData),
             },
           );
         } catch (e) {
@@ -296,14 +333,257 @@ bool _isCardInScheduleRange({
   final start = switch (templateId) {
     'event' => _parseScheduleDateTime(data['start_time']) ?? fallback,
     'task' => _parseScheduleDateTime(data['due_date']) ?? fallback,
-    _ =>
-      _parseScheduleDateTime(data['start_time']) ??
-          _parseScheduleDateTime(data['due_date']) ??
-          fallback,
+    _ => _parseScheduleDateTime(data['start_time']) ??
+        _parseScheduleDateTime(data['due_date']) ??
+        fallback,
   };
 
   final end = _parseScheduleDateTime(data['end_time']) ?? start;
   return !end.isBefore(from) && !start.isAfter(to);
+}
+
+String scheduleDateSourceForCard(String templateId, Map<String, dynamic> data) {
+  final startTime = _parseScheduleDateTime(data['start_time']);
+  if (startTime != null) return 'start_time';
+  if (templateId == 'task') {
+    final dueDate = _parseScheduleDateTime(data['due_date']);
+    if (dueDate != null) return 'due_date';
+  }
+  return 'created_at_fallback';
+}
+
+DateTime? scheduleExplicitDateForCard(
+  String templateId,
+  Map<String, dynamic> data,
+) {
+  final startTime = _parseScheduleDateTime(data['start_time']);
+  if (startTime != null) return startTime;
+  if (templateId == 'task') {
+    return _parseScheduleDateTime(data['due_date']);
+  }
+  return _parseScheduleDateTime(data['due_date']);
+}
+
+Map<String, dynamic>? scheduleResultForSystemAction(SystemAction action) {
+  if (action.status == 'rejected') return null;
+  if (action.actionType != 'calendar' && action.actionType != 'reminder') {
+    return null;
+  }
+
+  final data = _decodeActionData(action.actionData);
+  if (data == null) return null;
+  final title = _nonEmptyScheduleValue(data['title'])?.toString();
+  if (title == null) return null;
+
+  final isCalendar = action.actionType == 'calendar';
+  final startTime = isCalendar
+      ? _nonEmptyScheduleValue(data['start_time'])
+      : _nonEmptyScheduleValue(data['due_date']);
+  if (_parseScheduleDateTime(startTime) == null) return null;
+
+  return <String, dynamic>{
+    'card_id': 'system_action:${action.id}',
+    'source_fact_id': action.factId,
+    'system_action_id': action.id,
+    'source': 'system_action',
+    'title': title,
+    'template_id': isCalendar ? 'event' : 'reminder',
+    'timestamp': action.createdAt ?? action.updatedAt ?? 0,
+    'status': 'pending',
+    'action_status': action.status,
+    'tags': const [],
+    'start_time': startTime,
+    'end_time': data['end_time'],
+    'location': data['location'],
+    'due_date': data['due_date'],
+    'notes': data['notes'],
+    'date_source':
+        isCalendar ? 'system_action_start_time' : 'system_action_due_date',
+    'is_unscheduled': false,
+  };
+}
+
+Future<Map<String, dynamic>> normalizeScheduleAggregationForCards({
+  required String userId,
+  required Map<String, dynamic> yamlData,
+}) async {
+  final fileSystem = FileSystemService.instance;
+  final normalized = _deepCopyMap(yamlData);
+  final timeline = normalized['timeline'];
+  if (timeline is! List) return normalized;
+
+  final normalizedTimeline = <Map<String, dynamic>>[];
+  final unscheduledItems = <Map<String, dynamic>>[];
+
+  for (final rawDay in timeline) {
+    if (rawDay is! Map) continue;
+    final day = Map<String, dynamic>.from(rawDay);
+    final items = day['items'];
+    if (items is! List) {
+      normalizedTimeline.add(day);
+      continue;
+    }
+
+    final retainedItems = <Map<String, dynamic>>[];
+    for (final rawItem in items) {
+      if (rawItem is! Map) continue;
+      final item = Map<String, dynamic>.from(rawItem);
+      if (await _shouldMoveToUnscheduled(
+        fileSystem: fileSystem,
+        userId: userId,
+        day: day,
+        item: item,
+      )) {
+        unscheduledItems.add(item);
+      } else {
+        retainedItems.add(item);
+      }
+    }
+
+    if (retainedItems.isNotEmpty || !_isUnscheduledDay(day)) {
+      day['items'] = retainedItems;
+      if (retainedItems.isNotEmpty) {
+        normalizedTimeline.add(day);
+      }
+    } else {
+      unscheduledItems.insertAll(0, retainedItems);
+    }
+  }
+
+  if (unscheduledItems.isNotEmpty) {
+    final existingIndex = normalizedTimeline.indexWhere(_isUnscheduledDay);
+    if (existingIndex >= 0) {
+      final existing = normalizedTimeline[existingIndex];
+      final existingItems = existing['items'];
+      existing['items'] = [
+        if (existingItems is List) ...existingItems,
+        ...unscheduledItems,
+      ];
+    } else {
+      normalizedTimeline.add({
+        'day_label': '待安排',
+        'day_date': '',
+        'items': unscheduledItems,
+      });
+    }
+  }
+
+  normalized['timeline'] = normalizedTimeline;
+  return normalized;
+}
+
+Future<bool> _shouldMoveToUnscheduled({
+  required FileSystemService fileSystem,
+  required String userId,
+  required Map<String, dynamic> day,
+  required Map<String, dynamic> item,
+}) async {
+  if (_isUnscheduledDay(day)) return false;
+  if (_parseScheduleDateTime(item['start_time']) != null ||
+      _parseScheduleDateTime(item['due_date']) != null) {
+    return false;
+  }
+
+  final type = item['type']?.toString().toLowerCase().trim();
+  if (type != 'task' && type != 'todo') return false;
+
+  final cardId = item['card_id']?.toString();
+  if (cardId == null || !_isFactId(cardId)) return false;
+
+  final cardData = await fileSystem.readCardFile(userId, cardId);
+  if (cardData == null) return false;
+  for (final config in cardData.uiConfigs) {
+    if (config.templateId != 'task') continue;
+    return scheduleExplicitDateForCard(config.templateId, config.data) == null;
+  }
+  return false;
+}
+
+bool _isUnscheduledDay(Map<dynamic, dynamic> day) {
+  final label = day['day_label']?.toString().trim();
+  final dayDate = day['day_date']?.toString().trim();
+  return dayDate == null ||
+      dayDate.isEmpty ||
+      label == '待安排' ||
+      label == '周末待定';
+}
+
+bool _isFactId(String value) {
+  return RegExp(r'^\d{4}/\d{2}/\d{2}\.md#ts_\d+$').hasMatch(value);
+}
+
+bool _isResultInScheduleRange(
+  Map<String, dynamic> result,
+  DateTime from,
+  DateTime to,
+) {
+  final start = _parseScheduleDateTime(result['start_time']) ??
+      _parseScheduleDateTime(result['due_date']);
+  if (start == null) return false;
+  final end = _parseScheduleDateTime(result['end_time']) ?? start;
+  return !end.isBefore(from) && !start.isAfter(to);
+}
+
+bool _duplicatesExistingScheduleResult(
+  List<Map<String, dynamic>> existing,
+  Map<String, dynamic> candidate,
+) {
+  final candidateTitle = _normalizeTitle(candidate['title']);
+  final candidateDate = _parseScheduleDateTime(candidate['start_time']) ??
+      _parseScheduleDateTime(candidate['due_date']);
+  if (candidateTitle.isEmpty || candidateDate == null) return false;
+
+  for (final item in existing) {
+    final itemTitle = _normalizeTitle(item['title']);
+    final itemDate = _parseScheduleDateTime(item['start_time']) ??
+        _parseScheduleDateTime(item['due_date']);
+    if (itemTitle == candidateTitle && _sameMinute(itemDate, candidateDate)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+String _normalizeTitle(dynamic value) {
+  return value
+          ?.toString()
+          .trim()
+          .toLowerCase()
+          .replaceAll(RegExp(r'\s+'), '') ??
+      '';
+}
+
+bool _sameMinute(DateTime? a, DateTime b) {
+  if (a == null) return false;
+  return a.year == b.year &&
+      a.month == b.month &&
+      a.day == b.day &&
+      a.hour == b.hour &&
+      a.minute == b.minute;
+}
+
+Map<String, dynamic>? _decodeActionData(String? value) {
+  if (value == null || value.trim().isEmpty) return null;
+  final decoded = jsonDecode(value);
+  if (decoded is Map) return Map<String, dynamic>.from(decoded);
+  return null;
+}
+
+Map<String, dynamic> _deepCopyMap(Map<String, dynamic> value) {
+  return Map<String, dynamic>.from(_deepCopy(value) as Map);
+}
+
+dynamic _deepCopy(dynamic value) {
+  if (value is Map) {
+    return {
+      for (final entry in value.entries)
+        entry.key.toString(): _deepCopy(entry.value),
+    };
+  }
+  if (value is List) {
+    return value.map(_deepCopy).toList();
+  }
+  return value;
 }
 
 DateTime? _parseScheduleDateTime(dynamic value) {
@@ -390,10 +670,10 @@ int _countAggregationItems(Map<String, dynamic> yamlData) {
   final heroCount = yamlData['hero_item'] == null ? 0 : 1;
   final timelineCount =
       (yamlData['timeline'] as List?)?.whereType<Map>().fold<int>(
-        0,
-        (count, day) => count + ((day['items'] as List?)?.length ?? 0),
-      ) ??
-      0;
+                0,
+                (count, day) => count + ((day['items'] as List?)?.length ?? 0),
+              ) ??
+          0;
   final completedCount = (yamlData['completed'] as List?)?.length ?? 0;
   return heroCount + timelineCount + completedCount;
 }

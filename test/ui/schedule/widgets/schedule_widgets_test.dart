@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:memex/agent/skills/schedule_aggregation/schedule_aggregation_retention.dart';
 import 'package:memex/domain/models/schedule_aggregation_model.dart';
 import 'package:memex/l10n/app_localizations.dart';
 import 'package:memex/ui/core/cards/templates/system/schedule_briefing_card.dart';
@@ -334,6 +335,89 @@ void main() {
         findsOneWidget,
       );
     });
+
+    testWidgets(
+      'renders retained floating procedure without todo affordances',
+      (tester) async {
+        final tappedCards = <String>[];
+        final toggledTasks = <String>[];
+
+        await tester.pumpWidget(
+          buildHost(
+            MagazineNarrativeTab(
+              aggregation: _retainedFloatingProcedureAggregation(),
+              onTapCardId: tappedCards.add,
+              onToggleTask: toggledTasks.add,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('沙球转体转髋训练要点'), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('schedule_task_toggle_procedure-1')),
+          findsNothing,
+        );
+        expect(find.text('2026-05-28'), findsNothing);
+
+        await tester.tap(find.text('沙球转体转髋训练要点'));
+        await tester.pump();
+
+        expect(tappedCards, ['procedure-1']);
+        expect(toggledTasks, isEmpty);
+      },
+    );
+
+    testWidgets(
+      'does not render expired floating items after retention filtering',
+      (tester) async {
+        final filtered = applyScheduleDisplayRetention(
+          yamlData: _retentionAggregationMap(
+            generatedAt: '2026-05-29T09:00:00+08:00',
+            items: [
+              _retentionItem(
+                cardId: 'procedure-1',
+                title: '沙球转体转髋训练要点',
+                type: 'procedure',
+              ),
+              _retentionItem(
+                cardId: 'task-tax',
+                title: '补税/退税确认',
+                type: 'task',
+              ),
+            ],
+          ),
+          previousAggregations: [
+            _retentionAggregationMap(
+              generatedAt: '2026-05-21T09:00:00+08:00',
+              items: [
+                _retentionItem(
+                  cardId: 'procedure-1',
+                  title: '沙球转体转髋训练要点',
+                  type: 'procedure',
+                ),
+              ],
+            ),
+          ],
+        );
+
+        await tester.pumpWidget(
+          buildHost(
+            MagazineNarrativeTab(
+              aggregation: ScheduleAggregationModel.fromYaml(filtered),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('沙球转体转髋训练要点'), findsNothing);
+        expect(find.text('补税/退税确认'), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('schedule_task_toggle_task-tax')),
+          findsOneWidget,
+        );
+      },
+    );
   });
 
   group('ScheduleBriefingCard', () {
@@ -423,6 +507,29 @@ ScheduleAggregationModel _subtaskAggregation() {
   );
 }
 
+ScheduleAggregationModel _retainedFloatingProcedureAggregation() {
+  return ScheduleAggregationModel(
+    id: 'agg_retained_procedure',
+    generatedAt: DateTime(2026, 5, 25, 11),
+    timeRange: TimeRange(from: DateTime(2026, 5, 21), to: DateTime(2026, 6, 1)),
+    timeline: [
+      TimelineDay(
+        dayLabel: '待安排',
+        items: [
+          TimelineItem(
+            cardId: 'procedure-1',
+            title: '沙球转体转髋训练要点',
+            type: 'procedure',
+            status: 'pending',
+            displayFirstSeenAt: DateTime(2026, 5, 21),
+            displayUntil: DateTime(2026, 5, 28),
+          ),
+        ],
+      ),
+    ],
+  );
+}
+
 ScheduleAggregationModel _complexAggregation({
   bool longText = false,
   String heroTitle = 'Visa renewal',
@@ -498,4 +605,28 @@ ScheduleAggregationModel _complexAggregation({
       ),
     ],
   );
+}
+
+Map<String, dynamic> _retentionAggregationMap({
+  required String generatedAt,
+  required List<Map<String, dynamic>> items,
+}) {
+  return {
+    'id': 'schedule_agg_retention_widget',
+    'generated_at': generatedAt,
+    'time_range': {'from': '2026-05-21', 'to': '2026-06-01'},
+    'timeline': [
+      {'day_label': '待安排', 'day_date': '', 'items': items},
+    ],
+    'completed': [],
+    'conflicts': [],
+  };
+}
+
+Map<String, dynamic> _retentionItem({
+  required String cardId,
+  required String title,
+  required String type,
+}) {
+  return {'card_id': cardId, 'title': title, 'status': 'pending', 'type': type};
 }

@@ -44,7 +44,8 @@ class CardAttachmentService {
     final userId = await UserStorage.getUserId();
 
     if (type == null || type == CardAttachmentType.systemAction) {
-      total += await SystemActionService.instance.rejectAllPending();
+      total +=
+          await SystemActionService.instance.dismissPendingFromActionCenter();
     }
     if (type == null || type == CardAttachmentType.clarificationRequest) {
       total += await ClarificationRequestService.instance.dismissAllPending();

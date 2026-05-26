@@ -47,17 +47,17 @@ class ScheduleAggregationModel {
   }
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'generated_at': generatedAt.toIso8601String(),
-    'version': version,
-    'time_range': timeRange.toJson(),
-    if (heroItem != null) 'hero_item': heroItem!.toJson(),
-    'editorial_intro': editorialIntro,
-    'quote_blocks': quoteBlocks.map((e) => e.toJson()).toList(),
-    'timeline': timeline.map((e) => e.toJson()).toList(),
-    'completed': completed.map((e) => e.toJson()).toList(),
-    'conflicts': conflicts.map((e) => e.toJson()).toList(),
-  };
+        'id': id,
+        'generated_at': generatedAt.toIso8601String(),
+        'version': version,
+        'time_range': timeRange.toJson(),
+        if (heroItem != null) 'hero_item': heroItem!.toJson(),
+        'editorial_intro': editorialIntro,
+        'quote_blocks': quoteBlocks.map((e) => e.toJson()).toList(),
+        'timeline': timeline.map((e) => e.toJson()).toList(),
+        'completed': completed.map((e) => e.toJson()).toList(),
+        'conflicts': conflicts.map((e) => e.toJson()).toList(),
+      };
 
   static DateTime _parseDateTime(dynamic value) {
     return _parseDateTimeNullable(value) ?? DateTime.now();
@@ -90,9 +90,9 @@ class TimeRange {
   }
 
   Map<String, dynamic> toJson() => {
-    'from': _formatDate(from),
-    'to': _formatDate(to),
-  };
+        'from': _formatDate(from),
+        'to': _formatDate(to),
+      };
 
   static DateTime _parseDate(dynamic value) {
     if (value == null) return DateTime.now();
@@ -138,14 +138,14 @@ class HeroItem {
   }
 
   Map<String, dynamic> toJson() => {
-    'card_id': cardId,
-    'title': title,
-    if (description != null) 'description': description,
-    if (startTime != null) 'start_time': startTime!.toIso8601String(),
-    if (endTime != null) 'end_time': endTime!.toIso8601String(),
-    if (location != null) 'location': location,
-    if (priority != null) 'priority': priority,
-  };
+        'card_id': cardId,
+        'title': title,
+        if (description != null) 'description': description,
+        if (startTime != null) 'start_time': startTime!.toIso8601String(),
+        if (endTime != null) 'end_time': endTime!.toIso8601String(),
+        if (location != null) 'location': location,
+        if (priority != null) 'priority': priority,
+      };
 }
 
 class QuoteBlock {
@@ -171,11 +171,11 @@ class QuoteBlock {
   }
 
   Map<String, dynamic> toJson() => {
-    'title': title,
-    'content': content,
-    'priority': priority,
-    if (relatedCardId != null) 'related_card_id': relatedCardId,
-  };
+        'title': title,
+        'content': content,
+        'priority': priority,
+        if (relatedCardId != null) 'related_card_id': relatedCardId,
+      };
 }
 
 class TimelineDay {
@@ -194,10 +194,10 @@ class TimelineDay {
   }
 
   Map<String, dynamic> toJson() => {
-    'day_label': dayLabel,
-    if (dayDate != null) 'day_date': _formatDate(dayDate!),
-    'items': items.map((e) => e.toJson()).toList(),
-  };
+        'day_label': dayLabel,
+        if (dayDate != null) 'day_date': _formatDate(dayDate!),
+        'items': items.map((e) => e.toJson()).toList(),
+      };
 
   static String _formatDate(DateTime date) {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
@@ -213,6 +213,8 @@ class TimelineItem {
   final int? priority;
   final String? description;
   final List<ScheduleSubtask> subtasks;
+  final DateTime? displayFirstSeenAt;
+  final DateTime? displayUntil;
 
   TimelineItem({
     required this.cardId,
@@ -223,6 +225,8 @@ class TimelineItem {
     this.priority,
     this.description,
     this.subtasks = const [],
+    this.displayFirstSeenAt,
+    this.displayUntil,
   });
 
   factory TimelineItem.fromYaml(Map<String, dynamic> yaml) {
@@ -238,20 +242,26 @@ class TimelineItem {
         yaml['subtasks'],
         ScheduleSubtask.fromYaml,
       ).where((subtask) => subtask.title.trim().isNotEmpty).toList(),
+      displayFirstSeenAt: _parseDateTimeNullable(yaml['display_first_seen_at']),
+      displayUntil: _parseDateTimeNullable(yaml['display_until']),
     );
   }
 
   Map<String, dynamic> toJson() => {
-    'card_id': cardId,
-    'title': title,
-    'status': status,
-    if (startTime != null) 'start_time': startTime!.toIso8601String(),
-    'type': type,
-    if (priority != null) 'priority': priority,
-    if (description != null) 'description': description,
-    if (subtasks.isNotEmpty)
-      'subtasks': subtasks.map((e) => e.toJson()).toList(),
-  };
+        'card_id': cardId,
+        'title': title,
+        'status': status,
+        if (startTime != null) 'start_time': startTime!.toIso8601String(),
+        'type': type,
+        if (priority != null) 'priority': priority,
+        if (description != null) 'description': description,
+        if (subtasks.isNotEmpty)
+          'subtasks': subtasks.map((e) => e.toJson()).toList(),
+        if (displayFirstSeenAt != null)
+          'display_first_seen_at': TimelineDay._formatDate(displayFirstSeenAt!),
+        if (displayUntil != null)
+          'display_until': TimelineDay._formatDate(displayUntil!),
+      };
 }
 
 class ScheduleSubtask {
@@ -293,10 +303,10 @@ class CompletedItem {
   }
 
   Map<String, dynamic> toJson() => {
-    'card_id': cardId,
-    'title': title,
-    if (completedAt != null) 'completed_at': completedAt!.toIso8601String(),
-  };
+        'card_id': cardId,
+        'title': title,
+        if (completedAt != null) 'completed_at': completedAt!.toIso8601String(),
+      };
 }
 
 class Conflict {
@@ -308,8 +318,7 @@ class Conflict {
   factory Conflict.fromYaml(Map<String, dynamic> yaml) {
     return Conflict(
       description: _parseString(yaml['description']),
-      itemIds:
-          (yaml['item_ids'] as List?)
+      itemIds: (yaml['item_ids'] as List?)
               ?.map((item) => item.toString())
               .toList() ??
           [],
@@ -317,9 +326,9 @@ class Conflict {
   }
 
   Map<String, dynamic> toJson() => {
-    'description': description,
-    'item_ids': itemIds,
-  };
+        'description': description,
+        'item_ids': itemIds,
+      };
 }
 
 DateTime? _parseDateTimeNullable(dynamic value) {

@@ -1,3 +1,4 @@
+import 'package:memex/agent/skills/schedule_aggregation/schedule_aggregation_retention.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/domain/models/card_model.dart';
 import 'package:memex/domain/models/schedule_aggregation_model.dart';
@@ -16,16 +17,22 @@ Future<ScheduleAggregationModel?> getScheduleAggregation() async {
     }
 
     final fileSystem = FileSystemService.instance;
-    final latest = await fileSystem.getLatestScheduleAggregation(userId);
-    if (latest == null) {
+    final aggregations = await fileSystem.listScheduleAggregations(userId);
+    if (aggregations.isEmpty) {
       _logger.info('No schedule aggregation found for user $userId');
       return null;
     }
 
+    final latest = aggregations.first;
+    final retained = applyScheduleDisplayRetention(
+      yamlData: latest,
+      previousAggregations: aggregations.skip(1),
+      now: DateTime.now(),
+    );
     final hydrated = await _hydrateLiveTaskState(
       fileSystem: fileSystem,
       userId: userId,
-      aggregation: latest,
+      aggregation: retained,
     );
     return ScheduleAggregationModel.fromYaml(hydrated);
   } catch (e) {
@@ -117,7 +124,7 @@ Set<String> _collectScheduleCardIds(Map<String, dynamic> aggregation) {
       for (final itemValue in items) {
         if (itemValue is! Map) continue;
         final cardId = _readCardId(Map<String, dynamic>.from(itemValue));
-        if (cardId.isNotEmpty) cardIds.add(cardId);
+        if (_isFactCardId(cardId)) cardIds.add(cardId);
       }
     }
   }
@@ -127,7 +134,7 @@ Set<String> _collectScheduleCardIds(Map<String, dynamic> aggregation) {
     for (final itemValue in completed) {
       if (itemValue is! Map) continue;
       final cardId = _readCardId(Map<String, dynamic>.from(itemValue));
-      if (cardId.isNotEmpty) cardIds.add(cardId);
+      if (_isFactCardId(cardId)) cardIds.add(cardId);
     }
   }
   return cardIds;
@@ -148,6 +155,10 @@ Map<String, dynamic> _hydrateTimelineTaskItem(
 
 String _readCardId(Map<String, dynamic> value) {
   return (value['card_id'] ?? value['id'] ?? '').toString();
+}
+
+bool _isFactCardId(String value) {
+  return RegExp(r'^\d{4}/\d{2}/\d{2}\.md#ts_\d+$').hasMatch(value);
 }
 
 bool _isTaskTimelineItem(Map<String, dynamic> item) {
@@ -183,8 +194,7 @@ class _LiveTaskState {
     final data = taskConfig.data;
     final normalizedSubtasks = _normalizeSubtasks(data['subtasks']);
     final explicitCompleted = _parseTaskBool(data['is_completed']);
-    final subtasksCompleted =
-        normalizedSubtasks.isNotEmpty &&
+    final subtasksCompleted = normalizedSubtasks.isNotEmpty &&
         normalizedSubtasks.every(
           (subtask) => _parseTaskBool(subtask['completed']),
         );
@@ -194,8 +204,8 @@ class _LiveTaskState {
       isCompleted: isCompleted,
       subtasks: isCompleted
           ? normalizedSubtasks
-                .map((subtask) => {...subtask, 'completed': true})
-                .toList()
+              .map((subtask) => {...subtask, 'completed': true})
+              .toList()
           : normalizedSubtasks,
     );
   }

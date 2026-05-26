@@ -227,6 +227,59 @@ void main() {
       },
     );
 
+    test(
+      'extends dirty window to explicit future schedule dates',
+      () async {
+        final fileSystem = FileSystemService.instance;
+        await fileSystem.safeWriteCardFile(
+          userId,
+          '2026/05/20.md#ts_5',
+          CardData(
+            factId: '2026/05/20.md#ts_5',
+            title: '天津小白院领证Party调研',
+            timestamp: DateTime.utc(2026, 5, 20).millisecondsSinceEpoch ~/ 1000,
+            status: 'completed',
+            tags: const ['schedule'],
+            uiConfigs: const [
+              UiConfig(
+                templateId: 'event',
+                data: {
+                  'start_time': '2026-06-06T09:00:00+08:00',
+                  'location': '天津',
+                },
+              ),
+            ],
+          ),
+        );
+        await ScheduleRefreshStateService.instance.markDirty(
+          userId: userId,
+          reason: 'future event card changed',
+          cardIds: const ['2026/05/20.md#ts_5'],
+        );
+
+        final context = await buildScheduleAggregationRunContext(
+          userId: userId,
+          runId: 'task_future_dirty_date',
+          now: DateTime.utc(2026, 5, 25, 12),
+          scheduleCardLimit: 10,
+        );
+
+        final payload = _decodeContextPayload(context);
+        final targetWindow = payload['target_window'] as Map<String, dynamic>;
+        final sources = payload['durable_sources'] as Map<String, dynamic>;
+        final cards = sources['schedule_cards'] as Map<String, dynamic>;
+
+        expect(targetWindow['source'], 'dirty_schedule_dates');
+        expect(targetWindow['from'], startsWith('2026-05-17'));
+        expect(targetWindow['to'], startsWith('2026-06-24'));
+        expect(targetWindow['source_card_ids'], ['2026/05/20.md#ts_5']);
+        expect(
+          (cards['cards'] as List).map((card) => card['card_id']),
+          contains('2026/05/20.md#ts_5'),
+        );
+      },
+    );
+
     test('builds no-op aggregation payload for empty target window', () async {
       await ScheduleRefreshStateService.instance.markDirty(
         userId: userId,

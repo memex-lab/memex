@@ -75,25 +75,77 @@ void main() {
       expect(aggregation!.completed, isEmpty);
     },
   );
+
+  test(
+      'filters expired floating non-task items when reading latest aggregation',
+      () async {
+    await _writeAggregation(
+      aggregationId: 'schedule_agg_2020_01_01',
+      generatedAt: '2020-01-01T09:00:00',
+      dayLabel: '待安排',
+      dayDate: '',
+      timelineItems: [
+        {
+          'card_id': 'procedure-1',
+          'title': '沙球转体转髋训练要点',
+          'type': 'procedure',
+          'status': 'pending',
+        },
+      ],
+    );
+    await _writeAggregation(
+      aggregationId: 'schedule_agg_2020_01_10',
+      generatedAt: '2020-01-10T09:00:00',
+      dayLabel: '待安排',
+      dayDate: '',
+      timelineItems: [
+        {
+          'card_id': 'procedure-1',
+          'title': '沙球转体转髋训练要点',
+          'type': 'procedure',
+          'status': 'pending',
+        },
+        {
+          'card_id': 'task-1',
+          'title': '无日期待办仍保留',
+          'type': 'task',
+          'status': 'pending',
+        },
+      ],
+    );
+
+    final aggregation = await getScheduleAggregation();
+
+    expect(
+      aggregation!.timeline
+          .expand((day) => day.items)
+          .map((item) => item.title),
+      ['无日期待办仍保留'],
+    );
+  });
 }
 
 Future<void> _writeAggregation({
+  String aggregationId = 'schedule_agg_test',
+  String generatedAt = '2026-05-23T09:00:00',
+  String dayLabel = 'Today',
+  String dayDate = '2026-05-23',
   List<Map<String, dynamic>> timelineItems = const [],
   List<Map<String, dynamic>> completedItems = const [],
 }) {
   return FileSystemService.instance.writeScheduleAggregation(
     _userId,
-    'schedule_agg_test',
+    aggregationId,
     {
-      'id': 'schedule_agg_test',
-      'generated_at': '2026-05-23T09:00:00',
+      'id': aggregationId,
+      'generated_at': generatedAt,
       'version': 1,
       'time_range': {'from': '2026-05-23', 'to': '2026-05-30'},
       'timeline': [
         if (timelineItems.isNotEmpty)
           {
-            'day_label': 'Today',
-            'day_date': '2026-05-23',
+            'day_label': dayLabel,
+            'day_date': dayDate,
             'items': timelineItems,
           },
       ],

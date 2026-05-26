@@ -33,8 +33,7 @@ class _ScheduleAggregatorScreenBody extends StatefulWidget {
 }
 
 class _ScheduleAggregatorScreenState
-    extends State<_ScheduleAggregatorScreenBody>
-    with WidgetsBindingObserver {
+    extends State<_ScheduleAggregatorScreenBody> with WidgetsBindingObserver {
   DateTime _relativeDate = DateTime.now();
   Timer? _dayRefreshTimer;
 
@@ -87,7 +86,7 @@ class _ScheduleAggregatorScreenState
   }
 
   void _navigateToCard(String cardId) {
-    if (cardId.isEmpty) {
+    if (cardId.isEmpty || !_isFactCardId(cardId)) {
       return;
     }
     Navigator.push(
@@ -96,6 +95,10 @@ class _ScheduleAggregatorScreenState
         builder: (_) => TimelineCardDetailScreen(cardId: cardId),
       ),
     );
+  }
+
+  bool _isFactCardId(String cardId) {
+    return RegExp(r'^\d{4}/\d{2}/\d{2}\.md#ts_\d+$').hasMatch(cardId);
   }
 
   Future<void> _onReload() async {
