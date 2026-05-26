@@ -44,8 +44,13 @@ class ToolCallItem extends ChatDisplayItem {
   bool isError;
   bool isExpanded;
 
-  ToolCallItem(this.toolName, this.args,
-      {this.result, this.isError = false, this.isExpanded = false});
+  ToolCallItem(
+    this.toolName,
+    this.args, {
+    this.result,
+    this.isError = false,
+    this.isExpanded = false,
+  });
 }
 
 class ErrorItem extends ChatDisplayItem {
@@ -58,6 +63,26 @@ class ProcessItem extends ChatDisplayItem {
   bool isExpanded;
   bool isFinished;
   ProcessItem({this.isExpanded = true, this.isFinished = false});
+}
+
+const double _agentChatSheetHeightFactor = 0.75;
+const BorderRadius _agentChatSheetBorderRadius = BorderRadius.vertical(
+  top: Radius.circular(32),
+);
+
+@visibleForTesting
+double resolveAgentChatDialogHeight(
+  Size viewportSize, {
+  required bool isFullScreen,
+}) {
+  return isFullScreen
+      ? viewportSize.height
+      : viewportSize.height * _agentChatSheetHeightFactor;
+}
+
+@visibleForTesting
+BorderRadius resolveAgentChatDialogBorderRadius({required bool isFullScreen}) {
+  return isFullScreen ? BorderRadius.zero : _agentChatSheetBorderRadius;
 }
 
 /// Agent Chat Dialog with Real-time Event Streaming
@@ -90,7 +115,8 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   final Logger _logger = getLogger('AgentChatDialog');
 
   // Services
-  final MemexRouter _memexRouter = MemexRouter();
+  MemexRouter? _memexRouter;
+  MemexRouter get _router => _memexRouter ??= MemexRouter();
 
   // State
   List<ChatDisplayItem> _items = [];
@@ -102,6 +128,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   bool _isReadOnly = false;
   // Whether the user has sent at least one message in normal mode — prevents switching to read-only.
   bool _hasSentInNormalMode = false;
+  bool _isFullScreen = false;
 
   // Controllers
   final TextEditingController _messageController = TextEditingController();
@@ -128,8 +155,10 @@ class _AgentChatDialogState extends State<AgentChatDialog>
       begin: const Offset(0, 1),
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
-    _fadeAnimation = Tween<double>(begin: 0, end: 1)
-        .animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+    _fadeAnimation = Tween<double>(
+      begin: 0,
+      end: 1,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
     _controller.forward();
 
     if (_currentSessionId != null) {
@@ -156,8 +185,9 @@ class _AgentChatDialogState extends State<AgentChatDialog>
     try {
       // Note: We still use MemexRouter (or directly file service via a helper) to fetch history.
       // Since ChatService doesn't expose fetchHistory yet, reusing existing endpoint logic is fine.
-      final sessionData =
-          await _memexRouter.fetchChatSessionDetail(_currentSessionId!);
+      final sessionData = await _router.fetchChatSessionDetail(
+        _currentSessionId!,
+      );
       final messagesData = sessionData['messages'] as List<dynamic>? ?? [];
 
       final historyItems = <ChatDisplayItem>[];
@@ -200,9 +230,10 @@ class _AgentChatDialogState extends State<AgentChatDialog>
           final mc = msgUsage['cached_tokens'] as int? ?? 0;
           final sem = TokenUsageUtils.resolveFromUsageRecord(msgUsage);
           final eff = TokenUsageUtils.effectivePromptTokensOrNull(
-              promptTokens: mp,
-              cachedTokens: mc,
-              cachedTokensIncludedInPrompt: sem);
+            promptTokens: mp,
+            cachedTokens: mc,
+            cachedTokensIncludedInPrompt: sem,
+          );
           if (eff != null) {
             effPrompt += eff;
             cachedForRate += mc;
@@ -262,7 +293,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
 
     _chatSubscription?.cancel();
 
-    _chatSubscription = _memexRouter
+    _chatSubscription = _router
         .sendMessage(
       finalMessage,
       sessionId: _currentSessionId,
@@ -388,6 +419,15 @@ class _AgentChatDialogState extends State<AgentChatDialog>
 
   @override
   Widget build(BuildContext context) {
+    final viewportSize = MediaQuery.of(context).size;
+    final dialogHeight = resolveAgentChatDialogHeight(
+      viewportSize,
+      isFullScreen: _isFullScreen,
+    );
+    final borderRadius = resolveAgentChatDialogBorderRadius(
+      isFullScreen: _isFullScreen,
+    );
+
     return Material(
       color: Colors.transparent,
       child: Stack(
@@ -397,7 +437,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
             opacity: _fadeAnimation,
             child: GestureDetector(
               onTap: () => Navigator.of(context).pop(),
-              child: Container(color: Colors.black.withOpacity(0.2)),
+              child: Container(color: Colors.black.withValues(alpha: 0.2)),
             ),
           ),
           // Dialog
@@ -405,85 +445,94 @@ class _AgentChatDialogState extends State<AgentChatDialog>
             position: _slideAnimation,
             child: Align(
               alignment: Alignment.bottomCenter,
-              child: Container(
-                height: MediaQuery.of(context).size.height *
-                    0.75, // Taller for better view
-                decoration: const BoxDecoration(
+              child: AnimatedContainer(
+                key: const ValueKey('agent_chat_dialog_container'),
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOutCubic,
+                height: dialogHeight,
+                decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-                  boxShadow: [
+                  borderRadius: borderRadius,
+                  boxShadow: const [
                     BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 40,
-                        offset: Offset(0, -10)),
+                      color: Colors.black26,
+                      blurRadius: 40,
+                      offset: Offset(0, -10),
+                    ),
                   ],
                 ),
                 clipBehavior: Clip.antiAlias,
-                child: Column(
-                  children: [
-                    _buildHeader(),
-                    Expanded(
-                      child: Container(
-                        color: Colors.white,
-                        child: _isLoading
-                            ? Center(child: AgentLogoLoading())
-                            : _items.isEmpty
-                                ? Center(
-                                    child: Text(
-                                      'Start a conversation with ${widget.title}',
-                                      style: TextStyle(
-                                        color: Colors.grey[400],
-                                        fontSize: 14,
+                child: SafeArea(
+                  top: _isFullScreen,
+                  bottom: false,
+                  child: Column(
+                    children: [
+                      _buildHeader(),
+                      Expanded(
+                        child: Container(
+                          color: Colors.white,
+                          child: _isLoading
+                              ? const Center(child: AgentLogoLoading())
+                              : _items.isEmpty
+                                  ? Center(
+                                      child: Text(
+                                        'Start a conversation with ${widget.title}',
+                                        style: TextStyle(
+                                          color: Colors.grey[400],
+                                          fontSize: 14,
+                                        ),
                                       ),
-                                    ),
-                                  )
-                                : ListView.builder(
-                                    controller: _scrollController,
-                                    padding: const EdgeInsets.all(24),
-                                    itemCount: _items.length +
-                                        (_isLoadingAgent ? 1 : 0),
-                                    itemBuilder: (context, index) {
-                                      if (index == _items.length) {
-                                        return Padding(
-                                          padding:
-                                              const EdgeInsets.only(bottom: 24),
-                                          child: Row(
-                                            children: const [
-                                              CircleAvatar(
-                                                radius: 12,
-                                                backgroundColor:
-                                                    AppColors.iconBgLight,
-                                                child: SizedBox(
-                                                  width: 12,
-                                                  height: 12,
-                                                  child:
-                                                      CircularProgressIndicator(
-                                                    strokeWidth: 2,
-                                                    color: AppColors.primary,
+                                    )
+                                  : ListView.builder(
+                                      controller: _scrollController,
+                                      padding: const EdgeInsets.all(24),
+                                      itemCount: _items.length +
+                                          (_isLoadingAgent ? 1 : 0),
+                                      itemBuilder: (context, index) {
+                                        if (index == _items.length) {
+                                          return const Padding(
+                                            padding: EdgeInsets.only(
+                                              bottom: 24,
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                CircleAvatar(
+                                                  radius: 12,
+                                                  backgroundColor:
+                                                      AppColors.iconBgLight,
+                                                  child: SizedBox(
+                                                    width: 12,
+                                                    height: 12,
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                      color: AppColors.primary,
+                                                    ),
                                                   ),
                                                 ),
-                                              ),
-                                              SizedBox(width: 8),
-                                              Text(
-                                                'Thinking...',
-                                                style: TextStyle(
+                                                SizedBox(width: 8),
+                                                Text(
+                                                  'Thinking...',
+                                                  style: TextStyle(
                                                     fontSize: 13,
                                                     color:
-                                                        AppColors.textTertiary),
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                      }
-                                      return _buildItem(_items[index]);
-                                    },
-                                  ),
+                                                        AppColors.textTertiary,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        }
+                                        return _buildItem(_items[index]);
+                                      },
+                                    ),
+                        ),
                       ),
-                    ),
-                    _buildTokenUsageDisplay(),
-                    _buildContextIndicator(),
-                    _buildInput(),
-                  ],
+                      _buildTokenUsageDisplay(),
+                      _buildContextIndicator(),
+                      _buildInput(),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -531,26 +580,35 @@ class _AgentChatDialogState extends State<AgentChatDialog>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.8),
+        color: Colors.white.withValues(alpha: 0.8),
         border: const Border(bottom: BorderSide(color: Color(0xFFF7F8FA))),
       ),
       child: Row(
         children: [
           const Icon(Icons.auto_awesome, size: 18, color: AppColors.primary),
           const SizedBox(width: 8),
-          Text(
-            widget.title,
-            style: TextStyle(
+          Flexible(
+            child: Text(
+              widget.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary),
+                color: AppColors.textPrimary,
+              ),
+            ),
           ),
           const SizedBox(width: 8),
           _buildModeChip(),
           const Spacer(),
           IconButton(
-            icon: const Icon(Icons.history,
-                size: 18, color: AppColors.textTertiary),
+            tooltip: UserStorage.l10n.chatHistory,
+            icon: const Icon(
+              Icons.history,
+              size: 18,
+              color: AppColors.textTertiary,
+            ),
             onPressed: () {
               context.push(
                 AppRoutes.chatHistory,
@@ -567,8 +625,29 @@ class _AgentChatDialogState extends State<AgentChatDialog>
             },
           ),
           IconButton(
-            icon: const Icon(Icons.close,
-                size: 20, color: AppColors.textTertiary),
+            key: const ValueKey('agent_chat_fullscreen_toggle'),
+            tooltip: _isFullScreen
+                ? UserStorage.l10n.exitFullScreenTooltip
+                : UserStorage.l10n.enterFullScreenTooltip,
+            icon: Icon(
+              _isFullScreen ? Icons.close_fullscreen : Icons.open_in_full,
+              size: 18,
+              color: AppColors.textTertiary,
+            ),
+            onPressed: () {
+              setState(() {
+                _isFullScreen = !_isFullScreen;
+              });
+              _scrollToBottom();
+            },
+          ),
+          IconButton(
+            tooltip: UserStorage.l10n.close,
+            icon: const Icon(
+              Icons.close,
+              size: 20,
+              color: AppColors.textTertiary,
+            ),
             onPressed: () => Navigator.of(context).pop(),
           ),
         ],
@@ -636,7 +715,11 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   Widget _buildInput() {
     return Container(
       padding: EdgeInsets.fromLTRB(
-          16, 12, 16, MediaQuery.of(context).viewInsets.bottom + 16),
+        16,
+        12,
+        16,
+        MediaQuery.of(context).viewInsets.bottom + 16,
+      ),
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(top: BorderSide(color: Color(0xFFF7F8FA))),
@@ -656,7 +739,9 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                 decoration: InputDecoration(
                   hintText: widget.inputHint,
                   hintStyle: const TextStyle(
-                      color: AppColors.textTertiary, fontSize: 14),
+                    color: AppColors.textTertiary,
+                    fontSize: 14,
+                  ),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(vertical: 12),
                 ),
@@ -693,12 +778,14 @@ class _AgentChatDialogState extends State<AgentChatDialog>
           children: [
             Container(
               constraints: BoxConstraints(
-                  maxWidth: MediaQuery.of(context).size.width * 0.75),
+                maxWidth: MediaQuery.of(context).size.width * 0.75,
+              ),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
                 color: AppColors.primary,
-                borderRadius: BorderRadius.circular(16)
-                    .copyWith(bottomRight: const Radius.circular(4)),
+                borderRadius: BorderRadius.circular(
+                  16,
+                ).copyWith(bottomRight: const Radius.circular(4)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -712,16 +799,21 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                           return Container(
                             margin: const EdgeInsets.only(bottom: 4),
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
+                              color: Colors.white.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.link,
-                                    size: 12, color: Colors.white70),
+                                const Icon(
+                                  Icons.link,
+                                  size: 12,
+                                  color: Colors.white70,
+                                ),
                                 const SizedBox(width: 4),
                                 Flexible(
                                   child: Text(
@@ -743,7 +835,10 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                   SelectableText(
                     item.text,
                     style: const TextStyle(
-                        fontSize: 14, color: Colors.white, height: 1.5),
+                      fontSize: 14,
+                      color: Colors.white,
+                      height: 1.5,
+                    ),
                   ),
                 ],
               ),
@@ -760,8 +855,11 @@ class _AgentChatDialogState extends State<AgentChatDialog>
             const CircleAvatar(
               radius: 12,
               backgroundColor: AppColors.iconBgLight,
-              child:
-                  Icon(Icons.auto_awesome, size: 12, color: AppColors.primary),
+              child: Icon(
+                Icons.auto_awesome,
+                size: 12,
+                color: AppColors.primary,
+              ),
             ),
             const SizedBox(width: 8),
             Flexible(
@@ -770,13 +868,17 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                 children: [
                   Container(
                     constraints: BoxConstraints(
-                        maxWidth: MediaQuery.of(context).size.width * 0.75),
+                      maxWidth: MediaQuery.of(context).size.width * 0.75,
+                    ),
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 10),
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(16)
-                          .copyWith(topLeft: const Radius.circular(4)),
+                      borderRadius: BorderRadius.circular(
+                        16,
+                      ).copyWith(topLeft: const Radius.circular(4)),
                       border: Border.all(color: const Color(0xFFF7F8FA)),
                     ),
                     child: MarkdownBody(
@@ -813,8 +915,10 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                           color: const Color(0xFFF7F8FA),
                           borderRadius: BorderRadius.circular(8),
                           border: const Border(
-                            left:
-                                BorderSide(color: AppColors.primary, width: 3),
+                            left: BorderSide(
+                              color: AppColors.primary,
+                              width: 3,
+                            ),
                           ),
                         ),
                       ),
@@ -866,11 +970,12 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                         child: Row(
                           children: [
                             Icon(
-                                item.isFinished
-                                    ? Icons.check_circle_outline
-                                    : Icons.sync,
-                                size: 14,
-                                color: AppColors.textTertiary),
+                              item.isFinished
+                                  ? Icons.check_circle_outline
+                                  : Icons.sync,
+                              size: 14,
+                              color: AppColors.textTertiary,
+                            ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
@@ -878,9 +983,10 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                                     ? 'Process Completed'
                                     : 'Processing...',
                                 style: const TextStyle(
-                                    fontSize: 12,
-                                    color: AppColors.textTertiary,
-                                    fontWeight: FontWeight.w500),
+                                  fontSize: 12,
+                                  color: AppColors.textTertiary,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ),
                             Icon(
@@ -916,8 +1022,10 @@ class _AgentChatDialogState extends State<AgentChatDialog>
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(8.0),
-          child: Text(item.error,
-              style: const TextStyle(color: Colors.red, fontSize: 12)),
+          child: Text(
+            item.error,
+            style: const TextStyle(color: Colors.red, fontSize: 12),
+          ),
         ),
       );
     }
@@ -929,8 +1037,9 @@ class _AgentChatDialogState extends State<AgentChatDialog>
     final item = _lastTokenUsage!;
 
     final cacheRate = TokenUsageUtils.formatCacheRateFromAggregated(
-        effectivePromptTokens: item.effectivePromptTokens,
-        cachedTokens: item.cachedTokensForRate);
+      effectivePromptTokens: item.effectivePromptTokens,
+      cachedTokens: item.cachedTokensForRate,
+    );
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -960,15 +1069,18 @@ class _AgentChatDialogState extends State<AgentChatDialog>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: const [
+          const Row(
+            children: [
               Icon(Icons.psychology, size: 12, color: Color(0xFFCBD5E1)),
               SizedBox(width: 6),
-              Text('Thinking...',
-                  style: TextStyle(
-                      fontSize: 11,
-                      color: AppColors.textTertiary,
-                      fontWeight: FontWeight.w500)),
+              Text(
+                'Thinking...',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: AppColors.textTertiary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 4),
@@ -1021,16 +1133,18 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                     child: Text(
                       'Used tool: ${item.toolName}',
                       style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF334155)),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF334155),
+                      ),
                     ),
                   ),
                   if (item.result == null)
                     const SizedBox(
-                        width: 12,
-                        height: 12,
-                        child: CircularProgressIndicator(strokeWidth: 1.5))
+                      width: 12,
+                      height: 12,
+                      child: CircularProgressIndicator(strokeWidth: 1.5),
+                    )
                   else
                     Icon(
                       item.isExpanded ? Icons.expand_less : Icons.expand_more,
@@ -1052,31 +1166,43 @@ class _AgentChatDialogState extends State<AgentChatDialog>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Arguments:',
-                      style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textSecondary)),
+                  const Text(
+                    'Arguments:',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
                   const SizedBox(height: 4),
-                  Text(item.args,
-                      style: const TextStyle(
-                          fontSize: 11,
-                          fontFamily: 'monospace',
-                          color: Color(0xFF334155))),
+                  Text(
+                    item.args,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontFamily: 'monospace',
+                      color: Color(0xFF334155),
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   if (item.result != null) ...[
-                    const Text('Result:',
-                        style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textSecondary)),
+                    const Text(
+                      'Result:',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
                     const SizedBox(height: 4),
-                    Text(item.result!,
-                        style: const TextStyle(
-                            fontSize: 11,
-                            fontFamily: 'monospace',
-                            color: Color(0xFF334155))),
-                  ]
+                    Text(
+                      item.result!,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontFamily: 'monospace',
+                        color: Color(0xFF334155),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

@@ -978,6 +978,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatHistory => '会话历史';
 
   @override
+  String get enterFullScreenTooltip => '全屏查看';
+
+  @override
+  String get exitFullScreenTooltip => '退出全屏';
+
+  @override
   String get noConversations => '暂无会话';
 
   @override

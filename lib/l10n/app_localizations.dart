@@ -1886,6 +1886,18 @@ abstract class AppLocalizations {
   /// **'Chat history'**
   String get chatHistory;
 
+  /// No description provided for @enterFullScreenTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter full screen'**
+  String get enterFullScreenTooltip;
+
+  /// No description provided for @exitFullScreenTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit full screen'**
+  String get exitFullScreenTooltip;
+
   /// No description provided for @noConversations.
   ///
   /// In en, this message translates to:

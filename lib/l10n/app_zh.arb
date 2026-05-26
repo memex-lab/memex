@@ -470,6 +470,8 @@
   "continueChat": "继续对话...",
   "daysAgo": "{count}天前",
   "chatHistory": "会话历史",
+  "enterFullScreenTooltip": "全屏查看",
+  "exitFullScreenTooltip": "退出全屏",
   "noConversations": "暂无会话",
   "@loadSessionListFailed": {
     "placeholders": {

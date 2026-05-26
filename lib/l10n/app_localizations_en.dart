@@ -1001,6 +1001,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatHistory => 'Chat history';
 
   @override
+  String get enterFullScreenTooltip => 'Enter full screen';
+
+  @override
+  String get exitFullScreenTooltip => 'Exit full screen';
+
+  @override
   String get noConversations => 'No conversations';
 
   @override

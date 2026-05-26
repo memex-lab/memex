@@ -470,6 +470,8 @@
   "continueChat": "Continue conversation...",
   "daysAgo": "{count} days ago",
   "chatHistory": "Chat history",
+  "enterFullScreenTooltip": "Enter full screen",
+  "exitFullScreenTooltip": "Exit full screen",
   "noConversations": "No conversations",
   "@loadSessionListFailed": {
     "placeholders": {
