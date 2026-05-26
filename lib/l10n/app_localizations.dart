@@ -5570,11 +5570,23 @@ abstract class AppLocalizations {
   /// **'Download and install'**
   String get earlyUpdateDownloadAndInstall;
 
+  /// No description provided for @earlyUpdateDownloadInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading update...'**
+  String get earlyUpdateDownloadInProgress;
+
   /// No description provided for @earlyUpdateDownloadingPercent.
   ///
   /// In en, this message translates to:
   /// **'Downloading update: {percent}%'**
   String earlyUpdateDownloadingPercent(Object percent);
+
+  /// No description provided for @earlyUpdateDownloadReadyToInstall.
+  ///
+  /// In en, this message translates to:
+  /// **'Update package downloaded. Ready to install.'**
+  String get earlyUpdateDownloadReadyToInstall;
 
   /// No description provided for @earlyUpdateInstallDownloadedPackage.
   ///

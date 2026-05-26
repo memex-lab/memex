@@ -3077,9 +3077,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get earlyUpdateDownloadAndInstall => 'Download and install';
 
   @override
+  String get earlyUpdateDownloadInProgress => 'Downloading update...';
+
+  @override
   String earlyUpdateDownloadingPercent(Object percent) {
     return 'Downloading update: $percent%';
   }
+
+  @override
+  String get earlyUpdateDownloadReadyToInstall =>
+      'Update package downloaded. Ready to install.';
 
   @override
   String get earlyUpdateInstallDownloadedPackage =>

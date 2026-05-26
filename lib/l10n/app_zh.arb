@@ -1363,12 +1363,14 @@
   },
   "earlyUpdateFound": "发现 Early 版本 {version}+{build}。",
   "earlyUpdateDownloadAndInstall": "下载并安装",
+  "earlyUpdateDownloadInProgress": "正在下载更新...",
   "@earlyUpdateDownloadingPercent": {
     "placeholders": {
       "percent": {}
     }
   },
   "earlyUpdateDownloadingPercent": "正在下载更新：{percent}%",
+  "earlyUpdateDownloadReadyToInstall": "更新包已下载，可直接安装。",
   "earlyUpdateInstallDownloadedPackage": "安装已下载包",
   "earlyUpdateClearDownloadedPackage": "清除下载包",
   "earlyUpdateClearDownloadedPackageSuccess": "已清除下载包。",

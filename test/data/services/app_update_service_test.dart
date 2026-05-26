@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -276,9 +277,111 @@ void main() {
 
       expect(download.reusedExistingFile, isTrue);
       expect(download.apkPath, apk.path);
-      expect(progress, [4]);
+      expect(progress, contains(4));
       expect(await File(download.apkPath).readAsBytes(), [1, 2, 3, 4]);
     });
+
+    test('coalesces concurrent downloads of the same APK', () async {
+      final responseCompleter = Completer<http.StreamedResponse>();
+      final client = ControlledDownloadClient((request) {
+        expect(request.url.toString(), _testUpdate.downloadUrl);
+        return responseCompleter.future;
+      });
+      final service = buildService(client: client);
+      final firstProgress = <int>[];
+      final secondProgress = <int>[];
+
+      final first = service.downloadUpdate(
+        _testUpdate,
+        onProgress: (received, _) => firstProgress.add(received),
+      );
+      final second = service.downloadUpdate(
+        _testUpdate,
+        onProgress: (received, _) => secondProgress.add(received),
+      );
+
+      await waitFor(() => client.requestCount == 1);
+      expect(client.requestCount, 1);
+      expect(service.isDownloadingUpdate(_testUpdate), isTrue);
+
+      responseCompleter.complete(
+        http.StreamedResponse(
+          Stream.fromIterable([
+            [1, 2],
+            [3, 4],
+          ]),
+          200,
+          contentLength: 4,
+        ),
+      );
+
+      final downloads = await Future.wait([first, second]);
+
+      expect(downloads[0].apkPath, downloads[1].apkPath);
+      expect(client.requestCount, 1);
+      expect(service.hasActiveDownload, isFalse);
+      expect(firstProgress, contains(4));
+      expect(secondProgress, contains(4));
+      expect(await File(downloads[0].apkPath).readAsBytes(), [1, 2, 3, 4]);
+    });
+
+    test('does not clear update cache while a download is active', () async {
+      final responseCompleter = Completer<http.StreamedResponse>();
+      final service = buildService(
+        client: ControlledDownloadClient((_) => responseCompleter.future),
+      );
+
+      final download = service.downloadUpdate(_testUpdate);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(service.hasActiveDownload, isTrue);
+      await expectLater(
+        service.clearDownloadedUpdates(),
+        throwsA(isA<AppUpdateDownloadInProgressException>()),
+      );
+
+      responseCompleter.complete(
+        http.StreamedResponse(
+          Stream.value([1, 2, 3, 4]),
+          200,
+          contentLength: 4,
+        ),
+      );
+      await download;
+
+      expect(await service.clearDownloadedUpdates(), 1);
+    });
+
+    test(
+      'deletes corrupt partial APK when downloaded size mismatches',
+      () async {
+        final service = buildService(
+          client: ControlledDownloadClient((_) async {
+            return http.StreamedResponse(
+              Stream.value([1, 2]),
+              200,
+              contentLength: 2,
+            );
+          }),
+        );
+
+        await expectLater(
+          service.downloadUpdate(_testUpdate),
+          throwsA(isA<AppUpdateInvalidPackageException>()),
+        );
+
+        expect(
+          await File(p.join(tempDir.path, _testUpdate.assetName)).exists(),
+          isFalse,
+        );
+        expect(
+          await File(
+            '${p.join(tempDir.path, _testUpdate.assetName)}.part',
+          ).exists(),
+          isFalse,
+        );
+      },
+    );
 
     test(
       'redownloads when cached APK size does not match asset size',
@@ -330,13 +433,49 @@ void main() {
     test(
       'opens unknown-app settings when install permission is missing',
       () async {
+        final apk = File(p.join(tempDir.path, _testUpdate.assetName));
+        await apk.writeAsBytes([1, 2, 3, 4]);
         platform.canInstall = false;
         final service = buildService();
 
-        final result = await service.installUpdate('/tmp/memex.apk');
+        final result = await service.installUpdate(apk.path);
 
         expect(result.status, AppUpdateInstallStatus.permissionRequired);
         expect(platform.openedInstallSettings, isTrue);
+        expect(platform.installedApkPath, isNull);
+      },
+    );
+
+    test('coalesces concurrent install requests for the same APK', () async {
+      final apk = File(p.join(tempDir.path, _testUpdate.assetName));
+      await apk.writeAsBytes([1, 2, 3, 4]);
+      platform.installCompleter = Completer<void>();
+      final service = buildService();
+
+      final first = service.installUpdate(apk.path);
+      final second = service.installUpdate(apk.path);
+      await waitFor(() => platform.installCallCount == 1);
+
+      expect(platform.installCallCount, 1);
+      platform.installCompleter!.complete();
+
+      expect((await first).status, AppUpdateInstallStatus.started);
+      expect((await second).status, AppUpdateInstallStatus.started);
+      expect(platform.installedApkPath, apk.path);
+    });
+
+    test(
+      'fails install before platform call when APK file is missing',
+      () async {
+        final service = buildService();
+
+        await expectLater(
+          service.installUpdate(p.join(tempDir.path, 'missing.apk')),
+          throwsA(isA<AppUpdateInvalidPackageException>()),
+        );
+
+        expect(platform.canInstallCheckCount, 0);
+        expect(platform.installCallCount, 0);
         expect(platform.installedApkPath, isNull);
       },
     );
@@ -373,17 +512,31 @@ Map<String, dynamic> release({
   };
 }
 
+Future<void> waitFor(bool Function() condition) async {
+  for (var i = 0; i < 20; i += 1) {
+    if (condition()) return;
+    await Future<void>.delayed(Duration.zero);
+  }
+  fail('Condition was not met before timeout.');
+}
+
 class FakeUpdatePlatform implements AppUpdatePlatform {
   bool wifiConnected = true;
   bool canInstall = true;
   bool openedInstallSettings = false;
   String? installedApkPath;
+  int canInstallCheckCount = 0;
+  int installCallCount = 0;
+  Completer<void>? installCompleter;
 
   @override
   Future<bool> isWifiConnected() async => wifiConnected;
 
   @override
-  Future<bool> canInstallApk() async => canInstall;
+  Future<bool> canInstallApk() async {
+    canInstallCheckCount += 1;
+    return canInstall;
+  }
 
   @override
   Future<void> openInstallPermissionSettings() async {
@@ -392,6 +545,25 @@ class FakeUpdatePlatform implements AppUpdatePlatform {
 
   @override
   Future<void> installApk(String apkPath) async {
+    installCallCount += 1;
     installedApkPath = apkPath;
+    final completer = installCompleter;
+    if (completer != null) {
+      await completer.future;
+    }
+  }
+}
+
+class ControlledDownloadClient extends http.BaseClient {
+  ControlledDownloadClient(this.handler);
+
+  final Future<http.StreamedResponse> Function(http.BaseRequest request)
+      handler;
+  int requestCount = 0;
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) {
+    requestCount += 1;
+    return handler(request);
   }
 }

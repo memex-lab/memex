@@ -142,6 +142,21 @@ class AppUpdateDownloadResult {
   });
 }
 
+class AppUpdateDownloadProgress {
+  final int receivedBytes;
+  final int totalBytes;
+
+  const AppUpdateDownloadProgress({
+    required this.receivedBytes,
+    required this.totalBytes,
+  });
+
+  int get percent {
+    if (totalBytes <= 0) return 0;
+    return ((receivedBytes / totalBytes) * 100).clamp(0, 100).round();
+  }
+}
+
 class AppUpdateCacheInfo {
   final int fileCount;
   final int totalBytes;
@@ -166,6 +181,22 @@ class AppUpdateWifiRequiredException implements Exception {
 
   @override
   String toString() => 'Wi-Fi is required to download this update.';
+}
+
+class AppUpdateDownloadInProgressException implements Exception {
+  const AppUpdateDownloadInProgressException();
+
+  @override
+  String toString() => 'An update package is already downloading.';
+}
+
+class AppUpdateInvalidPackageException implements Exception {
+  final String message;
+
+  const AppUpdateInvalidPackageException(this.message);
+
+  @override
+  String toString() => message;
 }
 
 class AppUpdateEnvironment {
@@ -292,6 +323,8 @@ class AppUpdateService {
   final UpdateDirectoryProvider _updateDirectoryProvider;
   final Clock _clock;
   final _logger = getLogger('AppUpdateService');
+  final Map<String, _ActiveAppUpdateDownload> _activeDownloads = {};
+  final Map<String, Future<AppUpdateInstallResult>> _activeInstalls = {};
 
   bool get isSupported => _environment.isAndroid && _environment.isEarlyChannel;
 
@@ -345,13 +378,54 @@ class AppUpdateService {
     AppUpdateInfo update, {
     void Function(int receivedBytes, int totalBytes)? onProgress,
   }) async {
+    final downloadKey = _downloadKeyFor(update);
+    final activeDownload = _activeDownloads[downloadKey];
+    if (activeDownload != null) {
+      _logger.info('Joining active APK download for ${update.displayVersion}');
+      return activeDownload.join(onProgress);
+    }
+
+    final session = _ActiveAppUpdateDownload(
+      initialProgress: AppUpdateDownloadProgress(
+        receivedBytes: 0,
+        totalBytes: update.sizeBytes,
+      ),
+    );
+    _activeDownloads[downloadKey] = session;
+    session.future =
+        _downloadUpdateToFile(
+          update,
+          onProgress: session.reportProgress,
+        ).whenComplete(() {
+          if (identical(_activeDownloads[downloadKey], session)) {
+            _activeDownloads.remove(downloadKey);
+          }
+        });
+
+    return session.join(onProgress);
+  }
+
+  bool get hasActiveDownload => _activeDownloads.isNotEmpty;
+
+  bool isDownloadingUpdate(AppUpdateInfo update) {
+    return _activeDownloads.containsKey(_downloadKeyFor(update));
+  }
+
+  AppUpdateDownloadProgress? getActiveDownloadProgress(AppUpdateInfo update) {
+    return _activeDownloads[_downloadKeyFor(update)]?.progress;
+  }
+
+  Future<AppUpdateDownloadResult> _downloadUpdateToFile(
+    AppUpdateInfo update, {
+    required void Function(int receivedBytes, int totalBytes) onProgress,
+  }) async {
     final dir = await _updateDirectoryProvider();
     final fileName = _safeFileName(update.assetName);
     final targetFile = File(path.join(dir.path, fileName));
     if (await _isReusableDownloadedApk(targetFile, update)) {
       final cachedBytes = await targetFile.length();
       final totalBytes = update.sizeBytes > 0 ? update.sizeBytes : cachedBytes;
-      onProgress?.call(totalBytes, totalBytes);
+      onProgress(totalBytes, totalBytes);
       _logger.info(
         'Reusing downloaded APK for ${update.displayVersion}: '
         '${targetFile.path}',
@@ -392,17 +466,29 @@ class AppUpdateService {
     }
 
     final totalBytes = response.contentLength ?? update.sizeBytes;
+    final expectedBytes = update.sizeBytes > 0 ? update.sizeBytes : totalBytes;
     var receivedBytes = 0;
     final sink = tempFile.openWrite();
+    var completed = false;
     try {
       await for (final chunk in response.stream) {
         sink.add(chunk);
         receivedBytes += chunk.length;
-        onProgress?.call(receivedBytes, totalBytes);
+        onProgress(receivedBytes, totalBytes);
       }
+      completed = true;
     } finally {
       await sink.close();
+      if (!completed && await tempFile.exists()) {
+        await tempFile.delete();
+      }
     }
+
+    await _validateDownloadedApkFile(
+      tempFile,
+      expectedBytes: expectedBytes,
+      update: update,
+    );
 
     if (await targetFile.exists()) {
       await targetFile.delete();
@@ -438,6 +524,10 @@ class AppUpdateService {
   }
 
   Future<int> clearDownloadedUpdates() async {
+    if (hasActiveDownload) {
+      throw const AppUpdateDownloadInProgressException();
+    }
+
     final dir = await _updateDirectoryProvider();
     if (!await dir.exists()) {
       return 0;
@@ -452,10 +542,27 @@ class AppUpdateService {
     return deletedCount;
   }
 
-  Future<AppUpdateInstallResult> installUpdate(String apkPath) async {
+  Future<AppUpdateInstallResult> installUpdate(String apkPath) {
+    final normalizedPath = path.normalize(apkPath);
+    final activeInstall = _activeInstalls[normalizedPath];
+    if (activeInstall != null) return activeInstall;
+
+    late final Future<AppUpdateInstallResult> install;
+    install = _installUpdate(normalizedPath).whenComplete(() {
+      if (identical(_activeInstalls[normalizedPath], install)) {
+        _activeInstalls.remove(normalizedPath);
+      }
+    });
+    _activeInstalls[normalizedPath] = install;
+    return install;
+  }
+
+  Future<AppUpdateInstallResult> _installUpdate(String apkPath) async {
     if (!isSupported) {
       return const AppUpdateInstallResult(AppUpdateInstallStatus.unsupported);
     }
+
+    await _validateInstallableApkPath(apkPath);
 
     final canInstall = await _platform.canInstallApk();
     if (!canInstall) {
@@ -594,6 +701,56 @@ class AppUpdateService {
     }
   }
 
+  Future<void> _validateDownloadedApkFile(
+    File file, {
+    required int expectedBytes,
+    required AppUpdateInfo update,
+  }) async {
+    final stat = await file.stat();
+    if (stat.type != FileSystemEntityType.file || stat.size <= 0) {
+      await _deleteIfExists(file);
+      throw AppUpdateInvalidPackageException(
+        'Downloaded APK is empty for ${update.displayVersion}.',
+      );
+    }
+
+    if (expectedBytes > 0 && stat.size != expectedBytes) {
+      await _deleteIfExists(file);
+      throw AppUpdateInvalidPackageException(
+        'Downloaded APK size mismatch for ${update.displayVersion}: '
+        'expected $expectedBytes bytes, found ${stat.size}.',
+      );
+    }
+  }
+
+  Future<void> _validateInstallableApkPath(String apkPath) async {
+    if (!apkPath.toLowerCase().endsWith('.apk')) {
+      throw AppUpdateInvalidPackageException('File is not an APK: $apkPath');
+    }
+
+    final file = File(apkPath);
+    final stat = await file.stat();
+    if (stat.type != FileSystemEntityType.file || stat.size <= 0) {
+      throw AppUpdateInvalidPackageException(
+        'APK file does not exist or is empty: $apkPath',
+      );
+    }
+  }
+
+  Future<void> _deleteIfExists(File file) async {
+    try {
+      if (await file.exists()) {
+        await file.delete();
+      }
+    } catch (e, st) {
+      _logger.warning(
+        'Failed to delete invalid update file: ${file.path}',
+        e,
+        st,
+      );
+    }
+  }
+
   static bool _isUpdateCacheFile(File file) {
     final lowerPath = file.path.toLowerCase();
     return lowerPath.endsWith('.apk') || lowerPath.endsWith('.apk.part');
@@ -670,5 +827,58 @@ class AppUpdateService {
   static String _safeFileName(String value) {
     final fallback = value.trim().isEmpty ? 'memex_early_update.apk' : value;
     return fallback.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_');
+  }
+
+  static String _downloadKeyFor(AppUpdateInfo update) {
+    return [
+      _safeFileName(update.assetName),
+      update.downloadUrl,
+      update.sizeBytes,
+    ].join('|');
+  }
+}
+
+class _ActiveAppUpdateDownload {
+  _ActiveAppUpdateDownload({required AppUpdateDownloadProgress initialProgress})
+    : _progress = initialProgress;
+
+  final Set<void Function(int receivedBytes, int totalBytes)> _listeners = {};
+  late final Future<AppUpdateDownloadResult> future;
+  AppUpdateDownloadProgress _progress;
+
+  AppUpdateDownloadProgress get progress => _progress;
+
+  Future<AppUpdateDownloadResult> join(
+    void Function(int receivedBytes, int totalBytes)? onProgress,
+  ) {
+    if (onProgress == null) return future;
+
+    _listeners.add(onProgress);
+    final currentProgress = _progress;
+    scheduleMicrotask(() {
+      if (_listeners.contains(onProgress)) {
+        try {
+          onProgress(currentProgress.receivedBytes, currentProgress.totalBytes);
+        } catch (_) {
+          // Progress listeners are UI conveniences and must not affect downloads.
+        }
+      }
+    });
+    return future.whenComplete(() => _listeners.remove(onProgress));
+  }
+
+  void reportProgress(int receivedBytes, int totalBytes) {
+    _progress = AppUpdateDownloadProgress(
+      receivedBytes: receivedBytes,
+      totalBytes: totalBytes,
+    );
+
+    for (final listener in List.of(_listeners)) {
+      try {
+        listener(receivedBytes, totalBytes);
+      } catch (_) {
+        // Progress listeners are UI conveniences and must not affect downloads.
+      }
+    }
   }
 }

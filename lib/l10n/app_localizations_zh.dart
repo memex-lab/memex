@@ -2967,9 +2967,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get earlyUpdateDownloadAndInstall => '下载并安装';
 
   @override
+  String get earlyUpdateDownloadInProgress => '正在下载更新...';
+
+  @override
   String earlyUpdateDownloadingPercent(Object percent) {
     return '正在下载更新：$percent%';
   }
+
+  @override
+  String get earlyUpdateDownloadReadyToInstall => '更新包已下载，可直接安装。';
 
   @override
   String get earlyUpdateInstallDownloadedPackage => '安装已下载包';

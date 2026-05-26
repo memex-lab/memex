@@ -1400,12 +1400,14 @@
   },
   "earlyUpdateFound": "Early build {version}+{build} is available.",
   "earlyUpdateDownloadAndInstall": "Download and install",
+  "earlyUpdateDownloadInProgress": "Downloading update...",
   "@earlyUpdateDownloadingPercent": {
     "placeholders": {
       "percent": {}
     }
   },
   "earlyUpdateDownloadingPercent": "Downloading update: {percent}%",
+  "earlyUpdateDownloadReadyToInstall": "Update package downloaded. Ready to install.",
   "earlyUpdateInstallDownloadedPackage": "Install downloaded package",
   "earlyUpdateClearDownloadedPackage": "Clear downloaded package",
   "earlyUpdateClearDownloadedPackageSuccess": "Downloaded update package cleared.",

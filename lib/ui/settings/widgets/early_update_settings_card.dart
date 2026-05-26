@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'package:memex/data/services/app_update_service.dart';
@@ -25,16 +27,24 @@ class _EarlyUpdateSettingsCardState extends State<EarlyUpdateSettingsCard> {
   AppUpdateInfo? _availableUpdate;
   AppUpdateCacheInfo _cacheInfo = AppUpdateCacheInfo.empty;
   bool _availableUpdateDownloaded = false;
+  bool _availableUpdateDownloading = false;
   bool _checking = false;
   bool _downloading = false;
   bool _clearingCache = false;
   int _downloadPercent = 0;
   String? _statusText;
+  Timer? _downloadPollTimer;
 
   @override
   void initState() {
     super.initState();
     _loadSettings();
+  }
+
+  @override
+  void dispose() {
+    _downloadPollTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadSettings() async {
@@ -68,9 +78,14 @@ class _EarlyUpdateSettingsCardState extends State<EarlyUpdateSettingsCard> {
       final latestCacheInfo =
           await widget.service.getDownloadedUpdateCacheInfo();
       var availableUpdateDownloaded = false;
+      AppUpdateDownloadProgress? activeDownloadProgress;
       if (result.status == AppUpdateCheckStatus.updateAvailable) {
+        final update = result.update!;
+        activeDownloadProgress = widget.service.getActiveDownloadProgress(
+          update,
+        );
         availableUpdateDownloaded = await widget.service.hasDownloadedUpdate(
-          result.update!,
+          update,
         );
       }
       if (!mounted) return;
@@ -83,40 +98,56 @@ class _EarlyUpdateSettingsCardState extends State<EarlyUpdateSettingsCard> {
           case AppUpdateCheckStatus.unsupported:
             _availableUpdate = null;
             _availableUpdateDownloaded = false;
+            _availableUpdateDownloading = false;
             _statusText = UserStorage.l10n.earlyUpdateUnsupported;
           case AppUpdateCheckStatus.skippedNotWifi:
             _availableUpdate = null;
             _availableUpdateDownloaded = false;
+            _availableUpdateDownloading = false;
             _statusText = UserStorage.l10n.earlyUpdateSkippedMobile;
           case AppUpdateCheckStatus.noUpdate:
             _availableUpdate = null;
             _availableUpdateDownloaded = false;
+            _availableUpdateDownloading = false;
             _statusText = UserStorage.l10n.earlyUpdateNoUpdate;
           case AppUpdateCheckStatus.updateAvailable:
             _availableUpdate = result.update;
             final update = result.update!;
-            _statusText = UserStorage.l10n.earlyUpdateFound(
-              update.versionName,
-              update.buildNumber,
-            );
+            _availableUpdateDownloading = activeDownloadProgress != null;
+            _downloadPercent = activeDownloadProgress?.percent ?? 0;
+            _statusText = _availableUpdateDownloading
+                ? _downloadStatusText(activeDownloadProgress)
+                : UserStorage.l10n.earlyUpdateFound(
+                    update.versionName,
+                    update.buildNumber,
+                  );
         }
       });
+      _syncDownloadPolling();
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _checking = false;
         _availableUpdateDownloaded = false;
+        _availableUpdateDownloading = false;
         _statusText = UserStorage.l10n.earlyUpdateCheckFailed(e);
       });
+      _syncDownloadPolling();
     }
   }
 
   Future<void> _downloadAndInstall() async {
     final update = _availableUpdate;
-    if (update == null || _downloading || _clearingCache) return;
+    if (update == null ||
+        _downloading ||
+        _clearingCache ||
+        _availableUpdateDownloading) {
+      return;
+    }
 
     setState(() {
       _downloading = true;
+      _availableUpdateDownloading = false;
       _downloadPercent = 0;
       _statusText = UserStorage.l10n.earlyUpdateDownloadingPercent(0);
     });
@@ -143,6 +174,7 @@ class _EarlyUpdateSettingsCardState extends State<EarlyUpdateSettingsCard> {
       if (!mounted) return;
       setState(() {
         _downloading = false;
+        _availableUpdateDownloading = false;
         _downloadPercent = 100;
         _cacheInfo = latestCacheInfo;
         _availableUpdateDownloaded = true;
@@ -157,11 +189,16 @@ class _EarlyUpdateSettingsCardState extends State<EarlyUpdateSettingsCard> {
       });
     } catch (e) {
       if (!mounted) return;
-      final statusText = e is AppUpdateWifiRequiredException
-          ? UserStorage.l10n.earlyUpdateSkippedMobile
-          : UserStorage.l10n.earlyUpdateCheckFailed(e);
+      final statusText = switch (e) {
+        AppUpdateWifiRequiredException() =>
+          UserStorage.l10n.earlyUpdateSkippedMobile,
+        AppUpdateDownloadInProgressException() =>
+          UserStorage.l10n.earlyUpdateDownloadInProgress,
+        _ => UserStorage.l10n.earlyUpdateCheckFailed(e),
+      };
       setState(() {
         _downloading = false;
+        _availableUpdateDownloading = e is AppUpdateDownloadInProgressException;
         _statusText = statusText;
       });
       if (e is AppUpdateWifiRequiredException) {
@@ -169,14 +206,28 @@ class _EarlyUpdateSettingsCardState extends State<EarlyUpdateSettingsCard> {
           context,
           UserStorage.l10n.earlyUpdateSkippedMobile,
         );
+      } else if (e is AppUpdateDownloadInProgressException) {
+        ToastHelper.showInfo(
+          context,
+          UserStorage.l10n.earlyUpdateDownloadInProgress,
+        );
       } else {
         ToastHelper.showError(context, e);
       }
+      _syncDownloadPolling();
     }
   }
 
   Future<void> _clearDownloadedPackage() async {
     if (_checking || _downloading || _clearingCache) return;
+    if (widget.service.hasActiveDownload) {
+      setState(() {
+        _availableUpdateDownloading = _availableUpdate != null;
+        _statusText = UserStorage.l10n.earlyUpdateDownloadInProgress;
+      });
+      _syncDownloadPolling();
+      return;
+    }
 
     setState(() => _clearingCache = true);
     try {
@@ -188,6 +239,7 @@ class _EarlyUpdateSettingsCardState extends State<EarlyUpdateSettingsCard> {
         _clearingCache = false;
         _cacheInfo = latestCacheInfo;
         _availableUpdateDownloaded = false;
+        _availableUpdateDownloading = false;
         _statusText = UserStorage.l10n.earlyUpdateClearDownloadedPackageSuccess;
       });
       ToastHelper.showSuccess(
@@ -196,12 +248,85 @@ class _EarlyUpdateSettingsCardState extends State<EarlyUpdateSettingsCard> {
       );
     } catch (e) {
       if (!mounted) return;
+      final statusText = e is AppUpdateDownloadInProgressException
+          ? UserStorage.l10n.earlyUpdateDownloadInProgress
+          : UserStorage.l10n.earlyUpdateCheckFailed(e);
       setState(() {
         _clearingCache = false;
-        _statusText = UserStorage.l10n.earlyUpdateCheckFailed(e);
+        _availableUpdateDownloading = e is AppUpdateDownloadInProgressException;
+        _statusText = statusText;
       });
-      ToastHelper.showError(context, e);
+      if (e is AppUpdateDownloadInProgressException) {
+        ToastHelper.showInfo(
+          context,
+          UserStorage.l10n.earlyUpdateDownloadInProgress,
+        );
+      } else {
+        ToastHelper.showError(context, e);
+      }
+      _syncDownloadPolling();
     }
+  }
+
+  void _syncDownloadPolling() {
+    final update = _availableUpdate;
+    final shouldPoll = update != null &&
+        (_availableUpdateDownloading ||
+            widget.service.isDownloadingUpdate(update));
+    if (!shouldPoll) {
+      _downloadPollTimer?.cancel();
+      _downloadPollTimer = null;
+      return;
+    }
+
+    _downloadPollTimer ??= Timer.periodic(const Duration(milliseconds: 500), (
+      _,
+    ) {
+      unawaited(_refreshActiveDownloadState());
+    });
+  }
+
+  Future<void> _refreshActiveDownloadState() async {
+    final update = _availableUpdate;
+    if (update == null || !mounted) return;
+
+    final progress = widget.service.getActiveDownloadProgress(update);
+    if (progress != null) {
+      setState(() {
+        _availableUpdateDownloading = true;
+        _downloadPercent = progress.percent;
+        _statusText = _downloadStatusText(progress);
+      });
+      return;
+    }
+
+    final latestCacheInfo = await widget.service.getDownloadedUpdateCacheInfo();
+    final downloaded = await widget.service.hasDownloadedUpdate(update);
+    if (!mounted) return;
+    setState(() {
+      _availableUpdateDownloading = false;
+      _availableUpdateDownloaded = downloaded;
+      _cacheInfo = latestCacheInfo;
+      if (downloaded) {
+        _downloadPercent = 100;
+        _statusText = UserStorage.l10n.earlyUpdateDownloadReadyToInstall;
+      } else {
+        _downloadPercent = 0;
+        _statusText = UserStorage.l10n.earlyUpdateFound(
+          update.versionName,
+          update.buildNumber,
+        );
+      }
+    });
+    _syncDownloadPolling();
+  }
+
+  String _downloadStatusText(AppUpdateDownloadProgress? progress) {
+    final percent = progress?.percent ?? 0;
+    if (percent > 0) {
+      return UserStorage.l10n.earlyUpdateDownloadingPercent(percent);
+    }
+    return UserStorage.l10n.earlyUpdateDownloadInProgress;
   }
 
   String? _lastCheckedText(AppUpdateSettings settings) {
@@ -230,6 +355,11 @@ class _EarlyUpdateSettingsCardState extends State<EarlyUpdateSettingsCard> {
         ),
       );
     }
+
+    final operationBusy = _checking ||
+        _downloading ||
+        _clearingCache ||
+        _availableUpdateDownloading;
 
     return _buildShell(
       child: Column(
@@ -303,7 +433,7 @@ class _EarlyUpdateSettingsCardState extends State<EarlyUpdateSettingsCard> {
               ),
             ),
           ],
-          if (_downloading) ...[
+          if (_downloading || _availableUpdateDownloading) ...[
             const SizedBox(height: 10),
             LinearProgressIndicator(
               value: _downloadPercent <= 0 ? null : _downloadPercent / 100,
@@ -317,9 +447,7 @@ class _EarlyUpdateSettingsCardState extends State<EarlyUpdateSettingsCard> {
             runSpacing: 10,
             children: [
               OutlinedButton.icon(
-                onPressed: _checking || _downloading || _clearingCache
-                    ? null
-                    : _checkNow,
+                onPressed: operationBusy ? null : _checkNow,
                 icon: _checking
                     ? const SizedBox(
                         width: 16,
@@ -331,24 +459,27 @@ class _EarlyUpdateSettingsCardState extends State<EarlyUpdateSettingsCard> {
               ),
               if (_availableUpdate != null)
                 FilledButton.icon(
-                  onPressed: _checking || _downloading || _clearingCache
-                      ? null
-                      : _downloadAndInstall,
+                  onPressed: operationBusy ? null : _downloadAndInstall,
                   icon: Icon(
-                    _availableUpdateDownloaded
-                        ? Icons.install_mobile
-                        : Icons.download,
+                    _availableUpdateDownloading
+                        ? Icons.downloading
+                        : _availableUpdateDownloaded
+                            ? Icons.install_mobile
+                            : Icons.download,
                     size: 18,
                   ),
                   label: Text(
-                    _availableUpdateDownloaded
-                        ? UserStorage.l10n.earlyUpdateInstallDownloadedPackage
-                        : UserStorage.l10n.earlyUpdateDownloadAndInstall,
+                    _availableUpdateDownloading
+                        ? UserStorage.l10n.earlyUpdateDownloadInProgress
+                        : _availableUpdateDownloaded
+                            ? UserStorage
+                                .l10n.earlyUpdateInstallDownloadedPackage
+                            : UserStorage.l10n.earlyUpdateDownloadAndInstall,
                   ),
                 ),
               if (_cacheInfo.hasFiles)
                 OutlinedButton.icon(
-                  onPressed: _checking || _downloading || _clearingCache
+                  onPressed: operationBusy || widget.service.hasActiveDownload
                       ? null
                       : _clearDownloadedPackage,
                   icon: _clearingCache

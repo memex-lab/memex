@@ -80,6 +80,96 @@ void main() {
     );
   });
 
+  testWidgets('shows active background download and disables manual actions', (
+    tester,
+  ) async {
+    final service = FakeWidgetUpdateService(
+      update: testUpdate,
+      cacheInfo: const AppUpdateCacheInfo(fileCount: 1, totalBytes: 2),
+      activeDownload: true,
+      activeProgress: const AppUpdateDownloadProgress(
+        receivedBytes: 2,
+        totalBytes: 4,
+      ),
+    );
+    await pumpCard(tester, service);
+
+    await tester.tap(find.text(UserStorage.l10n.earlyUpdateCheckNow));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(
+      find.text(UserStorage.l10n.earlyUpdateDownloadingPercent(50)),
+      findsOneWidget,
+    );
+    expect(
+      find.text(UserStorage.l10n.earlyUpdateDownloadInProgress),
+      findsOneWidget,
+    );
+
+    final downloadButton = tester.widget<FilledButton>(
+      find.widgetWithText(
+        FilledButton,
+        UserStorage.l10n.earlyUpdateDownloadInProgress,
+      ),
+    );
+    expect(downloadButton.onPressed, isNull);
+
+    final clearButton = tester.widget<OutlinedButton>(
+      find.widgetWithText(
+        OutlinedButton,
+        UserStorage.l10n.earlyUpdateClearDownloadedPackage,
+      ),
+    );
+    expect(clearButton.onPressed, isNull);
+    expect(service.downloadCallCount, 0);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('background download becomes installable after polling', (
+    tester,
+  ) async {
+    final service = FakeWidgetUpdateService(
+      update: testUpdate,
+      activeDownload: true,
+      activeProgress: const AppUpdateDownloadProgress(
+        receivedBytes: 1,
+        totalBytes: 4,
+      ),
+    );
+    await pumpCard(tester, service);
+
+    await tester.tap(find.text(UserStorage.l10n.earlyUpdateCheckNow));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(
+      find.text(UserStorage.l10n.earlyUpdateDownloadingPercent(25)),
+      findsOneWidget,
+    );
+
+    service
+      ..activeDownload = false
+      ..activeProgress = null
+      ..downloadedUpdateAvailable = true
+      ..cacheInfo = const AppUpdateCacheInfo(fileCount: 1, totalBytes: 4);
+
+    await tester.pump(const Duration(milliseconds: 600));
+    await tester.pump();
+
+    expect(
+      find.text(UserStorage.l10n.earlyUpdateDownloadReadyToInstall),
+      findsOneWidget,
+    );
+    expect(
+      find.text(UserStorage.l10n.earlyUpdateInstallDownloadedPackage),
+      findsOneWidget,
+    );
+
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
   testWidgets('can install cached update package and clear cache', (
     tester,
   ) async {
@@ -135,6 +225,8 @@ class FakeWidgetUpdateService extends AppUpdateService {
     this.update,
     AppUpdateCacheInfo? cacheInfo,
     this.downloadedUpdateAvailable = false,
+    this.activeDownload = false,
+    this.activeProgress,
   }) : cacheInfo = cacheInfo ?? AppUpdateCacheInfo.empty,
        super(
          environment: const AppUpdateEnvironment(
@@ -147,9 +239,12 @@ class FakeWidgetUpdateService extends AppUpdateService {
   final AppUpdateInfo? update;
   AppUpdateCacheInfo cacheInfo;
   bool downloadedUpdateAvailable;
+  bool activeDownload;
+  AppUpdateDownloadProgress? activeProgress;
   AppUpdateSettings settings = const AppUpdateSettings();
   bool installStarted = false;
   bool cacheCleared = false;
+  int downloadCallCount = 0;
 
   @override
   bool get isSupported => true;
@@ -179,6 +274,7 @@ class FakeWidgetUpdateService extends AppUpdateService {
     AppUpdateInfo update, {
     void Function(int receivedBytes, int totalBytes)? onProgress,
   }) async {
+    downloadCallCount += 1;
     onProgress?.call(4, 4);
     cacheInfo = const AppUpdateCacheInfo(fileCount: 1, totalBytes: 4);
     downloadedUpdateAvailable = true;
@@ -197,12 +293,28 @@ class FakeWidgetUpdateService extends AppUpdateService {
   }
 
   @override
+  bool get hasActiveDownload => activeDownload;
+
+  @override
+  bool isDownloadingUpdate(AppUpdateInfo update) {
+    return activeDownload;
+  }
+
+  @override
+  AppUpdateDownloadProgress? getActiveDownloadProgress(AppUpdateInfo update) {
+    return activeProgress;
+  }
+
+  @override
   Future<AppUpdateCacheInfo> getDownloadedUpdateCacheInfo() async {
     return cacheInfo;
   }
 
   @override
   Future<int> clearDownloadedUpdates() async {
+    if (activeDownload) {
+      throw const AppUpdateDownloadInProgressException();
+    }
     cacheCleared = true;
     final deletedCount = cacheInfo.fileCount;
     cacheInfo = AppUpdateCacheInfo.empty;
