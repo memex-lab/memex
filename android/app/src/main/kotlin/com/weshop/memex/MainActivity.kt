@@ -1,6 +1,7 @@
 package com.memexlab.memex
 
 import android.content.Intent
+import com.memexlab.memex.channels.AgentBackgroundChannelHandler
 import com.memexlab.memex.channels.BackupImportChannelHandler
 import com.memexlab.memex.channels.BackupStorageChannelHandler
 import com.memexlab.memex.channels.ChannelRegistrar
@@ -18,12 +19,14 @@ class MainActivity : FlutterFragmentActivity() {
         }
         super.onCreate(savedInstanceState)
         BackupImportChannelHandler.handleIntent(this, intent)
+        AgentBackgroundChannelHandler.handleIntent(intent)
     }
 
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
         BackupImportChannelHandler.handleIntent(this, intent)
+        AgentBackgroundChannelHandler.handleIntent(intent)
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {

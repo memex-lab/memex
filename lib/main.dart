@@ -85,10 +85,11 @@ void main() async {
     isInDebugMode: false,
   );
 
-  // Cancel any previously registered pedometer background tasks on iOS
-  // (iOS now uses HealthKit only, not CMPedometer)
+  // Cancel legacy pedometer background tasks on iOS without wiping newer
+  // Workmanager registrations such as Agent queue drain.
   if (Platform.isIOS) {
-    await Workmanager().cancelAll();
+    await Workmanager().cancelByUniqueName('workmanager.background.task');
+    await Workmanager().cancelByUniqueName('dailyStepSnapshotTask');
   }
 
   // MemexRouter is provided via config/dependencies.dart and created on first read

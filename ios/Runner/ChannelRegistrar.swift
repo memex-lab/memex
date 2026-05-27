@@ -15,5 +15,6 @@ class ChannelRegistrar {
         StorageChannelHandler.register(with: messenger)
         SystemActionsChannelHandler.register(with: messenger)
         AudioConverterChannelHandler.register(with: messenger)
+        AgentBackgroundChannelHandler.register(with: messenger)
     }
 }

@@ -6,6 +6,7 @@ import 'package:logging/logging.dart';
 import 'package:workmanager/workmanager.dart'; // Added for Workmanager
 import 'dart:isolate'; // Added for Isolate
 import 'package:flutter/foundation.dart'; // Added for debugPrint
+import 'package:memex/data/services/agent_queue_background_worker.dart';
 import 'package:memex/data/services/file_logger_service.dart'; // Added
 import 'health_strategies.dart';
 import 'package:memex/utils/logger.dart';
@@ -305,6 +306,10 @@ void callbackDispatcher() {
       logger.severe('BackgroundCallback: Logger setup complete');
     } catch (e) {
       debugPrint('BackgroundCallback: Logger setup failed: $e');
+    }
+
+    if (AgentQueueBackgroundWorker.isAgentQueueDrainTask(task)) {
+      return AgentQueueBackgroundWorker.run();
     }
 
     try {

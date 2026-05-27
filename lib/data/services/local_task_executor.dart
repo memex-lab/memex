@@ -55,6 +55,18 @@ class TaskActivitySnapshot {
   int get hashCode => Object.hash(pending, processing, retrying);
 }
 
+class TaskQueueDrainResult {
+  const TaskQueueDrainResult({
+    required this.snapshot,
+    required this.timedOut,
+    this.nextRunnableDelay,
+  });
+
+  final TaskActivitySnapshot snapshot;
+  final bool timedOut;
+  final Duration? nextRunnableDelay;
+}
+
 /// Handler function type
 typedef TaskHandler = Future<void> Function(
     String userId, Map<String, dynamic> payload, TaskContext context);
@@ -127,6 +139,48 @@ class LocalTaskExecutor {
     return _snapshotFromTasks(await query.get());
   }
 
+  Future<TaskQueueDrainResult> drainAvailableTasks({
+    required String userId,
+    Duration maxDuration = const Duration(seconds: 25),
+    Duration pollInterval = const Duration(milliseconds: 200),
+  }) async {
+    final wasRunning = _isRunning;
+    if (!wasRunning) {
+      await start(userId: userId, recoverStaleTasks: false);
+    } else {
+      _currentUserId ??= userId;
+    }
+
+    final deadline = DateTime.now().add(maxDuration);
+    var timedOut = false;
+    try {
+      _scheduleNextPoll(immediate: true);
+      while (true) {
+        final hasProcessing = await _hasProcessingTasks();
+        final hasRunnable = await _hasRunnableTasks();
+        if (!hasProcessing && !hasRunnable) {
+          break;
+        }
+        if (DateTime.now().isAfter(deadline)) {
+          timedOut = true;
+          break;
+        }
+        _scheduleNextPoll(immediate: true);
+        await Future<void>.delayed(pollInterval);
+      }
+
+      return TaskQueueDrainResult(
+        snapshot: await getTaskActivitySnapshot(),
+        timedOut: timedOut,
+        nextRunnableDelay: await _nextRunnableDelay(),
+      );
+    } finally {
+      if (!wasRunning) {
+        stop();
+      }
+    }
+  }
+
   TaskActivitySnapshot _snapshotFromTasks(List<Task> tasks) {
     var pending = 0;
     var processing = 0;
@@ -162,17 +216,22 @@ class LocalTaskExecutor {
   }
 
   /// Start the worker loop
-  Future<void> start({String? userId}) async {
+  Future<void> start({
+    String? userId,
+    bool recoverStaleTasks = true,
+  }) async {
     if (_isRunning) return;
     _currentUserId = userId; // Store for use in worker loop
 
-    // Detect whether the previous process exited while a task was running.
-    // This must happen before resetting stale tasks, otherwise we lose the only
-    // durable signal that a crash-like exit happened during task execution.
-    await _handlePreviousExecutionMarkers();
+    if (recoverStaleTasks) {
+      // Detect whether the previous process exited while a task was running.
+      // This must happen before resetting stale tasks, otherwise we lose the only
+      // durable signal that a crash-like exit happened during task execution.
+      await _handlePreviousExecutionMarkers();
 
-    // Reset any stale 'processing' tasks that might have been left over from a crash
-    await _resetStaleTasks();
+      // Reset any stale 'processing' tasks that might have been left over from a crash
+      await _resetStaleTasks();
+    }
 
     _isRunning = true;
     _logger.info('LocalTaskExecutor started for user $_currentUserId');
@@ -389,6 +448,56 @@ class LocalTaskExecutor {
     return tasksToRun;
   }
 
+  Future<Task?> _claimTask(Task task) async {
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final updated = await (_db.update(_db.tasks)
+          ..where((t) => t.id.equals(task.id))
+          ..where((t) => t.status.isIn(['pending', 'retrying']))
+          ..where(
+            (t) =>
+                t.scheduledAt.isNull() |
+                t.scheduledAt.isSmallerOrEqualValue(now),
+          ))
+        .write(
+      TasksCompanion(
+        status: const Value('processing'),
+        updatedAt: Value(now),
+      ),
+    );
+
+    if (updated == 0) return null;
+    return (_db.select(_db.tasks)..where((t) => t.id.equals(task.id)))
+        .getSingleOrNull();
+  }
+
+  Future<bool> _hasProcessingTasks() async {
+    final query = _db.selectOnly(_db.tasks)
+      ..addColumns([_db.tasks.id.count()])
+      ..where(_db.tasks.status.equals('processing'));
+    final row = await query.getSingle();
+    return (row.read(_db.tasks.id.count()) ?? 0) > 0;
+  }
+
+  Future<bool> _hasRunnableTasks() async {
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    return (await _findRunnableTasks(slotsAvailable: 1, now: now)).isNotEmpty;
+  }
+
+  Future<Duration?> _nextRunnableDelay() async {
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final query = _db.select(_db.tasks)
+      ..where((t) => t.status.isIn(['pending', 'retrying']))
+      ..where((t) => t.scheduledAt.isBiggerThanValue(now))
+      ..orderBy([
+        (t) => OrderingTerm(expression: t.scheduledAt, mode: OrderingMode.asc),
+      ])
+      ..limit(1);
+    final task = await query.getSingleOrNull();
+    if (task?.scheduledAt == null) return null;
+    final seconds = task!.scheduledAt! - now;
+    return Duration(seconds: seconds < 30 ? 30 : seconds);
+  }
+
   Future<bool> _dependenciesMet(Task task) async {
     if (task.dependencies == null) return true;
 
@@ -413,24 +522,23 @@ class LocalTaskExecutor {
 
   Future<void> _executeTask(Task task) async {
     try {
-      final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+      final claimedTask = await _claimTask(task);
+      if (claimedTask == null) {
+        _logger.fine(
+          'Skipping task ${task.id}; it was already claimed or is no longer runnable',
+        );
+        return;
+      }
+      await _markTaskExecutionStarted(claimedTask);
 
-      // Mark as processing
-      await (_db.update(_db.tasks)..where((t) => t.id.equals(task.id))).write(
-        TasksCompanion(
-          status: const Value('processing'),
-          updatedAt: Value(now),
-        ),
-      );
-      await _markTaskExecutionStarted(task);
-
-      final handler = _handlers[task.type];
+      final handler = _handlers[claimedTask.type];
       if (handler == null) {
-        throw Exception('No handler registered for task type: ${task.type}');
+        throw Exception(
+            'No handler registered for task type: ${claimedTask.type}');
       }
 
-      final payloadMap = task.payload != null
-          ? jsonDecode(task.payload!) as Map<String, dynamic>
+      final payloadMap = claimedTask.payload != null
+          ? jsonDecode(claimedTask.payload!) as Map<String, dynamic>
           : <String, dynamic>{};
 
       final currentUserId = _currentUserId;
@@ -444,14 +552,15 @@ class LocalTaskExecutor {
         currentUserId,
         payloadMap,
         TaskContext(
-          taskId: task.id,
-          taskType: task.type,
-          bizId: task.bizId,
+          taskId: claimedTask.id,
+          taskType: claimedTask.type,
+          bizId: claimedTask.bizId,
         ),
       );
 
       // Success
-      await (_db.update(_db.tasks)..where((t) => t.id.equals(task.id))).write(
+      await (_db.update(_db.tasks)..where((t) => t.id.equals(claimedTask.id)))
+          .write(
         TasksCompanion(
           status: const Value('completed'),
           completedAt: Value(DateTime.now().millisecondsSinceEpoch ~/ 1000),
@@ -459,7 +568,7 @@ class LocalTaskExecutor {
         ),
       );
 
-      _logger.info('Task ${task.id} completed');
+      _logger.info('Task ${claimedTask.id} completed');
     } catch (e, stack) {
       _logger.severe('Task ${task.id} failed', e, stack);
 
