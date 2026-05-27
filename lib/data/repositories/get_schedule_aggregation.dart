@@ -1,5 +1,6 @@
 import 'package:memex/agent/skills/schedule_aggregation/schedule_aggregation_retention.dart';
 import 'package:memex/data/services/file_system_service.dart';
+import 'package:memex/data/services/schedule_aggregation_normalizer.dart';
 import 'package:memex/domain/models/card_model.dart';
 import 'package:memex/domain/models/schedule_aggregation_model.dart';
 import 'package:memex/utils/logger.dart';
@@ -34,7 +35,9 @@ Future<ScheduleAggregationModel?> getScheduleAggregation() async {
       userId: userId,
       aggregation: retained,
     );
-    return ScheduleAggregationModel.fromYaml(hydrated);
+    return ScheduleAggregationModel.fromYaml(
+      normalizeScheduleAggregationYaml(hydrated),
+    );
   } catch (e) {
     _logger.severe('Failed to get schedule aggregation: $e');
     return null;

@@ -60,15 +60,6 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
         const SizedBox(height: 18),
       ],
 
-      // Conflicts
-      if (agg.conflicts.isNotEmpty) ...[
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: agg.conflicts.map(_buildAgentConflict).toList(),
-        ),
-        const SizedBox(height: 18),
-      ],
-
       // Timeline
       if (agg.timeline.isNotEmpty)
         for (final entry in agg.timeline.indexed) ...[
@@ -339,30 +330,6 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildAgentConflict(Conflict conflict) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFEF2F2),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFFCA5A5)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.warning_amber, size: 20, color: Color(0xFFF87171)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              conflict.description,
-              style: const TextStyle(fontSize: 14, color: Color(0xFFB91C1C)),
-            ),
-          ),
-        ],
-      ),
     );
   }
 

@@ -60,13 +60,9 @@ void main() {
         );
         expect(find.text('Deadline pressure'), findsOneWidget);
 
-        await tester.ensureVisible(
-          find.text('Two fixed events overlap with the cleaning window.'),
-        );
-        await tester.pumpAndSettle();
         expect(
           find.text('Two fixed events overlap with the cleaning window.'),
-          findsOneWidget,
+          findsNothing,
         );
 
         await tester.ensureVisible(find.text('Clean the apartment'));
@@ -465,7 +461,7 @@ void main() {
       expect(find.textContaining('2026-05-15T10:00'), findsNothing);
       expect(
         find.text(UserStorage.l10n.scheduleBriefingConflictCount(1)),
-        findsOneWidget,
+        findsNothing,
       );
     });
   });

@@ -117,14 +117,6 @@ class ScheduleBriefingCard extends StatelessWidget {
                   data['completed_count'] ?? 0,
                 ),
               ),
-              const SizedBox(width: 8),
-              if ((data['conflict_count'] as int? ?? 0) > 0)
-                _buildCountChip(
-                  Icons.warning_amber_rounded,
-                  UserStorage.l10n.scheduleBriefingConflictCount(
-                    data['conflict_count'] ?? 0,
-                  ),
-                ),
               const Spacer(),
               Text(
                 UserStorage.l10n.scheduleBriefingOpen,

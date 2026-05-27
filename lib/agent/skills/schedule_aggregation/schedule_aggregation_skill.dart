@@ -4,6 +4,7 @@ import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:memex/agent/prompts.dart';
 import 'package:memex/agent/skills/schedule_aggregation/schedule_aggregation_retention.dart';
 import 'package:memex/data/services/file_system_service.dart';
+import 'package:memex/data/services/schedule_aggregation_normalizer.dart';
 import 'package:memex/data/services/schedule_refresh_state_service.dart';
 import 'package:memex/data/services/system_action_service.dart';
 import 'package:memex/db/app_database.dart';
@@ -263,11 +264,14 @@ Tool buildSaveScheduleAggregationTool() {
           userId: userId,
           yamlData: yamlData,
         );
+        final reconciledYamlData = normalizeScheduleAggregationYaml(
+          normalizedYamlData,
+        );
         final previousAggregations = await fileSystem.listScheduleAggregations(
           userId,
         );
         final retainedYamlData = applyScheduleDisplayRetention(
-          yamlData: normalizedYamlData,
+          yamlData: reconciledYamlData,
           previousAggregations: previousAggregations,
         );
 
