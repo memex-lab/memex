@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:memex/data/services/file_system_service.dart';
+import 'package:memex/data/services/input_draft_service.dart';
 import 'package:memex/data/services/local_asset_server.dart';
 import 'package:memex/l10n/app_localizations.dart';
 import 'package:memex/ui/main_screen/widgets/input_sheet.dart';
@@ -15,11 +18,55 @@ void main() {
   late Directory testDataRoot;
 
   setUpAll(() async {
+    const recordChannel = MethodChannel('com.llfbandit.record/messages');
+    const audioGlobalChannel = MethodChannel('xyz.luan/audioplayers.global');
+    const audioPlayerChannel = MethodChannel('xyz.luan/audioplayers');
+    final messenger = TestDefaultBinaryMessengerBinding
+        .instance
+        .defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(recordChannel, (call) async {
+      switch (call.method) {
+        case 'hasPermission':
+        case 'isPaused':
+        case 'isRecording':
+        case 'isEncoderSupported':
+          return false;
+        case 'listInputDevices':
+          return <Object>[];
+        case 'getAmplitude':
+          return {'current': 0.0, 'max': 0.0};
+        default:
+          return null;
+      }
+    });
+    messenger.setMockMethodCallHandler(audioGlobalChannel, (_) async => null);
+    messenger.setMockStreamHandler(
+      const EventChannel('xyz.luan/audioplayers.global/events'),
+      MockStreamHandler.inline(onListen: (arguments, events) {}),
+    );
+    messenger.setMockMethodCallHandler(audioPlayerChannel, (call) async {
+      if (call.method == 'create') {
+        final arguments = call.arguments as Map<Object?, Object?>?;
+        final playerId = arguments?['playerId'] as String?;
+        if (playerId != null) {
+          messenger.setMockStreamHandler(
+            EventChannel('xyz.luan/audioplayers/events/$playerId'),
+            MockStreamHandler.inline(onListen: (arguments, events) {}),
+          );
+        }
+      }
+      return null;
+    });
+
     SharedPreferences.setMockInitialValues({'user_id': 'input-sheet-test'});
     await UserStorage.initL10n();
 
     testDataRoot = await Directory.systemTemp.createTemp('memex_input_sheet_');
     await FileSystemService.init(testDataRoot.path);
+  });
+
+  setUp(() async {
+    await InputDraftService.instance.clearActiveDraft();
   });
 
   tearDownAll(() async {
@@ -81,5 +128,143 @@ void main() {
     expect(find.text('Home content'), findsOneWidget);
     expect(find.byType(TextField), findsNothing);
     expect(find.text('close count: 1'), findsOneWidget);
+  });
+
+  testWidgets(
+    'successful submit clears draft and suppresses dispose saves',
+    (tester) async {
+      final submitCompleter = Completer<bool>();
+      InputData? submittedData;
+
+      await tester.pumpWidget(
+        buildSubmitHost(
+          onSubmit: (data, closeSheet) {
+            submittedData = data;
+            closeSheet();
+            return submitCompleter.future;
+          },
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 350));
+
+      await tester.enterText(find.byType(TextField), 'sent note');
+      await tester.pump();
+      await saveActiveDraft(tester, 'sent note');
+      expect(await activeDraftText(tester), 'sent note');
+
+      final submitButton = find.byKey(
+        const ValueKey('input_sheet_submit_button'),
+      );
+      await tester.runAsync<void>(() async {
+        tester.widget<GestureDetector>(submitButton).onTap!();
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      });
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(submittedData?.text, 'sent note');
+      expect(await activeDraftText(tester), isNull);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(await activeDraftText(tester), isNull);
+
+      await tester.runAsync<void>(() async {
+        submitCompleter.complete(true);
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      });
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(await activeDraftText(tester), isNull);
+    },
+  );
+
+  testWidgets('failed submit writes the submitted text back to draft', (
+    tester,
+  ) async {
+    final submitCompleter = Completer<bool>();
+
+    await tester.pumpWidget(
+      buildSubmitHost(
+        onSubmit: (data, closeSheet) {
+          closeSheet();
+          return submitCompleter.future;
+        },
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 350));
+
+    await tester.enterText(find.byType(TextField), 'keep on failure');
+    await tester.pump();
+    await saveActiveDraft(tester, 'keep on failure');
+
+    final submitButton = find.byKey(
+      const ValueKey('input_sheet_submit_button'),
+    );
+    await tester.runAsync<void>(() async {
+      tester.widget<GestureDetector>(submitButton).onTap!();
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    });
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(await activeDraftText(tester), isNull);
+
+    await tester.runAsync<void>(() async {
+      submitCompleter.complete(false);
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    });
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(await activeDraftText(tester), 'keep on failure');
+  });
+}
+
+typedef SubmitHostCallback = Future<bool> Function(
+  InputData data,
+  VoidCallback closeSheet,
+);
+
+Widget buildSubmitHost({required SubmitHostCallback onSubmit}) {
+  var isOpen = true;
+
+  return MaterialApp(
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+    home: Scaffold(
+      body: StatefulBuilder(
+        builder: (context, setState) {
+          return Stack(
+            children: [
+              InputSheet(
+                isOpen: isOpen,
+                onClose: () {
+                  setState(() => isOpen = false);
+                },
+                onSubmit: (data) {
+                  return onSubmit(data, () {
+                    setState(() => isOpen = false);
+                  });
+                },
+              ),
+            ],
+          );
+        },
+      ),
+    ),
+  );
+}
+
+Future<String?> activeDraftText(WidgetTester tester) {
+  return tester.runAsync<String?>(() async {
+    final draft = await InputDraftService.instance.loadActiveDraft();
+    return draft?.text;
+  });
+}
+
+Future<void> saveActiveDraft(WidgetTester tester, String text) {
+  return tester.runAsync<void>(() {
+    return InputDraftService.instance.saveTextDraft(text);
   });
 }

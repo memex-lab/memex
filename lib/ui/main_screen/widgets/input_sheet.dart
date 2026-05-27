@@ -369,13 +369,16 @@ class _InputSheetState extends State<InputSheet>
   }
 
   void _scheduleDraftSave() {
+    if (_isSubmitting) return;
     _draftSaveDebounce?.cancel();
     _draftSaveDebounce = Timer(const Duration(milliseconds: 400), () {
+      if (_isSubmitting) return;
       unawaited(_draftService.saveTextDraft(_textController.text));
     });
   }
 
   Future<void> _flushDraft() async {
+    if (_isSubmitting) return;
     _draftSaveDebounce?.cancel();
     if (!widget.isOpen && _textController.text.trim().isEmpty) return;
     await _draftService.saveTextDraft(_textController.text);
@@ -426,7 +429,8 @@ class _InputSheetState extends State<InputSheet>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _draftSaveDebounce?.cancel();
-    if (widget.isOpen || _textController.text.trim().isNotEmpty) {
+    if (!_isSubmitting &&
+        (widget.isOpen || _textController.text.trim().isNotEmpty)) {
       unawaited(_draftService.saveTextDraft(_textController.text));
     }
     _audioStreamSub?.cancel();
@@ -1204,9 +1208,10 @@ class _InputSheetState extends State<InputSheet>
     }
 
     setState(() => _isSubmitting = true);
-    await _flushDraft();
+    final submittedDraftText = _textController.text;
+    _draftSaveDebounce?.cancel();
+    await _draftService.clearActiveDraft();
     final submitted = await widget.onSubmit(inputData);
-    if (!mounted) return;
 
     if (submitted) {
       await _draftService.clearActiveDraft();
@@ -1214,6 +1219,8 @@ class _InputSheetState extends State<InputSheet>
       _resetForm();
       _setRestoredDraft(false);
     } else {
+      await _draftService.saveTextDraft(submittedDraftText);
+      if (!mounted) return;
       setState(() => _isSubmitting = false);
     }
   }
@@ -1762,7 +1769,9 @@ class _InputSheetState extends State<InputSheet>
                                               key: DemoService.instance.isActive
                                                   ? DemoService
                                                       .instance.sendButtonKey
-                                                  : null,
+                                                  : const ValueKey(
+                                                      'input_sheet_submit_button',
+                                                    ),
                                               onTap: _handleSubmit,
                                               child: Container(
                                                 padding:
