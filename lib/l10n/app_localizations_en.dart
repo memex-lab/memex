@@ -1130,10 +1130,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Tap Update to organize schedules and todos from real temporal cards.';
 
   @override
-  String get scheduleAggregationDirtyReason =>
-      'New schedule-related content is available. Tap Update to reorganize.';
-
-  @override
   String get scheduleAggregationLoadFailed => 'Failed to load schedule data';
 
   @override

@@ -18,6 +18,7 @@ import 'package:memex/data/services/table_change_notifier.dart';
 import 'package:memex/data/services/card_attachment_service.dart';
 import 'package:memex/data/services/card_detail_notifier.dart';
 import 'package:memex/data/services/clarification_request_service.dart';
+import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/data/services/app_update_service.dart';
 import 'package:memex/data/services/user_notification_service.dart';
 import 'package:path/path.dart' as path;
@@ -25,7 +26,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:memex/data/repositories/get_timeline_card.dart'; // Import for fetchTimelineCard
 import 'package:logging/logging.dart';
 import 'package:memex/data/services/card_renderer.dart';
-import 'package:memex/data/services/event_handlers/schedule_dirty_on_card_update_handler.dart';
+import 'package:memex/data/services/event_handlers/schedule_state_on_card_change_handler.dart';
+import 'package:memex/data/services/schedule_state_service.dart';
 import 'package:memex/domain/models/timeline_card_model.dart';
 import 'package:memex/domain/models/card_model.dart';
 import 'package:memex/domain/models/card_detail_model.dart';
@@ -49,9 +51,7 @@ import 'package:memex/data/repositories/retry_failed_cards.dart'
 import 'package:memex/data/services/task_handlers/analyze_assets_handler.dart';
 import 'package:memex/data/services/task_handlers/card_agent_handler.dart';
 import 'package:memex/data/services/task_handlers/pkm_agent_handler.dart';
-import 'package:memex/data/services/task_handlers/system_action_handler.dart';
 import 'package:memex/data/services/task_handlers/ask_clarification_handler.dart';
-import 'package:memex/data/services/task_handlers/task_completion_handler.dart';
 import 'package:memex/data/services/task_handlers/fts_index_handler.dart';
 import 'package:memex/data/services/task_handlers/llm_error_utils.dart';
 import 'package:memex/data/services/task_handlers/comment_agent_handler.dart';
@@ -181,16 +181,8 @@ class MemexRouter {
         handlePostCardRouter,
       );
       LocalTaskExecutor.instance.registerHandler(
-        'system_action_task',
-        handleSystemActionTask,
-      );
-      LocalTaskExecutor.instance.registerHandler(
         'ask_clarification_task',
         handleAskClarificationTask,
-      );
-      LocalTaskExecutor.instance.registerHandler(
-        'task_completion_task',
-        handleTaskCompletionTask,
       );
       LocalTaskExecutor.instance.registerHandler(
         'clarification_resolution_task',
@@ -209,9 +201,7 @@ class MemexRouter {
         'knowledge_insight_task',
         'schedule_aggregator_task',
         'post_card_router_task',
-        'system_action_task',
         'ask_clarification_task',
-        'task_completion_task',
         'clarification_resolution_task',
         'reprocess_cards_task',
         'reprocess_comments_task',
@@ -237,6 +227,7 @@ class MemexRouter {
       // Also triggers a one-time full rebuild when FTS tables were just created
       // via migration (existing users upgrading to schema v10).
       SearchService.instance.init(userId);
+      await ScheduleStateService.instance.ensureInitialized(userId);
 
       scheduleAutoBackupCheck(trigger: 'app_start');
     } catch (e) {
@@ -341,6 +332,7 @@ class MemexRouter {
             'fact_id': p.factId,
             'combined_text': p.combinedText,
             'created_at_ts': p.createdAtTs,
+            'location_context_reminder': p.locationContextReminder,
           });
         },
       ),
@@ -365,11 +357,19 @@ class MemexRouter {
       ),
     );
 
+    eventBus.subscribeSync<DataChangeRecord>(
+      eventType: SystemEventTypes.dataChanged,
+      subscription: EventSyncSubscription<DataChangeRecord>(
+        subscriptionId: 'schedule_state_on_card_change',
+        handler: handleScheduleStateOnCardChanged,
+      ),
+    );
+
     eventBus.subscribeSync<CardUiConfigUpdatedPayload>(
       eventType: SystemEventTypes.cardUiConfigUpdated,
       subscription: EventSyncSubscription<CardUiConfigUpdatedPayload>(
-        subscriptionId: 'schedule_dirty_on_card_ui_config_update',
-        handler: handleScheduleDirtyOnCardUiConfigUpdated,
+        subscriptionId: 'schedule_state_on_card_ui_config_update',
+        handler: handleScheduleStateOnCardUiConfigUpdated,
       ),
     );
 
@@ -387,7 +387,16 @@ class MemexRouter {
       subscription: EventTaskSubscription(
         subscriptionId: 'schedule_aggregation_refresh',
         taskType: 'schedule_aggregator_task',
-        payloadBuilder: (_, event) => Future.value(const {}),
+        payloadBuilder: (_, event) {
+          final payload = event.payload;
+          if (payload is Map<String, dynamic>) {
+            return Future.value(Map<String, dynamic>.from(payload));
+          }
+          if (payload is Map) {
+            return Future.value(Map<String, dynamic>.from(payload));
+          }
+          return Future.value(const {});
+        },
       ),
     );
 
@@ -1098,6 +1107,46 @@ class MemexRouter {
       return false;
     }
   }
+
+  Future<Result<void>> completeScheduleItem(String itemId) =>
+      runResultVoid(() async {
+        await _ensureInitialized();
+        final userId = await UserStorage.getUserId();
+        if (userId == null) {
+          throw Exception('User not logged in');
+        }
+
+        await ScheduleStateService.instance.completePendingItem(
+          userId: userId,
+          pendingId: itemId,
+        );
+        EventBusService.instance.emitEvent(
+          ScheduleAggregationUpdatedMessage(aggregationId: 'schedule_state'),
+        );
+      });
+
+  Future<Result<void>> setScheduleSubtaskCompletion({
+    required String itemId,
+    required String subtaskTitle,
+    required bool completed,
+  }) =>
+      runResultVoid(() async {
+        await _ensureInitialized();
+        final userId = await UserStorage.getUserId();
+        if (userId == null) {
+          throw Exception('User not logged in');
+        }
+
+        await ScheduleStateService.instance.setSubtaskCompletion(
+          userId: userId,
+          pendingId: itemId,
+          subtaskTitle: subtaskTitle,
+          completed: completed,
+        );
+        EventBusService.instance.emitEvent(
+          ScheduleAggregationUpdatedMessage(aggregationId: 'schedule_state'),
+        );
+      });
 
   Future<bool> updateCardTime(String cardId, int timestamp) async {
     await _ensureInitialized();

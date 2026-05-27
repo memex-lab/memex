@@ -546,7 +546,6 @@
   "scheduleAggregation": "日程聚合",
   "noScheduleAggregation": "暂无日程聚合",
   "scheduleAggregationEmptyHint": "点击更新，从真实时间卡片里整理日程和待办。",
-  "scheduleAggregationDirtyReason": "有新的日程相关内容，点击更新后重新整理。",
   "scheduleAggregationLoadFailed": "加载日程数据失败",
   "scheduleAggregationRefreshFailed": "刷新日程数据失败",
   "scheduleTaskUpdateFailed": "更新待办失败",

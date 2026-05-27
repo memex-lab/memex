@@ -148,7 +148,7 @@ class AppLocalizationsExtEn extends AppLocalizationsEn
 
   @override
   String get scheduleAggregatorLanguageInstruction =>
-      '**Important**: All output text (editorial_intro, quote_blocks, conflict descriptions) must be in **English**.';
+      '**Important**: All output text (editorial_intro and quote_blocks) must be in **English**.';
 
   @override
   String get assetAnalysisLanguageInstruction =>

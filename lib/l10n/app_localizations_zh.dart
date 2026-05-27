@@ -1102,9 +1102,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get scheduleAggregationEmptyHint => '点击更新，从真实时间卡片里整理日程和待办。';
 
   @override
-  String get scheduleAggregationDirtyReason => '有新的日程相关内容，点击更新后重新整理。';
-
-  @override
   String get scheduleAggregationLoadFailed => '加载日程数据失败';
 
   @override

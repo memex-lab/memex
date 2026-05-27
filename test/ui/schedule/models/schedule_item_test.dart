@@ -1,13 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:memex/domain/models/schedule_aggregation_model.dart';
+import 'package:memex/domain/models/schedule_state.dart' show ScheduleSubtask;
+import 'package:memex/domain/models/schedule_view_data.dart';
 import 'package:memex/ui/schedule/models/schedule_item.dart';
-import 'package:yaml/yaml.dart';
 
 void main() {
   group('ScheduleItem', () {
     test('copyWith creates a new instance with updated fields', () {
       final item = ScheduleItem(
-        id: 'test-1',
+        sourceFactId: 'test-1',
         title: 'Original Title',
         type: ScheduleItemType.todo,
         status: ScheduleItemStatus.pending,
@@ -20,7 +20,7 @@ void main() {
         completedAt: DateTime(2026, 4, 23, 10, 30),
       );
 
-      expect(updated.id, 'test-1');
+      expect(updated.sourceFactId, 'test-1');
       expect(updated.title, 'Original Title');
       expect(updated.status, ScheduleItemStatus.completed);
       expect(updated.completedAt, isNotNull);
@@ -32,7 +32,7 @@ void main() {
 
     test('copyWith preserves values when null is passed', () {
       final item = ScheduleItem(
-        id: 'test-1',
+        sourceFactId: 'test-1',
         title: 'Title',
         type: ScheduleItemType.event,
         status: ScheduleItemStatus.pending,
@@ -40,14 +40,14 @@ void main() {
 
       final updated = item.copyWith();
 
-      expect(updated.id, 'test-1');
+      expect(updated.sourceFactId, 'test-1');
       expect(updated.status, ScheduleItemStatus.pending);
       expect(updated.type, ScheduleItemType.event);
     });
 
     test('copyWith can clear completedAt when reopening a task', () {
       final item = ScheduleItem(
-        id: 'test-1',
+        sourceFactId: 'test-1',
         title: 'Title',
         type: ScheduleItemType.todo,
         status: ScheduleItemStatus.completed,
@@ -65,7 +65,7 @@ void main() {
 
     test('event item has correct defaults', () {
       final event = ScheduleItem(
-        id: 'event-1',
+        sourceFactId: 'event-1',
         title: 'Meeting',
         type: ScheduleItemType.event,
         startTime: DateTime(2026, 4, 23, 14, 0),
@@ -77,66 +77,71 @@ void main() {
       expect(event.relatedEvents, isEmpty);
     });
 
-    test('builds real UI items from LLM-style aggregation YAML', () {
-      final yaml = loadYaml('''
-id: schedule_agg_2026_04_26
-generated_at: "2026-04-26T08:00:00+08:00"
-version: "1"
-time_range:
-  from: "2026-04-26"
-  to: "2026-05-03"
-hero_item:
-  card_id: "2026/04/26.md#ts_100"
-  title: "产品发布会"
-  description: "本周最重要的外部日程"
-  start_time: "2026-04-26T14:00:00+08:00"
-  end_time: "2026-04-26T16:00:00+08:00"
-  location: "总部大礼堂"
-  priority: high
-editorial_intro: "今天重点是发布会和上线检查。"
-timeline:
-  - day_label: Today
-    day_date: "2026-04-26"
-    items:
-      - card_id: "2026/04/26.md#ts_100"
-        title: "产品发布会"
-        status: pending
-        type: event
-        priority: 3
-      - card_id: 101
-        title: "上线检查清单"
-        status: in_progress
-        start_time: "2026-04-26T10:00:00+08:00"
-        type: task
-        priority: normal
-        subtasks:
-          - title: "检查环境变量"
-            completed: true
-          - title: "确认灰度开关"
-            completed: false
-completed:
-  - card_id: "2026/04/25.md#ts_88"
-    title: "完成彩排"
-    completed_at: "2026-04-25T19:30:00+08:00"
-conflicts:
-  - description: "发布会和彩排复盘时间接近"
-    item_ids: [2026/04/26.md#ts_100, 42]
-''');
-
-      final aggregation = ScheduleAggregationModel.fromYaml(_yamlToMap(yaml));
-      final items = ScheduleItem.fromAggregation(aggregation);
+    test('builds real UI items from schedule view data', () {
+      final viewData = ScheduleViewData(
+        id: 'schedule_state',
+        generatedAt: DateTime.parse('2026-04-26T08:00:00+08:00'),
+        timeRange: ScheduleViewTimeRange(
+          from: DateTime(2026, 4, 26),
+          to: DateTime(2026, 5, 3),
+        ),
+        hero: ScheduleViewHero(
+          cardId: '2026/04/26.md#ts_100',
+          title: '产品发布会',
+          description: '本周最重要的外部日程',
+          startTime: DateTime.parse('2026-04-26T14:00:00+08:00'),
+          endTime: DateTime.parse('2026-04-26T16:00:00+08:00'),
+          location: '总部大礼堂',
+          priority: 3,
+        ),
+        timeline: [
+          ScheduleViewTimelineDay(
+            dayLabel: 'Today',
+            dayDate: DateTime(2026, 4, 26),
+            items: [
+              const ScheduleViewPendingItem(
+                cardId: '2026/04/26.md#ts_100',
+                title: '产品发布会',
+                status: 'pending',
+                type: 'event',
+                priority: 3,
+              ),
+              ScheduleViewPendingItem(
+                cardId: '101',
+                title: '上线检查清单',
+                status: 'in_progress',
+                startTime: DateTime.parse('2026-04-26T10:00:00+08:00'),
+                type: 'task',
+                priority: 2,
+                subtasks: const [
+                  ScheduleSubtask(title: '检查环境变量', completed: true),
+                  ScheduleSubtask(title: '确认灰度开关'),
+                ],
+              ),
+            ],
+          ),
+        ],
+        completed: [
+          ScheduleViewCompletedItem(
+            cardId: '2026/04/25.md#ts_88',
+            title: '完成彩排',
+            completedAt: DateTime.parse('2026-04-25T19:30:00+08:00'),
+          ),
+        ],
+      );
+      final items = ScheduleItem.fromViewData(viewData);
 
       expect(items, hasLength(3));
 
       final launch = items.singleWhere(
-        (item) => item.id == '2026/04/26.md#ts_100',
+        (item) => item.sourceFactId == '2026/04/26.md#ts_100',
       );
       expect(launch.type, ScheduleItemType.event);
       expect(launch.priority, 3);
       expect(launch.location, '总部大礼堂');
       expect(launch.description, '本周最重要的外部日程');
 
-      final checklist = items.singleWhere((item) => item.id == '101');
+      final checklist = items.singleWhere((item) => item.sourceFactId == '101');
       expect(checklist.type, ScheduleItemType.todo);
       expect(checklist.status, ScheduleItemStatus.inProgress);
       expect(checklist.priority, 2);
@@ -144,85 +149,137 @@ conflicts:
       expect(checklist.subtasks.first.completed, isTrue);
 
       final rehearsal = items.singleWhere(
-        (item) => item.id == '2026/04/25.md#ts_88',
+        (item) => item.sourceFactId == '2026/04/25.md#ts_88',
       );
       expect(rehearsal.status, ScheduleItemStatus.completed);
       expect(rehearsal.completedAt?.toUtc(), DateTime.utc(2026, 4, 25, 11, 30));
-      expect(aggregation.conflicts.single.itemIds, [
-        '2026/04/26.md#ts_100',
-        '42',
-      ]);
     });
 
-    test('keeps timeline task fields when hero points to the same card', () {
-      final aggregation = ScheduleAggregationModel.fromYaml(
-        _yamlToMap(
-          loadYaml('''
-id: schedule_agg_2026_04_26
-generated_at: "2026-04-26T08:00:00+08:00"
-time_range:
-  from: "2026-04-26"
-  to: "2026-05-03"
-hero_item:
-  card_id: "deadline-1"
-  title: "融资材料截止"
-  description: "今天最需要守住的交付"
-  start_time: "2026-04-26T18:00:00+08:00"
-  location: "线上提交"
-  priority: urgent
-timeline:
-  - day_label: Today
-    day_date: "2026-04-26"
-    items:
-      - card_id: "deadline-1"
-        title: "融资材料截止"
-        status: " in-progress "
-        type: task
-        priority: 2
-'''),
+    test('keeps hero and timeline items separate when only source matches', () {
+      final aggregation = ScheduleViewData(
+        id: 'schedule_state',
+        generatedAt: DateTime.parse('2026-04-26T08:00:00+08:00'),
+        timeRange: ScheduleViewTimeRange(
+          from: DateTime(2026, 4, 26),
+          to: DateTime(2026, 5, 3),
         ),
+        hero: ScheduleViewHero(
+          cardId: 'deadline-1',
+          title: '融资材料截止',
+          description: '今天最需要守住的交付',
+          startTime: DateTime.parse('2026-04-26T18:00:00+08:00'),
+          location: '线上提交',
+          priority: 3,
+        ),
+        timeline: [
+          ScheduleViewTimelineDay(
+            dayLabel: 'Today',
+            dayDate: DateTime(2026, 4, 26),
+            items: [
+              const ScheduleViewPendingItem(
+                cardId: 'deadline-1',
+                itemId: 'pi_deadline_1',
+                title: '融资材料截止',
+                status: ' in-progress ',
+                type: 'task',
+                priority: 2,
+              ),
+            ],
+          ),
+        ],
       );
 
-      final item = ScheduleItem.fromAggregation(aggregation).single;
+      final items = ScheduleItem.fromViewData(aggregation);
+      final task = items.singleWhere((item) => item.itemId == 'pi_deadline_1');
+      final hero = items.singleWhere((item) => item.itemId == 'deadline-1');
 
-      expect(item.type, ScheduleItemType.todo);
-      expect(item.status, ScheduleItemStatus.inProgress);
-      expect(item.sourceType, 'task');
-      expect(item.description, '今天最需要守住的交付');
-      expect(item.location, '线上提交');
-      expect(item.priority, 3);
+      expect(task.type, ScheduleItemType.todo);
+      expect(task.sourceFactId, 'deadline-1');
+      expect(task.status, ScheduleItemStatus.inProgress);
+      expect(task.sourceType, 'task');
+      expect(task.priority, 2);
+      expect(hero.description, '今天最需要守住的交付');
+      expect(hero.location, '线上提交');
+      expect(hero.priority, 3);
     });
 
     test('completed section wins over duplicate pending timeline items', () {
-      final aggregation = ScheduleAggregationModel.fromYaml(
-        _yamlToMap(
-          loadYaml('''
-id: schedule_agg_2026_04_26
-generated_at: "2026-04-26T08:00:00+08:00"
-time_range:
-  from: "2026-04-26"
-  to: "2026-05-03"
-timeline:
-  - day_label: Today
-    day_date: "2026-04-26"
-    items:
-      - card_id: "task-done"
-        title: "同步发布稿"
-        status: overdue
-        type: task
-completed:
-  - card_id: "task-done"
-    title: "同步发布稿"
-    completed_at: "2026-04-26T11:20:00+08:00"
-'''),
+      final aggregation = ScheduleViewData(
+        id: 'schedule_state',
+        generatedAt: DateTime.parse('2026-04-26T08:00:00+08:00'),
+        timeRange: ScheduleViewTimeRange(
+          from: DateTime(2026, 4, 26),
+          to: DateTime(2026, 5, 3),
         ),
+        timeline: [
+          ScheduleViewTimelineDay(
+            dayLabel: 'Today',
+            dayDate: DateTime(2026, 4, 26),
+            items: const [
+              ScheduleViewPendingItem(
+                cardId: 'task-done',
+                title: '同步发布稿',
+                status: 'overdue',
+                type: 'task',
+              ),
+            ],
+          ),
+        ],
+        completed: [
+          ScheduleViewCompletedItem(
+            cardId: 'task-done',
+            title: '同步发布稿',
+            completedAt: DateTime.parse('2026-04-26T11:20:00+08:00'),
+          ),
+        ],
       );
 
-      final item = ScheduleItem.fromAggregation(aggregation).single;
+      final item = ScheduleItem.fromViewData(aggregation).single;
 
       expect(item.type, ScheduleItemType.todo);
       expect(item.status, ScheduleItemStatus.completed);
       expect(item.completedAt?.toUtc(), DateTime.utc(2026, 4, 26, 3, 20));
+    });
+
+    test('preserves distinct pending items from the same source fact', () {
+      final aggregation = ScheduleViewData(
+        id: 'schedule_state',
+        generatedAt: DateTime.parse('2026-04-26T08:00:00+08:00'),
+        timeRange: ScheduleViewTimeRange(
+          from: DateTime(2026, 4, 26),
+          to: DateTime(2026, 5, 3),
+        ),
+        timeline: [
+          ScheduleViewTimelineDay(
+            dayLabel: 'Today',
+            dayDate: DateTime(2026, 4, 26),
+            items: [
+              ScheduleViewPendingItem(
+                itemId: 'pi_dentist',
+                cardId: '2026/04/26.md#ts_1',
+                title: 'Dentist at 10',
+                type: 'event',
+                startTime: DateTime(2026, 4, 26, 10),
+              ),
+              const ScheduleViewPendingItem(
+                itemId: 'pi_milk',
+                cardId: '2026/04/26.md#ts_1',
+                title: 'Buy milk',
+                type: 'task',
+              ),
+            ],
+          ),
+        ],
+      );
+
+      final items = ScheduleItem.fromViewData(aggregation);
+
+      expect(items, hasLength(2));
+      expect(items.map((item) => item.itemId), ['pi_milk', 'pi_dentist']);
+      expect(
+        items.map((item) => item.sourceFactId).toSet(),
+        {'2026/04/26.md#ts_1'},
+      );
     });
 
     test('derives task status from subtask progress conservatively', () {
@@ -249,27 +306,37 @@ completed:
     });
 
     test('assigns stable fallback ids and sorts undated items by title', () {
-      final aggregation = ScheduleAggregationModel(
+      final aggregation = ScheduleViewData(
         id: 'agg_missing_ids',
         generatedAt: DateTime(2026, 4, 26, 8),
-        timeRange: TimeRange(
+        timeRange: ScheduleViewTimeRange(
           from: DateTime(2026, 4, 26),
           to: DateTime(2026, 5, 3),
         ),
         timeline: [
-          TimelineDay(
+          const ScheduleViewTimelineDay(
             dayLabel: 'Today',
             items: [
-              TimelineItem(cardId: '', title: 'B task', type: 'task'),
-              TimelineItem(cardId: '', title: 'A event', type: 'event'),
+              ScheduleViewPendingItem(
+                cardId: '',
+                title: 'B task',
+                status: 'pending',
+                type: 'task',
+              ),
+              ScheduleViewPendingItem(
+                cardId: '',
+                title: 'A event',
+                status: 'pending',
+                type: 'event',
+              ),
             ],
           ),
         ],
       );
 
-      final items = ScheduleItem.fromAggregation(aggregation);
+      final items = ScheduleItem.fromViewData(aggregation);
 
-      expect(items.map((item) => item.id), [
+      expect(items.map((item) => item.sourceFactId), [
         'schedule_item_1',
         'schedule_item_0',
       ]);
@@ -302,20 +369,4 @@ completed:
       expect(related.timestamp.hour, 10);
     });
   });
-}
-
-Map<String, dynamic> _yamlToMap(dynamic yaml) {
-  if (yaml is YamlMap) {
-    return {
-      for (final entry in yaml.entries)
-        entry.key.toString(): _yamlToValue(entry.value),
-    };
-  }
-  return Map<String, dynamic>.from(yaml as Map);
-}
-
-dynamic _yamlToValue(dynamic value) {
-  if (value is YamlMap) return _yamlToMap(value);
-  if (value is YamlList) return value.map(_yamlToValue).toList();
-  return value;
 }

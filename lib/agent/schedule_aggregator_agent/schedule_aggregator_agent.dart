@@ -1,23 +1,18 @@
-import 'dart:io';
+import 'dart:convert';
 
 import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:memex/agent/agent_controller.util.dart';
-import 'package:memex/agent/built_in_tools/file_tools.dart';
-import 'package:memex/agent/built_in_tools/search_event_logs_tool.dart';
-import 'package:memex/agent/common_tools.dart';
-import 'package:memex/agent/memory/memory_management.dart';
 import 'package:memex/agent/agent_system_prompt_helper.dart';
-import 'package:memex/agent/schedule_aggregator_agent/schedule_aggregation_run_context.dart';
-import 'package:memex/agent/schedule_aggregator_agent/schedule_aggregation_run_lifecycle.dart';
 import 'package:memex/agent/schedule_aggregator_agent/prompt.dart';
-import 'package:memex/agent/security/file_permission_manager.dart';
 import 'package:memex/agent/skills/schedule_aggregation/schedule_aggregation_skill.dart';
 import 'package:memex/agent/state_util.dart';
 import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
-import 'package:memex/data/services/schedule_refresh_state_service.dart';
+import 'package:memex/data/services/schedule_state_service.dart';
 import 'package:memex/domain/models/agent_definitions.dart';
+import 'package:memex/domain/models/card_model.dart';
 import 'package:memex/domain/models/llm_config.dart';
+import 'package:memex/domain/models/schedule_state.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/time_context.dart';
 import 'package:memex/utils/user_storage.dart';
@@ -31,70 +26,18 @@ class ScheduleAggregatorAgent {
     required String userId,
     required AgentState state,
   }) async {
-    final fileService = FileSystemService.instance;
     final sessionId = state.sessionId;
 
     final controller = AgentController();
     addAgentLogger(controller);
     addAgentActivityCollector(controller);
 
-    final skills = [ScheduleAggregationSkill(forceActivate: true)];
-
-    // Ensure output directory exists
-    final scheduleAggPath = fileService.getScheduleAggregationsPath(userId);
-    final scheduleAggDir = Directory(scheduleAggPath);
-    if (!scheduleAggDir.existsSync()) {
-      scheduleAggDir.createSync(recursive: true);
-    }
-
-    final workingDirectory = fileService.getWorkspacePath(userId);
-
-    // Configure File Permission Manager
-    final permissionManager = FilePermissionManager(userId, [
-      PermissionRule(
-        rootPath: fileService.getWorkspacePath(userId),
-        access: FileAccessType.read,
+    final skills = [
+      ScheduleAggregationSkill(
+        forceActivate: true,
+        stopAfterSetPresentation: true,
       ),
-      PermissionRule(
-        rootPath: fileService.getCardsPath(userId),
-        access: FileAccessType.read,
-      ),
-      PermissionRule(
-        rootPath: fileService.getFactsPath(userId),
-        access: FileAccessType.read,
-      ),
-      PermissionRule(
-        rootPath: fileService.getScheduleAggregationsPath(userId),
-        access: FileAccessType.write,
-      ),
-    ]);
-
-    final fileToolFactory = FileToolFactory(
-      permissionManager: permissionManager,
-      workingDirectory: workingDirectory,
-    );
-
-    final tools = [
-      fileToolFactory.buildLSTool(),
-      fileToolFactory.buildGlobTool(),
-      fileToolFactory.buildGrepTool(),
-      fileToolFactory.buildReadTool(),
-      fileToolFactory.buildBatchReadTool(),
-      buildSearchEventLogsTool(),
-      getCurrentTimeTool,
     ];
-
-    // Memory is read-only for this batch agent. Durable memory can inform the
-    // summary, but schedule aggregation should not write long-term memory.
-    final memoryManagement = await MemoryManagement.createDefault(
-      userId: userId,
-      sourceAgent: 'schedule_aggregator_agent',
-    );
-    final memoryReadOnlyPrompt =
-        await memoryManagement.buildMemoryReadOnlyPrompt();
-
-    final userMemory = await memoryManagement.buildMemoryPrompt();
-    state.systemReminders["user_memory"] = userMemory;
 
     final agent = StatefulAgent(
       name: 'schedule_aggregator_agent',
@@ -107,13 +50,13 @@ class ScheduleAggregatorAgent {
         totalTokenThreshold: 32000,
         keepRecentMessageSize: 10,
       ),
-      tools: tools,
+      tools: const [],
       skills: skills,
-      systemPrompts: [scheduleAggregatorSystemPrompt, memoryReadOnlyPrompt],
-      disableSubAgents: false,
+      systemPrompts: [scheduleAggregatorSystemPrompt],
+      disableSubAgents: true,
       controller: controller,
       withGeneralPrinciples: true,
-      planMode: PlanMode.auto,
+      planMode: PlanMode.none,
       systemCallback: createSystemCallback(userId),
       autoSaveStateFunc: (state) async {
         await saveAgentState(state);
@@ -129,7 +72,7 @@ class ScheduleAggregatorAgent {
   static Future<bool> updateScheduleAggregation({
     String? userId,
     String? runId,
-    Duration resumeTtl = defaultScheduleAggregationResumeTtl,
+    Map<String, dynamic>? routerHint,
   }) async {
     final effectiveUserId = userId ?? await UserStorage.getUserId();
     if (effectiveUserId == null) {
@@ -139,22 +82,31 @@ class ScheduleAggregatorAgent {
     }
 
     final now = DateTime.now();
-    final effectiveRunId = normalizeScheduleAggregationRunId(runId, now);
-    final sessionId = buildScheduleAggregatorSessionId(
-      effectiveUserId,
-      effectiveRunId,
-    );
+    final normalizedRunId = runId?.trim();
+    final effectiveRunId = normalizedRunId == null || normalizedRunId.isEmpty
+        ? 'manual_${now.microsecondsSinceEpoch}'
+        : normalizedRunId;
+    final fileSystem = FileSystemService.instance;
+    final runIdSafe = fileSystem.makeFactIdSafe(effectiveRunId);
+    final sessionId = 'schedule_aggregator_$runIdSafe';
 
-    final runPlan = await buildScheduleAggregationRunPlan(
-      userId: effectiveUserId,
-      runId: effectiveRunId,
+    final scheduleState = await ScheduleStateService.instance.ensureInitialized(
+      effectiveUserId,
       now: now,
     );
-    if (!runPlan.hasScheduleCards) {
+    final isManualRefresh = routerHint == null || routerHint.isEmpty;
+    final manualInputMarkdown = isManualRefresh
+        ? await _buildRecentScheduleInputMarkdown(
+            userId: effectiveUserId,
+            scheduleState: scheduleState,
+            now: now,
+          )
+        : null;
+    if (!_hasScheduleData(scheduleState) &&
+        isManualRefresh &&
+        (manualInputMarkdown == null || manualInputMarkdown.isEmpty)) {
       await _completeNoOpScheduleAggregation(
-        userId: effectiveUserId,
         sessionId: sessionId,
-        plan: runPlan,
       );
       return true;
     }
@@ -166,40 +118,17 @@ class ScheduleAggregatorAgent {
     final client = resources.client;
     final modelConfig = resources.modelConfig;
 
-    var state = await loadOrCreateScheduleAggregatorRunState(
-      userId: effectiveUserId,
-      runId: effectiveRunId,
-      sessionId: sessionId,
-      now: now,
-    );
-    _applyScheduleWindowMetadata(state, runPlan.window);
-
-    if (!state.isRunning && state.history.messages.isNotEmpty) {
-      _logger.info(
-        'ScheduleAggregatorAgent completed state residue, sessionId:$sessionId, delete state and restart',
-      );
-      await deleteAgentState(effectiveUserId, sessionId);
-      state = await loadOrCreateScheduleAggregatorRunState(
-        userId: effectiveUserId,
-        runId: effectiveRunId,
-        sessionId: sessionId,
-        now: now,
-      );
-      _applyScheduleWindowMetadata(state, runPlan.window);
-    } else if (state.isRunning &&
-        !shouldResumeScheduleAggregatorRun(state, now, resumeTtl)) {
-      _logger.info(
-        'ScheduleAggregatorAgent stale interrupted run, sessionId:$sessionId, delete state and restart',
-      );
-      await deleteAgentState(effectiveUserId, sessionId);
-      state = await loadOrCreateScheduleAggregatorRunState(
-        userId: effectiveUserId,
-        runId: effectiveRunId,
-        sessionId: sessionId,
-        now: now,
-      );
-      _applyScheduleWindowMetadata(state, runPlan.window);
-    }
+    final state = await loadOrCreateAgentState(sessionId, {
+      'userId': effectiveUserId,
+      'scene': 'schedule_aggregation',
+      'sceneId': effectiveRunId,
+      'run_id': effectiveRunId,
+    });
+    state.metadata['userId'] = effectiveUserId;
+    state.metadata['scene'] = 'schedule_aggregation';
+    state.metadata['sceneId'] = effectiveRunId;
+    state.metadata['run_id'] = effectiveRunId;
+    state.metadata['run_started_at'] ??= now.toIso8601String();
 
     final agent = await _createAgent(
       client: client,
@@ -220,12 +149,13 @@ class ScheduleAggregatorAgent {
           "ScheduleAggregatorAgent run, sessionId:${state.sessionId}",
         );
 
-        String inputMessage = "Please update schedule aggregation.";
-        final runContext = await buildScheduleAggregationRunContext(
-          userId: effectiveUserId,
+        const inputMessage = 'Please handle the current task.';
+        final runContext = _buildScheduleRunContext(
           runId: effectiveRunId,
-          now: now,
-          plan: runPlan,
+          generatedAt: now,
+          scheduleState: scheduleState,
+          routerHint: routerHint,
+          manualInputMarkdown: manualInputMarkdown,
         );
 
         final messages = [
@@ -260,14 +190,12 @@ class ScheduleAggregatorAgent {
 
       // Post-processing: emit UI refresh event for both fresh runs and resume.
       EventBusService.instance.emitEvent(
-        ScheduleAggregationUpdatedMessage(aggregationId: sessionId),
+        ScheduleAggregationUpdatedMessage(aggregationId: 'schedule_state'),
       );
-      await deleteAgentState(effectiveUserId, sessionId);
     } on AgentException catch (e) {
       if (e.code == AgentExceptionCode.loopDetection) {
-        await deleteAgentState(effectiveUserId, sessionId);
         _logger.info(
-          "ScheduleAggregatorAgent loop detection, sessionId:${state.sessionId}, delete state",
+          "ScheduleAggregatorAgent loop detection, sessionId:${state.sessionId}",
         );
       }
       rethrow;
@@ -279,53 +207,234 @@ class ScheduleAggregatorAgent {
     return true;
   }
 
-  static void _applyScheduleWindowMetadata(
-    AgentState state,
-    ScheduleAggregationWindow window,
-  ) {
-    state.metadata['schedule_window_from'] = window.from.toIso8601String();
-    state.metadata['schedule_window_to'] = window.to.toIso8601String();
-    state.metadata['schedule_window_source'] = window.source;
-  }
-
   static Future<void> _completeNoOpScheduleAggregation({
-    required String userId,
     required String sessionId,
-    required ScheduleAggregationRunPlan plan,
   }) async {
-    final aggregationId = scheduleAggregationIdFor(plan.generatedAt);
-    final fileSystem = FileSystemService.instance;
-    await fileSystem.writeScheduleAggregation(
-      userId,
-      aggregationId,
-      buildNoOpScheduleAggregation(aggregationId: aggregationId, plan: plan),
-    );
-    await ScheduleRefreshStateService.instance.clearDirty(
-      userId: userId,
-      aggregationId: aggregationId,
-    );
-
-    try {
-      await fileSystem.eventLogService.logFileCreated(
-        userId: userId,
-        filePath: 'ScheduleAggregations/$aggregationId.yaml',
-        description: 'Schedule aggregation completed as no-op',
-        metadata: {
-          'aggregation_id': aggregationId,
-          'reason': 'no_temporal_cards_in_window',
-          'target_window_source': plan.window.source,
-        },
-      );
-    } catch (e) {
-      // Event logging failure should not break no-op completion.
-    }
-
-    await deleteAgentState(userId, sessionId);
     EventBusService.instance.emitEvent(
-      ScheduleAggregationUpdatedMessage(aggregationId: aggregationId),
+      ScheduleAggregationUpdatedMessage(aggregationId: 'schedule_state'),
     );
     _logger.info(
-      'ScheduleAggregatorAgent no-op completed, sessionId:$sessionId, aggregationId:$aggregationId',
+      'ScheduleAggregatorAgent no-op completed, sessionId:$sessionId',
     );
   }
+}
+
+bool _hasScheduleData(ScheduleState state) {
+  return state.pending.isNotEmpty ||
+      state.completed.isNotEmpty ||
+      state.presentation != null;
+}
+
+String _buildScheduleRunContext({
+  required String runId,
+  required DateTime generatedAt,
+  required ScheduleState scheduleState,
+  Map<String, dynamic>? routerHint,
+  String? manualInputMarkdown,
+}) {
+  final inputMarkdown = _currentInputMarkdown(
+    routerHint,
+    manualInputMarkdown: manualInputMarkdown,
+  );
+  final metadata = {
+    'run_id': runId,
+    'generated_at': generatedAt.toIso8601String(),
+    if (routerHint != null && routerHint['reason'] != null)
+      'router_reason': routerHint['reason'],
+  };
+
+  return '''# Schedule Aggregation Run Context
+
+## Run Metadata
+```json
+${const JsonEncoder.withIndent('  ').convert(metadata)}
+```
+
+## Current Input
+$inputMarkdown
+
+## Schedule State
+```json
+${const JsonEncoder.withIndent('  ').convert(_compactScheduleState(scheduleState, generatedAt: generatedAt))}
+```
+
+## Execution Policy
+- Use schedule_state as the source of truth for pending schedule items, recent completed items, and presentation.
+- Use only the current input and schedule_state.
+- Apply needed schedule changes with the schedule tools.
+- Use set_presentation only when refreshing the presentation.
+- If neither schedule_state nor presentation should change, do not call tools.
+''';
+}
+
+String _currentInputMarkdown(
+  Map<String, dynamic>? routerHint, {
+  String? manualInputMarkdown,
+}) {
+  if (routerHint == null || routerHint.isEmpty) {
+    final manualInput = manualInputMarkdown?.trim();
+    if (manualInput != null && manualInput.isNotEmpty) {
+      return manualInput;
+    }
+    return '(No current input; refresh the presentation from schedule_state.)';
+  }
+  final markdown = routerHint['input_markdown'];
+  if (markdown is String && markdown.trim().isNotEmpty) {
+    return markdown;
+  }
+
+  final factId = routerHint['fact_id']?.toString();
+  final combinedText = routerHint['combined_text']?.toString().trim() ?? '';
+  final buffer = StringBuffer();
+  if (factId != null && factId.isNotEmpty) {
+    buffer.writeln('- Raw Input ID (fact_id): $factId');
+    buffer.writeln();
+  }
+  buffer.writeln('### Raw Input Content');
+  buffer.writeln(
+    combinedText.isEmpty ? '(No text content.)' : _truncate(combinedText, 4000),
+  );
+  return buffer.toString().trimRight();
+}
+
+Map<String, dynamic> _compactScheduleState(
+  ScheduleState state, {
+  required DateTime generatedAt,
+}) {
+  final json = state.toJson();
+  json['completed'] = _recentCompletedScheduleItems(
+    state,
+    now: generatedAt,
+  ).map((item) => item.toJson()).toList();
+  return json;
+}
+
+List<ScheduleCompletedItem> _recentCompletedScheduleItems(
+  ScheduleState state, {
+  required DateTime now,
+}) {
+  // Completed items belong to the window by their schedule semantic time:
+  // for completed state, that is the time the schedule item was closed.
+  final since = now.subtract(const Duration(days: 7));
+  return state.completed
+      .where((item) => !item.closedAt.isBefore(since))
+      .toList();
+}
+
+String _truncate(String value, int maxLength) {
+  if (value.length <= maxLength) return value;
+  return '${value.substring(0, maxLength)}...';
+}
+
+Future<String?> _buildRecentScheduleInputMarkdown({
+  required String userId,
+  required ScheduleState scheduleState,
+  required DateTime now,
+}) async {
+  final fileSystem = FileSystemService.instance;
+  final sourceFactIds = _scheduleSourceFactIds(scheduleState);
+  final cardPaths = await fileSystem.listAllCardFiles(userId);
+  if (cardPaths.isEmpty && sourceFactIds.isEmpty) return null;
+
+  final entries = <_ScheduleCandidateInput>[];
+  final seenFactIds = <String>{};
+
+  for (final cardPath in cardPaths) {
+    if (entries.length >= 60) break;
+    final factId = fileSystem.factIdFromCardPath(cardPath);
+    if (factId == null || !seenFactIds.add(factId)) continue;
+
+    final card = await fileSystem.readCardFile(userId, factId);
+    if (card == null || card.deleted == true) continue;
+    if (!_isScheduleCard(card) && !sourceFactIds.contains(factId)) continue;
+
+    final fact = await fileSystem.extractFactContentFromFile(userId, factId);
+    if (fact == null) continue;
+    entries.add(_ScheduleCandidateInput(factId: factId, fact: fact));
+  }
+
+  for (final factId in sourceFactIds) {
+    if (entries.length >= 60) break;
+    if (!seenFactIds.add(factId)) continue;
+    final fact = await fileSystem.extractFactContentFromFile(userId, factId);
+    if (fact == null) continue;
+    entries.add(_ScheduleCandidateInput(factId: factId, fact: fact));
+  }
+
+  if (entries.isEmpty) return null;
+
+  final buffer = StringBuffer();
+  buffer.writeln(
+    '### Recent Schedule/Todo-Related Raw Inputs',
+  );
+  buffer.writeln();
+  buffer.writeln(
+    'These are recent raw inputs that may affect schedule_state. Use them as evidence together with the current schedule_state.',
+  );
+
+  for (final entry in entries) {
+    buffer.writeln();
+    buffer.writeln(
+      '#### ${entry.factId} (${formatLocalDateTimeWithZone(entry.fact.datetime)})',
+    );
+    buffer.writeln();
+    buffer.writeln(_truncate(entry.fact.content.trim(), 3000));
+    _appendAssetContext(buffer, entry.fact.assetAnalyses, 'Asset Analysis');
+    _appendAssetContext(buffer, entry.fact.assetOcrTexts, 'Asset OCR');
+  }
+
+  return buffer.toString().trimRight();
+}
+
+bool _isScheduleCard(CardData card) {
+  return card.uiConfigs.any((config) {
+    return config.templateId == 'event' ||
+        config.templateId == 'task' ||
+        config.templateId == 'system_task';
+  });
+}
+
+Set<String> _scheduleSourceFactIds(ScheduleState state) {
+  final ids = <String>{};
+  for (final item in state.pending) {
+    ids.addAll(item.sourceFactIds.where(_isFactId));
+  }
+  for (final item in state.completed) {
+    ids.addAll(item.sourceFactIds.where(_isFactId));
+  }
+  return ids;
+}
+
+bool _isFactId(String value) {
+  return RegExp(r'^\d{4}/\d{2}/\d{2}\.md#ts_\d+$').hasMatch(value);
+}
+
+void _appendAssetContext(
+  StringBuffer buffer,
+  List<Map<String, dynamic>> entries,
+  String title,
+) {
+  if (entries.isEmpty) return;
+
+  buffer.writeln();
+  buffer.writeln('##### $title');
+  for (final entry in entries) {
+    final name = entry['name']?.toString();
+    final text =
+        (entry['analysis'] ?? entry['ocr_text'] ?? entry['text'])?.toString();
+    if (text == null || text.trim().isEmpty) continue;
+    final label = name == null || name.isEmpty ? '' : ' ($name)';
+    buffer.writeln();
+    buffer.writeln('-$label ${_truncate(text.trim(), 1200)}');
+  }
+}
+
+class _ScheduleCandidateInput {
+  const _ScheduleCandidateInput({
+    required this.factId,
+    required this.fact,
+  });
+
+  final String factId;
+  final FactContentResult fact;
 }

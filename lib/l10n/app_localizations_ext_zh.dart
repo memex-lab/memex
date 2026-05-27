@@ -147,7 +147,7 @@ class AppLocalizationsExtZh extends AppLocalizationsZh
 
   @override
   String get scheduleAggregatorLanguageInstruction =>
-      '**Important**: All output text (editorial_intro, quote_blocks, conflict descriptions) must be in **zh-CN (Simplified Chinese)**.';
+      '**Important**: All output text (editorial_intro and quote_blocks) must be in **zh-CN (Simplified Chinese)**.';
 
   @override
   String get assetAnalysisLanguageInstruction =>

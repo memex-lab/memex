@@ -1636,98 +1636,52 @@ class FileSystemService {
     return path.join(getSystemPath(userId), 'insight_tags.md');
   }
 
-  /// Get ScheduleAggregations directory path
-  String getScheduleAggregationsPath(String userId) {
-    return path.join(getWorkspacePath(userId), 'ScheduleAggregations');
+  /// Schedule directory path. Holds the canonical maintained state
+  /// (`schedule_state.yaml`) used by the schedule aggregator agent and the
+  /// deterministic projector.
+  String getSchedulePath(String userId) {
+    return path.join(getWorkspacePath(userId), 'Schedule');
   }
 
-  /// Read schedule aggregation file (YAML)
-  Future<Map<String, dynamic>?> readScheduleAggregation(
-      String userId, String aggregationId) async {
-    final filePath = getScheduleAggregationPath(userId, aggregationId);
+  /// File path of the user-level schedule state YAML.
+  String getScheduleStatePath(String userId) {
+    return path.join(getSchedulePath(userId), 'schedule_state.yaml');
+  }
 
+  /// Read schedule_state.yaml. Returns null if the file does not exist or is
+  /// unreadable. Callers typically substitute an empty [ScheduleState] in
+  /// that case.
+  Future<Map<String, dynamic>?> readScheduleStateRaw(String userId) async {
+    final filePath = getScheduleStatePath(userId);
     if (!await _baseService.exists(filePath)) {
       return null;
     }
-
     try {
       final content = await _baseService.readFile(filePath);
       final data = _parseYaml(content);
       return data.isEmpty ? null : data;
     } catch (e) {
-      _logger.severe('Failed to read schedule aggregation $filePath: $e');
+      _logger.severe('Failed to read schedule_state $filePath: $e');
       return null;
     }
   }
 
-  /// Write schedule aggregation file (YAML)
-  Future<void> writeScheduleAggregation(
+  /// Atomically write schedule_state.yaml. Creates the parent directory if
+  /// missing.
+  Future<void> writeScheduleStateRaw(
     String userId,
-    String aggregationId,
     Map<String, dynamic> data,
   ) async {
-    final filePath = getScheduleAggregationPath(userId, aggregationId);
-    final parentDir = path.dirname(filePath);
-    await ensureDirectory(parentDir);
-
+    final filePath = getScheduleStatePath(userId);
+    await ensureDirectory(path.dirname(filePath));
     try {
       final yamlContent = _mapToYaml(data);
       await _baseService.writeFile(filePath, yamlContent);
-      _logger.info('Schedule aggregation written: $filePath');
+      _logger.info('schedule_state written: $filePath');
     } catch (e) {
-      _logger.severe('Failed to write schedule aggregation $filePath: $e');
+      _logger.severe('Failed to write schedule_state $filePath: $e');
       rethrow;
     }
-  }
-
-  /// List all schedule aggregations
-  Future<List<Map<String, dynamic>>> listScheduleAggregations(
-      String userId) async {
-    final dirPath = getScheduleAggregationsPath(userId);
-    if (!await _baseService.exists(dirPath)) {
-      return [];
-    }
-
-    final aggregations = <Map<String, dynamic>>[];
-    try {
-      final items = await _baseService.listDirectory(dirPath);
-      for (final item in items) {
-        if (item.endsWith('.yaml')) {
-          final aggregationId = path.basename(item);
-          final data = await readScheduleAggregation(userId, aggregationId);
-          if (data != null) {
-            if (!data.containsKey('id')) {
-              data['id'] = path.basenameWithoutExtension(aggregationId);
-            }
-            aggregations.add(data);
-          }
-        }
-      }
-      // Sort by generated_at descending (newest first)
-      aggregations.sort((a, b) {
-        final aTime = DateTime.tryParse(a['generated_at'] ?? '') ?? DateTime(0);
-        final bTime = DateTime.tryParse(b['generated_at'] ?? '') ?? DateTime(0);
-        return bTime.compareTo(aTime);
-      });
-    } catch (e) {
-      _logger.warning('Failed to list schedule aggregations: $e');
-    }
-    return aggregations;
-  }
-
-  /// Get the latest schedule aggregation
-  Future<Map<String, dynamic>?> getLatestScheduleAggregation(
-      String userId) async {
-    final aggregations = await listScheduleAggregations(userId);
-    if (aggregations.isEmpty) return null;
-    return aggregations.first;
-  }
-
-  /// Schedule aggregation file path
-  String getScheduleAggregationPath(String userId, String aggregationId) {
-    final filename =
-        aggregationId.endsWith('.yaml') ? aggregationId : '$aggregationId.yaml';
-    return path.join(getScheduleAggregationsPath(userId), filename);
   }
 
   /// Knowledge insight card file path

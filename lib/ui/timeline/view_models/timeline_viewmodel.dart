@@ -156,10 +156,6 @@ class TimelineViewModel extends ChangeNotifier {
       _handleAttachmentsChanged,
     );
     eventBus.addHandler(
-      EventBusMessageType.scheduleAggregationDirty,
-      _handleScheduleBriefingChanged,
-    );
-    eventBus.addHandler(
       EventBusMessageType.scheduleAggregationUpdated,
       _handleScheduleBriefingChanged,
     );
@@ -460,10 +456,6 @@ class TimelineViewModel extends ChangeNotifier {
       eventBus.removeHandler(
         EventBusMessageType.attachmentsChanged,
         _handleAttachmentsChanged,
-      );
-      eventBus.removeHandler(
-        EventBusMessageType.scheduleAggregationDirty,
-        _handleScheduleBriefingChanged,
       );
       eventBus.removeHandler(
         EventBusMessageType.scheduleAggregationUpdated,

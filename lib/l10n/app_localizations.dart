@@ -2102,12 +2102,6 @@ abstract class AppLocalizations {
   /// **'Tap Update to organize schedules and todos from real temporal cards.'**
   String get scheduleAggregationEmptyHint;
 
-  /// No description provided for @scheduleAggregationDirtyReason.
-  ///
-  /// In en, this message translates to:
-  /// **'New schedule-related content is available. Tap Update to reorganize.'**
-  String get scheduleAggregationDirtyReason;
-
   /// No description provided for @scheduleAggregationLoadFailed.
   ///
   /// In en, this message translates to:

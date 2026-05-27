@@ -2,592 +2,482 @@ import 'dart:convert';
 
 import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:memex/agent/prompts.dart';
-import 'package:memex/agent/skills/schedule_aggregation/schedule_aggregation_retention.dart';
-import 'package:memex/data/services/file_system_service.dart';
-import 'package:memex/data/services/schedule_aggregation_normalizer.dart';
-import 'package:memex/data/services/schedule_refresh_state_service.dart';
-import 'package:memex/data/services/system_action_service.dart';
-import 'package:memex/db/app_database.dart';
-import 'package:memex/utils/logger.dart';
+import 'package:memex/data/services/schedule_state_service.dart';
+import 'package:memex/domain/models/schedule_state.dart';
 
 import '../../../utils/user_storage.dart';
 
 class ScheduleAggregationSkill extends Skill {
-  ScheduleAggregationSkill({super.forceActivate})
-      : super(
+  ScheduleAggregationSkill({
+    super.forceActivate,
+    bool stopAfterSetPresentation = false,
+  }) : super(
           name: "update_schedule_aggregation",
           description:
-              "Analyzes user's temporal cards (events, tasks, routines) and generates a magazine-style schedule aggregation.",
+              "Maintains schedule_state and its magazine-style presentation when the current input warrants it.",
           systemPrompt: Prompts.scheduleAggregatorSkillPrompt(
             UserStorage.l10n.scheduleAggregatorLanguageInstruction,
           ),
           tools: [
-            buildGetScheduleCardsTool(),
-            buildSaveScheduleAggregationTool(),
+            buildGetScheduleStateTool(),
+            buildAddPendingItemTool(),
+            buildUpdatePendingItemTool(),
+            buildCompletePendingItemTool(),
+            buildCompleteSubtaskTool(),
+            buildSetPresentationTool(
+              stopAfterSetPresentation: stopAfterSetPresentation,
+            ),
+            buildSearchCompletedTool(),
           ],
         );
 }
 
-const scheduleTemporalTemplateIds = {
-  'event',
-  'task',
-  'routine',
-  'duration',
-  'procedure',
-};
-
-const defaultScheduleAggregationLookback = Duration(days: 3);
-const defaultScheduleAggregationLookahead = Duration(days: 30);
-
-dynamic scheduleStartTimeForCard(String templateId, Map<String, dynamic> data) {
-  final startTime = _nonEmptyScheduleValue(data['start_time']);
-  if (startTime != null) return startTime;
-
-  if (templateId == 'task') {
-    return _nonEmptyScheduleValue(data['due_date']);
-  }
-  return null;
-}
-
-Future<Map<String, dynamic>> queryScheduleCardsForRange({
-  required String userId,
-  DateTime? from,
-  DateTime? to,
-  int? limit,
-}) async {
-  final logger = getLogger('ScheduleAggregationSkill');
-  final fileSystem = FileSystemService.instance;
-  final now = DateTime.now();
-  final effectiveFrom =
-      from ?? now.subtract(defaultScheduleAggregationLookback);
-  final effectiveTo = to ?? now.add(defaultScheduleAggregationLookahead);
-
-  final db = AppDatabase.instance;
-  if (await db.cardDao.isCacheEmpty()) {
-    await fileSystem.rebuildCardCache(userId);
-  }
-  final query = db.select(db.cardCache);
-  final cachedCards = await query.get();
-  final results = <Map<String, dynamic>>[];
-
-  for (final cached in cachedCards) {
-    try {
-      final cardData = await fileSystem.readCardFile(userId, cached.factId);
-      if (cardData == null) continue;
-
-      final temporalConfigs = cardData.uiConfigs.where(
-        (config) => scheduleTemporalTemplateIds.contains(config.templateId),
-      );
-      if (temporalConfigs.isEmpty) continue;
-
-      final uiConfig = temporalConfigs.first;
-      final templateId = uiConfig.templateId;
-      final data = uiConfig.data;
-      final startTime = scheduleStartTimeForCard(templateId, data);
-      final status = deriveScheduleCardStatus(templateId, data);
-      final dateSource = scheduleDateSourceForCard(templateId, data);
-
-      if (!_isCardInScheduleRange(
-        templateId: templateId,
-        data: data,
-        fallbackTimestamp: cardData.timestamp,
-        from: effectiveFrom,
-        to: effectiveTo,
-      )) {
-        continue;
-      }
-
-      final result = <String, dynamic>{
-        'card_id': cached.factId,
-        'title': cardData.title,
-        'template_id': templateId,
-        'timestamp': cardData.timestamp,
-        'status': status,
-        'tags': cardData.tags,
-        'start_time': startTime,
-        'date_source': dateSource,
-        'is_unscheduled': dateSource == 'created_at_fallback',
-        'end_time': data['end_time'],
-        'location': data['location'],
-        'is_completed':
-            templateId == 'task' ? status == 'completed' : data['is_completed'],
-        'priority': data['priority'],
-        'due_date': data['due_date'],
-        'subtasks': data['subtasks'],
-        'habit_name': data['habit_name'],
-        'streak': data['streak'],
-        'steps': data['steps'],
-        'elapsed': data['elapsed'],
-      };
-
-      results.add(result);
-    } catch (e) {
-      logger.warning('Error processing card ${cached.factId}: $e');
-    }
-  }
-
-  final actions = await SystemActionService.instance.getVisibleForSchedule();
-  for (final action in actions) {
-    try {
-      final actionResult = scheduleResultForSystemAction(action);
-      if (actionResult == null) continue;
-      if (!_isResultInScheduleRange(actionResult, effectiveFrom, effectiveTo)) {
-        continue;
-      }
-      if (_duplicatesExistingScheduleResult(results, actionResult)) {
-        continue;
-      }
-      results.add(actionResult);
-    } catch (e) {
-      logger.warning('Error processing system action ${action.id}: $e');
-    }
-  }
-
-  results.sort((a, b) {
-    final aTime = _resultScheduleDate(a);
-    final bTime = _resultScheduleDate(b);
-    return aTime.compareTo(bTime);
-  });
-
-  final cards = limit == null ? results : results.take(limit).toList();
-  return {
-    'count': cards.length,
-    'date_range': {
-      'from': effectiveFrom.toIso8601String(),
-      'to': effectiveTo.toIso8601String(),
-    },
-    'cards': cards,
-  };
-}
-
-/// Tool to query temporal cards within a date range
-Tool buildGetScheduleCardsTool() {
+Tool buildGetScheduleStateTool() {
   return Tool(
-    name: 'get_schedule_cards',
+    name: 'get_schedule_state',
     description:
-        'Query temporal cards (events, tasks, routines, durations, procedures) within a date range. Returns structured card data including title, normalized start_time, status, template type, and task subtasks. Task due_date is exposed as start_time when start_time is absent.',
-    parameters: {
-      'type': 'object',
-      'properties': {
-        'from_date': {
-          'type': 'string',
-          'description':
-              'Start date in ISO format (e.g., 2026-04-20). Defaults to 3 days ago.',
-        },
-        'to_date': {
-          'type': 'string',
-          'description':
-              'End date in ISO format (e.g., 2026-04-30). Defaults to 30 days from now.',
-        },
-      },
-    },
-    executable: (String? fromDate, String? toDate) async {
-      final logger = getLogger('ScheduleAggregationSkill');
-      final metadata = AgentCallToolContext.current!.state.metadata;
-      final userId = metadata['userId'] as String;
-
-      final now = DateTime.now();
-      final defaultFrom = _parseBoundaryDate(
-        metadata['schedule_window_from']?.toString(),
-        fallback: now.subtract(defaultScheduleAggregationLookback),
-      );
-      final defaultTo = _parseBoundaryDate(
-        metadata['schedule_window_to']?.toString(),
-        fallback: now.add(defaultScheduleAggregationLookahead),
-      );
-      final from = _parseBoundaryDate(fromDate, fallback: defaultFrom);
-      final to = _parseBoundaryDate(
-        toDate,
-        fallback: defaultTo,
-        endOfDay: true,
-      );
-
-      try {
-        final result = await queryScheduleCardsForRange(
-          userId: userId,
-          from: from,
-          to: to,
-        );
-        if ((result['cards'] as List).isEmpty) {
-          return "No temporal cards (event/task/routine/duration/procedure) found in the specified date range.";
-        }
-
-        return jsonEncode(result);
-      } catch (e) {
-        logger.severe('Failed to get schedule cards: $e');
-        throw Exception('Failed to get schedule cards: $e');
-      }
-    },
-  );
-}
-
-/// Tool to save schedule aggregation YAML
-Tool buildSaveScheduleAggregationTool() {
-  return Tool(
-    name: 'save_schedule_aggregation',
-    description:
-        'Save the schedule aggregation as a YAML file. The aggregation_id should be in format "schedule_agg_YYYY_MM_DD".',
-    parameters: {
-      'type': 'object',
-      'properties': {
-        'aggregation_id': {
-          'type': 'string',
-          'description':
-              'Unique ID for this aggregation, e.g., "schedule_agg_2026_04_23"',
-        },
-        'yaml_data': {
-          'type': 'object',
-          'description':
-              'The schedule aggregation data object matching the required schema.',
-        },
-      },
-      'required': ['aggregation_id', 'yaml_data'],
-    },
-    executable: (String aggregationId, Map<String, dynamic> yamlData) async {
-      final logger = getLogger('ScheduleAggregationSkill');
-      final fileSystem = FileSystemService.instance;
+        'Return the canonical schedule_state document. Completed items are '
+        'truncated to the latest 20 entries; use search_completed for older '
+        'history.',
+    parameters: {'type': 'object', 'properties': {}},
+    executable: () async {
       final userId = AgentCallToolContext.current!.state.metadata['userId'];
-
-      try {
-        // Validate required fields
-        if (!yamlData.containsKey('id')) {
-          yamlData['id'] = aggregationId;
-        }
-        if (!yamlData.containsKey('generated_at')) {
-          yamlData['generated_at'] = DateTime.now().toIso8601String();
-        }
-        if (!yamlData.containsKey('version')) {
-          yamlData['version'] = 1;
-        }
-
-        final normalizedYamlData = await normalizeScheduleAggregationForCards(
-          userId: userId,
-          yamlData: yamlData,
-        );
-        final reconciledYamlData = normalizeScheduleAggregationYaml(
-          normalizedYamlData,
-        );
-        final previousAggregations = await fileSystem.listScheduleAggregations(
-          userId,
-        );
-        final retainedYamlData = applyScheduleDisplayRetention(
-          yamlData: reconciledYamlData,
-          previousAggregations: previousAggregations,
-        );
-
-        await fileSystem.writeScheduleAggregation(
-          userId,
-          aggregationId,
-          retainedYamlData,
-        );
-        await ScheduleRefreshStateService.instance.clearDirty(
-          userId: userId,
-          aggregationId: aggregationId,
-        );
-
-        // Log event
-        try {
-          await fileSystem.eventLogService.logFileCreated(
-            userId: userId,
-            filePath: 'ScheduleAggregations/$aggregationId.yaml',
-            description: 'Agent created schedule aggregation',
-            metadata: {
-              'aggregation_id': aggregationId,
-              'card_count': _countAggregationItems(retainedYamlData),
-            },
-          );
-        } catch (e) {
-          // Event logging failure should not break tool
-        }
-
-        return "Schedule aggregation saved successfully: $aggregationId";
-      } catch (e) {
-        logger.severe('Failed to save schedule aggregation: $e');
-        throw Exception('Failed to save schedule aggregation: $e');
-      }
+      final state = await ScheduleStateService.instance.read(userId);
+      final data = state.toJson();
+      data['completed'] =
+          state.completed.take(20).map((item) => item.toJson()).toList();
+      data['completed_truncated'] = state.completed.length > 20;
+      return jsonEncode(data);
     },
   );
 }
 
-DateTime _parseBoundaryDate(
-  String? value, {
-  required DateTime fallback,
-  bool endOfDay = false,
-}) {
-  final parsed = value == null ? null : DateTime.tryParse(value);
-  if (parsed == null) return fallback;
-
-  final isDateOnly = RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(value!);
-  if (!endOfDay || !isDateOnly) return parsed;
-  return DateTime(parsed.year, parsed.month, parsed.day, 23, 59, 59, 999);
-}
-
-bool _isCardInScheduleRange({
-  required String templateId,
-  required Map<String, dynamic> data,
-  required int fallbackTimestamp,
-  required DateTime from,
-  required DateTime to,
-}) {
-  final fallback = DateTime.fromMillisecondsSinceEpoch(
-    fallbackTimestamp * 1000,
-    isUtc: true,
-  ).toLocal();
-
-  final start = switch (templateId) {
-    'event' => _parseScheduleDateTime(data['start_time']) ?? fallback,
-    'task' => _parseScheduleDateTime(data['due_date']) ?? fallback,
-    _ => _parseScheduleDateTime(data['start_time']) ??
-        _parseScheduleDateTime(data['due_date']) ??
-        fallback,
-  };
-
-  final end = _parseScheduleDateTime(data['end_time']) ?? start;
-  return !end.isBefore(from) && !start.isAfter(to);
-}
-
-String scheduleDateSourceForCard(String templateId, Map<String, dynamic> data) {
-  final startTime = _parseScheduleDateTime(data['start_time']);
-  if (startTime != null) return 'start_time';
-  if (templateId == 'task') {
-    final dueDate = _parseScheduleDateTime(data['due_date']);
-    if (dueDate != null) return 'due_date';
-  }
-  return 'created_at_fallback';
-}
-
-DateTime? scheduleExplicitDateForCard(
-  String templateId,
-  Map<String, dynamic> data,
-) {
-  final startTime = _parseScheduleDateTime(data['start_time']);
-  if (startTime != null) return startTime;
-  if (templateId == 'task') {
-    return _parseScheduleDateTime(data['due_date']);
-  }
-  return _parseScheduleDateTime(data['due_date']);
-}
-
-Map<String, dynamic>? scheduleResultForSystemAction(SystemAction action) {
-  if (action.status == 'rejected') return null;
-  if (action.actionType != 'calendar' && action.actionType != 'reminder') {
-    return null;
-  }
-
-  final data = _decodeActionData(action.actionData);
-  if (data == null) return null;
-  final title = _nonEmptyScheduleValue(data['title'])?.toString();
-  if (title == null) return null;
-
-  final isCalendar = action.actionType == 'calendar';
-  final startTime = isCalendar
-      ? _nonEmptyScheduleValue(data['start_time'])
-      : _nonEmptyScheduleValue(data['due_date']);
-  if (_parseScheduleDateTime(startTime) == null) return null;
-
-  return <String, dynamic>{
-    'card_id': 'system_action:${action.id}',
-    'source_fact_id': action.factId,
-    'system_action_id': action.id,
-    'source': 'system_action',
-    'title': title,
-    'template_id': isCalendar ? 'event' : 'reminder',
-    'timestamp': action.createdAt ?? action.updatedAt ?? 0,
-    'status': 'pending',
-    'action_status': action.status,
-    'tags': const [],
-    'start_time': startTime,
-    'end_time': data['end_time'],
-    'location': data['location'],
-    'due_date': data['due_date'],
-    'notes': data['notes'],
-    'date_source':
-        isCalendar ? 'system_action_start_time' : 'system_action_due_date',
-    'is_unscheduled': false,
-  };
-}
-
-Future<Map<String, dynamic>> normalizeScheduleAggregationForCards({
-  required String userId,
-  required Map<String, dynamic> yamlData,
-}) async {
-  final fileSystem = FileSystemService.instance;
-  final normalized = _deepCopyMap(yamlData);
-  final timeline = normalized['timeline'];
-  if (timeline is! List) return normalized;
-
-  final normalizedTimeline = <Map<String, dynamic>>[];
-  final unscheduledItems = <Map<String, dynamic>>[];
-
-  for (final rawDay in timeline) {
-    if (rawDay is! Map) continue;
-    final day = Map<String, dynamic>.from(rawDay);
-    final items = day['items'];
-    if (items is! List) {
-      normalizedTimeline.add(day);
-      continue;
-    }
-
-    final retainedItems = <Map<String, dynamic>>[];
-    for (final rawItem in items) {
-      if (rawItem is! Map) continue;
-      final item = Map<String, dynamic>.from(rawItem);
-      if (await _shouldMoveToUnscheduled(
-        fileSystem: fileSystem,
+Tool buildAddPendingItemTool() {
+  return Tool(
+    name: 'add_pending_item',
+    description:
+        'Append a pending item to schedule_state. kind=todo uses due_at and '
+        'optional subtasks; kind=event uses start_time plus optional end_time '
+        'and location. Do not mix todo-only and event-only fields.',
+    parameters: {
+      'type': 'object',
+      'properties': {
+        'kind': {
+          'type': 'string',
+          'enum': ['todo', 'event']
+        },
+        'title': {'type': 'string'},
+        'description': {'type': 'string'},
+        'start_time': {
+          'type': 'string',
+          'description': 'Event-only ISO8601 start time.'
+        },
+        'end_time': {
+          'type': 'string',
+          'description': 'Event-only optional ISO8601 end time.'
+        },
+        'due_at': {
+          'type': 'string',
+          'description': 'Todo-only optional ISO8601 deadline/time anchor.'
+        },
+        'location': {
+          'type': 'string',
+          'description': 'Event-only optional location.'
+        },
+        'priority': {'type': 'number'},
+        'subtasks': {
+          'type': 'array',
+          'description': 'Todo-only explicit subtasks.'
+        },
+        'sync_device_action': {
+          'type': 'boolean',
+          'description':
+              'Set true when this item should also be synced to the device calendar/reminders. Defaults to false.'
+        },
+        'source_fact_id': {'type': 'string'},
+      },
+      'required': ['kind', 'title', 'source_fact_id'],
+    },
+    executable: (
+      String kind,
+      String title,
+      String? description,
+      String? startTime,
+      String? endTime,
+      String? dueAt,
+      String? location,
+      num? priority,
+      List<dynamic>? subtasks,
+      bool? syncDeviceAction,
+      String sourceFactId,
+    ) async {
+      final userId = AgentCallToolContext.current!.state.metadata['userId'];
+      final state = await ScheduleStateService.instance.addPendingItem(
         userId: userId,
-        day: day,
-        item: item,
-      )) {
-        unscheduledItems.add(item);
-      } else {
-        retainedItems.add(item);
-      }
-    }
-
-    if (retainedItems.isNotEmpty || !_isUnscheduledDay(day)) {
-      day['items'] = retainedItems;
-      if (retainedItems.isNotEmpty) {
-        normalizedTimeline.add(day);
-      }
-    } else {
-      unscheduledItems.insertAll(0, retainedItems);
-    }
-  }
-
-  if (unscheduledItems.isNotEmpty) {
-    final existingIndex = normalizedTimeline.indexWhere(_isUnscheduledDay);
-    if (existingIndex >= 0) {
-      final existing = normalizedTimeline[existingIndex];
-      final existingItems = existing['items'];
-      existing['items'] = [
-        if (existingItems is List) ...existingItems,
-        ...unscheduledItems,
-      ];
-    } else {
-      normalizedTimeline.add({
-        'day_label': '待安排',
-        'day_date': '',
-        'items': unscheduledItems,
+        kind: kind,
+        title: title,
+        description: _nonEmptyString(description),
+        startTime: _parseScheduleDateTime(startTime),
+        endTime: _parseScheduleDateTime(endTime),
+        dueAt: _parseScheduleDateTime(dueAt),
+        location: _nonEmptyString(location),
+        priority: priority?.toInt(),
+        subtasks: _parseScheduleSubtasks(subtasks),
+        sourceFactId: sourceFactId,
+        syncDeviceAction: syncDeviceAction == true,
+      );
+      final item = _latestPendingItemForSource(
+        state,
+        sourceFactId: sourceFactId,
+        title: title,
+      );
+      return jsonEncode({
+        'status': 'ok',
+        'item_id': item?.id,
+        'pending': state.pending.length,
       });
+    },
+  );
+}
+
+Tool buildUpdatePendingItemTool() {
+  return Tool(
+    name: 'update_pending_item',
+    description:
+        'Update an existing pending item by id. For todos, update due_at and '
+        'subtasks. For events, update start_time, end_time, and location. '
+        'Pass clear_* flags to remove optional fields.',
+    parameters: {
+      'type': 'object',
+      'properties': {
+        'id': {'type': 'string'},
+        'title': {'type': 'string'},
+        'description': {'type': 'string'},
+        'start_time': {
+          'type': 'string',
+          'description': 'Event-only ISO8601 start time.'
+        },
+        'end_time': {
+          'type': 'string',
+          'description': 'Event-only optional ISO8601 end time.'
+        },
+        'due_at': {
+          'type': 'string',
+          'description': 'Todo-only optional ISO8601 deadline/time anchor.'
+        },
+        'location': {
+          'type': 'string',
+          'description': 'Event-only optional location.'
+        },
+        'priority': {'type': 'number'},
+        'subtasks': {
+          'type': 'array',
+          'description': 'Todo-only explicit subtasks.'
+        },
+        'sync_device_action': {
+          'type': 'boolean',
+          'description':
+              'Set true to sync this item to the device calendar/reminders; set false to disable and cancel any existing synced action.'
+        },
+        'clear_description': {'type': 'boolean'},
+        'clear_start_time': {'type': 'boolean'},
+        'clear_end_time': {'type': 'boolean'},
+        'clear_due_at': {'type': 'boolean'},
+        'clear_location': {'type': 'boolean'},
+        'clear_priority': {'type': 'boolean'},
+      },
+      'required': ['id'],
+    },
+    executable: (
+      String id,
+      String? title,
+      String? description,
+      String? startTime,
+      String? endTime,
+      String? dueAt,
+      String? location,
+      num? priority,
+      List<dynamic>? subtasks,
+      bool? syncDeviceAction,
+      bool? clearDescription,
+      bool? clearStartTime,
+      bool? clearEndTime,
+      bool? clearDueAt,
+      bool? clearLocation,
+      bool? clearPriority,
+    ) async {
+      final userId = AgentCallToolContext.current!.state.metadata['userId'];
+      final state = await ScheduleStateService.instance.updatePendingItem(
+        userId: userId,
+        pendingId: id,
+        title: _nonEmptyString(title),
+        description: _nonEmptyString(description),
+        startTime: _parseScheduleDateTime(startTime),
+        endTime: _parseScheduleDateTime(endTime),
+        dueAt: _parseScheduleDateTime(dueAt),
+        location: _nonEmptyString(location),
+        priority: priority?.toInt(),
+        subtasks: _parseScheduleSubtasks(subtasks),
+        syncDeviceAction: syncDeviceAction,
+        clearDescription: clearDescription == true,
+        clearStartTime: clearStartTime == true,
+        clearEndTime: clearEndTime == true,
+        clearDueAt: clearDueAt == true,
+        clearLocation: clearLocation == true,
+        clearPriority: clearPriority == true,
+      );
+      return 'Pending item updated. pending=${state.pending.length}';
+    },
+  );
+}
+
+Tool buildCompletePendingItemTool() {
+  return Tool(
+    name: 'complete_pending_item',
+    description: 'Move a pending item to completed.',
+    parameters: {
+      'type': 'object',
+      'properties': {
+        'id': {'type': 'string'},
+        'closed_by_fact_id': {'type': 'string'},
+        'closed_at': {'type': 'string'},
+      },
+      'required': ['id', 'closed_by_fact_id'],
+    },
+    executable: (String id, String closedByFactId, String? closedAt) async {
+      final userId = AgentCallToolContext.current!.state.metadata['userId'];
+      final state = await ScheduleStateService.instance.completePendingItem(
+        userId: userId,
+        pendingId: id,
+        closedByFactId: closedByFactId,
+        closedAt: _parseScheduleDateTime(closedAt),
+      );
+      return 'Pending item completed. completed=${state.completed.length}';
+    },
+  );
+}
+
+Tool buildCompleteSubtaskTool() {
+  return Tool(
+    name: 'complete_subtask',
+    description:
+        'Mark one exact subtask on a pending todo completed. If all subtasks '
+        'are completed, the pending item is moved to completed.',
+    parameters: {
+      'type': 'object',
+      'properties': {
+        'item_id': {'type': 'string'},
+        'subtask_title': {'type': 'string'},
+        'closed_by_fact_id': {'type': 'string'},
+        'closed_at': {'type': 'string'},
+      },
+      'required': ['item_id', 'subtask_title', 'closed_by_fact_id'],
+    },
+    executable: (
+      String itemId,
+      String subtaskTitle,
+      String closedByFactId,
+      String? closedAt,
+    ) async {
+      final userId = AgentCallToolContext.current!.state.metadata['userId'];
+      final state = await ScheduleStateService.instance.completeSubtask(
+        userId: userId,
+        pendingId: itemId,
+        subtaskTitle: subtaskTitle,
+        closedByFactId: closedByFactId,
+        closedAt: _parseScheduleDateTime(closedAt),
+      );
+      return 'Subtask completed. pending=${state.pending.length}';
+    },
+  );
+}
+
+Tool buildSetPresentationTool({bool stopAfterSetPresentation = false}) {
+  return Tool(
+    name: 'set_presentation',
+    description:
+        'Atomically update the cached magazine presentation in schedule_state. '
+        'Use after any needed schedule state changes.',
+    parameters: {
+      'type': 'object',
+      'properties': {
+        'hero': {'type': 'object'},
+        'editorial_intro': {'type': 'string'},
+        'quote_blocks': {'type': 'array'},
+        'timeline': {'type': 'array'},
+      },
+      'required': ['editorial_intro', 'timeline'],
+    },
+    executable: (
+      Map<String, dynamic>? hero,
+      String editorialIntro,
+      List<dynamic>? quoteBlocks,
+      List<dynamic>? timeline,
+    ) async {
+      final userId = AgentCallToolContext.current!.state.metadata['userId'];
+      final state = await ScheduleStateService.instance.read(userId);
+      final presentation = _normalizePresentationItemIds(
+        SchedulePresentation(
+          hero: hero == null ? null : SchedulePresentationHero.fromJson(hero),
+          editorialIntro: editorialIntro,
+          quoteBlocks: _parseQuoteBlocks(quoteBlocks),
+          timeline: _parseTimelineDays(timeline),
+        ),
+        pending: state.pending,
+      );
+      final updated = await ScheduleStateService.instance.setPresentation(
+        userId: userId,
+        presentation: presentation,
+      );
+      return AgentToolResult(
+        content: TextPart(
+          'Presentation updated. pending=${updated.pending.length}',
+        ),
+        stopFlag: stopAfterSetPresentation,
+      );
+    },
+  );
+}
+
+SchedulePendingItem? _latestPendingItemForSource(
+  ScheduleState state, {
+  required String sourceFactId,
+  required String title,
+}) {
+  final matches = state.pending
+      .where(
+        (item) =>
+            item.sourceFactIds.contains(sourceFactId) && item.title == title,
+      )
+      .toList()
+    ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+  if (matches.isEmpty) return null;
+  return matches.first;
+}
+
+SchedulePresentation _normalizePresentationItemIds(
+  SchedulePresentation presentation, {
+  required List<SchedulePendingItem> pending,
+}) {
+  final pendingIds = {for (final item in pending) item.id};
+  final sourceIdToItemId = <String, String>{
+    for (final item in pending)
+      for (final sourceFactId in item.sourceFactIds) sourceFactId: item.id,
+  };
+
+  String? normalizeId(String? id) {
+    if (id == null || id.isEmpty) return null;
+    if (pendingIds.contains(id)) return id;
+    const prefix = 'pi_';
+    if (id.startsWith(prefix)) {
+      final sourceFactId = id.substring(prefix.length);
+      return sourceIdToItemId[sourceFactId];
     }
+    return sourceIdToItemId[id];
   }
 
-  normalized['timeline'] = normalizedTimeline;
-  return normalized;
+  final normalizedHeroId = normalizeId(presentation.hero?.itemId);
+  return SchedulePresentation(
+    hero: presentation.hero == null || normalizedHeroId == null
+        ? null
+        : SchedulePresentationHero(
+            itemId: normalizedHeroId,
+            title: presentation.hero!.title,
+            description: presentation.hero!.description,
+          ),
+    editorialIntro: presentation.editorialIntro,
+    quoteBlocks: [
+      for (final block in presentation.quoteBlocks)
+        ScheduleQuoteBlock(
+          title: block.title,
+          content: block.content,
+          priority: block.priority,
+          itemId: normalizeId(block.itemId),
+        ),
+    ],
+    timeline: [
+      for (final day in presentation.timeline)
+        ScheduleTimelineDay(
+          dayLabel: day.dayLabel,
+          dayDate: day.dayDate,
+          itemIds: [
+            for (final itemId in day.itemIds)
+              if (normalizeId(itemId) case final normalized?) normalized,
+          ],
+        ),
+    ],
+  );
 }
 
-Future<bool> _shouldMoveToUnscheduled({
-  required FileSystemService fileSystem,
-  required String userId,
-  required Map<String, dynamic> day,
-  required Map<String, dynamic> item,
-}) async {
-  if (_isUnscheduledDay(day)) return false;
-  if (_parseScheduleDateTime(item['start_time']) != null ||
-      _parseScheduleDateTime(item['due_date']) != null) {
-    return false;
+Tool buildSearchCompletedTool() {
+  return Tool(
+    name: 'search_completed',
+    description:
+        'Search completed schedule history by title text and/or closed_at lower bound.',
+    parameters: {
+      'type': 'object',
+      'properties': {
+        'query': {'type': 'string'},
+        'since': {'type': 'string'},
+        'limit': {'type': 'number'},
+      },
+    },
+    executable: (String? query, String? since, num? limit) async {
+      final userId = AgentCallToolContext.current!.state.metadata['userId'];
+      final results = await ScheduleStateService.instance.searchCompleted(
+        userId: userId,
+        query: query,
+        since: _parseScheduleDateTime(since),
+        limit: limit?.toInt() ?? 20,
+      );
+      return jsonEncode(results.map((item) => item.toJson()).toList());
+    },
+  );
+}
+
+String? _nonEmptyString(String? value) {
+  final trimmed = value?.trim();
+  if (trimmed == null || trimmed.isEmpty) return null;
+  return trimmed;
+}
+
+List<ScheduleSubtask>? _parseScheduleSubtasks(List<dynamic>? raw) {
+  if (raw == null) return null;
+  final out = <ScheduleSubtask>[];
+  for (final item in raw) {
+    if (item is! Map) continue;
+    final title = item['title']?.toString().trim();
+    if (title == null || title.isEmpty) continue;
+    out.add(
+      ScheduleSubtask(
+        title: title,
+        completed: _parseScheduleBool(item['completed']) == true,
+        closedByFactId: item['closed_by_fact_id']?.toString(),
+      ),
+    );
   }
-
-  final type = item['type']?.toString().toLowerCase().trim();
-  if (type != 'task' && type != 'todo') return false;
-
-  final cardId = item['card_id']?.toString();
-  if (cardId == null || !_isFactId(cardId)) return false;
-
-  final cardData = await fileSystem.readCardFile(userId, cardId);
-  if (cardData == null) return false;
-  for (final config in cardData.uiConfigs) {
-    if (config.templateId != 'task') continue;
-    return scheduleExplicitDateForCard(config.templateId, config.data) == null;
-  }
-  return false;
+  return out;
 }
 
-bool _isUnscheduledDay(Map<dynamic, dynamic> day) {
-  final label = day['day_label']?.toString().trim();
-  final dayDate = day['day_date']?.toString().trim();
-  return dayDate == null ||
-      dayDate.isEmpty ||
-      label == '待安排' ||
-      label == '周末待定';
+List<ScheduleQuoteBlock> _parseQuoteBlocks(List<dynamic>? raw) {
+  if (raw == null) return const <ScheduleQuoteBlock>[];
+  return raw
+      .whereType<Map>()
+      .map(
+        (item) => ScheduleQuoteBlock.fromJson(Map<String, dynamic>.from(item)),
+      )
+      .take(2)
+      .toList();
 }
 
-bool _isFactId(String value) {
-  return RegExp(r'^\d{4}/\d{2}/\d{2}\.md#ts_\d+$').hasMatch(value);
-}
-
-bool _isResultInScheduleRange(
-  Map<String, dynamic> result,
-  DateTime from,
-  DateTime to,
-) {
-  final start = _parseScheduleDateTime(result['start_time']) ??
-      _parseScheduleDateTime(result['due_date']);
-  if (start == null) return false;
-  final end = _parseScheduleDateTime(result['end_time']) ?? start;
-  return !end.isBefore(from) && !start.isAfter(to);
-}
-
-bool _duplicatesExistingScheduleResult(
-  List<Map<String, dynamic>> existing,
-  Map<String, dynamic> candidate,
-) {
-  final candidateTitle = _normalizeTitle(candidate['title']);
-  final candidateDate = _parseScheduleDateTime(candidate['start_time']) ??
-      _parseScheduleDateTime(candidate['due_date']);
-  if (candidateTitle.isEmpty || candidateDate == null) return false;
-
-  for (final item in existing) {
-    final itemTitle = _normalizeTitle(item['title']);
-    final itemDate = _parseScheduleDateTime(item['start_time']) ??
-        _parseScheduleDateTime(item['due_date']);
-    if (itemTitle == candidateTitle && _sameMinute(itemDate, candidateDate)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-String _normalizeTitle(dynamic value) {
-  return value
-          ?.toString()
-          .trim()
-          .toLowerCase()
-          .replaceAll(RegExp(r'\s+'), '') ??
-      '';
-}
-
-bool _sameMinute(DateTime? a, DateTime b) {
-  if (a == null) return false;
-  return a.year == b.year &&
-      a.month == b.month &&
-      a.day == b.day &&
-      a.hour == b.hour &&
-      a.minute == b.minute;
-}
-
-Map<String, dynamic>? _decodeActionData(String? value) {
-  if (value == null || value.trim().isEmpty) return null;
-  final decoded = jsonDecode(value);
-  if (decoded is Map) return Map<String, dynamic>.from(decoded);
-  return null;
-}
-
-Map<String, dynamic> _deepCopyMap(Map<String, dynamic> value) {
-  return Map<String, dynamic>.from(_deepCopy(value) as Map);
-}
-
-dynamic _deepCopy(dynamic value) {
-  if (value is Map) {
-    return {
-      for (final entry in value.entries)
-        entry.key.toString(): _deepCopy(entry.value),
-    };
-  }
-  if (value is List) {
-    return value.map(_deepCopy).toList();
-  }
-  return value;
+List<ScheduleTimelineDay> _parseTimelineDays(List<dynamic>? raw) {
+  if (raw == null) return const <ScheduleTimelineDay>[];
+  return raw
+      .whereType<Map>()
+      .map(
+        (item) => ScheduleTimelineDay.fromJson(Map<String, dynamic>.from(item)),
+      )
+      .toList();
 }
 
 DateTime? _parseScheduleDateTime(dynamic value) {
@@ -607,77 +497,21 @@ DateTime? _parseScheduleDateTime(dynamic value) {
       isUtc: true,
     ).toLocal();
   }
-  if (value is String) return DateTime.tryParse(value);
-  return null;
-}
-
-dynamic _nonEmptyScheduleValue(dynamic value) {
-  if (value is String && value.trim().isEmpty) return null;
-  return value;
-}
-
-DateTime _resultScheduleDate(Map<String, dynamic> result) {
-  final timestamp = (result['timestamp'] as num?)?.toInt() ?? 0;
-  final fallback = DateTime.fromMillisecondsSinceEpoch(
-    timestamp * 1000,
-    isUtc: true,
-  ).toLocal();
-  return _parseScheduleDateTime(result['start_time']) ??
-      _parseScheduleDateTime(result['due_date']) ??
-      fallback;
-}
-
-String deriveScheduleCardStatus(String templateId, Map<String, dynamic> data) {
-  if (templateId == 'task') {
-    if (_deriveTaskCompleted(data)) return 'completed';
-    if (_hasCompletedSubtask(data['subtasks'])) return 'in_progress';
-    return 'pending';
-  }
-
-  return 'pending';
-}
-
-bool _deriveTaskCompleted(Map<String, dynamic> data) {
-  if (_parseScheduleBool(data['is_completed']) == true) return true;
-  final subtasks = data['subtasks'];
-  return subtasks is List &&
-      subtasks.isNotEmpty &&
-      subtasks.every(
-        (subtask) =>
-            subtask is Map && _parseScheduleBool(subtask['completed']) == true,
-      );
-}
-
-bool _hasCompletedSubtask(dynamic value) {
-  return value is List &&
-      value.any(
-        (subtask) =>
-            subtask is Map && _parseScheduleBool(subtask['completed']) == true,
-      );
+  final text = value.toString().trim();
+  if (text.isEmpty) return null;
+  return DateTime.tryParse(text)?.toLocal();
 }
 
 bool? _parseScheduleBool(dynamic value) {
   if (value == null) return null;
   if (value is bool) return value;
   if (value is num) return value != 0;
-  if (value is String) {
-    return switch (value.toLowerCase().trim()) {
-      'true' || 'yes' || 'y' || '1' || 'done' || 'completed' => true,
-      'false' || 'no' || 'n' || '0' || 'pending' || 'todo' => false,
-      _ => null,
-    };
-  }
-  return null;
-}
-
-int _countAggregationItems(Map<String, dynamic> yamlData) {
-  final heroCount = yamlData['hero_item'] == null ? 0 : 1;
-  final timelineCount =
-      (yamlData['timeline'] as List?)?.whereType<Map>().fold<int>(
-                0,
-                (count, day) => count + ((day['items'] as List?)?.length ?? 0),
-              ) ??
-          0;
-  final completedCount = (yamlData['completed'] as List?)?.length ?? 0;
-  return heroCount + timelineCount + completedCount;
+  final text = value.toString().trim().toLowerCase();
+  if (text.isEmpty) return null;
+  return text == 'true' ||
+      text == '1' ||
+      text == 'yes' ||
+      text == 'y' ||
+      text == 'done' ||
+      text == 'completed';
 }

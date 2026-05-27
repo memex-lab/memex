@@ -111,16 +111,16 @@ class _ScheduleAggregatorScreenState
     await vm.refreshAggregation();
   }
 
-  void _toggleTaskCompletion(String cardId) {
+  void _toggleTaskCompletion(String itemId) {
     final vm = context.read<ScheduleAggregatorViewModel>();
-    final index = vm.items.indexWhere((item) => item.id == cardId);
+    final index = vm.items.indexWhere((item) => item.itemId == itemId);
     if (index < 0) return;
     vm.toggleCompletion(vm.items[index]);
   }
 
-  void _toggleSubtask(String cardId, int subtaskIndex) {
+  void _toggleSubtask(String itemId, int subtaskIndex) {
     final vm = context.read<ScheduleAggregatorViewModel>();
-    final index = vm.items.indexWhere((item) => item.id == cardId);
+    final index = vm.items.indexWhere((item) => item.itemId == itemId);
     if (index < 0) return;
     vm.toggleSubtask(vm.items[index], subtaskIndex);
   }
@@ -133,12 +133,6 @@ class _ScheduleAggregatorScreenState
         child: Column(
           children: [
             _buildHeader(),
-            Consumer<ScheduleAggregatorViewModel>(
-              builder: (context, vm, child) {
-                if (!vm.isDirty) return const SizedBox.shrink();
-                return _buildDirtyBanner(vm.dirtyReason);
-              },
-            ),
             Expanded(
               child: Consumer<ScheduleAggregatorViewModel>(
                 builder: (context, vm, child) {
@@ -151,11 +145,11 @@ class _ScheduleAggregatorScreenState
 
                   final items = vm.items;
                   final itemStatuses = {
-                    for (final item in items) item.id: item.status,
+                    for (final item in items) item.itemId: item.status,
                   };
                   final itemSubtasks = {
                     for (final item in items)
-                      if (item.subtasks.isNotEmpty) item.id: item.subtasks,
+                      if (item.subtasks.isNotEmpty) item.itemId: item.subtasks,
                   };
 
                   return RefreshIndicator(
@@ -363,57 +357,6 @@ class _ScheduleAggregatorScreenState
             },
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildDirtyBanner(String? reason) {
-    final message = reason == null || reason.isEmpty
-        ? UserStorage.l10n.scheduleAggregationDirtyReason
-        : reason;
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-      child: Tooltip(
-        message: message,
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFFF8E7),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: const Color(0xFFFFD166)),
-          ),
-          child: Row(
-            children: [
-              const Icon(Icons.update, size: 16, color: Color(0xFF9A6A00)),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  UserStorage.l10n.scheduleBriefingNeedsUpdate,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF765000),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              TextButton(
-                onPressed: _onUpdate,
-                style: TextButton.styleFrom(
-                  minimumSize: const Size(0, 30),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  foregroundColor: const Color(0xFF765000),
-                ),
-                child: Text(UserStorage.l10n.update),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

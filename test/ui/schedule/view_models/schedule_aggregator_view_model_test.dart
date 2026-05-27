@@ -1,8 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:memex/data/services/event_bus_service.dart';
-import 'package:memex/domain/models/card_detail_model.dart';
-import 'package:memex/domain/models/schedule_aggregation_model.dart';
-import 'package:memex/domain/models/schedule_refresh_state.dart';
+import 'package:memex/domain/models/schedule_state.dart' show ScheduleSubtask;
+import 'package:memex/domain/models/schedule_view_data.dart';
 import 'package:memex/ui/schedule/models/schedule_item.dart';
 import 'package:memex/ui/schedule/view_models/schedule_aggregator_view_model.dart';
 import 'package:memex/utils/result.dart';
@@ -31,9 +30,9 @@ void main() {
       expect(vm.hasData, isTrue);
       expect(vm.error, isNull);
       expect(vm.items, hasLength(1));
-      expect(vm.items.single.id, 'task-1');
+      expect(vm.items.single.sourceFactId, 'task-1');
       expect(vm.items.single.type, ScheduleItemType.todo);
-      expect(vm.todayItems.single.id, 'task-1');
+      expect(vm.todayItems.single.sourceFactId, 'task-1');
 
       vm.dispose();
     });
@@ -58,35 +57,6 @@ void main() {
       expect(loadCount, 2);
       expect(vm.aggregation?.id, 'agg_2');
       expect(vm.items.single.title, '任务 2');
-
-      vm.dispose();
-    });
-
-    test('loads and updates dirty state from schedule dirty events', () async {
-      final vm = ScheduleAggregatorViewModel(
-        loadAggregation: () async => _aggregation(),
-        loadRefreshState: () async => ScheduleRefreshState(
-          isDirty: true,
-          reason: '新卡片可能影响日程',
-          dirtySince: DateTime(2026, 4, 26, 9),
-        ),
-      );
-
-      await vm.loadAggregation();
-
-      expect(vm.isDirty, isTrue);
-      expect(vm.dirtyReason, '新卡片可能影响日程');
-
-      EventBusService.instance.emitEvent(
-        ScheduleAggregationDirtyMessage(
-          isDirty: false,
-          cardIds: const ['task-1'],
-        ),
-      );
-      await _drainEventQueue();
-
-      expect(vm.isDirty, isFalse);
-      expect(vm.dirtyReason, isNull);
 
       vm.dispose();
     });
@@ -190,19 +160,14 @@ void main() {
     });
 
     test(
-      'toggleCompletion writes the real task ui_config optimistically',
+      'toggleCompletion completes the canonical schedule item optimistically',
       () async {
-        String? updatedCardId;
-        int? updatedConfigIndex;
-        Map<String, dynamic>? updatedData;
+        String? completedItemId;
         final vm = ScheduleAggregatorViewModel(
           loadAggregation: () async => _aggregation(),
-          fetchCardDetail: (_) async => _cardDetailWithTaskConfig(),
-          updateCardUiConfig: (cardId, configIndex, data) async {
-            updatedCardId = cardId;
-            updatedConfigIndex = configIndex;
-            updatedData = data;
-            return true;
+          completeScheduleItem: (itemId) async {
+            completedItemId = itemId;
+            return const Ok.v();
           },
           listenToEvents: false,
         );
@@ -214,9 +179,7 @@ void main() {
         expect(vm.items.single.status, ScheduleItemStatus.completed);
         await toggle;
 
-        expect(updatedCardId, 'task-1');
-        expect(updatedConfigIndex, 1);
-        expect(updatedData, {'is_completed': true});
+        expect(completedItemId, 'schedule-task-1');
         expect(vm.error, isNull);
 
         vm.dispose();
@@ -224,20 +187,14 @@ void main() {
     );
 
     test(
-      'toggleCompletion updates every persisted subtask for grouped tasks',
+      'toggleCompletion completes grouped tasks through schedule state',
       () async {
-        Map<String, dynamic>? updatedData;
+        String? completedItemId;
         final vm = ScheduleAggregatorViewModel(
           loadAggregation: () async => _aggregationWithSubtasks(),
-          fetchCardDetail: (_) async => _cardDetailWithTaskConfig(
-            subtasks: [
-              {'title': 'Collect documents', 'completed': false},
-              {'title': 'Submit form', 'completed': false, 'note': 'keep me'},
-            ],
-          ),
-          updateCardUiConfig: (_, __, data) async {
-            updatedData = data;
-            return true;
+          completeScheduleItem: (itemId) async {
+            completedItemId = itemId;
+            return const Ok.v();
           },
           listenToEvents: false,
         );
@@ -251,11 +208,7 @@ void main() {
         ]);
         await toggle;
 
-        expect(updatedData?['is_completed'], isTrue);
-        expect(updatedData?['subtasks'], [
-          {'title': 'Collect documents', 'completed': true},
-          {'title': 'Submit form', 'completed': true, 'note': 'keep me'},
-        ]);
+        expect(completedItemId, 'schedule-task-1');
         expect(vm.error, isNull);
 
         vm.dispose();
@@ -263,27 +216,17 @@ void main() {
     );
 
     test(
-      'toggleCompletion reverts grouped tasks when card subtasks are stale',
+      'toggleCompletion reverts optimistic state when write fails',
       () async {
-        var didUpdate = false;
         final vm = ScheduleAggregatorViewModel(
           loadAggregation: () async => _aggregationWithSubtasks(),
-          fetchCardDetail: (_) async => _cardDetailWithTaskConfig(
-            subtasks: [
-              {'title': 'Collect documents', 'completed': false},
-            ],
-          ),
-          updateCardUiConfig: (_, __, ___) async {
-            didUpdate = true;
-            return true;
-          },
+          completeScheduleItem: (_) async => Error(Exception('failed')),
           listenToEvents: false,
         );
 
         await vm.loadAggregation();
         await vm.toggleCompletion(vm.items.single);
 
-        expect(didUpdate, isFalse);
         expect(vm.items.single.status, ScheduleItemStatus.pending);
         expect(vm.items.single.subtasks.map((subtask) => subtask.completed), [
           false,
@@ -296,12 +239,11 @@ void main() {
     );
 
     test(
-      'toggleCompletion reverts optimistic state when write fails',
+      'toggleCompletion reverts plain tasks when write fails',
       () async {
         final vm = ScheduleAggregatorViewModel(
           loadAggregation: () async => _aggregation(),
-          fetchCardDetail: (_) async => _cardDetailWithTaskConfig(),
-          updateCardUiConfig: (_, __, ___) async => false,
+          completeScheduleItem: (_) async => Error(Exception('failed')),
           listenToEvents: false,
         );
 
@@ -318,12 +260,12 @@ void main() {
     );
 
     test('toggleCompletion ignores event items', () async {
-      var didFetchDetail = false;
+      var didComplete = false;
       final vm = ScheduleAggregatorViewModel(
         loadAggregation: () async => _eventAggregation(),
-        fetchCardDetail: (_) async {
-          didFetchDetail = true;
-          return _cardDetailWithTaskConfig();
+        completeScheduleItem: (_) async {
+          didComplete = true;
+          return const Ok.v();
         },
         listenToEvents: false,
       );
@@ -333,28 +275,24 @@ void main() {
 
       expect(vm.items.single.type, ScheduleItemType.event);
       expect(vm.items.single.status, ScheduleItemStatus.pending);
-      expect(didFetchDetail, isFalse);
+      expect(didComplete, isFalse);
 
       vm.dispose();
     });
 
     test(
-      'toggleSubtask writes one subtask and derives partial status',
+      'toggleSubtask writes one subtask to schedule state',
       () async {
-        String? updatedCardId;
-        Map<String, dynamic>? updatedData;
+        String? updatedItemId;
+        String? updatedSubtaskTitle;
+        bool? updatedCompleted;
         final vm = ScheduleAggregatorViewModel(
           loadAggregation: () async => _aggregationWithSubtasks(),
-          fetchCardDetail: (_) async => _cardDetailWithTaskConfig(
-            subtasks: [
-              {'title': 'Collect documents', 'completed': false},
-              {'title': 'Submit form', 'completed': false},
-            ],
-          ),
-          updateCardUiConfig: (cardId, _, data) async {
-            updatedCardId = cardId;
-            updatedData = data;
-            return true;
+          setScheduleSubtaskCompletion: (itemId, title, completed) async {
+            updatedItemId = itemId;
+            updatedSubtaskTitle = title;
+            updatedCompleted = completed;
+            return const Ok.v();
           },
           listenToEvents: false,
         );
@@ -367,12 +305,9 @@ void main() {
         expect(vm.items.single.subtasks.first.completed, isTrue);
         await toggle;
 
-        expect(updatedCardId, 'task-1');
-        expect(updatedData?['is_completed'], isFalse);
-        expect(updatedData?['subtasks'], [
-          {'title': 'Collect documents', 'completed': true},
-          {'title': 'Submit form', 'completed': false},
-        ]);
+        expect(updatedItemId, 'schedule-task-1');
+        expect(updatedSubtaskTitle, 'Collect documents');
+        expect(updatedCompleted, isTrue);
         expect(vm.error, isNull);
 
         vm.dispose();
@@ -382,7 +317,7 @@ void main() {
     test(
       'toggleSubtask marks parent completed when last subtask is done',
       () async {
-        Map<String, dynamic>? updatedData;
+        bool? updatedCompleted;
         final vm = ScheduleAggregatorViewModel(
           loadAggregation: () async => _aggregationWithSubtasks(
             subtasks: const [
@@ -390,15 +325,9 @@ void main() {
               ScheduleSubtask(title: 'Submit form'),
             ],
           ),
-          fetchCardDetail: (_) async => _cardDetailWithTaskConfig(
-            subtasks: [
-              {'title': 'Collect documents', 'completed': true},
-              {'title': 'Submit form', 'completed': false},
-            ],
-          ),
-          updateCardUiConfig: (_, __, data) async {
-            updatedData = data;
-            return true;
+          setScheduleSubtaskCompletion: (_, __, completed) async {
+            updatedCompleted = completed;
+            return const Ok.v();
           },
           listenToEvents: false,
         );
@@ -407,25 +336,21 @@ void main() {
         await vm.toggleSubtask(vm.items.single, 1);
 
         expect(vm.items.single.status, ScheduleItemStatus.completed);
-        expect(updatedData?['is_completed'], isTrue);
-        expect(updatedData?['subtasks'], [
-          {'title': 'Collect documents', 'completed': true},
-          {'title': 'Submit form', 'completed': true},
-        ]);
+        expect(updatedCompleted, isTrue);
 
         vm.dispose();
       },
     );
 
     test(
-      'toggleSubtask ignores invalid indexes without reading the card',
+      'toggleSubtask ignores invalid indexes without writing state',
       () async {
-        var didFetch = false;
+        var didWrite = false;
         final vm = ScheduleAggregatorViewModel(
           loadAggregation: () async => _aggregationWithSubtasks(),
-          fetchCardDetail: (_) async {
-            didFetch = true;
-            return _cardDetailWithTaskConfig();
+          setScheduleSubtaskCompletion: (_, __, ___) async {
+            didWrite = true;
+            return const Ok.v();
           },
           listenToEvents: false,
         );
@@ -433,7 +358,7 @@ void main() {
         await vm.loadAggregation();
         await vm.toggleSubtask(vm.items.single, 99);
 
-        expect(didFetch, isFalse);
+        expect(didWrite, isFalse);
         expect(vm.items.single.status, ScheduleItemStatus.pending);
 
         vm.dispose();
@@ -441,16 +366,12 @@ void main() {
     );
 
     test(
-      'toggleSubtask reverts optimistic state for stale card detail',
+      'toggleSubtask reverts optimistic state when write fails',
       () async {
         final vm = ScheduleAggregatorViewModel(
           loadAggregation: () async => _aggregationWithSubtasks(),
-          fetchCardDetail: (_) async => _cardDetailWithTaskConfig(
-            subtasks: [
-              {'title': 'Collect documents', 'completed': false},
-            ],
-          ),
-          updateCardUiConfig: (_, __, ___) async => true,
+          setScheduleSubtaskCompletion: (_, __, ___) async =>
+              Error(Exception('failed')),
           listenToEvents: false,
         );
 
@@ -467,51 +388,28 @@ void main() {
         vm.dispose();
       },
     );
-
-    test(
-      'toggleCompletion reverts when the card has no task ui_config',
-      () async {
-        var didUpdate = false;
-        final vm = ScheduleAggregatorViewModel(
-          loadAggregation: () async => _aggregation(),
-          fetchCardDetail: (_) async => _cardDetailWithoutTaskConfig(),
-          updateCardUiConfig: (_, __, ___) async {
-            didUpdate = true;
-            return true;
-          },
-          listenToEvents: false,
-        );
-
-        await vm.loadAggregation();
-        await vm.toggleCompletion(vm.items.single);
-
-        expect(didUpdate, isFalse);
-        expect(vm.items.single.status, ScheduleItemStatus.pending);
-        expect(vm.error, 'Failed to update task');
-
-        vm.dispose();
-      },
-    );
   });
 }
 
-ScheduleAggregationModel _aggregation({
+ScheduleViewData _aggregation({
   String id = 'agg',
   String taskTitle = '待办事项',
   DateTime? taskStartTime,
 }) {
   final start = taskStartTime ?? DateTime(2026, 4, 26, 10);
-  return ScheduleAggregationModel(
+  return ScheduleViewData(
     id: id,
     generatedAt: DateTime(2026, 4, 26, 8),
-    timeRange: TimeRange(from: DateTime(2026, 4, 26), to: DateTime(2026, 5, 3)),
+    timeRange: ScheduleViewTimeRange(
+        from: DateTime(2026, 4, 26), to: DateTime(2026, 5, 3)),
     timeline: [
-      TimelineDay(
+      ScheduleViewTimelineDay(
         dayLabel: 'Today',
         dayDate: DateTime(start.year, start.month, start.day),
         items: [
-          TimelineItem(
+          ScheduleViewPendingItem(
             cardId: 'task-1',
+            itemId: 'schedule-task-1',
             title: taskTitle,
             status: 'pending',
             startTime: start,
@@ -524,23 +422,25 @@ ScheduleAggregationModel _aggregation({
   );
 }
 
-ScheduleAggregationModel _aggregationWithSubtasks({
+ScheduleViewData _aggregationWithSubtasks({
   List<ScheduleSubtask> subtasks = const [
     ScheduleSubtask(title: 'Collect documents'),
     ScheduleSubtask(title: 'Submit form'),
   ],
 }) {
-  return ScheduleAggregationModel(
+  return ScheduleViewData(
     id: 'agg_subtasks',
     generatedAt: DateTime(2026, 4, 26, 8),
-    timeRange: TimeRange(from: DateTime(2026, 4, 26), to: DateTime(2026, 5, 3)),
+    timeRange: ScheduleViewTimeRange(
+        from: DateTime(2026, 4, 26), to: DateTime(2026, 5, 3)),
     timeline: [
-      TimelineDay(
+      ScheduleViewTimelineDay(
         dayLabel: 'Today',
         dayDate: DateTime(2026, 4, 26),
         items: [
-          TimelineItem(
+          ScheduleViewPendingItem(
             cardId: 'task-1',
+            itemId: 'schedule-task-1',
             title: 'Visa checklist',
             status: 'pending',
             startTime: DateTime(2026, 4, 26, 10),
@@ -554,17 +454,18 @@ ScheduleAggregationModel _aggregationWithSubtasks({
   );
 }
 
-ScheduleAggregationModel _eventAggregation() {
-  return ScheduleAggregationModel(
+ScheduleViewData _eventAggregation() {
+  return ScheduleViewData(
     id: 'event_agg',
     generatedAt: DateTime(2026, 4, 26, 8),
-    timeRange: TimeRange(from: DateTime(2026, 4, 26), to: DateTime(2026, 5, 3)),
+    timeRange: ScheduleViewTimeRange(
+        from: DateTime(2026, 4, 26), to: DateTime(2026, 5, 3)),
     timeline: [
-      TimelineDay(
+      ScheduleViewTimelineDay(
         dayLabel: 'Today',
         dayDate: DateTime(2026, 4, 26),
         items: [
-          TimelineItem(
+          ScheduleViewPendingItem(
             cardId: 'event-1',
             title: '发布会',
             status: 'pending',
@@ -575,37 +476,6 @@ ScheduleAggregationModel _eventAggregation() {
       ),
     ],
   );
-}
-
-CardDetailModel _cardDetailWithTaskConfig({
-  List<Map<String, dynamic>>? subtasks,
-}) {
-  return CardDetailModel.fromJson(<String, dynamic>{
-    'id': 'task-1',
-    'title': '待办事项',
-    'timestamp': 1777188000,
-    'ui_configs': <Map<String, dynamic>>[
-      <String, dynamic>{'template_id': 'event', 'data': <String, dynamic>{}},
-      <String, dynamic>{
-        'template_id': 'task',
-        'data': <String, dynamic>{
-          'is_completed': false,
-          if (subtasks != null) 'subtasks': subtasks,
-        },
-      },
-    ],
-  });
-}
-
-CardDetailModel _cardDetailWithoutTaskConfig() {
-  return CardDetailModel.fromJson(<String, dynamic>{
-    'id': 'task-1',
-    'title': '待办事项',
-    'timestamp': 1777188000,
-    'ui_configs': <Map<String, dynamic>>[
-      <String, dynamic>{'template_id': 'event', 'data': <String, dynamic>{}},
-    ],
-  });
 }
 
 Future<void> _drainEventQueue() async {

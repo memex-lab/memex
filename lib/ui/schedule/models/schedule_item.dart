@@ -1,4 +1,5 @@
-import 'package:memex/domain/models/schedule_aggregation_model.dart';
+import 'package:memex/domain/models/schedule_state.dart' show ScheduleSubtask;
+import 'package:memex/domain/models/schedule_view_data.dart';
 
 // =============================================================================
 // Schedule presentation models
@@ -9,7 +10,8 @@ enum ScheduleItemType { todo, event }
 enum ScheduleItemStatus { pending, completed, inProgress, overdue }
 
 class ScheduleItem {
-  final String id;
+  final String itemId;
+  final String sourceFactId;
   final String title;
   final ScheduleItemType type;
   final ScheduleItemStatus status;
@@ -25,7 +27,8 @@ class ScheduleItem {
   final List<ScheduleSubtask> subtasks;
 
   ScheduleItem({
-    required this.id,
+    required this.sourceFactId,
+    String? itemId,
     required this.title,
     required this.type,
     this.status = ScheduleItemStatus.pending,
@@ -39,9 +42,10 @@ class ScheduleItem {
     this.sourceType = 'event',
     this.relatedEvents = const [],
     this.subtasks = const [],
-  });
+  }) : itemId = itemId ?? sourceFactId;
 
   ScheduleItem copyWith({
+    String? itemId,
     ScheduleItemType? type,
     ScheduleItemStatus? status,
     DateTime? completedAt,
@@ -56,7 +60,8 @@ class ScheduleItem {
     bool clearCompletedAt = false,
   }) {
     return ScheduleItem(
-      id: id,
+      itemId: itemId ?? this.itemId,
+      sourceFactId: sourceFactId,
       title: title,
       type: type ?? this.type,
       status: status ?? this.status,
@@ -73,18 +78,20 @@ class ScheduleItem {
     );
   }
 
-  static List<ScheduleItem> fromAggregation(
-    ScheduleAggregationModel aggregation,
-  ) {
-    final itemsById = <String, ScheduleItem>{};
+  static List<ScheduleItem> fromViewData(ScheduleViewData data) {
+    final itemsByItemId = <String, ScheduleItem>{};
     var fallbackIndex = 0;
 
     void upsert(ScheduleItem item) {
-      final id = item.id.isEmpty ? 'schedule_item_${fallbackIndex++}' : item.id;
-      final normalized = id == item.id
+      final sourceFactId = item.sourceFactId.isEmpty
+          ? 'schedule_item_${fallbackIndex++}'
+          : item.sourceFactId;
+      final itemId = item.itemId.isEmpty ? sourceFactId : item.itemId;
+      final normalized = sourceFactId == item.sourceFactId
           ? item
           : ScheduleItem(
-              id: id,
+              itemId: itemId,
+              sourceFactId: sourceFactId,
               title: item.title,
               type: item.type,
               status: item.status,
@@ -99,17 +106,21 @@ class ScheduleItem {
               relatedEvents: item.relatedEvents,
               subtasks: item.subtasks,
             );
-      final existing = itemsById[id];
-      itemsById[id] = existing == null
-          ? normalized
-          : _merge(existing, normalized);
+      final existing = itemsByItemId[itemId];
+      if (existing != null) {
+        itemsByItemId[itemId] = _merge(existing, normalized);
+        return;
+      }
+
+      itemsByItemId[itemId] = normalized;
     }
 
-    if (aggregation.heroItem != null) {
-      final hero = aggregation.heroItem!;
+    if (data.hero != null) {
+      final hero = data.hero!;
       upsert(
         ScheduleItem(
-          id: hero.cardId,
+          itemId: hero.cardId,
+          sourceFactId: hero.cardId,
           title: hero.title,
           type: ScheduleItemType.event,
           status: ScheduleItemStatus.pending,
@@ -123,24 +134,27 @@ class ScheduleItem {
       );
     }
 
-    for (final day in aggregation.timeline) {
+    for (final day in data.timeline) {
       for (final timelineItem in day.items) {
         upsert(_fromTimelineItem(timelineItem, day.dayDate));
       }
     }
 
-    for (final completedItem in aggregation.completed) {
-      final id = completedItem.cardId;
-      final existing = itemsById[id];
+    for (final completedItem in data.completed) {
+      final sourceFactId = completedItem.cardId;
+      final existingEntry = itemsByItemId.entries.where((entry) {
+        return entry.value.sourceFactId == sourceFactId;
+      }).firstOrNull;
+      final existing = existingEntry?.value;
       if (existing != null) {
-        itemsById[id] = existing.copyWith(
+        itemsByItemId[existing.itemId] = existing.copyWith(
           status: ScheduleItemStatus.completed,
           completedAt: completedItem.completedAt,
         );
       } else {
         upsert(
           ScheduleItem(
-            id: id,
+            sourceFactId: sourceFactId,
             title: completedItem.title,
             type: ScheduleItemType.todo,
             status: ScheduleItemStatus.completed,
@@ -151,7 +165,7 @@ class ScheduleItem {
       }
     }
 
-    final items = itemsById.values.toList()
+    final items = itemsByItemId.values.toList()
       ..sort((a, b) {
         final aTime = a.startTime ?? a.completedAt;
         final bTime = b.startTime ?? b.completedAt;
@@ -165,13 +179,17 @@ class ScheduleItem {
     return items;
   }
 
-  static ScheduleItem _fromTimelineItem(TimelineItem item, DateTime? dayDate) {
+  static ScheduleItem _fromTimelineItem(
+    ScheduleViewPendingItem item,
+    DateTime? dayDate,
+  ) {
     final sourceType = item.type;
     final itemType = _parseType(sourceType);
     final startTime = item.startTime ?? dayDate;
     final parsedStatus = _parseStatus(item.status);
     return ScheduleItem(
-      id: item.cardId,
+      itemId: item.itemId ?? item.cardId,
+      sourceFactId: item.cardId,
       title: item.title,
       type: itemType,
       status: itemType == ScheduleItemType.todo
@@ -186,12 +204,10 @@ class ScheduleItem {
   }
 
   static ScheduleItem _merge(ScheduleItem base, ScheduleItem incoming) {
-    final type = incoming.type == ScheduleItemType.todo
-        ? incoming.type
-        : base.type;
-    final subtasks = base.subtasks.isNotEmpty
-        ? base.subtasks
-        : incoming.subtasks;
+    final type =
+        incoming.type == ScheduleItemType.todo ? incoming.type : base.type;
+    final subtasks =
+        base.subtasks.isNotEmpty ? base.subtasks : incoming.subtasks;
     final status = type == ScheduleItemType.todo
         ? deriveTodoStatus(
             subtasks,
@@ -200,9 +216,10 @@ class ScheduleItem {
         : _higherPriorityStatus(base.status, incoming.status);
     final sourceType =
         base.sourceType == 'event' && incoming.sourceType != 'event'
-        ? incoming.sourceType
-        : base.sourceType;
+            ? incoming.sourceType
+            : base.sourceType;
     return base.copyWith(
+      itemId: incoming.type == ScheduleItemType.todo ? incoming.itemId : null,
       type: type,
       status: status,
       startTime: base.startTime ?? incoming.startTime,
@@ -225,9 +242,8 @@ class ScheduleItem {
       return fallback;
     }
 
-    final completedCount = subtasks
-        .where((subtask) => subtask.completed)
-        .length;
+    final completedCount =
+        subtasks.where((subtask) => subtask.completed).length;
     if (completedCount == subtasks.length) {
       return ScheduleItemStatus.completed;
     }
@@ -253,7 +269,8 @@ class ScheduleItem {
       'completed' || 'done' => ScheduleItemStatus.completed,
       'in_progress' ||
       'inprogress' ||
-      'active' => ScheduleItemStatus.inProgress,
+      'active' =>
+        ScheduleItemStatus.inProgress,
       'overdue' => ScheduleItemStatus.overdue,
       _ => ScheduleItemStatus.pending,
     };

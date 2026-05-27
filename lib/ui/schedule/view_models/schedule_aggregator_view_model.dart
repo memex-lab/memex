@@ -1,12 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:memex/data/repositories/get_schedule_aggregation.dart';
-import 'package:memex/data/repositories/get_schedule_refresh_state.dart';
+import 'package:memex/data/repositories/get_schedule_view_data.dart';
 import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/data/services/event_bus_service.dart';
-import 'package:memex/domain/models/card_detail_model.dart';
-import 'package:memex/domain/models/schedule_aggregation_model.dart';
-import 'package:memex/domain/models/schedule_refresh_state.dart';
+import 'package:memex/domain/models/schedule_state.dart' show ScheduleSubtask;
+import 'package:memex/domain/models/schedule_view_data.dart';
 import 'package:memex/l10n/app_localizations_ext.dart';
 import 'package:memex/ui/schedule/models/schedule_item.dart';
 import 'package:memex/utils/logger.dart';
@@ -26,18 +24,16 @@ String _localizedOrFallback(
   }
 }
 
-typedef ScheduleAggregationLoader = Future<ScheduleAggregationModel?>
-    Function();
-typedef ScheduleAggregationFreshnessChecker = Future<bool> Function(
-    {Duration? maxAge});
+typedef ScheduleAggregationLoader = Future<ScheduleViewData?> Function();
+typedef ScheduleAggregationFreshnessChecker = Future<bool> Function({
+  Duration? maxAge,
+});
 typedef ScheduleAggregationRefresher = Future<Result<void>> Function();
-typedef ScheduleRefreshStateLoader = Future<ScheduleRefreshState> Function();
-typedef ScheduleCardDetailFetcher = Future<CardDetailModel> Function(
-    String cardId);
-typedef ScheduleCardUiConfigUpdater = Future<bool> Function(
-  String cardId,
-  int configIndex,
-  Map<String, dynamic> data,
+typedef ScheduleItemCompleter = Future<Result<void>> Function(String itemId);
+typedef ScheduleSubtaskCompletionSetter = Future<Result<void>> Function(
+  String itemId,
+  String subtaskTitle,
+  bool completed,
 );
 
 class ScheduleAggregatorViewModel extends ChangeNotifier {
@@ -45,21 +41,23 @@ class ScheduleAggregatorViewModel extends ChangeNotifier {
     ScheduleAggregationLoader? loadAggregation,
     ScheduleAggregationFreshnessChecker? needsRefresh,
     ScheduleAggregationRefresher? refreshAggregation,
-    ScheduleRefreshStateLoader? loadRefreshState,
-    ScheduleCardDetailFetcher? fetchCardDetail,
-    ScheduleCardUiConfigUpdater? updateCardUiConfig,
+    ScheduleItemCompleter? completeScheduleItem,
+    ScheduleSubtaskCompletionSetter? setScheduleSubtaskCompletion,
     Duration refreshReloadDelay = const Duration(seconds: 90),
     bool listenToEvents = true,
-  })  : _loadAggregation = loadAggregation ?? getScheduleAggregation,
-        _needsRefresh = needsRefresh ?? scheduleAggregationNeedsRefresh,
+  })  : _loadAggregation = loadAggregation ?? getScheduleViewData,
+        _needsRefresh = needsRefresh ?? scheduleViewDataNeedsRefresh,
         _refreshAggregation = refreshAggregation ??
             (() => MemexRouter().refreshScheduleAggregation()),
-        _loadRefreshState = loadRefreshState ?? getScheduleRefreshState,
-        _fetchCardDetail = fetchCardDetail ??
-            ((cardId) => MemexRouter().fetchCardDetail(cardId)),
-        _updateCardUiConfig = updateCardUiConfig ??
-            ((cardId, configIndex, data) =>
-                MemexRouter().updateCardUiConfig(cardId, configIndex, data)),
+        _completeScheduleItem = completeScheduleItem ??
+            ((itemId) => MemexRouter().completeScheduleItem(itemId)),
+        _setScheduleSubtaskCompletion = setScheduleSubtaskCompletion ??
+            ((itemId, subtaskTitle, completed) =>
+                MemexRouter().setScheduleSubtaskCompletion(
+                  itemId: itemId,
+                  subtaskTitle: subtaskTitle,
+                  completed: completed,
+                )),
         _refreshReloadDelay = refreshReloadDelay,
         _listenToEvents = listenToEvents {
     if (_listenToEvents) {
@@ -67,41 +65,33 @@ class ScheduleAggregatorViewModel extends ChangeNotifier {
         EventBusMessageType.scheduleAggregationUpdated,
         _handleScheduleAggregationUpdated,
       );
-      EventBusService.instance.addHandler(
-        EventBusMessageType.scheduleAggregationDirty,
-        _handleScheduleAggregationDirty,
-      );
     }
   }
 
   final ScheduleAggregationLoader _loadAggregation;
   final ScheduleAggregationFreshnessChecker _needsRefresh;
   final ScheduleAggregationRefresher _refreshAggregation;
-  final ScheduleRefreshStateLoader _loadRefreshState;
-  final ScheduleCardDetailFetcher _fetchCardDetail;
-  final ScheduleCardUiConfigUpdater _updateCardUiConfig;
+  final ScheduleItemCompleter _completeScheduleItem;
+  final ScheduleSubtaskCompletionSetter _setScheduleSubtaskCompletion;
   final Duration _refreshReloadDelay;
   final bool _listenToEvents;
 
-  ScheduleAggregationModel? _aggregation;
+  ScheduleViewData? _aggregation;
   bool _isLoading = false;
   String? _error;
-  ScheduleRefreshState _refreshState = ScheduleRefreshState.clean();
   Completer<void>? _pendingRefreshCompletion;
   final Map<String, ScheduleItemStatus> _statusOverrides = {};
   final Map<String, List<ScheduleSubtask>> _subtaskOverrides = {};
 
-  ScheduleAggregationModel? get aggregation => _aggregation;
+  ScheduleViewData? get aggregation => _aggregation;
   bool get isLoading => _isLoading;
   String? get error => _error;
   bool get hasData => _aggregation != null;
-  bool get isDirty => _refreshState.isDirty;
-  String? get dirtyReason => _refreshState.reason;
   List<ScheduleItem> get items {
     if (_aggregation == null) return const [];
-    return ScheduleItem.fromAggregation(_aggregation!).map((item) {
-      final subtasks = _subtaskOverrides[item.id];
-      final status = _statusOverrides[item.id];
+    return ScheduleItem.fromViewData(_aggregation!).map((item) {
+      final subtasks = _subtaskOverrides[item.itemId];
+      final status = _statusOverrides[item.itemId];
       if (status == null && subtasks == null) return item;
       final effectiveSubtasks = subtasks ?? item.subtasks;
       final effectiveStatus = status ??
@@ -138,7 +128,6 @@ class ScheduleAggregatorViewModel extends ChangeNotifier {
     _setLoading(true);
     try {
       _aggregation = await _loadAggregation();
-      _refreshState = await _loadRefreshState();
       _statusOverrides.clear();
       _subtaskOverrides.clear();
       _error = null;
@@ -208,59 +197,41 @@ class ScheduleAggregatorViewModel extends ChangeNotifier {
         ? ScheduleItemStatus.pending
         : ScheduleItemStatus.completed;
     final nextCompleted = nextStatus == ScheduleItemStatus.completed;
-    final previousStatusOverride = _statusOverrides[item.id];
-    final previousSubtaskOverride = _subtaskOverrides[item.id];
+    final previousStatusOverride = _statusOverrides[item.itemId];
+    final previousSubtaskOverride = _subtaskOverrides[item.itemId];
     final optimisticSubtasks = item.subtasks.isEmpty
         ? null
         : item.subtasks
             .map((subtask) => subtask.copyWith(completed: nextCompleted))
             .toList();
     _applyTaskOverride(
-      item.id,
+      item.itemId,
       status: nextStatus,
       subtasks: optimisticSubtasks,
     );
 
     try {
-      final detail = await _fetchCardDetail(item.id);
-      final configIndex = _findTaskConfigIndex(detail);
-
-      if (configIndex < 0) {
-        throw Exception('No task ui_config found for ${item.id}');
-      }
-
-      final taskData = detail.uiConfigs[configIndex].data;
-      final updates = <String, dynamic>{'is_completed': nextCompleted};
-      final rawSubtasks = taskData['subtasks'];
-      if (item.subtasks.isNotEmpty) {
-        if (rawSubtasks is! List ||
-            rawSubtasks.length != item.subtasks.length) {
-          throw Exception('Task card subtasks are stale for ${item.id}');
+      if (nextCompleted) {
+        _throwOnError(await _completeScheduleItem(item.itemId));
+      } else {
+        for (final subtask in item.subtasks) {
+          if (!subtask.completed) continue;
+          _throwOnError(
+            await _setScheduleSubtaskCompletion(
+              item.itemId,
+              subtask.title,
+              false,
+            ),
+          );
         }
-        updates['subtasks'] = _setRawSubtasksCompletion(
-          rawSubtasks,
-          nextCompleted,
-        );
-      } else if (_canBulkUpdateSubtasks(rawSubtasks)) {
-        updates['subtasks'] = _setRawSubtasksCompletion(
-          rawSubtasks as List,
-          nextCompleted,
-        );
-      }
-
-      final success = await _updateCardUiConfig(item.id, configIndex, updates);
-
-      if (!success) {
-        throw Exception('Failed to update task card');
       }
       _error = null;
     } catch (e) {
-      _logger.warning('Failed to toggle schedule item ${item.id}: $e');
-      _restoreTaskOverrides(
-        item.id,
-        previousStatusOverride,
-        previousSubtaskOverride,
+      _logger.warning(
+        'Failed to toggle schedule item ${item.sourceFactId}: $e',
       );
+      _restoreTaskOverrides(
+          item.itemId, previousStatusOverride, previousSubtaskOverride);
       _error = _localizedOrFallback(
         (l10n) => l10n.scheduleTaskUpdateFailed,
         'Failed to update task',
@@ -273,8 +244,8 @@ class ScheduleAggregatorViewModel extends ChangeNotifier {
     if (item.type != ScheduleItemType.todo) return;
     if (subtaskIndex < 0 || subtaskIndex >= item.subtasks.length) return;
 
-    final previousStatusOverride = _statusOverrides[item.id];
-    final previousSubtaskOverride = _subtaskOverrides[item.id];
+    final previousStatusOverride = _statusOverrides[item.itemId];
+    final previousSubtaskOverride = _subtaskOverrides[item.itemId];
     final nextSubtasks = item.subtasks.toList();
     final currentSubtask = nextSubtasks[subtaskIndex];
     nextSubtasks[subtaskIndex] = currentSubtask.copyWith(
@@ -284,43 +255,27 @@ class ScheduleAggregatorViewModel extends ChangeNotifier {
       nextSubtasks,
       fallback: item.status,
     );
-    _applyTaskOverride(item.id, status: nextStatus, subtasks: nextSubtasks);
+    _applyTaskOverride(
+      item.itemId,
+      status: nextStatus,
+      subtasks: nextSubtasks,
+    );
 
     try {
-      final detail = await _fetchCardDetail(item.id);
-      final configIndex = _findTaskConfigIndex(detail);
-
-      if (configIndex < 0) {
-        throw Exception('No task ui_config found for ${item.id}');
-      }
-
-      final rawSubtasks = detail.uiConfigs[configIndex].data['subtasks'];
-      if (rawSubtasks is! List) {
-        throw Exception('Task card has no subtask list for ${item.id}');
-      }
-
-      final updatedRawSubtasks = _toggleRawSubtask(rawSubtasks, subtaskIndex);
-      final completedSubtasks = _countCompletedRawSubtasks(updatedRawSubtasks);
-      final isCompleted = updatedRawSubtasks.isNotEmpty &&
-          completedSubtasks == updatedRawSubtasks.length;
-      final success = await _updateCardUiConfig(item.id, configIndex, {
-        'subtasks': updatedRawSubtasks,
-        'is_completed': isCompleted,
-      });
-
-      if (!success) {
-        throw Exception('Failed to update task card');
-      }
+      _throwOnError(
+        await _setScheduleSubtaskCompletion(
+          item.itemId,
+          currentSubtask.title,
+          !currentSubtask.completed,
+        ),
+      );
       _error = null;
     } catch (e) {
       _logger.warning(
-        'Failed to toggle schedule subtask $subtaskIndex for ${item.id}: $e',
+        'Failed to toggle schedule subtask $subtaskIndex for ${item.sourceFactId}: $e',
       );
       _restoreTaskOverrides(
-        item.id,
-        previousStatusOverride,
-        previousSubtaskOverride,
-      );
+          item.itemId, previousStatusOverride, previousSubtaskOverride);
       _error = _localizedOrFallback(
         (l10n) => l10n.scheduleTaskUpdateFailed,
         'Failed to update task',
@@ -345,18 +300,6 @@ class ScheduleAggregatorViewModel extends ChangeNotifier {
       return;
     }
     unawaited(loadAggregation());
-  }
-
-  void _handleScheduleAggregationDirty(EventBusMessage message) {
-    if (message is! ScheduleAggregationDirtyMessage) return;
-    _refreshState = _refreshState.copyWith(
-      isDirty: message.isDirty,
-      reason: message.reason,
-      cardIds: message.cardIds,
-      clearReason: !message.isDirty,
-      clearDirtySince: !message.isDirty,
-    );
-    notifyListeners();
   }
 
   void _applyTaskOverride(
@@ -405,75 +348,14 @@ class ScheduleAggregatorViewModel extends ChangeNotifier {
         EventBusMessageType.scheduleAggregationUpdated,
         _handleScheduleAggregationUpdated,
       );
-      EventBusService.instance.removeHandler(
-        EventBusMessageType.scheduleAggregationDirty,
-        _handleScheduleAggregationDirty,
-      );
     }
     super.dispose();
   }
 }
 
-int _findTaskConfigIndex(CardDetailModel detail) {
-  return detail.uiConfigs.indexWhere((config) => config.templateId == 'task');
-}
-
-bool _canBulkUpdateSubtasks(dynamic rawSubtasks) {
-  return rawSubtasks is List &&
-      rawSubtasks.isNotEmpty &&
-      rawSubtasks.every((subtask) => subtask is Map);
-}
-
-List<Map<String, dynamic>> _setRawSubtasksCompletion(
-  List<dynamic> rawSubtasks,
-  bool completed,
-) {
-  return rawSubtasks
-      .map(
-        (subtask) => {
-          ...Map<String, dynamic>.from(subtask as Map),
-          'completed': completed,
-        },
-      )
-      .toList();
-}
-
-List<Map<String, dynamic>> _toggleRawSubtask(
-  List<dynamic> rawSubtasks,
-  int subtaskIndex,
-) {
-  if (subtaskIndex >= rawSubtasks.length) {
-    throw Exception('Subtask index out of bounds: $subtaskIndex');
-  }
-  final updated = <Map<String, dynamic>>[];
-  for (final entry in rawSubtasks.indexed) {
-    final value = entry.$2;
-    if (value is! Map) {
-      throw Exception('Malformed subtask at index ${entry.$1}');
-    }
-    final subtask = Map<String, dynamic>.from(value);
-    if (entry.$1 == subtaskIndex) {
-      subtask['completed'] = !_parseCompletedBool(subtask['completed']);
-    }
-    updated.add(subtask);
-  }
-  return updated;
-}
-
-int _countCompletedRawSubtasks(List<Map<String, dynamic>> subtasks) {
-  return subtasks
-      .where((subtask) => _parseCompletedBool(subtask['completed']))
-      .length;
-}
-
-bool _parseCompletedBool(dynamic value) {
-  if (value is bool) return value;
-  if (value is num) return value != 0;
-  if (value is String) {
-    return switch (value.toLowerCase().trim()) {
-      'true' || 'yes' || 'y' || '1' || 'done' || 'completed' => true,
-      _ => false,
-    };
-  }
-  return false;
+void _throwOnError(Result<void> result) {
+  result.when(
+    onOk: (_) {},
+    onError: (e, st) => throw e,
+  );
 }

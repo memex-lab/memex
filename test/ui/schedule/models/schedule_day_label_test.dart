@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
-import 'package:memex/domain/models/schedule_aggregation_model.dart';
+import 'package:memex/domain/models/schedule_view_data.dart';
 import 'package:memex/ui/schedule/models/schedule_day_label.dart';
 
 void main() {
@@ -23,7 +23,8 @@ void main() {
 
       expect(
         resolveScheduleDayLabel(
-          TimelineDay(dayLabel: 'Tomorrow', dayDate: DateTime(2026, 5, 16, 8)),
+          ScheduleViewTimelineDay(
+              dayLabel: 'Tomorrow', dayDate: DateTime(2026, 5, 16, 8)),
           referenceDate: reference,
           labels: labels,
         ),
@@ -31,7 +32,7 @@ void main() {
       );
       expect(
         resolveScheduleDayLabel(
-          TimelineDay(
+          ScheduleViewTimelineDay(
             dayLabel: 'Today',
             dayDate: DateTime(2026, 5, 17, 23, 59),
           ),
@@ -42,7 +43,8 @@ void main() {
       );
       expect(
         resolveScheduleDayLabel(
-          TimelineDay(dayLabel: '明天', dayDate: DateTime(2026, 5, 15)),
+          ScheduleViewTimelineDay(
+              dayLabel: '明天', dayDate: DateTime(2026, 5, 15)),
           referenceDate: reference,
           labels: labels,
         ),
@@ -52,7 +54,8 @@ void main() {
 
     test('preserves custom non-relative labels for distant days', () {
       final label = resolveScheduleDayLabel(
-        TimelineDay(dayLabel: 'Launch day', dayDate: DateTime(2026, 5, 20)),
+        ScheduleViewTimelineDay(
+            dayLabel: 'Launch day', dayDate: DateTime(2026, 5, 20)),
         referenceDate: DateTime(2026, 5, 16),
         labels: labels,
       );
@@ -66,7 +69,7 @@ void main() {
 
       expect(
         resolveScheduleDayLabel(
-          TimelineDay(dayLabel: 'tomorrow', dayDate: dayDate),
+          ScheduleViewTimelineDay(dayLabel: 'tomorrow', dayDate: dayDate),
           referenceDate: DateTime(2026, 5, 16),
           labels: labels,
         ),
@@ -74,7 +77,7 @@ void main() {
       );
       expect(
         resolveScheduleDayLabel(
-          TimelineDay(dayLabel: '', dayDate: dayDate),
+          ScheduleViewTimelineDay(dayLabel: '', dayDate: dayDate),
           referenceDate: DateTime(2026, 5, 16),
           labels: labels,
         ),
@@ -85,7 +88,7 @@ void main() {
     test('uses stored or fallback labels when day date is missing', () {
       expect(
         resolveScheduleDayLabel(
-          TimelineDay(dayLabel: 'Unscheduled'),
+          const ScheduleViewTimelineDay(dayLabel: 'Unscheduled'),
           referenceDate: DateTime(2026, 5, 16),
           labels: labels,
         ),
@@ -93,7 +96,7 @@ void main() {
       );
       expect(
         resolveScheduleDayLabel(
-          TimelineDay(dayLabel: '   '),
+          const ScheduleViewTimelineDay(dayLabel: '   '),
           referenceDate: DateTime(2026, 5, 16),
           labels: labels,
         ),

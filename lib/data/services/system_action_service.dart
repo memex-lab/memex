@@ -75,6 +75,38 @@ class SystemActionService {
     }
   }
 
+  Future<SystemAction?> getAction(String actionId) async {
+    try {
+      return await (_db.select(_db.systemActions)
+            ..where((t) => t.id.equals(actionId))
+            ..limit(1))
+          .getSingleOrNull();
+    } catch (e) {
+      _logger.severe('Failed to get system action $actionId: $e');
+      return null;
+    }
+  }
+
+  /// Cancels only an action that has not been applied to the device yet.
+  Future<bool> cancelPendingAction(String actionId) async {
+    try {
+      final count = await (_db.delete(_db.systemActions)
+            ..where(
+              (t) => t.id.equals(actionId) & t.status.equals('pending'),
+            ))
+          .go();
+      if (count == 0) {
+        _logger.info(
+          'Skipped cancelling system action $actionId because it is not pending',
+        );
+      }
+      return count > 0;
+    } catch (e) {
+      _logger.severe('Failed to cancel pending action $actionId: $e');
+      return false;
+    }
+  }
+
   /// Gets non-rejected actions for a given factId (one-shot query).
   Future<List<SystemAction>> getVisibleForFact(String factId) async {
     return (_db.select(_db.systemActions)

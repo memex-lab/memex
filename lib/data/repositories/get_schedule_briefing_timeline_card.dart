@@ -1,21 +1,19 @@
-import 'package:memex/data/repositories/get_schedule_aggregation.dart';
-import 'package:memex/data/repositories/get_schedule_refresh_state.dart';
-import 'package:memex/domain/models/schedule_aggregation_model.dart';
+import 'package:memex/data/repositories/get_schedule_view_data.dart';
 import 'package:memex/domain/models/system_card_constants.dart';
+import 'package:memex/domain/models/schedule_view_data.dart';
 import 'package:memex/domain/models/timeline_card_model.dart';
 
 Future<TimelineCardModel?> getScheduleBriefingTimelineCard() async {
-  final aggregation = await getScheduleAggregation();
-  final refreshState = await getScheduleRefreshState();
+  final schedule = await getScheduleViewData();
 
-  if (aggregation == null && !refreshState.isDirty) {
+  if (schedule == null) {
     return null;
   }
 
-  final generatedAt = aggregation?.generatedAt ?? refreshState.updatedAt;
+  final generatedAt = schedule.generatedAt;
   return TimelineCardModel(
     id: scheduleBriefingCardId,
-    timestamp: generatedAt ?? DateTime.now(),
+    timestamp: generatedAt,
     tags: const [],
     status: 'completed',
     title: 'Schedule briefing',
@@ -23,10 +21,8 @@ Future<TimelineCardModel?> getScheduleBriefingTimelineCard() async {
       UiConfig(
         templateId: scheduleBriefingTemplateId,
         data: _buildScheduleBriefingData(
-          aggregation: aggregation,
+          schedule: schedule,
           generatedAt: generatedAt,
-          isDirty: refreshState.isDirty,
-          dirtyReason: refreshState.reason,
         ),
       ),
     ],
@@ -34,24 +30,19 @@ Future<TimelineCardModel?> getScheduleBriefingTimelineCard() async {
 }
 
 Map<String, dynamic> _buildScheduleBriefingData({
-  required ScheduleAggregationModel? aggregation,
+  required ScheduleViewData? schedule,
   required DateTime? generatedAt,
-  required bool isDirty,
-  required String? dirtyReason,
 }) {
-  final hero = aggregation?.heroItem;
-  final items = aggregation == null
+  final hero = schedule?.hero;
+  final items = schedule == null
       ? const <Map<String, dynamic>>[]
-      : _nextScheduleItems(aggregation).take(3).toList();
+      : _nextScheduleItems(schedule).take(3).toList();
 
   return {
-    'is_dirty': isDirty,
     if (generatedAt != null) 'generated_at': generatedAt.toIso8601String(),
-    if (dirtyReason != null && dirtyReason.isNotEmpty)
-      'dirty_reason': dirtyReason,
-    if (aggregation != null) ...{
-      'aggregation_id': aggregation.id,
-      'summary': aggregation.editorialIntro,
+    if (schedule != null) ...{
+      'aggregation_id': schedule.id,
+      'summary': schedule.editorialIntro,
       if (hero != null) ...{
         'hero_title': hero.title,
         if (hero.description != null) 'hero_description': hero.description,
@@ -60,16 +51,15 @@ Map<String, dynamic> _buildScheduleBriefingData({
         if (hero.location != null) 'hero_location': hero.location,
       },
       'items': items,
-      'completed_count': aggregation.completed.length,
-      'conflict_count': aggregation.conflicts.length,
+      'completed_count': schedule.completed.length,
     },
   };
 }
 
 Iterable<Map<String, dynamic>> _nextScheduleItems(
-  ScheduleAggregationModel aggregation,
+  ScheduleViewData schedule,
 ) sync* {
-  final allItems = aggregation.timeline
+  final allItems = schedule.timeline
       .expand((day) => day.items)
       .where((item) => item.status != 'completed')
       .toList()

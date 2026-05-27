@@ -1,5 +1,5 @@
 import 'package:intl/intl.dart';
-import 'package:memex/domain/models/schedule_aggregation_model.dart';
+import 'package:memex/domain/models/schedule_view_data.dart';
 
 class ScheduleDayLabelStrings {
   const ScheduleDayLabelStrings({
@@ -18,7 +18,7 @@ class ScheduleDayLabelStrings {
 }
 
 String resolveScheduleDayLabel(
-  TimelineDay day, {
+  ScheduleViewTimelineDay day, {
   required DateTime referenceDate,
   required ScheduleDayLabelStrings labels,
 }) {
@@ -32,10 +32,9 @@ String resolveScheduleDayLabel(
     -1 => labels.yesterday,
     0 => labels.today,
     1 => labels.tomorrow,
-    _ =>
-      storedLabel.isNotEmpty && !isRelativeScheduleDayLabel(storedLabel)
-          ? storedLabel
-          : DateFormat.MMMEd(labels.localeName).format(dayDate),
+    _ => storedLabel.isNotEmpty && !isRelativeScheduleDayLabel(storedLabel)
+        ? storedLabel
+        : DateFormat.MMMEd(labels.localeName).format(dayDate),
   };
 }
 

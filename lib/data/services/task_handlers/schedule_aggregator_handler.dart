@@ -19,9 +19,14 @@ Future<void> handleScheduleAggregation(
   );
 
   try {
+    final factId = payload['fact_id'] as String?;
+    final runId = factId != null && factId.isNotEmpty
+        ? factId
+        : context.taskId;
     await ScheduleAggregatorAgent.updateScheduleAggregation(
       userId: userId,
-      runId: context.taskId,
+      runId: runId,
+      routerHint: payload,
     );
   } on AgentException catch (e) {
     if (e.code == AgentExceptionCode.loopDetection) {

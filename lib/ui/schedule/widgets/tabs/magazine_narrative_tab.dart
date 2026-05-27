@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:memex/domain/models/schedule_state.dart' show ScheduleSubtask;
 import 'package:memex/utils/user_storage.dart';
 
-import '../../../../domain/models/schedule_aggregation_model.dart';
+import '../../../../domain/models/schedule_view_data.dart';
 import '../../models/schedule_day_label.dart';
 import '../../models/schedule_item.dart';
 import '../../../core/cards/ui/glass_card.dart';
 
 /// Magazine Narrative Tab renders the AI-curated schedule aggregation.
 class MagazineNarrativeTab extends StatefulWidget {
-  final ScheduleAggregationModel aggregation;
+  final ScheduleViewData aggregation;
   final void Function(String cardId)? onTapCardId;
   final Map<String, ScheduleItemStatus> itemStatuses;
   final Map<String, List<ScheduleSubtask>> itemSubtasks;
-  final void Function(String cardId)? onToggleTask;
-  final void Function(String cardId, int subtaskIndex)? onToggleSubtask;
+  final void Function(String itemId)? onToggleTask;
+  final void Function(String itemId, int subtaskIndex)? onToggleSubtask;
   final DateTime? referenceDate;
 
   const MagazineNarrativeTab({
@@ -43,14 +44,14 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
   }
 
   // ===========================================================================
-  // Agent Mode - uses ScheduleAggregationModel
+  // Agent Mode - uses ScheduleViewData
   // ===========================================================================
 
-  Widget _buildAgentMode(ScheduleAggregationModel agg) {
+  Widget _buildAgentMode(ScheduleViewData agg) {
     final bodyItems = <Widget>[
       // Hero card
-      if (agg.heroItem != null) ...[
-        _buildAgentHeroCard(agg.heroItem!),
+      if (agg.hero != null) ...[
+        _buildAgentHeroCard(agg.hero!),
         const SizedBox(height: 16),
       ],
 
@@ -101,11 +102,11 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
     );
   }
 
-  Widget _buildAgentHeroCard(HeroItem item) {
+  Widget _buildAgentHeroCard(ScheduleViewHero item) {
     return GestureDetector(
       onTap: () => widget.onTapCardId?.call(item.cardId),
       child: Container(
-        height: 188,
+        constraints: const BoxConstraints(minHeight: 188),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           gradient: const LinearGradient(
@@ -161,8 +162,6 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
                       letterSpacing: 0,
                       color: Colors.white,
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                   ),
                   if (item.description != null) ...[
                     const SizedBox(height: 6),
@@ -173,52 +172,25 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
                         height: 1.4,
                         color: Colors.white.withValues(alpha: 0.7),
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                   const SizedBox(height: 10),
-                  Row(
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
-                        Icons.calendar_today,
-                        size: 14,
-                        color: Colors.white.withValues(alpha: 0.6),
-                      ),
-                      const SizedBox(width: 6),
-                      Flexible(
-                        child: Text(
-                          item.startTime != null
-                              ? DateFormat.MMMEd(
-                                  UserStorage.l10n.localeName,
-                                ).add_Hm().format(item.startTime!)
-                              : UserStorage.l10n.scheduleTbd,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.white.withValues(alpha: 0.6),
-                          ),
-                        ),
+                      _buildHeroMetaRow(
+                        icon: Icons.calendar_today,
+                        text: item.startTime != null
+                            ? DateFormat.MMMEd(
+                                UserStorage.l10n.localeName,
+                              ).add_Hm().format(item.startTime!)
+                            : UserStorage.l10n.scheduleTbd,
                       ),
                       if (item.location != null) ...[
-                        const SizedBox(width: 16),
-                        Icon(
-                          Icons.location_on_outlined,
-                          size: 14,
-                          color: Colors.white.withValues(alpha: 0.6),
-                        ),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text(
-                            item.location!,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.white.withValues(alpha: 0.6),
-                            ),
-                          ),
+                        const SizedBox(height: 4),
+                        _buildHeroMetaRow(
+                          icon: Icons.location_on_outlined,
+                          text: item.location!,
                         ),
                       ],
                     ],
@@ -232,7 +204,36 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
     );
   }
 
-  Widget _buildAgentSummaryPanel(ScheduleAggregationModel agg) {
+  Widget _buildHeroMetaRow({
+    required IconData icon,
+    required String text,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 1),
+          child: Icon(
+            icon,
+            size: 14,
+            color: Colors.white.withValues(alpha: 0.6),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.white.withValues(alpha: 0.6),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAgentSummaryPanel(ScheduleViewData agg) {
     return GlassCard(
       borderRadius: 14,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -252,8 +253,6 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
             const SizedBox(height: 5),
             Text(
               agg.editorialIntro,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 fontSize: 13,
                 height: 1.35,
@@ -275,11 +274,10 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
     );
   }
 
-  Widget _buildAgentReminderRow(QuoteBlock block) {
+  Widget _buildAgentReminderRow(ScheduleViewQuoteBlock block) {
     final isHighPriority = block.priority == 'high';
-    final accentColor = isHighPriority
-        ? const Color(0xFFD97706)
-        : const Color(0xFF64748B);
+    final accentColor =
+        isHighPriority ? const Color(0xFFD97706) : const Color(0xFF64748B);
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -307,8 +305,6 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
             children: [
               Text(
                 block.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
                 style: GoogleFonts.inter(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
@@ -318,8 +314,6 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
               const SizedBox(height: 2),
               Text(
                 block.content,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   fontSize: 12,
                   height: 1.3,
@@ -333,11 +327,14 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
     );
   }
 
-  Widget _buildAgentTimelineCard(TimelineItem item, {DateTime? dayDate}) {
+  Widget _buildAgentTimelineCard(
+    ScheduleViewPendingItem item, {
+    DateTime? dayDate,
+  }) {
     final isTask = _isTaskItem(item);
-    final subtasks = isTask
-        ? _resolveSubtasks(item)
-        : const <ScheduleSubtask>[];
+    final itemKey = _itemKey(item);
+    final subtasks =
+        isTask ? _resolveSubtasks(item) : const <ScheduleSubtask>[];
     final status = _resolveStatus(item, subtasks);
     final isCompleted = status == ScheduleItemStatus.completed;
 
@@ -357,19 +354,18 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
                     color: isCompleted
                         ? const Color(0xFF99A1AF)
                         : item.priority == 3
-                        ? const Color(0xFFF43F5E)
-                        : const Color(0xFF5B6CFF),
+                            ? const Color(0xFFF43F5E)
+                            : const Color(0xFF5B6CFF),
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.white, width: 2),
                     boxShadow: [
                       BoxShadow(
-                        color:
-                            (isCompleted
-                                    ? const Color(0xFF99A1AF)
-                                    : item.priority == 3
+                        color: (isCompleted
+                                ? const Color(0xFF99A1AF)
+                                : item.priority == 3
                                     ? const Color(0xFFF43F5E)
                                     : const Color(0xFF5B6CFF))
-                                .withValues(alpha: 0.3),
+                            .withValues(alpha: 0.3),
                         blurRadius: 6,
                       ),
                     ],
@@ -389,7 +385,7 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
                     Row(
                       children: [
                         if (isTask) ...[
-                          _buildTaskCompletionCircle(item.cardId, status),
+                          _buildTaskCompletionCircle(itemKey, status),
                           const SizedBox(width: 10),
                         ],
                         Expanded(
@@ -446,15 +442,13 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
                           fontSize: 13,
                           color: Color(0xFF4A5565),
                         ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                     if (isTask && subtasks.isNotEmpty) ...[
                       const SizedBox(height: 10),
-                      _buildSubtaskProgress(item.cardId, subtasks, status),
+                      _buildSubtaskProgress(itemKey, subtasks, status),
                       const SizedBox(height: 8),
-                      _buildSubtaskList(item.cardId, subtasks, isCompleted),
+                      _buildSubtaskList(itemKey, subtasks, isCompleted),
                     ],
                   ],
                 ),
@@ -466,74 +460,66 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
     );
   }
 
-  Widget _buildAgentDoneCard(CompletedItem item) {
+  Widget _buildAgentDoneCard(ScheduleViewCompletedItem item) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.only(bottom: 10),
       child: GestureDetector(
         onTap: () => widget.onTapCardId?.call(item.cardId),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 12,
-              height: 12,
-              decoration: const BoxDecoration(
-                color: Color(0xFF99A1AF),
-                shape: BoxShape.circle,
+        child: GlassCard(
+          borderRadius: 14,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Padding(
+                padding: EdgeInsets.only(top: 1),
+                child: Icon(
+                  Icons.check_circle_rounded,
+                  size: 17,
+                  color: Color(0xFF94A3B8),
+                ),
               ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Opacity(
-                opacity: 0.5,
-                child: GlassCard(
-                  borderRadius: 14,
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.check_circle,
-                        size: 16,
-                        color: Color(0xFF99A1AF),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          item.title,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF99A1AF),
-                            decoration: TextDecoration.lineThrough,
-                          ),
-                        ),
-                      ),
-                      if (item.completedAt != null)
-                        Text(
-                          DateFormat.MMMd(
-                            UserStorage.l10n.localeName,
-                          ).format(item.completedAt!),
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: Color(0xFF99A1AF),
-                          ),
-                        ),
-                    ],
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  item.title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    height: 1.35,
+                    color: Color(0xFF64748B),
+                    decoration: TextDecoration.lineThrough,
                   ),
                 ),
               ),
-            ),
-          ],
+              if (item.completedAt != null) ...[
+                const SizedBox(width: 10),
+                Padding(
+                  padding: const EdgeInsets.only(top: 1),
+                  child: Text(
+                    DateFormat.MMMd(
+                      UserStorage.l10n.localeName,
+                    ).format(item.completedAt!),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF94A3B8),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildTaskCompletionCircle(String cardId, ScheduleItemStatus status) {
+  Widget _buildTaskCompletionCircle(String itemId, ScheduleItemStatus status) {
     final isCompleted = status == ScheduleItemStatus.completed;
     final isInProgress = status == ScheduleItemStatus.inProgress;
     return GestureDetector(
-      key: ValueKey('schedule_task_toggle_$cardId'),
-      onTap: () => widget.onToggleTask?.call(cardId),
+      key: ValueKey('schedule_task_toggle_$itemId'),
+      onTap: () => widget.onToggleTask?.call(itemId),
       behavior: HitTestBehavior.opaque,
       child: Container(
         width: 22,
@@ -543,24 +529,23 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
           shape: BoxShape.circle,
           color: isCompleted ? const Color(0xFF5B6CFF) : Colors.transparent,
           border: Border.all(
-            color: isCompleted
-                ? const Color(0xFF5B6CFF)
-                : const Color(0xFFCBD5E1),
+            color:
+                isCompleted ? const Color(0xFF5B6CFF) : const Color(0xFFCBD5E1),
             width: 2,
           ),
         ),
         child: isCompleted
             ? const Icon(Icons.check, size: 13, color: Colors.white)
             : isInProgress
-            ? Container(
-                width: 8,
-                height: 8,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF5B6CFF),
-                  shape: BoxShape.circle,
-                ),
-              )
-            : null,
+                ? Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF5B6CFF),
+                      shape: BoxShape.circle,
+                    ),
+                  )
+                : null,
       ),
     );
   }
@@ -676,8 +661,6 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
           Expanded(
             child: Text(
               subtask.title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: 12,
                 height: 1.3,
@@ -723,7 +706,7 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
     ).add_Hm().format(startTime);
   }
 
-  String _resolveDayLabel(TimelineDay day) {
+  String _resolveDayLabel(ScheduleViewTimelineDay day) {
     return resolveScheduleDayLabel(
       day,
       referenceDate: widget.referenceDate ?? DateTime.now(),
@@ -737,23 +720,27 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
     );
   }
 
-  bool _isTaskItem(TimelineItem item) {
+  bool _isTaskItem(ScheduleViewPendingItem item) {
     final type = item.type.toLowerCase().trim();
     return type == 'task' || type == 'todo';
   }
 
-  List<ScheduleSubtask> _resolveSubtasks(TimelineItem item) {
-    return widget.itemSubtasks[item.cardId] ?? item.subtasks;
+  List<ScheduleSubtask> _resolveSubtasks(ScheduleViewPendingItem item) {
+    return widget.itemSubtasks[_itemKey(item)] ?? item.subtasks;
   }
 
   ScheduleItemStatus _resolveStatus(
-    TimelineItem item,
+    ScheduleViewPendingItem item,
     List<ScheduleSubtask> subtasks,
   ) {
     final status =
-        widget.itemStatuses[item.cardId] ?? _parseStatus(item.status);
+        widget.itemStatuses[_itemKey(item)] ?? _parseStatus(item.status);
     if (!_isTaskItem(item)) return status;
     return ScheduleItem.deriveTodoStatus(subtasks, fallback: status);
+  }
+
+  String _itemKey(ScheduleViewPendingItem item) {
+    return item.itemId ?? item.cardId;
   }
 
   List<_IndexedSubtask> _visibleSubtasks(
@@ -780,7 +767,8 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
       'completed' || 'done' => ScheduleItemStatus.completed,
       'in_progress' ||
       'inprogress' ||
-      'active' => ScheduleItemStatus.inProgress,
+      'active' =>
+        ScheduleItemStatus.inProgress,
       'overdue' => ScheduleItemStatus.overdue,
       _ => ScheduleItemStatus.pending,
     };

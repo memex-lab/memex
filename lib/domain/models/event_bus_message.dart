@@ -6,7 +6,6 @@ enum EventBusMessageType {
   cardAdded('card_added'),
   cardDetailUpdated('card_detail_updated'),
   newInsight('new_insight'),
-  scheduleAggregationDirty('schedule_aggregation_dirty'),
   scheduleAggregationUpdated('schedule_aggregation_updated'),
   newSystemAction('new_system_action'),
   attachmentsChanged('attachments_changed'),
@@ -48,8 +47,6 @@ abstract class EventBusMessage {
         return CardDetailUpdatedMessage.fromJson(json);
       case EventBusMessageType.newInsight:
         return NewInsightMessage.fromJson(json);
-      case EventBusMessageType.scheduleAggregationDirty:
-        return ScheduleAggregationDirtyMessage.fromJson(json);
       case EventBusMessageType.scheduleAggregationUpdated:
         return ScheduleAggregationUpdatedMessage.fromJson(json);
       case EventBusMessageType.newSystemAction:
@@ -251,38 +248,6 @@ class NewInsightMessage extends EventBusMessage {
     return NewInsightMessage(
       insightId: data['insight_id'] as String,
       html: data['html'] as String,
-    );
-  }
-}
-
-/// Schedule aggregation dirty-state changed.
-class ScheduleAggregationDirtyMessage extends EventBusMessage {
-  final bool isDirty;
-  final String? reason;
-  final List<String> cardIds;
-
-  ScheduleAggregationDirtyMessage({
-    required this.isDirty,
-    this.reason,
-    this.cardIds = const [],
-  }) : super(
-          type: EventBusMessageType.scheduleAggregationDirty,
-          data: {
-            'is_dirty': isDirty,
-            if (reason != null) 'reason': reason,
-            if (cardIds.isNotEmpty) 'card_ids': cardIds,
-          },
-        );
-
-  factory ScheduleAggregationDirtyMessage.fromJson(Map<String, dynamic> json) {
-    final data = json['data'] as Map<String, dynamic>;
-    return ScheduleAggregationDirtyMessage(
-      isDirty: data['is_dirty'] as bool? ?? false,
-      reason: data['reason'] as String?,
-      cardIds: (data['card_ids'] as List<dynamic>?)
-              ?.map((e) => e.toString())
-              .toList() ??
-          const [],
     );
   }
 }

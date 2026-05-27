@@ -16,10 +16,8 @@ class ScheduleBriefingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDirty = data['is_dirty'] == true;
     final summary = (data['summary'] as String? ?? '').trim();
     final heroTitle = (data['hero_title'] as String? ?? '').trim();
-    final dirtyReason = (data['dirty_reason'] as String? ?? '').trim();
     final items = (data['items'] as List<dynamic>? ?? const [])
         .whereType<Map>()
         .map((item) => Map<String, dynamic>.from(item))
@@ -71,7 +69,6 @@ class ScheduleBriefingCard extends StatelessWidget {
                   ],
                 ),
               ),
-              if (isDirty) _buildDirtyPill(),
             ],
           ),
           const SizedBox(height: 14),
@@ -85,31 +82,26 @@ class ScheduleBriefingCard extends StatelessWidget {
                 color: Color(0xFF111827),
                 letterSpacing: -0.25,
               ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 8),
           ],
           Text(
-            _summaryText(
-              summary: summary,
-              dirtyReason: dirtyReason,
-              isDirty: isDirty,
-            ),
+            _summaryText(summary),
             style: const TextStyle(
               fontSize: 14,
               height: 1.45,
               color: Color(0xFF4B5563),
             ),
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
           ),
           if (items.isNotEmpty) ...[
             const SizedBox(height: 14),
             ...items.map(_buildItemRow),
           ],
           const SizedBox(height: 14),
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               _buildCountChip(
                 Icons.check_circle_outline_rounded,
@@ -117,42 +109,28 @@ class ScheduleBriefingCard extends StatelessWidget {
                   data['completed_count'] ?? 0,
                 ),
               ),
-              const Spacer(),
-              Text(
-                UserStorage.l10n.scheduleBriefingOpen,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: Color(0xFF4F46E5),
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(width: 4),
-              const Icon(
-                Icons.arrow_forward_rounded,
-                size: 16,
-                color: Color(0xFF4F46E5),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    UserStorage.l10n.scheduleBriefingOpen,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF4F46E5),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Icon(
+                    Icons.arrow_forward_rounded,
+                    size: 16,
+                    color: Color(0xFF4F46E5),
+                  ),
+                ],
               ),
             ],
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildDirtyPill() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF7ED),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        UserStorage.l10n.scheduleBriefingNeedsUpdate,
-        style: const TextStyle(
-          color: Color(0xFFB45309),
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-        ),
       ),
     );
   }
@@ -182,8 +160,6 @@ class ScheduleBriefingCard extends StatelessWidget {
                 color: Color(0xFF374151),
                 fontWeight: FontWeight.w600,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
           ),
           if (timeLabel != null) ...[
@@ -234,12 +210,7 @@ class ScheduleBriefingCard extends StatelessWidget {
     );
   }
 
-  String _summaryText({
-    required String summary,
-    required String dirtyReason,
-    required bool isDirty,
-  }) {
-    if (isDirty && dirtyReason.isNotEmpty) return dirtyReason;
+  String _summaryText(String summary) {
     if (summary.isNotEmpty) return summary;
     return UserStorage.l10n.scheduleBriefingNoData;
   }

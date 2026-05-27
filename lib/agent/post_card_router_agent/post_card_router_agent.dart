@@ -3,12 +3,13 @@ import 'dart:convert';
 import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:memex/agent/agent_controller.util.dart';
 import 'package:memex/agent/agent_system_prompt_helper.dart';
+import 'package:memex/agent/agent_utils.dart';
 import 'package:memex/agent/post_card_router_agent/prompt.dart';
-import 'package:memex/agent/skills/schedule_aggregation/schedule_aggregation_skill.dart';
 import 'package:memex/agent/state_util.dart';
 import 'package:memex/data/services/global_event_bus.dart';
 import 'package:memex/data/services/local_task_executor.dart';
-import 'package:memex/data/services/schedule_refresh_state_service.dart';
+import 'package:memex/data/services/schedule_state_service.dart';
+import 'package:memex/domain/models/schedule_state.dart';
 import 'package:memex/domain/models/system_event.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/time_context.dart';
@@ -18,14 +19,10 @@ final _logger = getLogger('PostCardRouterAgent');
 /// Names of the downstream agents the router can activate.
 class PostCardRouterTargets {
   static const String scheduleAggregator = 'schedule_aggregator';
-  static const String taskCompletion = 'task_completion';
-  static const String systemAction = 'system_action';
   static const String askClarification = 'ask_clarification';
 
   static const Set<String> all = {
     scheduleAggregator,
-    taskCompletion,
-    systemAction,
     askClarification,
   };
 }
@@ -51,8 +48,8 @@ class PostCardRouterAgent {
     required String userId,
     required String factId,
     required String combinedText,
-    required Map<String, dynamic> recentScheduleContext,
-    required Map<String, dynamic> refreshState,
+    required String inputMarkdown,
+    required Map<String, dynamic> scheduleStateContext,
   }) async {
     PostCardRouteResult? toolDecision;
 
@@ -74,7 +71,8 @@ class PostCardRouterAgent {
         userId: userId,
         factId: factId,
         combinedText: combinedText,
-        recentScheduleContext: recentScheduleContext,
+        inputMarkdown: inputMarkdown,
+        scheduleStateContext: scheduleStateContext,
         onDecision: (decision) => toolDecision = decision,
       ),
     ];
@@ -102,11 +100,10 @@ class PostCardRouterAgent {
       },
     );
 
-    final context = buildPostCardRouterContext(
+    final context = buildPostCardRouterContextMarkdown(
       factId: factId,
-      combinedText: combinedText,
-      recentScheduleContext: recentScheduleContext,
-      refreshState: refreshState,
+      inputMarkdown: inputMarkdown,
+      scheduleStateContext: scheduleStateContext,
     );
 
     final messages = [
@@ -116,19 +113,17 @@ class PostCardRouterAgent {
           'Decide which downstream agents to activate for this new input. '
           'Call the `select_downstream_agents` tool exactly once. Use an '
           'empty list if no downstream agent is needed.\n\n'
-          '${jsonEncode(context)}',
+          '$context',
         ),
       ]),
     ];
 
-    try {
+    if (state.isRunning) {
+      _logger.info('Post-card router resume, sessionId:$sessionId');
+      await agent.resume(useStream: false);
+    } else {
+      _logger.info('Post-card router run, sessionId:$sessionId');
       await agent.run(messages, useStream: false);
-    } finally {
-      try {
-        await deleteAgentState(userId, sessionId);
-      } catch (_) {
-        // best effort
-      }
     }
 
     final decision = toolDecision;
@@ -152,27 +147,29 @@ class PostCardRouterAgent {
 }
 
 /// Build the structured context that the router LLM receives.
-Map<String, dynamic> buildPostCardRouterContext({
+String buildPostCardRouterContextMarkdown({
   required String factId,
-  required String combinedText,
-  required Map<String, dynamic> recentScheduleContext,
-  required Map<String, dynamic> refreshState,
+  required String inputMarkdown,
+  required Map<String, dynamic> scheduleStateContext,
 }) {
-  return {
-    'new_input': {
-      'fact_id': factId,
-      'combined_text': _truncate(combinedText, 4000),
-    },
-    'recent_schedule_context': recentScheduleContext,
-    'schedule_refresh_state': refreshState,
-  };
+  return '''# Post-Card Routing Context
+
+## Current Input
+$inputMarkdown
+
+## Schedule State Context
+```json
+${const JsonEncoder.withIndent('  ').convert(scheduleStateContext)}
+```
+''';
 }
 
 Tool _buildActivateTool({
   required String userId,
   required String factId,
   required String combinedText,
-  required Map<String, dynamic> recentScheduleContext,
+  required String inputMarkdown,
+  required Map<String, dynamic> scheduleStateContext,
   required void Function(PostCardRouteResult decision) onDecision,
 }) {
   return Tool(
@@ -180,9 +177,8 @@ Tool _buildActivateTool({
     description:
         'Select which downstream agents to activate for this input. Pass '
         'an empty list when nothing needs to run. Allowed agent names: '
-        'schedule_aggregator, task_completion, system_action, '
-        'ask_clarification. This tool finishes the routing decision; do '
-        'not call any other tool afterwards.',
+        'schedule_aggregator, ask_clarification. This tool finishes the '
+        'routing decision; do not call any other tool afterwards.',
     parameters: {
       'type': 'object',
       'properties': {
@@ -192,8 +188,6 @@ Tool _buildActivateTool({
             'type': 'string',
             'enum': [
               PostCardRouterTargets.scheduleAggregator,
-              PostCardRouterTargets.taskCompletion,
-              PostCardRouterTargets.systemAction,
               PostCardRouterTargets.askClarification,
             ],
           },
@@ -227,7 +221,7 @@ Tool _buildActivateTool({
             userId: userId,
             factId: factId,
             combinedText: combinedText,
-            recentScheduleContext: recentScheduleContext,
+            inputMarkdown: inputMarkdown,
             reason: reason,
           );
         } catch (e, st) {
@@ -266,25 +260,18 @@ Future<void> _enqueueDownstream({
   required String userId,
   required String factId,
   required String combinedText,
-  required Map<String, dynamic> recentScheduleContext,
+  required String inputMarkdown,
   required String reason,
 }) async {
   final basePayload = <String, dynamic>{
     'fact_id': factId,
     'combined_text': combinedText,
+    'input_markdown': inputMarkdown,
     'router_reason': reason,
   };
 
   switch (agentName) {
     case PostCardRouterTargets.scheduleAggregator:
-      // Mark schedule view dirty before triggering the aggregator so the
-      // schedule UI knows it is currently stale.
-      await ScheduleRefreshStateService.instance.markDirty(
-        userId: userId,
-        reason: reason,
-        cardIds: [factId],
-        refreshRequested: true,
-      );
       // Reuse the existing scheduleAggregationRequested event so the
       // aggregator queue collapses repeated requests across inputs.
       await GlobalEventBus.instance.publish(
@@ -294,26 +281,12 @@ Future<void> _enqueueDownstream({
           source: 'post_card_router_agent',
           payload: {
             'reason': reason,
-            'card_ids': [factId]
+            'card_ids': [factId],
+            'fact_id': factId,
+            'combined_text': combinedText,
+            'input_markdown': inputMarkdown,
           },
         ),
-      );
-      return;
-    case PostCardRouterTargets.taskCompletion:
-      await LocalTaskExecutor.instance.enqueueTask(
-        userId: userId,
-        taskType: 'task_completion_task',
-        payload: {
-          ...basePayload,
-          'recent_schedule_context': recentScheduleContext,
-        },
-      );
-      return;
-    case PostCardRouterTargets.systemAction:
-      await LocalTaskExecutor.instance.enqueueTask(
-        userId: userId,
-        taskType: 'system_action_task',
-        payload: basePayload,
       );
       return;
     case PostCardRouterTargets.askClarification:
@@ -339,52 +312,87 @@ List<String> _normalizeAgents(List<dynamic>? raw) {
   return ordered;
 }
 
-/// Run the router using the configured LLM resources, building the same
-/// schedule-context snapshot the downstream agents rely on.
+/// Run the router using the configured LLM resources and current schedule
+/// state context.
 Future<PostCardRouteResult> runPostCardRouter({
   required String userId,
   required String factId,
   required String combinedText,
+  List<Map<String, dynamic>>? assetAnalyses,
+  DateTime? inputDateTime,
+  String? locationContextReminder,
   required LLMClient client,
   required ModelConfig modelConfig,
 }) async {
-  final now = DateTime.now();
-  final recentScheduleContext = await queryScheduleCardsForRange(
-    userId: userId,
-    from: now.subtract(const Duration(days: 3)),
-    to: now.add(const Duration(days: 7)),
-    limit: 40,
+  final scheduleState = await ScheduleStateService.instance.ensureInitialized(
+    userId,
   );
-  final refreshState =
-      (await ScheduleRefreshStateService.instance.read(userId)).toJson();
-
+  final scheduleStateContext = _compactScheduleStateForRouter(scheduleState);
+  final inputMarkdown = buildPostCardRouterInputMarkdown(
+    factId: factId,
+    combinedText: combinedText,
+    assetAnalyses: assetAnalyses,
+    inputDateTime: inputDateTime,
+    locationContextReminder: locationContextReminder,
+  );
   return PostCardRouterAgent.route(
     client: client,
     modelConfig: modelConfig,
     userId: userId,
     factId: factId,
     combinedText: combinedText,
-    recentScheduleContext: recentScheduleContext,
-    refreshState: refreshState,
+    inputMarkdown: inputMarkdown,
+    scheduleStateContext: scheduleStateContext,
   );
 }
 
-/// Pure-rule fallback used when no LLM is configured. Empty activation set
-/// means nothing downstream will run.
-PostCardRouteResult fallbackPostCardRoute({
+String buildPostCardRouterInputMarkdown({
   required String factId,
   required String combinedText,
+  List<Map<String, dynamic>>? assetAnalyses,
+  DateTime? inputDateTime,
+  String? locationContextReminder,
 }) {
-  // Without LLM context we cannot reliably classify the input. Instead of
-  // guessing, leave activation empty and let the user trigger downstream
-  // refresh manually if needed.
-  _logger.info(
-    'Post-card router fallback (no LLM) for $factId; activating nothing.',
-  );
-  return const PostCardRouteResult(
-    activatedAgents: [],
-    reason: 'no_llm_configured',
-  );
+  final buffer = StringBuffer();
+  buffer.writeln('- Raw Input ID (fact_id): $factId');
+  if (inputDateTime != null) {
+    buffer.writeln(
+      '- Published time: ${formatLocalDateTimeWithZone(inputDateTime)}',
+    );
+  }
+  final locationReminder = locationContextReminder?.trim();
+  if (locationReminder != null && locationReminder.isNotEmpty) {
+    buffer.writeln();
+    buffer.writeln('<system-reminder>');
+    buffer.writeln(locationReminder);
+    buffer.writeln('</system-reminder>');
+  }
+  buffer.writeln();
+  buffer.writeln('### Raw Input Content');
+  final trimmed = combinedText.trim();
+  buffer.writeln(
+      trimmed.isEmpty ? '(No text content.)' : _truncate(trimmed, 4000));
+  buffer.write(formatAssetAnalysis(assetAnalyses, includeExif: true));
+  return buffer.toString().trimRight();
+}
+
+Map<String, dynamic> _compactScheduleStateForRouter(ScheduleState state) {
+  final pending = state.pending.take(30).map((item) {
+    return {
+      'id': item.id,
+      'kind': item.kind,
+      'title': item.title,
+      if (item.startTime != null)
+        'start_time': item.startTime!.toIso8601String(),
+      if (item.endTime != null) 'end_time': item.endTime!.toIso8601String(),
+      if (item.dueAt != null) 'due_at': item.dueAt!.toIso8601String(),
+      if (item.sourceFactIds.isNotEmpty) 'source_fact_ids': item.sourceFactIds,
+    };
+  }).toList();
+  return {
+    'pending': pending,
+    'pending_truncated': state.pending.length > pending.length,
+  };
 }
 
 String _safeSessionPart(String value) {
