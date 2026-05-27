@@ -28,7 +28,10 @@ class AgentBackgroundCoordinator {
   StreamSubscription<TaskActivitySnapshot>? _taskSubscription;
   StreamSubscription<AgentActivityMessageModel>? _messageSubscription;
   StreamSubscription<String>? _actionSubscription;
-  final _openActivityController = StreamController<void>.broadcast();
+  late final StreamController<void> _openActivityController =
+      StreamController<void>.broadcast(
+    onListen: _flushPendingOpenActivityRequest,
+  );
 
   TaskActivitySnapshot _taskSnapshot = const TaskActivitySnapshot.empty();
   AgentActivityMessageModel? _latestMessage;
@@ -36,6 +39,7 @@ class AgentBackgroundCoordinator {
   Timer? _terminalStopTimer;
   bool _started = false;
   bool _drainWorkScheduledForCurrentRun = false;
+  bool _hasPendingOpenActivityRequest = false;
 
   Stream<void> get openActivityRequests => _openActivityController.stream;
 
@@ -90,8 +94,22 @@ class AgentBackgroundCoordinator {
 
   void _handleAction(String action) {
     if (action == 'agent_activity') {
-      _openActivityController.add(null);
+      if (_openActivityController.hasListener) {
+        _openActivityController.add(null);
+      } else {
+        _hasPendingOpenActivityRequest = true;
+      }
     }
+  }
+
+  void _flushPendingOpenActivityRequest() {
+    if (!_hasPendingOpenActivityRequest) return;
+    _hasPendingOpenActivityRequest = false;
+    scheduleMicrotask(() {
+      if (!_openActivityController.isClosed) {
+        _openActivityController.add(null);
+      }
+    });
   }
 
   Future<void> _consumeInitialAction() async {

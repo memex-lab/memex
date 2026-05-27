@@ -110,6 +110,22 @@ void main() {
     await opened.future.timeout(const Duration(seconds: 1));
   });
 
+  test('buffers initial notification tap until a listener attaches', () async {
+    platform.initialAction = 'agent_activity';
+    coordinator.start(executor: executor, activityService: activityService);
+
+    await platform.initialActionConsumed.future.timeout(
+      const Duration(seconds: 1),
+    );
+
+    final opened = Completer<void>();
+    coordinator.openActivityRequests.listen((_) {
+      if (!opened.isCompleted) opened.complete();
+    });
+
+    await opened.future.timeout(const Duration(seconds: 1));
+  });
+
   test(
     'keeps system surface active when an error message arrives with retryable tasks',
     () async {
@@ -170,16 +186,23 @@ void main() {
 class _FakePlatform implements AgentBackgroundPlatform {
   final updates = <AgentBackgroundStatus>[];
   final finished = <AgentBackgroundStatus>[];
+  final initialActionConsumed = Completer<void>();
   var stopCount = 0;
   var updateAttempts = 0;
   var failNextUpdate = false;
+  String? initialAction;
   final _actions = StreamController<String>.broadcast();
 
   @override
   Stream<String> get actionStream => _actions.stream;
 
   @override
-  Future<String?> consumeInitialAction() async => null;
+  Future<String?> consumeInitialAction() async {
+    if (!initialActionConsumed.isCompleted) {
+      initialActionConsumed.complete();
+    }
+    return initialAction;
+  }
 
   @override
   Future<void> finishStatus(AgentBackgroundStatus status) async {

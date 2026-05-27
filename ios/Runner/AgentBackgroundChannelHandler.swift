@@ -74,6 +74,10 @@ class AgentBackgroundChannelHandler {
         }
     }
 
+    static func queueOpenAgentActivityIntent() {
+        pendingOpenAgentActivity = true
+    }
+
     private static func updateLiveActivity(status: [String: Any], terminal: Bool) {
         #if canImport(ActivityKit)
         if #available(iOS 16.1, *) {
