@@ -40,7 +40,7 @@ bool shouldEmitChatTurnStartedBeforeIo({
   required String trimmedMessage,
   required bool hasImages,
 }) {
-  return trimmedMessage.isNotEmpty || hasImages;
+  return trimmedMessage.trim().isNotEmpty || hasImages;
 }
 
 @visibleForTesting

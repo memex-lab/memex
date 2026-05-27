@@ -48,6 +48,16 @@ void main() {
         isFalse,
       );
     });
+
+    test('does not announce a whitespace-only turn', () {
+      expect(
+        shouldEmitChatTurnStartedBeforeIo(
+          trimmedMessage: '   ',
+          hasImages: false,
+        ),
+        isFalse,
+      );
+    });
   });
 
   group('isActiveChatTurnTaskForSession', () {
