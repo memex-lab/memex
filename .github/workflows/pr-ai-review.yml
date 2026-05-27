@@ -33,7 +33,7 @@ jobs:
       - name: Check out trusted base branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.repository.default_branch }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.ref || github.event.repository.default_branch }}
           fetch-depth: 0
 
       - name: Resolve PR metadata
@@ -131,15 +131,22 @@ jobs:
         uses: anthropics/claude-code-action@v1
         env:
           ANTHROPIC_BASE_URL: ${{ secrets.ANTHROPIC_BASE_URL }}
+          ANTHROPIC_MODEL: mimo-v2.5-pro
+          ANTHROPIC_CUSTOM_MODEL_OPTION: mimo-v2.5-pro
+          ANTHROPIC_CUSTOM_MODEL_OPTION_NAME: MIMO v2.5 Pro
+          ANTHROPIC_DEFAULT_OPUS_MODEL: mimo-v2.5-pro
+          ANTHROPIC_DEFAULT_SONNET_MODEL: mimo-v2.5-pro
+          ANTHROPIC_DEFAULT_HAIKU_MODEL: mimo-v2.5-pro
+          CLAUDE_CODE_DISABLE_1M_CONTEXT: "1"
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ github.token }}
           prompt: |
             Read `.github/claude/pr-ai-review-prompt.md` and perform that review now.
           claude_args: >-
+            --model "mimo-v2.5-pro"
             --tools "Read"
             --allowedTools "Read"
-            --json-schema '{"$schema":"https://json-schema.org/draft/2020-12/schema","title":"Memex PR AI Review Result","type":"object","additionalProperties":false,"required":["schema_version","risk_level","human_review_required","golden_path_impact","summary_zh","summary_en","affected_areas","findings","test_gaps","confidence"],"properties":{"schema_version":{"type":"integer","const":1},"risk_level":{"type":"string","enum":["low","medium","high","critical"]},"human_review_required":{"type":"boolean"},"golden_path_impact":{"type":"object","additionalProperties":false,"required":["level","paths","reason_zh","reason_en"],"properties":{"level":{"type":"string","enum":["none","possible","likely","confirmed"]},"paths":{"type":"array","items":{"type":"string","enum":["record_capture","timeline","agent_pipeline","knowledge_pkm","llm_configuration","local_first_data","platform_entry","none"]},"uniqueItems":true},"reason_zh":{"type":"string"},"reason_en":{"type":"string"}}},"summary_zh":{"type":"string"},"summary_en":{"type":"string"},"affected_areas":{"type":"array","items":{"type":"string","enum":["docs","ci","ui","view_model","router","repository","service","agent","llm_provider","storage","database","backup_restore","i18n","platform_android","platform_ios","tests","unknown"]},"uniqueItems":true},"findings":{"type":"array","items":{"type":"object","additionalProperties":false,"required":["severity","category","title_zh","title_en","evidence","recommendation_zh","recommendation_en","blocks_merge"],"properties":{"severity":{"type":"string","enum":["info","warn","high","critical"]},"category":{"type":"string","enum":["architecture","golden_path","testing","security_privacy","data_integrity","maintainability","review_context","other"]},"title_zh":{"type":"string"},"title_en":{"type":"string"},"evidence":{"type":"array","items":{"type":"string"}},"recommendation_zh":{"type":"string"},"recommendation_en":{"type":"string"},"blocks_merge":{"type":"boolean"}}}},"test_gaps":{"type":"array","items":{"type":"object","additionalProperties":false,"required":["area","gap_zh","gap_en","suggested_check"],"properties":{"area":{"type":"string"},"gap_zh":{"type":"string"},"gap_en":{"type":"string"},"suggested_check":{"type":"string"}}}},"confidence":{"type":"string","enum":["low","medium","high"]}}}'
           display_report: "false"
           show_full_output: "false"
 
@@ -147,26 +154,14 @@ jobs:
         if: always() && env.HAS_ANTHROPIC_API_KEY == 'true'
         env:
           STRUCTURED_OUTPUT: ${{ steps.claude-ai-review.outputs.structured_output }}
+          EXECUTION_FILE: ${{ steps.claude-ai-review.outputs.execution_file }}
         run: |
-          python3 - <<'PY'
-          import json
-          import os
-          from pathlib import Path
+          python3 scripts/extract_claude_structured_review.py \
+            --output ai-review-raw.json
 
-          raw = os.environ.get("STRUCTURED_OUTPUT", "").strip()
-          if not raw:
-              print("::warning::Claude structured output is empty.")
-              raise SystemExit(0)
-          try:
-              data = json.loads(raw)
-          except json.JSONDecodeError as exc:
-              print(f"::warning::Claude structured output is not valid JSON: {exc}")
-              raise SystemExit(0)
-          Path("ai-review-raw.json").write_text(
-              json.dumps(data, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
-              encoding="utf-8",
-          )
-          PY
+          if [ -n "$EXECUTION_FILE" ] && [ -f "$EXECUTION_FILE" ]; then
+            cp "$EXECUTION_FILE" claude-execution-output.json
+          fi
 
       - name: Write fallback result when Claude did not produce JSON
         if: always() && env.HAS_ANTHROPIC_API_KEY == 'true'
@@ -287,3 +282,4 @@ jobs:
             ai-review-raw.json
             ai-review.json
             ai-review.md
+            claude-execution-output.json
