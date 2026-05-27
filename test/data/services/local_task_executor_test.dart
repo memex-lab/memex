@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:drift/drift.dart' hide isNull;
+import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:memex/data/services/local_task_executor.dart';
@@ -194,6 +194,111 @@ void main() {
       );
       expect(snapshot.total, 3);
       expect(snapshot.hasActiveTasks, isTrue);
+    });
+
+    test('claims a runnable task only once across competing executors',
+        () async {
+      final firstStarted = Completer<void>();
+      final release = Completer<void>();
+      var runCount = 0;
+
+      Future<void> handler(
+        String userId,
+        Map<String, dynamic> payload,
+        TaskContext context,
+      ) async {
+        runCount++;
+        if (!firstStarted.isCompleted) firstStarted.complete();
+        await release.future;
+      }
+
+      executor.registerHandler('single_claim_task', handler);
+      final competingExecutor = LocalTaskExecutor.forTesting()
+        ..registerHandler('single_claim_task', handler);
+      addTearDown(competingExecutor.stop);
+
+      final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+      await db.into(db.tasks).insert(TasksCompanion.insert(
+            id: 'single-claim',
+            type: 'single_claim_task',
+            payload: const Value('{}'),
+            status: 'pending',
+            createdAt: Value(now),
+          ));
+
+      await executor.start(userId: 'user-a');
+      await competingExecutor.start(userId: 'user-a');
+      await firstStarted.future.timeout(const Duration(seconds: 3));
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+      release.complete();
+
+      final task = await _waitForTaskStatus(db, 'single-claim', 'completed');
+
+      expect(task.status, 'completed');
+      expect(runCount, 1);
+    });
+
+    test('background drain runs available tasks and leaves future retries',
+        () async {
+      final completedTaskIds = <String>[];
+      executor.registerHandler('drain_task', (_, __, context) async {
+        completedTaskIds.add(context.taskId);
+      });
+
+      final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+      await db.into(db.tasks).insert(TasksCompanion.insert(
+            id: 'available-drain',
+            type: 'drain_task',
+            payload: const Value('{}'),
+            status: 'pending',
+            createdAt: Value(now),
+          ));
+      await db.into(db.tasks).insert(TasksCompanion.insert(
+            id: 'future-retry',
+            type: 'drain_task',
+            payload: const Value('{}'),
+            status: 'retrying',
+            createdAt: Value(now + 1),
+            scheduledAt: Value(now + 3600),
+          ));
+
+      final result = await executor.drainAvailableTasks(
+        userId: 'user-a',
+        maxDuration: const Duration(seconds: 3),
+        pollInterval: const Duration(milliseconds: 25),
+      );
+
+      final available = await _getTask(db, 'available-drain');
+      final futureRetry = await _getTask(db, 'future-retry');
+
+      expect(completedTaskIds, ['available-drain']);
+      expect(available.status, 'completed');
+      expect(futureRetry.status, 'retrying');
+      expect(result.timedOut, isFalse);
+      expect(result.snapshot.retrying, 1);
+      expect(result.nextRunnableDelay, isNotNull);
+    });
+
+    test('background drain does not reset already processing tasks', () async {
+      final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+      await db.into(db.tasks).insert(TasksCompanion.insert(
+            id: 'foreground-processing',
+            type: 'long_task',
+            payload: const Value('{}'),
+            status: 'processing',
+            createdAt: Value(now),
+          ));
+
+      final result = await executor.drainAvailableTasks(
+        userId: 'user-a',
+        maxDuration: const Duration(milliseconds: 100),
+        pollInterval: const Duration(milliseconds: 20),
+      );
+
+      final task = await _getTask(db, 'foreground-processing');
+
+      expect(result.timedOut, isTrue);
+      expect(task.status, 'processing');
     });
   });
 

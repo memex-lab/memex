@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:intl/intl.dart';
 import 'package:memex/data/services/agent_activity_service.dart';
+import 'package:memex/data/services/agent_background_coordinator.dart';
 import 'package:memex/data/services/local_task_executor.dart';
 import 'package:memex/utils/user_storage.dart';
 
@@ -31,6 +32,7 @@ class _AgentActivityWidgetState extends State<AgentActivityWidget>
   LocalTaskExecutor? _executor;
   StreamSubscription<AgentActivityMessageModel>? _subscription;
   StreamSubscription<TaskActivitySnapshot>? _taskSubscription;
+  StreamSubscription<void>? _openActivitySubscription;
   Timer? _historyLoadTimer;
   TaskActivitySnapshot _taskSnapshot = const TaskActivitySnapshot.empty();
 
@@ -60,6 +62,9 @@ class _AgentActivityWidgetState extends State<AgentActivityWidget>
     try {
       _service = AgentActivityService.instance;
       _executor = LocalTaskExecutor.instance;
+      _openActivitySubscription = AgentBackgroundCoordinator
+          .instance.openActivityRequests
+          .listen((_) => _showDetail());
       _subscribeToService();
     } catch (_) {
       _historyLoadTimer = Timer(const Duration(seconds: 3), () {
@@ -73,6 +78,9 @@ class _AgentActivityWidgetState extends State<AgentActivityWidget>
     try {
       _service = AgentActivityService.instance;
       _executor = LocalTaskExecutor.instance;
+      _openActivitySubscription ??= AgentBackgroundCoordinator
+          .instance.openActivityRequests
+          .listen((_) => _showDetail());
       _subscribeToService();
     } catch (_) {}
   }
@@ -110,6 +118,7 @@ class _AgentActivityWidgetState extends State<AgentActivityWidget>
   void dispose() {
     _subscription?.cancel();
     _taskSubscription?.cancel();
+    _openActivitySubscription?.cancel();
     _historyLoadTimer?.cancel();
     _bounceController.dispose();
     super.dispose();
@@ -117,7 +126,7 @@ class _AgentActivityWidgetState extends State<AgentActivityWidget>
 
   bool _isDetailShowing = false;
 
-  Future<void> _showDetail(BuildContext context) async {
+  Future<void> _showDetail() async {
     if (_isDetailShowing) return;
     _isDetailShowing = true;
     final targetContext = widget.navigatorKey?.currentContext ?? context;
@@ -142,7 +151,7 @@ class _AgentActivityWidgetState extends State<AgentActivityWidget>
     if (!_isActive) return const SizedBox.shrink();
 
     return GestureDetector(
-      onTap: () => _showDetail(context),
+      onTap: _showDetail,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(

@@ -22,6 +22,7 @@ void main() {
     bool forceVisible = false,
     TaskActivitySnapshot initialTaskSnapshot =
         const TaskActivitySnapshot.empty(),
+    Stream<TaskActivitySnapshot>? taskActivitySnapshotStream,
   }) {
     return MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -32,6 +33,7 @@ void main() {
             forceVisible: forceVisible,
             initialTaskSnapshot: initialTaskSnapshot,
             taskActivitySnapshotStream:
+                taskActivitySnapshotStream ??
                 const Stream<TaskActivitySnapshot>.empty(),
           ),
         ),
@@ -83,6 +85,40 @@ void main() {
       findsWidgets,
     );
 
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+  });
+
+  testWidgets('updates backlog count from task activity stream', (
+    tester,
+  ) async {
+    final controller = StreamController<TaskActivitySnapshot>();
+    await tester.pumpWidget(
+      buildHost(taskActivitySnapshotStream: controller.stream),
+    );
+    await tester.pump();
+
+    expect(find.text('AI is processing...'), findsNothing);
+
+    controller.add(
+      const TaskActivitySnapshot(pending: 2, processing: 1, retrying: 1),
+    );
+    await tester.pump(const Duration(milliseconds: 350));
+
+    expect(find.text('AI is processing...'), findsOneWidget);
+    expect(
+      find.text(
+        '4 background tasks are still processing. Insights may update after they finish.',
+      ),
+      findsOneWidget,
+    );
+
+    controller.add(const TaskActivitySnapshot.empty());
+    await tester.pump(const Duration(milliseconds: 350));
+
+    expect(find.text('AI is processing...'), findsNothing);
+
+    await controller.close();
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
   });

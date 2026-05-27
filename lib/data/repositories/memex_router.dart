@@ -78,6 +78,7 @@ import 'package:memex/data/repositories/get_knowledge_insight_detail.dart';
 import 'package:memex/data/repositories/chat.dart' as chat_endpoint;
 import 'package:memex/data/services/llm_call_record_service.dart';
 import 'package:memex/data/services/agent_activity_service.dart';
+import 'package:memex/data/services/agent_background_coordinator.dart';
 import 'package:memex/agent/state_util.dart';
 import 'package:memex/agent/skills/knowledge_insight/native_widgets.dart';
 import 'package:memex/utils/result.dart';
@@ -88,6 +89,7 @@ import 'package:memex/domain/models/user_stats_model.dart';
 class MemexRouter {
   static final MemexRouter _instance = MemexRouter._();
   factory MemexRouter() => _instance;
+  static bool _backgroundTaskInitialization = false;
 
   final Logger _logger = getLogger('MemexRouter');
 
@@ -117,7 +119,10 @@ class MemexRouter {
       // Use userId to init DB (drift_flutter handles path isolation via name)
       _logger.info('Initializing Local DB for user: $userId');
       await AppDatabase.init(userId);
-      await LocalTaskExecutor.instance.start(userId: userId);
+      await LocalTaskExecutor.instance.start(
+        userId: userId,
+        recoverStaleTasks: !_backgroundTaskInitialization,
+      );
 
       // Start table change notifier (binlog-style listener for Drift tables)
       TableChangeNotifier.instance.init();
@@ -237,6 +242,10 @@ class MemexRouter {
       // Also triggers a one-time full rebuild when FTS tables were just created
       // via migration (existing users upgrading to schema v10).
       SearchService.instance.init(userId);
+      AgentBackgroundCoordinator.instance.start(
+        executor: LocalTaskExecutor.instance,
+        activityService: LocalAgentActivityService.instance,
+      );
 
       scheduleAutoBackupCheck(trigger: 'app_start');
     } catch (e) {
@@ -423,6 +432,17 @@ class MemexRouter {
     return _initFuture!;
   }
 
+  Future<void> ensureInitialized() => _ensureInitialized();
+
+  static Future<void> ensureInitializedForBackgroundTask() async {
+    _backgroundTaskInitialization = true;
+    try {
+      await MemexRouter().ensureInitialized();
+    } finally {
+      _backgroundTaskInitialization = false;
+    }
+  }
+
   /// External hook to force switch user (e.g. on login)
   Future<void> switchUser(String userId) async {
     _logger.info('Switching user to $userId');
@@ -471,6 +491,7 @@ class MemexRouter {
     _logger.info('Resetting MemexRouter for logout');
     _targetUserIdForInit = null;
     _initFuture = null;
+    unawaited(AgentBackgroundCoordinator.instance.stop());
     LocalTaskExecutor.instance.stop();
     SearchService.instance.reset();
   }

@@ -14,11 +14,25 @@ import workmanager_apple
         WorkmanagerPlugin.setPluginRegistrantCallback { registry in
             GeneratedPluginRegistrant.register(with: registry)
         }
+        WorkmanagerPlugin.registerBGProcessingTask(withIdentifier: "agent_queue_drain")
+        AgentBackgroundChannelHandler.registerContinuedProcessingTaskHandler()
 
         // Register all MethodChannel handlers
         ChannelRegistrar.registerAll(with: controller.binaryMessenger)
 
         GeneratedPluginRegistrant.register(with: self)
         return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+    }
+
+    override func application(
+        _ app: UIApplication,
+        open url: URL,
+        options: [UIApplication.OpenURLOptionsKey: Any] = [:]
+    ) -> Bool {
+        if url.scheme == "memex", url.host == "agent_activity" {
+            AgentBackgroundChannelHandler.handleOpenAgentActivityIntent()
+            return true
+        }
+        return super.application(app, open: url, options: options)
     }
 }

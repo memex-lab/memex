@@ -104,9 +104,13 @@
 			<string>processing</string>
 			<string>fetch</string>
 		</array>
+		<key>NSSupportsLiveActivities</key>
+		<true/>
 		<key>BGTaskSchedulerPermittedIdentifiers</key>
 		<array>
 			<string>workmanager.background.task</string>
+			<string>agent_queue_drain</string>
+			<string>$(PRODUCT_BUNDLE_IDENTIFIER).agentQueue.*</string>
 		</array>
 		<key>UIApplicationShortcutItems</key>
 		<array>
@@ -119,6 +123,25 @@
 				<string>UIApplicationShortcutIconTypeCompose</string>
 			</dict>
 		</array>
+		<key>CFBundleURLTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleURLName</key>
+				<string>com.memexlab.memex.agent-activity</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>memex</string>
+				</array>
+			</dict>
+			<dict>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>ShareMedia-$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+				</array>
+			</dict>
+		</array>
 		<key>NSAppTransportSecurity</key>
 		<dict>
 			<key>NSAllowsArbitraryLoads</key>
@@ -129,18 +152,7 @@
 		<array>
 			<string>INSendMessageIntent</string>
 		</array>
-		<key>CFBundleURLTypes</key>
-			<array>
-				<dict>
-					<key>CFBundleTypeRole</key>
-					<string>Editor</string>
-					<key>CFBundleURLSchemes</key>
-				<array>
-					<string>ShareMedia-$(PRODUCT_BUNDLE_IDENTIFIER)</string>
-					</array>
-				</dict>
-			</array>
-			<key>UTExportedTypeDeclarations</key>
+		<key>UTExportedTypeDeclarations</key>
 			<array>
 				<dict>
 					<key>UTTypeIdentifier</key>
