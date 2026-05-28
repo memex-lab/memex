@@ -12,6 +12,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:memex/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:memex/config/dependencies.dart';
+import 'package:memex/config/app_config.dart';
 import 'package:memex/config/app_flavor.dart';
 import 'package:memex/ui/insight/view_models/insight_viewmodel.dart';
 import 'package:memex/ui/knowledge/view_models/knowledge_base_viewmodel.dart';
@@ -30,6 +31,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:ui';
 import 'package:memex/ui/main_screen/widgets/input_sheet.dart';
+import 'package:memex/ui/settings/widgets/ai_service_setup_page.dart';
 import 'package:memex/ui/settings/widgets/model_config_list_page.dart';
 import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/data/services/event_bus_service.dart';
@@ -681,7 +683,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const ModelConfigListPage(),
+                  builder: (context) => AppConfig.enableMemexModelService
+                      ? const AiServiceSetupPage()
+                      : const ModelConfigListPage(),
                 ),
               );
             },
@@ -730,7 +734,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const ModelConfigListPage(),
+                    builder: (context) => AppConfig.enableMemexModelService
+                        ? const AiServiceSetupPage()
+                        : const ModelConfigListPage(),
                   ),
                 );
               },

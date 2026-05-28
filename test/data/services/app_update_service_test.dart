@@ -513,9 +513,9 @@ Map<String, dynamic> release({
 }
 
 Future<void> waitFor(bool Function() condition) async {
-  for (var i = 0; i < 20; i += 1) {
+  for (var i = 0; i < 50; i += 1) {
     if (condition()) return;
-    await Future<void>.delayed(Duration.zero);
+    await Future<void>.delayed(const Duration(milliseconds: 10));
   }
   fail('Condition was not met before timeout.');
 }

@@ -1616,6 +1616,90 @@ abstract class AppLocalizations {
   /// **'Complete & Go'**
   String get setupModelConfigComplete;
 
+  /// No description provided for @aiService.
+  ///
+  /// In en, this message translates to:
+  /// **'Memex Model Service'**
+  String get aiService;
+
+  /// No description provided for @aiServiceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The AI journal for your real life'**
+  String get aiServiceTitle;
+
+  /// No description provided for @aiServiceSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn scattered notes, photos, and voice records into a structured second brain.'**
+  String get aiServiceSubtitle;
+
+  /// No description provided for @aiServiceLongDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Memex uses a multi-agent system to organize life records, knowledge notes, and social context, discover deeper insights, and provide AI companionship with persistent memory. Your data is stored as plain-text Markdown, preserving data freedom and portability.'**
+  String get aiServiceLongDescription;
+
+  /// No description provided for @aiServiceCustomModelTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect your own AI model'**
+  String get aiServiceCustomModelTitle;
+
+  /// No description provided for @aiServiceCustomModelDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'If you are familiar with model APIs and can configure them yourself, we recommend using your own key. If not, you can top up our pay-as-you-go credit.'**
+  String get aiServiceCustomModelDescription;
+
+  /// No description provided for @aiServiceStepAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'One account manages credit, billing, and usage history.'**
+  String get aiServiceStepAccount;
+
+  /// No description provided for @aiServiceStepBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay as you go. Top up when balance runs low; no fixed monthly fee.'**
+  String get aiServiceStepBalance;
+
+  /// No description provided for @aiServiceStepEnable.
+  ///
+  /// In en, this message translates to:
+  /// **'Once enabled, text, photo, and voice records enter the AI organization queue.'**
+  String get aiServiceStepEnable;
+
+  /// No description provided for @enableAiService.
+  ///
+  /// In en, this message translates to:
+  /// **'Start using'**
+  String get enableAiService;
+
+  /// No description provided for @aiServiceWaitingForPayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in and choose credit to turn on'**
+  String get aiServiceWaitingForPayment;
+
+  /// No description provided for @aiServiceReadyToast.
+  ///
+  /// In en, this message translates to:
+  /// **'AI organization is on'**
+  String get aiServiceReadyToast;
+
+  /// No description provided for @aiServiceSettingsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage AI organization, credit, and usage history.'**
+  String get aiServiceSettingsDescription;
+
+  /// No description provided for @advancedModelConfiguration.
+  ///
+  /// In en, this message translates to:
+  /// **'I want to connect my own AI model'**
+  String get advancedModelConfiguration;
+
   /// No description provided for @skipForNow.
   ///
   /// In en, this message translates to:
@@ -3257,7 +3341,7 @@ abstract class AppLocalizations {
   /// No description provided for @memexPayAmount.
   ///
   /// In en, this message translates to:
-  /// **'Pay {amount}'**
+  /// **'Top up {amount}'**
   String memexPayAmount(Object amount);
 
   /// No description provided for @modelIdLabel.

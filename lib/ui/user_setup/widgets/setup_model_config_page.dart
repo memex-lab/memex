@@ -10,7 +10,6 @@ import 'package:memex/data/services/model_list_service.dart';
 import 'package:memex/ui/core/widgets/searchable_dropdown.dart';
 import 'package:memex/ui/core/themes/app_colors.dart';
 import 'package:memex/config/app_config.dart';
-import 'package:memex/ui/settings/widgets/memex_auth_section.dart';
 
 class SetupModelConfigPage extends StatefulWidget {
   final LLMConfig config;
@@ -731,8 +730,7 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
                 // Base URL (before API key — needed for model fetching)
                 if (_selectedType != LLMConfig.typeBedrockClaude &&
                     _selectedType != LLMConfig.typeOpenAiOauth &&
-                    _selectedType != LLMConfig.typeGeminiOauth &&
-                    _selectedType != LLMConfig.typeMemex) ...[
+                    _selectedType != LLMConfig.typeGeminiOauth) ...[
                   _buildTextField(
                     controller: _baseUrlController,
                     label: UserStorage.l10n.baseUrlLabel,
@@ -747,29 +745,6 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
                   const SizedBox(height: 20),
                 ] else if (_selectedType == LLMConfig.typeGeminiOauth) ...[
                   _buildGeminiAuthSection(),
-                  const SizedBox(height: 20),
-                ] else if (_selectedType == LLMConfig.typeMemex) ...[
-                  MemexAuthSection(
-                    onCredentialsReady: (baseUrl, apiKey, models) {
-                      setState(() {
-                        _baseUrlController.text = baseUrl;
-                        _apiKeyController.text = apiKey;
-                        if (models.isNotEmpty) {
-                          _fetchedModels = models;
-                          _modelIdController.text = models.first;
-                          _modelDropdownKey.currentState?.setText(models.first);
-                        }
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  _buildTextField(
-                    controller: _baseUrlController,
-                    label: UserStorage.l10n.baseUrlLabel,
-                    icon: Icons.link,
-                  ),
-                  const SizedBox(height: 20),
-                  _buildApiKeyField(),
                   const SizedBox(height: 20),
                 ] else if (_selectedType == LLMConfig.typeBedrockClaude) ...[
                   _buildBedrockFields(),

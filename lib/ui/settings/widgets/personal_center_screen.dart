@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logging/logging.dart';
+import 'package:memex/config/app_config.dart';
 import 'package:memex/routing/routes.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/utils/toast_helper.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/ui/settings/widgets/agent_config_list_page.dart';
+import 'package:memex/ui/settings/widgets/ai_service_setup_page.dart';
 import 'package:memex/ui/settings/widgets/model_config_list_page.dart';
 import 'package:memex/ui/settings/widgets/system_authorization_page.dart';
 import 'package:memex/ui/settings/widgets/debug_settings_page.dart';
@@ -958,6 +960,22 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
                             },
                           ),
                           const SizedBox(height: 12),
+                          if (AppConfig.enableMemexModelService) ...[
+                            _buildFunctionTab(
+                              icon: Icons.auto_awesome_rounded,
+                              title: UserStorage.l10n.aiService,
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const AiServiceSetupPage(),
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 12),
+                          ],
                           _buildFunctionTab(
                             icon: Icons.settings_input_component_outlined,
                             title: UserStorage.l10n.modelConfig,

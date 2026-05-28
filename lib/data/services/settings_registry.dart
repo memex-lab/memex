@@ -1,10 +1,12 @@
 import 'dart:io';
 
+import 'package:memex/config/app_config.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:memex/config/app_flavor.dart';
 import 'package:memex/domain/models/settings_item.dart';
 import 'package:memex/data/repositories/memex_router.dart';
+import 'package:memex/ui/settings/widgets/ai_service_setup_page.dart';
 import 'package:memex/ui/settings/widgets/system_authorization_page.dart';
 import 'package:memex/ui/settings/widgets/model_config_list_page.dart';
 import 'package:memex/ui/settings/widgets/agent_config_list_page.dart';
@@ -65,6 +67,34 @@ class SettingsRegistry {
           ),
           parentPathGetter: () => [UserStorage.l10n.personalCenter],
         ),
+        if (AppConfig.enableMemexModelService)
+          SettingsItem(
+            id: 'ai_service',
+            titleGetter: () => UserStorage.l10n.aiService,
+            descriptionGetter: () =>
+                UserStorage.l10n.aiServiceSettingsDescription,
+            keywords: const [
+              'AI服务',
+              '付费',
+              '充值',
+              '余额',
+              '普通配置',
+              '开通',
+              'memex模型服务',
+              'ai service',
+              'memex model service',
+              'paid',
+              'payment',
+              'top up',
+              'balance',
+              'subscription',
+            ],
+            icon: Icons.auto_awesome_rounded,
+            navigationTarget: NavigationTarget(
+              pageBuilder: (_) => const AiServiceSetupPage(),
+            ),
+            parentPathGetter: () => [UserStorage.l10n.personalCenter],
+          ),
         SettingsItem(
           id: 'model_config',
           titleGetter: () => UserStorage.l10n.modelConfig,

@@ -53,8 +53,6 @@ class AppConfig {
   ];
 
   static const _cnProviders = [
-    // Memex AI (built-in service)
-    LLMConfig.typeMemex,
     // Chinese providers
     LLMConfig.typeKimi,
     LLMConfig.typeQwen,
@@ -69,6 +67,7 @@ class AppConfig {
   // ─── Feature Flags ───────────────────────────────────────────────
   // Add more flavor-dependent flags here as needed, e.g.:
   //
+  static bool get enableMemexModelService => AppFlavor.isGlobal;
   // static bool get enableICloudSync => AppFlavor.isGlobal;
   // static bool get enableHealthKit  => AppFlavor.isGlobal;
 }

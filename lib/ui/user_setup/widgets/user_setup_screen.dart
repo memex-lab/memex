@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'dart:ui' show PlatformDispatcher;
 import 'package:google_fonts/google_fonts.dart';
+import 'package:memex/config/app_config.dart';
 import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/media_service.dart';
@@ -9,6 +10,7 @@ import 'package:memex/utils/user_storage.dart';
 import 'package:memex/utils/toast_helper.dart';
 
 import 'package:memex/ui/settings/widgets/data_storage_page.dart';
+import 'package:memex/ui/settings/widgets/ai_service_setup_page.dart';
 import 'package:memex/ui/core/widgets/avatar_picker.dart';
 import 'package:memex/ui/core/widgets/character_avatar.dart';
 import 'package:memex/ui/core/themes/app_colors.dart';
@@ -113,6 +115,22 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
 
         final avatarToSave = await _resolveAvatarForSave(userId);
         await _memexRouter.updateUserAvatar(avatarToSave);
+        if (!mounted) return;
+
+        if (AppConfig.enableMemexModelService) {
+          final completedAiSetup = await Navigator.push<bool>(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AiServiceSetupPage(
+                onboardingMode: true,
+                onComplete: () => Navigator.of(context).pop(true),
+              ),
+            ),
+          );
+          if (!mounted || completedAiSetup != true) {
+            return;
+          }
+        }
 
         widget.onUserCreated();
       }

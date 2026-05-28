@@ -829,6 +829,50 @@ class AppLocalizationsZh extends AppLocalizations {
   String get setupModelConfigComplete => '配置完成，开启旅程';
 
   @override
+  String get aiService => 'Memex 模型服务';
+
+  @override
+  String get aiServiceTitle => '为真实生活打造的 AI 日记';
+
+  @override
+  String get aiServiceSubtitle => '将零散的笔记、照片和语音，自动转化为结构化的第二大脑。';
+
+  @override
+  String get aiServiceLongDescription =>
+      'Memex 利用多 Agent 架构自动整理你的生活记录、知识笔记与社交关系，深度挖掘洞察，并提供具有持久记忆的 AI 陪伴。所有数据均以纯文本 Markdown 存储，赋予你绝对的数据自由与跨平台迁移能力。';
+
+  @override
+  String get aiServiceCustomModelTitle => '连接自有 AI 模型';
+
+  @override
+  String get aiServiceCustomModelDescription =>
+      '如果您熟悉模型 API 并具备配置能力，我们建议使用您自己的 Key。如果您不熟悉或没有配置能力，可以充值我们的按量付费额度。';
+
+  @override
+  String get aiServiceStepAccount => '一个账号管理额度、账单和使用记录。';
+
+  @override
+  String get aiServiceStepBalance => '按量消耗，余额不足时再充值；没有固定月费。';
+
+  @override
+  String get aiServiceStepEnable => '开启后，文字、照片和语音记录会自动进入 AI 整理队列。';
+
+  @override
+  String get enableAiService => '开始使用';
+
+  @override
+  String get aiServiceWaitingForPayment => '登录并选择额度后开启';
+
+  @override
+  String get aiServiceReadyToast => 'AI 整理已开启';
+
+  @override
+  String get aiServiceSettingsDescription => '管理 AI 整理的开通状态、额度和使用记录。';
+
+  @override
+  String get advancedModelConfiguration => '我想连接自己的 AI 模型';
+
+  @override
   String get skipForNow => '暂不配置，先逛逛';
 
   @override
@@ -1715,7 +1759,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String memexPayAmount(Object amount) {
-    return '支付 $amount';
+    return '充值 $amount';
   }
 
   @override

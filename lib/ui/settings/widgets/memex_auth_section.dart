@@ -5,6 +5,10 @@ import 'package:memex/utils/user_storage.dart';
 import 'package:memex/ui/core/themes/app_colors.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
+const _memexAuthBorder = Color(0xFFC6C5D8);
+const _memexAuthSurface = Color(0xFFFFFFFF);
+const _memexAuthSecondary = Color(0xFF006397);
+
 /// Memex 认证区域 — 嵌入到模型配置页中
 /// 当用户选择 "Memex AI" 作为 provider 时显示
 /// 提供注册/登录/余额显示/充值功能
@@ -12,8 +16,15 @@ import 'package:webview_flutter/webview_flutter.dart';
 class MemexAuthSection extends StatefulWidget {
   final void Function(String baseUrl, String apiKey, List<String> models)?
       onCredentialsReady;
+  final ValueChanged<bool>? onLoginStateChanged;
+  final VoidCallback? onLogout;
 
-  const MemexAuthSection({super.key, this.onCredentialsReady});
+  const MemexAuthSection({
+    super.key,
+    this.onCredentialsReady,
+    this.onLoginStateChanged,
+    this.onLogout,
+  });
 
   @override
   State<MemexAuthSection> createState() => _MemexAuthSectionState();
@@ -58,15 +69,14 @@ class _MemexAuthSectionState extends State<MemexAuthSection> {
 
     if (_isLoggedIn) {
       await _loadUserInfo();
-      // Auto-fetch credentials if logged in with balance
       if ((_userInfo?.quota ?? 0) > 0) {
         _fetchAndNotifyCredentials();
       }
     }
 
-    // Fetch pricing info (public, doesn't require login)
     _groupRatio = await _service.getGroupRatio();
 
+    widget.onLoginStateChanged?.call(_isLoggedIn);
     if (mounted) setState(() => _isLoading = false);
   }
 
@@ -83,8 +93,7 @@ class _MemexAuthSectionState extends State<MemexAuthSection> {
         credentials.models ?? [],
       );
       if (mounted) {
-        setState(() {
-        });
+        setState(() {});
       }
     }
   }
@@ -100,43 +109,47 @@ class _MemexAuthSectionState extends State<MemexAuthSection> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Padding(
-        padding: EdgeInsets.all(16),
-        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-      );
+      return _buildLoadingPlaceholder();
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Pricing info
-        if (_groupRatio != null) ...[
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.blue[50],
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.info_outline, size: 16, color: Colors.blue[700]),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    UserStorage.l10n
-                        .memexPricingInfo(_groupRatio!.toStringAsFixed(1)),
-                    style: TextStyle(fontSize: 12, color: Colors.blue[700]),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-        ],
+    return _isLoggedIn ? _buildLoggedInSection() : _buildAuthForm();
+  }
 
-        // Auth or logged-in section
-        if (!_isLoggedIn) _buildAuthForm() else _buildLoggedInSection(),
+  Widget _buildLoadingPlaceholder() {
+    return Column(
+      children: [
+        _buildSkeletonBox(height: 48),
+        const SizedBox(height: 8),
+        _buildSkeletonBox(height: 48),
+        const SizedBox(height: 12),
+        _buildSkeletonBox(height: 48, color: AppColors.primary),
+        const SizedBox(height: 14),
+        Align(
+          alignment: Alignment.center,
+          child: _buildSkeletonBox(width: 134, height: 18),
+        ),
+        const SizedBox(height: 8),
+        Align(
+          alignment: Alignment.center,
+          child: _buildSkeletonBox(width: 210, height: 14),
+        ),
       ],
+    );
+  }
+
+  Widget _buildSkeletonBox({
+    double? width,
+    required double height,
+    Color color = const Color(0xFFEDEDF2),
+  }) {
+    return Container(
+      width: width ?? double.infinity,
+      height: height,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: color == AppColors.primary ? 0.16 : 1),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFE2E2E5)),
+      ),
     );
   }
 
@@ -145,98 +158,117 @@ class _MemexAuthSectionState extends State<MemexAuthSection> {
   // ============================================================
 
   Widget _buildAuthForm() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[300]!),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.info_outline, color: Colors.orange, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                _isLoginMode
-                    ? UserStorage.l10n.memexSignInToMemex
-                    : UserStorage.l10n.memexCreateMemexAccount,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _usernameController,
-            decoration: InputDecoration(
-              labelText: UserStorage.l10n.memexUsername,
-              isDense: true,
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-          ),
+    final l10n = UserStorage.l10n;
+    return Column(
+      children: [
+        _buildAuthField(
+          controller: _usernameController,
+          icon: Icons.person_outline_rounded,
+          label: l10n.memexUsername,
+        ),
+        const SizedBox(height: 8),
+        _buildAuthField(
+          controller: _passwordController,
+          icon: Icons.lock_outline_rounded,
+          label: l10n.memexPassword,
+          obscureText: true,
+        ),
+        if (!_isLoginMode) ...[
           const SizedBox(height: 8),
-          TextField(
-            controller: _passwordController,
+          _buildAuthField(
+            controller: _confirmPasswordController,
+            icon: Icons.verified_user_outlined,
+            label: l10n.memexConfirmPassword,
             obscureText: true,
-            decoration: InputDecoration(
-              labelText: UserStorage.l10n.memexPassword,
-              isDense: true,
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        ],
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          height: 48,
+          child: FilledButton.icon(
+            onPressed: _isAuthLoading ? null : _handleAuth,
+            iconAlignment: IconAlignment.end,
+            icon: _isAuthLoading
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(Icons.arrow_forward_rounded, size: 22),
+            label: Text(
+              _isLoginMode ? l10n.memexSignIn : l10n.memexCreateAccount,
+            ),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              disabledBackgroundColor: const Color(0xFFE2E2E5),
+              disabledForegroundColor: const Color(0xFF757687),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              textStyle: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ),
-          if (!_isLoginMode) ...[
-            const SizedBox(height: 8),
-            TextField(
-              controller: _confirmPasswordController,
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: UserStorage.l10n.memexConfirmPassword,
-                isDense: true,
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              ),
+        ),
+        const SizedBox(height: 10),
+        Center(
+          child: TextButton(
+            onPressed: () => setState(() => _isLoginMode = !_isLoginMode),
+            style: TextButton.styleFrom(
+              visualDensity: VisualDensity.compact,
+              foregroundColor: AppColors.primary,
             ),
-          ],
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _isAuthLoading ? null : _handleAuth,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: _isAuthLoading
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white),
-                    )
-                  : Text(_isLoginMode
-                      ? UserStorage.l10n.memexSignIn
-                      : UserStorage.l10n.memexCreateAccount),
+            child: Text(
+              _isLoginMode ? l10n.memexCreateAccountLink : l10n.memexSignInLink,
+              style: const TextStyle(fontWeight: FontWeight.w800),
             ),
           ),
-          Center(
-            child: TextButton(
-              onPressed: () => setState(() => _isLoginMode = !_isLoginMode),
-              child: Text(
-                _isLoginMode
-                    ? UserStorage.l10n.memexCreateAccountLink
-                    : UserStorage.l10n.memexSignInLink,
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-              ),
+        ),
+        if (_groupRatio != null) ...[
+          const SizedBox(height: 2),
+          Text(
+            l10n.memexPricingInfo(_groupRatio!.toStringAsFixed(1)),
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 11,
+              color: Color(0xFFC6C5D8),
             ),
           ),
         ],
+      ],
+    );
+  }
+
+  Widget _buildAuthField({
+    required TextEditingController controller,
+    required IconData icon,
+    required String label,
+    bool obscureText = false,
+  }) {
+    return TextField(
+      controller: controller,
+      obscureText: obscureText,
+      decoration: InputDecoration(
+        hintText: label,
+        prefixIcon: Icon(icon, color: const Color(0xFF757687)),
+        filled: true,
+        fillColor: _memexAuthSurface,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: _memexAuthBorder),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.4),
+        ),
       ),
     );
   }
@@ -272,6 +304,7 @@ class _MemexAuthSectionState extends State<MemexAuthSection> {
     if (result.success) {
       _isLoggedIn = true;
       _username = username;
+      widget.onLoginStateChanged?.call(true);
       await _loadUserInfo();
       if ((_userInfo?.quota ?? 0) > 0) {
         await _fetchAndNotifyCredentials();
@@ -291,194 +324,183 @@ class _MemexAuthSectionState extends State<MemexAuthSection> {
   Widget _buildLoggedInSection() {
     final balance = _userInfo?.balanceUsd ?? 0;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[300]!),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Status row
-          Row(
-            children: [
-              Icon(
-                Icons.check_circle,
-                color: balance > 0 ? Colors.green : Colors.orange,
-                size: 20,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: balance > 0
+                    ? AppColors.success.withValues(alpha: 0.1)
+                    : const Color(0xFFFFF7ED),
+                borderRadius: BorderRadius.circular(10),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  '$_username · ${UserStorage.l10n.memexBalanceLabel('\$${balance.toStringAsFixed(3)}')}',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
-              GestureDetector(
-                onTap: () async {
-                  await _service.logout();
-                  setState(() {
-                    _isLoggedIn = false;
-                    _username = null;
-                    _userInfo = null;
-                  });
-                },
-                child: Text(UserStorage.l10n.memexLogout,
-                    style: TextStyle(fontSize: 12, color: Colors.red[400])),
-              ),
-            ],
-          ),
-
-          if (balance <= 0) ...[
-            const SizedBox(height: 12),
-            Text(
-              UserStorage.l10n.memexTopUp,
-              style: TextStyle(fontSize: 12, color: Colors.orange[700]),
-            ),
-          ],
-
-          // Top up buttons
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              ...[5, 20, 100].map((amount) {
-                final isSelected = _selectedTopUpAmount == amount;
-                return SizedBox(
-                  width: 70,
-                  height: 32,
-                  child: OutlinedButton(
-                    onPressed: _isTopUpLoading
-                        ? null
-                        : () => setState(() => _selectedTopUpAmount = amount),
-                    style: OutlinedButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      backgroundColor: isSelected
-                          ? AppColors.primary.withValues(alpha: 0.1)
-                          : null,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      side: BorderSide(
-                        color:
-                            isSelected ? AppColors.primary : Colors.grey[300]!,
-                      ),
-                    ),
-                    child: Text('\$$amount',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color:
-                              isSelected ? AppColors.primary : Colors.black87,
-                          fontWeight:
-                              isSelected ? FontWeight.w600 : FontWeight.normal,
-                        )),
-                  ),
-                );
-              }),
-              SizedBox(
-                width: 70,
-                height: 32,
-                child: OutlinedButton(
-                  onPressed: _isTopUpLoading ? null : _handleCustomTopUp,
-                  style: OutlinedButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    backgroundColor: _selectedTopUpAmount != null &&
-                            ![5, 20, 100].contains(_selectedTopUpAmount)
-                        ? AppColors.primary.withValues(alpha: 0.1)
-                        : null,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    side: BorderSide(
-                      color: _selectedTopUpAmount != null &&
-                              ![5, 20, 100].contains(_selectedTopUpAmount)
-                          ? AppColors.primary
-                          : Colors.grey[300]!,
-                    ),
-                  ),
-                  child: Text(
-                    _selectedTopUpAmount != null &&
-                            ![5, 20, 100].contains(_selectedTopUpAmount)
-                        ? '\$$_selectedTopUpAmount'
-                        : '...',
-                    style: const TextStyle(fontSize: 13, color: Colors.black54),
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          // Pay button
-          if (_selectedTopUpAmount != null) ...[
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              height: 36,
-              child: ElevatedButton(
-                onPressed: _isTopUpLoading
-                    ? null
-                    : () => _handleTopUp(_selectedTopUpAmount!),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: _isTopUpLoading
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white))
-                    : Text(UserStorage.l10n
-                        .memexPayAmount('\$$_selectedTopUpAmount')),
+              child: Icon(
+                balance > 0
+                    ? Icons.check_circle_outline_rounded
+                    : Icons.account_balance_wallet_outlined,
+                color: balance > 0 ? AppColors.success : AppColors.warning,
+                size: 19,
               ),
             ),
-          ],
-
-          // Refresh credentials button
-          if (balance > 0) ...[
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () async {
-                  await _fetchAndNotifyCredentials();
-                  if (mounted) {
-                    ToastHelper.showSuccess(
-                        context, UserStorage.l10n.memexCredentialsApplied);
-                  }
-                },
-                icon: const Icon(Icons.auto_fix_high, size: 16),
-                label: Text(UserStorage.l10n.memexApplyCredentials),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                '$_username · ${UserStorage.l10n.memexBalanceLabel('\$${balance.toStringAsFixed(3)}')}',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF1A1C1E),
                 ),
               ),
             ),
-          ],
-
-          // View history button
-          const SizedBox(height: 8),
-          Center(
-            child: TextButton.icon(
-              onPressed: _showHistorySheet,
-              icon: Icon(Icons.receipt_long, size: 16, color: Colors.grey[600]),
-              label: Text(
-                UserStorage.l10n.memexViewHistory,
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            TextButton(
+              onPressed: () async {
+                await _service.logout();
+                widget.onLoginStateChanged?.call(false);
+                widget.onLogout?.call();
+                setState(() {
+                  _isLoggedIn = false;
+                  _username = null;
+                  _userInfo = null;
+                });
+              },
+              style: TextButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                foregroundColor: AppColors.danger,
               ),
+              child: Text(UserStorage.l10n.memexLogout),
+            ),
+          ],
+        ),
+        if (balance <= 0) ...[
+          const SizedBox(height: 10),
+          Text(
+            UserStorage.l10n.memexTopUp,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color(0xFFD97706),
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            ...[5, 20, 100].map((amount) => _buildTopUpChip(amount)),
+            _buildCustomTopUpChip(),
+          ],
+        ),
+        if (_selectedTopUpAmount != null) ...[
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            height: 42,
+            child: FilledButton(
+              onPressed: _isTopUpLoading
+                  ? null
+                  : () => _handleTopUp(_selectedTopUpAmount!),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: _isTopUpLoading
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white))
+                  : Text(UserStorage.l10n
+                      .memexPayAmount('\$$_selectedTopUpAmount')),
+            ),
+          ),
+        ],
+        const SizedBox(height: 8),
+        Center(
+          child: TextButton.icon(
+            onPressed: _showHistorySheet,
+            icon: const Icon(
+              Icons.receipt_long,
+              size: 16,
+              color: _memexAuthSecondary,
+            ),
+            label: Text(UserStorage.l10n.memexViewHistory),
+            style: TextButton.styleFrom(
+              foregroundColor: _memexAuthSecondary,
+              visualDensity: VisualDensity.compact,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTopUpChip(int amount) {
+    final isSelected = _selectedTopUpAmount == amount;
+    return SizedBox(
+      width: 74,
+      height: 36,
+      child: OutlinedButton(
+        onPressed: _isTopUpLoading
+            ? null
+            : () => setState(() => _selectedTopUpAmount = amount),
+        style: OutlinedButton.styleFrom(
+          padding: EdgeInsets.zero,
+          backgroundColor:
+              isSelected ? AppColors.primary.withValues(alpha: 0.08) : null,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(9),
+          ),
+          side: BorderSide(
+            color: isSelected ? AppColors.primary : _memexAuthBorder,
+          ),
+        ),
+        child: Text(
+          '\$$amount',
+          style: TextStyle(
+            fontSize: 13,
+            color: isSelected ? AppColors.primary : const Color(0xFF454655),
+            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCustomTopUpChip() {
+    final isSelected = _selectedTopUpAmount != null &&
+        ![5, 20, 100].contains(_selectedTopUpAmount);
+    return SizedBox(
+      width: 74,
+      height: 36,
+      child: OutlinedButton(
+        onPressed: _isTopUpLoading ? null : _handleCustomTopUp,
+        style: OutlinedButton.styleFrom(
+          padding: EdgeInsets.zero,
+          backgroundColor:
+              isSelected ? AppColors.primary.withValues(alpha: 0.08) : null,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(9),
+          ),
+          side: BorderSide(
+            color: isSelected ? AppColors.primary : _memexAuthBorder,
+          ),
+        ),
+        child: Text(
+          isSelected ? '\$$_selectedTopUpAmount' : '...',
+          style: TextStyle(
+            fontSize: 13,
+            color: isSelected ? AppColors.primary : const Color(0xFF757687),
+            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+          ),
+        ),
       ),
     );
   }

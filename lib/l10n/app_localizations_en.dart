@@ -850,6 +850,56 @@ class AppLocalizationsEn extends AppLocalizations {
   String get setupModelConfigComplete => 'Complete & Go';
 
   @override
+  String get aiService => 'Memex Model Service';
+
+  @override
+  String get aiServiceTitle => 'The AI journal for your real life';
+
+  @override
+  String get aiServiceSubtitle =>
+      'Turn scattered notes, photos, and voice records into a structured second brain.';
+
+  @override
+  String get aiServiceLongDescription =>
+      'Memex uses a multi-agent system to organize life records, knowledge notes, and social context, discover deeper insights, and provide AI companionship with persistent memory. Your data is stored as plain-text Markdown, preserving data freedom and portability.';
+
+  @override
+  String get aiServiceCustomModelTitle => 'Connect your own AI model';
+
+  @override
+  String get aiServiceCustomModelDescription =>
+      'If you are familiar with model APIs and can configure them yourself, we recommend using your own key. If not, you can top up our pay-as-you-go credit.';
+
+  @override
+  String get aiServiceStepAccount =>
+      'One account manages credit, billing, and usage history.';
+
+  @override
+  String get aiServiceStepBalance =>
+      'Pay as you go. Top up when balance runs low; no fixed monthly fee.';
+
+  @override
+  String get aiServiceStepEnable =>
+      'Once enabled, text, photo, and voice records enter the AI organization queue.';
+
+  @override
+  String get enableAiService => 'Start using';
+
+  @override
+  String get aiServiceWaitingForPayment =>
+      'Sign in and choose credit to turn on';
+
+  @override
+  String get aiServiceReadyToast => 'AI organization is on';
+
+  @override
+  String get aiServiceSettingsDescription =>
+      'Manage AI organization, credit, and usage history.';
+
+  @override
+  String get advancedModelConfiguration => 'I want to connect my own AI model';
+
+  @override
   String get skipForNow => 'Skip for now';
 
   @override
@@ -1762,7 +1812,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String memexPayAmount(Object amount) {
-    return 'Pay $amount';
+    return 'Top up $amount';
   }
 
   @override
