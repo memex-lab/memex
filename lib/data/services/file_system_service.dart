@@ -83,6 +83,12 @@ class FileSystemService {
         .info('FileSystemService switched to new data root: $dataRoot');
   }
 
+  /// Creates a file-system service for background workers without replacing
+  /// the app singleton or starting the local asset server.
+  factory FileSystemService.detached({required String dataRoot}) {
+    return FileSystemService._(dataRoot: dataRoot);
+  }
+
   FileSystemService._({required this.dataRoot}) {
     if (!path.isAbsolute(dataRoot)) {
       throw ArgumentError('dataRoot must be an absolute path: $dataRoot');

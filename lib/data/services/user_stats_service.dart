@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:path/path.dart' as path;
 
@@ -9,11 +10,31 @@ import 'package:memex/utils/logger.dart';
 
 final _logger = getLogger('UserStatsService');
 
+Future<UserStatsSnapshot> _fetchUserStatsSnapshotInWorker(
+  String dataRoot,
+  String userId,
+  DateTime start,
+  DateTime end,
+) {
+  final fileSystemService = FileSystemService.detached(dataRoot: dataRoot);
+  return UserStatsService(
+    fileSystemService: fileSystemService,
+    useBackgroundIsolate: false,
+  ).fetchSnapshot(
+    userId: userId,
+    range: UserStatsDateRange(start: start, end: end),
+  );
+}
+
 class UserStatsService {
-  UserStatsService({FileSystemService? fileSystemService})
-      : _fileSystemService = fileSystemService ?? FileSystemService.instance;
+  UserStatsService({
+    FileSystemService? fileSystemService,
+    bool useBackgroundIsolate = true,
+  }) : _fileSystemService = fileSystemService ?? FileSystemService.instance,
+       _useBackgroundIsolate = useBackgroundIsolate;
 
   final FileSystemService _fileSystemService;
+  final bool _useBackgroundIsolate;
 
   Future<UserStatsSnapshot> fetchSnapshot({
     required String userId,
@@ -27,6 +48,25 @@ class UserStatsService {
       return UserStatsSnapshot.empty(normalizedRange);
     }
 
+    if (_useBackgroundIsolate) {
+      final dataRoot = _fileSystemService.dataRoot;
+      final start = normalizedRange.start;
+      final end = normalizedRange.end;
+      return Isolate.run(
+        () => _fetchUserStatsSnapshotInWorker(dataRoot, userId, start, end),
+      );
+    }
+
+    return _fetchSnapshotOnCurrentIsolate(
+      userId: userId,
+      normalizedRange: normalizedRange,
+    );
+  }
+
+  Future<UserStatsSnapshot> _fetchSnapshotOnCurrentIsolate({
+    required String userId,
+    required UserStatsDateRange normalizedRange,
+  }) async {
     final daily = <String, _DailyStatsAccumulator>{};
     final details = <String, _DayDetailAccumulator>{};
     for (var i = 0; i < normalizedRange.dayCount; i++) {
@@ -447,14 +487,16 @@ class UserStatsService {
   }
 
   List<_FactEntryStats> _parseFactEntries(String content, DateTime date) {
-    final matches = RegExp(r'^## <id:([^>]+)>.*$', multiLine: true)
-        .allMatches(content)
-        .toList();
+    final matches = RegExp(
+      r'^## <id:([^>]+)>.*$',
+      multiLine: true,
+    ).allMatches(content).toList();
     final entries = <_FactEntryStats>[];
     for (var i = 0; i < matches.length; i++) {
       final start = matches[i].end;
-      final end =
-          i + 1 < matches.length ? matches[i + 1].start : content.length;
+      final end = i + 1 < matches.length
+          ? matches[i + 1].start
+          : content.length;
       final simpleId = matches[i].group(1) ?? '';
       entries.add(
         _FactEntryStats(
@@ -582,14 +624,14 @@ class _DailyStatsAccumulator {
   final Map<String, int> tagCounts = {};
 
   UserStatsDailyPoint toPoint() => UserStatsDailyPoint(
-        date: date,
-        inputs: inputs,
-        words: words,
-        cards: cards,
-        knowledgeUnits: knowledgeUnits,
-        insights: insights,
-        completedTodos: completedTodos,
-      );
+    date: date,
+    inputs: inputs,
+    words: words,
+    cards: cards,
+    knowledgeUnits: knowledgeUnits,
+    insights: insights,
+    completedTodos: completedTodos,
+  );
 }
 
 class _DayDetailAccumulator {
@@ -602,12 +644,12 @@ class _DayDetailAccumulator {
   final List<String> completedTodoTitles = [];
 
   UserStatsDayDetail toDetail() => UserStatsDayDetail(
-        date: date,
-        cardTitles: _dedupe(cardTitles),
-        knowledgePaths: _dedupe(knowledgePaths),
-        insightTitles: _dedupe(insightTitles),
-        completedTodoTitles: _dedupe(completedTodoTitles),
-      );
+    date: date,
+    cardTitles: _dedupe(cardTitles),
+    knowledgePaths: _dedupe(knowledgePaths),
+    insightTitles: _dedupe(insightTitles),
+    completedTodoTitles: _dedupe(completedTodoTitles),
+  );
 
   List<String> _dedupe(List<String> values) {
     final seen = <String>{};

@@ -22,15 +22,15 @@ void main() {
     tempDir = await Directory.systemTemp.createTemp('memex_insight_vm_');
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(pathProviderChannel, (call) async {
-      switch (call.method) {
-        case 'getApplicationDocumentsDirectory':
-        case 'getApplicationSupportDirectory':
-        case 'getTemporaryDirectory':
-          return tempDir.path;
-        default:
-          return null;
-      }
-    });
+          switch (call.method) {
+            case 'getApplicationDocumentsDirectory':
+            case 'getApplicationSupportDirectory':
+            case 'getTemporaryDirectory':
+              return tempDir.path;
+            default:
+              return null;
+          }
+        });
   });
 
   setUp(() async {
@@ -53,30 +53,32 @@ void main() {
     }
   });
 
-  test('visible stats refresh notifies listeners on insight overview',
-      () async {
-    final firstSnapshot = _snapshot(totalInputs: 3);
-    final secondSnapshot = _snapshot(totalInputs: 8);
-    var calls = 0;
-    final vm = _buildViewModel((_) async {
-      calls += 1;
-      return Ok(secondSnapshot);
-    });
-    vm.statsSnapshot = firstSnapshot;
-    vm.selectedSection = InsightSection.insights;
+  test(
+    'visible stats refresh notifies listeners on insight overview',
+    () async {
+      final firstSnapshot = _snapshot(totalInputs: 3);
+      final secondSnapshot = _snapshot(totalInputs: 8);
+      var calls = 0;
+      final vm = _buildViewModel((_) async {
+        calls += 1;
+        return Ok(secondSnapshot);
+      });
+      vm.statsSnapshot = firstSnapshot;
+      vm.selectedSection = InsightSection.insights;
 
-    var notifications = 0;
-    vm.addListener(() => notifications += 1);
+      var notifications = 0;
+      vm.addListener(() => notifications += 1);
 
-    await vm.refreshStatsForVisibleInsightPage();
+      await vm.refreshStatsForVisibleInsightPage();
 
-    expect(calls, 1);
-    expect(vm.statsSnapshot, secondSnapshot);
-    expect(vm.isStatsLoading, isFalse);
-    expect(notifications, greaterThanOrEqualTo(2));
+      expect(calls, 1);
+      expect(vm.statsSnapshot, secondSnapshot);
+      expect(vm.isStatsLoading, isFalse);
+      expect(notifications, greaterThanOrEqualTo(2));
 
-    vm.dispose();
-  });
+      vm.dispose();
+    },
+  );
 
   test('stats loading state is visible while refresh is in flight', () async {
     final completer = Completer<Result<UserStatsSnapshot>>();
@@ -100,38 +102,42 @@ void main() {
     vm.dispose();
   });
 
-  test('failed stats refresh keeps previous snapshot and exposes error',
-      () async {
-    final existing = _snapshot(totalInputs: 4);
-    final vm = _buildViewModel(
-      (_) async => Error<UserStatsSnapshot>(StateError('boom')),
-    );
-    vm.statsSnapshot = existing;
+  test(
+    'failed stats refresh keeps previous snapshot and exposes error',
+    () async {
+      final existing = _snapshot(totalInputs: 4);
+      final vm = _buildViewModel(
+        (_) async => Error<UserStatsSnapshot>(StateError('boom')),
+      );
+      vm.statsSnapshot = existing;
 
-    await vm.refreshStatsForVisibleInsightPage();
+      await vm.refreshStatsForVisibleInsightPage();
 
-    expect(vm.statsSnapshot, existing);
-    expect(vm.statsErrorMessage, UserStorage.l10n.dataLoadFailedRetry);
-    expect(vm.isStatsLoading, isFalse);
+      expect(vm.statsSnapshot, existing);
+      expect(vm.statsErrorMessage, UserStorage.l10n.dataLoadFailedRetry);
+      expect(vm.isStatsLoading, isFalse);
 
-    vm.dispose();
-  });
+      vm.dispose();
+    },
+  );
 
-  test('failed first stats refresh leaves no snapshot and exits loading',
-      () async {
-    final vm = _buildViewModel(
-      (_) async => Error<UserStatsSnapshot>(StateError('boom')),
-    );
-    vm.statsSnapshot = null;
+  test(
+    'failed first stats refresh leaves no snapshot and exits loading',
+    () async {
+      final vm = _buildViewModel(
+        (_) async => Error<UserStatsSnapshot>(StateError('boom')),
+      );
+      vm.statsSnapshot = null;
 
-    await vm.refreshStatsForVisibleInsightPage();
+      await vm.refreshStatsForVisibleInsightPage();
 
-    expect(vm.statsSnapshot, isNull);
-    expect(vm.statsErrorMessage, UserStorage.l10n.dataLoadFailedRetry);
-    expect(vm.isStatsLoading, isFalse);
+      expect(vm.statsSnapshot, isNull);
+      expect(vm.statsErrorMessage, UserStorage.l10n.dataLoadFailedRetry);
+      expect(vm.isStatsLoading, isFalse);
 
-    vm.dispose();
-  });
+      vm.dispose();
+    },
+  );
 
   test('selecting the current stats preset does not reload', () async {
     var calls = 0;
@@ -149,24 +155,84 @@ void main() {
     vm.dispose();
   });
 
-  test('selecting a different stats preset updates range and reloads',
-      () async {
-    var calls = 0;
-    final vm = _buildViewModel((range) async {
-      calls += 1;
-      return Ok(_snapshot(totalInputs: calls, range: range));
-    });
-    vm.statsRange = UserStatsDateRange.lastDays(7);
+  test(
+    'selecting a different stats preset updates range and reloads',
+    () async {
+      var calls = 0;
+      final vm = _buildViewModel((range) async {
+        calls += 1;
+        return Ok(_snapshot(totalInputs: calls, range: range));
+      });
+      vm.statsRange = UserStatsDateRange.lastDays(7);
 
-    vm.setStatsPresetDays(30);
-    await Future<void>.delayed(Duration.zero);
+      vm.setStatsPresetDays(30);
+      await Future<void>.delayed(Duration.zero);
 
-    expect(calls, 1);
-    expect(vm.statsRange.dayCount, 30);
-    expect(vm.statsSnapshot?.range.dayCount, 30);
+      expect(calls, 1);
+      expect(vm.statsRange.dayCount, 30);
+      expect(vm.statsSnapshot?.range.dayCount, 30);
 
-    vm.dispose();
-  });
+      vm.dispose();
+    },
+  );
+
+  test(
+    'selecting a stats preset updates selection before fetch completes',
+    () async {
+      final completer = Completer<Result<UserStatsSnapshot>>();
+      final vm = _buildViewModel((range) => completer.future);
+      vm.statsRange = UserStatsDateRange.lastDays(7);
+
+      vm.setStatsPresetDays(90);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(vm.statsRange.dayCount, 90);
+      expect(vm.isStatsLoading, isTrue);
+      expect(vm.statsSnapshot, isNull);
+
+      completer.complete(Ok(_snapshot(totalInputs: 9, range: vm.statsRange)));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(vm.isStatsLoading, isFalse);
+      expect(vm.statsSnapshot?.range.dayCount, 90);
+
+      vm.dispose();
+    },
+  );
+
+  test(
+    'ignores stale stats responses when presets are changed quickly',
+    () async {
+      final completers = <int, Completer<Result<UserStatsSnapshot>>>{};
+      final vm = _buildViewModel((range) {
+        final completer = Completer<Result<UserStatsSnapshot>>();
+        completers[range.dayCount] = completer;
+        return completer.future;
+      });
+      vm.statsRange = UserStatsDateRange.lastDays(7);
+
+      vm.setStatsPresetDays(30);
+      await Future<void>.delayed(Duration.zero);
+      vm.setStatsPresetDays(90);
+      await Future<void>.delayed(Duration.zero);
+
+      completers[90]!.complete(
+        Ok(_snapshot(totalInputs: 90, range: UserStatsDateRange.lastDays(90))),
+      );
+      await Future<void>.delayed(Duration.zero);
+      completers[30]!.complete(
+        Ok(_snapshot(totalInputs: 30, range: UserStatsDateRange.lastDays(30))),
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      expect(vm.statsRange.dayCount, 90);
+      expect(vm.statsSnapshot?.range.dayCount, 90);
+      expect(vm.statsSnapshot?.summary.totalInputs, 90);
+      expect(vm.isStatsLoading, isFalse);
+
+      vm.dispose();
+    },
+  );
 }
 
 InsightViewModel _buildViewModel(UserStatsFetcher fetcher) {
@@ -178,9 +244,12 @@ UserStatsSnapshot _snapshot({
   required int totalInputs,
   UserStatsDateRange? range,
 }) {
-  final resolvedRange = range ??
+  final resolvedRange =
+      range ??
       UserStatsDateRange(
-          start: DateTime(2026, 5, 18), end: DateTime(2026, 5, 20));
+        start: DateTime(2026, 5, 18),
+        end: DateTime(2026, 5, 20),
+      );
   return UserStatsSnapshot(
     range: resolvedRange,
     summary: UserStatsSummary(
