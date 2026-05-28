@@ -140,6 +140,7 @@ ScheduleViewPendingItem _pendingForState(SchedulePendingItem item) {
 ScheduleViewCompletedItem _completedForState(ScheduleCompletedItem item) {
   return ScheduleViewCompletedItem(
     cardId: item.sourceFactIds.isEmpty ? item.id : item.sourceFactIds.first,
+    itemId: item.id,
     title: item.title,
     completedAt: item.closedAt,
   );

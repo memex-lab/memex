@@ -238,26 +238,23 @@ void main() {
       },
     );
 
-    test(
-      'toggleCompletion reverts plain tasks when write fails',
-      () async {
-        final vm = ScheduleAggregatorViewModel(
-          loadAggregation: () async => _aggregation(),
-          completeScheduleItem: (_) async => Error(Exception('failed')),
-          listenToEvents: false,
-        );
+    test('toggleCompletion reverts plain tasks when write fails', () async {
+      final vm = ScheduleAggregatorViewModel(
+        loadAggregation: () async => _aggregation(),
+        completeScheduleItem: (_) async => Error(Exception('failed')),
+        listenToEvents: false,
+      );
 
-        await vm.loadAggregation();
-        final item = vm.items.single;
+      await vm.loadAggregation();
+      final item = vm.items.single;
 
-        await vm.toggleCompletion(item);
+      await vm.toggleCompletion(item);
 
-        expect(vm.items.single.status, ScheduleItemStatus.pending);
-        expect(vm.error, 'Failed to update task');
+      expect(vm.items.single.status, ScheduleItemStatus.pending);
+      expect(vm.error, 'Failed to update task');
 
-        vm.dispose();
-      },
-    );
+      vm.dispose();
+    });
 
     test('toggleCompletion ignores event items', () async {
       var didComplete = false;
@@ -280,39 +277,61 @@ void main() {
       vm.dispose();
     });
 
-    test(
-      'toggleSubtask writes one subtask to schedule state',
-      () async {
-        String? updatedItemId;
-        String? updatedSubtaskTitle;
-        bool? updatedCompleted;
-        final vm = ScheduleAggregatorViewModel(
-          loadAggregation: () async => _aggregationWithSubtasks(),
-          setScheduleSubtaskCompletion: (itemId, title, completed) async {
-            updatedItemId = itemId;
-            updatedSubtaskTitle = title;
-            updatedCompleted = completed;
-            return const Ok.v();
-          },
-          listenToEvents: false,
-        );
+    test('restoreCompletedItem writes canonical restore and reloads', () async {
+      String? restoredItemId;
+      var loadCount = 0;
+      final vm = ScheduleAggregatorViewModel(
+        loadAggregation: () async {
+          loadCount += 1;
+          return _completedAggregation(id: 'completed_$loadCount');
+        },
+        restoreScheduleItem: (itemId) async {
+          restoredItemId = itemId;
+          return const Ok.v();
+        },
+        listenToEvents: false,
+      );
 
-        await vm.loadAggregation();
-        final item = vm.items.single;
+      await vm.loadAggregation();
+      await vm.restoreCompletedItem('schedule-task-1');
 
-        final toggle = vm.toggleSubtask(item, 0);
-        expect(vm.items.single.status, ScheduleItemStatus.inProgress);
-        expect(vm.items.single.subtasks.first.completed, isTrue);
-        await toggle;
+      expect(restoredItemId, 'schedule-task-1');
+      expect(loadCount, 2);
+      expect(vm.error, isNull);
 
-        expect(updatedItemId, 'schedule-task-1');
-        expect(updatedSubtaskTitle, 'Collect documents');
-        expect(updatedCompleted, isTrue);
-        expect(vm.error, isNull);
+      vm.dispose();
+    });
 
-        vm.dispose();
-      },
-    );
+    test('toggleSubtask writes one subtask to schedule state', () async {
+      String? updatedItemId;
+      String? updatedSubtaskTitle;
+      bool? updatedCompleted;
+      final vm = ScheduleAggregatorViewModel(
+        loadAggregation: () async => _aggregationWithSubtasks(),
+        setScheduleSubtaskCompletion: (itemId, title, completed) async {
+          updatedItemId = itemId;
+          updatedSubtaskTitle = title;
+          updatedCompleted = completed;
+          return const Ok.v();
+        },
+        listenToEvents: false,
+      );
+
+      await vm.loadAggregation();
+      final item = vm.items.single;
+
+      final toggle = vm.toggleSubtask(item, 0);
+      expect(vm.items.single.status, ScheduleItemStatus.inProgress);
+      expect(vm.items.single.subtasks.first.completed, isTrue);
+      await toggle;
+
+      expect(updatedItemId, 'schedule-task-1');
+      expect(updatedSubtaskTitle, 'Collect documents');
+      expect(updatedCompleted, isTrue);
+      expect(vm.error, isNull);
+
+      vm.dispose();
+    });
 
     test(
       'toggleSubtask marks parent completed when last subtask is done',
@@ -365,29 +384,26 @@ void main() {
       },
     );
 
-    test(
-      'toggleSubtask reverts optimistic state when write fails',
-      () async {
-        final vm = ScheduleAggregatorViewModel(
-          loadAggregation: () async => _aggregationWithSubtasks(),
-          setScheduleSubtaskCompletion: (_, __, ___) async =>
-              Error(Exception('failed')),
-          listenToEvents: false,
-        );
+    test('toggleSubtask reverts optimistic state when write fails', () async {
+      final vm = ScheduleAggregatorViewModel(
+        loadAggregation: () async => _aggregationWithSubtasks(),
+        setScheduleSubtaskCompletion: (_, __, ___) async =>
+            Error(Exception('failed')),
+        listenToEvents: false,
+      );
 
-        await vm.loadAggregation();
-        await vm.toggleSubtask(vm.items.single, 1);
+      await vm.loadAggregation();
+      await vm.toggleSubtask(vm.items.single, 1);
 
-        expect(vm.items.single.status, ScheduleItemStatus.pending);
-        expect(vm.items.single.subtasks.map((subtask) => subtask.completed), [
-          false,
-          false,
-        ]);
-        expect(vm.error, 'Failed to update task');
+      expect(vm.items.single.status, ScheduleItemStatus.pending);
+      expect(vm.items.single.subtasks.map((subtask) => subtask.completed), [
+        false,
+        false,
+      ]);
+      expect(vm.error, 'Failed to update task');
 
-        vm.dispose();
-      },
-    );
+      vm.dispose();
+    });
   });
 }
 
@@ -401,7 +417,9 @@ ScheduleViewData _aggregation({
     id: id,
     generatedAt: DateTime(2026, 4, 26, 8),
     timeRange: ScheduleViewTimeRange(
-        from: DateTime(2026, 4, 26), to: DateTime(2026, 5, 3)),
+      from: DateTime(2026, 4, 26),
+      to: DateTime(2026, 5, 3),
+    ),
     timeline: [
       ScheduleViewTimelineDay(
         dayLabel: 'Today',
@@ -432,7 +450,9 @@ ScheduleViewData _aggregationWithSubtasks({
     id: 'agg_subtasks',
     generatedAt: DateTime(2026, 4, 26, 8),
     timeRange: ScheduleViewTimeRange(
-        from: DateTime(2026, 4, 26), to: DateTime(2026, 5, 3)),
+      from: DateTime(2026, 4, 26),
+      to: DateTime(2026, 5, 3),
+    ),
     timeline: [
       ScheduleViewTimelineDay(
         dayLabel: 'Today',
@@ -459,7 +479,9 @@ ScheduleViewData _eventAggregation() {
     id: 'event_agg',
     generatedAt: DateTime(2026, 4, 26, 8),
     timeRange: ScheduleViewTimeRange(
-        from: DateTime(2026, 4, 26), to: DateTime(2026, 5, 3)),
+      from: DateTime(2026, 4, 26),
+      to: DateTime(2026, 5, 3),
+    ),
     timeline: [
       ScheduleViewTimelineDay(
         dayLabel: 'Today',
@@ -473,6 +495,25 @@ ScheduleViewData _eventAggregation() {
             type: 'event',
           ),
         ],
+      ),
+    ],
+  );
+}
+
+ScheduleViewData _completedAggregation({String id = 'completed_agg'}) {
+  return ScheduleViewData(
+    id: id,
+    generatedAt: DateTime(2026, 4, 26, 8),
+    timeRange: ScheduleViewTimeRange(
+      from: DateTime(2026, 4, 26),
+      to: DateTime(2026, 5, 3),
+    ),
+    completed: [
+      ScheduleViewCompletedItem(
+        cardId: 'task-1',
+        itemId: 'schedule-task-1',
+        title: 'Submitted visa form',
+        completedAt: DateTime(2026, 4, 26, 12),
       ),
     ],
   );

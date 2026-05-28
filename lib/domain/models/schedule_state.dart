@@ -18,9 +18,9 @@ class ScheduleState {
     List<SchedulePendingItem>? pending,
     List<ScheduleCompletedItem>? completed,
     this.presentation,
-  })  : generatedAt = generatedAt ?? DateTime.now(),
-        pending = pending ?? <SchedulePendingItem>[],
-        completed = completed ?? <ScheduleCompletedItem>[];
+  }) : generatedAt = generatedAt ?? DateTime.now(),
+       pending = pending ?? <SchedulePendingItem>[],
+       completed = completed ?? <ScheduleCompletedItem>[];
 
   final int version;
   final DateTime generatedAt;
@@ -35,14 +35,8 @@ class ScheduleState {
     return ScheduleState(
       version: (json['version'] as num?)?.toInt() ?? 1,
       generatedAt: _parseDateTime(json['generated_at']) ?? DateTime.now(),
-      pending: _parseList(
-        json['pending'],
-        SchedulePendingItem.fromJson,
-      ),
-      completed: _parseList(
-        json['completed'],
-        ScheduleCompletedItem.fromJson,
-      ),
+      pending: _parseList(json['pending'], SchedulePendingItem.fromJson),
+      completed: _parseList(json['completed'], ScheduleCompletedItem.fromJson),
       presentation: json['presentation'] is Map
           ? SchedulePresentation.fromJson(
               Map<String, dynamic>.from(json['presentation'] as Map),
@@ -77,8 +71,9 @@ class ScheduleState {
       generatedAt: generatedAt ?? this.generatedAt,
       pending: pending ?? this.pending,
       completed: completed ?? this.completed,
-      presentation:
-          clearPresentation ? null : (presentation ?? this.presentation),
+      presentation: clearPresentation
+          ? null
+          : (presentation ?? this.presentation),
     );
   }
 }
@@ -101,14 +96,14 @@ class SchedulePendingItem {
     DateTime? updatedAt,
     this.syncDeviceAction = false,
     this.deviceActionId,
-  })  : assert(
-          kind == kindTodo || kind == kindEvent,
-          'kind must be "todo" or "event"',
-        ),
-        subtasks = subtasks ?? const <ScheduleSubtask>[],
-        sourceFactIds = sourceFactIds ?? const <String>[],
-        createdAt = createdAt ?? DateTime.now(),
-        updatedAt = updatedAt ?? createdAt ?? DateTime.now();
+  }) : assert(
+         kind == kindTodo || kind == kindEvent,
+         'kind must be "todo" or "event"',
+       ),
+       subtasks = subtasks ?? const <ScheduleSubtask>[],
+       sourceFactIds = sourceFactIds ?? const <String>[],
+       createdAt = createdAt ?? DateTime.now(),
+       updatedAt = updatedAt ?? createdAt ?? DateTime.now();
 
   static const String kindTodo = 'todo';
   static const String kindEvent = 'event';
@@ -232,8 +227,9 @@ class SchedulePendingItem {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       syncDeviceAction: syncDeviceAction ?? this.syncDeviceAction,
-      deviceActionId:
-          clearDeviceActionId ? null : (deviceActionId ?? this.deviceActionId),
+      deviceActionId: clearDeviceActionId
+          ? null
+          : (deviceActionId ?? this.deviceActionId),
     );
   }
 }
@@ -258,10 +254,7 @@ class ScheduleSubtask {
   }
 
   Map<String, dynamic> toJson() {
-    final m = <String, dynamic>{
-      'title': title,
-      'completed': completed,
-    };
+    final m = <String, dynamic>{'title': title, 'completed': completed};
     if (closedByFactId != null) m['closed_by_fact_id'] = closedByFactId;
     return m;
   }
@@ -275,8 +268,9 @@ class ScheduleSubtask {
     return ScheduleSubtask(
       title: title ?? this.title,
       completed: completed ?? this.completed,
-      closedByFactId:
-          clearClosedByFactId ? null : (closedByFactId ?? this.closedByFactId),
+      closedByFactId: clearClosedByFactId
+          ? null
+          : (closedByFactId ?? this.closedByFactId),
     );
   }
 }
@@ -288,18 +282,20 @@ class ScheduleCompletedItem {
     required this.title,
     required this.closedAt,
     this.closedByFactId,
+    this.pendingSnapshot,
     List<String>? sourceFactIds,
-  })  : assert(
-          kind == SchedulePendingItem.kindTodo ||
-              kind == SchedulePendingItem.kindEvent,
-        ),
-        sourceFactIds = sourceFactIds ?? const <String>[];
+  }) : assert(
+         kind == SchedulePendingItem.kindTodo ||
+             kind == SchedulePendingItem.kindEvent,
+       ),
+       sourceFactIds = sourceFactIds ?? const <String>[];
 
   final String id;
   final String kind;
   final String title;
   final DateTime closedAt;
   final String? closedByFactId;
+  final SchedulePendingItem? pendingSnapshot;
   final List<String> sourceFactIds;
 
   factory ScheduleCompletedItem.fromJson(Map<String, dynamic> json) {
@@ -309,6 +305,11 @@ class ScheduleCompletedItem {
       title: json['title'] as String? ?? '',
       closedAt: _parseDateTime(json['closed_at']) ?? DateTime.now(),
       closedByFactId: json['closed_by_fact_id'] as String?,
+      pendingSnapshot: json['pending_snapshot'] is Map
+          ? SchedulePendingItem.fromJson(
+              Map<String, dynamic>.from(json['pending_snapshot'] as Map),
+            )
+          : null,
       sourceFactIds: _parseStringList(json['source_fact_ids']),
     );
   }
@@ -321,6 +322,9 @@ class ScheduleCompletedItem {
       'closed_at': closedAt.toIso8601String(),
     };
     if (closedByFactId != null) m['closed_by_fact_id'] = closedByFactId;
+    if (pendingSnapshot != null) {
+      m['pending_snapshot'] = pendingSnapshot!.toJson();
+    }
     if (sourceFactIds.isNotEmpty) m['source_fact_ids'] = sourceFactIds;
     return m;
   }
@@ -332,8 +336,8 @@ class SchedulePresentation {
     this.editorialIntro,
     List<ScheduleQuoteBlock>? quoteBlocks,
     List<ScheduleTimelineDay>? timeline,
-  })  : quoteBlocks = quoteBlocks ?? const <ScheduleQuoteBlock>[],
-        timeline = timeline ?? const <ScheduleTimelineDay>[];
+  }) : quoteBlocks = quoteBlocks ?? const <ScheduleQuoteBlock>[],
+       timeline = timeline ?? const <ScheduleTimelineDay>[];
 
   final SchedulePresentationHero? hero;
   final String? editorialIntro;
@@ -348,8 +352,10 @@ class SchedulePresentation {
             )
           : null,
       editorialIntro: json['editorial_intro'] as String?,
-      quoteBlocks:
-          _parseList(json['quote_blocks'], ScheduleQuoteBlock.fromJson),
+      quoteBlocks: _parseList(
+        json['quote_blocks'],
+        ScheduleQuoteBlock.fromJson,
+      ),
       timeline: _parseList(json['timeline'], ScheduleTimelineDay.fromJson),
     );
   }
@@ -388,10 +394,7 @@ class SchedulePresentationHero {
   }
 
   Map<String, dynamic> toJson() {
-    final m = <String, dynamic>{
-      'item_id': itemId,
-      'title': title,
-    };
+    final m = <String, dynamic>{'item_id': itemId, 'title': title};
     if (description != null) m['description'] = description;
     return m;
   }
@@ -491,10 +494,7 @@ bool _parseBool(dynamic value) {
   return false;
 }
 
-List<T> _parseList<T>(
-  dynamic raw,
-  T Function(Map<String, dynamic>) fromJson,
-) {
+List<T> _parseList<T>(dynamic raw, T Function(Map<String, dynamic>) fromJson) {
   if (raw is! List) return <T>[];
   final out = <T>[];
   for (final item in raw) {

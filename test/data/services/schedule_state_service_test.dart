@@ -34,143 +34,245 @@ void main() {
     });
 
     test(
-        'completePendingItem moves item to completed and writes back task card',
-        () async {
-      const userId = 'test_user';
-      const factId = '2026/05/26.md#ts_1';
-      final card = _taskCard(factId: factId, isCompleted: false);
-      await FileSystemService.instance.safeWriteCardFile(userId, factId, card);
-
-      await ScheduleStateService.instance.addPendingItem(
-        userId: userId,
-        kind: SchedulePendingItem.kindTodo,
-        title: 'Buy skincare',
-        sourceFactId: factId,
-        dueAt: DateTime.parse('2020-05-27T09:00:00'),
-        now: DateTime.parse('2026-05-26T10:00:00'),
-      );
-      final pending = await ScheduleStateService.instance.read(userId);
-      GlobalEventBus.instance.subscribeSync<DataChangeRecord>(
-        eventType: SystemEventTypes.dataChanged,
-        subscription: EventSyncSubscription<DataChangeRecord>(
-          subscriptionId: 'schedule_state_service_test_completion_sync',
-          handler: handleScheduleStateOnCardChanged,
-        ),
-      );
-      addTearDown(() {
-        GlobalEventBus.instance.unsubscribeSync(
-          eventType: SystemEventTypes.dataChanged,
-          subscriptionId: 'schedule_state_service_test_completion_sync',
+      'completePendingItem moves item to completed and writes back task card',
+      () async {
+        const userId = 'test_user';
+        const factId = '2026/05/26.md#ts_1';
+        final card = _taskCard(factId: factId, isCompleted: false);
+        await FileSystemService.instance.safeWriteCardFile(
+          userId,
+          factId,
+          card,
         );
-      });
 
-      await ScheduleStateService.instance.completePendingItem(
-        userId: userId,
-        pendingId: pending.pending.single.id,
-        closedByFactId: '2026/05/26.md#ts_2',
-        closedAt: DateTime.parse('2026-05-26T11:00:00'),
-      );
+        await ScheduleStateService.instance.addPendingItem(
+          userId: userId,
+          kind: SchedulePendingItem.kindTodo,
+          title: 'Buy skincare',
+          sourceFactId: factId,
+          dueAt: DateTime.parse('2020-05-27T09:00:00'),
+          now: DateTime.parse('2026-05-26T10:00:00'),
+        );
+        final pending = await ScheduleStateService.instance.read(userId);
+        GlobalEventBus.instance.subscribeSync<DataChangeRecord>(
+          eventType: SystemEventTypes.dataChanged,
+          subscription: EventSyncSubscription<DataChangeRecord>(
+            subscriptionId: 'schedule_state_service_test_completion_sync',
+            handler: handleScheduleStateOnCardChanged,
+          ),
+        );
+        addTearDown(() {
+          GlobalEventBus.instance.unsubscribeSync(
+            eventType: SystemEventTypes.dataChanged,
+            subscriptionId: 'schedule_state_service_test_completion_sync',
+          );
+        });
 
-      final state = await ScheduleStateService.instance.read(userId);
-      expect(state.pending, isEmpty);
-      expect(state.completed, hasLength(1));
-      expect(state.completed.single.closedByFactId, '2026/05/26.md#ts_2');
+        await ScheduleStateService.instance.completePendingItem(
+          userId: userId,
+          pendingId: pending.pending.single.id,
+          closedByFactId: '2026/05/26.md#ts_2',
+          closedAt: DateTime.parse('2026-05-26T11:00:00'),
+        );
 
-      final updatedCard =
-          await FileSystemService.instance.readCardFile(userId, factId);
-      expect(updatedCard!.uiConfigs.single.data['is_completed'], isTrue);
-    });
+        final state = await ScheduleStateService.instance.read(userId);
+        expect(state.pending, isEmpty);
+        expect(state.completed, hasLength(1));
+        expect(state.completed.single.closedByFactId, '2026/05/26.md#ts_2');
 
-    test('setSubtaskCompletion persists state without touching task card',
-        () async {
-      const userId = 'test_user';
-      const factId = '2026/05/26.md#ts_1';
-      await FileSystemService.instance.safeWriteCardFile(
-        userId,
-        factId,
-        _taskCard(
-          factId: factId,
-          isCompleted: false,
+        final updatedCard = await FileSystemService.instance.readCardFile(
+          userId,
+          factId,
+        );
+        expect(updatedCard!.uiConfigs.single.data['is_completed'], isTrue);
+      },
+    );
+
+    test(
+      'restoreCompletedItem reopens item and restores task card snapshot',
+      () async {
+        const userId = 'test_user';
+        const factId = '2026/05/26.md#ts_1';
+        await FileSystemService.instance.safeWriteCardFile(
+          userId,
+          factId,
+          _taskCard(
+            factId: factId,
+            isCompleted: false,
+            subtasks: const [
+              {'title': 'Draft', 'completed': false},
+              {'title': 'Review', 'completed': true},
+            ],
+          ),
+        );
+
+        final created = await ScheduleStateService.instance.addPendingItem(
+          userId: userId,
+          kind: SchedulePendingItem.kindTodo,
+          title: 'Write launch plan',
+          description: 'Keep the draft short.',
+          sourceFactId: factId,
+          dueAt: DateTime.parse('2026-05-27T09:00:00'),
+          priority: 3,
           subtasks: const [
-            {'title': '整理今日工作进展要点', 'completed': false},
-            {'title': '撰写日报内容', 'completed': false},
-            {'title': '发送给主管', 'completed': false},
+            ScheduleSubtask(title: 'Draft', completed: false),
+            ScheduleSubtask(title: 'Review', completed: true),
           ],
-        ),
-      );
+          now: DateTime.parse('2026-05-26T10:00:00'),
+        );
+        final pendingId = created.pending.single.id;
 
-      final initial = await ScheduleStateService.instance.addPendingItem(
-        userId: userId,
-        kind: SchedulePendingItem.kindTodo,
-        title: '下午 6 点提交日报给主管',
-        sourceFactId: factId,
-        dueAt: DateTime.parse('2026-05-27T18:00:00'),
-        subtasks: const [
-          ScheduleSubtask(title: '整理今日工作进展要点'),
-          ScheduleSubtask(title: '撰写日报内容'),
-          ScheduleSubtask(title: '发送给主管'),
-        ],
-        now: DateTime.parse('2026-05-27T16:00:00'),
-      );
+        await ScheduleStateService.instance.completePendingItem(
+          userId: userId,
+          pendingId: pendingId,
+          closedAt: DateTime.parse('2026-05-26T11:00:00'),
+        );
+        final completed = await ScheduleStateService.instance.read(userId);
+        expect(completed.pending, isEmpty);
+        expect(completed.completed.single.pendingSnapshot?.priority, 3);
 
-      await ScheduleStateService.instance.setSubtaskCompletion(
-        userId: userId,
-        pendingId: initial.pending.single.id,
-        subtaskTitle: '整理今日工作进展要点',
-        completed: true,
-        changedAt: DateTime.parse('2026-05-27T16:10:00'),
-      );
+        final completedCard = await FileSystemService.instance.readCardFile(
+          userId,
+          factId,
+        );
+        final completedSubtasks =
+            completedCard!.uiConfigs.single.data['subtasks'] as List<dynamic>;
+        expect(completedCard.uiConfigs.single.data['is_completed'], isTrue);
+        expect(
+          completedSubtasks.map((subtask) => (subtask as Map)['completed']),
+          [true, true],
+        );
 
-      final state = await ScheduleStateService.instance.read(userId);
-      expect(state.pending.single.subtasks.first.completed, isTrue);
-      expect(state.pending.single.subtasks.first.closedByFactId, isNull);
+        await ScheduleStateService.instance.restoreCompletedItem(
+          userId: userId,
+          completedId: pendingId,
+          now: DateTime.parse('2026-05-26T11:05:00'),
+        );
 
-      final updatedCard =
-          await FileSystemService.instance.readCardFile(userId, factId);
-      final rawSubtasks =
-          updatedCard!.uiConfigs.single.data['subtasks'] as List<dynamic>;
-      expect(rawSubtasks.first as Map, containsPair('completed', false));
-      expect(updatedCard.uiConfigs.single.data['is_completed'], isFalse);
-    });
+        final restored = await ScheduleStateService.instance.read(userId);
+        expect(restored.completed, isEmpty);
+        expect(restored.pending.single.id, pendingId);
+        expect(restored.pending.single.description, 'Keep the draft short.');
+        expect(
+          restored.pending.single.dueAt,
+          DateTime.parse('2026-05-27T09:00:00'),
+        );
+        expect(restored.pending.single.priority, 3);
+        expect(
+          restored.pending.single.subtasks.map((subtask) => subtask.completed),
+          [false, true],
+        );
 
-    test('setPresentation and searchCompleted persist canonical state',
-        () async {
-      const userId = 'test_user';
-      await ScheduleStateService.instance.addPendingItem(
-        userId: userId,
-        kind: SchedulePendingItem.kindTodo,
-        title: 'Write launch plan',
-        sourceFactId: '2026/05/26.md#ts_1',
-        now: DateTime.parse('2026-05-26T10:00:00'),
-      );
-      final pending = await ScheduleStateService.instance.read(userId);
-      await ScheduleStateService.instance.completePendingItem(
-        userId: userId,
-        pendingId: pending.pending.single.id,
-        closedByFactId: '2026/05/26.md#ts_2',
-        closedAt: DateTime.parse('2026-05-26T11:00:00'),
-      );
+        final restoredCard = await FileSystemService.instance.readCardFile(
+          userId,
+          factId,
+        );
+        final restoredSubtasks =
+            restoredCard!.uiConfigs.single.data['subtasks'] as List<dynamic>;
+        expect(restoredCard.uiConfigs.single.data['is_completed'], isFalse);
+        expect(
+          restoredSubtasks.map((subtask) => (subtask as Map)['completed']),
+          [false, true],
+        );
+      },
+    );
 
-      await ScheduleStateService.instance.setPresentation(
-        userId: userId,
-        presentation: const SchedulePresentation(
-          editorialIntro: 'Clear morning, one completed planning task.',
-          timeline: [
-            ScheduleTimelineDay(dayLabel: 'Today', dayDate: '2026-05-26'),
+    test(
+      'setSubtaskCompletion persists state without touching task card',
+      () async {
+        const userId = 'test_user';
+        const factId = '2026/05/26.md#ts_1';
+        await FileSystemService.instance.safeWriteCardFile(
+          userId,
+          factId,
+          _taskCard(
+            factId: factId,
+            isCompleted: false,
+            subtasks: const [
+              {'title': '整理今日工作进展要点', 'completed': false},
+              {'title': '撰写日报内容', 'completed': false},
+              {'title': '发送给主管', 'completed': false},
+            ],
+          ),
+        );
+
+        final initial = await ScheduleStateService.instance.addPendingItem(
+          userId: userId,
+          kind: SchedulePendingItem.kindTodo,
+          title: '下午 6 点提交日报给主管',
+          sourceFactId: factId,
+          dueAt: DateTime.parse('2026-05-27T18:00:00'),
+          subtasks: const [
+            ScheduleSubtask(title: '整理今日工作进展要点'),
+            ScheduleSubtask(title: '撰写日报内容'),
+            ScheduleSubtask(title: '发送给主管'),
           ],
-        ),
-      );
+          now: DateTime.parse('2026-05-27T16:00:00'),
+        );
 
-      final state = await ScheduleStateService.instance.read(userId);
-      expect(state.presentation!.editorialIntro, contains('Clear morning'));
+        await ScheduleStateService.instance.setSubtaskCompletion(
+          userId: userId,
+          pendingId: initial.pending.single.id,
+          subtaskTitle: '整理今日工作进展要点',
+          completed: true,
+          changedAt: DateTime.parse('2026-05-27T16:10:00'),
+        );
 
-      final matches = await ScheduleStateService.instance.searchCompleted(
-        userId: userId,
-        query: 'launch',
-      );
-      expect(matches, hasLength(1));
-      expect(matches.single.title, 'Write launch plan');
-    });
+        final state = await ScheduleStateService.instance.read(userId);
+        expect(state.pending.single.subtasks.first.completed, isTrue);
+        expect(state.pending.single.subtasks.first.closedByFactId, isNull);
+
+        final updatedCard = await FileSystemService.instance.readCardFile(
+          userId,
+          factId,
+        );
+        final rawSubtasks =
+            updatedCard!.uiConfigs.single.data['subtasks'] as List<dynamic>;
+        expect(rawSubtasks.first as Map, containsPair('completed', false));
+        expect(updatedCard.uiConfigs.single.data['is_completed'], isFalse);
+      },
+    );
+
+    test(
+      'setPresentation and searchCompleted persist canonical state',
+      () async {
+        const userId = 'test_user';
+        await ScheduleStateService.instance.addPendingItem(
+          userId: userId,
+          kind: SchedulePendingItem.kindTodo,
+          title: 'Write launch plan',
+          sourceFactId: '2026/05/26.md#ts_1',
+          now: DateTime.parse('2026-05-26T10:00:00'),
+        );
+        final pending = await ScheduleStateService.instance.read(userId);
+        await ScheduleStateService.instance.completePendingItem(
+          userId: userId,
+          pendingId: pending.pending.single.id,
+          closedByFactId: '2026/05/26.md#ts_2',
+          closedAt: DateTime.parse('2026-05-26T11:00:00'),
+        );
+
+        await ScheduleStateService.instance.setPresentation(
+          userId: userId,
+          presentation: const SchedulePresentation(
+            editorialIntro: 'Clear morning, one completed planning task.',
+            timeline: [
+              ScheduleTimelineDay(dayLabel: 'Today', dayDate: '2026-05-26'),
+            ],
+          ),
+        );
+
+        final state = await ScheduleStateService.instance.read(userId);
+        expect(state.presentation!.editorialIntro, contains('Clear morning'));
+
+        final matches = await ScheduleStateService.instance.searchCompleted(
+          userId: userId,
+          query: 'launch',
+        );
+        expect(matches, hasLength(1));
+        expect(matches.single.title, 'Write launch plan');
+      },
+    );
 
     test('ensureInitialized creates empty canonical schedule state', () async {
       const userId = 'test_user';
@@ -203,38 +305,40 @@ void main() {
       expect(actions, isEmpty);
     });
 
-    test('syncDeviceAction controls device action creation and cancellation',
-        () async {
-      const userId = 'test_user';
+    test(
+      'syncDeviceAction controls device action creation and cancellation',
+      () async {
+        const userId = 'test_user';
 
-      final state = await ScheduleStateService.instance.addPendingItem(
-        userId: userId,
-        kind: SchedulePendingItem.kindEvent,
-        title: 'Dentist appointment',
-        sourceFactId: '2026/05/26.md#ts_1',
-        startTime: DateTime.parse('2099-05-27T09:00:00'),
-        now: DateTime.parse('2026-05-26T10:00:00'),
-        syncDeviceAction: true,
-      );
+        final state = await ScheduleStateService.instance.addPendingItem(
+          userId: userId,
+          kind: SchedulePendingItem.kindEvent,
+          title: 'Dentist appointment',
+          sourceFactId: '2026/05/26.md#ts_1',
+          startTime: DateTime.parse('2099-05-27T09:00:00'),
+          now: DateTime.parse('2026-05-26T10:00:00'),
+          syncDeviceAction: true,
+        );
 
-      expect(state.pending.single.syncDeviceAction, isTrue);
-      expect(state.pending.single.deviceActionId, isNotNull);
-      var actions = await db.select(db.systemActions).get();
-      expect(actions, hasLength(1));
-      expect(actions.single.actionType, 'calendar');
+        expect(state.pending.single.syncDeviceAction, isTrue);
+        expect(state.pending.single.deviceActionId, isNotNull);
+        var actions = await db.select(db.systemActions).get();
+        expect(actions, hasLength(1));
+        expect(actions.single.actionType, 'calendar');
 
-      final updated = await ScheduleStateService.instance.updatePendingItem(
-        userId: userId,
-        pendingId: state.pending.single.id,
-        syncDeviceAction: false,
-        now: DateTime.parse('2026-05-26T10:05:00'),
-      );
+        final updated = await ScheduleStateService.instance.updatePendingItem(
+          userId: userId,
+          pendingId: state.pending.single.id,
+          syncDeviceAction: false,
+          now: DateTime.parse('2026-05-26T10:05:00'),
+        );
 
-      expect(updated.pending.single.syncDeviceAction, isFalse);
-      expect(updated.pending.single.deviceActionId, isNull);
-      actions = await db.select(db.systemActions).get();
-      expect(actions, isEmpty);
-    });
+        expect(updated.pending.single.syncDeviceAction, isFalse);
+        expect(updated.pending.single.deviceActionId, isNull);
+        actions = await db.select(db.systemActions).get();
+        expect(actions, isEmpty);
+      },
+    );
 
     test('disabling sync preserves completed device action history', () async {
       const userId = 'test_user';
@@ -249,9 +353,9 @@ void main() {
         syncDeviceAction: true,
       );
       final actionId = state.pending.single.deviceActionId!;
-      await db.update(db.systemActions).write(
-            const SystemActionsCompanion(status: Value('completed')),
-          );
+      await db
+          .update(db.systemActions)
+          .write(const SystemActionsCompanion(status: Value('completed')));
 
       final updated = await ScheduleStateService.instance.updatePendingItem(
         userId: userId,
@@ -281,9 +385,9 @@ void main() {
         syncDeviceAction: true,
       );
       final actionId = state.pending.single.deviceActionId!;
-      await db.update(db.systemActions).write(
-            const SystemActionsCompanion(status: Value('completed')),
-          );
+      await db
+          .update(db.systemActions)
+          .write(const SystemActionsCompanion(status: Value('completed')));
 
       final updated = await ScheduleStateService.instance.updatePendingItem(
         userId: userId,
@@ -299,39 +403,41 @@ void main() {
       expect(actions.single.status, 'completed');
     });
 
-    test('cards and aggregation are not imported after initialization',
-        () async {
-      const userId = 'test_user';
-      const secondTaskId = '2026/05/27.md#ts_1';
+    test(
+      'cards and aggregation are not imported after initialization',
+      () async {
+        const userId = 'test_user';
+        const secondTaskId = '2026/05/27.md#ts_1';
 
-      final first = await ScheduleStateService.instance.ensureInitialized(
-        userId,
-        now: DateTime.parse('2026-05-26T09:00:00'),
-      );
-      expect(first.pending, isEmpty);
-      expect(first.presentation, isNull);
+        final first = await ScheduleStateService.instance.ensureInitialized(
+          userId,
+          now: DateTime.parse('2026-05-26T09:00:00'),
+        );
+        expect(first.pending, isEmpty);
+        expect(first.presentation, isNull);
 
-      await FileSystemService.instance.safeWriteCardFile(
-        userId,
-        secondTaskId,
-        _taskCard(factId: secondTaskId, isCompleted: false),
-      );
+        await FileSystemService.instance.safeWriteCardFile(
+          userId,
+          secondTaskId,
+          _taskCard(factId: secondTaskId, isCompleted: false),
+        );
 
-      final second = await ScheduleStateService.instance.ensureInitialized(
-        userId,
-        now: DateTime.parse('2026-05-27T09:00:00'),
-      );
+        final second = await ScheduleStateService.instance.ensureInitialized(
+          userId,
+          now: DateTime.parse('2026-05-27T09:00:00'),
+        );
 
-      expect(second.pending, isEmpty);
-      expect(second.presentation, isNull);
+        expect(second.pending, isEmpty);
+        expect(second.presentation, isNull);
 
-      final rebuilt = await ScheduleStateService.instance.rebuildFromCards(
-        userId,
-        now: DateTime.parse('2026-05-28T09:00:00'),
-      );
-      expect(rebuilt.pending, isEmpty);
-      expect(rebuilt.presentation, isNull);
-    });
+        final rebuilt = await ScheduleStateService.instance.rebuildFromCards(
+          userId,
+          now: DateTime.parse('2026-05-28T09:00:00'),
+        );
+        expect(rebuilt.pending, isEmpty);
+        expect(rebuilt.presentation, isNull);
+      },
+    );
   });
 }
 

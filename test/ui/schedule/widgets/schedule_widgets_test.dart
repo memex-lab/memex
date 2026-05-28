@@ -34,16 +34,18 @@ void main() {
       (tester) async {
         final tappedCards = <String>[];
         final toggledTasks = <String>[];
+        final restoredTasks = <String>[];
 
         await tester.pumpWidget(
           buildHost(
             MagazineNarrativeTab(
               aggregation: _complexAggregation(),
               itemStatuses: const {
-                'pi_task_clean': ScheduleItemStatus.completed
+                'pi_task_clean': ScheduleItemStatus.completed,
               },
               onTapCardId: tappedCards.add,
               onToggleTask: toggledTasks.add,
+              onToggleCompletedTask: restoredTasks.add,
             ),
           ),
         );
@@ -87,6 +89,12 @@ void main() {
         await tester.scrollUntilVisible(find.text('Done grocery order'), 240);
         await tester.pumpAndSettle();
         expect(find.text('Done grocery order'), findsOneWidget);
+
+        await tester.tap(
+          find.byKey(const ValueKey('schedule_completed_toggle_pi_done')),
+        );
+        await tester.pump();
+        expect(restoredTasks, ['pi_done']);
       },
     );
 
@@ -478,6 +486,7 @@ ScheduleViewData _complexAggregation({
     completed: [
       ScheduleViewCompletedItem(
         cardId: 'task-grocery',
+        itemId: 'pi_done',
         title: 'Done grocery order',
         completedAt: DateTime(2026, 5, 14, 21, 15),
       ),

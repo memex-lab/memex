@@ -16,6 +16,7 @@ class MagazineNarrativeTab extends StatefulWidget {
   final Map<String, ScheduleItemStatus> itemStatuses;
   final Map<String, List<ScheduleSubtask>> itemSubtasks;
   final void Function(String itemId)? onToggleTask;
+  final void Function(String itemId)? onToggleCompletedTask;
   final void Function(String itemId, int subtaskIndex)? onToggleSubtask;
   final DateTime? referenceDate;
 
@@ -26,6 +27,7 @@ class MagazineNarrativeTab extends StatefulWidget {
     this.itemStatuses = const {},
     this.itemSubtasks = const {},
     this.onToggleTask,
+    this.onToggleCompletedTask,
     this.onToggleSubtask,
     this.referenceDate,
   });
@@ -204,10 +206,7 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
     );
   }
 
-  Widget _buildHeroMetaRow({
-    required IconData icon,
-    required String text,
-  }) {
+  Widget _buildHeroMetaRow({required IconData icon, required String text}) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -276,8 +275,9 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
 
   Widget _buildAgentReminderRow(ScheduleViewQuoteBlock block) {
     final isHighPriority = block.priority == 'high';
-    final accentColor =
-        isHighPriority ? const Color(0xFFD97706) : const Color(0xFF64748B);
+    final accentColor = isHighPriority
+        ? const Color(0xFFD97706)
+        : const Color(0xFF64748B);
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -333,8 +333,9 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
   }) {
     final isTask = _isTaskItem(item);
     final itemKey = _itemKey(item);
-    final subtasks =
-        isTask ? _resolveSubtasks(item) : const <ScheduleSubtask>[];
+    final subtasks = isTask
+        ? _resolveSubtasks(item)
+        : const <ScheduleSubtask>[];
     final status = _resolveStatus(item, subtasks);
     final isCompleted = status == ScheduleItemStatus.completed;
 
@@ -354,18 +355,19 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
                     color: isCompleted
                         ? const Color(0xFF99A1AF)
                         : item.priority == 3
-                            ? const Color(0xFFF43F5E)
-                            : const Color(0xFF5B6CFF),
+                        ? const Color(0xFFF43F5E)
+                        : const Color(0xFF5B6CFF),
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.white, width: 2),
                     boxShadow: [
                       BoxShadow(
-                        color: (isCompleted
-                                ? const Color(0xFF99A1AF)
-                                : item.priority == 3
+                        color:
+                            (isCompleted
+                                    ? const Color(0xFF99A1AF)
+                                    : item.priority == 3
                                     ? const Color(0xFFF43F5E)
                                     : const Color(0xFF5B6CFF))
-                            .withValues(alpha: 0.3),
+                                .withValues(alpha: 0.3),
                         blurRadius: 6,
                       ),
                     ],
@@ -461,6 +463,7 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
   }
 
   Widget _buildAgentDoneCard(ScheduleViewCompletedItem item) {
+    final itemId = item.itemId ?? item.cardId;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: GestureDetector(
@@ -471,15 +474,20 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Padding(
-                padding: EdgeInsets.only(top: 1),
-                child: Icon(
-                  Icons.check_circle_rounded,
-                  size: 17,
-                  color: Color(0xFF94A3B8),
+              GestureDetector(
+                key: ValueKey('schedule_completed_toggle_$itemId'),
+                onTap: () => widget.onToggleCompletedTask?.call(itemId),
+                behavior: HitTestBehavior.opaque,
+                child: const Padding(
+                  padding: EdgeInsets.fromLTRB(0, 1, 8, 8),
+                  child: Icon(
+                    Icons.check_circle_rounded,
+                    size: 17,
+                    color: Color(0xFF94A3B8),
+                  ),
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 2),
               Expanded(
                 child: Text(
                   item.title,
@@ -529,23 +537,24 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
           shape: BoxShape.circle,
           color: isCompleted ? const Color(0xFF5B6CFF) : Colors.transparent,
           border: Border.all(
-            color:
-                isCompleted ? const Color(0xFF5B6CFF) : const Color(0xFFCBD5E1),
+            color: isCompleted
+                ? const Color(0xFF5B6CFF)
+                : const Color(0xFFCBD5E1),
             width: 2,
           ),
         ),
         child: isCompleted
             ? const Icon(Icons.check, size: 13, color: Colors.white)
             : isInProgress
-                ? Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF5B6CFF),
-                      shape: BoxShape.circle,
-                    ),
-                  )
-                : null,
+            ? Container(
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF5B6CFF),
+                  shape: BoxShape.circle,
+                ),
+              )
+            : null,
       ),
     );
   }
@@ -767,8 +776,7 @@ class _MagazineNarrativeTabState extends State<MagazineNarrativeTab> {
       'completed' || 'done' => ScheduleItemStatus.completed,
       'in_progress' ||
       'inprogress' ||
-      'active' =>
-        ScheduleItemStatus.inProgress,
+      'active' => ScheduleItemStatus.inProgress,
       'overdue' => ScheduleItemStatus.overdue,
       _ => ScheduleItemStatus.pending,
     };

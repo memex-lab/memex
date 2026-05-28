@@ -25,16 +25,18 @@ String _localizedOrFallback(
 }
 
 typedef ScheduleAggregationLoader = Future<ScheduleViewData?> Function();
-typedef ScheduleAggregationFreshnessChecker = Future<bool> Function({
-  Duration? maxAge,
-});
+typedef ScheduleAggregationFreshnessChecker =
+    Future<bool> Function({Duration? maxAge});
 typedef ScheduleAggregationRefresher = Future<Result<void>> Function();
 typedef ScheduleItemCompleter = Future<Result<void>> Function(String itemId);
-typedef ScheduleSubtaskCompletionSetter = Future<Result<void>> Function(
-  String itemId,
-  String subtaskTitle,
-  bool completed,
-);
+typedef ScheduleCompletedItemRestorer =
+    Future<Result<void>> Function(String itemId);
+typedef ScheduleSubtaskCompletionSetter =
+    Future<Result<void>> Function(
+      String itemId,
+      String subtaskTitle,
+      bool completed,
+    );
 
 class ScheduleAggregatorViewModel extends ChangeNotifier {
   ScheduleAggregatorViewModel({
@@ -42,24 +44,31 @@ class ScheduleAggregatorViewModel extends ChangeNotifier {
     ScheduleAggregationFreshnessChecker? needsRefresh,
     ScheduleAggregationRefresher? refreshAggregation,
     ScheduleItemCompleter? completeScheduleItem,
+    ScheduleCompletedItemRestorer? restoreScheduleItem,
     ScheduleSubtaskCompletionSetter? setScheduleSubtaskCompletion,
     Duration refreshReloadDelay = const Duration(seconds: 90),
     bool listenToEvents = true,
-  })  : _loadAggregation = loadAggregation ?? getScheduleViewData,
-        _needsRefresh = needsRefresh ?? scheduleViewDataNeedsRefresh,
-        _refreshAggregation = refreshAggregation ??
-            (() => MemexRouter().refreshScheduleAggregation()),
-        _completeScheduleItem = completeScheduleItem ??
-            ((itemId) => MemexRouter().completeScheduleItem(itemId)),
-        _setScheduleSubtaskCompletion = setScheduleSubtaskCompletion ??
-            ((itemId, subtaskTitle, completed) =>
-                MemexRouter().setScheduleSubtaskCompletion(
-                  itemId: itemId,
-                  subtaskTitle: subtaskTitle,
-                  completed: completed,
-                )),
-        _refreshReloadDelay = refreshReloadDelay,
-        _listenToEvents = listenToEvents {
+  }) : _loadAggregation = loadAggregation ?? getScheduleViewData,
+       _needsRefresh = needsRefresh ?? scheduleViewDataNeedsRefresh,
+       _refreshAggregation =
+           refreshAggregation ??
+           (() => MemexRouter().refreshScheduleAggregation()),
+       _completeScheduleItem =
+           completeScheduleItem ??
+           ((itemId) => MemexRouter().completeScheduleItem(itemId)),
+       _restoreScheduleItem =
+           restoreScheduleItem ??
+           ((itemId) => MemexRouter().restoreScheduleItem(itemId)),
+       _setScheduleSubtaskCompletion =
+           setScheduleSubtaskCompletion ??
+           ((itemId, subtaskTitle, completed) =>
+               MemexRouter().setScheduleSubtaskCompletion(
+                 itemId: itemId,
+                 subtaskTitle: subtaskTitle,
+                 completed: completed,
+               )),
+       _refreshReloadDelay = refreshReloadDelay,
+       _listenToEvents = listenToEvents {
     if (_listenToEvents) {
       EventBusService.instance.addHandler(
         EventBusMessageType.scheduleAggregationUpdated,
@@ -72,6 +81,7 @@ class ScheduleAggregatorViewModel extends ChangeNotifier {
   final ScheduleAggregationFreshnessChecker _needsRefresh;
   final ScheduleAggregationRefresher _refreshAggregation;
   final ScheduleItemCompleter _completeScheduleItem;
+  final ScheduleCompletedItemRestorer _restoreScheduleItem;
   final ScheduleSubtaskCompletionSetter _setScheduleSubtaskCompletion;
   final Duration _refreshReloadDelay;
   final bool _listenToEvents;
@@ -94,7 +104,8 @@ class ScheduleAggregatorViewModel extends ChangeNotifier {
       final status = _statusOverrides[item.itemId];
       if (status == null && subtasks == null) return item;
       final effectiveSubtasks = subtasks ?? item.subtasks;
-      final effectiveStatus = status ??
+      final effectiveStatus =
+          status ??
           (subtasks == null
               ? item.status
               : ScheduleItem.deriveTodoStatus(
@@ -202,8 +213,8 @@ class ScheduleAggregatorViewModel extends ChangeNotifier {
     final optimisticSubtasks = item.subtasks.isEmpty
         ? null
         : item.subtasks
-            .map((subtask) => subtask.copyWith(completed: nextCompleted))
-            .toList();
+              .map((subtask) => subtask.copyWith(completed: nextCompleted))
+              .toList();
     _applyTaskOverride(
       item.itemId,
       status: nextStatus,
@@ -231,7 +242,25 @@ class ScheduleAggregatorViewModel extends ChangeNotifier {
         'Failed to toggle schedule item ${item.sourceFactId}: $e',
       );
       _restoreTaskOverrides(
-          item.itemId, previousStatusOverride, previousSubtaskOverride);
+        item.itemId,
+        previousStatusOverride,
+        previousSubtaskOverride,
+      );
+      _error = _localizedOrFallback(
+        (l10n) => l10n.scheduleTaskUpdateFailed,
+        'Failed to update task',
+      );
+      notifyListeners();
+    }
+  }
+
+  Future<void> restoreCompletedItem(String itemId) async {
+    try {
+      _throwOnError(await _restoreScheduleItem(itemId));
+      _error = null;
+      await loadAggregation();
+    } catch (e) {
+      _logger.warning('Failed to restore schedule item $itemId: $e');
       _error = _localizedOrFallback(
         (l10n) => l10n.scheduleTaskUpdateFailed,
         'Failed to update task',
@@ -255,11 +284,7 @@ class ScheduleAggregatorViewModel extends ChangeNotifier {
       nextSubtasks,
       fallback: item.status,
     );
-    _applyTaskOverride(
-      item.itemId,
-      status: nextStatus,
-      subtasks: nextSubtasks,
-    );
+    _applyTaskOverride(item.itemId, status: nextStatus, subtasks: nextSubtasks);
 
     try {
       _throwOnError(
@@ -275,7 +300,10 @@ class ScheduleAggregatorViewModel extends ChangeNotifier {
         'Failed to toggle schedule subtask $subtaskIndex for ${item.sourceFactId}: $e',
       );
       _restoreTaskOverrides(
-          item.itemId, previousStatusOverride, previousSubtaskOverride);
+        item.itemId,
+        previousStatusOverride,
+        previousSubtaskOverride,
+      );
       _error = _localizedOrFallback(
         (l10n) => l10n.scheduleTaskUpdateFailed,
         'Failed to update task',
@@ -354,8 +382,5 @@ class ScheduleAggregatorViewModel extends ChangeNotifier {
 }
 
 void _throwOnError(Result<void> result) {
-  result.when(
-    onOk: (_) {},
-    onError: (e, st) => throw e,
-  );
+  result.when(onOk: (_) {}, onError: (e, st) => throw e);
 }
