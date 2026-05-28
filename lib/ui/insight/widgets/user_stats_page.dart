@@ -10,6 +10,7 @@ class UserStatsPage extends StatelessWidget {
     required this.snapshot,
     required this.isLoading,
     required this.errorMessage,
+    required this.selectedDays,
     required this.selectedMetric,
     required this.onMetricChanged,
     required this.onPresetSelected,
@@ -20,6 +21,7 @@ class UserStatsPage extends StatelessWidget {
   final UserStatsSnapshot? snapshot;
   final bool isLoading;
   final String? errorMessage;
+  final int selectedDays;
   final UserStatsMetric selectedMetric;
   final ValueChanged<UserStatsMetric> onMetricChanged;
   final ValueChanged<int> onPresetSelected;
@@ -72,7 +74,8 @@ class UserStatsPage extends StatelessWidget {
         const SizedBox(height: 16),
         if (header != null) ...[header!, const SizedBox(height: 16)],
         _RangeSelector(
-          selectedDays: data.range.dayCount,
+          selectedDays: selectedDays,
+          isLoading: isLoading,
           onSelected: onPresetSelected,
         ),
         const SizedBox(height: 16),
@@ -97,9 +100,14 @@ class UserStatsPage extends StatelessWidget {
 }
 
 class _RangeSelector extends StatelessWidget {
-  const _RangeSelector({required this.selectedDays, required this.onSelected});
+  const _RangeSelector({
+    required this.selectedDays,
+    required this.isLoading,
+    required this.onSelected,
+  });
 
   final int selectedDays;
+  final bool isLoading;
   final ValueChanged<int> onSelected;
 
   @override
@@ -110,33 +118,46 @@ class _RangeSelector extends StatelessWidget {
       (90, UserStorage.l10n.last90Days),
     ];
     return Row(
-      children: items.map((item) {
-        final selected = selectedDays == item.$1;
-        return Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: ChoiceChip(
-            key: ValueKey('stats_range_${item.$1}'),
-            label: Text(item.$2),
-            selected: selected,
-            onSelected: (_) => onSelected(item.$1),
-            selectedColor: const Color(0xFF111827),
-            backgroundColor: Colors.white,
-            labelStyle: TextStyle(
-              color: selected ? Colors.white : const Color(0xFF4B5563),
-              fontWeight: FontWeight.w700,
-              fontSize: 12,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-              side: BorderSide(
-                color: selected
-                    ? const Color(0xFF111827)
-                    : const Color(0xFFE5E7EB),
+      children: [
+        ...items.map((item) {
+          final selected = selectedDays == item.$1;
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ChoiceChip(
+              key: ValueKey('stats_range_${item.$1}'),
+              label: Text(item.$2),
+              selected: selected,
+              onSelected: (_) => onSelected(item.$1),
+              selectedColor: const Color(0xFF111827),
+              backgroundColor: Colors.white,
+              labelStyle: TextStyle(
+                color: selected ? Colors.white : const Color(0xFF4B5563),
+                fontWeight: FontWeight.w700,
+                fontSize: 12,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+                side: BorderSide(
+                  color: selected
+                      ? const Color(0xFF111827)
+                      : const Color(0xFFE5E7EB),
+                ),
               ),
             ),
+          );
+        }),
+        const Spacer(),
+        if (isLoading)
+          const SizedBox(
+            key: ValueKey('stats_range_loading'),
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF9CA3AF)),
+            ),
           ),
-        );
-      }).toList(),
+      ],
     );
   }
 }
@@ -344,11 +365,15 @@ class _DailyBars extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final maxValue = snapshot.maxValueFor(metric).clamp(1, 1 << 30);
+    final buckets = snapshot.trendBuckets();
+    final maxValue = snapshot.maxTrendValueFor(metric).clamp(1, 1 << 30);
     final formatter = DateFormat.Md(UserStorage.l10n.localeName);
-    final contentWidth = snapshot.daily.length <= 14
-        ? MediaQuery.sizeOf(context).width - 80
-        : snapshot.daily.length * 28.0;
+    final bucketWidth = snapshot.preferredTrendBucketSizeDays > 1 ? 44.0 : 28.0;
+    final minContentWidth = buckets.length * bucketWidth;
+    final viewportWidth = MediaQuery.sizeOf(context).width - 80;
+    final contentWidth = buckets.length <= 14
+        ? (viewportWidth < minContentWidth ? minContentWidth : viewportWidth)
+        : minContentWidth;
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -357,14 +382,17 @@ class _DailyBars extends StatelessWidget {
         height: 172,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.end,
-          children: snapshot.daily.map((point) {
-            final value = point.valueFor(metric);
+          children: buckets.map((bucket) {
+            final value = bucket.valueFor(metric);
             final height = value == 0 ? 8.0 : 20 + value / maxValue * 100;
+            final key = bucket.isSingleDay
+                ? 'stats_day_${_dateKey(bucket.start)}'
+                : 'stats_bucket_${bucket.key}';
             return Expanded(
               child: GestureDetector(
-                key: ValueKey('stats_day_${_dateKey(point.date)}'),
+                key: ValueKey(key),
                 behavior: HitTestBehavior.opaque,
-                onTap: () => _showDayDetails(context, snapshot, point),
+                onTap: () => _showBucketDetails(context, snapshot, bucket),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 3),
                   child: Column(
@@ -392,9 +420,9 @@ class _DailyBars extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        formatter.format(point.date),
+                        formatter.format(bucket.start),
                         maxLines: 1,
-                        overflow: TextOverflow.visible,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           fontSize: 10,
                           color: Color(0xFF9CA3AF),
@@ -794,16 +822,16 @@ String _metricLabel(UserStatsMetric metric) {
   }
 }
 
-void _showDayDetails(
+void _showBucketDetails(
   BuildContext context,
   UserStatsSnapshot snapshot,
-  UserStatsDailyPoint point,
+  UserStatsTrendBucket bucket,
 ) {
-  final key = _dateKey(point.date);
-  final detail = snapshot.dayDetails[key];
-  final dateLabel = DateFormat.yMMMd(
-    UserStorage.l10n.localeName,
-  ).format(point.date);
+  final detail = snapshot.detailForBucket(bucket);
+  final formatter = DateFormat.yMMMd(UserStorage.l10n.localeName);
+  final dateLabel = bucket.isSingleDay
+      ? formatter.format(bucket.start)
+      : '${formatter.format(bucket.start)} - ${formatter.format(bucket.end)}';
 
   showModalBottomSheet<void>(
     context: context,
@@ -838,26 +866,24 @@ void _showDayDetails(
                   ),
                 ),
                 const SizedBox(height: 16),
-                _DetailCountRow(point: point),
+                _DetailCountRow(point: bucket.toAggregatePoint()),
                 const SizedBox(height: 18),
-                if (detail != null) ...[
-                  _DetailList(
-                    title: UserStorage.l10n.cards,
-                    items: detail.cardTitles,
-                  ),
-                  _DetailList(
-                    title: UserStorage.l10n.knowledgeUnits,
-                    items: detail.knowledgePaths,
-                  ),
-                  _DetailList(
-                    title: UserStorage.l10n.knowledgeInsight,
-                    items: detail.insightTitles,
-                  ),
-                  _DetailList(
-                    title: UserStorage.l10n.completedTodos,
-                    items: detail.completedTodoTitles,
-                  ),
-                ],
+                _DetailList(
+                  title: UserStorage.l10n.cards,
+                  items: detail.cardTitles,
+                ),
+                _DetailList(
+                  title: UserStorage.l10n.knowledgeUnits,
+                  items: detail.knowledgePaths,
+                ),
+                _DetailList(
+                  title: UserStorage.l10n.knowledgeInsight,
+                  items: detail.insightTitles,
+                ),
+                _DetailList(
+                  title: UserStorage.l10n.completedTodos,
+                  items: detail.completedTodoTitles,
+                ),
               ],
             ),
           ),

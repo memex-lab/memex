@@ -535,6 +535,7 @@ class _InsightScreenState extends State<InsightScreen> {
                               snapshot: vm.statsSnapshot,
                               isLoading: vm.isStatsLoading,
                               errorMessage: vm.statsErrorMessage,
+                              selectedDays: vm.statsRange.dayCount,
                               selectedMetric: vm.selectedStatsMetric,
                               onMetricChanged: vm.setStatsMetric,
                               onPresetSelected: (days) =>

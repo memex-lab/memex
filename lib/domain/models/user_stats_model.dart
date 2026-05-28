@@ -25,10 +25,10 @@ class UserStatsDateRange {
   int get dayCount => end.difference(start).inDays + 1;
 
   Map<String, dynamic> toJson() => {
-        'start': _dateKey(start),
-        'end': _dateKey(end),
-        'day_count': dayCount,
-      };
+    'start': _dateKey(start),
+    'end': _dateKey(end),
+    'day_count': dayCount,
+  };
 }
 
 class UserStatsSummary {
@@ -56,16 +56,16 @@ class UserStatsSummary {
       totalCards + totalKnowledgeUnits + totalInsights + totalCompletedTodos;
 
   Map<String, dynamic> toJson() => {
-        'total_inputs': totalInputs,
-        'total_words': totalWords,
-        'total_cards': totalCards,
-        'total_knowledge_units': totalKnowledgeUnits,
-        'total_insights': totalInsights,
-        'total_completed_todos': totalCompletedTodos,
-        'total_outputs': totalOutputs,
-        'active_days': activeDays,
-        'current_streak_days': currentStreakDays,
-      };
+    'total_inputs': totalInputs,
+    'total_words': totalWords,
+    'total_cards': totalCards,
+    'total_knowledge_units': totalKnowledgeUnits,
+    'total_insights': totalInsights,
+    'total_completed_todos': totalCompletedTodos,
+    'total_outputs': totalOutputs,
+    'active_days': activeDays,
+    'current_streak_days': currentStreakDays,
+  };
 }
 
 class UserStatsDailyPoint {
@@ -112,15 +112,96 @@ class UserStatsDailyPoint {
   }
 
   Map<String, dynamic> toJson() => {
-        'date': _dateKey(date),
-        'inputs': inputs,
-        'words': words,
-        'cards': cards,
-        'knowledge_units': knowledgeUnits,
-        'insights': insights,
-        'completed_todos': completedTodos,
-        'is_active': isActive,
-      };
+    'date': _dateKey(date),
+    'inputs': inputs,
+    'words': words,
+    'cards': cards,
+    'knowledge_units': knowledgeUnits,
+    'insights': insights,
+    'completed_todos': completedTodos,
+    'is_active': isActive,
+  };
+}
+
+class UserStatsTrendBucket {
+  final DateTime start;
+  final DateTime end;
+  final List<UserStatsDailyPoint> dailyPoints;
+  final int inputs;
+  final int words;
+  final int cards;
+  final int knowledgeUnits;
+  final int insights;
+  final int completedTodos;
+
+  const UserStatsTrendBucket({
+    required this.start,
+    required this.end,
+    required this.dailyPoints,
+    required this.inputs,
+    required this.words,
+    required this.cards,
+    required this.knowledgeUnits,
+    required this.insights,
+    required this.completedTodos,
+  });
+
+  factory UserStatsTrendBucket.fromPoints(List<UserStatsDailyPoint> points) {
+    if (points.isEmpty) {
+      throw ArgumentError.value(points, 'points', 'Must not be empty');
+    }
+    return UserStatsTrendBucket(
+      start: points.first.date,
+      end: points.last.date,
+      dailyPoints: List.unmodifiable(points),
+      inputs: points.fold(0, (sum, point) => sum + point.inputs),
+      words: points.fold(0, (sum, point) => sum + point.words),
+      cards: points.fold(0, (sum, point) => sum + point.cards),
+      knowledgeUnits: points.fold(
+        0,
+        (sum, point) => sum + point.knowledgeUnits,
+      ),
+      insights: points.fold(0, (sum, point) => sum + point.insights),
+      completedTodos: points.fold(
+        0,
+        (sum, point) => sum + point.completedTodos,
+      ),
+    );
+  }
+
+  bool get isSingleDay => _dateKey(start) == _dateKey(end);
+
+  String get key =>
+      isSingleDay ? _dateKey(start) : '${_dateKey(start)}_${_dateKey(end)}';
+
+  int valueFor(UserStatsMetric metric) {
+    switch (metric) {
+      case UserStatsMetric.inputs:
+        return inputs;
+      case UserStatsMetric.words:
+        return words;
+      case UserStatsMetric.cards:
+        return cards;
+      case UserStatsMetric.knowledgeUnits:
+        return knowledgeUnits;
+      case UserStatsMetric.insights:
+        return insights;
+      case UserStatsMetric.completedTodos:
+        return completedTodos;
+    }
+  }
+
+  UserStatsDailyPoint toAggregatePoint() {
+    return UserStatsDailyPoint(
+      date: start,
+      inputs: inputs,
+      words: words,
+      cards: cards,
+      knowledgeUnits: knowledgeUnits,
+      insights: insights,
+      completedTodos: completedTodos,
+    );
+  }
 }
 
 class UserStatsSourceBreakdown {
@@ -137,11 +218,11 @@ class UserStatsSourceBreakdown {
   int get total => textInputs + imageInputs + audioInputs;
 
   Map<String, dynamic> toJson() => {
-        'text_inputs': textInputs,
-        'image_inputs': imageInputs,
-        'audio_inputs': audioInputs,
-        'total': total,
-      };
+    'text_inputs': textInputs,
+    'image_inputs': imageInputs,
+    'audio_inputs': audioInputs,
+    'total': total,
+  };
 }
 
 class UserStatsTopTag {
@@ -169,12 +250,12 @@ class UserStatsDayDetail {
   });
 
   Map<String, dynamic> toJson() => {
-        'date': _dateKey(date),
-        'card_titles': cardTitles,
-        'knowledge_paths': knowledgePaths,
-        'insight_titles': insightTitles,
-        'completed_todo_titles': completedTodoTitles,
-      };
+    'date': _dateKey(date),
+    'card_titles': cardTitles,
+    'knowledge_paths': knowledgePaths,
+    'insight_titles': insightTitles,
+    'completed_todo_titles': completedTodoTitles,
+  };
 }
 
 class UserStatsSnapshot {
@@ -249,16 +330,77 @@ class UserStatsSnapshot {
     return max;
   }
 
+  int get preferredTrendBucketSizeDays => range.dayCount >= 90 ? 7 : 1;
+
+  List<UserStatsTrendBucket> trendBuckets({int? bucketSizeDays}) {
+    final size = bucketSizeDays ?? preferredTrendBucketSizeDays;
+    if (daily.isEmpty) return const [];
+    if (size <= 1) {
+      return daily
+          .map((point) => UserStatsTrendBucket.fromPoints([point]))
+          .toList();
+    }
+
+    final buckets = <UserStatsTrendBucket>[];
+    for (var index = 0; index < daily.length; index += size) {
+      final end = index + size > daily.length ? daily.length : index + size;
+      buckets.add(UserStatsTrendBucket.fromPoints(daily.sublist(index, end)));
+    }
+    return buckets;
+  }
+
+  int maxTrendValueFor(UserStatsMetric metric, {int? bucketSizeDays}) {
+    var max = 0;
+    for (final bucket in trendBuckets(bucketSizeDays: bucketSizeDays)) {
+      final value = bucket.valueFor(metric);
+      if (value > max) max = value;
+    }
+    return max;
+  }
+
+  UserStatsDayDetail detailForBucket(UserStatsTrendBucket bucket) {
+    final cardTitles = <String>[];
+    final knowledgePaths = <String>[];
+    final insightTitles = <String>[];
+    final completedTodoTitles = <String>[];
+
+    for (final point in bucket.dailyPoints) {
+      final detail = dayDetails[_dateKey(point.date)];
+      if (detail == null) continue;
+      cardTitles.addAll(detail.cardTitles);
+      knowledgePaths.addAll(detail.knowledgePaths);
+      insightTitles.addAll(detail.insightTitles);
+      completedTodoTitles.addAll(detail.completedTodoTitles);
+    }
+
+    return UserStatsDayDetail(
+      date: bucket.start,
+      cardTitles: _dedupe(cardTitles),
+      knowledgePaths: _dedupe(knowledgePaths),
+      insightTitles: _dedupe(insightTitles),
+      completedTodoTitles: _dedupe(completedTodoTitles),
+    );
+  }
+
   Map<String, dynamic> toJson() => {
-        'range': range.toJson(),
-        'summary': summary.toJson(),
-        'daily': daily.map((point) => point.toJson()).toList(),
-        'source_breakdown': sourceBreakdown.toJson(),
-        'top_tags': topTags.map((tag) => tag.toJson()).toList(),
-        'day_details': dayDetails.map((key, value) {
-          return MapEntry(key, value.toJson());
-        }),
-      };
+    'range': range.toJson(),
+    'summary': summary.toJson(),
+    'daily': daily.map((point) => point.toJson()).toList(),
+    'source_breakdown': sourceBreakdown.toJson(),
+    'top_tags': topTags.map((tag) => tag.toJson()).toList(),
+    'day_details': dayDetails.map((key, value) {
+      return MapEntry(key, value.toJson());
+    }),
+  };
+}
+
+List<String> _dedupe(List<String> values) {
+  final seen = <String>{};
+  final result = <String>[];
+  for (final value in values) {
+    if (seen.add(value)) result.add(value);
+  }
+  return result;
 }
 
 String _dateKey(DateTime date) {

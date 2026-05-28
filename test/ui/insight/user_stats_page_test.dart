@@ -168,6 +168,7 @@ void main() {
               snapshot: _snapshot(),
               isLoading: false,
               errorMessage: null,
+              selectedDays: 3,
               selectedMetric: selectedMetric,
               onMetricChanged: (metric) => setState(() {
                 selectedMetric = metric;
@@ -202,6 +203,108 @@ void main() {
     expect(find.text('Day details'), findsOneWidget);
     expect(find.text('Weekly review'), findsOneWidget);
     expect(find.text('Clean desk'), findsOneWidget);
+  });
+
+  testWidgets('groups ninety-day rhythm chart into seven-day buckets', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      _wrap(
+        UserStatsPage(
+          snapshot: _ninetyDaySnapshot(),
+          isLoading: false,
+          errorMessage: null,
+          selectedDays: 90,
+          selectedMetric: UserStatsMetric.inputs,
+          onMetricChanged: (_) {},
+          onPresetSelected: (_) {},
+          onReload: () {},
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('stats_bucket_2026-03-01_2026-03-07')),
+      220,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('stats_bucket_2026-03-01_2026-03-07')),
+    );
+    await tester.drag(
+      find.byKey(const ValueKey('user_stats_page')),
+      const Offset(0, -260),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('stats_bucket_2026-03-01_2026-03-07')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const ValueKey('stats_day_2026-03-01')), findsNothing);
+
+    await tester.tap(
+      find.byKey(const ValueKey('stats_bucket_2026-03-01_2026-03-07')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Day details'), findsOneWidget);
+    expect(find.text('Mar 1, 2026 - Mar 7, 2026'), findsOneWidget);
+    expect(find.text('Weekly pattern'), findsOneWidget);
+    expect(find.text('Planning note'), findsOneWidget);
+  });
+
+  testWidgets('updates selected range immediately while preset reloads', (
+    tester,
+  ) async {
+    final statsCompleter = Completer<Result<UserStatsSnapshot>>();
+    final vm = _buildViewModelWithFetcher((range) {
+      if (range.dayCount == 90) return statsCompleter.future;
+      return Future.value(Ok(_snapshot()));
+    });
+    vm.statsRange = UserStatsDateRange(
+      start: DateTime(2026, 5, 18),
+      end: DateTime(2026, 5, 20),
+    );
+    vm.statsSnapshot = _snapshot();
+
+    await tester.pumpWidget(
+      _wrap(InsightScreen(viewModel: vm, isEmbedded: true)),
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+
+    await tester.tap(find.byKey(const ValueKey('user_stats_overview_card')));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.byKey(const ValueKey('stats_range_90')));
+    await tester.pump();
+
+    final selectedChip = tester.widget<ChoiceChip>(
+      find.byKey(const ValueKey('stats_range_90')),
+    );
+    expect(selectedChip.selected, isTrue);
+    expect(find.byKey(const ValueKey('stats_range_loading')), findsOneWidget);
+
+    statsCompleter.complete(Ok(_ninetyDaySnapshot()));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('stats_bucket_2026-03-01_2026-03-07')),
+      220,
+      scrollable: find.byType(Scrollable).first,
+    );
+
+    expect(find.byKey(const ValueKey('stats_range_loading')), findsNothing);
+    expect(
+      find.byKey(const ValueKey('stats_bucket_2026-03-01_2026-03-07')),
+      findsOneWidget,
+    );
+
+    vm.dispose();
   });
 }
 
@@ -326,7 +429,8 @@ UserStatsSnapshot _singleInputSnapshot() {
   final range = UserStatsDateRange.lastDays(7, now: today);
   final daily = List.generate(range.dayCount, (index) {
     final date = range.start.add(Duration(days: index));
-    final isToday = date.year == today.year &&
+    final isToday =
+        date.year == today.year &&
         date.month == today.month &&
         date.day == today.day;
     return UserStatsDailyPoint(
@@ -362,6 +466,62 @@ UserStatsSnapshot _singleInputSnapshot() {
     dayDetails: {
       for (final point in daily)
         _dateKey(point.date): UserStatsDayDetail(date: point.date),
+    },
+  );
+}
+
+UserStatsSnapshot _ninetyDaySnapshot() {
+  final range = UserStatsDateRange(
+    start: DateTime(2026, 3, 1),
+    end: DateTime(2026, 5, 29),
+  );
+  final daily = List.generate(range.dayCount, (index) {
+    final value = index + 1;
+    return UserStatsDailyPoint(
+      date: range.start.add(Duration(days: index)),
+      inputs: value,
+      words: value * 2,
+      cards: 1,
+      knowledgeUnits: index.isEven ? 1 : 0,
+      insights: index == 0 ? 1 : 0,
+      completedTodos: index == 1 ? 1 : 0,
+    );
+  });
+
+  return UserStatsSnapshot(
+    range: range,
+    summary: UserStatsSummary(
+      totalInputs: daily.fold(0, (sum, point) => sum + point.inputs),
+      totalWords: daily.fold(0, (sum, point) => sum + point.words),
+      totalCards: daily.fold(0, (sum, point) => sum + point.cards),
+      totalKnowledgeUnits: daily.fold(
+        0,
+        (sum, point) => sum + point.knowledgeUnits,
+      ),
+      totalInsights: daily.fold(0, (sum, point) => sum + point.insights),
+      totalCompletedTodos: daily.fold(
+        0,
+        (sum, point) => sum + point.completedTodos,
+      ),
+      activeDays: daily.where((point) => point.isActive).length,
+      currentStreakDays: daily.where((point) => point.isActive).length,
+    ),
+    daily: daily,
+    sourceBreakdown: const UserStatsSourceBreakdown(
+      textInputs: 90,
+      imageInputs: 0,
+      audioInputs: 0,
+    ),
+    topTags: const [],
+    dayDetails: {
+      for (var index = 0; index < daily.length; index++)
+        _dateKey(daily[index].date): UserStatsDayDetail(
+          date: daily[index].date,
+          cardTitles: index == 0 ? const ['Weekly pattern'] : const [],
+          knowledgePaths: const [],
+          insightTitles: index == 1 ? const ['Planning note'] : const [],
+          completedTodoTitles: const [],
+        ),
     },
   );
 }

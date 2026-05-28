@@ -12,17 +12,18 @@ import 'package:memex/utils/user_storage.dart';
 
 enum InsightSection { insights, stats }
 
-typedef UserStatsFetcher = Future<Result<UserStatsSnapshot>> Function(
-    UserStatsDateRange range);
+typedef UserStatsFetcher =
+    Future<Result<UserStatsSnapshot>> Function(UserStatsDateRange range);
 
 /// ViewModel for the Insight page. Holds insight list, pin/delete/reorder state.
 class InsightViewModel extends ChangeNotifier {
   InsightViewModel({
     required MemexRouter router,
     UserStatsFetcher? userStatsFetcher,
-  })  : _router = router,
-        _userStatsFetcher = userStatsFetcher ??
-            ((range) => router.fetchUserStats(range: range)) {
+  }) : _router = router,
+       _userStatsFetcher =
+           userStatsFetcher ??
+           ((range) => router.fetchUserStats(range: range)) {
     EventBusService.instance.addHandler(
       EventBusMessageType.newInsight,
       _handleNewInsightEvent,
@@ -55,6 +56,7 @@ class InsightViewModel extends ChangeNotifier {
   bool isStatsLoading = false;
   String? statsErrorMessage;
   UserStatsMetric selectedStatsMetric = UserStatsMetric.inputs;
+  int _statsLoadGeneration = 0;
 
   int get activeTaskCount => taskActivity.total;
   bool get hasActiveTaskBacklog => activeTaskCount > 0;
@@ -105,12 +107,21 @@ class InsightViewModel extends ChangeNotifier {
     if (notify) notifyListeners();
   }
 
-  Future<void> loadStats({bool notify = true}) async {
+  Future<void> loadStats({
+    bool notify = true,
+    UserStatsDateRange? range,
+  }) async {
+    final requestGeneration = ++_statsLoadGeneration;
+    final requestRange = range ?? statsRange;
     isStatsLoading = true;
     statsErrorMessage = null;
     if (notify) notifyListeners();
 
-    final result = await _userStatsFetcher(statsRange);
+    final result = await _userStatsFetcher(requestRange);
+    if (requestGeneration != _statsLoadGeneration) {
+      return;
+    }
+
     result.when(
       onOk: (snapshot) {
         statsSnapshot = snapshot;
@@ -150,7 +161,8 @@ class InsightViewModel extends ChangeNotifier {
       return;
     }
     statsRange = nextRange;
-    unawaited(loadStats());
+    notifyListeners();
+    unawaited(loadStats(range: nextRange));
   }
 
   Future<void> togglePin(KnowledgeInsightCard item) async {
