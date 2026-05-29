@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' show log;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:logging/logging.dart';
 import 'package:memex/utils/logger.dart';
@@ -11,6 +12,36 @@ import 'package:memex/utils/logger.dart';
 class _TrieNode {
   final Map<int, _TrieNode> children = {};
   int freq = 0; // >0 means this node is a complete word
+}
+
+class _JiebaDictionary {
+  const _JiebaDictionary({
+    required this.root,
+    required this.total,
+  });
+
+  final _TrieNode root;
+  final int total;
+}
+
+_JiebaDictionary _buildJiebaDictionary(String raw) {
+  final root = _TrieNode();
+  int total = 0;
+  for (final line in raw.split('\n')) {
+    final trimmed = line.trim();
+    if (trimmed.isEmpty) continue;
+    final parts = trimmed.split(' ');
+    if (parts.length < 2) continue;
+    final word = parts[0];
+    final freq = int.tryParse(parts[1]) ?? 0;
+    var node = root;
+    for (int i = 0; i < word.length; i++) {
+      node = node.children.putIfAbsent(word.codeUnitAt(i), () => _TrieNode());
+    }
+    node.freq = freq;
+    total += freq;
+  }
+  return _JiebaDictionary(root: root, total: total);
 }
 
 /// Pure-Dart port of jieba Chinese word segmentation (no-HMM mode).
@@ -34,6 +65,7 @@ class JiebaSegmenter {
   int _total = 0;
   double _logTotal = 0;
   Timer? _releaseTimer;
+  Future<bool>? _loading;
 
   /// Whether the dictionary is currently loaded in memory.
   bool get isLoaded => _root != null;
@@ -50,9 +82,29 @@ class JiebaSegmenter {
   Future<bool> ensureLoaded() async {
     _touchTimer();
     if (_root != null) return true;
+    final loading = _loading;
+    if (loading != null) return loading;
+
+    final future = _load();
+    _loading = future;
+    return future.whenComplete(() {
+      if (identical(_loading, future)) {
+        _loading = null;
+      }
+    });
+  }
+
+  Future<bool> _load() async {
     try {
       final raw = await rootBundle.loadString('assets/jieba_dict.txt');
-      _buildTrie(raw);
+      final dictionary = await compute(
+        _buildJiebaDictionary,
+        raw,
+        debugLabel: 'jieba_dictionary_build',
+      );
+      _root = dictionary.root;
+      _total = dictionary.total;
+      _logTotal = log(dictionary.total);
       _logger.info('Jieba dictionary loaded: total freq=$_total');
       return true;
     } catch (e) {
@@ -82,28 +134,6 @@ class JiebaSegmenter {
   // ---------------------------------------------------------------------------
   // Trie construction
   // ---------------------------------------------------------------------------
-
-  void _buildTrie(String raw) {
-    final root = _TrieNode();
-    int total = 0;
-    for (final line in raw.split('\n')) {
-      final trimmed = line.trim();
-      if (trimmed.isEmpty) continue;
-      final parts = trimmed.split(' ');
-      if (parts.length < 2) continue;
-      final word = parts[0];
-      final freq = int.tryParse(parts[1]) ?? 0;
-      var node = root;
-      for (int i = 0; i < word.length; i++) {
-        node = node.children.putIfAbsent(word.codeUnitAt(i), () => _TrieNode());
-      }
-      node.freq = freq;
-      total += freq;
-    }
-    _root = root;
-    _total = total;
-    _logTotal = log(total);
-  }
 
   int _getFreq(String word) {
     var node = _root;

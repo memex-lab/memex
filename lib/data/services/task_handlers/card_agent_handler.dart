@@ -58,12 +58,6 @@ Future<CardRunCompletionEvidence> processWithCardAgent({
         factId: factId,
         requireSaveToolCall: false,
       );
-      if (!evidence.isComplete) {
-        throw StateError(
-          'Rule-based card generation did not produce a completed card for '
-          '$factId. Evidence: ${jsonEncode(evidence.toJson())}',
-        );
-      }
       return evidence;
     }
 

@@ -324,10 +324,17 @@ class LocalTaskExecutor {
         return;
       }
 
-      // 3. Mark and Execute
+      // 3. Claim tasks before starting handlers so immediate polling cannot
+      // pick the same pending row again while execution starts asynchronously.
+      final claimedTasks = <Task>[];
       for (final task in tasksToRun) {
-        // Fire and forget execution - don't await
-        _executeTask(task);
+        if (await _claimTaskForExecution(task, now)) {
+          claimedTasks.add(task);
+        }
+      }
+
+      for (final task in claimedTasks) {
+        unawaited(_executeTask(task));
       }
 
       // Loop immediately to check for more tasks or completion
@@ -413,17 +420,6 @@ class LocalTaskExecutor {
 
   Future<void> _executeTask(Task task) async {
     try {
-      final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-
-      // Mark as processing
-      await (_db.update(_db.tasks)..where((t) => t.id.equals(task.id))).write(
-        TasksCompanion(
-          status: const Value('processing'),
-          updatedAt: Value(now),
-        ),
-      );
-      await _markTaskExecutionStarted(task);
-
       final handler = _handlers[task.type];
       if (handler == null) {
         throw Exception('No handler registered for task type: ${task.type}');
@@ -530,6 +526,22 @@ class LocalTaskExecutor {
         _scheduleNextPoll(immediate: true);
       }
     }
+  }
+
+  Future<bool> _claimTaskForExecution(Task task, int now) async {
+    final updated = await (_db.update(_db.tasks)
+          ..where((t) => t.id.equals(task.id))
+          ..where((t) => t.status.isIn(['pending', 'retrying'])))
+        .write(
+      TasksCompanion(
+        status: const Value('processing'),
+        updatedAt: Value(now),
+      ),
+    );
+    if (updated == 0) return false;
+
+    await _markTaskExecutionStarted(task);
+    return true;
   }
 
   Future<void> _handlePreviousExecutionMarkers() async {

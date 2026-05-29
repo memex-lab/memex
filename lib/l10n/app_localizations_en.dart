@@ -1162,7 +1162,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String insightProcessingBacklogMessage(Object count) {
-    return '$count background tasks are still processing. Insights may update after they finish.';
+    return '$count background tasks are still processing.';
   }
 
   @override

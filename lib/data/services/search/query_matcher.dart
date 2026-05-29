@@ -17,8 +17,7 @@ class QueryMatcher {
 
   static Future<String> tokenizeForIndex(String text) async {
     if (text.isEmpty) return text;
-    await JiebaSegmenter.instance.ensureLoaded();
-    if (JiebaSegmenter.instance.isLoaded && _containsCjk(text)) {
+    if (_containsCjk(text) && await JiebaSegmenter.instance.ensureLoaded()) {
       return JiebaSegmenter.instance.cutForSearch(text).join(' ');
     }
     return _tokenizeFallback(text);
@@ -28,8 +27,7 @@ class QueryMatcher {
     final trimmed = query.trim();
     if (trimmed.isEmpty) return trimmed;
 
-    await JiebaSegmenter.instance.ensureLoaded();
-    if (JiebaSegmenter.instance.isLoaded && _containsCjk(trimmed)) {
+    if (_containsCjk(trimmed) && await JiebaSegmenter.instance.ensureLoaded()) {
       final tokens = <String>[];
       for (final word in JiebaSegmenter.instance.cut(trimmed)) {
         final token = word.trim();
@@ -59,9 +57,8 @@ class QueryMatcher {
     final trimmed = query.trim().toLowerCase();
     if (trimmed.isEmpty) return const [];
 
-    await JiebaSegmenter.instance.ensureLoaded();
     final tokens = <String>[];
-    if (JiebaSegmenter.instance.isLoaded && _containsCjk(trimmed)) {
+    if (_containsCjk(trimmed) && await JiebaSegmenter.instance.ensureLoaded()) {
       for (final token in JiebaSegmenter.instance.cut(trimmed)) {
         _addToken(tokens, token);
       }

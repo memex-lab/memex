@@ -555,7 +555,7 @@
       "count": {}
     }
   },
-  "insightProcessingBacklogMessage": "{count} background tasks are still processing. Insights may update after they finish.",
+  "insightProcessingBacklogMessage": "{count} background tasks are still processing.",
   "insightUnavailableMessage": "This insight is still being generated or was updated. Refresh insights and try again later.",
   "scheduleAggregation": "Schedule aggregation",
   "noScheduleAggregation": "No schedule aggregation",

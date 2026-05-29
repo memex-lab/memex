@@ -2,7 +2,6 @@ import 'package:logging/logging.dart';
 import 'package:memex/db/app_database.dart';
 import 'package:memex/db/daos/search_dao.dart';
 import 'package:memex/data/services/local_task_executor.dart';
-import 'package:memex/utils/jieba.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/domain/models/system_event.dart';
 
@@ -31,9 +30,6 @@ Future<void> handleFtsIndexUpdateImpl(
     _logger.warning('Database not initialized, skipping FTS update');
     return;
   }
-
-  // Ensure jieba is loaded for tokenization
-  await JiebaSegmenter.instance.ensureLoaded();
 
   final searchDao = AppDatabase.instance.searchDao;
 

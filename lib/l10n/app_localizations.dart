@@ -2159,7 +2159,7 @@ abstract class AppLocalizations {
   /// No description provided for @insightProcessingBacklogMessage.
   ///
   /// In en, this message translates to:
-  /// **'{count} background tasks are still processing. Insights may update after they finish.'**
+  /// **'{count} background tasks are still processing.'**
   String insightProcessingBacklogMessage(Object count);
 
   /// No description provided for @insightUnavailableMessage.

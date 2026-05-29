@@ -77,9 +77,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 350));
 
     expect(
-      find.text(
-        '1 background tasks are still processing. Insights may update after they finish.',
-      ),
+      find.text('1 background tasks are still processing.'),
       findsWidgets,
     );
 

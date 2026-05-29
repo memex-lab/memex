@@ -1130,7 +1130,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String insightProcessingBacklogMessage(Object count) {
-    return '还有 $count 个后台任务正在处理，洞察可能会在完成后更新。';
+    return '还有 $count 个后台任务正在处理。';
   }
 
   @override
