@@ -13,6 +13,11 @@ typedef EventTaskDependencyBuilder = Future<List<String>> Function(
   SystemEvent event,
 );
 
+typedef EventTaskShouldEnqueue = Future<bool> Function(
+  String userId,
+  SystemEvent event,
+);
+
 typedef EventSyncHandler<T> = Future<void> Function(
   String userId,
   SystemEvent<T> event,
@@ -32,6 +37,7 @@ class EventTaskSubscription {
     this.priority = 0,
     this.maxRetries = 5,
     this.dependenciesBuilder,
+    this.shouldEnqueue,
   });
 
   final String subscriptionId;
@@ -41,6 +47,7 @@ class EventTaskSubscription {
   final int maxRetries;
   final EventTaskPayloadBuilder payloadBuilder;
   final EventTaskDependencyBuilder? dependenciesBuilder;
+  final EventTaskShouldEnqueue? shouldEnqueue;
 }
 
 /// 同步订阅：publish 时直接 await 执行 handler，而非入队任务。
@@ -197,8 +204,20 @@ class GlobalEventBus {
     final orderedSubscriptions = _resolveExecutionOrder(subscriptions);
     final enqueuedTaskIds = <String>[];
     final enqueuedTaskIdsBySubscription = <String, String>{};
+    final skippedSubscriptionIds = <String>{};
 
     for (final subscription in orderedSubscriptions) {
+      if (subscription.dependsOn.any(skippedSubscriptionIds.contains)) {
+        skippedSubscriptionIds.add(subscription.subscriptionId);
+        continue;
+      }
+
+      if (subscription.shouldEnqueue != null &&
+          !await subscription.shouldEnqueue!(userId, event)) {
+        skippedSubscriptionIds.add(subscription.subscriptionId);
+        continue;
+      }
+
       final payload = await subscription.payloadBuilder(userId, event);
       final dependencies = <String>[
         ...(baseDependencies ?? const []),

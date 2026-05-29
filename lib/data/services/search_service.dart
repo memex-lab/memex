@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:memex/db/app_database.dart';
@@ -407,12 +408,64 @@ class SearchService {
         taskType: 'fts_index_update',
         priority: -1, // Lower priority than agent tasks
         maxRetries: 3,
+        shouldEnqueue: (_, event) async {
+          final record = event.payload as DataChangeRecord;
+          return _shouldEnqueueFtsIndexUpdate(record);
+        },
         payloadBuilder: (_, event) async {
           final record = event.payload as DataChangeRecord;
           return dataChangeRecordToPayload(record);
         },
       ),
     );
+  }
+
+  bool _shouldEnqueueFtsIndexUpdate(DataChangeRecord record) {
+    if (record.ns == DataChangeNs.pkmFile) return true;
+    if (record.ns != DataChangeNs.card) return false;
+
+    switch (record.op) {
+      case DataChangeOp.insert:
+      case DataChangeOp.delete:
+        return true;
+      case DataChangeOp.update:
+        final before = record.before;
+        final after = record.after;
+        if (before == null || after == null) return true;
+        return _indexedCardFieldChanged(before, after);
+    }
+  }
+
+  bool _indexedCardFieldChanged(
+    Map<String, dynamic> before,
+    Map<String, dynamic> after,
+  ) {
+    return _stringValue(before['title']) != _stringValue(after['title']) ||
+        _stringListValue(before['tags']) != _stringListValue(after['tags']) ||
+        _insightText(before['insight']) != _insightText(after['insight']);
+  }
+
+  @visibleForTesting
+  bool shouldEnqueueFtsIndexUpdateForTesting(DataChangeRecord record) {
+    return _shouldEnqueueFtsIndexUpdate(record);
+  }
+
+  String _stringValue(Object? value) => value is String ? value : '';
+
+  String _stringListValue(Object? value) {
+    if (value is List) return value.whereType<String>().join(' ');
+    return '';
+  }
+
+  String _insightText(Object? value) {
+    if (value is Map<String, dynamic>) {
+      return value['text'] as String? ?? '';
+    }
+    if (value is Map) {
+      final text = value['text'];
+      return text is String ? text : '';
+    }
+    return '';
   }
 
   // ---------------------------------------------------------------------------
