@@ -78,6 +78,8 @@ class ScheduleAggregatorViewModel extends ChangeNotifier {
 
   ScheduleViewData? _aggregation;
   bool _isLoading = false;
+  bool _isRefreshing = false;
+  bool _hasLoaded = false;
   String? _error;
   Completer<void>? _pendingRefreshCompletion;
   final Map<String, ScheduleItemStatus> _statusOverrides = {};
@@ -85,6 +87,8 @@ class ScheduleAggregatorViewModel extends ChangeNotifier {
 
   ScheduleViewData? get aggregation => _aggregation;
   bool get isLoading => _isLoading;
+  bool get isRefreshing => _isRefreshing;
+  bool get hasLoaded => _hasLoaded;
   String? get error => _error;
   bool get hasData => _aggregation != null;
   List<ScheduleItem> get items {
@@ -138,6 +142,7 @@ class ScheduleAggregatorViewModel extends ChangeNotifier {
         'Failed to load schedule data',
       );
     } finally {
+      _hasLoaded = true;
       _setLoading(false);
     }
   }
@@ -145,6 +150,7 @@ class ScheduleAggregatorViewModel extends ChangeNotifier {
   /// Refresh schedule aggregation by triggering the Agent
   Future<void> refreshAggregation() async {
     _setLoading(true);
+    _setRefreshing(true);
     final completion = Completer<void>();
     _pendingRefreshCompletion = completion;
     try {
@@ -186,6 +192,7 @@ class ScheduleAggregatorViewModel extends ChangeNotifier {
       if (identical(_pendingRefreshCompletion, completion)) {
         _pendingRefreshCompletion = null;
       }
+      _setRefreshing(false);
       _setLoading(false);
     }
   }
@@ -332,7 +339,14 @@ class ScheduleAggregatorViewModel extends ChangeNotifier {
   }
 
   void _setLoading(bool value) {
+    if (_isLoading == value) return;
     _isLoading = value;
+    notifyListeners();
+  }
+
+  void _setRefreshing(bool value) {
+    if (_isRefreshing == value) return;
+    _isRefreshing = value;
     notifyListeners();
   }
 

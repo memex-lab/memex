@@ -89,6 +89,7 @@ class TimelineViewModel extends ChangeNotifier {
   bool isLoading = false;
   bool hasMore = true;
   int _currentPage = 1;
+  int _loadGeneration = 0;
   String? errorMessage;
   bool isSubmitting = false;
 
@@ -108,30 +109,57 @@ class TimelineViewModel extends ChangeNotifier {
 
   late final Command0<void> load = Command0<void>(_loadInitial)..execute();
 
-  Future<Result<void>> _loadInitial() async {
+  Future<Result<void>> _loadInitial({bool notifyLoading = false}) async {
+    final generation = ++_loadGeneration;
+    final filter = activeFilter;
+    final viewModeAtRequest = viewMode;
+    if (notifyLoading) {
+      isLoading = true;
+      notifyListeners();
+    }
     final cardsResult = await _router.fetchTimelineCards(
       page: 1,
       limit: pageLimit,
-      tags: activeFilter == 'all' ? null : [activeFilter],
+      tags: filter == 'all' ? null : [filter],
     );
     return cardsResult.when(
       onOk: (list) async {
+        if (_isStaleTimelineLoad(generation, filter)) {
+          return const Ok.v();
+        }
         _currentPage = 1;
         final loadedHasMore = list.length >= pageLimit;
-        cards = await _withScheduleBriefingCard(
+        final nextCards = await _withScheduleBriefingCard(
           list,
           hasMoreAfterList: loadedHasMore,
+          showScheduleBriefing:
+              viewModeAtRequest == TimelineViewMode.timeline && filter == 'all',
         );
+        if (_isStaleTimelineLoad(generation, filter)) {
+          return const Ok.v();
+        }
+        cards = nextCards;
         hasMore = loadedHasMore;
+        isLoading = false;
         errorMessage = null;
         _startPollingIfNeeded();
         // Load attachments for all cards in parallel
         await _loadAttachmentsForCards(list);
+        if (_isStaleTimelineLoad(generation, filter)) {
+          return const Ok.v();
+        }
         await _refreshPendingCount();
+        if (_isStaleTimelineLoad(generation, filter)) {
+          return const Ok.v();
+        }
         notifyListeners();
         return const Ok.v();
       },
       onError: (error, stackTrace) {
+        if (_isStaleTimelineLoad(generation, filter)) {
+          return const Ok.v();
+        }
+        isLoading = false;
         errorMessage = UserStorage.l10n.timelineLoadFailedRetry;
         notifyListeners();
         return Error<void>(error, stackTrace);
@@ -249,8 +277,8 @@ class TimelineViewModel extends ChangeNotifier {
   }
 
   Future<void> _refreshPendingCount() async {
-    final pending = await CardAttachmentService.instance
-        .getPendingAttachments();
+    final pending =
+        await CardAttachmentService.instance.getPendingAttachments();
     final failedCardCount = await _router.countFailedCardGenerations();
     pendingAttachmentCount = pending.length + (failedCardCount > 0 ? 1 : 0);
     notifyListeners();
@@ -285,10 +313,8 @@ class TimelineViewModel extends ChangeNotifier {
   }
 
   void _pollProcessingCards() {
-    final processingIds = cards
-        .where((c) => c.status == 'processing')
-        .map((c) => c.id)
-        .toList();
+    final processingIds =
+        cards.where((c) => c.status == 'processing').map((c) => c.id).toList();
     if (processingIds.isEmpty) {
       _stopPolling();
       return;
@@ -336,7 +362,14 @@ class TimelineViewModel extends ChangeNotifier {
   }
 
   void setActiveFilter(String tag) {
+    if (activeFilter == tag) return;
+    _loadGeneration++;
     activeFilter = tag;
+    cards = [];
+    attachments.clear();
+    hasMore = true;
+    _currentPage = 1;
+    isLoading = false;
     notifyListeners();
   }
 
@@ -348,31 +381,43 @@ class TimelineViewModel extends ChangeNotifier {
 
   Future<void> loadCards({bool refresh = false}) async {
     if (refresh) {
-      await load.execute();
+      await _loadInitial(notifyLoading: true);
       return;
     }
     if (isLoading || !hasMore) return;
+    final generation = _loadGeneration;
+    final filter = activeFilter;
+    final viewModeAtRequest = viewMode;
     isLoading = true;
     notifyListeners();
     final result = await _router.fetchTimelineCards(
       page: _currentPage,
       limit: pageLimit,
-      tags: activeFilter == 'all' ? null : [activeFilter],
+      tags: filter == 'all' ? null : [filter],
     );
-    result.when(
-      onOk: (newCards) async {
+    switch (result) {
+      case Ok(:final value):
+        if (_isStaleTimelineLoad(generation, filter)) return;
+        final newCards = value;
         _currentPage++;
         final loadedHasMore = newCards.length >= pageLimit;
-        cards = await _withScheduleBriefingCard([
+        final nextCards = await _withScheduleBriefingCard([
           ...cards,
           ...newCards,
-        ], hasMoreAfterList: loadedHasMore);
+        ],
+            hasMoreAfterList: loadedHasMore,
+            showScheduleBriefing:
+                viewModeAtRequest == TimelineViewMode.timeline &&
+                    filter == 'all');
+        if (_isStaleTimelineLoad(generation, filter)) return;
+        cards = nextCards;
         hasMore = loadedHasMore;
         _startPollingIfNeeded();
         await _loadAttachmentsForCards(newCards);
-      },
-      onError: (_, __) {},
-    );
+        if (_isStaleTimelineLoad(generation, filter)) return;
+      case Error():
+        break;
+    }
     isLoading = false;
     notifyListeners();
   }
@@ -380,11 +425,14 @@ class TimelineViewModel extends ChangeNotifier {
   Future<List<TimelineCardModel>> _withScheduleBriefingCard(
     List<TimelineCardModel> list, {
     required bool hasMoreAfterList,
+    bool? showScheduleBriefing,
   }) async {
     final withoutBriefing = dedupeTimelineCardsById(
       list,
     ).where((card) => card.id != scheduleBriefingCardId).toList();
-    if (!_shouldShowScheduleBriefing) return withoutBriefing;
+    if (!(showScheduleBriefing ?? _shouldShowScheduleBriefing)) {
+      return withoutBriefing;
+    }
 
     final briefingResult = await _router.fetchScheduleBriefingCard();
     return briefingResult.when(
@@ -413,28 +461,44 @@ class TimelineViewModel extends ChangeNotifier {
 
   Future<void> loadMore() async {
     if (isLoading || !hasMore) return;
+    final generation = _loadGeneration;
+    final filter = activeFilter;
+    final viewModeAtRequest = viewMode;
     isLoading = true;
     notifyListeners();
     final result = await _router.fetchTimelineCards(
       page: _currentPage + 1,
       limit: pageLimit,
-      tags: activeFilter == 'all' ? null : [activeFilter],
+      tags: filter == 'all' ? null : [filter],
     );
-    result.when(
-      onOk: (newCards) async {
+    switch (result) {
+      case Ok(:final value):
+        if (_isStaleTimelineLoad(generation, filter)) return;
+        final newCards = value;
         _currentPage++;
         final loadedHasMore = newCards.length >= pageLimit;
-        cards = await _withScheduleBriefingCard([
+        final nextCards = await _withScheduleBriefingCard([
           ...cards,
           ...newCards,
-        ], hasMoreAfterList: loadedHasMore);
+        ],
+            hasMoreAfterList: loadedHasMore,
+            showScheduleBriefing:
+                viewModeAtRequest == TimelineViewMode.timeline &&
+                    filter == 'all');
+        if (_isStaleTimelineLoad(generation, filter)) return;
+        cards = nextCards;
         hasMore = loadedHasMore;
         await _loadAttachmentsForCards(newCards);
-      },
-      onError: (_, __) {},
-    );
+        if (_isStaleTimelineLoad(generation, filter)) return;
+      case Error():
+        break;
+    }
     isLoading = false;
     notifyListeners();
+  }
+
+  bool _isStaleTimelineLoad(int generation, String filter) {
+    return generation != _loadGeneration || filter != activeFilter;
   }
 
   Future<void> fetchTags() async {

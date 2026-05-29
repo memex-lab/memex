@@ -276,14 +276,12 @@ class TimelineScreenState extends State<TimelineScreen> {
     );
   }
 
-  /// Called when user taps a tag chip — animate PageView to that page.
-  void _animateToPage(int index) {
-    _currentPageIndex = index;
-    _pageController.animateToPage(
-      index,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
+  /// Called when user taps a tag chip.
+  void _jumpToPage(int index) {
+    setState(() {
+      _currentPageIndex = index;
+    });
+    _pageController.jumpToPage(index);
     _scrollTagIntoView(index, widget.viewModel);
   }
 
@@ -729,7 +727,7 @@ class TimelineScreenState extends State<TimelineScreen> {
                     });
                     // Also sync PageView
                     final pageIdx = _filterToPageIndex(vm);
-                    _animateToPage(pageIdx);
+                    _jumpToPage(pageIdx);
                     return true;
                   } else if (action['action'] == 'navigate_to_card' &&
                       action['card_id'] != null) {
@@ -758,14 +756,20 @@ class TimelineScreenState extends State<TimelineScreen> {
                   itemBuilder: (context, index) {
                     if (index == 1) {
                       // Insight page
-                      return InsightScreen(
-                        isEmbedded: true,
-                        viewModel: widget.insightViewModel,
+                      return _DeferredActivePage(
+                        isActive: _currentPageIndex == 1,
+                        builder: (_) => InsightScreen(
+                          isEmbedded: true,
+                          viewModel: widget.insightViewModel,
+                        ),
                       );
                     }
                     if (index == 2) {
                       // Schedule Aggregator page
-                      return const ScheduleAggregatorScreen();
+                      return _DeferredActivePage(
+                        isActive: _currentPageIndex == 2,
+                        builder: (_) => const ScheduleAggregatorScreen(),
+                      );
                     }
                     // Timeline page (All or filtered by tag)
                     return _buildTimelineBody(vm);
@@ -802,7 +806,7 @@ class TimelineScreenState extends State<TimelineScreen> {
               vm.setViewMode(TimelineViewMode.timeline);
               vm.setActiveFilter('all');
               vm.loadCards(refresh: true);
-              _animateToPage(0);
+              _jumpToPage(0);
             },
           );
         }
@@ -815,10 +819,10 @@ class TimelineScreenState extends State<TimelineScreen> {
             icon: '✨',
             isSelected: isSelected,
             onTap: () {
+              _jumpToPage(1);
               vm.setViewMode(TimelineViewMode.insight);
               vm.setActiveFilter('insight');
               widget.insightViewModel.refreshStatsForVisibleInsightPage();
-              _animateToPage(1);
               DemoService.instance.tryAdvance(DemoStep.tapInsightTab);
             },
           );
@@ -839,9 +843,9 @@ class TimelineScreenState extends State<TimelineScreen> {
             icon: '📅',
             isSelected: isSelected,
             onTap: () {
+              _jumpToPage(2);
               vm.setViewMode(TimelineViewMode.timeline);
               vm.setActiveFilter('schedule');
-              _animateToPage(2);
             },
           );
         }
@@ -858,7 +862,7 @@ class TimelineScreenState extends State<TimelineScreen> {
             vm.setViewMode(TimelineViewMode.timeline);
             vm.setActiveFilter(tag.name);
             vm.loadCards(refresh: true);
-            _animateToPage(index);
+            _jumpToPage(index);
           },
         );
       },
@@ -1043,9 +1047,9 @@ class TimelineScreenState extends State<TimelineScreen> {
               // Clarification Ask cards are self-contained; no detail page.
               if (_isClarificationAskCard(card)) return;
               if (_isScheduleBriefingCard(card)) {
+                _jumpToPage(2);
                 vm.setViewMode(TimelineViewMode.timeline);
                 vm.setActiveFilter('schedule');
-                _animateToPage(2);
                 return;
               }
               final result = await Navigator.push(
@@ -1111,6 +1115,56 @@ bool _isDemoTargetCard(List<TimelineCardModel> cards, int index) {
   final firstUserCardIndex =
       cards.indexWhere((card) => !_isScheduleBriefingCard(card));
   return index == firstUserCardIndex;
+}
+
+class _DeferredActivePage extends StatefulWidget {
+  const _DeferredActivePage({
+    required this.isActive,
+    required this.builder,
+  });
+
+  final bool isActive;
+  final WidgetBuilder builder;
+
+  @override
+  State<_DeferredActivePage> createState() => _DeferredActivePageState();
+}
+
+class _DeferredActivePageState extends State<_DeferredActivePage> {
+  bool _showChild = false;
+  bool _isScheduled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scheduleMountIfActive();
+  }
+
+  @override
+  void didUpdateWidget(covariant _DeferredActivePage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _scheduleMountIfActive();
+  }
+
+  void _scheduleMountIfActive() {
+    if (!widget.isActive || _showChild || _isScheduled) return;
+    _isScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() {
+        _showChild = true;
+        _isScheduled = false;
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_showChild) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    return widget.builder(context);
+  }
 }
 
 class TimelineEntryItem extends StatefulWidget {

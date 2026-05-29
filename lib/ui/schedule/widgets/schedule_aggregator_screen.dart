@@ -136,7 +136,7 @@ class _ScheduleAggregatorScreenState
             Expanded(
               child: Consumer<ScheduleAggregatorViewModel>(
                 builder: (context, vm, child) {
-                  if (vm.isLoading && !vm.hasData) {
+                  if (!vm.hasData && (!vm.hasLoaded || vm.isLoading)) {
                     return _buildRefreshableState(_buildLoadingState());
                   }
                   if (!vm.hasData) {
@@ -313,7 +313,7 @@ class _ScheduleAggregatorScreenState
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
-                    children: vm.isLoading
+                    children: vm.isRefreshing
                         ? [
                             const SizedBox(
                               width: 16,

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/domain/models/schedule_state.dart' show ScheduleSubtask;
@@ -25,8 +27,10 @@ void main() {
         listenToEvents: false,
       );
 
+      expect(vm.hasLoaded, isFalse);
       await vm.loadAggregation();
 
+      expect(vm.hasLoaded, isTrue);
       expect(vm.hasData, isTrue);
       expect(vm.error, isNull);
       expect(vm.items, hasLength(1));
@@ -83,7 +87,42 @@ void main() {
       expect(loadCount, 1);
       expect(vm.aggregation?.id, 'fresh');
       expect(vm.isLoading, isFalse);
+      expect(vm.isRefreshing, isFalse);
+      expect(vm.hasLoaded, isTrue);
       expect(vm.error, isNull);
+
+      vm.dispose();
+    });
+
+    test('refreshing state only tracks agent-triggered refresh', () async {
+      final refreshCompleter = Completer<Result<void>>();
+      var loadCount = 0;
+      final vm = ScheduleAggregatorViewModel(
+        refreshAggregation: () => refreshCompleter.future,
+        loadAggregation: () async {
+          loadCount += 1;
+          return _aggregation(id: 'refreshed_$loadCount');
+        },
+        refreshReloadDelay: const Duration(seconds: 5),
+      );
+
+      final refresh = vm.refreshAggregation();
+
+      expect(vm.isLoading, isTrue);
+      expect(vm.isRefreshing, isTrue);
+      refreshCompleter.complete(const Ok<void>.v());
+      await Future<void>.delayed(Duration.zero);
+
+      expect(vm.isRefreshing, isTrue);
+      EventBusService.instance.emitEvent(
+        ScheduleAggregationUpdatedMessage(aggregationId: 'refreshed'),
+      );
+      await refresh;
+
+      expect(loadCount, 1);
+      expect(vm.aggregation?.id, 'refreshed_1');
+      expect(vm.isLoading, isFalse);
+      expect(vm.isRefreshing, isFalse);
 
       vm.dispose();
     });
@@ -105,6 +144,7 @@ void main() {
       expect(loadCount, 0);
       expect(vm.hasData, isFalse);
       expect(vm.isLoading, isFalse);
+      expect(vm.isRefreshing, isFalse);
       expect(vm.error, contains('no model'));
 
       vm.dispose();
