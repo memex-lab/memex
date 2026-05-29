@@ -151,6 +151,7 @@ class MemexRouter {
       LocalTaskExecutor.instance.registerHandler(
         'reprocess_cards_task',
         handleReprocessCardsImpl,
+        concurrencyPolicy: TaskConcurrencyPolicy.byUser(),
       );
       LocalTaskExecutor.instance.registerHandler(
         'comment_agent_task',
@@ -159,10 +160,12 @@ class MemexRouter {
       LocalTaskExecutor.instance.registerHandler(
         'reprocess_comments_task',
         handleReprocessCommentsImpl,
+        concurrencyPolicy: TaskConcurrencyPolicy.byUser(),
       );
       LocalTaskExecutor.instance.registerHandler(
         'reprocess_knowledge_base_task',
         handleReprocessKnowledgeBaseImpl,
+        concurrencyPolicy: TaskConcurrencyPolicy.byUser(),
       );
       LocalTaskExecutor.instance.registerHandler(
         'process_ai_reply',
@@ -171,10 +174,12 @@ class MemexRouter {
       LocalTaskExecutor.instance.registerHandler(
         'knowledge_insight_task',
         handleKnowledgeInsight,
+        concurrencyPolicy: TaskConcurrencyPolicy.byUser(),
       );
       LocalTaskExecutor.instance.registerHandler(
         'schedule_aggregator_task',
         handleScheduleAggregation,
+        concurrencyPolicy: TaskConcurrencyPolicy.byUser(),
       );
       LocalTaskExecutor.instance.registerHandler(
         'post_card_router_task',

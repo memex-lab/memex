@@ -150,6 +150,63 @@ void main() {
       executor.stop();
     });
 
+    test('serializes tasks that share a concurrency policy key', () async {
+      final firstStarted = Completer<void>();
+      final releaseFirst = Completer<void>();
+      final secondStarted = Completer<void>();
+      final otherCompleted = Completer<void>();
+
+      executor.registerHandler(
+        'serial_task',
+        (_, __, context) async {
+          if (context.taskId == 'serial-1') {
+            if (!firstStarted.isCompleted) firstStarted.complete();
+            await releaseFirst.future;
+          } else if (context.taskId == 'serial-2') {
+            if (!secondStarted.isCompleted) secondStarted.complete();
+          }
+        },
+        concurrencyPolicy: TaskConcurrencyPolicy.byUser(),
+      );
+      executor.registerHandler('other_task', (_, __, ___) async {
+        if (!otherCompleted.isCompleted) otherCompleted.complete();
+      });
+
+      await _insertTask(
+        db,
+        id: 'serial-1',
+        type: 'serial_task',
+        status: 'pending',
+        payload: {'value': 1},
+      );
+      await _insertTask(
+        db,
+        id: 'serial-2',
+        type: 'serial_task',
+        status: 'pending',
+        payload: {'value': 2},
+      );
+      await _insertTask(
+        db,
+        id: 'other',
+        type: 'other_task',
+        status: 'pending',
+        payload: {'value': 3},
+      );
+
+      await executor.start(userId: 'user-a');
+      await firstStarted.future.timeout(const Duration(seconds: 3));
+      await otherCompleted.future.timeout(const Duration(seconds: 3));
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+
+      expect((await _getTask(db, 'serial-2')).status, 'pending');
+
+      releaseFirst.complete();
+      await secondStarted.future.timeout(const Duration(seconds: 3));
+      await _waitForTaskStatus(db, 'serial-1', 'completed');
+      await _waitForTaskStatus(db, 'serial-2', 'completed');
+    });
+
     test('reports active task activity snapshot', () async {
       final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
 
