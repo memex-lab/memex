@@ -15,13 +15,22 @@ class CharacterService {
 
   /// Bump this whenever new default characters need to be seeded to existing users.
   /// New users get all characters from l10n.defaultCharacters at once.
-  static const int _currentSeedVersion = 1;
+  static const int _currentSeedVersion = 2;
   static const String _seedVersionFile = '.characters_seed_version';
 
   /// Migrations: version -> list of character IDs to seed for existing users.
-  /// Only append new entries; never modify existing ones.
+  /// Existing default characters are refreshed only when they still match
+  /// known legacy seed text, so user-created characters are left alone.
   static const Map<int, List<String>> _migrations = {
     1: ['counselor'],
+  };
+
+  static const Map<String, List<String>> _legacyDefaultPersonaMarkers = {
+    '2': ['智慧认可者', 'Wise Validator'],
+    '3': ["喜欢用'哎呀'", 'unconditionally caring elder'],
+    '4': ['求而不得', 'distant moonlight'],
+    '5': ['帮亲不帮理', 'ride-or-die bestie'],
+    'counselor': ['心理咨询师型陪伴者', 'psychological counselor-style companion'],
   };
 
   final Logger _logger = getLogger('CharacterService');
@@ -111,16 +120,29 @@ class CharacterService {
   String _buildPersona(Map<String, dynamic> charData) {
     var persona = charData['persona'] as String;
     if (charData.containsKey('style_guide')) {
-      persona += "\n\n## Style Guide\n${charData['style_guide']}";
-    }
-    if (charData.containsKey('pkm_interest_filter')) {
-      persona +=
-          "\n\n## PKM Interest Filter\n${charData['pkm_interest_filter']}";
-    }
-    if (charData.containsKey('example_dialogue')) {
-      persona += "\n\n## Example Dialogue\n${charData['example_dialogue']}";
+      persona += "\n\n## Voice\n${charData['style_guide']}";
     }
     return persona;
+  }
+
+  Map<String, dynamic> _buildDefaultCharacterYaml(
+    Map<String, dynamic> charData,
+  ) {
+    return {
+      "name": charData['name'],
+      "tags": charData['tags'],
+      "persona": _buildPersona(charData),
+      "avatar": charData['avatar'],
+      "enabled": true,
+      if (charData['pkm_interest_filter'] != null)
+        "interest_filter": charData['pkm_interest_filter'],
+      if (charData['first_message'] != null)
+        "first_message": charData['first_message'],
+      if (charData['post_history_instructions'] != null)
+        "post_history_instructions": charData['post_history_instructions'],
+      if (charData['example_dialogue'] != null)
+        "mes_example": charData['example_dialogue'],
+    };
   }
 
   /// Seed a single character from its data map. Skips if file already exists.
@@ -133,13 +155,7 @@ class CharacterService {
     final charFile = p.join(charsPath, '$charId.yaml');
     if (await File(charFile).exists()) return;
 
-    final charDict = {
-      "name": charData['name'],
-      "tags": charData['tags'],
-      "persona": _buildPersona(charData),
-      "avatar": charData['avatar'],
-      "enabled": true,
-    };
+    final charDict = _buildDefaultCharacterYaml(charData);
 
     try {
       await _fileSystem.writeYamlFile(charFile, charDict);
@@ -192,13 +208,63 @@ class CharacterService {
 
     for (int v = currentVersion + 1; v <= _currentSeedVersion; v++) {
       final charIds = _migrations[v];
-      if (charIds == null) continue;
-      for (final charId in charIds) {
-        await _seedCharacterById(userId, charsPath, charId);
+      if (charIds != null) {
+        for (final charId in charIds) {
+          await _seedCharacterById(userId, charsPath, charId);
+        }
+      }
+      if (v == 2) {
+        await _refreshLegacyDefaultCharacters(userId, charsPath);
       }
     }
 
     await _writeSeedVersion(charsPath, _currentSeedVersion);
+  }
+
+  Future<void> _refreshLegacyDefaultCharacters(
+    String userId,
+    String charsPath,
+  ) async {
+    final defaultsById = {
+      for (final data in UserStorage.l10n.defaultCharacters)
+        data['id'] as String: data,
+    };
+
+    for (final entry in _legacyDefaultPersonaMarkers.entries) {
+      final defaultData = defaultsById[entry.key];
+      if (defaultData == null) continue;
+
+      final charFile = File(p.join(charsPath, '${entry.key}.yaml'));
+      if (!await charFile.exists()) continue;
+
+      try {
+        final content = await charFile.readAsString();
+        final doc = loadYaml(content);
+        final charData = jsonDecode(jsonEncode(doc)) as Map<String, dynamic>;
+        final persona = charData['persona']?.toString() ?? '';
+        final looksLikeOldDefault =
+            entry.value.any((marker) => persona.contains(marker));
+        if (!looksLikeOldDefault) continue;
+
+        final refreshed = _buildDefaultCharacterYaml(defaultData);
+        refreshed['enabled'] = charData['enabled'] ?? true;
+        if (charData.containsKey('is_primary_companion')) {
+          refreshed['is_primary_companion'] = charData['is_primary_companion'];
+        }
+        if (charData['chat_background'] != null) {
+          refreshed['chat_background'] = charData['chat_background'];
+        }
+
+        await _fileSystem.writeYamlFile(charFile.path, refreshed);
+        _logger.info(
+          'Refreshed legacy default character ${entry.key} for user $userId',
+        );
+      } catch (e) {
+        _logger.warning(
+          'Failed to refresh default character ${entry.key} for user $userId: $e',
+        );
+      }
+    }
   }
 
   /// Get all characters for a user
@@ -332,6 +398,8 @@ class CharacterService {
       "avatar": characterData['avatar'],
       "enabled": characterData['enabled'] ?? true,
       "memory": characterData['memory'] ?? [],
+      if (characterData['interest_filter'] != null)
+        "interest_filter": characterData['interest_filter'],
       if (characterData['first_message'] != null)
         "first_message": characterData['first_message'],
       if (characterData['system_prompt_override'] != null)

@@ -74,8 +74,14 @@ class CharacterSelectionService {
       }
     }
 
-    // 2. Extract interest keywords from persona's pkm_interest_filter section
-    final interestKeywords = _extractInterestKeywords(char.persona);
+    // 2. Extract interest keywords from the dedicated interest filter.
+    // Legacy characters may still have this embedded in persona, so keep a
+    // fallback for compatibility.
+    final interestKeywords = _extractInterestKeywords(
+      char.interestFilter?.trim().isNotEmpty == true
+          ? char.interestFilter!
+          : char.persona,
+    );
     for (final keyword in interestKeywords) {
       if (lower.contains(keyword.toLowerCase())) {
         score += 2.0;
@@ -88,30 +94,40 @@ class CharacterSelectionService {
     return score;
   }
 
-  /// Extract keywords from the PKM Interest Filter section of persona text.
-  static List<String> _extractInterestKeywords(String persona) {
+  /// Extract keywords from a character interest filter or legacy persona text.
+  static List<String> _extractInterestKeywords(String text) {
     final keywords = <String>[];
 
-    // Look for "PKM Interest Filter" or "Focus on" sections
+    if (!text.contains('\n') && !text.contains('#')) {
+      return _tokenizeInterestKeywords(text);
+    }
+
+    // Look for "PKM Interest Filter" or "Focus on" sections in legacy
+    // personas created before interest_filter was stored separately.
     final filterMatch = RegExp(
       r'(?:PKM Interest Filter|Focus on)[:\s]*(.*?)(?:\n#|\n\n|$)',
       caseSensitive: false,
       dotAll: true,
-    ).firstMatch(persona);
+    ).firstMatch(text);
 
     if (filterMatch != null) {
       final filterText = filterMatch.group(1) ?? '';
-      // Extract meaningful nouns/phrases
-      final words = filterText
-          .replaceAll(RegExp(r'[,;.!?()]'), ' ')
-          .split(RegExp(r'\s+'))
-          .where((w) => w.length > 3) // Skip short words
-          .where((w) => !_stopWords.contains(w.toLowerCase()))
-          .toList();
-      keywords.addAll(words);
+      keywords.addAll(_tokenizeInterestKeywords(filterText));
+    } else {
+      keywords.addAll(_tokenizeInterestKeywords(text));
     }
 
     return keywords;
+  }
+
+  static List<String> _tokenizeInterestKeywords(String text) {
+    return text
+        .replaceAll(RegExp(r'[,;.!?()、，。；：！？（）]'), ' ')
+        .replaceAll('和', ' ')
+        .split(RegExp(r'\s+'))
+        .where((w) => w.length > 1)
+        .where((w) => !_stopWords.contains(w.toLowerCase()))
+        .toList();
   }
 
   /// Score emotional affinity between character and content tone.
@@ -330,7 +346,9 @@ class CharacterSelectionService {
   // ---------------------------------------------------------------------------
 
   /// Use an LLM call to decide which characters should comment on this input.
-  /// Returns 1–N characters. Falls back to primary companion on failure.
+  /// Returns 1–N characters. The prompt nudges the router toward multiple
+  /// distinct voices when the user allows them, but it still respects the
+  /// model's choice when only one character is appropriate.
   static Future<List<CharacterModel>> selectMultipleCharacters({
     required String userId,
     required String inputContent,
@@ -364,7 +382,7 @@ class CharacterSelectionService {
       _logger.warning('LLM character selection failed, falling back: $e');
     }
 
-    // Fallback: pick the primary companion, or the first enabled character
+    // Fallback: pick the primary companion, or the first enabled character.
     final primary = enabled.where((c) => c.isPrimaryCompanion).toList();
     if (primary.isNotEmpty) return [primary.first];
     return [enabled.first];
@@ -393,11 +411,14 @@ class CharacterSelectionService {
         ? '${inputContent.substring(0, 500)}...'
         : inputContent;
 
+    final targetCount = min(maxCharacters, characters.length);
     final prompt = 'Pick which characters should comment on this user entry.\n'
-        'Pick at most $maxCharacters characters whose personality or interests naturally fit the content.\n\n'
+        'The user allows up to $targetCount character comments. This is a multi-character setting, so prefer selecting 2-$targetCount distinct voices when multiple characters can add meaningfully different reactions.\n'
+        'Do not pick only the single best fit by default. Pick one character only when the entry is clearly narrow, private, or would become repetitive with more voices.\n'
+        'Rank selected characters from strongest fit to weakest fit. Do not include characters whose response would be redundant or forced.\n\n'
         'Characters:\n$charDescriptions\n'
         'User entry:\n"$truncatedInput"\n\n'
-        'Reply with ONLY their IDs separated by commas, e.g. id1,id2. No explanation.';
+        'Reply with ONLY comma-separated IDs, e.g. id1,id2. No explanation.';
 
     final selectionConfig = ModelConfig(
       model: modelConfig.model,
