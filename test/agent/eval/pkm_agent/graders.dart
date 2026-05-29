@@ -379,8 +379,8 @@ abstract class _LlmKeys {
 ///    PKM, or is it generic life-coach advice?
 /// 2. **non-redundancy** — does it add an observation beyond restating
 ///    the fact?
-/// 3. **brevity** — short, scannable, ≤ ~200 chars (the tool's own
-///    contract).
+/// 3. **expression quality** — does it feel distilled and readable, or
+///    verbose, list-like, and report-ish?
 ///
 /// Anthropic Step 5: rubric must include an "Unknown" escape hatch so the
 /// judge can return null instead of fabricating a score. We return
@@ -410,8 +410,8 @@ class PkmInsightQualityGrader implements Grader {
 
   static const _rubric = '''
 You are grading the QUALITY of a single "insight" written by an automated
-PKM agent. The insight is a one-paragraph reflection (target ≤ 200 chars)
-that ties a new user-facing fact into the user's broader knowledge base.
+PKM agent. The insight ties a new user-facing fact into the user's broader
+knowledge base.
 
 You will receive:
 - USER_FACT       — the new fact the user just published
@@ -426,9 +426,14 @@ Score the insight on three dimensions, each in [0.0, 1.0]:
                      apply to anyone?
 2. non_redundancy  — does it add an observation beyond restating the
                      fact text, or is it just a paraphrase?
-3. brevity         — is it appropriately short (≤ ~200 chars, single
-                     coherent thought)? Long, multi-paragraph insights
-                     score lower here.
+3. expression_quality
+                   — is the writing distilled, natural, and easy to read?
+                     Penalize verbose evidence inventories, chronological
+                     recaps, checklist/report-like wording, filler, or
+                     over-explaining. Do NOT score by a fixed character or
+                     word limit; longer insights can score well when each
+                     part carries useful meaning, and short insights can
+                     score poorly when generic or awkward.
 
 If the insight is empty, malformed, missing, or you genuinely cannot tell
 (e.g. the rubric doesn't apply), return "unknown" for that dimension.
@@ -438,8 +443,8 @@ Respond with EXACTLY this JSON shape, no extra prose:
 {
   "groundedness":   <number in [0,1] or "unknown">,
   "non_redundancy": <number in [0,1] or "unknown">,
-  "brevity":        <number in [0,1] or "unknown">,
-  "rationale":      "<= 200 chars summarizing why"
+  "expression_quality": <number in [0,1] or "unknown">,
+  "rationale":      "<short explanation>"
 }
 ''';
 
@@ -514,7 +519,7 @@ Respond with EXACTLY this JSON shape, no extra prose:
     final dims = <String, double?>{
       'groundedness': parsed.groundedness,
       'non_redundancy': parsed.nonRedundancy,
-      'brevity': parsed.brevity,
+      'expression_quality': parsed.expressionQuality,
     };
     final present = dims.values.where((v) => v != null).cast<double>().toList();
     final avg = present.isEmpty
@@ -540,7 +545,7 @@ Respond with EXACTLY this JSON shape, no extra prose:
       metadata: {
         'groundedness': parsed.groundedness,
         'non_redundancy': parsed.nonRedundancy,
-        'brevity': parsed.brevity,
+        'expression_quality': parsed.expressionQuality,
         'raw_reply': reply,
       },
     );
@@ -619,7 +624,7 @@ Respond with EXACTLY this JSON shape, no extra prose:
 
 {
   "coherence": <number in [0,1] or "unknown">,
-  "rationale": "<= 200 chars"
+  "rationale": "<short explanation>"
 }
 ''';
 
@@ -740,10 +745,10 @@ Respond with EXACTLY this JSON shape, no extra prose:
 class _ParsedInsight {
   final double? groundedness;
   final double? nonRedundancy;
-  final double? brevity;
+  final double? expressionQuality;
   final String? rationale;
-  _ParsedInsight(
-      this.groundedness, this.nonRedundancy, this.brevity, this.rationale);
+  _ParsedInsight(this.groundedness, this.nonRedundancy, this.expressionQuality,
+      this.rationale);
 }
 
 class _ParsedCoherence {
@@ -771,7 +776,7 @@ _ParsedInsight? _parseJudge(String reply) {
     return _ParsedInsight(
       _readMaybeNumber(obj['groundedness']),
       _readMaybeNumber(obj['non_redundancy']),
-      _readMaybeNumber(obj['brevity']),
+      _readMaybeNumber(obj['expression_quality']),
       obj['rationale'] as String?,
     );
   } catch (_) {

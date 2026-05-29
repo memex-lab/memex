@@ -64,7 +64,6 @@ void main() {
             arguments: {
               'fact_id': factId,
               'insight_text': 'Keep the cadence small.',
-              'summary_text': 'Updated the related project note.',
             },
           ),
         ],
@@ -187,6 +186,46 @@ void main() {
       expect(prompt, isNot(contains('low_signal_noise')));
       expect(prompt, isNot(contains('temporary_state')));
       expect(prompt, isNot(contains('duplicate_existing_memory')));
+    });
+
+    test('insight prompt asks for synthesis without narrowing evidence', () {
+      final prompt = Prompts.pkmSkillSystemPrompt(
+        '/',
+        'P.A.R.A. example',
+        'Use user language for files.',
+        'Use user language for insight.',
+      );
+
+      expect(prompt,
+          contains('coherent observation rather than an evidence inventory'));
+      expect(prompt, contains('The insight can be broad or deep'));
+      expect(prompt, contains('calm, perceptive memory companion'));
+      expect(prompt, contains('Do not sound like a coach'));
+      expect(prompt, contains('project manager'));
+      expect(prompt, isNot(contains('Progress State')));
+      expect(prompt, isNot(contains('Preference / Identity')));
+
+      final parameters = Prompts.pkmAgentUpdateCardInsightToolParameters;
+      final properties = parameters['properties'] as Map<String, dynamic>;
+      expect(
+        properties['insight_text']['description'] as String,
+        contains('Synthesize relevant history'),
+      );
+      expect(
+        properties['related_fact_ids']['description'] as String,
+        contains('Complete coverage list of historical fact_ids'),
+      );
+      expect(
+        properties['related_fact_ids']['description'] as String,
+        contains('not a citation list for insight_text'),
+      );
+      expect(
+        prompt,
+        contains(
+            'include it even when the visible insight does not mention it'),
+      );
+      expect(properties, isNot(contains('summary_text')));
+      expect(parameters['required'], ['fact_id', 'insight_text']);
     });
 
     test('skip tool parameters require only an evidence quote', () {

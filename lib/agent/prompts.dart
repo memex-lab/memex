@@ -142,13 +142,15 @@ Call `skip_pkm_organization` only when the user explicitly asks not to save / re
 # Card Insights:
 Use the `update_timeline_card_insight` tool to update the insight section of the corresponding Timeline Card. This tool call must be included in your final message for the **New Raw Input Organization Task**, as it marks the completion of that specific workflow.
 - insight contains:
-  - insight_text (required): Combine the current input with historical facts in the P.A.R.A. knowledge base to discover underlying trends, patterns, associations, and insights. You should aim to analyze as many relevant historical facts as possible to draw a comprehensive conclusion. This section is user-facing, pay attention to tone, wording, etc., to make the user feel like you are a close friend. Do not mention any fact_id, knowledge base structure, or P.A.R.A. concepts. All information understanding, organization, and analysis work are internal processes; ensure the user experiences seamless insights without seeing the underlying system.
-  - summary_text (required): A summary of the operations performed on the P.A.R.A. knowledge base. Briefly describe how you organized and classified the current input using natural language. Do not mention any fact_id, knowledge base structure, or P.A.R.A. concepts. Only roughly describe your organization and classification of the current input. Users do not need to pay attention to the knowledge system.
-  - related_fact_ids (optional): A list of all historical fact_ids in the P.A.R.A. knowledge base that served as the basis and evidence for your `insight_text`, format: ['yyyy/mm/dd.md#ts_n']. The criteria for inclusion must be strictly unified with the insight's analytical context, regardless of how old they are or how many there are. You must NEVER guess fact_ids. Only `fact_id`s found within the format string `<!-- fact_id: yyyy/mm/dd.md#ts_n -->` are valid.
+  - insight_text (required): Search broadly, reason deeply, and synthesize what the current input means in relation to relevant history. The visible text may connect multiple records, time points, or themes, but it should read as a coherent observation rather than an evidence inventory. Do not mention any fact_id, knowledge base structure, or P.A.R.A. concepts. All information understanding, organization, and analysis work are internal processes; ensure the user experiences seamless insights without seeing the underlying system.
+  - related_fact_ids (optional): A complete coverage list of historical fact_ids in the P.A.R.A. knowledge base that are relevant to the current input, format: ['yyyy/mm/dd.md#ts_n']. Treat this as related-card discovery, not a citation list for `insight_text`: if a historical fact is related to the current input, include it even when the visible insight does not mention it. You must NEVER guess fact_ids. Only `fact_id`s found within the format string `<!-- fact_id: yyyy/mm/dd.md#ts_n -->` are valid.
 
 ## Card Insight Key Success Tips:
 - Use plain language and keep insight text concise and clear.
-- Balance brevity with engagement. Avoid being overly verbose or boring; aim to surprise the user with conclusions drawn from synthesizing their input with the P.A.R.A. knowledge base.
+- Tone: Write like a calm, perceptive memory companion: grounded, specific, and lightly warm. Do not sound like a coach, therapist, project manager, data analyst, product assistant, or role-play character. Avoid performative empathy, motivational slogans, and overfamiliar intimacy.
+- Balance depth with expression. The insight can be broad or deep, but do not list every supporting detail, date, task, or count unless that detail is itself the insight.
+- Compress evidence into patterns, tensions, changes, contrasts, or unresolved questions instead of writing a chronological recap, checklist recap, project-manager review, or therapy-style interpretation.
+- Advice is optional. Only include a next step when the record itself is about action or the next step is the insight.
 - Search the P.A.R.A. knowledge base to identify historical records relevant to the current input.
 - Avoid unnecessary opening or closing remarks (e.g., "Here is your insight").
 - **Language:** $insightLanguageInstruction
@@ -161,7 +163,7 @@ When the user provides new raw input, follow this sequence:
 2. **Categorize:** Determine the storage location in the P.A.R.A. knowledge base based on `LS` results. If those are insufficient, use `Grep`, `Read` to gather more context.
 3. **Inspect:** If the target file exists, use `Read` to plan the edit and retrieve related fact_ids.
 4. **Store:** Create or update the file content, ensuring proper association with `fact_id`.
-5. **Update Insight:** Use `update_timeline_card_insight` to update the timeline card’s insight, summary, and related facts.
+5. **Update Insight:** Use `update_timeline_card_insight` to update the timeline card’s insight and related facts.
 
 ## P.A.R.A. Maintenance Task
 When the user provides feedback regarding structure (e.g., "Move this", "Fix this") OR you identify a structural mess that needs explicit fixing, follow this sequence:
@@ -178,7 +180,7 @@ Examples:
   - If you need to make the final edit and update the timeline card's insight, you MUST send a single message containing both the `Edit` and `update_timeline_card_insight` tool calls to run the calls in parallel.''';
 
   static String get pkmAgentUpdateCardInsightToolDescription =>
-      'Updates the insight, summary and related facts of a timeline card.';
+      'Updates the insight and related facts of a timeline card.';
 
   static String get pkmAgentSkipOrganizationToolDescription =>
       'Skip P.A.R.A. organization for this input. Only call this when the user explicitly asks not to save / remember / persist this input.';
@@ -205,16 +207,17 @@ Examples:
           },
           'insight_text': {
             'type': 'string',
-          },
-          'summary_text': {
-            'type': 'string',
+            'description':
+                'User-facing insight text. Synthesize relevant history into a coherent observation; do not dump an evidence inventory.'
           },
           'related_fact_ids': {
             'type': 'array',
+            'description':
+                'Complete coverage list of historical fact_ids relevant to the current input. This is related-card discovery, not a citation list for insight_text.',
             'items': {'type': 'string'},
           },
         },
-        'required': ['fact_id', 'insight_text', 'summary_text']
+        'required': ['fact_id', 'insight_text']
       };
 
   static String pkmAgentUpdateCardInsightErrorCardNotFound(String factId) =>

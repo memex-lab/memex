@@ -6,6 +6,9 @@ import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/user_storage.dart';
 
+// Tool executable parameter names mirror JSON schema keys.
+// ignore_for_file: non_constant_identifier_names
+
 /// Skill for PKM Agent - organizes user input into P.A.R.A knowledge base structure
 class PkmSkill extends Skill {
   /// When provided, [stopAfterUpdateCardInsightRef] must be a single-element
@@ -38,8 +41,11 @@ class PkmSkill extends Skill {
         name: 'update_timeline_card_insight',
         description: Prompts.pkmAgentUpdateCardInsightToolDescription,
         parameters: Prompts.pkmAgentUpdateCardInsightToolParameters,
-        executable: (String fact_id, String insight_text, String summary_text,
-            List? related_fact_ids) async {
+        executable: (
+          String fact_id,
+          String insight_text,
+          List? related_fact_ids,
+        ) async {
           final context = AgentCallToolContext.current;
           if (context == null) {
             throw StateError(
@@ -66,7 +72,6 @@ class PkmSkill extends Skill {
           final insightData = CardInsight(
             characterId: '0',
             text: insight_text,
-            summary: summary_text,
             relatedFacts: relatedFacts,
           );
 
