@@ -142,6 +142,7 @@ class ScheduleItem {
 
     for (final completedItem in data.completed) {
       final sourceFactId = completedItem.cardId;
+      final completedItemId = completedItem.itemId ?? completedItem.cardId;
       final existingEntry = itemsByItemId.entries.where((entry) {
         return entry.value.sourceFactId == sourceFactId;
       }).firstOrNull;
@@ -154,6 +155,7 @@ class ScheduleItem {
       } else {
         upsert(
           ScheduleItem(
+            itemId: completedItemId,
             sourceFactId: sourceFactId,
             title: completedItem.title,
             type: ScheduleItemType.todo,
@@ -204,10 +206,12 @@ class ScheduleItem {
   }
 
   static ScheduleItem _merge(ScheduleItem base, ScheduleItem incoming) {
-    final type =
-        incoming.type == ScheduleItemType.todo ? incoming.type : base.type;
-    final subtasks =
-        base.subtasks.isNotEmpty ? base.subtasks : incoming.subtasks;
+    final type = incoming.type == ScheduleItemType.todo
+        ? incoming.type
+        : base.type;
+    final subtasks = base.subtasks.isNotEmpty
+        ? base.subtasks
+        : incoming.subtasks;
     final status = type == ScheduleItemType.todo
         ? deriveTodoStatus(
             subtasks,
@@ -216,8 +220,8 @@ class ScheduleItem {
         : _higherPriorityStatus(base.status, incoming.status);
     final sourceType =
         base.sourceType == 'event' && incoming.sourceType != 'event'
-            ? incoming.sourceType
-            : base.sourceType;
+        ? incoming.sourceType
+        : base.sourceType;
     return base.copyWith(
       itemId: incoming.type == ScheduleItemType.todo ? incoming.itemId : null,
       type: type,
@@ -242,8 +246,9 @@ class ScheduleItem {
       return fallback;
     }
 
-    final completedCount =
-        subtasks.where((subtask) => subtask.completed).length;
+    final completedCount = subtasks
+        .where((subtask) => subtask.completed)
+        .length;
     if (completedCount == subtasks.length) {
       return ScheduleItemStatus.completed;
     }
@@ -269,8 +274,7 @@ class ScheduleItem {
       'completed' || 'done' => ScheduleItemStatus.completed,
       'in_progress' ||
       'inprogress' ||
-      'active' =>
-        ScheduleItemStatus.inProgress,
+      'active' => ScheduleItemStatus.inProgress,
       'overdue' => ScheduleItemStatus.overdue,
       _ => ScheduleItemStatus.pending,
     };

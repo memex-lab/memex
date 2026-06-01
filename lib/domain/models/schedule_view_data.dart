@@ -23,10 +23,7 @@ class ScheduleViewData {
 }
 
 class ScheduleViewTimeRange {
-  const ScheduleViewTimeRange({
-    required this.from,
-    required this.to,
-  });
+  const ScheduleViewTimeRange({required this.from, required this.to});
 
   final DateTime from;
   final DateTime to;
@@ -110,10 +107,12 @@ class ScheduleViewCompletedItem {
   const ScheduleViewCompletedItem({
     required this.cardId,
     required this.title,
+    this.itemId,
     this.completedAt,
   });
 
   final String cardId;
+  final String? itemId;
   final String title;
   final DateTime? completedAt;
 }

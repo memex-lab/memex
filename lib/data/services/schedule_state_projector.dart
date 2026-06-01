@@ -17,6 +17,7 @@ ScheduleState sweepPastEventsInState(
           kind: item.kind,
           title: item.title,
           closedAt: pastAfter,
+          pendingSnapshot: item.copyWith(clearDeviceActionId: true),
           sourceFactIds: item.sourceFactIds,
         ),
       );

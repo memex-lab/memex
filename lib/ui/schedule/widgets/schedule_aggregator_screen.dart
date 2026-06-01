@@ -33,7 +33,8 @@ class _ScheduleAggregatorScreenBody extends StatefulWidget {
 }
 
 class _ScheduleAggregatorScreenState
-    extends State<_ScheduleAggregatorScreenBody> with WidgetsBindingObserver {
+    extends State<_ScheduleAggregatorScreenBody>
+    with WidgetsBindingObserver {
   DateTime _relativeDate = DateTime.now();
   Timer? _dayRefreshTimer;
 
@@ -118,6 +119,10 @@ class _ScheduleAggregatorScreenState
     vm.toggleCompletion(vm.items[index]);
   }
 
+  void _restoreCompletedTask(String itemId) {
+    context.read<ScheduleAggregatorViewModel>().restoreCompletedItem(itemId);
+  }
+
   void _toggleSubtask(String itemId, int subtaskIndex) {
     final vm = context.read<ScheduleAggregatorViewModel>();
     final index = vm.items.indexWhere((item) => item.itemId == itemId);
@@ -160,6 +165,7 @@ class _ScheduleAggregatorScreenState
                       onTapCardId: _navigateToCard,
                       itemStatuses: itemStatuses,
                       onToggleTask: _toggleTaskCompletion,
+                      onToggleCompletedTask: _restoreCompletedTask,
                       itemSubtasks: itemSubtasks,
                       onToggleSubtask: _toggleSubtask,
                     ),

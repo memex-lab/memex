@@ -1125,11 +1125,7 @@ class MemexRouter {
         );
       });
 
-  Future<Result<void>> setScheduleSubtaskCompletion({
-    required String itemId,
-    required String subtaskTitle,
-    required bool completed,
-  }) =>
+  Future<Result<void>> restoreScheduleItem(String itemId) =>
       runResultVoid(() async {
         await _ensureInitialized();
         final userId = await UserStorage.getUserId();
@@ -1137,16 +1133,36 @@ class MemexRouter {
           throw Exception('User not logged in');
         }
 
-        await ScheduleStateService.instance.setSubtaskCompletion(
+        await ScheduleStateService.instance.restoreCompletedItem(
           userId: userId,
-          pendingId: itemId,
-          subtaskTitle: subtaskTitle,
-          completed: completed,
+          completedId: itemId,
         );
         EventBusService.instance.emitEvent(
           ScheduleAggregationUpdatedMessage(aggregationId: 'schedule_state'),
         );
       });
+
+  Future<Result<void>> setScheduleSubtaskCompletion({
+    required String itemId,
+    required String subtaskTitle,
+    required bool completed,
+  }) => runResultVoid(() async {
+    await _ensureInitialized();
+    final userId = await UserStorage.getUserId();
+    if (userId == null) {
+      throw Exception('User not logged in');
+    }
+
+    await ScheduleStateService.instance.setSubtaskCompletion(
+      userId: userId,
+      pendingId: itemId,
+      subtaskTitle: subtaskTitle,
+      completed: completed,
+    );
+    EventBusService.instance.emitEvent(
+      ScheduleAggregationUpdatedMessage(aggregationId: 'schedule_state'),
+    );
+  });
 
   Future<bool> updateCardTime(String cardId, int timestamp) async {
     await _ensureInitialized();

@@ -36,14 +36,19 @@ class ScheduleStateService {
       return ScheduleState.fromJson(raw);
     } catch (e, st) {
       _logger.warning(
-          'Failed to decode schedule_state, falling back to empty', e, st);
+        'Failed to decode schedule_state, falling back to empty',
+        e,
+        st,
+      );
       return ScheduleState.empty();
     }
   }
 
   Future<void> write(String userId, ScheduleState state) async {
-    await FileSystemService.instance
-        .writeScheduleStateRaw(userId, state.toJson());
+    await FileSystemService.instance.writeScheduleStateRaw(
+      userId,
+      state.toJson(),
+    );
   }
 
   bool isCardCompletionSyncSuppressed({
@@ -57,8 +62,10 @@ class ScheduleStateService {
 
   /// Ensure a schedule_state file exists for this user. Existing files are left
   /// intact and only receive the time-based past-event sweep.
-  Future<ScheduleState> ensureInitialized(String userId,
-      {DateTime? now}) async {
+  Future<ScheduleState> ensureInitialized(
+    String userId, {
+    DateTime? now,
+  }) async {
     return _lock.synchronized(() async {
       final raw = await FileSystemService.instance.readScheduleStateRaw(userId);
       if (raw == null) {
@@ -89,10 +96,7 @@ class ScheduleStateService {
 
   /// Fully rebuild the schedule_state from no external inputs. This is for
   /// explicit repair/debug flows.
-  Future<ScheduleState> rebuildFromCards(
-    String userId, {
-    DateTime? now,
-  }) async {
+  Future<ScheduleState> rebuildFromCards(String userId, {DateTime? now}) async {
     return _lock.synchronized(() async {
       final clock = now ?? DateTime.now();
       final state = ScheduleState(generatedAt: clock);
@@ -113,9 +117,7 @@ class ScheduleStateService {
       final clock = now ?? DateTime.now();
       final current = await read(userId);
       final matching = current.pending
-          .where(
-            (item) => item.isTodo && item.sourceFactIds.contains(factId),
-          )
+          .where((item) => item.isTodo && item.sourceFactIds.contains(factId))
           .toList();
       if (matching.isEmpty) {
         _logger.info(
@@ -136,6 +138,7 @@ class ScheduleStateService {
             title: item.title,
             closedAt: clock,
             closedByFactId: factId,
+            pendingSnapshot: item.copyWith(clearDeviceActionId: true),
             sourceFactIds: item.sourceFactIds,
           ),
         ...current.completed,
@@ -301,6 +304,7 @@ class ScheduleStateService {
           title: item.title,
           closedAt: clock,
           closedByFactId: closedByFactId,
+          pendingSnapshot: item.copyWith(clearDeviceActionId: true),
           sourceFactIds: item.sourceFactIds,
         ),
         ...state.completed,
@@ -315,15 +319,78 @@ class ScheduleStateService {
         completed: completed,
       );
 
-      final sourceFactId =
-          item.sourceFactIds.isEmpty ? null : item.sourceFactIds.first;
+      final sourceFactId = item.sourceFactIds.isEmpty
+          ? null
+          : item.sourceFactIds.first;
       if (sourceFactId != null && item.isTodo) {
         await _withSuppressedCardCompletionSync(
           userId: userId,
           factId: sourceFactId,
-          action: () => _markSourceTaskCompleted(userId, sourceFactId),
+          action: () =>
+              _setSourceTaskCompletion(userId, sourceFactId, completed: true),
         );
       }
+      await write(userId, updated);
+      return updated;
+    });
+  }
+
+  Future<ScheduleState> restoreCompletedItem({
+    required String userId,
+    required String completedId,
+    DateTime? now,
+  }) async {
+    return _lock.synchronized(() async {
+      final clock = now ?? DateTime.now();
+      final state = await read(userId);
+      final item = state.completed.firstWhere(
+        (candidate) => candidate.id == completedId,
+        orElse: () =>
+            throw StateError('No completed schedule item found: $completedId'),
+      );
+
+      var restored =
+          (item.pendingSnapshot ??
+                  SchedulePendingItem(
+                    id: item.id,
+                    kind: item.kind,
+                    title: item.title,
+                    sourceFactIds: item.sourceFactIds,
+                    createdAt: item.closedAt,
+                    updatedAt: clock,
+                  ))
+              .copyWith(updatedAt: clock, clearDeviceActionId: true);
+      restored = await _maintainDeviceAction(userId, restored);
+
+      final pending = [
+        ...state.pending.where((candidate) => candidate.id != restored.id),
+        restored,
+      ]..sort(compareSchedulePendingItems);
+      final completed = state.completed
+          .where((candidate) => candidate.id != completedId)
+          .toList();
+      final updated = state.copyWith(
+        generatedAt: clock,
+        pending: pending,
+        completed: completed,
+      );
+
+      final sourceFactId = restored.sourceFactIds.isEmpty
+          ? null
+          : restored.sourceFactIds.first;
+      if (sourceFactId != null && restored.isTodo) {
+        await _withSuppressedCardCompletionSync(
+          userId: userId,
+          factId: sourceFactId,
+          action: () => _setSourceTaskCompletion(
+            userId,
+            sourceFactId,
+            completed: false,
+            restoredItem: restored,
+          ),
+        );
+      }
+
       await write(userId, updated);
       return updated;
     });
@@ -386,14 +453,15 @@ class ScheduleStateService {
         );
       }
 
-      final pending = state.pending
-          .map(
-            (candidate) => candidate.id == pendingId
-                ? candidate.copyWith(subtasks: subtasks, updatedAt: clock)
-                : candidate,
-          )
-          .toList()
-        ..sort(compareSchedulePendingItems);
+      final pending =
+          state.pending
+              .map(
+                (candidate) => candidate.id == pendingId
+                    ? candidate.copyWith(subtasks: subtasks, updatedAt: clock)
+                    : candidate,
+              )
+              .toList()
+            ..sort(compareSchedulePendingItems);
       final updated = state.copyWith(generatedAt: clock, pending: pending);
       await write(userId, updated);
       return updated;
@@ -433,8 +501,7 @@ class ScheduleStateService {
       if (since != null && item.closedAt.isBefore(since)) return false;
       if (normalizedQuery == null || normalizedQuery.isEmpty) return true;
       return _normalizeTitle(item.title).contains(normalizedQuery);
-    }).toList()
-      ..sort((a, b) => b.closedAt.compareTo(a.closedAt));
+    }).toList()..sort((a, b) => b.closedAt.compareTo(a.closedAt));
     return matches.take(limit).toList();
   }
 
@@ -450,8 +517,9 @@ class ScheduleStateService {
     }
 
     if (item.deviceActionId != null) {
-      final existingAction =
-          await SystemActionService.instance.getAction(item.deviceActionId!);
+      final existingAction = await SystemActionService.instance.getAction(
+        item.deviceActionId!,
+      );
       if (existingAction != null && existingAction.status != 'pending') {
         return item;
       }
@@ -465,8 +533,9 @@ class ScheduleStateService {
 
     try {
       final actionId = const Uuid().v4();
-      final sourceFactId =
-          item.sourceFactIds.isEmpty ? null : item.sourceFactIds.first;
+      final sourceFactId = item.sourceFactIds.isEmpty
+          ? null
+          : item.sourceFactIds.first;
       if (item.isEvent) {
         await SystemActionService.instance.createAction(
           id: actionId,
@@ -505,11 +574,19 @@ class ScheduleStateService {
       await SystemActionService.instance.cancelPendingAction(actionId);
     } catch (e, st) {
       _logger.warning(
-          'Failed to cancel pending device action $actionId', e, st);
+        'Failed to cancel pending device action $actionId',
+        e,
+        st,
+      );
     }
   }
 
-  Future<void> _markSourceTaskCompleted(String userId, String cardId) async {
+  Future<void> _setSourceTaskCompletion(
+    String userId,
+    String cardId, {
+    required bool completed,
+    SchedulePendingItem? restoredItem,
+  }) async {
     await FileSystemService.instance.updateCardFile(userId, cardId, (card) {
       final taskIndex = card.uiConfigs.indexWhere(
         (config) => config.templateId == 'task',
@@ -517,14 +594,24 @@ class ScheduleStateService {
       if (taskIndex < 0) return card;
       final config = card.uiConfigs[taskIndex];
       final data = Map<String, dynamic>.from(config.data);
-      data['is_completed'] = true;
+      data['is_completed'] = completed;
       final rawSubtasks = data['subtasks'];
       if (rawSubtasks is List) {
-        data['subtasks'] = rawSubtasks
-            .whereType<Map>()
-            .map((subtask) =>
-                {...Map<String, dynamic>.from(subtask), 'completed': true})
-            .toList();
+        final restoredSubtasks = {
+          for (final subtask in restoredItem?.subtasks ?? const [])
+            _normalizeTitle(subtask.title): subtask.completed,
+        };
+        data['subtasks'] = rawSubtasks.whereType<Map>().map((subtask) {
+          final normalized = _normalizeTitle(
+            subtask['title']?.toString() ?? '',
+          );
+          return {
+            ...Map<String, dynamic>.from(subtask),
+            'completed': completed
+                ? true
+                : (restoredSubtasks[normalized] ?? false),
+          };
+        }).toList();
       }
       final configs = card.uiConfigs.toList();
       configs[taskIndex] = UiConfig(templateId: config.templateId, data: data);
