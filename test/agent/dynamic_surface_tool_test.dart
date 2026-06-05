@@ -36,7 +36,11 @@ void main() {
     expect(properties, contains('page_agent_trigger_event_type'));
     expect(
       properties['page_agent_trigger_event_type']['enum'],
-      contains(''),
+      contains('manual_refresh_only'),
+    );
+    expect(
+      properties['page_agent_trigger_event_type']['enum'],
+      isNot(contains('')),
     );
     expect(
       properties['page_agent_trigger_event_type']['enum'],
@@ -73,7 +77,14 @@ void main() {
       configParams['properties'] as Map,
     );
     expect(configProperties, contains('trigger_event_type'));
-    expect(configProperties['trigger_event_type']['enum'], contains(''));
+    expect(
+      configProperties['trigger_event_type']['enum'],
+      contains('manual_refresh_only'),
+    );
+    expect(
+      configProperties['trigger_event_type']['enum'],
+      isNot(contains('')),
+    );
     expect(
       configProperties['trigger_event_type']['enum'],
       isNot(contains('data_changed')),

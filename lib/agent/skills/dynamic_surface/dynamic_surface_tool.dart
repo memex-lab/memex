@@ -16,8 +16,10 @@ import 'package:path/path.dart' as path;
 // Tool executable parameter names mirror JSON schema keys.
 // ignore_for_file: non_constant_identifier_names
 
+const String _manualRefreshOnlyTriggerEventType = 'manual_refresh_only';
+
 const List<String> _pageAgentTriggerEventTypes = [
-  '',
+  _manualRefreshOnlyTriggerEventType,
   SystemEventTypes.userInputSubmitted,
   SystemEventTypes.cardCommentPosted,
   SystemEventTypes.cardUiConfigUpdated,
@@ -29,7 +31,7 @@ const List<String> _pageAgentTriggerEventTypes = [
 
 const String _pageAgentTriggerEventTypeDescription = '''
 Single automatic trigger for the bound page agent.
-- Empty string means manual refresh only. Manual refresh is always available.
+- manual_refresh_only: disable automatic triggers. Manual refresh is always available.
 - user_input_submitted: run after the user submits a new record/input.
 - card_comment_posted: run after a Timeline card receives a comment.
 - clarification_answered: run after the user answers a clarification.
@@ -461,7 +463,10 @@ String? _optionalString(Map args, String key) {
 String? _optionalTriggerEventType(Map args, String key) {
   if (!args.containsKey(key) || args[key] == null) return null;
   final value = args[key];
-  if (value is String) return value.trim();
+  if (value is String) {
+    final trimmed = value.trim();
+    return trimmed == _manualRefreshOnlyTriggerEventType ? '' : trimmed;
+  }
   throw ArgumentError('Argument "$key" must be a string.');
 }
 
