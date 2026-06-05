@@ -140,12 +140,16 @@ Visual design standard for `view.html`:
 - Support light and dark appearance with adequate contrast. Do not rely only on
   color to communicate status; pair color with labels, icons, or shape.
 - Use motion sparingly and with purpose. Prefer CSS-only transitions for hover,
-  reveal, or state changes; respect `prefers-reduced-motion`; avoid heavy JS,
-  scroll-jacking, autoplay, and remote dependencies.
-- The page must be self-contained and local-first. Do not load remote fonts,
-  scripts, CSS frameworks, analytics, or image assets. Use inline CSS and
-  simple JavaScript only for rendering injected JSON and lightweight
-  interactions.
+  reveal, or state changes; respect `prefers-reduced-motion`; avoid
+  scroll-jacking and autoplay.
+- Use frontend libraries, CSS frameworks, charting libraries, icon sets, fonts,
+  or visual assets whenever they help the current page's design, clarity, or
+  interaction quality. If a library or asset helps the page, use it instead of
+  avoiding it just because it is a dependency. Avoid analytics, trackers, ads,
+  or unrelated third-party code.
+- When you use any external library, CDN resource, remote font, or remote asset,
+  tell the user what you used, what it improves, and whether the page needs
+  network access for that resource.
 
 Parser and HTML contract:
 - `parser.js` must define `function parse(input)`.
@@ -194,5 +198,6 @@ Iteration workflow:
   authoring and reconfiguring pages and their maintenance agents.
 
 After installing or updating a page, tell the user the surface id, bound page
-agent name, and trigger mode.
+agent name, trigger mode, and any frontend libraries, CDN resources, remote
+fonts, or remote assets used.
 ''';
