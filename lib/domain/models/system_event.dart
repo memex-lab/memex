@@ -23,6 +23,8 @@ class SystemEventTypes {
       'knowledge_insight_refresh_requested';
   static const String scheduleAggregationRequested =
       'schedule_aggregation_requested';
+  static const String dynamicSurfaceRefreshRequested =
+      'dynamic_surface_refresh_requested';
   static const String clarificationAnswered = 'clarification_answered';
   static const String dataChanged = 'data_changed';
 
@@ -32,6 +34,7 @@ class SystemEventTypes {
     cardUiConfigUpdated,
     knowledgeInsightRefreshRequested,
     scheduleAggregationRequested,
+    dynamicSurfaceRefreshRequested,
     clarificationAnswered,
     dataChanged,
   ];
@@ -110,6 +113,21 @@ class ClarificationAnsweredPayload {
       };
 }
 
+class DynamicSurfaceRefreshRequestedPayload {
+  DynamicSurfaceRefreshRequestedPayload({
+    required this.surfaceId,
+    this.reason,
+  });
+
+  final String surfaceId;
+  final String? reason;
+
+  Map<String, dynamic> toJson() => {
+        'surface_id': surfaceId,
+        if (reason != null && reason!.isNotEmpty) 'reason': reason,
+      };
+}
+
 // ---------------------------------------------------------------------------
 // Data change record (binlog / oplog style)
 // ---------------------------------------------------------------------------
@@ -157,6 +175,14 @@ class DataChangeRecord {
   /// Post-change snapshot. Null on [DataChangeOp.delete]. Non-null
   /// otherwise.
   final Map<String, dynamic>? after;
+
+  Map<String, dynamic> toJson() => {
+        'op': op.name,
+        'ns': ns,
+        'document_key': documentKey,
+        if (before != null) 'before': before,
+        if (after != null) 'after': after,
+      };
 }
 
 class CardUiConfigUpdatedPayload {

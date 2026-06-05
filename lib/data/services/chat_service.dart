@@ -4,10 +4,16 @@ import 'dart:io';
 
 import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:logging/logging.dart';
+import 'package:memex/agent/dynamic_surface_author_agent/dynamic_surface_author_agent.dart';
 import 'package:memex/agent/memex_skill_host_agent/memex_skill_host_agent.dart';
 import 'package:memex/agent/pure_skill_host_agent/pure_skill_host_agent.dart';
+import 'package:memex/agent/security/file_permission_manager.dart';
+import 'package:memex/agent/skills/dynamic_surface/dynamic_surface_page_agent_prompt.dart';
+import 'package:memex/agent/skills/dynamic_surface/dynamic_surface_permissions.dart';
 import 'package:memex/agent/super_agent/super_agent.dart';
 import 'package:memex/data/services/custom_agent_config_service.dart';
+import 'package:memex/data/services/dynamic_surface_service.dart';
+import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/data/services/location_context_service.dart';
 import 'package:memex/domain/models/custom_agent_config.dart';
 import 'package:memex/domain/models/location_context_config.dart';
@@ -62,6 +68,11 @@ class ChatService {
 
     String finalSessionId = sessionId ?? '';
     final userMessageTime = DateTime.now();
+    final isDynamicSurfaceAuthor =
+        agentName == AgentDefinitions.dynamicSurfaceAuthorAgent;
+    CustomAgentConfig? customAgentCfg = isDynamicSurfaceAuthor
+        ? null
+        : await _loadCustomAgentConfig(userId, agentName);
 
     // 1. Session Management
     try {
@@ -74,6 +85,7 @@ class ChatService {
           ],
           isQuickQuery: isQuickQuery,
           createdAt: userMessageTime,
+          isCustomAgent: customAgentCfg != null,
         );
       }
 
@@ -127,21 +139,18 @@ class ChatService {
 
     try {
       // Check if this session belongs to a custom agent by reading session metadata,
-      // then load the latest config from CustomAgentConfigService.
-      CustomAgentConfig? customAgentCfg;
-      if (sessionId != null && sessionId.isNotEmpty) {
+      // then load the latest config from CustomAgentConfigService. New sessions
+      // already resolve config from agentName before session creation.
+      if (customAgentCfg == null && sessionId != null && sessionId.isNotEmpty) {
         final isCustom = await _isCustomAgentSession(userId, finalSessionId);
         if (isCustom && agentName != null && agentName.isNotEmpty) {
-          final configs = await CustomAgentConfigService.instance.loadAll(
-            userId,
-          );
-          customAgentCfg =
-              configs.where((c) => c.agentName == agentName).firstOrNull;
+          customAgentCfg = await _loadCustomAgentConfig(userId, agentName);
         }
       }
 
-      final agentIdForLLM =
-          customAgentCfg?.llmConfigKey ?? AgentDefinitions.chatAgent;
+      final agentIdForLLM = isDynamicSurfaceAuthor
+          ? AgentDefinitions.dynamicSurfaceAuthorAgent
+          : customAgentCfg?.llmConfigKey ?? AgentDefinitions.chatAgent;
       final resources = await UserStorage.getAgentLLMResources(
         agentIdForLLM,
         defaultClientKey:
@@ -162,23 +171,60 @@ class ChatService {
 
       controller = AgentController();
 
-      if (customAgentCfg != null) {
-        // Recreate the same agent type used by custom_agent_task_handler.
-        final skillDir = _fileService.resolveSkillPath(
-          userId,
-          customAgentCfg.skillDirectoryPath,
+      if (isDynamicSurfaceAuthor) {
+        final workingDirAbs =
+            await _fileService.resolveWorkingDirectory(userId, '');
+        agent = await DynamicSurfaceAuthorAgent.createAgent(
+          client: client,
+          modelConfig: modelConfig,
+          userId: userId,
+          state: state,
+          workingDirectory: workingDirAbs,
+          controller: controller,
         );
+      } else if (customAgentCfg != null) {
+        // Recreate the same agent type used by custom_agent_task_handler.
         final workingDirAbs = await _fileService.resolveWorkingDirectory(
           userId,
           customAgentCfg.workingDirectory,
         );
-
-        // Sync skill directory into workingDirectory if it's outside,
-        // so file tools (Read, LS, etc.) can access skill files.
-        skillSync = await _fileService.syncSkillsIfNeeded(
-          skillAbsPath: skillDir,
-          workingDirAbsPath: workingDirAbs,
+        final managedSurfaceId = customAgentCfg.managedSurfaceId?.trim();
+        final managedSurfaceWriteRules = await _buildManagedSurfaceWriteRules(
+          userId: userId,
+          surfaceId: managedSurfaceId,
         );
+        final isManagedSurfaceAgent =
+            managedSurfaceId != null && managedSurfaceId.isNotEmpty;
+
+        final skillDirectoryPath = customAgentCfg.skillDirectoryPath.trim();
+        if (skillDirectoryPath.isNotEmpty) {
+          final skillDir = _fileService.resolveSkillPath(
+            userId,
+            skillDirectoryPath,
+          );
+          // Sync skill directory into workingDirectory if it's outside,
+          // so file tools (Read, LS, etc.) can access skill files.
+          skillSync = await _fileService.syncSkillsIfNeeded(
+            skillAbsPath: skillDir,
+            workingDirAbsPath: workingDirAbs,
+          );
+        }
+        final effectiveSkillDirectoryPath =
+            skillSync?.effectivePath ?? skillDirectoryPath;
+
+        final dynamicSurfacePrompt =
+            managedSurfaceId != null && managedSurfaceId.isNotEmpty
+                ? buildDynamicSurfacePageAgentRuntimePrompt(
+                    managedSurfaceId,
+                    interactiveChat: true,
+                  )
+                : null;
+        final additionalSystemPrompt = [
+          if (customAgentCfg.systemPrompt != null &&
+              customAgentCfg.systemPrompt!.trim().isNotEmpty)
+            customAgentCfg.systemPrompt!.trim(),
+          if (dynamicSurfacePrompt != null) dynamicSurfacePrompt,
+        ].join('\n\n');
 
         switch (customAgentCfg.hostAgentType) {
           case HostAgentType.pure:
@@ -188,10 +234,13 @@ class ChatService {
               userId: userId,
               name: agentName ?? 'custom_agent',
               state: state,
-              skillDirectoryPath: skillSync.effectivePath,
+              skillDirectoryPath: effectiveSkillDirectoryPath,
               workingDirectory: workingDirAbs,
               controller: controller,
-              additionalSystemPrompt: customAgentCfg.systemPrompt,
+              additionalSystemPrompt: additionalSystemPrompt.isEmpty
+                  ? null
+                  : additionalSystemPrompt,
+              filePermissionRules: managedSurfaceWriteRules,
             );
             break;
           case HostAgentType.memex:
@@ -201,10 +250,15 @@ class ChatService {
               userId: userId,
               name: agentName ?? 'custom_agent',
               state: state,
-              skillDirectoryPath: skillSync.effectivePath,
+              skillDirectoryPath: effectiveSkillDirectoryPath,
               workingDirectory: workingDirAbs,
               controller: controller,
-              additionalSystemPrompt: customAgentCfg.systemPrompt,
+              additionalSystemPrompt: additionalSystemPrompt.isEmpty
+                  ? null
+                  : additionalSystemPrompt,
+              filePermissionRules: managedSurfaceWriteRules,
+              enablePlanner: !isManagedSurfaceAgent,
+              enableJavaScriptRuntime: !isManagedSurfaceAgent,
             );
             break;
         }
@@ -261,6 +315,7 @@ When the user disputes content you generated (such as Cards, PKM entries, or Ass
       streamController,
       userId,
       finalSessionId,
+      managedSurfaceId: customAgentCfg?.managedSurfaceId,
     );
 
     // Build scene context reminder
@@ -376,8 +431,9 @@ When the user disputes content you generated (such as Cards, PKM entries, or Ass
     AgentController controller,
     StreamController<ChatEvent> stream,
     String userId,
-    String sessionId,
-  ) {
+    String sessionId, {
+    String? managedSurfaceId,
+  }) {
     // 1. Lifecycle Events
     // 1. Lifecycle Events
     controller.on((AgentStartedEvent event) {
@@ -456,6 +512,26 @@ When the user disputes content you generated (such as Cards, PKM entries, or Ass
         if (lastMsg.textOutput != null) {
           response = lastMsg.textOutput!;
         }
+      }
+
+      final validation =
+          managedSurfaceId == null || managedSurfaceId.trim().isEmpty
+              ? null
+              : await DynamicSurfaceService(fileSystemService: _fileService)
+                  .validateSurface(userId, managedSurfaceId.trim());
+      if (validation != null && !validation.isValid) {
+        final validationMessage =
+            '\n\nDynamic Surface parser/render validation failed:\n'
+            '${validation.errorMessage}';
+        response = '$response$validationMessage';
+        if (!stream.isClosed) {
+          stream.add(ChatResponseChunkEvent(validationMessage));
+        }
+      }
+      if (managedSurfaceId != null && managedSurfaceId.trim().isNotEmpty) {
+        EventBusService.instance.emitEvent(
+          DynamicSurfaceUpdatedMessage(surfaceId: managedSurfaceId.trim()),
+        );
       }
 
       // Save AI response with usage stats
@@ -615,12 +691,22 @@ When the user disputes content you generated (such as Cards, PKM entries, or Ass
     return false;
   }
 
+  Future<CustomAgentConfig?> _loadCustomAgentConfig(
+    String userId,
+    String? agentName,
+  ) async {
+    if (agentName == null || agentName.isEmpty) return null;
+    final configs = await CustomAgentConfigService.instance.loadAll(userId);
+    return configs.where((c) => c.agentName == agentName).firstOrNull;
+  }
+
   Future<String> _createSession(
     String userId,
     String? agentName,
     List<Map<String, dynamic>> initialContent, {
     bool isQuickQuery = false,
     DateTime? createdAt,
+    bool isCustomAgent = false,
   }) async {
     final uuidStr = _uuid.v4();
     final sessionId = agentName != null && agentName.isNotEmpty
@@ -648,6 +734,7 @@ When the user disputes content you generated (such as Cards, PKM entries, or Ass
       'updated_at_local': formatLocalDateTimeWithZone(now),
       'updated_at_unix_seconds': unixSecondsFromDateTime(now),
       'is_quick_query': isQuickQuery,
+      if (isCustomAgent) 'is_custom_agent': true,
       'messages': <dynamic>[],
     };
 
@@ -657,6 +744,30 @@ When the user disputes content you generated (such as Cards, PKM entries, or Ass
 
     await _fileService.writeYamlFile(sessionFile.path, sessionData);
     return sessionId;
+  }
+
+  Future<List<PermissionRule>?> _buildManagedSurfaceWriteRules({
+    required String userId,
+    required String? surfaceId,
+  }) async {
+    if (surfaceId == null || surfaceId.isEmpty) return null;
+
+    final service = DynamicSurfaceService(fileSystemService: _fileService);
+    final surface = await service.getSurface(userId, surfaceId);
+    if (surface == null) {
+      _logger.warning(
+        'Managed Dynamic Surface "$surfaceId" not found; using read-only file access for chat.',
+      );
+      return const [];
+    }
+
+    final writeRules = await buildManagedDynamicSurfaceWriteRules(
+      userId: userId,
+      surfaceId: surfaceId,
+      fileSystemService: _fileService,
+      dynamicSurfaceService: service,
+    );
+    return writeRules;
   }
 
   Future<Map<String, dynamic>?> _addMessageToSession(

@@ -2,7 +2,6 @@ import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:memex/agent/agent_controller.util.dart';
 import 'package:memex/agent/agent_system_prompt_helper.dart';
 import 'package:memex/agent/built_in_tools/file_tools.dart';
-import 'package:memex/agent/built_in_tools/search_event_logs_tool.dart';
 import 'package:memex/agent/common_tools.dart';
 import 'package:memex/agent/flutter_js_runtime.dart';
 import 'package:memex/agent/security/file_permission_manager.dart';
@@ -32,14 +31,23 @@ class PureSkillHostAgent {
     AgentController? controller,
     bool disableSubAgents = true,
     String? additionalSystemPrompt,
+    List<Tool> extraTools = const [],
+    List<PermissionRule>? filePermissionRules,
   }) async {
     controller = controller ?? AgentController();
     addAgentLogger(controller);
     addAgentActivityCollector(controller);
 
-    final permissionManager = FilePermissionManager(userId, [
-      PermissionRule(rootPath: workingDirectory, access: FileAccessType.write),
-    ]);
+    final permissionManager = FilePermissionManager(
+      userId,
+      filePermissionRules ??
+          [
+            PermissionRule(
+              rootPath: workingDirectory,
+              access: FileAccessType.write,
+            ),
+          ],
+    );
 
     final fileToolFactory = FileToolFactory(
       permissionManager: permissionManager,
@@ -56,8 +64,8 @@ class PureSkillHostAgent {
       fileToolFactory.buildMoveTool(),
       fileToolFactory.buildRemoveTool(),
       fileToolFactory.buildEditTool(),
-      buildSearchEventLogsTool(),
       getCurrentTimeTool,
+      ...extraTools,
     ];
 
     final systemPrompts = <String>[pureSkillHostAgentSystemPrompt];

@@ -45,7 +45,12 @@ class CustomAgentConfig {
   /// Always resolved relative to the user's workspace root.
   final String workingDirectory;
   final String? llmConfigKey;
+
+  /// Automatic trigger event type. Empty string means no automatic trigger.
+  /// Managed Dynamic Surface agents still receive manual
+  /// `dynamic_surface_refresh_requested` events through [managedSurfaceId].
   final String eventType;
+
   final ExecutionMode executionMode;
   final List<String> dependsOn;
   final bool enabled;
@@ -59,6 +64,12 @@ class CustomAgentConfig {
   /// Optional: name of a registered custom event serializer.
   /// null means use default XML serialization.
   final String? eventSerializerName;
+
+  /// Optional Dynamic Surface id maintained by this custom agent.
+  /// When set, the runtime treats this as a page maintenance agent: it may read
+  /// the workspace but ordinary file writes are restricted to the surface's
+  /// declared Markdown source.
+  final String? managedSurfaceId;
 
   const CustomAgentConfig({
     required this.agentName,
@@ -75,6 +86,7 @@ class CustomAgentConfig {
     this.isCustom = true,
     this.systemPrompt,
     this.eventSerializerName,
+    this.managedSurfaceId,
   });
 
   /// Validate agentName: only letters, digits, hyphens.
@@ -105,6 +117,7 @@ class CustomAgentConfig {
         if (systemPrompt != null) 'systemPrompt': systemPrompt,
         if (eventSerializerName != null)
           'eventSerializerName': eventSerializerName,
+        if (managedSurfaceId != null) 'managedSurfaceId': managedSurfaceId,
       };
 
   factory CustomAgentConfig.fromJson(Map<String, dynamic> json) {
@@ -128,6 +141,7 @@ class CustomAgentConfig {
       isCustom: json['isCustom'] as bool? ?? true,
       systemPrompt: json['systemPrompt'] as String?,
       eventSerializerName: json['eventSerializerName'] as String?,
+      managedSurfaceId: json['managedSurfaceId'] as String?,
     );
   }
 
@@ -153,6 +167,7 @@ class CustomAgentConfig {
     bool? isCustom,
     String? systemPrompt,
     String? eventSerializerName,
+    String? managedSurfaceId,
   }) {
     return CustomAgentConfig(
       agentName: agentName ?? this.agentName,
@@ -169,6 +184,7 @@ class CustomAgentConfig {
       isCustom: isCustom ?? this.isCustom,
       systemPrompt: systemPrompt ?? this.systemPrompt,
       eventSerializerName: eventSerializerName ?? this.eventSerializerName,
+      managedSurfaceId: managedSurfaceId ?? this.managedSurfaceId,
     );
   }
 }

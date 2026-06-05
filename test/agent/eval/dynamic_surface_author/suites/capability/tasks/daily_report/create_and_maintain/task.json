@@ -1,0 +1,103 @@
+{
+  "id": "dynamic_surface_daily_report_create_and_maintain",
+  "description": "Author creates a page-level daily report surface with a bound maintenance agent. The generated HTML must render existing Markdown data, and the generated page agent must incorporate source changes after a manual refresh.",
+  "trials_per_run": 1,
+  "timeout_seconds": 900,
+  "metadata": {
+    "failure_bucket": "daily_report_data_contract"
+  },
+  "input": {
+    "expected_surface_id": "daily_report",
+    "expected_surface_title": "每日日报",
+    "acceptable_surface_ids": [
+      "daily_report",
+      "daily_digest"
+    ],
+    "fixture_dir": "tasks/daily_report/create_and_maintain/workspace",
+    "prompt": "我想要一个「每日日报」页面，能把每天的记录整理成日报列表，展示日期、摘要、标签、亮点和待办。现在应该已经有 2026-06-03 的日报或相关数据，页面打开不能是空的。之后 Facts 里的新记录变化后，比如运动、心情、待办，我手动刷新这个页面后它要能更新当天日报。",
+    "page_agent_event_xml": "<event type=\"dynamic_surface_refresh_requested\" id=\"eval_daily_report_run\"><created_at>2026-06-03T19:30:00+08:00</created_at><surface_id>daily_report</surface_id><reason>manual refresh after Facts/2026/06/03.md changed</reason></event>",
+    "page_agent_workspace_updates": [
+      {
+        "path": "Facts/2026/06/03.md",
+        "content": "## <id:ts_welcome> 15:33:00 \"{}\"\n\n第一次进入 Memex，正式拥有了属于自己的 AI 个人记忆助手。\n\n## <id:ts_weather> 15:43:00 \"{}\"\n\n今天雨下了一整天，适合慢下来记录和整理。\n\n## <id:ts_run> 19:30:00 \"{}\"\n\n晚上跑步 3 公里，感觉精力恢复了一点。\n\n## <id:ts_todo> 21:10:00 \"{}\"\n\n明天继续记录一次晚间状态。\n"
+      }
+    ],
+    "page_agent_expected_substring": "跑步"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "surface_id": "daily_report",
+      "trigger": "manual_refresh_only",
+      "html_contract": "Use memex_data_json as the exact parser output; do not use memex_items_json.",
+      "page_agent_updates_source": true
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "dynamic_surface_install",
+      "config": {
+        "expected_source_path": "_UserSettings/DynamicSurfaceData"
+      }
+    },
+    {
+      "name": "dynamic_surface_html_contract"
+    },
+    {
+      "name": "dynamic_surface_content",
+      "config": {
+        "initial_concepts": [
+          {
+            "name": "Memex first-use record",
+            "any_of": [
+              "Memex",
+              "AI 个人记忆助手"
+            ]
+          },
+          {
+            "name": "rainy-day record",
+            "any_of": [
+              "雨下了一整天",
+              "雨天",
+              "天气"
+            ]
+          }
+        ],
+        "maintained_concepts": [
+          {
+            "name": "Memex first-use record",
+            "any_of": [
+              "Memex",
+              "AI 个人记忆助手"
+            ]
+          },
+          {
+            "name": "rainy-day record",
+            "any_of": [
+              "雨下了一整天",
+              "雨天",
+              "天气"
+            ]
+          },
+          {
+            "name": "running update",
+            "any_of": [
+              "跑步",
+              "运动",
+              "3 公里"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "dynamic_surface_page_agent",
+      "config": {
+        "expected_trigger": ""
+      }
+    },
+    {
+      "name": "dynamic_surface_page_agent_maintenance"
+    }
+  ]
+}

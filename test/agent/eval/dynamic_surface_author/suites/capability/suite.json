@@ -1,0 +1,6 @@
+{
+  "name": "dynamic_surface_author_capability",
+  "agent_name": "dynamic-surface-author",
+  "kind": "capability",
+  "task_pass_threshold": 1.0
+}
