@@ -48,6 +48,7 @@ void main() {
           city: '上海市',
           district: '徐汇区',
           neighborhood: '衡复风貌区',
+          fullAddress: '上海市徐汇区武康路376号',
           provider: 'amap',
           updatedAt: DateTime(2026),
         ),
@@ -56,12 +57,19 @@ void main() {
       final reminder = context.toSystemReminderContent();
 
       expect(reminder, contains('current_location_context'));
-      expect(reminder, contains('location_summary: 上海市 · 徐汇区 · 衡复风貌区'));
-      expect(reminder, contains('Prefer current_location_context'));
-      expect(reminder, contains('do not invent a missing city'));
+      expect(reminder, contains('gps: 31.212345, 121.456789'));
+      expect(reminder, contains('address: 上海市 · 徐汇区 · 衡复风貌区'));
+      expect(reminder, contains('Use current_location_context only when'));
+      expect(reminder, contains('Do not invent more specific places'));
+      expect(reminder, isNot(contains('latitude:')));
+      expect(reminder, isNot(contains('longitude:')));
+      expect(reminder, isNot(contains('reverse_geocode_provider:')));
+      expect(reminder, isNot(contains('full_address_candidate:')));
+      expect(reminder, isNot(contains('上海市徐汇区武康路376号')));
+      expect(reminder, isNot(contains('updated_at:')));
     });
 
-    test('fresh GPS-only context is not injected into agent prompts', () {
+    test('fresh GPS-only context is injected for coordinate-aware tools', () {
       final context = CurrentLocationContext(
         status: 'fresh',
         latitude: 31.212345,
@@ -72,7 +80,29 @@ void main() {
         reason: 'reverse geocode unavailable (amap): amap api key is empty',
       );
 
-      expect(context.toAgentSystemReminderContent(), isNull);
+      final reminder = context.toAgentSystemReminderContent();
+
+      expect(reminder, contains('gps: 31.212345, 121.456789'));
+      expect(reminder, isNot(contains('address:')));
+    });
+
+    test('unavailable reminder is concise', () {
+      final context = CurrentLocationContext(
+        status: 'disabled',
+        source: 'device_gps',
+        updatedAt: DateTime(2026),
+        granularity: LocationContextGranularity.city,
+        reason: 'location context is disabled in settings',
+      );
+
+      final reminder = context.toSystemReminderContent();
+
+      expect(reminder,
+          contains('current_location_context: unavailable (disabled)'));
+      expect(reminder, contains("Do not infer the user's current location"));
+      expect(reminder, isNot(contains('source:')));
+      expect(reminder, isNot(contains('updated_at:')));
+      expect(reminder, isNot(contains('reason:')));
     });
   });
 }
