@@ -404,6 +404,84 @@ abstract class AppLocalizations {
   /// **'Agent config'**
   String get agentConfig;
 
+  /// No description provided for @customPages.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom pages'**
+  String get customPages;
+
+  /// No description provided for @designPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Design page'**
+  String get designPage;
+
+  /// No description provided for @pageDesigner.
+  ///
+  /// In en, this message translates to:
+  /// **'Page designer'**
+  String get pageDesigner;
+
+  /// No description provided for @dynamicSurfaceAuthorInputHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe the page you want to create or change...'**
+  String get dynamicSurfaceAuthorInputHint;
+
+  /// No description provided for @runPageAgent.
+  ///
+  /// In en, this message translates to:
+  /// **'Run page agent'**
+  String get runPageAgent;
+
+  /// No description provided for @customPagesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No custom pages yet. Tap \"Design page\" to describe the page and maintenance logic you want.'**
+  String get customPagesEmpty;
+
+  /// No description provided for @customPagesPreviewEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a custom page to preview it, or tap \"Design page\" to create and iterate on pages.'**
+  String get customPagesPreviewEmpty;
+
+  /// No description provided for @selectCustomPageBeforeRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a custom page before requesting refresh.'**
+  String get selectCustomPageBeforeRefresh;
+
+  /// No description provided for @manualRefreshOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual refresh only'**
+  String get manualRefreshOnly;
+
+  /// No description provided for @managedSurfaceIdLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Managed Surface ID'**
+  String get managedSurfaceIdLabel;
+
+  /// No description provided for @managedSurfaceIdHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional, e.g. project_board'**
+  String get managedSurfaceIdHint;
+
+  /// No description provided for @managedSurfaceIdInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Use only letters, numbers, \"_\" and \"-\".'**
+  String get managedSurfaceIdInvalid;
+
+  /// No description provided for @managedSurfacePrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'surface'**
+  String get managedSurfacePrefix;
+
   /// No description provided for @modelUsageStats.
   ///
   /// In en, this message translates to:

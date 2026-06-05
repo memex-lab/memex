@@ -2,7 +2,6 @@ import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:memex/agent/agent_controller.util.dart';
 import 'package:memex/agent/agent_system_prompt_helper.dart';
 import 'package:memex/agent/built_in_tools/file_tools.dart';
-import 'package:memex/agent/built_in_tools/search_event_logs_tool.dart';
 import 'package:memex/agent/common_tools.dart';
 import 'package:memex/agent/flutter_js_runtime.dart';
 import 'package:memex/agent/memex_skill_host_agent/prompts.dart';
@@ -27,15 +26,26 @@ class MemexSkillHostAgent {
     required String workingDirectory,
     AgentController? controller,
     bool disableSubAgents = true,
+    bool enablePlanner = true,
+    bool enableJavaScriptRuntime = true,
     String? additionalSystemPrompt,
+    List<Tool> extraTools = const [],
+    List<PermissionRule>? filePermissionRules,
   }) async {
     controller = controller ?? AgentController();
     addAgentLogger(controller);
     addAgentActivityCollector(controller);
 
-    final permissionManager = FilePermissionManager(userId, [
-      PermissionRule(rootPath: workingDirectory, access: FileAccessType.write),
-    ]);
+    final permissionManager = FilePermissionManager(
+      userId,
+      filePermissionRules ??
+          [
+            PermissionRule(
+              rootPath: workingDirectory,
+              access: FileAccessType.write,
+            ),
+          ],
+    );
 
     final fileToolFactory = FileToolFactory(
       permissionManager: permissionManager,
@@ -52,8 +62,8 @@ class MemexSkillHostAgent {
       fileToolFactory.buildMoveTool(),
       fileToolFactory.buildRemoveTool(),
       fileToolFactory.buildEditTool(),
-      buildSearchEventLogsTool(),
       getCurrentTimeTool,
+      ...extraTools,
     ];
 
     final systemPrompts = <String>[memexSkillHostAgentSystemPrompt];
@@ -68,13 +78,14 @@ class MemexSkillHostAgent {
       state: state,
       tools: tools,
       skillDirectoryPath: skillDirectoryPath,
-      javaScriptRuntime: FlutterJavaScriptRuntime(),
+      javaScriptRuntime:
+          enableJavaScriptRuntime ? FlutterJavaScriptRuntime() : null,
       skills: null,
       systemPrompts: systemPrompts,
       disableSubAgents: disableSubAgents,
       controller: controller,
       withGeneralPrinciples: true,
-      planMode: PlanMode.auto,
+      planMode: enablePlanner ? PlanMode.auto : null,
       autoSaveStateFunc: (state) async {
         await saveAgentState(state);
       },

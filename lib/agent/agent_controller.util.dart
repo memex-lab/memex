@@ -12,7 +12,13 @@ void addAgentLogger(AgentController controller) {
       final metadata = event.agent.state.metadata;
       final userId = metadata['userId'] as String?;
       _logger.info(
-          '[${event.agent.name}] beforeCallLLM, userId: $userId, sessionId: ${event.agent.state.sessionId}, model:${event.params.modelConfig.model}');
+        '[${event.agent.name}] beforeCallLLM, userId: $userId, '
+        'sessionId: ${event.agent.state.sessionId}, '
+        'model:${event.params.modelConfig.model}, '
+        'maxTokens:${event.params.modelConfig.maxTokens}, '
+        'temperature:${event.params.modelConfig.temperature}, '
+        'topP:${event.params.modelConfig.topP}',
+      );
     },
   );
   controller.on(

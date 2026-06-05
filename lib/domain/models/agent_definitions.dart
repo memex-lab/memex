@@ -9,6 +9,7 @@ class AgentDefinitions {
   static const String profileAgent = 'profile_agent';
   static const String postCardRouterAgent = 'post_card_router_agent';
   static const String scheduleAggregatorAgent = 'schedule_aggregator_agent';
+  static const String dynamicSurfaceAuthorAgent = 'dynamic-surface-author';
   static const String askClarificationAgent = 'ask_clarification_agent';
   static const String clarificationResolutionAgent =
       'clarification_resolution_agent';
@@ -25,6 +26,7 @@ class AgentDefinitions {
     profileAgent: 'Memory summary',
     postCardRouterAgent: 'Post-Card Router',
     scheduleAggregatorAgent: 'Schedule',
+    dynamicSurfaceAuthorAgent: 'Dynamic Surface Author',
     askClarificationAgent: 'Ask Clarification',
     clarificationResolutionAgent: 'Ask resolution',
   };
