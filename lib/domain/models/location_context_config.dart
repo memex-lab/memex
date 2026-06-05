@@ -190,31 +190,22 @@ class CurrentLocationContext {
   }
 
   String? toAgentSystemReminderContent() {
-    if (isFresh && address == null) {
-      return null;
-    }
     return toSystemReminderContent();
   }
 
   String toSystemReminderContent() {
     if (!isFresh || latitude == null || longitude == null) {
-      return '''current_location_context:
-- status: $status
-- source: $source
-- updated_at: ${updatedAt.toIso8601String()}
-${reason != null ? '- reason: $reason\n' : ''}instruction: The user's current location is unavailable or stale. Do not infer the user's current city from old chat history, old memories, photos, or historical records unless the user explicitly states it in this turn.
+      return '''current_location_context: unavailable ($status)
+instruction: Do not infer the user's current location unless the user states it in this turn.
 ''';
     }
 
     final summary = address?.summary(granularity) ?? '';
+    final resolvedAddress = summary.isNotEmpty ? summary : address?.fullAddress;
     return '''current_location_context:
 - status: fresh
-- source: $source
-- latitude: ${latitude!.toStringAsFixed(6)}
-- longitude: ${longitude!.toStringAsFixed(6)}
-${accuracyMeters != null ? '- accuracy_meters: ${accuracyMeters!.toStringAsFixed(1)}\n' : ''}${summary.isNotEmpty ? '- location_summary: $summary\n' : ''}${address?.city != null ? '- city: ${address!.city}\n' : ''}${address?.district != null ? '- district: ${address!.district}\n' : ''}${address?.neighborhood != null ? '- neighborhood: ${address!.neighborhood}\n' : ''}${address?.street != null ? '- street: ${address!.street}\n' : ''}${address?.fullAddress != null ? '- full_address_candidate: ${address!.fullAddress}\n' : ''}${address != null ? '- reverse_geocode_provider: ${address!.provider}\n- reverse_geocode_confidence: ${address!.confidence}\n' : ''}${reason != null ? '- note: $reason\n' : ''}- granularity: ${granularity.name}
-- updated_at: ${updatedAt.toIso8601String()}
-instruction: Prefer current_location_context over old chat history or long-term memory when location matters. Use only the administrative levels explicitly listed here; do not invent a missing city, district, neighborhood, street, or venue. Treat full_address_candidate as an approximate reverse-geocode candidate, not an exact venue unless the user confirms it. Use location only when it is relevant to the user's request.
+- gps: ${latitude!.toStringAsFixed(6)}, ${longitude!.toStringAsFixed(6)}
+${resolvedAddress != null ? '- address: $resolvedAddress\n' : ''}instruction: Use current_location_context only when location matters. The gps value is available for tools that need coordinates. Do not invent more specific places than the address shown here.
 ''';
   }
 }

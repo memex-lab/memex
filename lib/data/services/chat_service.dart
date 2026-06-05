@@ -334,7 +334,8 @@ When the user disputes content you generated (such as Cards, PKM entries, or Ass
         sceneContext = "";
     }
 
-    List<LLMMessage> userMessages = [];
+    final userMessages = <LLMMessage>[];
+    final userContentParts = <UserContentPart>[];
     CurrentLocationContext? locationContext;
     String? locationContextReminder;
     try {
@@ -345,10 +346,9 @@ When the user disputes content you generated (such as Cards, PKM entries, or Ass
       _logger.warning('Failed to decorate chat with location context: $e');
     }
 
-    // Build combined system reminder content
-    if (sceneContext.isNotEmpty ||
-        locationContextReminder != null ||
-        (refs != null && refs.isNotEmpty)) {
+    // Scene and explicit refs context are grouped together. Location is added
+    // below next to the current-time reminder as per-turn runtime context.
+    if (sceneContext.isNotEmpty || (refs != null && refs.isNotEmpty)) {
       final StringBuffer reminderContent = StringBuffer();
       reminderContent.write('<system-reminder>\n');
 
@@ -358,17 +358,9 @@ When the user disputes content you generated (such as Cards, PKM entries, or Ass
         reminderContent.write('\n');
       }
 
-      if (locationContextReminder != null) {
-        if (sceneContext.isNotEmpty) {
-          reminderContent.write('\n');
-        }
-        reminderContent.write(locationContextReminder);
-        reminderContent.write('\n');
-      }
-
       // Add refs context if available
       if (refs != null && refs.isNotEmpty) {
-        if (sceneContext.isNotEmpty || locationContextReminder != null) {
+        if (sceneContext.isNotEmpty) {
           reminderContent.write('\n');
         }
         final refsString = refs
@@ -384,23 +376,23 @@ When the user disputes content you generated (such as Cards, PKM entries, or Ass
         reminderContent.write('\n');
       }
 
-      reminderContent.write('</system-reminder>');
+      reminderContent.write('</system-reminder>\n\n');
 
-      userMessages.addAll([
-        UserMessage.text(reminderContent.toString()),
-        ModelMessage(
-          model: "mocked",
-          textOutput: "Understood, I will keep this context in mind.",
-        ),
-      ]);
+      userContentParts.add(TextPart(reminderContent.toString()));
     }
 
+    userContentParts.addAll([
+      TextPart(buildCurrentTimeReminder(userMessageTime)),
+      if (locationContextReminder != null)
+        TextPart(
+          '<system-reminder>\n$locationContextReminder</system-reminder>\n\n',
+        ),
+      TextPart(buildMessageTimePrefix(userMessageTime)),
+      TextPart(message),
+    ]);
+
     userMessages.add(
-      UserMessage([
-        TextPart(buildCurrentTimeReminder(userMessageTime)),
-        TextPart(buildMessageTimePrefix(userMessageTime)),
-        TextPart(message),
-      ]),
+      UserMessage(userContentParts),
     );
 
     // We don't await the result here, we rely on AgentStoppedEvent to handle completion
