@@ -42,5 +42,14 @@ void main() {
       ),
       isTrue,
     );
+    expect(
+      shouldScrollChatToBottom(
+        now: start.subtract(const Duration(seconds: 1)),
+        lastScrollAt: start,
+        minInterval: gap,
+        force: false,
+      ),
+      isTrue,
+    );
   });
 }

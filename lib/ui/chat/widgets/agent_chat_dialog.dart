@@ -285,6 +285,7 @@ bool shouldScrollChatToBottom({
 }) {
   if (force) return true;
   if (lastScrollAt == null) return true;
+  if (now.isBefore(lastScrollAt)) return true;
   return now.difference(lastScrollAt) >= minInterval;
 }
 
