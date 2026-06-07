@@ -404,11 +404,29 @@ abstract class AppLocalizations {
   /// **'Agent config'**
   String get agentConfig;
 
+  /// No description provided for @experimentalLab.
+  ///
+  /// In en, this message translates to:
+  /// **'Labs'**
+  String get experimentalLab;
+
+  /// No description provided for @experimentalLabDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Experimental features that may change or move later.'**
+  String get experimentalLabDescription;
+
   /// No description provided for @customPages.
   ///
   /// In en, this message translates to:
   /// **'Custom pages'**
   String get customPages;
+
+  /// No description provided for @customPagesLabDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Design and maintain agent-powered custom pages.'**
+  String get customPagesLabDescription;
 
   /// No description provided for @designPage.
   ///
@@ -1679,13 +1697,13 @@ abstract class AppLocalizations {
   /// No description provided for @setupModelConfigTitle.
   ///
   /// In en, this message translates to:
-  /// **'Connect Your AI Brain'**
+  /// **'Set up an AI model'**
   String get setupModelConfigTitle;
 
   /// No description provided for @setupModelConfigSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Memex needs an AI model to process your memories and insights. Please configure your preferred provider.'**
+  /// **'Memex needs a frontier AI model to organize records, analyze images, and generate insights. Choose one connection method.'**
   String get setupModelConfigSubtitle;
 
   /// No description provided for @setupModelConfigComplete.
@@ -1699,6 +1717,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Memex Model Service'**
   String get aiService;
+
+  /// No description provided for @aiServiceMemexRouteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect through Memex'**
+  String get aiServiceMemexRouteTitle;
 
   /// No description provided for @aiServiceTitle.
   ///
@@ -1724,10 +1748,16 @@ abstract class AppLocalizations {
   /// **'Connect your own AI model'**
   String get aiServiceCustomModelTitle;
 
+  /// No description provided for @aiServiceCustomApiRouteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'I have an API key'**
+  String get aiServiceCustomApiRouteTitle;
+
   /// No description provided for @aiServiceCustomModelDescription.
   ///
   /// In en, this message translates to:
-  /// **'If you are familiar with model APIs and can configure them yourself, we recommend using your own key. If not, you can top up our pay-as-you-go credit.'**
+  /// **'Choose this first if you already have an API key from OpenAI, Anthropic, DeepSeek, Gemini, or another provider.'**
   String get aiServiceCustomModelDescription;
 
   /// No description provided for @aiServiceStepAccount.
@@ -1751,7 +1781,7 @@ abstract class AppLocalizations {
   /// No description provided for @enableAiService.
   ///
   /// In en, this message translates to:
-  /// **'Start using'**
+  /// **'Connect with Memex'**
   String get enableAiService;
 
   /// No description provided for @aiServiceWaitingForPayment.
@@ -1769,13 +1799,13 @@ abstract class AppLocalizations {
   /// No description provided for @aiServiceSettingsDescription.
   ///
   /// In en, this message translates to:
-  /// **'Manage AI organization, credit, and usage history.'**
+  /// **'If you do not have an API key, use a Memex account to connect to mainstream model services.'**
   String get aiServiceSettingsDescription;
 
   /// No description provided for @advancedModelConfiguration.
   ///
   /// In en, this message translates to:
-  /// **'I want to connect my own AI model'**
+  /// **'Configure API key'**
   String get advancedModelConfiguration;
 
   /// No description provided for @skipForNow.
@@ -3107,13 +3137,13 @@ abstract class AppLocalizations {
   /// No description provided for @keyIdLabel.
   ///
   /// In en, this message translates to:
-  /// **'Key (ID)'**
+  /// **'Config ID'**
   String get keyIdLabel;
 
   /// No description provided for @keyIdHelper.
   ///
   /// In en, this message translates to:
-  /// **'Unique identifier for this configuration'**
+  /// **'Used to distinguish multiple model configs. Most users do not need to change it.'**
   String get keyIdHelper;
 
   /// No description provided for @required.
@@ -3125,7 +3155,7 @@ abstract class AppLocalizations {
   /// No description provided for @clientLabel.
   ///
   /// In en, this message translates to:
-  /// **'Provider'**
+  /// **'Model provider'**
   String get clientLabel;
 
   /// No description provided for @geminiClient.
@@ -3275,7 +3305,7 @@ abstract class AppLocalizations {
   /// No description provided for @providerMemex.
   ///
   /// In en, this message translates to:
-  /// **'Memex AI'**
+  /// **'Memex proxy service'**
   String get providerMemex;
 
   /// No description provided for @memexSignIn.
@@ -3425,7 +3455,7 @@ abstract class AppLocalizations {
   /// No description provided for @modelIdLabel.
   ///
   /// In en, this message translates to:
-  /// **'Model ID'**
+  /// **'Model'**
   String get modelIdLabel;
 
   /// No description provided for @modelIdHelper.
@@ -3461,7 +3491,7 @@ abstract class AppLocalizations {
   /// No description provided for @baseUrlLabel.
   ///
   /// In en, this message translates to:
-  /// **'Base URL'**
+  /// **'API endpoint'**
   String get baseUrlLabel;
 
   /// No description provided for @advancedSettings.

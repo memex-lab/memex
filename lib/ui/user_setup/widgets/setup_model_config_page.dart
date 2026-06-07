@@ -1012,7 +1012,6 @@ class _SetupModelConfigPageState extends State<SetupModelConfigPage>
         LLMConfig.typeGeminiOauth,
       ],
       l10n.providerGroupOthers: [
-        LLMConfig.typeMemex,
         LLMConfig.typeKimi,
         LLMConfig.typeQwen,
         LLMConfig.typeSeed,

@@ -12,9 +12,11 @@ class ModelConfigListPage extends StatefulWidget {
   const ModelConfigListPage({
     super.key,
     this.popOnConfigSaved = false,
+    this.autoOpenFirstConfig = false,
   });
 
   final bool popOnConfigSaved;
+  final bool autoOpenFirstConfig;
 
   @override
   State<ModelConfigListPage> createState() => _ModelConfigListPageState();
@@ -24,6 +26,7 @@ class _ModelConfigListPageState extends State<ModelConfigListPage> {
   List<LLMConfig> _configs = [];
   String _defaultConfigKey = LLMConfig.defaultClientKey;
   bool _isLoading = true;
+  bool _didAutoOpenFirstConfig = false;
 
   String _providerDisplayName(String type) {
     final l10n = UserStorage.l10n;
@@ -86,6 +89,33 @@ class _ModelConfigListPageState extends State<ModelConfigListPage> {
       _configs = configs;
       _defaultConfigKey = defaultConfigKey;
       _isLoading = false;
+    });
+    _maybeAutoOpenFirstConfig();
+  }
+
+  bool get _shouldAutoOpenFirstConfig {
+    if (!widget.autoOpenFirstConfig || _didAutoOpenFirstConfig) return false;
+    final manualConfigs =
+        _configs.where((c) => c.type != LLMConfig.typeMemex).toList();
+    if (manualConfigs.any((c) => c.isValid)) return false;
+    return manualConfigs.length <= 1;
+  }
+
+  LLMConfig? get _autoOpenConfig {
+    final manualConfigs =
+        _configs.where((c) => c.type != LLMConfig.typeMemex).toList();
+    if (manualConfigs.length == 1 && !manualConfigs.first.isValid) {
+      return manualConfigs.first;
+    }
+    return null;
+  }
+
+  void _maybeAutoOpenFirstConfig() {
+    if (!_shouldAutoOpenFirstConfig) return;
+    _didAutoOpenFirstConfig = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _editConfig(_autoOpenConfig);
     });
   }
 

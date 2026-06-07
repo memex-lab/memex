@@ -11,6 +11,14 @@ void main() {
       expect(AppConfig.availableProviders, contains(LLMConfig.typeDeepSeek));
     });
 
+    test('excludes Memex proxy service from manual providers', () {
+      AppFlavor.init('global');
+
+      expect(
+          AppConfig.availableProviders, isNot(contains(LLMConfig.typeMemex)));
+      expect(AppConfig.enableMemexModelService, isTrue);
+    });
+
     test('includes DeepSeek in CN flavor', () {
       AppFlavor.init('cn');
 

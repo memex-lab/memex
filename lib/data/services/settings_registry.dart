@@ -9,12 +9,12 @@ import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/ui/settings/widgets/ai_service_setup_page.dart';
 import 'package:memex/ui/settings/widgets/system_authorization_page.dart';
 import 'package:memex/ui/settings/widgets/model_config_list_page.dart';
-import 'package:memex/ui/settings/widgets/agent_config_list_page.dart';
 import 'package:memex/ui/settings/widgets/settings_page.dart';
 import 'package:memex/ui/settings/widgets/debug_settings_page.dart';
 import 'package:memex/ui/settings/widgets/data_storage_page.dart';
 import 'package:memex/ui/settings/widgets/backup_restore_page.dart';
 import 'package:memex/ui/settings/widgets/location_context_settings_page.dart';
+import 'package:memex/ui/settings/widgets/experimental_lab_page.dart';
 import 'package:memex/ui/memory/view_models/memory_viewmodel.dart';
 import 'package:memex/ui/memory/widgets/memory_screen.dart';
 import 'package:memex/ui/character/view_models/character_viewmodel.dart';
@@ -126,29 +126,28 @@ class SettingsRegistry {
           parentPathGetter: () => [UserStorage.l10n.personalCenter],
         ),
         SettingsItem(
-          id: 'agent_config',
-          titleGetter: () => UserStorage.l10n.agentConfig,
-          descriptionGetter: () => UserStorage.l10n.agentConfiguration,
+          id: 'experimental_lab',
+          titleGetter: () => UserStorage.l10n.experimentalLab,
+          descriptionGetter: () => UserStorage.l10n.experimentalLabDescription,
           keywords: const [
-            'agent',
-            '智能体',
-            '代理',
-            '分配模型',
-            '卡片处理',
-            '知识提取',
-            '评论生成',
-            '聊天',
-            '图片分析',
-            'agent config',
-            'agent model',
-            'card agent',
-            'knowledge',
-            'comment',
-            'chat',
+            '实验',
+            '实验室',
+            '内测',
+            '自定义页面',
+            '动态页面',
+            '页面',
+            'surface',
+            'custom page',
+            'dynamic surface',
+            'lab',
+            'labs',
+            'experimental',
           ],
-          icon: Icons.people_outline,
+          icon: Icons.science_outlined,
           navigationTarget: NavigationTarget(
-            pageBuilder: (_) => const AgentConfigListPage(),
+            pageBuilder: (context) => ExperimentalLabPage(
+              router: context.read<MemexRouter>(),
+            ),
           ),
           parentPathGetter: () => [UserStorage.l10n.personalCenter],
         ),

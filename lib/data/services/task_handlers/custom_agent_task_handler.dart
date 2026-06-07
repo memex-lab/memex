@@ -333,14 +333,18 @@ contract. Keep the change focused on the validation error.
       aiResponse: resultText,
     );
 
-    // Create a system_task card to show the result on the timeline.
-    await _createResultCard(
-      userId: userId,
-      agentName: agentName,
-      status: status,
-      message: resultText,
-      sessionId: sessionId,
-    );
+    // Dynamic Surface page agents maintain standalone pages. Their run
+    // summaries are internal task logs, not user memories, so keep them out of
+    // the main timeline.
+    if (!isManagedSurfaceAgent) {
+      await _createResultCard(
+        userId: userId,
+        agentName: agentName,
+        status: status,
+        message: resultText,
+        sessionId: sessionId,
+      );
+    }
     if (managedSurfaceId != null && managedSurfaceId.isNotEmpty) {
       EventBusService.instance.emitEvent(
         DynamicSurfaceUpdatedMessage(surfaceId: managedSurfaceId),
