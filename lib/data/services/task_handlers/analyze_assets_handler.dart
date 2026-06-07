@@ -39,14 +39,21 @@ class ExifData {
   final DateTime? datetimeOriginal;
   final List<double>? gpsCoordinates;
   final String? address;
+  final String? userMarkedLocation;
 
-  ExifData({this.datetimeOriginal, this.gpsCoordinates, this.address});
+  ExifData({
+    this.datetimeOriginal,
+    this.gpsCoordinates,
+    this.address,
+    this.userMarkedLocation,
+  });
 
   Map<String, dynamic> toJson() {
     return {
       'datetime_original': datetimeOriginal?.toIso8601String(),
       'gps_coordinates': gpsCoordinates,
       'address': address,
+      'user_marked_location': userMarkedLocation,
     };
   }
 }
@@ -243,6 +250,7 @@ Future<AssetAnalysisResult?> _analyzeSingleAsset({
       DateTime? datetimeOriginal;
       List<double>? gpsCoordinates;
       String? address;
+      String? userMarkedLocation;
 
       // Add image dimensions to EXIF info
       if (width > 0 && height > 0) {
@@ -295,8 +303,10 @@ Future<AssetAnalysisResult?> _analyzeSingleAsset({
                 lng,
               );
               if (markAddress != null) {
+                userMarkedLocation = markAddress;
                 addressLine +=
                     ', very close to user marked location ($markAddress) (less than 50 meters)';
+                exif['user_marked_location'] = markAddress;
               }
 
               infoLines.add(addressLine);
@@ -316,6 +326,7 @@ Future<AssetAnalysisResult?> _analyzeSingleAsset({
         datetimeOriginal: datetimeOriginal,
         gpsCoordinates: gpsCoordinates,
         address: address,
+        userMarkedLocation: userMarkedLocation,
       );
     }
 

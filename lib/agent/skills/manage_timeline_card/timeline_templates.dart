@@ -525,7 +525,7 @@ final List<Map<String, dynamic>> timelineTemplates = [
     'use_case': 'Image collections, multi-image displays, albums, etc.',
     'data_structure': '''
 - `image_urls` (List<String>, required): Image link list.
-- `title` (String, optional): Title (defaults to card title).
+- `title` (String, optional): Title following the same concrete, non-generic rules as the card title. For photo albums, prefer reliable venue, place, action, or OCR clues over mood-only titles. Defaults to card title.
 '''
   },
   {

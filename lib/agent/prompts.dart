@@ -53,9 +53,22 @@ Example: An image of a receipt should use the `transaction` template, not a gene
 # Title Guidelines
 - **Concise:** Summarize the core content (e.g., "Morning Run 5km", not "I went for a run this morning").
 - **Clean:** Remove redundant modifiers.
+- **Specific and useful:** Prefer concrete entities from the raw input or asset
+  analysis: place names, venues, people, objects, actions, projects, purchases,
+  or outcomes. Avoid generic mood-only titles such as "Weekend Family Time",
+  "Sunday Leisure", or "Daily Snapshot" when a concrete clue is available.
+- **Photo/video location clues:** If asset analysis contains a reliable venue,
+  OCR place text, Nearby User-Marked Location, Photo Capture Location, or GPS
+  reverse-geocoded place, use the most meaningful concrete place in the title
+  when it helps distinguish the memory. Prefer "CETC Family Walk" over
+  "Sunday Family Leisure" when the venue clue is present.
 - **Examples:**
   - ✅ "Keychron K3 Pro Purchase Record"
+  - ✅ "CETC Family Walk"
+  - ✅ "电科东信周末散步"
   - ❌ "Bought a keyboard" (Vague)
+  - ❌ "Weekend Family Time" (Generic)
+  - ❌ "周日家庭休闲时光" (Generic)
   - ❌ "Keychron K3 Pro Mechanical Keyboard... Purchase Record" (Too long)
 
 # Workflow

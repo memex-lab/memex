@@ -2,7 +2,7 @@ import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:memex/data/services/agent_activity_service.dart';
 import 'package:memex/data/services/llm_call_record_service.dart';
 import 'package:memex/utils/logger.dart';
-import 'package:wakelock_plus/wakelock_plus.dart';
+import 'package:memex/utils/wakelock_manager.dart';
 
 final _logger = getLogger('AgentControllerUtil');
 
@@ -253,11 +253,7 @@ void addAgentActivityCollector(AgentController controller) {
         agentName: info.name,
         agentId: info.id,
       );
-      try {
-        await WakelockPlus.enable();
-      } catch (_) {
-        // Ignore in non-UI / test runtimes where plugin channel is unavailable.
-      }
+      await WakelockManager.acquire('agent:${info.id}');
     },
   );
 
@@ -291,11 +287,7 @@ void addAgentActivityCollector(AgentController controller) {
         agentName: info.name,
         agentId: info.id,
       );
-      try {
-        await WakelockPlus.disable();
-      } catch (_) {
-        // Ignore in non-UI / test runtimes where plugin channel is unavailable.
-      }
+      await WakelockManager.release('agent:${info.id}');
     },
   );
 }

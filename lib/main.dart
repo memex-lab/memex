@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
@@ -36,6 +37,7 @@ import 'package:memex/ui/settings/widgets/ai_service_setup_page.dart';
 import 'package:memex/ui/settings/widgets/model_config_list_page.dart';
 import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/data/services/event_bus_service.dart';
+import 'package:memex/data/services/agent_background_task_service.dart';
 import 'package:memex/data/services/local_task_executor.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/data/services/publish_timestamp_service.dart';
@@ -65,6 +67,7 @@ import 'package:memex/ui/settings/widgets/backup_restore_confirm_dialog.dart';
 import 'package:quick_actions/quick_actions.dart';
 import 'package:memex/data/services/quick_action_service.dart';
 import 'package:memex/data/services/speech_transcription_service.dart';
+import 'package:memex/utils/wakelock_manager.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey =
@@ -78,6 +81,10 @@ void main() async {
   AppFlavor.init(appFlavor);
 
   await setupLogger();
+
+  if (kDebugMode || AppFlavor.isDev) {
+    await WakelockManager.acquire('debug_session');
+  }
 
   // Initialize l10n
   await UserStorage.initL10n();
@@ -93,6 +100,7 @@ void main() async {
   if (Platform.isIOS) {
     await Workmanager().cancelAll();
   }
+  await AgentBackgroundTaskService.instance.initializeNativeBridge();
 
   // MemexRouter is provided via config/dependencies.dart and created on first read
 
@@ -320,10 +328,12 @@ class _MemexAppState extends State<MemexApp> with WidgetsBindingObserver {
     if (state == AppLifecycleState.paused) {
       unawaited(LocalTaskExecutor.instance
           .recordGracefulShutdown(reason: 'app_lifecycle_paused'));
+      unawaited(AgentBackgroundTaskService.instance.onAppPaused());
       _lastPausedTime = DateTime.now();
       _checkLockSettingsBeforeLocking();
     } else if (state == AppLifecycleState.resumed) {
       unawaited(LocalTaskExecutor.instance.clearGracefulShutdownMarker());
+      unawaited(AgentBackgroundTaskService.instance.onAppResumed());
       MemexRouter().scheduleAutoBackupCheck(trigger: 'foreground');
       _checkGracePeriod();
     } else if (state == AppLifecycleState.detached) {

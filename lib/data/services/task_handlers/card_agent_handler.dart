@@ -71,9 +71,10 @@ Future<CardRunCompletionEvidence> processWithCardAgent({
 
     // 2. Prepare Fact Content (merge assets info if needed)
     var enhancedFactContent = contentText;
-    final locationReminder = _formatLocationContextReminder(
-      locationContextReminder,
-    );
+    final hasAssetCaptureLocation = _hasAssetCaptureLocation(assetAnalyses);
+    final locationReminder = hasAssetCaptureLocation
+        ? ''
+        : _formatLocationContextReminder(locationContextReminder);
     if (locationReminder.isNotEmpty) {
       enhancedFactContent = '$locationReminder$enhancedFactContent';
     }
@@ -119,6 +120,24 @@ String _formatLocationContextReminder(String? reminder) {
   final trimmed = reminder?.trim();
   if (trimmed == null || trimmed.isEmpty) return '';
   return '<system-reminder>\n$trimmed\n</system-reminder>\n\n';
+}
+
+bool _hasAssetCaptureLocation(List<Map<String, dynamic>>? assetAnalyses) {
+  if (assetAnalyses == null) return false;
+  for (final analysis in assetAnalyses) {
+    final exifData = analysis['exif_data'];
+    if (exifData is! Map) continue;
+    final address = exifData['address']?.toString().trim();
+    if (address != null && address.isNotEmpty) return true;
+    final userMarkedLocation =
+        exifData['user_marked_location']?.toString().trim();
+    if (userMarkedLocation != null && userMarkedLocation.isNotEmpty) {
+      return true;
+    }
+    final gpsCoords = exifData['gps_coordinates'];
+    if (gpsCoords is List && gpsCoords.length >= 2) return true;
+  }
+  return false;
 }
 
 /// Applies rule-based template matching and writes the card file.

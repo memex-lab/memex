@@ -18,6 +18,7 @@ import 'package:memex/data/services/table_change_notifier.dart';
 import 'package:memex/data/services/card_attachment_service.dart';
 import 'package:memex/data/services/card_detail_notifier.dart';
 import 'package:memex/data/services/clarification_request_service.dart';
+import 'package:memex/data/services/agent_background_task_service.dart';
 import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/data/services/app_update_service.dart';
 import 'package:memex/data/services/user_notification_service.dart';
@@ -224,6 +225,7 @@ class MemexRouter {
       initCustomAgentHandler();
       registerBuiltInEventSerializers();
       await CustomAgentConfigService.instance.registerAll(userId);
+      await AgentBackgroundTaskService.instance.startMonitoring();
 
       // Register file change callback and FTS event subscriptions.
       // Also triggers a one-time full rebuild when FTS tables were just created
@@ -482,11 +484,17 @@ class MemexRouter {
     _logger.info('Resetting MemexRouter for logout');
     _targetUserIdForInit = null;
     _initFuture = null;
+    unawaited(AgentBackgroundTaskService.instance.stopMonitoring(
+      reason: 'logout',
+    ));
     LocalTaskExecutor.instance.stop();
     SearchService.instance.reset();
   }
 
   void dispose() {
+    unawaited(AgentBackgroundTaskService.instance.stopMonitoring(
+      reason: 'router_dispose',
+    ));
     LocalTaskExecutor.instance.stop();
   }
 

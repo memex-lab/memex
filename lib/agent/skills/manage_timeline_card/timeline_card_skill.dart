@@ -95,7 +95,7 @@ class TimelineCardSkill extends Skill {
             'title': {
               'type': 'string',
               'description':
-                  'A concise summary displayed on detail page header.'
+                  'A concise but specific summary displayed on detail page header. Prefer concrete entities from the raw input or asset analysis: venues, named places, people, objects, actions, projects, purchases, or outcomes. For photo/video cards, if asset analysis contains OCR place text, Photo Capture Location, Nearby User-Marked Location, GPS reverse-geocoded place, or another reliable venue clue, use the most meaningful place when it helps distinguish the memory. Avoid generic mood-only titles such as "Weekend Family Time", "Sunday Family Leisure", or "Daily Snapshot" when concrete clues are available.'
             },
             'ui_configs': {
               'type': 'array',
@@ -120,7 +120,7 @@ class TimelineCardSkill extends Skill {
             'address': {
               'type': 'string',
               'description':
-                  'Location information for where the recorded card actually happened. Use raw input named places only when they are the actual occurrence, check-in, visit, photo capture, or activity location. For tasks, todos, reminders, plans, wishes, future destinations, or places the user merely wants to go to, omit address even if a place is mentioned. If raw input describes an immediate present-time event, check-in, photo capture, or daily activity and current_location_context is available, use its location_summary or full_address_candidate as a conservative default. Do not use current_location_context for memories, plans, remote events, or when raw input names a conflicting place. Do not be too specific. Use the format "City · Specific Location" (e.g., Beijing · Chaoyang Park) if possible, otherwise just the specific location name is fine.'
+                  'Location information for where the recorded card actually happened. Use raw input named places only when they are the actual occurrence, check-in, visit, photo capture, or activity location. For photo or video cards, if asset analysis includes Photo Capture Location, Nearby User-Marked Location, GPS Coordinates, OCR place text, or another concrete capture-place clue, prefer that media capture location for both address and location-bearing titles. Do not replace a media capture location with current_location_context. For tasks, todos, reminders, plans, wishes, future destinations, or places the user merely wants to go to, omit address even if a place is mentioned. If raw input describes an immediate present-time event, check-in, photo capture, or daily activity and current_location_context is available, use it only as a conservative fallback when the media/raw input has no conflicting location. Do not use current_location_context for memories, plans, remote events, selected old photos, or when raw input/media names a conflicting place. Do not be too specific. Use the format "City · Specific Location" (e.g., Beijing · Chaoyang Park) if possible, otherwise just the specific location name is fine.'
             },
             'user_mark_address': {
               'type': 'string',

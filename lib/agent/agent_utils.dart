@@ -27,6 +27,20 @@ String formatAssetAnalysis(List<Map<String, dynamic>>? assetAnalyses,
       // Add EXIF data (especially GPS coordinates) for card agent to use
       final exifData = analysis['exif_data'] as Map<String, dynamic>?;
       if (exifData != null) {
+        final captureTime = exifData['datetime_original'] as String?;
+        if (captureTime != null && captureTime.trim().isNotEmpty) {
+          assetInfo += 'Photo Capture Time: $captureTime\n';
+        }
+        final address = exifData['address'] as String?;
+        if (address != null && address.trim().isNotEmpty) {
+          assetInfo += 'Photo Capture Location: $address\n';
+        }
+        final userMarkedLocation = exifData['user_marked_location'] as String?;
+        if (userMarkedLocation != null &&
+            userMarkedLocation.trim().isNotEmpty) {
+          assetInfo +=
+              'Nearby User-Marked Location: $userMarkedLocation (within 50 meters)\n';
+        }
         final gpsCoords = exifData['gps_coordinates'] as List<dynamic>?;
         if (gpsCoords != null && gpsCoords.length >= 2) {
           final lat = (gpsCoords[0] as num).toDouble();
