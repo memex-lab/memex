@@ -18,6 +18,7 @@ import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:memex/ui/main_screen/widgets/chat_input_bar.dart';
 import 'package:memex/ui/core/widgets/back_button.dart';
 import 'package:memex/ui/core/themes/app_colors.dart';
+import 'package:memex/ui/core/widgets/local_image.dart';
 
 /// AI character config screen. Receives [viewModel] from parent (Compass-style).
 class CharacterConfigScreen extends StatefulWidget {
@@ -298,7 +299,7 @@ class _CharacterConfigScreenState extends State<CharacterConfigScreen> {
                           value: character.enabled,
                           onChanged: (enabled) =>
                               _toggleCharacterEnabled(vm, character, enabled),
-                          activeColor: Colors.white,
+                          activeThumbColor: Colors.white,
                           activeTrackColor: AppColors.primary,
                           inactiveThumbColor: Colors.white,
                           inactiveTrackColor: const Color(0xFFE2E8F0),
@@ -545,7 +546,7 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
           border: Border.all(color: const Color(0xFFE2E8F0)),
           image: hasBackground
               ? DecorationImage(
-                  image: FileImage(File(preview)),
+                  image: LocalImage.provider(preview),
                   fit: BoxFit.cover,
                 )
               : null,

@@ -12,6 +12,7 @@ import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/data/services/persona_chat_service.dart';
 import 'package:memex/data/services/character_service.dart';
 import 'package:memex/ui/core/widgets/character_avatar.dart';
+import 'package:memex/ui/core/widgets/local_image.dart';
 import 'package:memex/utils/tavern_macro.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/domain/models/agent_definitions.dart';
@@ -920,8 +921,8 @@ class _ChatAtmosphereBackground extends StatelessWidget {
       children: [
         if (hasCustomBg)
           Positioned.fill(
-            child: Image.file(
-              File(bgPath),
+            child: LocalImage(
+              url: bgPath,
               fit: BoxFit.cover,
             ),
           )

@@ -293,6 +293,22 @@ Insight Agent → 跨记录模式发现
 4. 推送分支 (`git push origin feature/amazing-feature`)
 5. 发起 Pull Request
 
+## Star History
+
+<div align="center">
+  <picture>
+    <source
+      media="(prefers-color-scheme: dark)"
+      srcset="https://api.star-history.com/svg?repos=memex-lab/memex&type=Date&theme=dark"
+    />
+    <source
+      media="(prefers-color-scheme: light)"
+      srcset="https://api.star-history.com/svg?repos=memex-lab/memex&type=Date"
+    />
+    <img src="https://api.star-history.com/svg?repos=memex-lab/memex&type=Date" alt="Star History Chart" />
+  </picture>
+</div>
+
 ## 许可证
 
 本项目基于 GPL-3.0 许可证开源 — 详见 [LICENSE](LICENSE) 文件。

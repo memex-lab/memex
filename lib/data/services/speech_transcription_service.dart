@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
+import 'package:memex/data/services/asset_safety_service.dart';
 import 'package:memex/data/services/whisper_service.dart';
 import 'package:memex/domain/models/agent_definitions.dart';
 import 'package:memex/domain/models/llm_config.dart';
@@ -67,8 +68,10 @@ class SpeechTranscriptionService {
     final useLocal = await UserStorage.getUseLocalSpeechToText();
 
     if (useLocal) {
-      return _transcribeFileLocally(audioPath,
-          skipLengthCheck: skipLengthCheck);
+      return _transcribeFileLocally(
+        audioPath,
+        skipLengthCheck: skipLengthCheck,
+      );
     }
 
     return _transcribeFileWithCloud(audioPath);
@@ -80,7 +83,8 @@ class SpeechTranscriptionService {
   }
 
   Future<SpeechTranscriptionResult> transcribeSamplesWithMetadata(
-      Float32List samples) async {
+    Float32List samples,
+  ) async {
     final useLocal = await UserStorage.getUseLocalSpeechToText();
 
     if (useLocal) {
@@ -94,6 +98,17 @@ class SpeechTranscriptionService {
     String audioPath, {
     bool skipLengthCheck = false,
   }) async {
+    final safety = await _inspectAudioForTranscription(audioPath);
+    if (!safety.safeForAnalysis) {
+      _logger.warning(
+        'Skipping unsafe local audio transcription for $audioPath: ${safety.reason}',
+      );
+      return const SpeechTranscriptionResult(
+        text: null,
+        usage: null,
+        model: 'asset-safety',
+      );
+    }
     final text = await WhisperService.instance.transcribe(
       audioPath,
       skipLengthCheck: skipLengthCheck,
@@ -106,7 +121,8 @@ class SpeechTranscriptionService {
   }
 
   Future<SpeechTranscriptionResult> _transcribeSamplesLocally(
-      Float32List samples) async {
+    Float32List samples,
+  ) async {
     final text = await WhisperService.instance.transcribeSamples(samples);
     return SpeechTranscriptionResult(
       text: text,
@@ -118,26 +134,38 @@ class SpeechTranscriptionService {
   Future<SpeechTranscriptionResult> _transcribeFileWithCloud(
     String audioPath,
   ) async {
+    final safety = await _inspectAudioForTranscription(audioPath);
+    if (!safety.safeForAnalysis) {
+      _logger.warning(
+        'Skipping unsafe cloud audio transcription for $audioPath: ${safety.reason}',
+      );
+      return const SpeechTranscriptionResult(
+        text: null,
+        usage: null,
+        model: 'asset-safety',
+      );
+    }
+    final file = File(audioPath);
+    final bytes = await file.readAsBytes();
+    final mimeType = _mimeTypeForPath(audioPath);
+    return _transcribeAudioBytesWithCloud(bytes, mimeType: mimeType);
+  }
+
+  Future<AssetSafetyReport> _inspectAudioForTranscription(
+    String audioPath,
+  ) async {
     final file = File(audioPath);
     if (!file.existsSync()) {
       throw Exception('Audio file not found: $audioPath');
     }
-    final bytes = await file.readAsBytes();
-    final mimeType = _mimeTypeForPath(audioPath);
-    return _transcribeAudioBytesWithCloud(
-      bytes,
-      mimeType: mimeType,
-    );
+    return AssetSafetyService.instance.inspectFile(audioPath);
   }
 
   Future<SpeechTranscriptionResult> _transcribeSamplesWithCloud(
     Float32List samples,
   ) async {
     final bytes = _samplesToWavBytes(samples);
-    return _transcribeAudioBytesWithCloud(
-      bytes,
-      mimeType: 'audio/wav',
-    );
+    return _transcribeAudioBytesWithCloud(bytes, mimeType: 'audio/wav');
   }
 
   Future<SpeechTranscriptionResult> _transcribeAudioBytesWithCloud(
@@ -160,16 +188,10 @@ Rules:
 - Do not add introductions, labels, translations, summaries, notes, or quotes.
 - Preserve the spoken language as-is.
 - If the audio contains no recognizable speech, return <transcript></transcript>.''';
-    final response = await resources.client.generate(
-      [
-        SystemMessage(systemPrompt),
-        UserMessage([
-          TextPart(prompt),
-          AudioPart(base64Encode(bytes), mimeType),
-        ])
-      ],
-      modelConfig: resources.modelConfig,
-    );
+    final response = await resources.client.generate([
+      SystemMessage(systemPrompt),
+      UserMessage([TextPart(prompt), AudioPart(base64Encode(bytes), mimeType)]),
+    ], modelConfig: resources.modelConfig);
 
     return SpeechTranscriptionResult(
       text: _normalizeCloudTranscript(response.textOutput),
@@ -192,7 +214,8 @@ Rules:
     }
 
     _logger.warning(
-        'Cloud speech transcription returned non-transcript text: $trimmed');
+      'Cloud speech transcription returned non-transcript text: $trimmed',
+    );
     return null;
   }
 

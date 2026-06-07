@@ -1,0 +1,138 @@
+name: Discord PR Merge Notification
+
+on:
+  pull_request_target:
+    types: [closed]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  notify:
+    name: Notify Discord
+    if: ${{ github.event.pull_request.merged == true }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+
+    steps:
+      - name: Build Discord payload and log context
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          def trim(value: str, limit: int) -> str:
+              value = value.strip()
+              if len(value) <= limit:
+                  return value
+              return value[: limit - 3].rstrip() + "..."
+
+          event = json.loads(Path(os.environ["GITHUB_EVENT_PATH"]).read_text())
+          repo = event["repository"]["full_name"]
+          pr = event["pull_request"]
+          author = pr.get("user", {}).get("login") or "unknown"
+          merged_by = (pr.get("merged_by") or {}).get("login") or "unknown"
+          merge_sha = pr.get("merge_commit_sha") or "unknown"
+          body = trim(pr.get("body") or "", 1000)
+
+          embed = {
+              "title": trim(f"#{pr['number']} {pr.get('title') or 'Pull request merged'}", 256),
+              "url": pr.get("html_url"),
+              "color": 5763719,
+              "description": body or "No PR description.",
+              "fields": [
+                  {"name": "Repository", "value": repo, "inline": True},
+                  {"name": "Author", "value": author, "inline": True},
+                  {"name": "Merged by", "value": merged_by, "inline": True},
+                  {"name": "Base", "value": pr.get("base", {}).get("ref") or "unknown", "inline": True},
+                  {"name": "Head", "value": pr.get("head", {}).get("ref") or "unknown", "inline": True},
+                  {"name": "Merge commit", "value": merge_sha[:12], "inline": True},
+              ],
+              "footer": {"text": "GitHub pull request merged"},
+          }
+          if pr.get("merged_at"):
+              embed["timestamp"] = pr["merged_at"]
+
+          payload = {
+              "username": "GitHub PR Bot",
+              "content": f"Pull request merged in {repo}",
+              "embeds": [embed],
+          }
+          payload_json = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+          Path("discord-payload.json").write_text(payload_json, encoding="utf-8")
+
+          print("::group::Discord notification context")
+          print(f"Event name: {os.environ.get('GITHUB_EVENT_NAME', 'unknown')}")
+          print(f"Repository: {repo}")
+          print(f"PR number: {pr['number']}")
+          print(f"PR title: {pr.get('title') or ''}")
+          print(f"PR URL: {pr.get('html_url') or ''}")
+          print(f"Author: {author}")
+          print(f"Merged by: {merged_by}")
+          print(f"Base ref: {pr.get('base', {}).get('ref') or 'unknown'}")
+          print(f"Head ref: {pr.get('head', {}).get('ref') or 'unknown'}")
+          print(f"Merge commit: {merge_sha}")
+          print(f"Merged at: {pr.get('merged_at') or 'unknown'}")
+          print(f"Original PR body length: {len(pr.get('body') or '')}")
+          print(f"Discord embed description length: {len(body or 'No PR description.')}")
+          print(f"Discord payload bytes: {len(payload_json.encode('utf-8'))}")
+          print("::endgroup::")
+
+          summary = Path(os.environ["GITHUB_STEP_SUMMARY"])
+          with summary.open("a", encoding="utf-8") as out:
+              out.write("# Discord PR Merge Notification\n\n")
+              out.write(f"- Repository: `{repo}`\n")
+              out.write(f"- Pull request: [#{pr['number']} {pr.get('title') or ''}]({pr.get('html_url') or ''})\n")
+              out.write(f"- Author: `{author}`\n")
+              out.write(f"- Merged by: `{merged_by}`\n")
+              out.write(f"- Base ref: `{pr.get('base', {}).get('ref') or 'unknown'}`\n")
+              out.write(f"- Head ref: `{pr.get('head', {}).get('ref') or 'unknown'}`\n")
+              out.write(f"- Merge commit: `{merge_sha}`\n")
+              out.write(f"- Payload bytes: `{len(payload_json.encode('utf-8'))}`\n")
+          PY
+
+      - name: Send Discord notification
+        if: env.DISCORD_WEBHOOK_URL != ''
+        run: |
+          echo "::group::Discord webhook request"
+          response_body="$(mktemp)"
+          set +e
+          http_status="$(curl --silent --show-error --fail-with-body \
+            --output "$response_body" \
+            --write-out "%{http_code}" \
+            -H "Content-Type: application/json" \
+            -X POST \
+            --data @discord-payload.json \
+            "$DISCORD_WEBHOOK_URL")"
+          curl_status="$?"
+          set -e
+          echo "curl exit code: ${curl_status}"
+          echo "Discord webhook HTTP status: ${http_status}"
+          if [ -s "$response_body" ]; then
+            echo "Discord webhook response body:"
+            cat "$response_body"
+          else
+            echo "Discord webhook response body is empty."
+          fi
+          echo "::endgroup::"
+          {
+            echo
+            echo "## Webhook delivery"
+            echo
+            echo "- curl exit code: \`${curl_status}\`"
+            echo "- HTTP status: \`${http_status}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+          rm -f "$response_body"
+          if [ "$curl_status" -ne 0 ]; then
+            exit "$curl_status"
+          fi
+
+      - name: Report missing Discord webhook
+        if: env.DISCORD_WEBHOOK_URL == ''
+        run: |
+          echo "DISCORD_WEBHOOK_URL is not configured; skipped Discord notification."
+          echo "DISCORD_WEBHOOK_URL is not configured; skipped Discord notification." >> "$GITHUB_STEP_SUMMARY"

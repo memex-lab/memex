@@ -293,6 +293,22 @@ Contributions are welcome. Please open an issue first to discuss what you would 
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
+## Star History
+
+<div align="center">
+  <picture>
+    <source
+      media="(prefers-color-scheme: dark)"
+      srcset="https://api.star-history.com/svg?repos=memex-lab/memex&type=Date&theme=dark"
+    />
+    <source
+      media="(prefers-color-scheme: light)"
+      srcset="https://api.star-history.com/svg?repos=memex-lab/memex&type=Date"
+    />
+    <img src="https://api.star-history.com/svg?repos=memex-lab/memex&type=Date" alt="Star History Chart" />
+  </picture>
+</div>
+
 ## License
 
 This project is licensed under the GPL-3.0 License — see the [LICENSE](LICENSE) file for details.

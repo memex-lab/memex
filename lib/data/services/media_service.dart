@@ -1,9 +1,8 @@
 import 'dart:io';
-import 'dart:ui' as ui;
-import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
+import 'package:memex/data/services/asset_safety_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/utils/logger.dart';
 
@@ -114,22 +113,17 @@ class MediaService {
     return '$base$extension';
   }
 
-  /// Decode an image file just far enough to learn its pixel dimensions.
-  /// Returns `(width, height)` or `null` if decoding fails.
+  /// Read image header metadata for pixel dimensions.
+  /// Returns `(width, height)` or `null` if metadata is unavailable.
   Future<(int, int)?> _probeImageDimensions(String imagePath) async {
     try {
-      final bytes = await File(imagePath).readAsBytes();
-      final codec = await ui.instantiateImageCodec(bytes);
-      final frame = await codec.getNextFrame();
-      final image = frame.image;
-      final result = (image.width, image.height);
-      image.dispose();
-      codec.dispose();
-      return result;
+      final safety = await AssetSafetyService.instance.inspectFile(imagePath);
+      final width = safety.width;
+      final height = safety.height;
+      if (width == null || height == null) return null;
+      return (width, height);
     } catch (e) {
-      if (kDebugMode) {
-        _logger.fine('Failed to probe image dimensions for $imagePath: $e');
-      }
+      _logger.fine('Failed to probe image dimensions for $imagePath: $e');
       return null;
     }
   }

@@ -26,13 +26,73 @@ require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelpe
 
 flutter_ios_podfile_setup
 
+def memex_use_ios_simulator_mlkit_stubs
+  ENV['MEMEX_IOS_SIMULATOR_MLKIT_STUBS'] == '1'
+end
+
+def memex_ios_simulator_mlkit_stub_plugins
+  [
+    'google_mlkit_commons',
+    'google_mlkit_image_labeling',
+    'google_mlkit_text_recognition',
+  ]
+end
+
+def memex_install_ios_pods(application_path)
+  if memex_use_ios_simulator_mlkit_stubs
+    flutter_install_ios_engine_pod(application_path)
+    memex_install_ios_plugin_pods_with_mlkit_stubs(application_path, '.symlinks', 'ios')
+  else
+    flutter_install_all_ios_pods(application_path)
+  end
+end
+
+def memex_install_ios_plugin_pods_with_mlkit_stubs(application_path, relative_symlink_dir, platform)
+  symlink_dir = File.expand_path(relative_symlink_dir, application_path)
+  system('rm', '-rf', symlink_dir)
+
+  symlink_plugins_dir = File.expand_path('plugins', symlink_dir)
+  system('mkdir', '-p', symlink_plugins_dir)
+
+  plugins_file = File.join(application_path, '..', '.flutter-plugins-dependencies')
+  dependencies_hash = flutter_parse_plugins_file(plugins_file)
+  plugin_pods = flutter_get_plugins_list(dependencies_hash, platform)
+  swift_package_manager_enabled = flutter_get_swift_package_manager_enabled(dependencies_hash, platform)
+  stub_plugins = memex_ios_simulator_mlkit_stub_plugins
+
+  plugin_pods.each do |plugin_hash|
+    plugin_name = plugin_hash['name']
+    plugin_path = plugin_hash['path']
+    has_native_build = plugin_hash.fetch('native_build', true)
+    next unless plugin_name && plugin_path && has_native_build
+
+    if stub_plugins.include?(plugin_name)
+      stub_path = File.join(application_path, 'SimulatorPluginStubs', plugin_name, platform)
+      pod plugin_name, path: flutter_relative_path_from_podfile(stub_path)
+      next
+    end
+
+    shared_darwin_source = plugin_hash.fetch('shared_darwin_source', false)
+    platform_directory = shared_darwin_source ? 'darwin' : platform
+    symlink = File.join(symlink_plugins_dir, plugin_name)
+    File.symlink(plugin_path, symlink)
+
+    relative = flutter_relative_path_from_podfile(symlink)
+    swift_package_exists = File.exist?(File.join(relative, platform_directory, plugin_name, "Package.swift"))
+    next if swift_package_manager_enabled && swift_package_exists
+    next if swift_package_exists && !File.exist?(File.join(relative, platform_directory, plugin_name + ".podspec"))
+
+    pod plugin_name, path: File.join(relative, platform_directory)
+  end
+end
+
 target 'Runner' do
   use_frameworks!
 
   # Add ML Kit Chinese Text Recognition support
-  pod 'GoogleMLKit/TextRecognitionChinese'
+  pod 'GoogleMLKit/TextRecognitionChinese' unless memex_use_ios_simulator_mlkit_stubs
 
-  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+  memex_install_ios_pods File.dirname(File.realpath(__FILE__))
 
   # share_handler addition start
   # This must match your Share Extension target name (ShareExtension).

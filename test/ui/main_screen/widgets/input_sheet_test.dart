@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/input_draft_service.dart';
 import 'package:memex/data/services/local_asset_server.dart';
@@ -21,9 +22,8 @@ void main() {
     const recordChannel = MethodChannel('com.llfbandit.record/messages');
     const audioGlobalChannel = MethodChannel('xyz.luan/audioplayers.global');
     const audioPlayerChannel = MethodChannel('xyz.luan/audioplayers');
-    final messenger = TestDefaultBinaryMessengerBinding
-        .instance
-        .defaultBinaryMessenger;
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     messenger.setMockMethodCallHandler(recordChannel, (call) async {
       switch (call.method) {
         case 'hasPermission':
@@ -76,7 +76,7 @@ void main() {
     }
   });
 
-  Widget buildHost() {
+  Widget buildHost({InputData? initialData}) {
     var isOpen = true;
     var closeCount = 0;
 
@@ -91,7 +91,7 @@ void main() {
                 const Center(child: Text('Home content')),
                 InputSheet(
                   isOpen: isOpen,
-                  initialData: InputData(text: 'started note'),
+                  initialData: initialData ?? InputData(text: 'started note'),
                   onClose: () {
                     setState(() {
                       isOpen = false;
@@ -128,6 +128,28 @@ void main() {
     expect(find.text('Home content'), findsOneWidget);
     expect(find.byType(TextField), findsNothing);
     expect(find.text('close count: 1'), findsOneWidget);
+  });
+
+  testWidgets('unsafe selected image uses safety placeholder in preview strip',
+      (
+    tester,
+  ) async {
+    final image = File('${testDataRoot.path}/unsafe_selected.png');
+    image.writeAsBytesSync(_pngHeader(width: 1000, height: 13000));
+
+    await tester.pumpWidget(
+      buildHost(
+        initialData: InputData(
+          text: 'long screenshot',
+          images: [XFile(image.path)],
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.byIcon(Icons.image_not_supported_outlined), findsOneWidget);
+    expect(find.byType(Image), findsNothing);
   });
 
   testWidgets(
@@ -267,4 +289,47 @@ Future<void> saveActiveDraft(WidgetTester tester, String text) {
   return tester.runAsync<void>(() {
     return InputDraftService.instance.saveTextDraft(text);
   });
+}
+
+List<int> _pngHeader({required int width, required int height}) {
+  final bytes = Uint8List(33);
+  bytes.setAll(0, const [
+    0x89,
+    0x50,
+    0x4e,
+    0x47,
+    0x0d,
+    0x0a,
+    0x1a,
+    0x0a,
+    0x00,
+    0x00,
+    0x00,
+    0x0d,
+    0x49,
+    0x48,
+    0x44,
+    0x52,
+  ]);
+  _writeUint32Be(bytes, 16, width);
+  _writeUint32Be(bytes, 20, height);
+  bytes.setAll(24, const [
+    0x08,
+    0x02,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+  ]);
+  return bytes;
+}
+
+void _writeUint32Be(Uint8List bytes, int offset, int value) {
+  bytes[offset] = (value >> 24) & 0xff;
+  bytes[offset + 1] = (value >> 16) & 0xff;
+  bytes[offset + 2] = (value >> 8) & 0xff;
+  bytes[offset + 3] = value & 0xff;
 }

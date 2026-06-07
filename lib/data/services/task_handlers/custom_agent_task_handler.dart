@@ -12,6 +12,7 @@ import 'package:memex/agent/security/file_permission_manager.dart';
 import 'package:memex/agent/skills/dynamic_surface/dynamic_surface_page_agent_prompt.dart';
 import 'package:memex/agent/skills/dynamic_surface/dynamic_surface_permissions.dart';
 import 'package:memex/agent/state_util.dart';
+import 'package:memex/data/services/asset_safety_service.dart';
 import 'package:memex/data/services/dynamic_surface_service.dart';
 import 'package:memex/data/services/custom_agent_config_service.dart';
 import 'package:memex/data/services/event_bus_service.dart';
@@ -121,6 +122,14 @@ Future<List<UserContentPart>> _buildAssetPartsFromXml(
         continue;
       }
 
+      final safety = await AssetSafetyService.instance.inspectFile(absPath);
+      if (!safety.safeForInlineBase64) {
+        _logger.warning(
+          'Skipping unsafe custom-agent inline asset $absPath: ${safety.reason}',
+        );
+        continue;
+      }
+
       final bytes = await file.readAsBytes();
       final b64 = base64Encode(bytes);
 
@@ -134,6 +143,13 @@ Future<List<UserContentPart>> _buildAssetPartsFromXml(
     }
   }
   return parts;
+}
+
+Future<List<UserContentPart>> buildAssetPartsFromXmlForTesting(
+  String userId,
+  String eventXml,
+) {
+  return _buildAssetPartsFromXml(userId, eventXml);
 }
 
 Future<void> _handleCustomAgentTask(

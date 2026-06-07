@@ -7,7 +7,7 @@ import 'package:memex/utils/user_storage.dart';
 import 'package:path/path.dart' as path;
 import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:memex/utils/exif_utils.dart';
-import 'package:memex/utils/image_utils.dart';
+import 'package:memex/data/services/asset_safety_service.dart';
 import 'package:memex/domain/models/llm_config.dart';
 import 'package:memex/domain/models/agent_definitions.dart';
 import 'package:memex/utils/logger.dart';
@@ -127,6 +127,28 @@ Future<List<AssetAnalysisResult>> analyzeAssetsForFact({
   }
 
   final fileSystem = FileSystemService.instance;
+  final preflightResults = <AssetAnalysisResult>[];
+  final safeAssetPaths = <(int, String)>[];
+
+  for (var i = 0; i < assetPaths.length; i++) {
+    final unsafeResult = await _writeUnsafeAssetSkipIfNeeded(
+      userId: userId,
+      factId: factId,
+      originalAssetPath: assetPaths[i],
+      index: i,
+      fileSystem: fileSystem,
+    );
+    if (unsafeResult != null) {
+      preflightResults.add(unsafeResult);
+    } else {
+      safeAssetPaths.add((i, assetPaths[i]));
+    }
+  }
+
+  if (safeAssetPaths.isEmpty) {
+    preflightResults.sort((a, b) => a.index.compareTo(b.index));
+    return preflightResults;
+  }
 
   // Skip LLM analysis if not configured — card agent will use rule-based matching.
   final llmConfig = await UserStorage.getAgentLLMConfig(
@@ -135,7 +157,8 @@ Future<List<AssetAnalysisResult>> analyzeAssetsForFact({
   );
   if (!llmConfig.isValid) {
     _logger.info('No LLM configured — skipping asset analysis for $factId');
-    return const [];
+    preflightResults.sort((a, b) => a.index.compareTo(b.index));
+    return preflightResults;
   }
 
   // 1. Get LLM Resources (Default to Gemini Flash for Asset Analysis)
@@ -146,13 +169,13 @@ Future<List<AssetAnalysisResult>> analyzeAssetsForFact({
 
   final futures = <Future<AssetAnalysisResult?>>[];
 
-  for (var i = 0; i < assetPaths.length; i++) {
+  for (final (index, assetPath) in safeAssetPaths) {
     futures.add(
       _analyzeSingleAsset(
         userId: userId,
         factId: factId,
-        originalAssetPath: assetPaths[i],
-        index: i,
+        originalAssetPath: assetPath,
+        index: index,
         fileSystem: fileSystem,
         client: resources.client,
         modelConfig: resources.modelConfig,
@@ -161,12 +184,55 @@ Future<List<AssetAnalysisResult>> analyzeAssetsForFact({
   }
 
   final results = await Future.wait(futures);
-  final assetAnalyses = results.whereType<AssetAnalysisResult>().toList();
+  final assetAnalyses = [
+    ...preflightResults,
+    ...results.whereType<AssetAnalysisResult>(),
+  ];
 
   // Sort by index to maintain order
   assetAnalyses.sort((a, b) => a.index.compareTo(b.index));
 
   return assetAnalyses;
+}
+
+Future<AssetAnalysisResult?> _writeUnsafeAssetSkipIfNeeded({
+  required String userId,
+  required String factId,
+  required String originalAssetPath,
+  required int index,
+  required FileSystemService fileSystem,
+}) async {
+  final assetPath = fileSystem.toAbsolutePath(originalAssetPath);
+  final file = File(assetPath);
+  if (!file.existsSync()) return null;
+
+  final extension = path.extension(assetPath).toLowerCase();
+  final isSupported =
+      AssetSafetyService.imageExtensions.contains(extension) ||
+      AssetSafetyService.audioExtensions.contains(extension);
+  if (!isSupported) return null;
+
+  final safety = await AssetSafetyService.instance.inspectFile(assetPath);
+  if (safety.safeForAnalysis) return null;
+
+  final assetName = path.basename(assetPath);
+  final skipText = safety.analysisSkipText(assetName);
+  await _saveAssetAnalysisText(
+    userId: userId,
+    factId: factId,
+    assetPath: assetPath,
+    fileSystem: fileSystem,
+    content: skipText,
+  );
+  _logger.warning('Skipped unsafe asset analysis for $assetPath: $skipText');
+  return AssetAnalysisResult(
+    factId: factId,
+    name: assetName,
+    path: assetPath,
+    index: index + 1,
+    analysis: skipText,
+    exifData: null,
+  );
 }
 
 Future<AssetAnalysisResult?> _analyzeSingleAsset({
@@ -227,6 +293,29 @@ Future<AssetAnalysisResult?> _analyzeSingleAsset({
       return null;
     }
 
+    final safety = await AssetSafetyService.instance.inspectFile(assetPath);
+    if (!safety.safeForAnalysis) {
+      final skipText = safety.analysisSkipText(assetName);
+      await _saveAssetAnalysisText(
+        userId: userId,
+        factId: factId,
+        assetPath: assetPath,
+        fileSystem: fileSystem,
+        content: skipText,
+      );
+      _logger.warning(
+        'Skipped unsafe asset analysis for $assetPath: $skipText',
+      );
+      return AssetAnalysisResult(
+        factId: factId,
+        name: assetName,
+        path: assetPath,
+        index: index + 1,
+        analysis: skipText,
+        exifData: null,
+      );
+    }
+
     // 1. Extract EXIF Data (Images only)
     Map<String, dynamic> exif = {};
     String exifInfoText = "";
@@ -239,11 +328,9 @@ Future<AssetAnalysisResult?> _analyzeSingleAsset({
         _logger.warning('Failed to extract EXIF data for $assetPath: $e');
       }
 
-      // Get image dimensions
-      final dimensions = await ImageUtils.getImageDimensions(assetPath);
-      final width = dimensions['width'] as int;
-      final height = dimensions['height'] as int;
-      final aspectRatio = dimensions['aspectRatio'] as double;
+      final width = safety.width ?? 0;
+      final height = safety.height ?? 0;
+      final aspectRatio = width > 0 && height > 0 ? width / height : 0.0;
 
       // Process EXIF Info
       final infoLines = <String>[];
@@ -290,7 +377,8 @@ Future<AssetAnalysisResult?> _analyzeSingleAsset({
             if (geocoded != null) {
               final locationConfig =
                   await UserStorage.getLocationContextConfig();
-              address = geocoded.fullAddress ??
+              address =
+                  geocoded.fullAddress ??
                   geocoded.summary(locationConfig.granularity);
             }
             if (address != null) {
@@ -426,41 +514,17 @@ Future<AssetAnalysisResult?> _analyzeSingleAsset({
 
     // 4. Save to file (using original filename + .analysis.txt suffix)
     if (finalAnalysisResult.isNotEmpty) {
-      try {
-        final assetFilename = path.basename(assetPath);
-        final analysisFilename = "$assetFilename.analysis.txt";
-        final analysisFile = File(
-          path.join(path.dirname(assetPath), analysisFilename),
-        );
-        await analysisFile.writeAsString(finalAnalysisResult);
-        _logger.info(
-          "Saved asset analysis (with EXIF info) to: ${analysisFile.path}",
-        );
-
-        // Log event
-        try {
-          final workspacePath = fileSystem.getWorkspacePath(userId);
-          final relativePath = fileSystem.toRelativePath(
-            analysisFile.path,
-            rootPath: workspacePath,
-          );
-          await fileSystem.eventLogService.logFileCreated(
-            userId: userId,
-            filePath: relativePath,
-            description: 'System created asset analysis file',
-            metadata: {'fact_id': factId, 'asset': assetFilename},
-          );
-        } catch (e) {
-          // Event logging failure should not break analysis
-        }
-      } catch (e) {
-        _logger.severe('Failed to save asset analysis for $assetPath: $e');
-        throw Exception('Failed to save asset analysis for $assetPath: $e');
-      }
+      await _saveAssetAnalysisText(
+        userId: userId,
+        factId: factId,
+        assetPath: assetPath,
+        fileSystem: fileSystem,
+        content: finalAnalysisResult,
+      );
     }
 
     // 4b. On-device OCR for images — persist as {filename}.ocr.txt
-    if (isImage) {
+    if (isImage && safety.safeForOcr) {
       try {
         final ocrText = await _performOnDeviceOcr(assetPath);
         if (ocrText.isNotEmpty) {
@@ -474,6 +538,8 @@ Future<AssetAnalysisResult?> _analyzeSingleAsset({
         // OCR failure should not break the overall asset analysis
         _logger.warning('On-device OCR failed for $assetPath: $e');
       }
+    } else if (isImage) {
+      _logger.warning('Skipping OCR for $assetPath: ${safety.reason}');
     }
 
     // 5. Add to results (analysis field should include EXIF + tool analysis, matching backend)
@@ -482,13 +548,51 @@ Future<AssetAnalysisResult?> _analyzeSingleAsset({
       name: assetName,
       path: assetPath,
       index: index + 1,
-      analysis:
-          finalAnalysisResult.isNotEmpty ? finalAnalysisResult : analysisResult,
+      analysis: finalAnalysisResult.isNotEmpty
+          ? finalAnalysisResult
+          : analysisResult,
       exifData: structuredExifData,
     );
   } catch (e, stack) {
     _logger.severe('Failed to analyze asset: $assetPath', e, stack);
     rethrowIfNonRetryable(e);
+  }
+}
+
+Future<void> _saveAssetAnalysisText({
+  required String userId,
+  required String factId,
+  required String assetPath,
+  required FileSystemService fileSystem,
+  required String content,
+}) async {
+  try {
+    final assetFilename = path.basename(assetPath);
+    final analysisFilename = "$assetFilename.analysis.txt";
+    final analysisFile = File(
+      path.join(path.dirname(assetPath), analysisFilename),
+    );
+    await analysisFile.writeAsString(content);
+    _logger.info("Saved asset analysis to: ${analysisFile.path}");
+
+    try {
+      final workspacePath = fileSystem.getWorkspacePath(userId);
+      final relativePath = fileSystem.toRelativePath(
+        analysisFile.path,
+        rootPath: workspacePath,
+      );
+      await fileSystem.eventLogService.logFileCreated(
+        userId: userId,
+        filePath: relativePath,
+        description: 'System created asset analysis file',
+        metadata: {'fact_id': factId, 'asset': assetFilename},
+      );
+    } catch (e) {
+      // Event logging failure should not break analysis.
+    }
+  } catch (e) {
+    _logger.severe('Failed to save asset analysis for $assetPath: $e');
+    throw Exception('Failed to save asset analysis for $assetPath: $e');
   }
 }
 

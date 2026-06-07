@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
@@ -8,10 +9,81 @@ import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:shimmer/shimmer.dart';
 import 'package:crypto/crypto.dart';
+import 'package:memex/data/services/asset_safety_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/utils/logger.dart';
 
 final Logger _logger = getLogger('LocalImage');
+
+final Uint8List _transparentPng = Uint8List.fromList(const [
+  0x89,
+  0x50,
+  0x4e,
+  0x47,
+  0x0d,
+  0x0a,
+  0x1a,
+  0x0a,
+  0x00,
+  0x00,
+  0x00,
+  0x0d,
+  0x49,
+  0x48,
+  0x44,
+  0x52,
+  0x00,
+  0x00,
+  0x00,
+  0x01,
+  0x00,
+  0x00,
+  0x00,
+  0x01,
+  0x08,
+  0x06,
+  0x00,
+  0x00,
+  0x00,
+  0x1f,
+  0x15,
+  0xc4,
+  0x89,
+  0x00,
+  0x00,
+  0x00,
+  0x0a,
+  0x49,
+  0x44,
+  0x41,
+  0x54,
+  0x78,
+  0x9c,
+  0x63,
+  0x00,
+  0x01,
+  0x00,
+  0x00,
+  0x05,
+  0x00,
+  0x01,
+  0x0d,
+  0x0a,
+  0x2d,
+  0xb4,
+  0x00,
+  0x00,
+  0x00,
+  0x00,
+  0x49,
+  0x45,
+  0x4e,
+  0x44,
+  0xae,
+  0x42,
+  0x60,
+  0x82,
+]);
 
 /// Image widget that handles local server URL and local file path
 /// - If URL starts with http://127.0.0.1, parse as local file path and use Image.file
@@ -155,11 +227,15 @@ class LocalImage extends StatefulWidget {
     final isLocalFile = localFilePath != null || !url.startsWith('http');
 
     if (isLocalFile) {
-      // use local file load
-      // TODO: Cannot easily use compression cache here because ImageProvider is sync,
-      // while compression is async. May need custom ImageProvider for compressed images.
-      // For now return raw image provider.
-      return FileImage(File(localFilePath ?? url));
+      final filePath = localFilePath ?? url;
+      final safety = AssetSafetyService.instance.inspectFileSync(filePath);
+      if (!safety.safeForPreview) {
+        _logger.warning(
+          'LocalImage.provider blocked unsafe preview for $filePath: ${safety.reason}',
+        );
+        return MemoryImage(_transparentPng);
+      }
+      return FileImage(File(filePath));
     } else {
       // use network load
       return NetworkImage(url);
@@ -188,6 +264,8 @@ class LocalImage extends StatefulWidget {
 class _LocalImageState extends State<LocalImage> {
   File? _imageFile;
   bool _isLoading = true; // preload state for local images only
+  bool _previewUnavailable = false;
+  String? _previewUnavailableReason;
 
   @override
   void initState() {
@@ -204,11 +282,16 @@ class _LocalImageState extends State<LocalImage> {
   }
 
   Future<void> _loadImage() async {
+    _previewUnavailable = false;
+    _previewUnavailableReason = null;
+
     if (widget.url.isEmpty) {
       if (mounted) {
         setState(() {
           _imageFile = null;
           _isLoading = false;
+          _previewUnavailable = false;
+          _previewUnavailableReason = null;
         });
       }
       return;
@@ -225,13 +308,30 @@ class _LocalImageState extends State<LocalImage> {
       originalPath = localFilePath ?? widget.url;
       originalFile = File(originalPath);
 
-      if (!await originalFile.exists()) {
+      if (!originalFile.existsSync()) {
         // original file not found, cannot load
         if (mounted) {
           setState(() {
-            _imageFile =
-                File(originalPath); // still set so Image.file handles error
+            _imageFile = File(
+              originalPath,
+            ); // still set so Image.file handles error
             _isLoading = false;
+          });
+        }
+        return;
+      }
+
+      final safety = AssetSafetyService.instance.inspectFileSync(originalPath);
+      if (!safety.safeForPreview) {
+        _logger.warning(
+          'Local image preview blocked for $originalPath: ${safety.reason}',
+        );
+        if (mounted) {
+          setState(() {
+            _imageFile = null;
+            _isLoading = false;
+            _previewUnavailable = true;
+            _previewUnavailableReason = safety.reason;
           });
         }
         return;
@@ -278,8 +378,12 @@ class _LocalImageState extends State<LocalImage> {
         _logger.info('Downloading network image: $originalPath');
         final response = await http.get(Uri.parse(originalPath));
         if (response.statusCode == 200) {
-          tempDownloadFile = File(path.join(
-              cacheDir.path, 'temp_${DateTime.now().millisecondsSinceEpoch}'));
+          tempDownloadFile = File(
+            path.join(
+              cacheDir.path,
+              'temp_${DateTime.now().millisecondsSinceEpoch}',
+            ),
+          );
           await tempDownloadFile.writeAsBytes(response.bodyBytes);
           sourcePath = tempDownloadFile.path;
         } else {
@@ -287,20 +391,43 @@ class _LocalImageState extends State<LocalImage> {
         }
       }
 
+      final previewSafety = AssetSafetyService.instance.inspectFileSync(
+        sourcePath,
+      );
+      if (!previewSafety.safeForPreview) {
+        _logger.warning(
+          'Image preview blocked for $originalPath: ${previewSafety.reason}',
+        );
+        if (tempDownloadFile != null && await tempDownloadFile.exists()) {
+          await tempDownloadFile.delete();
+        }
+        if (mounted) {
+          setState(() {
+            _imageFile = null;
+            _isLoading = false;
+            _previewUnavailable = true;
+            _previewUnavailableReason = previewSafety.reason;
+          });
+        }
+        return;
+      }
+
       // check image size; if already <= 768, copy file to avoid re-compression quality loss
       String? resultPath;
       bool needCompress = true;
 
       try {
-        final bytes = await File(sourcePath).readAsBytes();
-        final decodedImage = await decodeImageFromList(bytes);
-        if (decodedImage.width <= 768 && decodedImage.height <= 768) {
+        if (previewSafety.width != null &&
+            previewSafety.height != null &&
+            previewSafety.width! <= 768 &&
+            previewSafety.height! <= 768) {
           needCompress = false;
         }
-        decodedImage.dispose();
       } catch (e) {
         _logger.warning(
-            'Failed to decode image to check size for $sourcePath', e);
+          'Failed to read image metadata to check size for $sourcePath',
+          e,
+        );
       }
 
       if (needCompress) {
@@ -314,8 +441,9 @@ class _LocalImageState extends State<LocalImage> {
         );
         resultPath = result?.path;
       } else {
-        _logger
-            .info('Image dimensions <= 768, skip compression: $originalPath');
+        _logger.info(
+          'Image dimensions <= 768, skip compression: $originalPath',
+        );
         final copiedFile = await File(sourcePath).copy(cacheFile.path);
         resultPath = copiedFile.path;
       }
@@ -335,21 +463,24 @@ class _LocalImageState extends State<LocalImage> {
           });
         } else {
           _logger.warning(
-              'Compression/Copy failed (null result) for image: $originalPath');
+            'Compression/Copy failed (null result) for image: $originalPath',
+          );
           setState(() {
-            // on failure (null resultPath), fallback to original image (local) or URL (network)
-            _imageFile = isLocalFile ? originalFile : null;
+            _imageFile = null;
             _isLoading = false;
+            _previewUnavailable = true;
+            _previewUnavailableReason = 'safe preview generation failed';
           });
         }
       }
     } catch (e) {
       _logger.severe('LocalImage processing error for image: $originalPath', e);
-      // on error, fallback
       if (mounted) {
         setState(() {
-          _imageFile = isLocalFile ? originalFile : null;
+          _imageFile = null;
           _isLoading = false;
+          _previewUnavailable = true;
+          _previewUnavailableReason = 'safe preview generation failed';
         });
       }
     }
@@ -384,13 +515,39 @@ class _LocalImageState extends State<LocalImage> {
     return skeleton;
   }
 
+  Widget _buildPreviewUnavailable() {
+    if (widget.errorBuilder != null) {
+      return widget.errorBuilder!(
+        context,
+        Exception(_previewUnavailableReason ?? 'Image preview unavailable'),
+        StackTrace.current,
+      );
+    }
+
+    return Container(
+      width: widget.width ?? double.infinity,
+      height: widget.height ?? double.infinity,
+      color: Colors.grey[100],
+      alignment: Alignment.center,
+      child: Icon(
+        Icons.image_not_supported_outlined,
+        color: Colors.grey[500],
+        size: 28,
+      ),
+    );
+  }
+
   /// Wrap user frameBuilder or provide default skeleton
   Widget Function(BuildContext, Widget, int?, bool)? _getFrameBuilder() {
     if (widget.frameBuilder != null) return widget.frameBuilder;
 
     // default: show skeleton until first frame loaded
-    return (BuildContext context, Widget child, int? frame,
-        bool wasSynchronouslyLoaded) {
+    return (
+      BuildContext context,
+      Widget child,
+      int? frame,
+      bool wasSynchronouslyLoaded,
+    ) {
       if (wasSynchronouslyLoaded || frame != null) {
         return child;
       }
@@ -403,7 +560,10 @@ class _LocalImageState extends State<LocalImage> {
     if (widget.url.isEmpty) {
       if (widget.errorBuilder != null) {
         return widget.errorBuilder!(
-            context, Exception('Image url is empty'), StackTrace.current);
+          context,
+          Exception('Image url is empty'),
+          StackTrace.current,
+        );
       }
       return const Center(child: Icon(Icons.broken_image, color: Colors.grey));
     }
@@ -413,11 +573,16 @@ class _LocalImageState extends State<LocalImage> {
       return _buildSkeleton();
     }
 
+    if (_previewUnavailable) {
+      return _buildPreviewUnavailable();
+    }
+
     // local file mode
     if (_imageFile != null) {
       if (!_imageFile!.existsSync()) {
         _logger.severe(
-            'File not found when loading with Image.file: ${_imageFile!.path}');
+          'File not found when loading with Image.file: ${_imageFile!.path}',
+        );
       }
       return Image.file(
         _imageFile!,
@@ -433,14 +598,16 @@ class _LocalImageState extends State<LocalImage> {
         filterQuality: widget.filterQuality,
         errorBuilder: (context, error, stackTrace) {
           _logger.severe(
-              'Image.file failed to load local image: ${_imageFile!.path} - error: $error',
-              error,
-              stackTrace);
+            'Image.file failed to load local image: ${_imageFile!.path} - error: $error',
+            error,
+            stackTrace,
+          );
           if (widget.errorBuilder != null) {
             return widget.errorBuilder!(context, error, stackTrace);
           }
           return const Center(
-              child: Icon(Icons.broken_image, color: Colors.grey));
+            child: Icon(Icons.broken_image, color: Colors.grey),
+          );
         },
         frameBuilder: _getFrameBuilder(),
         semanticLabel: widget.semanticLabel,

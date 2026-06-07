@@ -7,7 +7,7 @@ import 'package:logging/logging.dart';
 import 'package:yaml/yaml.dart';
 import 'package:synchronized/synchronized.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:flutter/widgets.dart'; // For decodeImageFromList
+import 'package:memex/data/services/asset_safety_service.dart';
 import 'package:memex/utils/logger.dart';
 import 'base_file_service.dart';
 import 'api_exception.dart';
@@ -1475,9 +1475,11 @@ class FileSystemService {
     if (extraInfo == null) {
       if (assetType == 'img') {
         try {
-          final fileBytes = await File(sourcePath).readAsBytes();
-          final image = await decodeImageFromList(fileBytes);
-          extraInfo = '${image.width}x${image.height}';
+          final safety =
+              await AssetSafetyService.instance.inspectFile(sourcePath);
+          if (safety.width != null && safety.height != null) {
+            extraInfo = '${safety.width}x${safety.height}';
+          }
         } catch (e) {
           _logger.warning('Failed to extract image dimensions: $e');
         }

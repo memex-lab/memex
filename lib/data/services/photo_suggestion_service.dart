@@ -7,6 +7,7 @@ import 'dart:math';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:google_mlkit_image_labeling/google_mlkit_image_labeling.dart';
 import 'package:camera/camera.dart';
+import 'package:memex/data/services/asset_safety_service.dart';
 import 'publish_timestamp_service.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/user_storage.dart';
@@ -243,8 +244,8 @@ class PhotoSuggestionService {
       if (xFile == null) continue;
 
       final length = await xFile.length();
-      final String? trueTitle = await asset.titleAsync;
-      final String effectiveName = trueTitle ?? xFile.name;
+      final trueTitle = await asset.titleAsync;
+      final effectiveName = trueTitle.isNotEmpty ? trueTitle : xFile.name;
       final rawHashStr = 'photo_${effectiveName}_$length';
 
       photoInfoList.add(
@@ -370,8 +371,9 @@ class PhotoSuggestionService {
         };
         prefetchFutures.add(() async {
           final latlng = await info.asset.latlngAsync();
-          final String? trueTitle = await info.asset.titleAsync;
-          final String effectiveName = trueTitle ?? info.xFile.name;
+          final trueTitle = await info.asset.titleAsync;
+          final effectiveName =
+              trueTitle.isNotEmpty ? trueTitle : info.xFile.name;
 
           processedData[i]['latlng'] = latlng;
           processedData[i]['effectiveName'] = effectiveName;
@@ -497,29 +499,55 @@ class PhotoSuggestionService {
         List<String> ocrBlocks,
         List<String> labels,
         DateTime modifiedTime
+      })> processImageOCRForTesting(XFile xFile) {
+    return _processImageOCR(xFile);
+  }
+
+  static Future<
+      ({
+        List<String> ocrBlocks,
+        List<String> labels,
+        DateTime modifiedTime
       })> _processImageOCR(XFile xFile) async {
     _logger.info('--- Starting OCR + Labeling for ${xFile.name} ---');
-    final textRecognizer =
-        TextRecognizer(script: TextRecognitionScript.chinese);
-    final imageLabeler = ImageLabeler(options: ImageLabelerOptions());
+    TextRecognizer? textRecognizer;
+    ImageLabeler? imageLabeler;
     try {
       final file = File(xFile.path);
       final stat = await file.stat();
       _logger.fine('Processing ${xFile.name}, modified: ${stat.modified}');
 
+      final safety = await AssetSafetyService.instance.inspectFile(xFile.path);
+      if (!safety.safeForAnalysis) {
+        _logger.warning(
+          'Skipping unsafe photo suggestion analysis for ${xFile.path}: ${safety.reason}',
+        );
+        return (
+          ocrBlocks: <String>[],
+          labels: <String>[],
+          modifiedTime: stat.modified
+        );
+      }
+
       final inputImage = InputImage.fromFilePath(xFile.path);
+      imageLabeler = ImageLabeler(options: ImageLabelerOptions());
+      final labelsFuture = imageLabeler.processImage(inputImage);
 
-      // Run both in parallel
-      final results = await Future.wait([
-        textRecognizer.processImage(inputImage),
-        imageLabeler.processImage(inputImage),
-      ]);
+      Future<RecognizedText>? recognizedTextFuture;
+      if (safety.safeForOcr) {
+        textRecognizer = TextRecognizer(script: TextRecognitionScript.chinese);
+        recognizedTextFuture = textRecognizer.processImage(inputImage);
+      } else {
+        _logger.warning(
+          'Skipping OCR for ${xFile.path}: ${safety.reason}',
+        );
+      }
 
-      final recognizedText = results[0] as RecognizedText;
-      final labels = results[1] as List<ImageLabel>;
+      final labels = await labelsFuture;
+      final recognizedText = await recognizedTextFuture;
       final List<String> labelNames = labels.map((l) => l.label).toList();
       final List<String> blockTexts =
-          recognizedText.blocks.map((b) => b.text).toList();
+          recognizedText?.blocks.map((b) => b.text).toList() ?? <String>[];
 
       return (
         ocrBlocks: blockTexts,
@@ -534,8 +562,8 @@ class PhotoSuggestionService {
         modifiedTime: DateTime.now()
       );
     } finally {
-      textRecognizer.close();
-      imageLabeler.close();
+      textRecognizer?.close();
+      imageLabeler?.close();
     }
   }
 }

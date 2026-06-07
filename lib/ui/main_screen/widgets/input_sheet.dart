@@ -21,6 +21,7 @@ import 'package:memex/data/services/speech_transcription_service.dart';
 import 'package:memex/data/services/input_draft_service.dart';
 import 'package:memex/config/app_flavor.dart';
 import 'package:memex/ui/core/themes/app_colors.dart';
+import 'package:memex/ui/core/widgets/local_image.dart';
 import 'package:memex/data/services/demo_service.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -1096,16 +1097,10 @@ class _InputSheetState extends State<InputSheet>
           children: [
             Center(
               child: InteractiveViewer(
-                child: _assetsMap.containsKey(_selectedImages[index].path)
-                    ? AssetEntityImage(
-                        _assetsMap[_selectedImages[index].path]!,
-                        isOriginal: true,
-                        fit: BoxFit.contain,
-                      )
-                    : Image.file(
-                        File(_selectedImages[index].path),
-                        fit: BoxFit.contain,
-                      ),
+                child: _buildSelectedImagePreview(
+                  index: index,
+                  fit: BoxFit.contain,
+                ),
               ),
             ),
             SafeArea(
@@ -1134,6 +1129,20 @@ class _InputSheetState extends State<InputSheet>
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildSelectedImagePreview({
+    required int index,
+    required BoxFit fit,
+    double? width,
+    double? height,
+  }) {
+    return LocalImage(
+      url: _selectedImages[index].path,
+      fit: fit,
+      width: width,
+      height: height,
     );
   }
 
@@ -1451,43 +1460,13 @@ class _InputSheetState extends State<InputSheet>
                                                               _showImagePreview(
                                                             index,
                                                           ),
-                                                          child: _assetsMap
-                                                                  .containsKey(
-                                                            _selectedImages[
-                                                                    index]
-                                                                .path,
-                                                          )
-                                                              ? AssetEntityImage(
-                                                                  _assetsMap[
-                                                                      _selectedImages[
-                                                                              index]
-                                                                          .path]!,
-                                                                  width: 100,
-                                                                  height: 100,
-                                                                  fit: BoxFit
-                                                                      .cover,
-                                                                  isOriginal:
-                                                                      false,
-                                                                  thumbnailSize:
-                                                                      const ThumbnailSize
-                                                                          .square(
-                                                                    200,
-                                                                  ),
-                                                                  thumbnailFormat:
-                                                                      ThumbnailFormat
-                                                                          .jpeg,
-                                                                )
-                                                              : Image.file(
-                                                                  File(
-                                                                    _selectedImages[
-                                                                            index]
-                                                                        .path,
-                                                                  ),
-                                                                  width: 100,
-                                                                  height: 100,
-                                                                  fit: BoxFit
-                                                                      .cover,
-                                                                ),
+                                                          child:
+                                                              _buildSelectedImagePreview(
+                                                            index: index,
+                                                            width: 100,
+                                                            height: 100,
+                                                            fit: BoxFit.cover,
+                                                          ),
                                                         ),
                                                       ),
                                                       Positioned(

@@ -6,6 +6,7 @@ import 'package:path/path.dart' as path;
 import 'package:memex/utils/logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:memex/data/services/asset_safety_service.dart';
 import 'package:memex/data/services/speech_transcription_service.dart';
 
 class AssetAnalysisTool {
@@ -13,10 +14,7 @@ class AssetAnalysisTool {
   final LLMClient client;
   final ModelConfig modelConfig;
 
-  AssetAnalysisTool({
-    required this.client,
-    required this.modelConfig,
-  });
+  AssetAnalysisTool({required this.client, required this.modelConfig});
 
   /// The main tool method to analyze assets
   Future<String> tool({
@@ -43,10 +41,31 @@ class AssetAnalysisTool {
 
     final extension = path.extension(assetPath).toLowerCase();
     final assetName = path.basename(assetPath);
+    final safety = await AssetSafetyService.instance.inspectFile(assetPath);
 
     // Image Extensions
-    if ({'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.heic', '.heif'}
-        .contains(extension)) {
+    if ({
+      '.jpg',
+      '.jpeg',
+      '.png',
+      '.gif',
+      '.bmp',
+      '.webp',
+      '.heic',
+      '.heif',
+      '.tiff',
+      '.tif',
+    }.contains(extension)) {
+      if (!safety.safeForAnalysis) {
+        _logger.warning(
+          'Skipping unsafe image analysis for $assetPath: ${safety.reason}',
+        );
+        return (
+          '#Asset $assetName analysis result\n: ${safety.analysisSkipText(assetName)}',
+          null,
+          'asset-safety',
+        );
+      }
       return _analyzeImageWithUsage(assetPath, assetName, prompt);
     }
     // Audio Extensions
@@ -59,8 +78,18 @@ class AssetAnalysisTool {
       '.aiff',
       '.aif',
       '.m4a',
-      '.wma'
+      '.wma',
     }.contains(extension)) {
+      if (!safety.safeForAnalysis) {
+        _logger.warning(
+          'Skipping unsafe audio analysis for $assetPath: ${safety.reason}',
+        );
+        return (
+          '#Asset $assetName analysis result\n: ${safety.analysisSkipText(assetName)}',
+          null,
+          'asset-safety',
+        );
+      }
       return _analyzeAudioWithUsage(assetPath, assetName, prompt);
     }
     // TODO: Document support (PDF, Excel, PPT, Word, CSV) via MarkItDown or similar
@@ -70,8 +99,11 @@ class AssetAnalysisTool {
   }
 
   Future<(String result, ModelUsage? usage, String model)>
-      _analyzeImageWithUsage(
-          String assetPath, String assetName, String prompt) async {
+  _analyzeImageWithUsage(
+    String assetPath,
+    String assetName,
+    String prompt,
+  ) async {
     _logger.info('Starting analysis flow for: $assetPath');
 
     try {
@@ -82,15 +114,20 @@ class AssetAnalysisTool {
 
       // --- Step 1: compress and resize image ---
       // Target: convert to WebP, max side 2048, quality 85%
-      final compressedBytes = await _compressAndResizeImage(file.path,
-          targetSize: 2048, quality: 85);
+      final compressedBytes = await _compressAndResizeImage(
+        file.path,
+        targetSize: 2048,
+        quality: 85,
+      );
 
       if (compressedBytes == null) {
         throw Exception("Image compression failed");
       }
 
-      _logger.info("Original size: ${(await file.length()) / 1024} KB, "
-          "Compressed size: ${(compressedBytes.length / 1024).toStringAsFixed(2)} KB");
+      _logger.info(
+        "Original size: ${(await file.length()) / 1024} KB, "
+        "Compressed size: ${(compressedBytes.length / 1024).toStringAsFixed(2)} KB",
+      );
 
       // --- Step 2: Base64 encode ---
       // Encoding on a background isolate is still good practice even with smaller bytes
@@ -100,7 +137,8 @@ class AssetAnalysisTool {
       // Note: MimeType is fixed as image/webp since we converted to WebP
       const mimeType = 'image/webp';
 
-      final fullPrompt = """
+      final fullPrompt =
+          """
   ## Requirements:
   $prompt
 
@@ -108,16 +146,10 @@ class AssetAnalysisTool {
   """;
 
       _logger.info("Calling API...");
-      final response = await client.generate(
-        [
-          SystemMessage("You are an image analysis expert."),
-          UserMessage([
-            TextPart(fullPrompt),
-            ImagePart(base64Image, mimeType),
-          ])
-        ],
-        modelConfig: modelConfig,
-      );
+      final response = await client.generate([
+        SystemMessage("You are an image analysis expert."),
+        UserMessage([TextPart(fullPrompt), ImagePart(base64Image, mimeType)]),
+      ], modelConfig: modelConfig);
 
       final analysisResult = response.textOutput ?? "";
 
@@ -132,8 +164,11 @@ class AssetAnalysisTool {
     }
   }
 
-  Future<Uint8List?> _compressAndResizeImage(String path,
-      {int targetSize = 2048, int quality = 85}) async {
+  Future<Uint8List?> _compressAndResizeImage(
+    String path, {
+    int targetSize = 2048,
+    int quality = 85,
+  }) async {
     try {
       // compressWithFile reads path and returns Uint8List (bytes in memory),
       // no temp files, very efficient.
@@ -144,7 +179,6 @@ class AssetAnalysisTool {
         quality:
             quality, // 0-100, 85 is usually a good balance for visually lossless
         format: CompressFormat.webp, // output as WebP
-
         // Key: keep aspect ratio, auto-rotate (handles phone photo orientation)
         autoCorrectionAngle: true,
         keepExif:
@@ -162,8 +196,11 @@ class AssetAnalysisTool {
   }
 
   Future<(String result, ModelUsage? usage, String model)>
-      _analyzeAudioWithUsage(
-          String assetPath, String assetName, String prompt) async {
+  _analyzeAudioWithUsage(
+    String assetPath,
+    String assetName,
+    String prompt,
+  ) async {
     _logger.info('Analyzing audio: $assetPath');
 
     try {
@@ -172,7 +209,8 @@ class AssetAnalysisTool {
       final transcript = result.text;
       if (transcript != null && transcript.trim().isNotEmpty) {
         _logger.info(
-            'Audio transcribed via ${result.model}: ${transcript.substring(0, transcript.length.clamp(0, 100))}...');
+          'Audio transcribed via ${result.model}: ${transcript.substring(0, transcript.length.clamp(0, 100))}...',
+        );
         return (
           '#Asset $assetName analysis result\n: $transcript',
           result.usage,
