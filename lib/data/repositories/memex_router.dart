@@ -27,6 +27,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:memex/data/repositories/get_timeline_card.dart'; // Import for fetchTimelineCard
 import 'package:logging/logging.dart';
 import 'package:memex/data/services/card_renderer.dart';
+import 'package:memex/data/services/dynamic_surface_service.dart';
 import 'package:memex/data/services/event_handlers/schedule_state_on_card_change_handler.dart';
 import 'package:memex/data/services/schedule_state_service.dart';
 import 'package:memex/domain/models/timeline_card_model.dart';
@@ -84,6 +85,7 @@ import 'package:memex/agent/skills/knowledge_insight/native_widgets.dart';
 import 'package:memex/utils/result.dart';
 import 'package:memex/domain/models/system_event.dart';
 import 'package:memex/domain/models/user_stats_model.dart';
+import 'package:memex/domain/models/dynamic_surface_model.dart';
 
 /// Local data service for Memex. Handles all data operations via local storage (FileSystemService, DB).
 class MemexRouter {
@@ -241,7 +243,7 @@ class MemexRouter {
   }
 
   String?
-  _targetUserIdForInit; // Track the user ID we are currently initializing for
+      _targetUserIdForInit; // Track the user ID we are currently initializing for
 
   void _registerEventSubscriptions() {
     final eventBus = GlobalEventBus.instance;
@@ -1051,8 +1053,8 @@ class MemexRouter {
             id,
           );
           if (cardData != null) {
-            final currentSortOrder = (cardData['sort_order'] as num? ?? 0)
-                .toInt();
+            final currentSortOrder =
+                (cardData['sort_order'] as num? ?? 0).toInt();
             if (currentSortOrder != i) {
               cardData['sort_order'] = i;
               await fileSystemService.writeKnowledgeInsightCard(
@@ -1154,23 +1156,24 @@ class MemexRouter {
     required String itemId,
     required String subtaskTitle,
     required bool completed,
-  }) => runResultVoid(() async {
-    await _ensureInitialized();
-    final userId = await UserStorage.getUserId();
-    if (userId == null) {
-      throw Exception('User not logged in');
-    }
+  }) =>
+      runResultVoid(() async {
+        await _ensureInitialized();
+        final userId = await UserStorage.getUserId();
+        if (userId == null) {
+          throw Exception('User not logged in');
+        }
 
-    await ScheduleStateService.instance.setSubtaskCompletion(
-      userId: userId,
-      pendingId: itemId,
-      subtaskTitle: subtaskTitle,
-      completed: completed,
-    );
-    EventBusService.instance.emitEvent(
-      ScheduleAggregationUpdatedMessage(aggregationId: 'schedule_state'),
-    );
-  });
+        await ScheduleStateService.instance.setSubtaskCompletion(
+          userId: userId,
+          pendingId: itemId,
+          subtaskTitle: subtaskTitle,
+          completed: completed,
+        );
+        EventBusService.instance.emitEvent(
+          ScheduleAggregationUpdatedMessage(aggregationId: 'schedule_state'),
+        );
+      });
 
   Future<bool> updateCardTime(String cardId, int timestamp) async {
     await _ensureInitialized();
@@ -1605,8 +1608,7 @@ class MemexRouter {
     }
 
     final lower = avatar.toLowerCase();
-    final isRelativeImagePath =
-        !avatar.startsWith('/') &&
+    final isRelativeImagePath = !avatar.startsWith('/') &&
         (lower.endsWith('.png') ||
             lower.endsWith('.jpg') ||
             lower.endsWith('.jpeg') ||
@@ -1669,38 +1671,38 @@ class MemexRouter {
   Future<void> resetAllAgentConfigs() => UserStorage.resetAllAgentConfigs();
 
   Future<Result<void>> updateKnowledgeInsights() => runResultVoid(() async {
-    await _ensureInitialized();
-    final userId = await UserStorage.getUserId();
-    if (userId == null) {
-      throw Exception('User not logged in');
-    }
+        await _ensureInitialized();
+        final userId = await UserStorage.getUserId();
+        if (userId == null) {
+          throw Exception('User not logged in');
+        }
 
-    await GlobalEventBus.instance.publish(
-      userId: userId,
-      event: SystemEvent(
-        type: SystemEventTypes.knowledgeInsightRefreshRequested,
-        source: 'memex_router.updateKnowledgeInsights',
-        payload: const {},
-      ),
-    );
-  });
+        await GlobalEventBus.instance.publish(
+          userId: userId,
+          event: SystemEvent(
+            type: SystemEventTypes.knowledgeInsightRefreshRequested,
+            source: 'memex_router.updateKnowledgeInsights',
+            payload: const {},
+          ),
+        );
+      });
 
   Future<Result<void>> refreshScheduleAggregation() => runResultVoid(() async {
-    await _ensureInitialized();
-    final userId = await UserStorage.getUserId();
-    if (userId == null) {
-      throw Exception('User not logged in');
-    }
+        await _ensureInitialized();
+        final userId = await UserStorage.getUserId();
+        if (userId == null) {
+          throw Exception('User not logged in');
+        }
 
-    await GlobalEventBus.instance.publish(
-      userId: userId,
-      event: SystemEvent(
-        type: SystemEventTypes.scheduleAggregationRequested,
-        source: 'memex_router.refreshScheduleAggregation',
-        payload: const {},
-      ),
-    );
-  });
+        await GlobalEventBus.instance.publish(
+          userId: userId,
+          event: SystemEvent(
+            type: SystemEventTypes.scheduleAggregationRequested,
+            source: 'memex_router.refreshScheduleAggregation',
+            payload: const {},
+          ),
+        );
+      });
 
   Future<List<Task>> getTasks({int limit = 10, int offset = 0}) =>
       LocalTaskExecutor.instance.getTasks(limit: limit, offset: offset);
@@ -1745,5 +1747,121 @@ class MemexRouter {
     final userId = await UserStorage.getUserId();
     if (userId == null) return;
     await CardDetailNotifier.instance.dismissOnViewed(userId, factId);
+  }
+
+  Future<Result<List<DynamicSurfaceModel>>> listDynamicSurfaces() {
+    return runResult(() async {
+      await _ensureInitialized();
+      final userId = await UserStorage.getUserId();
+      if (userId == null) {
+        throw Exception('User not logged in');
+      }
+      return DynamicSurfaceService(
+        fileSystemService: fileSystemService,
+      ).listSurfaces(userId);
+    });
+  }
+
+  Future<Result<Object?>> readDynamicSurfaceData(
+    String surfaceId,
+  ) {
+    return runResult(() async {
+      await _ensureInitialized();
+      final userId = await UserStorage.getUserId();
+      if (userId == null) {
+        throw Exception('User not logged in');
+      }
+      final service = DynamicSurfaceService(
+        fileSystemService: fileSystemService,
+      );
+      final surface = await service.getSurface(userId, surfaceId);
+      if (surface == null) {
+        throw Exception('Dynamic surface not found: $surfaceId');
+      }
+      return service.readSurfaceData(userId, surface);
+    });
+  }
+
+  Future<Result<DynamicSurfaceRenderResult>> renderDynamicSurface(
+    String surfaceId,
+  ) {
+    return runResult(() async {
+      await _ensureInitialized();
+      final userId = await UserStorage.getUserId();
+      if (userId == null) {
+        throw Exception('User not logged in');
+      }
+      return DynamicSurfaceService(
+        fileSystemService: fileSystemService,
+      ).renderSurface(userId, surfaceId);
+    });
+  }
+
+  Future<Result<void>> refreshDynamicSurface(String surfaceId) {
+    return runResultVoid(() async {
+      await _ensureInitialized();
+      final userId = await UserStorage.getUserId();
+      if (userId == null) {
+        throw Exception('User not logged in');
+      }
+      await GlobalEventBus.instance.publish(
+        userId: userId,
+        event: SystemEvent(
+          type: SystemEventTypes.dynamicSurfaceRefreshRequested,
+          source: 'memex_router.refreshDynamicSurface',
+          payload: DynamicSurfaceRefreshRequestedPayload(
+            surfaceId: surfaceId,
+            reason: 'manual_refresh',
+          ),
+        ),
+      );
+    });
+  }
+
+  Future<Result<void>> uninstallDynamicSurface(
+    String surfaceId, {
+    bool deleteSourceData = true,
+  }) {
+    return runResultVoid(() async {
+      await _ensureInitialized();
+      final userId = await UserStorage.getUserId();
+      if (userId == null) {
+        throw Exception('User not logged in');
+      }
+      await DynamicSurfaceService(
+        fileSystemService: fileSystemService,
+      ).uninstallSurface(
+        userId: userId,
+        surfaceId: surfaceId,
+        deleteSourceData: deleteSourceData,
+      );
+      await CustomAgentConfigService.instance.deleteDynamicSurfacePageAgent(
+        userId: userId,
+        surfaceId: surfaceId,
+      );
+      EventBusService.instance.emitEvent(
+        DynamicSurfaceUpdatedMessage(surfaceId: surfaceId),
+      );
+    });
+  }
+
+  Future<Result<String>> installDynamicSurfacePageAgent(
+    String surfaceId, {
+    String triggerEventType = SystemEventTypes.userInputSubmitted,
+  }) {
+    return runResult(() async {
+      await _ensureInitialized();
+      final userId = await UserStorage.getUserId();
+      if (userId == null) {
+        throw Exception('User not logged in');
+      }
+      final config = await CustomAgentConfigService.instance
+          .installDynamicSurfacePageAgent(
+        userId: userId,
+        surfaceId: surfaceId,
+        triggerEventType: triggerEventType,
+      );
+      return config.agentName;
+    });
   }
 }

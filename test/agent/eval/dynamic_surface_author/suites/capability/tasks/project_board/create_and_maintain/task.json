@@ -1,0 +1,96 @@
+{
+  "id": "dynamic_surface_project_board_create_and_maintain",
+  "description": "Author creates a project board surface from second-level Markdown headings. The page agent must incorporate changed PKM project data after a manual refresh.",
+  "trials_per_run": 1,
+  "timeout_seconds": 900,
+  "metadata": {
+    "failure_bucket": "project_board_heading_items"
+  },
+  "input": {
+    "expected_surface_id": "project_board",
+    "expected_surface_title": "项目看板",
+    "acceptable_surface_ids": [
+      "project_board"
+    ],
+    "fixture_dir": "tasks/project_board/create_and_maintain/workspace",
+    "prompt": "我想要一个「项目看板」页面，用来集中查看我已有项目的进展。页面里要能看到项目标题、状态、负责人、截止日期和简短说明；我现在已有 Launch Plan 和 Website Refresh 这两个项目。之后项目笔记变化时，比如状态变化、阻塞原因、负责人变化，我手动刷新这个页面后它要能更新对应项目。",
+    "page_agent_event_xml": "<event type=\"dynamic_surface_refresh_requested\" id=\"eval_project_board\"><created_at>2026-06-03T20:10:00+08:00</created_at><surface_id>project_board</surface_id><reason>manual refresh after PKM/Projects changed</reason></event>",
+    "page_agent_workspace_updates": [
+      {
+        "path": "PKM/Projects/Launch.md",
+        "content": "# Product Projects\n\n## Launch Plan\nStatus: blocked\nOwner: Ming\nDue: 2026-06-20\n\nPublic launch checklist. Legal review 还没完成，launch email 继续等待。\n\n## Website Refresh\nStatus: in_review\nOwner: Design\nDue: 2026-06-12\n\nNew homepage copy and pricing section are ready for design review.\n"
+      }
+    ],
+    "page_agent_expected_substring": "legal review"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "surface_id": "project_board",
+      "mode": "heading_items",
+      "trigger": "manual_refresh_only",
+      "page_agent_updates_source": true
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "dynamic_surface_install",
+      "config": {
+        "expected_source_path": "_UserSettings/DynamicSurfaceData"
+      }
+    },
+    {
+      "name": "dynamic_surface_html_contract"
+    },
+    {
+      "name": "dynamic_surface_content",
+      "config": {
+        "initial_concepts": [
+          {
+            "name": "Launch Plan project",
+            "any_of": [
+              "Launch Plan"
+            ]
+          },
+          {
+            "name": "Website Refresh project",
+            "any_of": [
+              "Website Refresh"
+            ]
+          }
+        ],
+        "maintained_concepts": [
+          {
+            "name": "Launch Plan project",
+            "any_of": [
+              "Launch Plan"
+            ]
+          },
+          {
+            "name": "Website Refresh project",
+            "any_of": [
+              "Website Refresh"
+            ]
+          },
+          {
+            "name": "legal review blocker",
+            "any_of": [
+              "legal review",
+              "blocked",
+              "阻塞"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "dynamic_surface_page_agent",
+      "config": {
+        "expected_trigger": ""
+      }
+    },
+    {
+      "name": "dynamic_surface_page_agent_maintenance"
+    }
+  ]
+}

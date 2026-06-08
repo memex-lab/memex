@@ -16,6 +16,7 @@ import 'package:memex/config/dependencies.dart';
 import 'package:memex/config/app_config.dart';
 import 'package:memex/config/app_flavor.dart';
 import 'package:memex/ui/insight/view_models/insight_viewmodel.dart';
+import 'package:memex/ui/settings/view_models/dynamic_surface_preview_viewmodel.dart';
 import 'package:memex/ui/knowledge/view_models/knowledge_base_viewmodel.dart';
 import 'package:memex/ui/timeline/view_models/timeline_viewmodel.dart';
 import 'package:memex/ui/timeline/widgets/timeline_screen.dart';
@@ -267,6 +268,11 @@ class RootShellState extends State<RootShell> {
         ChangeNotifierProvider<KnowledgeBaseViewModel>(
           create: (c) => KnowledgeBaseViewModel(router: c.read<MemexRouter>())
             ..fetchData(),
+        ),
+        ChangeNotifierProvider<DynamicSurfacePreviewViewModel>(
+          create: (c) =>
+              DynamicSurfacePreviewViewModel(router: c.read<MemexRouter>())
+                ..loadSurfaces(),
         ),
       ],
       child: const MainScreen(),
@@ -1546,6 +1552,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                             key: _timelineKey,
                             viewModel: context.watch<TimelineViewModel>(),
                             insightViewModel: context.watch<InsightViewModel>(),
+                            dynamicSurfaceViewModel:
+                                context.watch<DynamicSurfacePreviewViewModel>(),
                             onInputTap: () {
                               setState(() {
                                 _isInputOpen = true;

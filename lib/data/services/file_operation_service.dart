@@ -851,11 +851,6 @@ ${addLineNumbers(snippet, startLine: startLine)}''';
       searchPath = _resolvePath(searchPath, workingDirectory);
     }
 
-    // Pattern might also need resolution if it's an absolute path (virtual)
-    if (pattern.startsWith('/')) {
-      pattern = _resolvePath(pattern, workingDirectory);
-    }
-
     final actualSearchPath = searchPath ?? workingDirectory;
     if (actualSearchPath == null) {
       throw ApiException(
@@ -884,6 +879,16 @@ ${addLineNumbers(snippet, startLine: startLine)}''';
     if (!await _baseService.isDirectory(searchPathStr)) {
       throw ApiException(
           _maskResult('$searchPathStr is not a directory', workingDirectory));
+    }
+
+    // Absolute patterns are model-visible paths under the working directory.
+    // Glob matching below uses paths relative to searchPathStr, so normalize
+    // absolute patterns into the same relative coordinate space.
+    if (path.isAbsolute(pattern)) {
+      final resolvedPattern = _resolvePath(pattern, workingDirectory);
+      pattern = path
+          .relative(resolvedPattern, from: searchPathStr)
+          .replaceAll(path.separator, '/');
     }
 
     // Convert glob to regex
@@ -1002,29 +1007,112 @@ ${addLineNumbers(snippet, startLine: startLine)}''';
     }
   }
 
-  /// Convert glob pattern to regex. * = any except /; ** = any including /
+  /// Convert glob pattern to regex.
+  /// Supports:
+  /// - * = any except /
+  /// - ** = any including /
+  /// - ? = one non-/ character
+  /// - {a,b,c} = alternatives
   String _globToRegex(String globPattern) {
-    // Escape special chars except * and ?
-    String regex = globPattern.replaceAllMapped(
-      RegExp(r'[.+^${}()|[\]\\]'),
-      (match) => '\\${match.group(0)}',
-    );
+    return '^${_globToRegexBody(globPattern)}\$';
+  }
 
-    // Use placeholders for ** patterns to avoid corruption by later * and ? replacements.
-    regex = regex.replaceAll('**/', '\x00STARSTAR_SLASH\x00');
-    regex = regex.replaceAll('/**', '\x00SLASH_STARSTAR\x00');
-    regex = regex.replaceAll(RegExp(r'\*\*'), '\x00STARSTAR\x00');
+  String _globToRegexBody(String globPattern) {
+    final buffer = StringBuffer();
+    var i = 0;
 
-    // Single glob wildcards: ? = one non-slash char, * = zero or more non-slash chars.
-    regex = regex.replaceAll('?', '[^/]');
-    regex = regex.replaceAll('*', '[^/]*');
+    while (i < globPattern.length) {
+      if (globPattern.startsWith('/**', i)) {
+        buffer.write('(?:/[^/]+)*');
+        i += 3;
+        continue;
+      }
 
-    // Restore ** placeholders to their regex equivalents.
-    regex = regex.replaceAll('\x00STARSTAR_SLASH\x00', '(?:[^/]+/)*');
-    regex = regex.replaceAll('\x00SLASH_STARSTAR\x00', '(?:/[^/]+)*');
-    regex = regex.replaceAll('\x00STARSTAR\x00', '.*');
+      if (globPattern.startsWith('**/', i)) {
+        buffer.write('(?:[^/]+/)*');
+        i += 3;
+        continue;
+      }
 
-    return '^$regex\$';
+      final char = globPattern[i];
+      if (char == '*') {
+        if (i + 1 < globPattern.length && globPattern[i + 1] == '*') {
+          buffer.write('.*');
+          i += 2;
+        } else {
+          buffer.write('[^/]*');
+          i += 1;
+        }
+        continue;
+      }
+
+      if (char == '?') {
+        buffer.write('[^/]');
+        i += 1;
+        continue;
+      }
+
+      if (char == '{') {
+        final closeIndex = _findGlobBraceClose(globPattern, i);
+        if (closeIndex != null) {
+          final content = globPattern.substring(i + 1, closeIndex);
+          final alternatives = _splitGlobBraceAlternatives(content);
+          if (alternatives.length > 1) {
+            buffer.write('(?:');
+            buffer.write(
+              alternatives.map(_globToRegexBody).join('|'),
+            );
+            buffer.write(')');
+            i = closeIndex + 1;
+            continue;
+          }
+        }
+      }
+
+      buffer.write(RegExp.escape(char));
+      i += 1;
+    }
+
+    return buffer.toString();
+  }
+
+  int? _findGlobBraceClose(String pattern, int openIndex) {
+    var depth = 0;
+    for (var i = openIndex; i < pattern.length; i++) {
+      final char = pattern[i];
+      if (char == '{') {
+        depth += 1;
+      } else if (char == '}') {
+        depth -= 1;
+        if (depth == 0) {
+          return i;
+        }
+      }
+    }
+    return null;
+  }
+
+  List<String> _splitGlobBraceAlternatives(String content) {
+    final alternatives = <String>[];
+    var depth = 0;
+    var start = 0;
+
+    for (var i = 0; i < content.length; i++) {
+      final char = content[i];
+      if (char == '{') {
+        depth += 1;
+      } else if (char == '}') {
+        if (depth > 0) {
+          depth -= 1;
+        }
+      } else if (char == ',' && depth == 0) {
+        alternatives.add(content.substring(start, i));
+        start = i + 1;
+      }
+    }
+
+    alternatives.add(content.substring(start));
+    return alternatives;
   }
 
   // ==================== Grep ====================

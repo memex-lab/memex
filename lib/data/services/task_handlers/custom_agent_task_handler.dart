@@ -4,11 +4,16 @@ import 'dart:io';
 import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
+import 'package:uuid/uuid.dart';
 
 import 'package:memex/agent/memex_skill_host_agent/memex_skill_host_agent.dart';
 import 'package:memex/agent/pure_skill_host_agent/pure_skill_host_agent.dart';
+import 'package:memex/agent/security/file_permission_manager.dart';
+import 'package:memex/agent/skills/dynamic_surface/dynamic_surface_page_agent_prompt.dart';
+import 'package:memex/agent/skills/dynamic_surface/dynamic_surface_permissions.dart';
 import 'package:memex/agent/state_util.dart';
 import 'package:memex/data/services/asset_safety_service.dart';
+import 'package:memex/data/services/dynamic_surface_service.dart';
 import 'package:memex/data/services/custom_agent_config_service.dart';
 import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
@@ -21,6 +26,7 @@ import 'package:memex/utils/time_context.dart';
 import 'package:memex/utils/user_storage.dart';
 
 final Logger _logger = getLogger('CustomAgentTaskHandler');
+const Uuid _uuid = Uuid();
 
 /// Call once at app init to wire the real runner into the service.
 void initCustomAgentHandler() {
@@ -156,6 +162,19 @@ Future<void> _handleCustomAgentTask(
     'Running custom agent "$agentName" for event ${payload['event_type']}',
   );
 
+  final managedSurfaceId = config.managedSurfaceId?.trim();
+  final requestedSurfaceId = payload['surface_id'] as String?;
+  if (managedSurfaceId != null &&
+      managedSurfaceId.isNotEmpty &&
+      requestedSurfaceId != null &&
+      requestedSurfaceId != managedSurfaceId) {
+    _logger.info(
+      'Skipping custom page agent "$agentName"; requested surface '
+      '$requestedSurfaceId does not match $managedSurfaceId',
+    );
+    return;
+  }
+
   final agentIdForLLM = config.llmConfigKey ?? AgentDefinitions.chatAgent;
   final resources = await UserStorage.getAgentLLMResources(
     agentIdForLLM,
@@ -165,7 +184,7 @@ Future<void> _handleCustomAgentTask(
   final now = DateTime.now();
   final nowStr =
       '${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}_${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}${now.second.toString().padLeft(2, '0')}_${now.microsecond.toString().padLeft(6, '0')}';
-  final sessionId = '${agentName}_custom_${userId}_$nowStr';
+  final sessionId = '${agentName}_${_uuid.v4()}';
   final state = await loadOrCreateAgentState(sessionId, {
     'userId': userId,
     'agentName': agentName,
@@ -173,20 +192,31 @@ Future<void> _handleCustomAgentTask(
     'sceneId': nowStr,
   });
 
-  final skillAbsPath = FileSystemService.instance.resolveSkillPath(
-    userId,
-    config.skillDirectoryPath,
-  );
-
   final workingDirAbsPath = await FileSystemService.instance
       .resolveWorkingDirectory(userId, config.workingDirectory);
-
-  // Sync skill directory into workingDirectory if it's outside,
-  // so file tools (Read, LS, etc.) can access skill files.
-  final skillSync = await FileSystemService.instance.syncSkillsIfNeeded(
-    skillAbsPath: skillAbsPath,
-    workingDirAbsPath: workingDirAbsPath,
+  final managedSurfaceWriteRules = await _buildManagedSurfaceWriteRules(
+    userId: userId,
+    surfaceId: managedSurfaceId,
   );
+  final isManagedSurfaceAgent =
+      managedSurfaceId != null && managedSurfaceId.isNotEmpty;
+
+  SkillSyncResult? skillSync;
+  final skillDirectoryPath = config.skillDirectoryPath.trim();
+  if (skillDirectoryPath.isNotEmpty) {
+    final skillAbsPath = FileSystemService.instance.resolveSkillPath(
+      userId,
+      skillDirectoryPath,
+    );
+    // Sync skill directory into workingDirectory if it's outside,
+    // so file tools (Read, LS, etc.) can access skill files.
+    skillSync = await FileSystemService.instance.syncSkillsIfNeeded(
+      skillAbsPath: skillAbsPath,
+      workingDirAbsPath: workingDirAbsPath,
+    );
+  }
+  final effectiveSkillDirectoryPath =
+      skillSync?.effectivePath ?? skillDirectoryPath;
 
   final eventXml = payload['event_xml'] as String? ?? '';
   final textContent =
@@ -198,6 +228,15 @@ Future<void> _handleCustomAgentTask(
   contentParts.addAll(mediaParts);
 
   final userMessage = UserMessage(contentParts);
+  final pageAgentPrompt =
+      managedSurfaceId != null && managedSurfaceId.isNotEmpty
+          ? buildDynamicSurfacePageAgentRuntimePrompt(managedSurfaceId)
+          : null;
+  final additionalSystemPrompt = [
+    if (config.systemPrompt != null && config.systemPrompt!.trim().isNotEmpty)
+      config.systemPrompt!.trim(),
+    if (pageAgentPrompt != null) pageAgentPrompt,
+  ].join('\n\n');
 
   StatefulAgent agent;
   switch (config.hostAgentType) {
@@ -208,9 +247,11 @@ Future<void> _handleCustomAgentTask(
         userId: userId,
         name: agentName,
         state: state,
-        skillDirectoryPath: skillSync.effectivePath,
+        skillDirectoryPath: effectiveSkillDirectoryPath,
         workingDirectory: workingDirAbsPath,
-        additionalSystemPrompt: config.systemPrompt,
+        additionalSystemPrompt:
+            additionalSystemPrompt.isEmpty ? null : additionalSystemPrompt,
+        filePermissionRules: managedSurfaceWriteRules,
       );
       break;
     case HostAgentType.memex:
@@ -220,9 +261,13 @@ Future<void> _handleCustomAgentTask(
         userId: userId,
         name: agentName,
         state: state,
-        skillDirectoryPath: skillSync.effectivePath,
+        skillDirectoryPath: effectiveSkillDirectoryPath,
         workingDirectory: workingDirAbsPath,
-        additionalSystemPrompt: config.systemPrompt,
+        additionalSystemPrompt:
+            additionalSystemPrompt.isEmpty ? null : additionalSystemPrompt,
+        filePermissionRules: managedSurfaceWriteRules,
+        enablePlanner: !isManagedSurfaceAgent,
+        enableJavaScriptRuntime: !isManagedSurfaceAgent,
       );
       break;
   }
@@ -240,6 +285,60 @@ Future<void> _handleCustomAgentTask(
       _logger.info('Custom agent "$agentName" completed, last: $last');
     }
 
+    final dynamicSurfaceService = DynamicSurfaceService(
+      fileSystemService: FileSystemService.instance,
+    );
+    final surfaceIdForValidation = managedSurfaceId;
+    var validation =
+        surfaceIdForValidation == null || surfaceIdForValidation.isEmpty
+            ? null
+            : await dynamicSurfaceService.validateSurface(
+                userId,
+                surfaceIdForValidation,
+              );
+    if (validation != null && !validation.isValid) {
+      _logger.warning(
+        'Dynamic Surface "$managedSurfaceId" validation failed after '
+        '$agentName run: ${validation.errorMessage}',
+      );
+      final repairPrompt = '''
+Your previous Markdown data update made Dynamic Surface "$managedSurfaceId" fail
+its parser/render validation.
+
+Validation error:
+${validation.errorMessage}
+
+Fix the declared Markdown data source so it matches this page's parser.js
+contract. Keep the change focused on the validation error.
+''';
+      final repairResponses = await agent.run([
+        UserMessage.text(repairPrompt),
+      ]);
+      final repairLast =
+          repairResponses.isNotEmpty ? repairResponses.last : null;
+      if (repairLast is ModelMessage && repairLast.textOutput != null) {
+        final repairText = repairLast.textOutput;
+        resultText = [
+          if (resultText != null && resultText.trim().isNotEmpty) resultText,
+          'Validation repair attempt:\n$repairText',
+        ].join('\n\n');
+      }
+      validation = await dynamicSurfaceService.validateSurface(
+        userId,
+        surfaceIdForValidation!,
+      );
+    }
+
+    final status =
+        validation == null || validation.isValid ? 'completed' : 'failed';
+    if (validation != null && !validation.isValid) {
+      resultText = [
+        if (resultText != null && resultText.trim().isNotEmpty) resultText,
+        'Dynamic Surface parser/render validation still failed:\n'
+            '${validation.errorMessage}',
+      ].join('\n\n');
+    }
+
     // Persist a chat session file so AgentChatDialog can load history and
     // continue the conversation in the same session context.
     await _createChatSession(
@@ -250,18 +349,54 @@ Future<void> _handleCustomAgentTask(
       aiResponse: resultText,
     );
 
-    // Create a system_task card to show the result on the timeline.
-    await _createResultCard(
-      userId: userId,
-      agentName: agentName,
-      status: 'completed',
-      message: resultText,
-      sessionId: sessionId,
-    );
+    if (isManagedSurfaceAgent) {
+      _logger.info(
+        'Skipping system_task card for managed Dynamic Surface agent "$agentName"',
+      );
+      EventBusService.instance.emitEvent(
+        DynamicSurfaceUpdatedMessage(surfaceId: managedSurfaceId),
+      );
+    } else {
+      // Create a system_task card to show the result on the timeline.
+      await _createResultCard(
+        userId: userId,
+        agentName: agentName,
+        status: status,
+        message: resultText,
+        sessionId: sessionId,
+      );
+    }
   } finally {
     // Sync skill changes back to the original directory if we made a copy.
-    await FileSystemService.instance.syncSkillsBack(skillSync);
+    if (skillSync != null) {
+      await FileSystemService.instance.syncSkillsBack(skillSync);
+    }
   }
+}
+
+Future<List<PermissionRule>?> _buildManagedSurfaceWriteRules({
+  required String userId,
+  required String? surfaceId,
+}) async {
+  if (surfaceId == null || surfaceId.isEmpty) return null;
+
+  final fileSystem = FileSystemService.instance;
+  final service = DynamicSurfaceService(fileSystemService: fileSystem);
+  final surface = await service.getSurface(userId, surfaceId);
+  if (surface == null) {
+    _logger.warning(
+      'Managed Dynamic Surface "$surfaceId" not found; using read-only file access.',
+    );
+    return const [];
+  }
+
+  final writeRules = await buildManagedDynamicSurfaceWriteRules(
+    userId: userId,
+    surfaceId: surfaceId,
+    fileSystemService: fileSystem,
+    dynamicSurfaceService: service,
+  );
+  return writeRules;
 }
 
 /// Create a chat session YAML file compatible with ChatService / chat.dart so

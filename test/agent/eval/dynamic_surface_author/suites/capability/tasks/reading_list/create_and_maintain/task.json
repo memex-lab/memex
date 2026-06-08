@@ -1,0 +1,95 @@
+{
+  "id": "dynamic_surface_reading_list_create_and_maintain",
+  "description": "Author creates a reading list surface from Markdown bullets. The page agent must incorporate changed PKM reading data after a manual refresh.",
+  "trials_per_run": 1,
+  "timeout_seconds": 900,
+  "metadata": {
+    "failure_bucket": "reading_list_list_items"
+  },
+  "input": {
+    "expected_surface_id": "reading_list",
+    "expected_surface_title": "阅读清单",
+    "acceptable_surface_ids": [
+      "reading_list"
+    ],
+    "fixture_dir": "tasks/reading_list/create_and_maintain/workspace",
+    "prompt": "我想要一个「阅读清单」页面，展示我正在读、想读、已经读完的书，最好能看到书名、状态、评分和一句备注。我现在已有 Atomic Habits 和 The Staff Engineer 两条阅读记录。之后阅读笔记变化或新增书目时，我手动刷新这个页面后它要能加入或更新对应书目。",
+    "page_agent_event_xml": "<event type=\"dynamic_surface_refresh_requested\" id=\"eval_reading_list\"><created_at>2026-06-03T20:30:00+08:00</created_at><surface_id>reading_list</surface_id><reason>manual refresh after PKM/Resources/Reading.md changed</reason></event>",
+    "page_agent_workspace_updates": [
+      {
+        "path": "PKM/Resources/Reading.md",
+        "content": "# Reading\n\n- title: Atomic Habits | status: reading | rating: 4/5 | note: Good habit systems framing.\n- title: The Staff Engineer | status: finished | rating: 5/5 | note: Useful career ladder stories.\n- title: Designing Data-Intensive Applications | status: finished | rating: 5/5 | note: 系统设计常读常新。\n"
+      }
+    ],
+    "page_agent_expected_substring": "Designing Data-Intensive Applications"
+  },
+  "reference_solution": {
+    "expected_outcome": {
+      "surface_id": "reading_list",
+      "mode": "list_items",
+      "trigger": "manual_refresh_only",
+      "page_agent_updates_source": true
+    },
+    "source": "manual"
+  },
+  "graders": [
+    {
+      "name": "dynamic_surface_install",
+      "config": {
+        "expected_source_path": "_UserSettings/DynamicSurfaceData"
+      }
+    },
+    {
+      "name": "dynamic_surface_html_contract"
+    },
+    {
+      "name": "dynamic_surface_content",
+      "config": {
+        "initial_concepts": [
+          {
+            "name": "Atomic Habits book",
+            "any_of": [
+              "Atomic Habits"
+            ]
+          },
+          {
+            "name": "Staff Engineer book",
+            "any_of": [
+              "The Staff Engineer"
+            ]
+          }
+        ],
+        "maintained_concepts": [
+          {
+            "name": "Atomic Habits book",
+            "any_of": [
+              "Atomic Habits"
+            ]
+          },
+          {
+            "name": "Staff Engineer book",
+            "any_of": [
+              "The Staff Engineer"
+            ]
+          },
+          {
+            "name": "new DDIA reading record",
+            "any_of": [
+              "Designing Data-Intensive Applications",
+              "系统设计常读常新"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "dynamic_surface_page_agent",
+      "config": {
+        "expected_trigger": ""
+      }
+    },
+    {
+      "name": "dynamic_surface_page_agent_maintenance"
+    }
+  ]
+}

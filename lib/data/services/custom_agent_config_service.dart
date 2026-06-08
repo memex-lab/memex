@@ -87,7 +87,7 @@ String defaultEventToXml(SystemEvent event) {
   buf.writeln(
       '<event type="${_xmlEscape(event.type)}" id="${_xmlEscape(event.eventId)}" source="${_xmlEscape(event.source)}">');
   buf.writeln(
-      '  <created_at>${event.createdAt.toIso8601String()}</created_at>');
+      '  <created_at>${_xmlEscape(formatLocalDateTimeWithZone(event.createdAt))}</created_at>');
   var payload = event.payload;
 
   // Convert typed payload objects to Map via toJson() if available.
@@ -125,7 +125,7 @@ String _userInputCompactXml(SystemEvent event) {
   buf.writeln(
       '<event type="${_xmlEscape(event.type)}" id="${_xmlEscape(event.eventId)}">');
   buf.writeln(
-      '  <created_at>${event.createdAt.toIso8601String()}</created_at>');
+      '  <created_at>${_xmlEscape(formatLocalDateTimeWithZone(event.createdAt))}</created_at>');
 
   final payload = event.payload;
   if (payload is UserInputSubmittedPayload) {
@@ -219,7 +219,7 @@ class CustomAgentConfigService {
   final Logger _logger = getLogger('CustomAgentConfigService');
 
   /// Tracked subscription IDs so we can unsubscribe on reload.
-  final Set<String> _registeredSubscriptionIds = {};
+  final Set<_RegisteredCustomAgentSubscription> _registeredSubscriptions = {};
 
   String _configDir(String userId) {
     final settingsPath = FileSystemService.instance.getUserSettingsPath(userId);
@@ -265,6 +265,50 @@ class CustomAgentConfigService {
     }
   }
 
+  Future<CustomAgentConfig> installDynamicSurfacePageAgent({
+    required String userId,
+    required String surfaceId,
+    String? displayName,
+    String triggerEventType = SystemEventTypes.userInputSubmitted,
+    String? systemPrompt,
+  }) async {
+    _validateSurfaceId(surfaceId);
+
+    final agentName = _agentNameForSurface(surfaceId);
+    final existing = await _findDynamicSurfacePageAgentConfig(
+      userId: userId,
+      surfaceId: surfaceId,
+    );
+    final effectiveSystemPrompt = systemPrompt?.trim().isNotEmpty == true
+        ? systemPrompt!.trim()
+        : existing?.systemPrompt ??
+            _buildDynamicSurfacePageAgentSystemPrompt(surfaceId);
+
+    final config = CustomAgentConfig(
+      agentName: agentName,
+      hostAgentType: HostAgentType.memex,
+      skillDirectoryPath: '',
+      workingDirectory: '',
+      llmConfigKey: existing?.llmConfigKey,
+      eventType: triggerEventType,
+      executionMode: existing?.executionMode ?? ExecutionMode.async_,
+      dependsOn: existing?.dependsOn ?? const [],
+      enabled: existing?.enabled ?? true,
+      priority: existing?.priority ?? 0,
+      maxRetries: existing?.maxRetries ?? 5,
+      isCustom: existing?.isCustom ?? true,
+      managedSurfaceId: surfaceId,
+      systemPrompt: effectiveSystemPrompt,
+      eventSerializerName: existing?.eventSerializerName,
+    );
+
+    await saveAndReload(userId, config);
+    _logger.info(
+      'Installed Dynamic Surface page agent: $agentName for $surfaceId',
+    );
+    return config;
+  }
+
   /// Register all enabled custom agents on the GlobalEventBus.
   /// Call this at app init (after built-in subscriptions) and after any config change.
   Future<void> registerAll(String userId) async {
@@ -277,24 +321,26 @@ class CustomAgentConfigService {
       _registerOne(config);
     }
     _logger.info(
-        'Registered ${_registeredSubscriptionIds.length} custom agent subscriptions');
+        'Registered ${_registeredSubscriptions.length} custom agent subscriptions');
   }
 
   void _unregisterAll() {
     final eventBus = GlobalEventBus.instance;
-    for (final id in _registeredSubscriptionIds) {
-      // We don't know which eventType it was on, so unsubscribe from all known types.
-      for (final eventType in SystemEventTypes.allTypes) {
-        eventBus.unsubscribe(eventType: eventType, subscriptionId: id);
-        eventBus.unsubscribeSync(eventType: eventType, subscriptionId: id);
-      }
+    for (final registered in _registeredSubscriptions) {
+      eventBus.unsubscribe(
+        eventType: registered.eventType,
+        subscriptionId: registered.subscriptionId,
+      );
+      eventBus.unsubscribeSync(
+        eventType: registered.eventType,
+        subscriptionId: registered.subscriptionId,
+      );
     }
-    _registeredSubscriptionIds.clear();
+    _registeredSubscriptions.clear();
   }
 
   void _registerOne(CustomAgentConfig config) {
     final eventBus = GlobalEventBus.instance;
-    final subscriptionId = 'custom_agent:${config.agentName}';
     final taskType = 'custom_agent_task:${config.agentName}';
 
     // Register the task handler (idempotent — overwrites if already registered).
@@ -307,49 +353,74 @@ class CustomAgentConfigService {
     LocalTaskExecutor.instance
         .registerFailureHandler(taskType, handleGenericAgentFailure);
 
-    if (config.executionMode == ExecutionMode.async_) {
-      eventBus.subscribe(
-        eventType: config.eventType,
-        subscription: EventTaskSubscription(
+    for (final eventType in _eventTypesForConfig(config)) {
+      final subscriptionId = 'custom_agent:${config.agentName}:$eventType';
+      if (config.executionMode == ExecutionMode.async_) {
+        eventBus.subscribe(
+          eventType: eventType,
+          subscription: EventTaskSubscription(
+            subscriptionId: subscriptionId,
+            taskType: taskType,
+            dependsOn: config.dependsOn,
+            priority: config.priority,
+            maxRetries: config.maxRetries,
+            payloadBuilder: (userId, event) async {
+              final serializer = getEventSerializer(config.eventSerializerName,
+                  eventType: event.type);
+              return _buildCustomAgentTaskPayload(config, event, serializer);
+            },
+          ),
+        );
+      } else {
+        eventBus.subscribeSync(
+          eventType: eventType,
+          subscription: EventSyncSubscription(
+            subscriptionId: subscriptionId,
+            dependsOn: config.dependsOn,
+            handler: (userId, event) async {
+              final serializer = getEventSerializer(config.eventSerializerName,
+                  eventType: event.type);
+              final payload =
+                  _buildCustomAgentTaskPayload(config, event, serializer);
+              await _runCustomAgentTask(userId, config, payload);
+            },
+          ),
+        );
+      }
+      _registeredSubscriptions.add(
+        _RegisteredCustomAgentSubscription(
+          eventType: eventType,
           subscriptionId: subscriptionId,
-          taskType: taskType,
-          dependsOn: config.dependsOn,
-          priority: config.priority,
-          maxRetries: config.maxRetries,
-          payloadBuilder: (userId, event) async {
-            final serializer = getEventSerializer(config.eventSerializerName,
-                eventType: event.type);
-            return {
-              'agent_name': config.agentName,
-              'event_xml': serializer(event),
-              'event_type': event.type,
-              'event_id': event.eventId,
-            };
-          },
-        ),
-      );
-    } else {
-      eventBus.subscribeSync(
-        eventType: config.eventType,
-        subscription: EventSyncSubscription(
-          subscriptionId: subscriptionId,
-          dependsOn: config.dependsOn,
-          handler: (userId, event) async {
-            final serializer = getEventSerializer(config.eventSerializerName,
-                eventType: event.type);
-            final payload = {
-              'agent_name': config.agentName,
-              'event_xml': serializer(event),
-              'event_type': event.type,
-              'event_id': event.eventId,
-            };
-            await _runCustomAgentTask(userId, config, payload);
-          },
         ),
       );
     }
+  }
 
-    _registeredSubscriptionIds.add(subscriptionId);
+  List<String> _eventTypesForConfig(CustomAgentConfig config) {
+    final eventTypes = <String>{config.eventType};
+    final managedSurfaceId = config.managedSurfaceId?.trim();
+    if (managedSurfaceId != null && managedSurfaceId.isNotEmpty) {
+      eventTypes.add(SystemEventTypes.dynamicSurfaceRefreshRequested);
+    }
+    return eventTypes
+        .where((eventType) => eventType.trim().isNotEmpty)
+        .toList();
+  }
+
+  Map<String, dynamic> _buildCustomAgentTaskPayload(
+    CustomAgentConfig config,
+    SystemEvent event,
+    EventSerializer serializer,
+  ) {
+    return {
+      'agent_name': config.agentName,
+      'event_xml': serializer(event),
+      'event_type': event.type,
+      'event_id': event.eventId,
+      if (event.payload is DynamicSurfaceRefreshRequestedPayload)
+        'surface_id':
+            (event.payload as DynamicSurfaceRefreshRequestedPayload).surfaceId,
+    };
   }
 
   /// Save config and re-register all subscriptions.
@@ -363,6 +434,91 @@ class CustomAgentConfigService {
     await delete(userId, agentName);
     await registerAll(userId);
   }
+
+  Future<String?> deleteDynamicSurfacePageAgent({
+    required String userId,
+    required String surfaceId,
+  }) async {
+    _validateSurfaceId(surfaceId);
+    final config = await _findDynamicSurfacePageAgentConfig(
+      userId: userId,
+      surfaceId: surfaceId,
+    );
+
+    final agentName = config?.agentName ?? _agentNameForSurface(surfaceId);
+    await delete(userId, agentName);
+
+    final configuredSkillDirectoryPath =
+        config?.skillDirectoryPath.trim() ?? '';
+    final legacySkillDirectoryPath = configuredSkillDirectoryPath.isNotEmpty
+        ? configuredSkillDirectoryPath
+        : path.join('_UserSettings', 'skills', 'dynamic-surfaces', surfaceId);
+    final skillPath = FileSystemService.instance.resolveSkillPath(
+      userId,
+      legacySkillDirectoryPath,
+    );
+    final skillDir = Directory(skillPath);
+    if (await skillDir.exists()) {
+      await skillDir.delete(recursive: true);
+      _logger.info('Deleted Dynamic Surface page agent skill: $skillPath');
+    }
+
+    await registerAll(userId);
+    return config == null ? null : agentName;
+  }
+
+  Future<CustomAgentConfig?> _findDynamicSurfacePageAgentConfig({
+    required String userId,
+    required String surfaceId,
+  }) async {
+    final configs = await loadAll(userId);
+    for (final config in configs) {
+      if (config.managedSurfaceId == surfaceId) return config;
+    }
+    return null;
+  }
+
+  String _agentNameForSurface(String surfaceId) {
+    final normalized = surfaceId
+        .replaceAll(RegExp(r'[^a-zA-Z0-9]+'), '-')
+        .replaceAll(RegExp(r'-+'), '-')
+        .replaceAll(RegExp(r'^-|-$'), '');
+    final suffix = normalized.isEmpty ? 'page' : normalized;
+    return 'surface-$suffix';
+  }
+
+  void _validateSurfaceId(String surfaceId) {
+    if (!RegExp(r'^[a-zA-Z0-9_-]+$').hasMatch(surfaceId)) {
+      throw ArgumentError(
+        'Dynamic Surface id may only contain letters, numbers, "_" and "-".',
+      );
+    }
+  }
+
+  String _buildDynamicSurfacePageAgentSystemPrompt(String surfaceId) {
+    return '''
+You maintain the Memex Dynamic Surface "$surfaceId".
+
+This is a user-defined page, not a Timeline card and not PKM organization.
+Keep it useful by maintaining the declared page-owned Markdown source and its
+parser.js Markdown data contract.
+
+Native Memex directories may be origin evidence or trigger origins, but the
+surface source is the formatted Markdown mapping owned by this page. Runtime
+permissions restrict writes to that page-owned source.
+
+After updating, the page should still render from injected JSON:
+- `{{memex_data_json}}` is exactly the raw parser.js return value.
+- parser.js and view.html decide the JSON shape together; Memex does not wrap
+  the value or extract item arrays.
+- parser.js is the validation contract. Keep Markdown changes parseable by the
+  installed parser.js.
+
+If the user wants to change the page template, parser.js contract, trigger
+timing, or agent mechanism, that request should go to the Dynamic Surface
+authoring agent.
+''';
+  }
 }
 
 /// Runner function type for custom agent execution.
@@ -373,6 +529,26 @@ typedef CustomAgentRunner = Future<void> Function(
     String userId, CustomAgentConfig config, Map<String, dynamic> payload);
 
 CustomAgentRunner? _customAgentRunner;
+
+class _RegisteredCustomAgentSubscription {
+  const _RegisteredCustomAgentSubscription({
+    required this.eventType,
+    required this.subscriptionId,
+  });
+
+  final String eventType;
+  final String subscriptionId;
+
+  @override
+  bool operator ==(Object other) {
+    return other is _RegisteredCustomAgentSubscription &&
+        other.eventType == eventType &&
+        other.subscriptionId == subscriptionId;
+  }
+
+  @override
+  int get hashCode => Object.hash(eventType, subscriptionId);
+}
 
 /// Called by custom_agent_task_handler.dart at app init to inject the real implementation.
 void setCustomAgentRunner(CustomAgentRunner runner) {

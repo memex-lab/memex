@@ -13,7 +13,7 @@ void main() {
     await UserStorage.initL10n();
   });
 
-  testWidgets('renders empty labs shell', (tester) async {
+  testWidgets('renders labs shell with custom pages entry', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: ExperimentalLabPage(router: MemexRouter()),
@@ -23,5 +23,6 @@ void main() {
     expect(find.text(UserStorage.l10n.experimentalLab), findsOneWidget);
     expect(
         find.text(UserStorage.l10n.experimentalLabDescription), findsOneWidget);
+    expect(find.text(UserStorage.l10n.customPages), findsOneWidget);
   });
 }

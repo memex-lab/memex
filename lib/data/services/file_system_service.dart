@@ -868,6 +868,65 @@ class FileSystemService {
     return path.join(getWorkspacePath(userId), '_UserSettings');
   }
 
+  /// Experimental dynamic surfaces directory path.
+  String getDynamicSurfacesPath(String userId) {
+    return path.join(getUserSettingsPath(userId), 'DynamicSurfaces');
+  }
+
+  /// Experimental dynamic surface Markdown data root path.
+  String getDynamicSurfaceDataRootPath(String userId) {
+    return path.join(getUserSettingsPath(userId), 'DynamicSurfaceData');
+  }
+
+  /// Experimental dynamic surface draft root path.
+  String getDynamicSurfaceDraftRootPath(String userId) {
+    return path.join(getUserSettingsPath(userId), 'DynamicSurfaceDrafts');
+  }
+
+  /// Experimental dynamic surface package directory path.
+  String getDynamicSurfacePath(String userId, String surfaceId) {
+    return path.join(getDynamicSurfacesPath(userId), surfaceId);
+  }
+
+  /// Experimental dynamic surface manifest path.
+  String getDynamicSurfaceManifestPath(String userId, String surfaceId) {
+    return path.join(getDynamicSurfacePath(userId, surfaceId), 'surface.yaml');
+  }
+
+  /// Read an experimental dynamic surface manifest.
+  Future<Map<String, dynamic>?> readDynamicSurfaceManifest(
+    String userId,
+    String surfaceId,
+  ) async {
+    final manifestPath = getDynamicSurfaceManifestPath(userId, surfaceId);
+    if (!await _baseService.exists(manifestPath)) {
+      return null;
+    }
+    try {
+      final content = await _baseService.readFile(manifestPath);
+      final parsed = loadYaml(content);
+      if (parsed is Map) {
+        return Map<String, dynamic>.from(parsed);
+      }
+      return null;
+    } catch (e) {
+      _logger.severe(
+        'Failed to read dynamic surface manifest $manifestPath: $e',
+      );
+      return null;
+    }
+  }
+
+  /// Write an experimental dynamic surface manifest.
+  Future<void> writeDynamicSurfaceManifest(
+    String userId,
+    String surfaceId,
+    Map<String, dynamic> data,
+  ) async {
+    final manifestPath = getDynamicSurfaceManifestPath(userId, surfaceId);
+    await writeYamlFile(manifestPath, data);
+  }
+
   /// Resolve a skill directory path (relative to workspace) to an absolute path.
   /// [skillDirectoryPath] is stored as e.g. `_UserSettings/skills/my-agent`.
   String resolveSkillPath(String userId, String skillDirectoryPath) {
