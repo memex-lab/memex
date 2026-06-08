@@ -1749,9 +1749,42 @@ class AppLocalizationsZh extends AppLocalizations {
   String get memexLogout => '退出';
 
   @override
-  String memexPricingInfo(Object ratio) {
-    return '按量计费 · 官方 API 定价 × $ratio';
+  String get memexTopUpButton => '充值';
+
+  @override
+  String get memexTopUpChooseAmount => '选择充值额度';
+
+  @override
+  String memexTopUpEstimatedRecords(Object range) {
+    return '预计 $range 条记录';
   }
+
+  @override
+  String get memexTopUpPlanStarter => '轻量尝试';
+
+  @override
+  String get memexTopUpPlanEveryday => '日常整理';
+
+  @override
+  String get memexTopUpPlanHighVolume => '高频使用';
+
+  @override
+  String get memexTopUpPlanCustom => '自定义额度';
+
+  @override
+  String get memexTopUpPlanStarterSubtitle => '适合先体验 Memex AI';
+
+  @override
+  String get memexTopUpPlanEverydaySubtitle => '适合持续整理和分析';
+
+  @override
+  String get memexTopUpPlanHighVolumeSubtitle => '适合批量处理较多记录';
+
+  @override
+  String get memexTopUpPlanCustomSubtitle => '输入 1-10000 美元';
+
+  @override
+  String get memexTopUpCustomEstimate => '按输入金额计算预计处理量';
 
   @override
   String get memexCustomAmount => '自定义金额';

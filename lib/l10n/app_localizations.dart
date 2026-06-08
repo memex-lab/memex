@@ -3326,11 +3326,77 @@ abstract class AppLocalizations {
   /// **'Logout'**
   String get memexLogout;
 
-  /// No description provided for @memexPricingInfo.
+  /// No description provided for @memexTopUpButton.
   ///
   /// In en, this message translates to:
-  /// **'Pay-as-you-go · Official API pricing × {ratio}'**
-  String memexPricingInfo(Object ratio);
+  /// **'Top up'**
+  String get memexTopUpButton;
+
+  /// No description provided for @memexTopUpChooseAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an amount'**
+  String get memexTopUpChooseAmount;
+
+  /// No description provided for @memexTopUpEstimatedRecords.
+  ///
+  /// In en, this message translates to:
+  /// **'About {range} records'**
+  String memexTopUpEstimatedRecords(Object range);
+
+  /// No description provided for @memexTopUpPlanStarter.
+  ///
+  /// In en, this message translates to:
+  /// **'Starter'**
+  String get memexTopUpPlanStarter;
+
+  /// No description provided for @memexTopUpPlanEveryday.
+  ///
+  /// In en, this message translates to:
+  /// **'Everyday'**
+  String get memexTopUpPlanEveryday;
+
+  /// No description provided for @memexTopUpPlanHighVolume.
+  ///
+  /// In en, this message translates to:
+  /// **'High volume'**
+  String get memexTopUpPlanHighVolume;
+
+  /// No description provided for @memexTopUpPlanCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom credits'**
+  String get memexTopUpPlanCustom;
+
+  /// No description provided for @memexTopUpPlanStarterSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Good for trying Memex AI'**
+  String get memexTopUpPlanStarterSubtitle;
+
+  /// No description provided for @memexTopUpPlanEverydaySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Good for regular organizing'**
+  String get memexTopUpPlanEverydaySubtitle;
+
+  /// No description provided for @memexTopUpPlanHighVolumeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Good for larger batches'**
+  String get memexTopUpPlanHighVolumeSubtitle;
+
+  /// No description provided for @memexTopUpPlanCustomSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter USD 1-10,000'**
+  String get memexTopUpPlanCustomSubtitle;
+
+  /// No description provided for @memexTopUpCustomEstimate.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimate is based on the amount entered'**
+  String get memexTopUpCustomEstimate;
 
   /// No description provided for @memexCustomAmount.
   ///

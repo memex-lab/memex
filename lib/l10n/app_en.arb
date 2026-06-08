@@ -820,12 +820,23 @@
   "memexAuthFailed": "Authentication failed",
   "memexPaymentFailed": "Failed to create payment",
   "memexLogout": "Logout",
-  "memexPricingInfo": "Pay-as-you-go · Official API pricing × {ratio}",
-  "@memexPricingInfo": {
+  "memexTopUpButton": "Top up",
+  "memexTopUpChooseAmount": "Choose an amount",
+  "memexTopUpEstimatedRecords": "About {range} records",
+  "@memexTopUpEstimatedRecords": {
     "placeholders": {
-      "ratio": {}
+      "range": {}
     }
   },
+  "memexTopUpPlanStarter": "Starter",
+  "memexTopUpPlanEveryday": "Everyday",
+  "memexTopUpPlanHighVolume": "High volume",
+  "memexTopUpPlanCustom": "Custom credits",
+  "memexTopUpPlanStarterSubtitle": "Good for trying Memex AI",
+  "memexTopUpPlanEverydaySubtitle": "Good for regular organizing",
+  "memexTopUpPlanHighVolumeSubtitle": "Good for larger batches",
+  "memexTopUpPlanCustomSubtitle": "Enter USD 1-10,000",
+  "memexTopUpCustomEstimate": "Estimate is based on the amount entered",
   "memexCustomAmount": "Custom Amount",
   "memexViewHistory": "Usage History",
   "memexBalanceLabel": "Balance: {amount}",

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:memex/data/repositories/memex_router.dart';
+import 'package:memex/data/services/memex_cloud_service.dart';
 import 'package:memex/domain/models/llm_config.dart';
 import 'package:memex/ui/core/themes/app_colors.dart';
 import 'package:memex/ui/settings/widgets/memex_auth_section.dart';
@@ -28,6 +29,8 @@ class _AiServiceSetupPageState extends State<AiServiceSetupPage> {
   bool _isSaving = false;
   bool _isMemexLoggedIn = false;
   bool _showMemexSetup = false;
+  bool _isMemexConfigLoading = false;
+  MemexTopUpConfig? _memexTopUpConfig;
 
   bool get _hasReadyCredentials =>
       _baseUrl.trim().isNotEmpty && _apiKey.trim().isNotEmpty;
@@ -114,6 +117,29 @@ class _AiServiceSetupPageState extends State<AiServiceSetupPage> {
     } catch (e) {
       if (mounted) {
         ToastHelper.showError(context, e);
+      }
+    }
+  }
+
+  Future<void> _showMemexServiceSetup() async {
+    if (_isMemexConfigLoading) return;
+
+    setState(() => _isMemexConfigLoading = true);
+    try {
+      final config = await MemexCloudService.instance.getAppConfig(
+        locale: UserStorage.l10n.localeName,
+      );
+      if (!mounted) return;
+      setState(() {
+        _memexTopUpConfig = config?.content.aiService.memexConnection.topUp;
+        _showMemexSetup = true;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _showMemexSetup = true);
+    } finally {
+      if (mounted) {
+        setState(() => _isMemexConfigLoading = false);
       }
     }
   }
@@ -346,11 +372,17 @@ class _AiServiceSetupPageState extends State<AiServiceSetupPage> {
               height: 48,
               width: double.infinity,
               child: OutlinedButton.icon(
-                onPressed: _isSaving
+                onPressed: (_isSaving || _isMemexConfigLoading)
                     ? null
-                    : () => setState(() => _showMemexSetup = true),
+                    : _showMemexServiceSetup,
                 iconAlignment: IconAlignment.end,
-                icon: const Icon(Icons.arrow_forward_rounded, size: 20),
+                icon: _isMemexConfigLoading
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.arrow_forward_rounded, size: 20),
                 label: Text(l10n.enableAiService),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.primary,
@@ -367,6 +399,7 @@ class _AiServiceSetupPageState extends State<AiServiceSetupPage> {
             ),
           ] else ...[
             MemexAuthSection(
+              topUpConfig: _memexTopUpConfig,
               onCredentialsReady: (baseUrl, apiKey, models) {
                 setState(() {
                   _baseUrl = baseUrl;

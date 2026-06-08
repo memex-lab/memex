@@ -1803,9 +1803,43 @@ class AppLocalizationsEn extends AppLocalizations {
   String get memexLogout => 'Logout';
 
   @override
-  String memexPricingInfo(Object ratio) {
-    return 'Pay-as-you-go · Official API pricing × $ratio';
+  String get memexTopUpButton => 'Top up';
+
+  @override
+  String get memexTopUpChooseAmount => 'Choose an amount';
+
+  @override
+  String memexTopUpEstimatedRecords(Object range) {
+    return 'About $range records';
   }
+
+  @override
+  String get memexTopUpPlanStarter => 'Starter';
+
+  @override
+  String get memexTopUpPlanEveryday => 'Everyday';
+
+  @override
+  String get memexTopUpPlanHighVolume => 'High volume';
+
+  @override
+  String get memexTopUpPlanCustom => 'Custom credits';
+
+  @override
+  String get memexTopUpPlanStarterSubtitle => 'Good for trying Memex AI';
+
+  @override
+  String get memexTopUpPlanEverydaySubtitle => 'Good for regular organizing';
+
+  @override
+  String get memexTopUpPlanHighVolumeSubtitle => 'Good for larger batches';
+
+  @override
+  String get memexTopUpPlanCustomSubtitle => 'Enter USD 1-10,000';
+
+  @override
+  String get memexTopUpCustomEstimate =>
+      'Estimate is based on the amount entered';
 
   @override
   String get memexCustomAmount => 'Custom Amount';

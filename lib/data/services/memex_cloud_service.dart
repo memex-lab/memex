@@ -208,18 +208,21 @@ class MemexCloudService {
     return LogsResult(items: [], total: 0);
   }
 
-  /// 获取分组倍率（用于展示计费信息）
-  Future<double> getGroupRatio() async {
-    final response =
-        await _get('/api/pricing/group-ratio', authenticated: true);
+  /// 获取 App 配置（文案、充值估算等非敏感配置）
+  Future<AppConfigResult?> getAppConfig({required String locale}) async {
+    final response = await _get(
+      '/api/app-config?locale=${Uri.encodeQueryComponent(locale)}',
+    );
 
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final groupRatio = data['groupRatio'] as Map<String, dynamic>? ?? {};
-      // 返回 default 组的倍率
-      return (groupRatio['default'] ?? 1.0).toDouble();
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      if (data['code'] == 0 && data['data'] is Map<String, dynamic>) {
+        return AppConfigResult.fromJson(
+          data['data'] as Map<String, dynamic>,
+        );
+      }
     }
-    return 1.0;
+    return null;
   }
 
   /// 获取可用模型列表
@@ -322,6 +325,88 @@ class PaymentResult {
   final String? error;
 
   PaymentResult({required this.success, this.checkoutUrl, this.error});
+}
+
+class AppConfigResult {
+  final AppConfigContent content;
+
+  AppConfigResult({required this.content});
+
+  factory AppConfigResult.fromJson(Map<String, dynamic> json) {
+    return AppConfigResult(
+      content: AppConfigContent.fromJson(
+        (json['content'] as Map<String, dynamic>?) ?? const {},
+      ),
+    );
+  }
+}
+
+class AppConfigContent {
+  final AiServiceConfig aiService;
+
+  AppConfigContent({required this.aiService});
+
+  factory AppConfigContent.fromJson(Map<String, dynamic> json) {
+    return AppConfigContent(
+      aiService: AiServiceConfig.fromJson(
+        (json['aiService'] as Map<String, dynamic>?) ?? const {},
+      ),
+    );
+  }
+}
+
+class AiServiceConfig {
+  final MemexConnectionConfig memexConnection;
+
+  AiServiceConfig({required this.memexConnection});
+
+  factory AiServiceConfig.fromJson(Map<String, dynamic> json) {
+    return AiServiceConfig(
+      memexConnection: MemexConnectionConfig.fromJson(
+        (json['memexConnection'] as Map<String, dynamic>?) ?? const {},
+      ),
+    );
+  }
+}
+
+class MemexConnectionConfig {
+  final MemexTopUpConfig? topUp;
+
+  MemexConnectionConfig({this.topUp});
+
+  factory MemexConnectionConfig.fromJson(Map<String, dynamic> json) {
+    return MemexConnectionConfig(
+      topUp: json['topUp'] is Map<String, dynamic>
+          ? MemexTopUpConfig.fromJson(json['topUp'] as Map<String, dynamic>)
+          : null,
+    );
+  }
+}
+
+class MemexTopUpConfig {
+  final int perUsdMinRecords;
+  final int perUsdMaxRecords;
+  final List<String> descriptionLines;
+
+  MemexTopUpConfig({
+    required this.perUsdMinRecords,
+    required this.perUsdMaxRecords,
+    required this.descriptionLines,
+  });
+
+  factory MemexTopUpConfig.fromJson(Map<String, dynamic> json) {
+    final estimate =
+        (json['perUsdRecordEstimate'] as Map<String, dynamic>?) ?? const {};
+    final min = estimate['min'];
+    final max = estimate['max'];
+    final lines = json['descriptionLines'];
+    return MemexTopUpConfig(
+      perUsdMinRecords: min is num ? min.toInt() : 5,
+      perUsdMaxRecords: max is num ? max.toInt() : 20,
+      descriptionLines:
+          lines is List ? lines.whereType<String>().toList() : const [],
+    );
+  }
 }
 
 class CredentialResult {

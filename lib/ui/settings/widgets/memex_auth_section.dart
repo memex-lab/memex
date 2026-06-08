@@ -8,6 +8,9 @@ import 'package:webview_flutter/webview_flutter.dart';
 const _memexAuthBorder = Color(0xFFC6C5D8);
 const _memexAuthSurface = Color(0xFFFFFFFF);
 const _memexAuthSecondary = Color(0xFF006397);
+const _memexPricingPurple = Color(0xFF7C3AED);
+const _memexPricingAmber = Color(0xFFFFB800);
+const _memexTopUpAmounts = [5, 20, 100];
 
 /// Memex 认证区域 — 嵌入到模型配置页中
 /// 当用户选择 "Memex AI" 作为 provider 时显示
@@ -18,12 +21,14 @@ class MemexAuthSection extends StatefulWidget {
       onCredentialsReady;
   final ValueChanged<bool>? onLoginStateChanged;
   final VoidCallback? onLogout;
+  final MemexTopUpConfig? topUpConfig;
 
   const MemexAuthSection({
     super.key,
     this.onCredentialsReady,
     this.onLoginStateChanged,
     this.onLogout,
+    this.topUpConfig,
   });
 
   @override
@@ -50,11 +55,44 @@ class _MemexAuthSectionState extends State<MemexAuthSection> {
 
   // Applied credentials display
 
-  // Pricing info
-  double? _groupRatio;
-
   // Top up selection
   int? _selectedTopUpAmount;
+
+  int get _activeTopUpAmount =>
+      _selectedTopUpAmount ?? _memexTopUpAmounts.first;
+
+  String _estimatedRecordsLabel(int amount) {
+    final topUpConfig = widget.topUpConfig;
+    if (topUpConfig == null) return '';
+    final minPerUsd = topUpConfig.perUsdMinRecords;
+    final maxPerUsd = topUpConfig.perUsdMaxRecords;
+    final range = '${amount * minPerUsd}-${amount * maxPerUsd}';
+    return UserStorage.l10n.memexTopUpEstimatedRecords(range);
+  }
+
+  String _topUpPlanTitle(int amount) {
+    switch (amount) {
+      case 5:
+        return UserStorage.l10n.memexTopUpPlanStarter;
+      case 20:
+        return UserStorage.l10n.memexTopUpPlanEveryday;
+      case 100:
+        return UserStorage.l10n.memexTopUpPlanHighVolume;
+    }
+    return UserStorage.l10n.memexTopUpPlanCustom;
+  }
+
+  String _topUpPlanSubtitle(int amount) {
+    switch (amount) {
+      case 5:
+        return UserStorage.l10n.memexTopUpPlanStarterSubtitle;
+      case 20:
+        return UserStorage.l10n.memexTopUpPlanEverydaySubtitle;
+      case 100:
+        return UserStorage.l10n.memexTopUpPlanHighVolumeSubtitle;
+    }
+    return UserStorage.l10n.memexTopUpPlanCustomSubtitle;
+  }
 
   @override
   void initState() {
@@ -73,8 +111,6 @@ class _MemexAuthSectionState extends State<MemexAuthSection> {
         _fetchAndNotifyCredentials();
       }
     }
-
-    _groupRatio = await _service.getGroupRatio();
 
     widget.onLoginStateChanged?.call(_isLoggedIn);
     if (mounted) setState(() => _isLoading = false);
@@ -230,17 +266,6 @@ class _MemexAuthSectionState extends State<MemexAuthSection> {
             ),
           ),
         ),
-        if (_groupRatio != null) ...[
-          const SizedBox(height: 2),
-          Text(
-            l10n.memexPricingInfo(_groupRatio!.toStringAsFixed(1)),
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 11,
-              color: Color(0xFFC6C5D8),
-            ),
-          ),
-        ],
       ],
     );
   }
@@ -327,182 +352,520 @@ class _MemexAuthSectionState extends State<MemexAuthSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                color: balance > 0
-                    ? AppColors.success.withValues(alpha: 0.1)
-                    : const Color(0xFFFFF7ED),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                balance > 0
-                    ? Icons.check_circle_outline_rounded
-                    : Icons.account_balance_wallet_outlined,
-                color: balance > 0 ? AppColors.success : AppColors.warning,
-                size: 19,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                '$_username · ${UserStorage.l10n.memexBalanceLabel('\$${balance.toStringAsFixed(3)}')}',
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF1A1C1E),
-                ),
-              ),
-            ),
-            TextButton(
-              onPressed: () async {
-                await _service.logout();
-                widget.onLoginStateChanged?.call(false);
-                widget.onLogout?.call();
-                setState(() {
-                  _isLoggedIn = false;
-                  _username = null;
-                  _userInfo = null;
-                });
-              },
-              style: TextButton.styleFrom(
-                visualDensity: VisualDensity.compact,
-                foregroundColor: AppColors.danger,
-              ),
-              child: Text(UserStorage.l10n.memexLogout),
-            ),
-          ],
-        ),
+        _buildAccountSummary(balance),
         if (balance <= 0) ...[
-          const SizedBox(height: 10),
-          Text(
-            UserStorage.l10n.memexTopUp,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Color(0xFFD97706),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          const SizedBox(height: 12),
+          _buildLowBalanceNotice(),
         ],
         const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            ...[5, 20, 100].map((amount) => _buildTopUpChip(amount)),
-            _buildCustomTopUpChip(),
-          ],
-        ),
-        if (_selectedTopUpAmount != null) ...[
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            height: 42,
-            child: FilledButton(
-              onPressed: _isTopUpLoading
-                  ? null
-                  : () => _handleTopUp(_selectedTopUpAmount!),
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              child: _isTopUpLoading
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white))
-                  : Text(UserStorage.l10n
-                      .memexPayAmount('\$$_selectedTopUpAmount')),
-            ),
-          ),
-        ],
-        const SizedBox(height: 8),
-        Center(
-          child: TextButton.icon(
-            onPressed: _showHistorySheet,
-            icon: const Icon(
-              Icons.receipt_long,
-              size: 16,
-              color: _memexAuthSecondary,
-            ),
-            label: Text(UserStorage.l10n.memexViewHistory),
-            style: TextButton.styleFrom(
-              foregroundColor: _memexAuthSecondary,
-              visualDensity: VisualDensity.compact,
-            ),
-          ),
-        ),
+        _buildTopUpEntryCard(),
       ],
     );
   }
 
-  Widget _buildTopUpChip(int amount) {
-    final isSelected = _selectedTopUpAmount == amount;
-    return SizedBox(
-      width: 74,
-      height: 36,
-      child: OutlinedButton(
-        onPressed: _isTopUpLoading
-            ? null
-            : () => setState(() => _selectedTopUpAmount = amount),
-        style: OutlinedButton.styleFrom(
-          padding: EdgeInsets.zero,
-          backgroundColor:
-              isSelected ? AppColors.primary.withValues(alpha: 0.08) : null,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(9),
+  Widget _buildAccountSummary(double balance) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F8FC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E2E5)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: balance > 0
+                  ? AppColors.success.withValues(alpha: 0.1)
+                  : const Color(0xFFFFF7ED),
+              borderRadius: BorderRadius.circular(11),
+            ),
+            child: Icon(
+              balance > 0
+                  ? Icons.check_circle_outline_rounded
+                  : Icons.account_balance_wallet_outlined,
+              color: balance > 0 ? AppColors.success : AppColors.warning,
+              size: 20,
+            ),
           ),
-          side: BorderSide(
-            color: isSelected ? AppColors.primary : _memexAuthBorder,
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _username ?? 'Memex',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF1A1C1E),
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  UserStorage.l10n
+                      .memexBalanceLabel('\$${balance.toStringAsFixed(3)}'),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF757687),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: _showHistorySheet,
+            icon: const Icon(Icons.receipt_long_rounded, size: 19),
+            color: _memexAuthSecondary,
+            tooltip: UserStorage.l10n.memexViewHistory,
+            visualDensity: VisualDensity.compact,
+          ),
+          IconButton(
+            onPressed: () async {
+              await _service.logout();
+              widget.onLoginStateChanged?.call(false);
+              widget.onLogout?.call();
+              setState(() {
+                _isLoggedIn = false;
+                _username = null;
+                _userInfo = null;
+              });
+            },
+            icon: const Icon(Icons.logout_rounded, size: 19),
+            color: AppColors.danger,
+            tooltip: UserStorage.l10n.memexLogout,
+            visualDensity: VisualDensity.compact,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLowBalanceNotice() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF7ED),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFFED7AA)),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.info_outline_rounded,
+            size: 17,
+            color: Color(0xFFD97706),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              UserStorage.l10n.memexTopUp,
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFFD97706),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTopUpEntryCard() {
+    return SizedBox(
+      width: double.infinity,
+      height: 44,
+      child: FilledButton(
+        onPressed: _isTopUpLoading ? null : _showPricingSheet,
+        style: FilledButton.styleFrom(
+          backgroundColor: _memexPricingPurple,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          textStyle: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w900,
           ),
         ),
-        child: Text(
-          '\$$amount',
-          style: TextStyle(
+        child: Text(UserStorage.l10n.memexTopUpButton),
+      ),
+    );
+  }
+
+  void _showPricingSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, refresh) {
+            final maxHeight = MediaQuery.of(context).size.height * 0.9;
+            return SafeArea(
+              top: false,
+              child: Container(
+                constraints: BoxConstraints(maxHeight: maxHeight),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF9F9FC),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 42,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD8D8E0),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            UserStorage.l10n.memexTopUpButton,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFF1A1C1E),
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: _isTopUpLoading
+                              ? null
+                              : () => Navigator.pop(sheetContext),
+                          icon: const Icon(Icons.close_rounded),
+                          color: const Color(0xFF757687),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Flexible(
+                      child: SingleChildScrollView(
+                        child: _buildPricingPanel(
+                          refresh: () => refresh(() {}),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildSheetPrimaryCta(
+                      amount: _activeTopUpAmount,
+                      onTopUp: (amount) async {
+                        await _handleTopUpFromSheet(
+                          amount,
+                          sheetContext: sheetContext,
+                          refreshSheet: refresh,
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildPricingPanel({VoidCallback? refresh}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          UserStorage.l10n.memexTopUpChooseAmount,
+          style: const TextStyle(
             fontSize: 13,
-            color: isSelected ? AppColors.primary : const Color(0xFF454655),
-            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+            fontWeight: FontWeight.w900,
+            color: Color(0xFF1A1C1E),
+          ),
+        ),
+        const SizedBox(height: 8),
+        _buildTopUpAmountGrid(refresh: refresh),
+        const SizedBox(height: 14),
+        _buildPricingFeatureRows(),
+      ],
+    );
+  }
+
+  Widget _buildSheetPrimaryCta({
+    required int amount,
+    required Future<void> Function(int amount) onTopUp,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      height: 50,
+      child: FilledButton.icon(
+        onPressed: _isTopUpLoading ? null : () => onTopUp(amount),
+        iconAlignment: IconAlignment.end,
+        icon: _isTopUpLoading
+            ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              )
+            : const Icon(Icons.arrow_forward_rounded, size: 21),
+        label: Text(UserStorage.l10n.memexPayAmount('\$$amount')),
+        style: FilledButton.styleFrom(
+          backgroundColor: _memexPricingAmber,
+          foregroundColor: const Color(0xFF1A1C1E),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          textStyle: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w900,
           ),
         ),
       ),
     );
   }
 
-  Widget _buildCustomTopUpChip() {
-    final isSelected = _selectedTopUpAmount != null &&
-        ![5, 20, 100].contains(_selectedTopUpAmount);
-    return SizedBox(
-      width: 74,
-      height: 36,
-      child: OutlinedButton(
-        onPressed: _isTopUpLoading ? null : _handleCustomTopUp,
-        style: OutlinedButton.styleFrom(
-          padding: EdgeInsets.zero,
-          backgroundColor:
-              isSelected ? AppColors.primary.withValues(alpha: 0.08) : null,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(9),
-          ),
-          side: BorderSide(
-            color: isSelected ? AppColors.primary : _memexAuthBorder,
+  Widget _buildTopUpAmountGrid({VoidCallback? refresh}) {
+    return Column(
+      children: [
+        ..._memexTopUpAmounts.map(
+          (amount) => Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: _buildTopUpChip(amount, refresh: refresh),
           ),
         ),
-        child: Text(
-          isSelected ? '\$$_selectedTopUpAmount' : '...',
-          style: TextStyle(
-            fontSize: 13,
-            color: isSelected ? AppColors.primary : const Color(0xFF757687),
-            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+        _buildCustomTopUpChip(refresh: refresh),
+      ],
+    );
+  }
+
+  Widget _buildTopUpChip(int amount, {VoidCallback? refresh}) {
+    final isSelected = _activeTopUpAmount == amount;
+    return _buildPlanTile(
+      isSelected: isSelected,
+      amountLabel: '\$$amount',
+      title: _topUpPlanTitle(amount),
+      subtitle: _topUpPlanSubtitle(amount),
+      estimate: _estimatedRecordsLabel(amount),
+      onPressed: _isTopUpLoading
+          ? null
+          : () {
+              _selectedTopUpAmount = amount;
+              if (refresh != null) {
+                refresh();
+              } else {
+                setState(() {});
+              }
+            },
+    );
+  }
+
+  Widget _buildCustomTopUpChip({VoidCallback? refresh}) {
+    final isSelected = _selectedTopUpAmount != null &&
+        !_memexTopUpAmounts.contains(_selectedTopUpAmount);
+    return _buildPlanTile(
+      isSelected: isSelected,
+      amountLabel: isSelected ? '\$$_selectedTopUpAmount' : '...',
+      title: UserStorage.l10n.memexTopUpPlanCustom,
+      subtitle: _topUpPlanSubtitle(-1),
+      estimate: widget.topUpConfig == null
+          ? ''
+          : UserStorage.l10n.memexTopUpCustomEstimate,
+      onPressed:
+          _isTopUpLoading ? null : () => _handleCustomTopUp(refresh: refresh),
+    );
+  }
+
+  Widget _buildPlanTile({
+    required bool isSelected,
+    required String amountLabel,
+    required String title,
+    required String subtitle,
+    required String estimate,
+    required VoidCallback? onPressed,
+  }) {
+    final borderColor =
+        isSelected ? _memexPricingPurple : const Color(0xFFE2E2E5);
+    return Material(
+      color: isSelected
+          ? _memexPricingPurple.withValues(alpha: 0.07)
+          : Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          width: double.infinity,
+          constraints: const BoxConstraints(minHeight: 74),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: borderColor, width: isSelected ? 1.3 : 1),
+            boxShadow: [
+              if (!isSelected)
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.025),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isSelected
+                        ? _memexPricingPurple
+                        : const Color(0xFFC6C5D8),
+                    width: 1.6,
+                  ),
+                ),
+                child: isSelected
+                    ? Center(
+                        child: Container(
+                          width: 9,
+                          height: 9,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: _memexPricingPurple,
+                          ),
+                        ),
+                      )
+                    : null,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFF1A1C1E),
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFF757687),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (estimate.isNotEmpty) ...[
+                      const SizedBox(height: 5),
+                      Text(
+                        estimate,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF454655),
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                amountLabel,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  color: isSelected
+                      ? _memexPricingPurple
+                      : const Color(0xFF1A1C1E),
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
+  }
+
+  Widget _buildPricingFeatureRows() {
+    final rows = _buildConfiguredPricingRows();
+    if (rows.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E2E5)),
+      ),
+      child: Column(
+        children: rows
+            .map(
+              (row) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 5),
+                child: Row(
+                  children: [
+                    Icon(row.$1, size: 17, color: _memexPricingPurple),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        row.$2,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          height: 1.35,
+                          color: Color(0xFF454655),
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+            .toList(),
+      ),
+    );
+  }
+
+  List<(IconData, String)> _buildConfiguredPricingRows() {
+    final lines = widget.topUpConfig?.descriptionLines ?? const [];
+    if (lines.isEmpty) return const [];
+
+    return [
+      for (var i = 0; i < lines.length; i++)
+        (
+          i == 0
+              ? Icons.payments_outlined
+              : i == 1
+                  ? Icons.bolt_rounded
+                  : Icons.tune_rounded,
+          lines[i],
+        ),
+    ];
   }
 
   void _showHistorySheet() {
@@ -525,7 +888,7 @@ class _MemexAuthSectionState extends State<MemexAuthSection> {
     );
   }
 
-  Future<void> _handleCustomTopUp() async {
+  Future<void> _handleCustomTopUp({VoidCallback? refresh}) async {
     final amount = await showDialog<int>(
       context: context,
       builder: (ctx) {
@@ -560,18 +923,34 @@ class _MemexAuthSectionState extends State<MemexAuthSection> {
     );
 
     if (amount != null && amount >= 1 && amount <= 10000) {
-      setState(() => _selectedTopUpAmount = amount);
+      _selectedTopUpAmount = amount;
+      if (refresh != null) {
+        refresh();
+      } else {
+        setState(() {});
+      }
     }
   }
 
-  Future<void> _handleTopUp(int amount) async {
+  Future<void> _handleTopUpFromSheet(
+    int amount, {
+    required BuildContext sheetContext,
+    required StateSetter refreshSheet,
+  }) async {
+    final sheetNavigator = Navigator.of(sheetContext);
+
     setState(() => _isTopUpLoading = true);
+    refreshSheet(() {});
 
     final result = await _service.createStripePayment(amount);
 
     if (!mounted) return;
 
     if (result.success && result.checkoutUrl != null) {
+      if (sheetNavigator.canPop()) {
+        sheetNavigator.pop();
+      }
+
       final paid = await Navigator.push<bool>(
         context,
         MaterialPageRoute(
@@ -590,12 +969,18 @@ class _MemexAuthSectionState extends State<MemexAuthSection> {
           ToastHelper.showSuccess(context, UserStorage.l10n.memexTopUpSuccess);
         }
       }
-    } else {
-      ToastHelper.showError(
-          context, result.error ?? UserStorage.l10n.memexPaymentFailed);
+
+      if (mounted) setState(() => _isTopUpLoading = false);
+      return;
     }
 
-    if (mounted) setState(() => _isTopUpLoading = false);
+    ToastHelper.showError(
+        context, result.error ?? UserStorage.l10n.memexPaymentFailed);
+
+    if (mounted) {
+      setState(() => _isTopUpLoading = false);
+      refreshSheet(() {});
+    }
   }
 }
 
