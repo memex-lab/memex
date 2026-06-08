@@ -255,10 +255,18 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
                         const SizedBox(height: 24),
 
                         // User ID
+                        Text(
+                          UserStorage.l10n.userIdLabel,
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
                         TextFormField(
                           controller: _userIdController,
                           decoration: InputDecoration(
-                            labelText: UserStorage.l10n.userIdLabel,
                             hintText: UserStorage.l10n.userIdHint,
                             prefixIcon:
                                 const Icon(Icons.person_outline, size: 20),
@@ -280,7 +288,9 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
                             filled: true,
                             fillColor: AppColors.background,
                             contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 14),
+                              horizontal: 16,
+                              vertical: 16,
+                            ),
                           ),
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {

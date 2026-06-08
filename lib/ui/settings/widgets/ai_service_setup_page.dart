@@ -27,6 +27,7 @@ class _AiServiceSetupPageState extends State<AiServiceSetupPage> {
   List<String> _models = const [];
   bool _isSaving = false;
   bool _isMemexLoggedIn = false;
+  bool _showMemexSetup = false;
 
   bool get _hasReadyCredentials =>
       _baseUrl.trim().isNotEmpty && _apiKey.trim().isNotEmpty;
@@ -123,6 +124,7 @@ class _AiServiceSetupPageState extends State<AiServiceSetupPage> {
       MaterialPageRoute(
         builder: (context) => ModelConfigListPage(
           popOnConfigSaved: widget.onboardingMode,
+          autoOpenFirstConfig: true,
         ),
       ),
     );
@@ -161,51 +163,61 @@ class _AiServiceSetupPageState extends State<AiServiceSetupPage> {
             ),
         ],
       ),
-      body: Stack(
-        children: [
-          SafeArea(
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 430),
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 300),
-                  children: [
-                    _buildBrand(),
-                    const SizedBox(height: 26),
-                    _buildIllustration(),
-                    const SizedBox(height: 30),
-                    _buildIntroCopy(),
-                    const SizedBox(height: 32),
-                    _buildCustomModelCard(),
-                  ],
-                ),
-              ),
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 430),
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(18, 18, 18, 32),
+              children: [
+                _buildSetupHeader(),
+                const SizedBox(height: 22),
+                _buildSetupOptions(),
+              ],
             ),
           ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: _buildPinnedAuthSection(),
-          ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildBrand() {
-    return const Center(
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+  Widget _buildSetupHeader() {
+    final l10n = UserStorage.l10n;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.memory_rounded, size: 30, color: AppColors.primary),
-          SizedBox(width: 8),
-          Text(
-            'Memex',
-            style: TextStyle(
-              fontSize: 38,
-              height: 1,
-              fontWeight: FontWeight.w800,
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.memory_rounded,
               color: AppColors.primary,
-              letterSpacing: -1.2,
+              size: 24,
+            ),
+          ),
+          const SizedBox(height: 18),
+          Text(
+            l10n.setupModelConfigTitle,
+            style: const TextStyle(
+              fontSize: 28,
+              height: 1.15,
+              fontWeight: FontWeight.w800,
+              color: Color(0xFF1A1C1E),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            l10n.setupModelConfigSubtitle,
+            style: const TextStyle(
+              fontSize: 15,
+              height: 1.55,
+              color: Color(0xFF454655),
             ),
           ),
         ],
@@ -213,11 +225,28 @@ class _AiServiceSetupPageState extends State<AiServiceSetupPage> {
     );
   }
 
-  Widget _buildIllustration() {
+  Widget _buildSetupOptions() {
+    return Column(
+      children: [
+        _buildCustomModelCard(),
+        const SizedBox(height: 14),
+        _buildMemexServiceCard(),
+      ],
+    );
+  }
+
+  Widget _buildOptionCard({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String description,
+    required Widget child,
+  }) {
     return Container(
-      height: 210,
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFFF3F3F6),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFFE2E2E5)),
         boxShadow: const [
@@ -228,178 +257,24 @@ class _AiServiceSetupPageState extends State<AiServiceSetupPage> {
           ),
         ],
       ),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14),
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFFFFFFFF),
-                    Color(0xFFE8E8EA),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Transform.translate(
-            offset: const Offset(-52, -6),
-            child: Transform.rotate(
-              angle: -0.11,
-              child: _buildMemoryCard(
-                width: 138,
-                height: 104,
-                icon: Icons.schedule_rounded,
-                iconColor: const Color(0xFF757687),
-                lineWidths: const [52],
-                opacity: 0.78,
-              ),
-            ),
-          ),
-          Transform.translate(
-            offset: const Offset(52, -2),
-            child: Transform.rotate(
-              angle: 0.11,
-              child: _buildMemoryCard(
-                width: 138,
-                height: 104,
-                icon: Icons.menu_book_rounded,
-                iconColor: const Color(0xFF757687),
-                lineWidths: const [68],
-                opacity: 0.78,
-              ),
-            ),
-          ),
-          Transform.translate(
-            offset: const Offset(0, 26),
-            child: _buildMemoryCard(
-              width: 160,
-              height: 124,
-              icon: Icons.psychology_alt_rounded,
-              iconColor: AppColors.primary,
-              iconBackground: AppColors.primary.withValues(alpha: 0.12),
-              lineWidths: const [86, 58],
-              elevation: 8,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMemoryCard({
-    required double width,
-    required double height,
-    required IconData icon,
-    required Color iconColor,
-    required List<double> lineWidths,
-    Color? iconBackground,
-    double opacity = 1,
-    double elevation = 2,
-  }) {
-    return Opacity(
-      opacity: opacity,
-      child: Container(
-        width: width,
-        height: height,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-              color: const Color(0xFFC6C5D8).withValues(alpha: 0.45)),
-          boxShadow: [
-            BoxShadow(
-              color: Color.fromRGBO(0, 0, 0, elevation == 2 ? 0.05 : 0.16),
-              blurRadius: elevation,
-              offset: Offset(0, elevation == 2 ? 1 : 4),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: iconBackground == null ? 0 : 44,
-              height: iconBackground == null ? 0 : 44,
-              decoration: iconBackground == null
-                  ? null
-                  : BoxDecoration(
-                      color: iconBackground,
-                      shape: BoxShape.circle,
-                    ),
-              child: Icon(icon, color: iconColor, size: 24),
-            ),
-            if (iconBackground == null) Icon(icon, color: iconColor, size: 24),
-            const SizedBox(height: 14),
-            for (final width in lineWidths) ...[
-              Container(
-                width: width,
-                height: 6,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE2E2E5),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
-              const SizedBox(height: 8),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildIntroCopy() {
-    final l10n = UserStorage.l10n;
-    return Column(
-      children: [
-        Text(
-          l10n.aiServiceTitle,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontSize: 32,
-            height: 1.18,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.6,
-            color: Color(0xFF1A1C1E),
-          ),
-        ),
-        const SizedBox(height: 28),
-        Text(
-          l10n.aiServiceLongDescription,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontSize: 16,
-            height: 1.72,
-            color: Color(0xFF454655),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCustomModelCard() {
-    final l10n = UserStorage.l10n;
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF3F3F6),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E2E5)),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.api_rounded, color: Color(0xFF006397)),
-              const SizedBox(width: 10),
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: iconColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: iconColor, size: 21),
+              ),
+              const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  l10n.aiServiceCustomModelTitle,
+                  title,
                   style: const TextStyle(
                     fontSize: 18,
                     height: 1.25,
@@ -410,121 +285,141 @@ class _AiServiceSetupPageState extends State<AiServiceSetupPage> {
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           Text(
-            l10n.aiServiceCustomModelDescription,
+            description,
             style: const TextStyle(
               fontSize: 14,
-              height: 1.65,
+              height: 1.55,
               color: Color(0xFF454655),
             ),
           ),
           const SizedBox(height: 16),
-          TextButton.icon(
-            onPressed: _openAdvancedConfig,
-            iconAlignment: IconAlignment.end,
-            label: Text(l10n.advancedModelConfiguration),
-            icon: const Icon(Icons.chevron_right_rounded, size: 18),
-            style: TextButton.styleFrom(
-              padding: EdgeInsets.zero,
-              foregroundColor: const Color(0xFF006397),
-              textStyle: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ),
+          child,
         ],
       ),
     );
   }
 
-  Widget _buildPinnedAuthSection() {
+  Widget _buildCustomModelCard() {
     final l10n = UserStorage.l10n;
-    return Container(
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFE2E2E5))),
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x14000000),
-            blurRadius: 24,
-            offset: Offset(0, -6),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        minimum: const EdgeInsets.fromLTRB(0, 12, 0, 10),
-        child: Align(
-          alignment: Alignment.topCenter,
-          heightFactor: 1,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 430),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  MemexAuthSection(
-                    onCredentialsReady: (baseUrl, apiKey, models) {
-                      setState(() {
-                        _baseUrl = baseUrl;
-                        _apiKey = apiKey;
-                        _models = models;
-                      });
-                      _saveMemexService(finish: false, showToast: false);
-                    },
-                    onLoginStateChanged: (isLoggedIn) {
-                      if (mounted) {
-                        setState(() => _isMemexLoggedIn = isLoggedIn);
-                      }
-                    },
-                    onLogout: _clearMemexService,
-                  ),
-                  if (_isMemexLoggedIn ||
-                      _hasReadyCredentials ||
-                      _isSaving) ...[
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      height: 50,
-                      width: double.infinity,
-                      child: FilledButton.icon(
-                        onPressed: _hasReadyCredentials && !_isSaving
-                            ? _saveMemexService
-                            : null,
-                        iconAlignment: IconAlignment.end,
-                        icon: _isSaving
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Icon(Icons.arrow_forward_rounded, size: 22),
-                        label: Text(l10n.enableAiService),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          disabledBackgroundColor: const Color(0xFFE2E2E5),
-                          disabledForegroundColor: const Color(0xFF757687),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          textStyle: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
+    return _buildOptionCard(
+      icon: Icons.key_rounded,
+      iconColor: const Color(0xFF006397),
+      title: l10n.aiServiceCustomApiRouteTitle,
+      description: l10n.aiServiceCustomModelDescription,
+      child: SizedBox(
+        height: 48,
+        width: double.infinity,
+        child: FilledButton.icon(
+          onPressed: _openAdvancedConfig,
+          iconAlignment: IconAlignment.end,
+          label: Text(l10n.advancedModelConfiguration),
+          icon: const Icon(Icons.chevron_right_rounded, size: 20),
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            textStyle: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildMemexServiceCard() {
+    final l10n = UserStorage.l10n;
+    return _buildOptionCard(
+      icon: Icons.auto_awesome_rounded,
+      iconColor: AppColors.primary,
+      title: l10n.aiServiceMemexRouteTitle,
+      description: l10n.aiServiceSettingsDescription,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (!_showMemexSetup) ...[
+            SizedBox(
+              height: 48,
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _isSaving
+                    ? null
+                    : () => setState(() => _showMemexSetup = true),
+                iconAlignment: IconAlignment.end,
+                icon: const Icon(Icons.arrow_forward_rounded, size: 20),
+                label: Text(l10n.enableAiService),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.primary),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  textStyle: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ),
+          ] else ...[
+            MemexAuthSection(
+              onCredentialsReady: (baseUrl, apiKey, models) {
+                setState(() {
+                  _baseUrl = baseUrl;
+                  _apiKey = apiKey;
+                  _models = models;
+                });
+                _saveMemexService(finish: false, showToast: false);
+              },
+              onLoginStateChanged: (isLoggedIn) {
+                if (mounted) {
+                  setState(() => _isMemexLoggedIn = isLoggedIn);
+                }
+              },
+              onLogout: _clearMemexService,
+            ),
+            if (_isMemexLoggedIn || _hasReadyCredentials || _isSaving) ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 50,
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: _hasReadyCredentials && !_isSaving
+                      ? _saveMemexService
+                      : null,
+                  iconAlignment: IconAlignment.end,
+                  icon: _isSaving
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.arrow_forward_rounded, size: 22),
+                  label: Text(l10n.setupModelConfigComplete),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    disabledBackgroundColor: const Color(0xFFE2E2E5),
+                    disabledForegroundColor: const Color(0xFF757687),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    textStyle: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ],
       ),
     );
   }

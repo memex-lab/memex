@@ -544,7 +544,6 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
         _ProviderEntry(LLMConfig.typeGeminiOauth, l10n.providerGeminiOauth),
       ],
       l10n.providerGroupOthers: [
-        const _ProviderEntry(LLMConfig.typeMemex, 'Memex AI'),
         _ProviderEntry(LLMConfig.typeKimi, l10n.providerKimi),
         _ProviderEntry(LLMConfig.typeQwen, l10n.providerQwen),
         _ProviderEntry(LLMConfig.typeSeed, l10n.providerSeed),
@@ -1266,58 +1265,7 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              // Data sharing notice banner
-              if (_selectedType.isNotEmpty)
-                Container(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFF7ED),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFFFBBF24)),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(
-                        Icons.info_outline,
-                        size: 18,
-                        color: Color(0xFFD97706),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          UserStorage.l10n.llmConsentDataShareNote(
-                            LLMConfig.providerDisplayName(_selectedType),
-                          ),
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: Color(0xFF92400E),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              // Key
-              TextFormField(
-                controller: _keyController,
-                decoration: InputDecoration(
-                  labelText: UserStorage.l10n.keyIdLabel,
-                  helperText: UserStorage.l10n.keyIdHelper,
-                  border: const OutlineInputBorder(),
-                ),
-                enabled: !locksKey,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return UserStorage.l10n.required;
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // Type
+              // Provider
               DropdownButtonFormField<String>(
                 isExpanded: true,
                 initialValue: _selectedType.isEmpty ? null : _selectedType,
@@ -1378,17 +1326,15 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
                 },
               ),
               const SizedBox(height: 16),
-
-              // Base URL (before API key — needed for model fetching)
-              if (_selectedType != LLMConfig.typeBedrockClaude &&
-                  _selectedType != LLMConfig.typeOpenAiOauth &&
-                  _selectedType != LLMConfig.typeGeminiOauth) ...[
+              if (!locksKey) ...[
                 TextFormField(
-                  controller: _baseUrlController,
+                  controller: _keyController,
                   decoration: InputDecoration(
-                    labelText: UserStorage.l10n.baseUrlLabel,
+                    labelText: UserStorage.l10n.keyIdLabel,
+                    helperText: UserStorage.l10n.keyIdHelper,
                     border: const OutlineInputBorder(),
                   ),
+                  enabled: !locksKey,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return UserStorage.l10n.required;
@@ -1399,370 +1345,396 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
                 const SizedBox(height: 16),
               ],
 
-              // API Key / Auth / Bedrock Section
-              if (_selectedType == LLMConfig.typeOpenAiOauth) ...[
-                _buildOpenAiAuthSection(),
-                const SizedBox(height: 16),
-              ] else if (_selectedType == LLMConfig.typeGeminiOauth) ...[
-                _buildGeminiAuthSection(),
-                const SizedBox(height: 16),
-              ] else if (_selectedType == LLMConfig.typeBedrockClaude) ...[
-                // Bedrock-specific fields
-                TextFormField(
-                  controller: _bedrockAccessKeyController,
-                  decoration: const InputDecoration(
-                    labelText: 'Access Key ID',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return UserStorage.l10n.required;
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _bedrockSecretKeyController,
-                  decoration: InputDecoration(
-                    labelText: 'Secret Access Key',
-                    border: const OutlineInputBorder(),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _isObscureApiKey
-                            ? Icons.visibility
-                            : Icons.visibility_off,
-                      ),
-                      onPressed: () =>
-                          setState(() => _isObscureApiKey = !_isObscureApiKey),
-                    ),
-                  ),
-                  obscureText: _isObscureApiKey,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return UserStorage.l10n.required;
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _bedrockRegionController,
-                  decoration: const InputDecoration(
-                    labelText: 'Region',
-                    hintText: 'us-west-2',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ] else if (_selectedType == LLMConfig.typeOllama) ...[
-                // Ollama doesn't need an API key — skip
-              ] else ...[
-                TextFormField(
-                  controller: _apiKeyController,
-                  decoration: InputDecoration(
-                    labelText: UserStorage.l10n.apiKeyLabel,
-                    border: const OutlineInputBorder(),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _isObscureApiKey
-                            ? Icons.visibility
-                            : Icons.visibility_off,
-                      ),
-                      onPressed: () =>
-                          setState(() => _isObscureApiKey = !_isObscureApiKey),
-                    ),
-                  ),
-                  obscureText: _isObscureApiKey,
-                  onChanged: (_) {
-                    _checkChanges();
-                    setState(() {});
-                  },
-                ),
-                const SizedBox(height: 16),
-              ],
-
-              // Model ID
-              if (_modelSelectorDisabled)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Text(
-                    UserStorage.l10n.enterApiKeyFirst,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.orange[700],
-                      height: 1.3,
-                    ),
-                  ),
-                ),
-              AbsorbPointer(
-                absorbing: _modelSelectorDisabled,
-                child: Opacity(
-                  opacity: _modelSelectorDisabled ? 0.5 : 1.0,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: SearchableDropdown(
-                          key: _modelDropdownKey,
-                          options: _modelOptions(),
-                          initialValue: _modelIdController.text,
-                          onChanged: (value) {
-                            _modelIdController.text = value;
-                            _checkChanges();
-                            setState(() {});
-                          },
-                          decoration: InputDecoration(
-                            labelText: UserStorage.l10n.modelIdLabel,
-                            helperText: _isFetchingModels
-                                ? UserStorage.l10n.fetchingModels
-                                : UserStorage.l10n.modelIdHelper,
-                            border: const OutlineInputBorder(),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return UserStorage.l10n.required;
-                            }
-                            return null;
-                          },
-                          optionBuilder: (option, _) {
-                            final isPro =
-                                _selectedType == LLMConfig.typeOpenAiOauth &&
-                                    _isProModel(option);
-                            final isFeatured = LLMConfig.featuredModels(
-                              _selectedType,
-                            ).contains(option);
-                            final isVision = _isKnownMultimodalModel(option);
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                              child: Row(
-                                children: [
-                                  Expanded(child: Text(option)),
-                                  if (isFeatured)
-                                    Container(
-                                      margin: const EdgeInsets.only(left: 8),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 6,
-                                        vertical: 2,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.primary.withValues(
-                                          alpha: 0.1,
-                                        ),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Text(
-                                        UserStorage.l10n.recommendedBadge,
-                                        style: const TextStyle(
-                                          fontSize: 10,
-                                          color: AppColors.primary,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                  if (isVision)
-                                    Container(
-                                      margin: const EdgeInsets.only(left: 8),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 6,
-                                        vertical: 2,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.green.withValues(
-                                          alpha: 0.1,
-                                        ),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Text(
-                                        _visionBadgeText,
-                                        style: const TextStyle(
-                                          fontSize: 10,
-                                          color: Colors.green,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                  if (isPro)
-                                    Container(
-                                      margin: const EdgeInsets.only(left: 8),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 6,
-                                        vertical: 2,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFFFF7ED),
-                                        borderRadius: BorderRadius.circular(4),
-                                        border: Border.all(
-                                          color: const Color(0xFFFBBF24),
-                                          width: 0.5,
-                                        ),
-                                      ),
-                                      child: const Text(
-                                        'Pro/Plus',
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          color: Color(0xFFD97706),
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                      if (LLMConfig.supportsModelListing(_selectedType) &&
-                          !_modelSelectorDisabled)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: IconButton(
-                            icon: _isFetchingModels
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Icon(Icons.refresh),
-                            tooltip: UserStorage.l10n.fetchModelsButton,
-                            onPressed: _isFetchingModels ? null : _fetchModels,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-              if (_selectedType == LLMConfig.typeOpenAiOauth &&
-                  _isProModel(_modelIdController.text))
-                Padding(
-                  padding: const EdgeInsets.only(top: 6, left: 4),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.info_outline,
-                        size: 14,
-                        color: Color(0xFFD97706),
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          UserStorage.l10n.proModelHint,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFFD97706),
-                            height: 1.3,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              if (_selectedType.isNotEmpty &&
-                  _modelIdController.text.trim().isNotEmpty &&
-                  !_isKnownMultimodalModel(_modelIdController.text))
-                Padding(
-                  padding: const EdgeInsets.only(top: 6, left: 16),
-                  child: Text(
-                    _notMultimodalHint,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFFD97706),
-                      height: 1.3,
-                    ),
-                  ),
-                ),
-              const SizedBox(height: 24),
-
-              // Connection Test
-              _buildTestConnectionSection(),
-              const SizedBox(height: 24),
-
-              // Advanced Settings
-              ExpansionTile(
-                title: Text(UserStorage.l10n.advancedSettings),
-                children: [
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _proxyUrlController,
-                    decoration: InputDecoration(
-                      labelText: UserStorage.l10n.proxyUrlOptional,
-                      helperText: UserStorage.l10n.proxyUrlHelper,
-                      border: const OutlineInputBorder(),
-                    ),
-                  ),
+              if (_selectedType.isNotEmpty) ...[
+                // API Key / Auth / Bedrock Section
+                if (_selectedType == LLMConfig.typeOpenAiOauth) ...[
+                  _buildOpenAiAuthSection(),
                   const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: _temperatureController,
-                          decoration: InputDecoration(
-                            labelText: UserStorage.l10n.temperatureLabel,
-                            border: const OutlineInputBorder(),
-                          ),
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: TextFormField(
-                          controller: _topPController,
-                          decoration: InputDecoration(
-                            labelText: UserStorage.l10n.topPLabel,
-                            border: const OutlineInputBorder(),
-                          ),
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                ] else if (_selectedType == LLMConfig.typeGeminiOauth) ...[
+                  _buildGeminiAuthSection(),
                   const SizedBox(height: 16),
+                ] else if (_selectedType == LLMConfig.typeBedrockClaude) ...[
+                  // Bedrock-specific fields
                   TextFormField(
-                    controller: _maxTokensController,
-                    decoration: InputDecoration(
-                      labelText: UserStorage.l10n.maxTokensLabel,
-                      border: const OutlineInputBorder(),
+                    controller: _bedrockAccessKeyController,
+                    decoration: const InputDecoration(
+                      labelText: 'Access Key ID',
+                      border: OutlineInputBorder(),
                     ),
-                    keyboardType: TextInputType.number,
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _extraController,
-                    decoration: InputDecoration(
-                      labelText: UserStorage.l10n.extraParamsJson,
-                      helperText:
-                          LLMConfig.extraParamsHint(_selectedType).isNotEmpty
-                              ? LLMConfig.extraParamsHint(_selectedType)
-                              : null,
-                      helperMaxLines: 10,
-                      border: const OutlineInputBorder(),
-                      alignLabelWithHint: true,
-                    ),
-                    maxLines: 5,
-                    keyboardType: TextInputType.multiline,
                     validator: (value) {
-                      if (value != null && value.isNotEmpty) {
-                        try {
-                          jsonDecode(value);
-                        } catch (e) {
-                          return UserStorage.l10n.invalidJson;
-                        }
+                      if (value == null || value.isEmpty) {
+                        return UserStorage.l10n.required;
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _bedrockSecretKeyController,
+                    decoration: InputDecoration(
+                      labelText: 'Secret Access Key',
+                      border: const OutlineInputBorder(),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _isObscureApiKey
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                        ),
+                        onPressed: () => setState(
+                            () => _isObscureApiKey = !_isObscureApiKey),
+                      ),
+                    ),
+                    obscureText: _isObscureApiKey,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return UserStorage.l10n.required;
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _bedrockRegionController,
+                    decoration: const InputDecoration(
+                      labelText: 'Region',
+                      hintText: 'us-west-2',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ] else if (_selectedType == LLMConfig.typeOllama) ...[
+                  // Ollama doesn't need an API key — skip
+                ] else ...[
+                  TextFormField(
+                    controller: _apiKeyController,
+                    decoration: InputDecoration(
+                      labelText: UserStorage.l10n.apiKeyLabel,
+                      border: const OutlineInputBorder(),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _isObscureApiKey
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                        ),
+                        onPressed: () => setState(
+                            () => _isObscureApiKey = !_isObscureApiKey),
+                      ),
+                    ),
+                    obscureText: _isObscureApiKey,
+                    onChanged: (_) {
+                      _checkChanges();
+                      setState(() {});
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                ],
+
+                // Base URL
+                if (_selectedType != LLMConfig.typeBedrockClaude &&
+                    _selectedType != LLMConfig.typeOpenAiOauth &&
+                    _selectedType != LLMConfig.typeGeminiOauth) ...[
+                  TextFormField(
+                    controller: _baseUrlController,
+                    decoration: InputDecoration(
+                      labelText: UserStorage.l10n.baseUrlLabel,
+                      border: const OutlineInputBorder(),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return UserStorage.l10n.required;
                       }
                       return null;
                     },
                   ),
                   const SizedBox(height: 16),
                 ],
-              ),
+
+                // Model ID
+                if (_modelSelectorDisabled)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Text(
+                      UserStorage.l10n.enterApiKeyFirst,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.orange[700],
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                AbsorbPointer(
+                  absorbing: _modelSelectorDisabled,
+                  child: Opacity(
+                    opacity: _modelSelectorDisabled ? 0.5 : 1.0,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: SearchableDropdown(
+                            key: _modelDropdownKey,
+                            options: _modelOptions(),
+                            initialValue: _modelIdController.text,
+                            onChanged: (value) {
+                              _modelIdController.text = value;
+                              _checkChanges();
+                              setState(() {});
+                            },
+                            decoration: InputDecoration(
+                              labelText: UserStorage.l10n.modelIdLabel,
+                              helperText: _isFetchingModels
+                                  ? UserStorage.l10n.fetchingModels
+                                  : UserStorage.l10n.modelIdHelper,
+                              border: const OutlineInputBorder(),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return UserStorage.l10n.required;
+                              }
+                              return null;
+                            },
+                            optionBuilder: (option, _) {
+                              final isPro =
+                                  _selectedType == LLMConfig.typeOpenAiOauth &&
+                                      _isProModel(option);
+                              final isFeatured = LLMConfig.featuredModels(
+                                _selectedType,
+                              ).contains(option);
+                              final isVision = _isKnownMultimodalModel(option);
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Expanded(child: Text(option)),
+                                    if (isFeatured)
+                                      Container(
+                                        margin: const EdgeInsets.only(left: 8),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                          vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primary.withValues(
+                                            alpha: 0.1,
+                                          ),
+                                          borderRadius:
+                                              BorderRadius.circular(4),
+                                        ),
+                                        child: Text(
+                                          UserStorage.l10n.recommendedBadge,
+                                          style: const TextStyle(
+                                            fontSize: 10,
+                                            color: AppColors.primary,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    if (isVision)
+                                      Container(
+                                        margin: const EdgeInsets.only(left: 8),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                          vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.green.withValues(
+                                            alpha: 0.1,
+                                          ),
+                                          borderRadius:
+                                              BorderRadius.circular(4),
+                                        ),
+                                        child: Text(
+                                          _visionBadgeText,
+                                          style: const TextStyle(
+                                            fontSize: 10,
+                                            color: Colors.green,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    if (isPro)
+                                      Container(
+                                        margin: const EdgeInsets.only(left: 8),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                          vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFFFF7ED),
+                                          borderRadius:
+                                              BorderRadius.circular(4),
+                                          border: Border.all(
+                                            color: const Color(0xFFFBBF24),
+                                            width: 0.5,
+                                          ),
+                                        ),
+                                        child: const Text(
+                                          'Pro/Plus',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: Color(0xFFD97706),
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        if (LLMConfig.supportsModelListing(_selectedType) &&
+                            !_modelSelectorDisabled)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: IconButton(
+                              icon: _isFetchingModels
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Icon(Icons.refresh),
+                              tooltip: UserStorage.l10n.fetchModelsButton,
+                              onPressed:
+                                  _isFetchingModels ? null : _fetchModels,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (_selectedType == LLMConfig.typeOpenAiOauth &&
+                    _isProModel(_modelIdController.text))
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6, left: 4),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.info_outline,
+                          size: 14,
+                          color: Color(0xFFD97706),
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            UserStorage.l10n.proModelHint,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFFD97706),
+                              height: 1.3,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                if (_selectedType.isNotEmpty &&
+                    _modelIdController.text.trim().isNotEmpty &&
+                    !_isKnownMultimodalModel(_modelIdController.text))
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6, left: 16),
+                    child: Text(
+                      _notMultimodalHint,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFFD97706),
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 24),
+
+                // Connection Test
+                _buildTestConnectionSection(),
+                const SizedBox(height: 24),
+
+                // Advanced Settings
+                ExpansionTile(
+                  title: Text(UserStorage.l10n.advancedSettings),
+                  children: [
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _proxyUrlController,
+                      decoration: InputDecoration(
+                        labelText: UserStorage.l10n.proxyUrlOptional,
+                        helperText: UserStorage.l10n.proxyUrlHelper,
+                        border: const OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _temperatureController,
+                            decoration: InputDecoration(
+                              labelText: UserStorage.l10n.temperatureLabel,
+                              border: const OutlineInputBorder(),
+                            ),
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _topPController,
+                            decoration: InputDecoration(
+                              labelText: UserStorage.l10n.topPLabel,
+                              border: const OutlineInputBorder(),
+                            ),
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _maxTokensController,
+                      decoration: InputDecoration(
+                        labelText: UserStorage.l10n.maxTokensLabel,
+                        border: const OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.number,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _extraController,
+                      decoration: InputDecoration(
+                        labelText: UserStorage.l10n.extraParamsJson,
+                        helperText:
+                            LLMConfig.extraParamsHint(_selectedType).isNotEmpty
+                                ? LLMConfig.extraParamsHint(_selectedType)
+                                : null,
+                        helperMaxLines: 10,
+                        border: const OutlineInputBorder(),
+                        alignLabelWithHint: true,
+                      ),
+                      maxLines: 5,
+                      keyboardType: TextInputType.multiline,
+                      validator: (value) {
+                        if (value != null && value.isNotEmpty) {
+                          try {
+                            jsonDecode(value);
+                          } catch (e) {
+                            return UserStorage.l10n.invalidJson;
+                          }
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+              ],
             ],
           ),
         ),

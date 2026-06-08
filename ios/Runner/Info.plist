@@ -107,6 +107,8 @@
 		<key>BGTaskSchedulerPermittedIdentifiers</key>
 		<array>
 			<string>workmanager.background.task</string>
+			<string>$(PRODUCT_BUNDLE_IDENTIFIER).agent.processing</string>
+			<string>$(PRODUCT_BUNDLE_IDENTIFIER).agent.continued.*</string>
 		</array>
 		<key>UIApplicationShortcutItems</key>
 		<array>

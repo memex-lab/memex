@@ -217,6 +217,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get managedSurfacePrefix => '页面';
 
   @override
+  String get experimentalLab => '实验室';
+
+  @override
+  String get experimentalLabDescription => '仍在实验中的能力，后续可能调整或移动。';
+
+  @override
   String get modelUsageStats => '模型使用统计';
 
   @override
@@ -858,17 +864,20 @@ class AppLocalizationsZh extends AppLocalizations {
   String get openAiAuthInfo => 'OpenAI 授权信息';
 
   @override
-  String get setupModelConfigTitle => '连接你的 AI 大脑';
+  String get setupModelConfigTitle => '配置 AI 模型';
 
   @override
   String get setupModelConfigSubtitle =>
-      'Memex 需要 AI 模型的支持才能为你整理记忆和提炼洞察。请配置你想使用的大模型服务。';
+      'Memex 需要一个前沿 AI 模型来整理记录、分析图片并生成洞察。选择一种连接方式即可。';
 
   @override
   String get setupModelConfigComplete => '配置完成，开启旅程';
 
   @override
   String get aiService => 'Memex 模型服务';
+
+  @override
+  String get aiServiceMemexRouteTitle => '通过 Memex 连接';
 
   @override
   String get aiServiceTitle => '为真实生活打造的 AI 日记';
@@ -884,8 +893,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get aiServiceCustomModelTitle => '连接自有 AI 模型';
 
   @override
+  String get aiServiceCustomApiRouteTitle => '我有 API Key';
+
+  @override
   String get aiServiceCustomModelDescription =>
-      '如果您熟悉模型 API 并具备配置能力，我们建议使用您自己的 Key。如果您不熟悉或没有配置能力，可以充值我们的按量付费额度。';
+      '已有 OpenAI、Anthropic、DeepSeek、Gemini 等服务的 API Key 时，优先选择这项。';
 
   @override
   String get aiServiceStepAccount => '一个账号管理额度、账单和使用记录。';
@@ -897,7 +909,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get aiServiceStepEnable => '开启后，文字、照片和语音记录会自动进入 AI 整理队列。';
 
   @override
-  String get enableAiService => '开始使用';
+  String get enableAiService => '使用 Memex 连接';
 
   @override
   String get aiServiceWaitingForPayment => '登录并选择额度后开启';
@@ -906,10 +918,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get aiServiceReadyToast => 'AI 整理已开启';
 
   @override
-  String get aiServiceSettingsDescription => '管理 AI 整理的开通状态、额度和使用记录。';
+  String get aiServiceSettingsDescription =>
+      '没有 API Key 时，可用 Memex 账号代理连接主流模型服务。';
 
   @override
-  String get advancedModelConfiguration => '我想连接自己的 AI 模型';
+  String get advancedModelConfiguration => '配置 API Key';
 
   @override
   String get skipForNow => '暂不配置，先逛逛';
@@ -1637,16 +1650,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get duplicate => '复制';
 
   @override
-  String get keyIdLabel => 'Key (ID)';
+  String get keyIdLabel => '配置 ID';
 
   @override
-  String get keyIdHelper => '此配置的唯一标识符';
+  String get keyIdHelper => '用于区分多个模型配置，普通用户无需修改';
 
   @override
   String get required => '必填';
 
   @override
-  String get clientLabel => '提供商';
+  String get clientLabel => '模型服务商';
 
   @override
   String get geminiClient => 'Gemini';
@@ -1721,7 +1734,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get providerMimo => 'Xiaomi MIMO (小米)';
 
   @override
-  String get providerMemex => 'Memex AI';
+  String get providerMemex => 'Memex 代理服务';
 
   @override
   String get memexSignIn => '登录';
@@ -1802,7 +1815,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get modelIdLabel => 'Model ID';
+  String get modelIdLabel => '模型';
 
   @override
   String get modelIdHelper => '例如 gemini-3.1-pro-preview、gpt-4o';
@@ -1820,7 +1833,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get apiKeyLabel => 'API Key';
 
   @override
-  String get baseUrlLabel => 'Base URL';
+  String get baseUrlLabel => 'API 地址';
 
   @override
   String get advancedSettings => '高级设置';

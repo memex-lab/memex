@@ -15,6 +15,7 @@ import 'package:memex/ui/settings/widgets/debug_settings_page.dart';
 import 'package:memex/ui/settings/widgets/data_storage_page.dart';
 import 'package:memex/ui/settings/widgets/backup_restore_page.dart';
 import 'package:memex/ui/settings/widgets/location_context_settings_page.dart';
+import 'package:memex/ui/settings/widgets/experimental_lab_page.dart';
 import 'package:memex/ui/memory/view_models/memory_viewmodel.dart';
 import 'package:memex/ui/memory/widgets/memory_screen.dart';
 import 'package:memex/ui/character/view_models/character_viewmodel.dart';
@@ -126,29 +127,24 @@ class SettingsRegistry {
           parentPathGetter: () => [UserStorage.l10n.personalCenter],
         ),
         SettingsItem(
-          id: 'agent_config',
-          titleGetter: () => UserStorage.l10n.agentConfig,
-          descriptionGetter: () => UserStorage.l10n.agentConfiguration,
+          id: 'experimental_lab',
+          titleGetter: () => UserStorage.l10n.experimentalLab,
+          descriptionGetter: () => UserStorage.l10n.experimentalLabDescription,
           keywords: const [
-            'agent',
-            '智能体',
-            '代理',
-            '分配模型',
-            '卡片处理',
-            '知识提取',
-            '评论生成',
-            '聊天',
-            '图片分析',
-            'agent config',
-            'agent model',
-            'card agent',
-            'knowledge',
-            'comment',
-            'chat',
+            '实验',
+            '实验室',
+            '内测',
+            '预览',
+            'lab',
+            'labs',
+            'experimental',
+            'preview',
           ],
-          icon: Icons.people_outline,
+          icon: Icons.science_outlined,
           navigationTarget: NavigationTarget(
-            pageBuilder: (_) => const AgentConfigListPage(),
+            pageBuilder: (context) => ExperimentalLabPage(
+              router: context.read<MemexRouter>(),
+            ),
           ),
           parentPathGetter: () => [UserStorage.l10n.personalCenter],
         ),
@@ -276,6 +272,37 @@ class SettingsRegistry {
             ),
           ),
           parentPathGetter: () => [UserStorage.l10n.personalCenter],
+        ),
+        SettingsItem(
+          id: 'debug.agent_config',
+          titleGetter: () => UserStorage.l10n.agentConfig,
+          descriptionGetter: () => UserStorage.l10n.agentConfiguration,
+          keywords: const [
+            'agent',
+            '智能体',
+            '代理',
+            '分配模型',
+            '卡片处理',
+            '知识提取',
+            '评论生成',
+            '聊天',
+            '图片分析',
+            'agent config',
+            'agent model',
+            'card agent',
+            'knowledge',
+            'comment',
+            'chat',
+            'debug',
+          ],
+          icon: Icons.people_outline,
+          navigationTarget: NavigationTarget(
+            pageBuilder: (_) => const AgentConfigListPage(),
+          ),
+          parentPathGetter: () => [
+            UserStorage.l10n.personalCenter,
+            'Debug',
+          ],
         ),
       ];
 

@@ -18,6 +18,7 @@
 		AA0001051000000100000003 /* StorageChannelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001061000000100000003 /* StorageChannelHandler.swift */; };
 		AA0001071000000100000004 /* SystemActionsChannelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001081000000100000004 /* SystemActionsChannelHandler.swift */; };
 		AA0001091000000100000005 /* AudioConverterChannelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00010A1000000100000005 /* AudioConverterChannelHandler.swift */; };
+		AA00010B1000000100000006 /* AgentBackgroundTaskChannelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00010C1000000100000006 /* AgentBackgroundTaskChannelHandler.swift */; };
 		94D8E68DFAF0E975A7B3AAC9 /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FD25ADB84447B9A4366F6055 /* Pods_RunnerTests.framework */; };
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
@@ -91,6 +92,7 @@
 		AA0001061000000100000003 /* StorageChannelHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageChannelHandler.swift; sourceTree = "<group>"; };
 		AA0001081000000100000004 /* SystemActionsChannelHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemActionsChannelHandler.swift; sourceTree = "<group>"; };
 		AA00010A1000000100000005 /* AudioConverterChannelHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioConverterChannelHandler.swift; sourceTree = "<group>"; };
+		AA00010C1000000100000006 /* AgentBackgroundTaskChannelHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentBackgroundTaskChannelHandler.swift; sourceTree = "<group>"; };
 		7AFA3C8E1D35360C0083082E /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Release.xcconfig; path = Flutter/Release.xcconfig; sourceTree = "<group>"; };
 		83F22F54729A29819701B85D /* Pods-ShareExtension.debug-cn.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ShareExtension.debug-cn.xcconfig"; path = "Target Support Files/Pods-ShareExtension/Pods-ShareExtension.debug-cn.xcconfig"; sourceTree = "<group>"; };
 		8968E2D1ACE76EDC468CD1F2 /* Pods-Runner.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"; sourceTree = "<group>"; };
@@ -235,6 +237,7 @@
 				AA0001061000000100000003 /* StorageChannelHandler.swift */,
 				AA0001081000000100000004 /* SystemActionsChannelHandler.swift */,
 				AA00010A1000000100000005 /* AudioConverterChannelHandler.swift */,
+				AA00010C1000000100000006 /* AgentBackgroundTaskChannelHandler.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 			);
 			path = Runner;
@@ -585,6 +588,7 @@
 				AA0001051000000100000003 /* StorageChannelHandler.swift in Sources */,
 				AA0001071000000100000004 /* SystemActionsChannelHandler.swift in Sources */,
 				AA0001091000000100000005 /* AudioConverterChannelHandler.swift in Sources */,
+				AA00010B1000000100000006 /* AgentBackgroundTaskChannelHandler.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

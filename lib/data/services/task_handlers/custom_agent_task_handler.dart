@@ -349,17 +349,21 @@ contract. Keep the change focused on the validation error.
       aiResponse: resultText,
     );
 
-    // Create a system_task card to show the result on the timeline.
-    await _createResultCard(
-      userId: userId,
-      agentName: agentName,
-      status: status,
-      message: resultText,
-      sessionId: sessionId,
-    );
-    if (managedSurfaceId != null && managedSurfaceId.isNotEmpty) {
+    if (isManagedSurfaceAgent) {
+      _logger.info(
+        'Skipping system_task card for managed Dynamic Surface agent "$agentName"',
+      );
       EventBusService.instance.emitEvent(
         DynamicSurfaceUpdatedMessage(surfaceId: managedSurfaceId),
+      );
+    } else {
+      // Create a system_task card to show the result on the timeline.
+      await _createResultCard(
+        userId: userId,
+        agentName: agentName,
+        status: status,
+        message: resultText,
+        sessionId: sessionId,
       );
     }
   } finally {

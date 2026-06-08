@@ -227,6 +227,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get managedSurfacePrefix => 'surface';
 
   @override
+  String get experimentalLab => 'Labs';
+
+  @override
+  String get experimentalLabDescription =>
+      'Experimental features that may change or move later.';
+
+  @override
   String get modelUsageStats => 'Model usage stats';
 
   @override
@@ -884,17 +891,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get openAiAuthInfo => 'OpenAI auth info';
 
   @override
-  String get setupModelConfigTitle => 'Connect Your AI Brain';
+  String get setupModelConfigTitle => 'Set up an AI model';
 
   @override
   String get setupModelConfigSubtitle =>
-      'Memex needs an AI model to process your memories and insights. Please configure your preferred provider.';
+      'Memex needs a frontier AI model to organize records, analyze images, and generate insights. Choose one connection method.';
 
   @override
   String get setupModelConfigComplete => 'Complete & Go';
 
   @override
   String get aiService => 'Memex Model Service';
+
+  @override
+  String get aiServiceMemexRouteTitle => 'Connect through Memex';
 
   @override
   String get aiServiceTitle => 'The AI journal for your real life';
@@ -911,8 +921,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aiServiceCustomModelTitle => 'Connect your own AI model';
 
   @override
+  String get aiServiceCustomApiRouteTitle => 'I have an API key';
+
+  @override
   String get aiServiceCustomModelDescription =>
-      'If you are familiar with model APIs and can configure them yourself, we recommend using your own key. If not, you can top up our pay-as-you-go credit.';
+      'Choose this first if you already have an API key from OpenAI, Anthropic, DeepSeek, Gemini, or another provider.';
 
   @override
   String get aiServiceStepAccount =>
@@ -927,7 +940,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Once enabled, text, photo, and voice records enter the AI organization queue.';
 
   @override
-  String get enableAiService => 'Start using';
+  String get enableAiService => 'Connect with Memex';
 
   @override
   String get aiServiceWaitingForPayment =>
@@ -938,10 +951,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aiServiceSettingsDescription =>
-      'Manage AI organization, credit, and usage history.';
+      'If you do not have an API key, use a Memex account to connect to mainstream model services.';
 
   @override
-  String get advancedModelConfiguration => 'I want to connect my own AI model';
+  String get advancedModelConfiguration => 'Configure API key';
 
   @override
   String get skipForNow => 'Skip for now';
@@ -1695,16 +1708,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get duplicate => 'Duplicate';
 
   @override
-  String get keyIdLabel => 'Key (ID)';
+  String get keyIdLabel => 'Config ID';
 
   @override
-  String get keyIdHelper => 'Unique identifier for this configuration';
+  String get keyIdHelper =>
+      'Used to distinguish multiple model configs. Most users do not need to change it.';
 
   @override
   String get required => 'Required';
 
   @override
-  String get clientLabel => 'Provider';
+  String get clientLabel => 'Model provider';
 
   @override
   String get geminiClient => 'Gemini';
@@ -1779,7 +1793,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get providerMimo => 'Xiaomi MIMO';
 
   @override
-  String get providerMemex => 'Memex AI';
+  String get providerMemex => 'Memex proxy service';
 
   @override
   String get memexSignIn => 'Sign In';
@@ -1860,7 +1874,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get modelIdLabel => 'Model ID';
+  String get modelIdLabel => 'Model';
 
   @override
   String get modelIdHelper => 'e.g. gemini-3.1-pro-preview, gpt-4o';
@@ -1878,7 +1892,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get apiKeyLabel => 'API Key';
 
   @override
-  String get baseUrlLabel => 'Base URL';
+  String get baseUrlLabel => 'API endpoint';
 
   @override
   String get advancedSettings => 'Advanced Settings';
