@@ -16,9 +16,8 @@ void main() {
       final dailyReportDir = Directory(
         p.join(
           tempDir.path,
-          '_UserSettings',
-          'DynamicSurfaceData',
-          'daily_report',
+          'Reports',
+          'Daily',
         ),
       );
       await dailyReportDir.create(recursive: true);
@@ -142,29 +141,29 @@ void main() {
 
     test('matches a virtual absolute exact file pattern', () async {
       final result = await service.globFiles(
-        pattern: '/_UserSettings/DynamicSurfaceData/daily_report/2026-06-03.md',
+        pattern: '/Reports/Daily/2026-06-03.md',
         workingDirectory: tempDir.path,
       );
 
       expect(
         result,
-        '/_UserSettings/DynamicSurfaceData/daily_report/2026-06-03.md',
+        '/Reports/Daily/2026-06-03.md',
       );
     });
 
     test('matches a virtual absolute glob pattern from workspace root',
         () async {
       final result = await service.globFiles(
-        pattern: '/_UserSettings/DynamicSurfaceData/daily_report/*.md',
+        pattern: '/Reports/Daily/*.md',
         workingDirectory: tempDir.path,
       );
 
       expect(
         _lines(result),
         containsAll([
-          '/_UserSettings/DynamicSurfaceData/daily_report/2026-06-03.md',
-          '/_UserSettings/DynamicSurfaceData/daily_report/2026-06-04.md',
-          '/_UserSettings/DynamicSurfaceData/daily_report/2026-06-10.md',
+          '/Reports/Daily/2026-06-03.md',
+          '/Reports/Daily/2026-06-04.md',
+          '/Reports/Daily/2026-06-10.md',
         ]),
       );
     });
@@ -172,14 +171,14 @@ void main() {
     test('matches a virtual absolute pattern under an explicit search path',
         () async {
       final result = await service.globFiles(
-        pattern: '/_UserSettings/DynamicSurfaceData/daily_report/2026-06-03.md',
-        searchPath: '/_UserSettings/DynamicSurfaceData/daily_report',
+        pattern: '/Reports/Daily/2026-06-03.md',
+        searchPath: '/Reports/Daily',
         workingDirectory: tempDir.path,
       );
 
       expect(
         result,
-        '/_UserSettings/DynamicSurfaceData/daily_report/2026-06-03.md',
+        '/Reports/Daily/2026-06-03.md',
       );
     });
 
@@ -211,22 +210,22 @@ void main() {
     test('question mark matches exactly one non-slash character', () async {
       final result = await service.globFiles(
         pattern: '2026-06-0?.md',
-        searchPath: '/_UserSettings/DynamicSurfaceData/daily_report',
+        searchPath: '/Reports/Daily',
         workingDirectory: tempDir.path,
       );
 
       expect(
         _lines(result),
         containsAll([
-          '/_UserSettings/DynamicSurfaceData/daily_report/2026-06-03.md',
-          '/_UserSettings/DynamicSurfaceData/daily_report/2026-06-04.md',
+          '/Reports/Daily/2026-06-03.md',
+          '/Reports/Daily/2026-06-04.md',
         ]),
       );
       expect(
         _lines(result),
         isNot(
           contains(
-            '/_UserSettings/DynamicSurfaceData/daily_report/2026-06-10.md',
+            '/Reports/Daily/2026-06-10.md',
           ),
         ),
       );

@@ -4,16 +4,10 @@ import 'dart:io';
 
 import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:logging/logging.dart';
-import 'package:memex/agent/dynamic_surface_author_agent/dynamic_surface_author_agent.dart';
 import 'package:memex/agent/memex_skill_host_agent/memex_skill_host_agent.dart';
 import 'package:memex/agent/pure_skill_host_agent/pure_skill_host_agent.dart';
-import 'package:memex/agent/security/file_permission_manager.dart';
-import 'package:memex/agent/skills/dynamic_surface/dynamic_surface_page_agent_prompt.dart';
-import 'package:memex/agent/skills/dynamic_surface/dynamic_surface_permissions.dart';
 import 'package:memex/agent/super_agent/super_agent.dart';
 import 'package:memex/data/services/custom_agent_config_service.dart';
-import 'package:memex/data/services/dynamic_surface_service.dart';
-import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/data/services/location_context_service.dart';
 import 'package:memex/domain/models/custom_agent_config.dart';
 import 'package:memex/domain/models/location_context_config.dart';
@@ -68,11 +62,8 @@ class ChatService {
 
     String finalSessionId = sessionId ?? '';
     final userMessageTime = DateTime.now();
-    final isDynamicSurfaceAuthor =
-        agentName == AgentDefinitions.dynamicSurfaceAuthorAgent;
-    CustomAgentConfig? customAgentCfg = isDynamicSurfaceAuthor
-        ? null
-        : await _loadCustomAgentConfig(userId, agentName);
+    CustomAgentConfig? customAgentCfg =
+        await _loadCustomAgentConfig(userId, agentName);
 
     // 1. Session Management
     try {
@@ -148,9 +139,8 @@ class ChatService {
         }
       }
 
-      final agentIdForLLM = isDynamicSurfaceAuthor
-          ? AgentDefinitions.dynamicSurfaceAuthorAgent
-          : customAgentCfg?.llmConfigKey ?? AgentDefinitions.chatAgent;
+      final agentIdForLLM =
+          customAgentCfg?.llmConfigKey ?? AgentDefinitions.chatAgent;
       final resources = await UserStorage.getAgentLLMResources(
         agentIdForLLM,
         defaultClientKey:
@@ -171,30 +161,12 @@ class ChatService {
 
       controller = AgentController();
 
-      if (isDynamicSurfaceAuthor) {
-        final workingDirAbs =
-            await _fileService.resolveWorkingDirectory(userId, '');
-        agent = await DynamicSurfaceAuthorAgent.createAgent(
-          client: client,
-          modelConfig: modelConfig,
-          userId: userId,
-          state: state,
-          workingDirectory: workingDirAbs,
-          controller: controller,
-        );
-      } else if (customAgentCfg != null) {
+      if (customAgentCfg != null) {
         // Recreate the same agent type used by custom_agent_task_handler.
         final workingDirAbs = await _fileService.resolveWorkingDirectory(
           userId,
           customAgentCfg.workingDirectory,
         );
-        final managedSurfaceId = customAgentCfg.managedSurfaceId?.trim();
-        final managedSurfaceWriteRules = await _buildManagedSurfaceWriteRules(
-          userId: userId,
-          surfaceId: managedSurfaceId,
-        );
-        final isManagedSurfaceAgent =
-            managedSurfaceId != null && managedSurfaceId.isNotEmpty;
 
         final skillDirectoryPath = customAgentCfg.skillDirectoryPath.trim();
         if (skillDirectoryPath.isNotEmpty) {
@@ -211,20 +183,11 @@ class ChatService {
         }
         final effectiveSkillDirectoryPath =
             skillSync?.effectivePath ?? skillDirectoryPath;
-
-        final dynamicSurfacePrompt =
-            managedSurfaceId != null && managedSurfaceId.isNotEmpty
-                ? buildDynamicSurfacePageAgentRuntimePrompt(
-                    managedSurfaceId,
-                    interactiveChat: true,
-                  )
-                : null;
-        final additionalSystemPrompt = [
-          if (customAgentCfg.systemPrompt != null &&
-              customAgentCfg.systemPrompt!.trim().isNotEmpty)
-            customAgentCfg.systemPrompt!.trim(),
-          if (dynamicSurfacePrompt != null) dynamicSurfacePrompt,
-        ].join('\n\n');
+        final trimmedSystemPrompt = customAgentCfg.systemPrompt?.trim();
+        final additionalSystemPrompt =
+            trimmedSystemPrompt == null || trimmedSystemPrompt.isEmpty
+                ? null
+                : trimmedSystemPrompt;
 
         switch (customAgentCfg.hostAgentType) {
           case HostAgentType.pure:
@@ -237,10 +200,7 @@ class ChatService {
               skillDirectoryPath: effectiveSkillDirectoryPath,
               workingDirectory: workingDirAbs,
               controller: controller,
-              additionalSystemPrompt: additionalSystemPrompt.isEmpty
-                  ? null
-                  : additionalSystemPrompt,
-              filePermissionRules: managedSurfaceWriteRules,
+              additionalSystemPrompt: additionalSystemPrompt,
             );
             break;
           case HostAgentType.memex:
@@ -253,12 +213,7 @@ class ChatService {
               skillDirectoryPath: effectiveSkillDirectoryPath,
               workingDirectory: workingDirAbs,
               controller: controller,
-              additionalSystemPrompt: additionalSystemPrompt.isEmpty
-                  ? null
-                  : additionalSystemPrompt,
-              filePermissionRules: managedSurfaceWriteRules,
-              enablePlanner: !isManagedSurfaceAgent,
-              enableJavaScriptRuntime: !isManagedSurfaceAgent,
+              additionalSystemPrompt: additionalSystemPrompt,
             );
             break;
         }
@@ -315,7 +270,6 @@ When the user disputes content you generated (such as Cards, PKM entries, or Ass
       streamController,
       userId,
       finalSessionId,
-      managedSurfaceId: customAgentCfg?.managedSurfaceId,
     );
 
     // Build scene context reminder
@@ -423,9 +377,8 @@ When the user disputes content you generated (such as Cards, PKM entries, or Ass
     AgentController controller,
     StreamController<ChatEvent> stream,
     String userId,
-    String sessionId, {
-    String? managedSurfaceId,
-  }) {
+    String sessionId,
+  ) {
     // 1. Lifecycle Events
     // 1. Lifecycle Events
     controller.on((AgentStartedEvent event) {
@@ -504,26 +457,6 @@ When the user disputes content you generated (such as Cards, PKM entries, or Ass
         if (lastMsg.textOutput != null) {
           response = lastMsg.textOutput!;
         }
-      }
-
-      final validation =
-          managedSurfaceId == null || managedSurfaceId.trim().isEmpty
-              ? null
-              : await DynamicSurfaceService(fileSystemService: _fileService)
-                  .validateSurface(userId, managedSurfaceId.trim());
-      if (validation != null && !validation.isValid) {
-        final validationMessage =
-            '\n\nDynamic Surface parser/render validation failed:\n'
-            '${validation.errorMessage}';
-        response = '$response$validationMessage';
-        if (!stream.isClosed) {
-          stream.add(ChatResponseChunkEvent(validationMessage));
-        }
-      }
-      if (managedSurfaceId != null && managedSurfaceId.trim().isNotEmpty) {
-        EventBusService.instance.emitEvent(
-          DynamicSurfaceUpdatedMessage(surfaceId: managedSurfaceId.trim()),
-        );
       }
 
       // Save AI response with usage stats
@@ -736,30 +669,6 @@ When the user disputes content you generated (such as Cards, PKM entries, or Ass
 
     await _fileService.writeYamlFile(sessionFile.path, sessionData);
     return sessionId;
-  }
-
-  Future<List<PermissionRule>?> _buildManagedSurfaceWriteRules({
-    required String userId,
-    required String? surfaceId,
-  }) async {
-    if (surfaceId == null || surfaceId.isEmpty) return null;
-
-    final service = DynamicSurfaceService(fileSystemService: _fileService);
-    final surface = await service.getSurface(userId, surfaceId);
-    if (surface == null) {
-      _logger.warning(
-        'Managed Dynamic Surface "$surfaceId" not found; using read-only file access for chat.',
-      );
-      return const [];
-    }
-
-    final writeRules = await buildManagedDynamicSurfaceWriteRules(
-      userId: userId,
-      surfaceId: surfaceId,
-      fileSystemService: _fileService,
-      dynamicSurfaceService: service,
-    );
-    return writeRules;
   }
 
   Future<Map<String, dynamic>?> _addMessageToSession(

@@ -14,7 +14,6 @@ import 'package:memex/ui/settings/widgets/debug_settings_page.dart';
 import 'package:memex/ui/settings/widgets/settings_page.dart';
 import 'package:memex/ui/settings/widgets/settings_search_screen.dart';
 import 'package:memex/ui/settings/view_models/settings_search_viewmodel.dart';
-import 'package:memex/ui/settings/widgets/experimental_lab_page.dart';
 import 'package:memex/utils/permission_utils.dart';
 import 'package:memex/ui/core/widgets/avatar_picker.dart';
 import 'package:memex/ui/core/widgets/character_avatar.dart';
@@ -985,21 +984,6 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
                                 MaterialPageRoute(
                                   builder: (context) =>
                                       const ModelConfigListPage(),
-                                ),
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 12),
-                          _buildFunctionTab(
-                            icon: Icons.science_outlined,
-                            title: UserStorage.l10n.experimentalLab,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => ExperimentalLabPage(
-                                    router: _memexRouter,
-                                  ),
                                 ),
                               );
                             },

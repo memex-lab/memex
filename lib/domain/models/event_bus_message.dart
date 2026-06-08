@@ -7,7 +7,6 @@ enum EventBusMessageType {
   cardDetailUpdated('card_detail_updated'),
   newInsight('new_insight'),
   scheduleAggregationUpdated('schedule_aggregation_updated'),
-  dynamicSurfaceUpdated('dynamic_surface_updated'),
   newSystemAction('new_system_action'),
   attachmentsChanged('attachments_changed'),
   invalidModelConfig('invalid_model_config'),
@@ -50,8 +49,6 @@ abstract class EventBusMessage {
         return NewInsightMessage.fromJson(json);
       case EventBusMessageType.scheduleAggregationUpdated:
         return ScheduleAggregationUpdatedMessage.fromJson(json);
-      case EventBusMessageType.dynamicSurfaceUpdated:
-        return DynamicSurfaceUpdatedMessage.fromJson(json);
       case EventBusMessageType.newSystemAction:
         return NewSystemActionMessage.fromJson(json);
       case EventBusMessageType.attachmentsChanged:
@@ -271,24 +268,6 @@ class ScheduleAggregationUpdatedMessage extends EventBusMessage {
     final data = json['data'] as Map<String, dynamic>;
     return ScheduleAggregationUpdatedMessage(
       aggregationId: data['aggregation_id'] as String,
-    );
-  }
-}
-
-/// Dynamic Surface package installed or updated.
-class DynamicSurfaceUpdatedMessage extends EventBusMessage {
-  final String surfaceId;
-
-  DynamicSurfaceUpdatedMessage({required this.surfaceId})
-      : super(
-          type: EventBusMessageType.dynamicSurfaceUpdated,
-          data: {'surface_id': surfaceId},
-        );
-
-  factory DynamicSurfaceUpdatedMessage.fromJson(Map<String, dynamic> json) {
-    final data = json['data'] as Map<String, dynamic>? ?? {};
-    return DynamicSurfaceUpdatedMessage(
-      surfaceId: data['surface_id'] as String? ?? '',
     );
   }
 }

@@ -265,50 +265,6 @@ class CustomAgentConfigService {
     }
   }
 
-  Future<CustomAgentConfig> installDynamicSurfacePageAgent({
-    required String userId,
-    required String surfaceId,
-    String? displayName,
-    String triggerEventType = SystemEventTypes.userInputSubmitted,
-    String? systemPrompt,
-  }) async {
-    _validateSurfaceId(surfaceId);
-
-    final agentName = _agentNameForSurface(surfaceId);
-    final existing = await _findDynamicSurfacePageAgentConfig(
-      userId: userId,
-      surfaceId: surfaceId,
-    );
-    final effectiveSystemPrompt = systemPrompt?.trim().isNotEmpty == true
-        ? systemPrompt!.trim()
-        : existing?.systemPrompt ??
-            _buildDynamicSurfacePageAgentSystemPrompt(surfaceId);
-
-    final config = CustomAgentConfig(
-      agentName: agentName,
-      hostAgentType: HostAgentType.memex,
-      skillDirectoryPath: '',
-      workingDirectory: '',
-      llmConfigKey: existing?.llmConfigKey,
-      eventType: triggerEventType,
-      executionMode: existing?.executionMode ?? ExecutionMode.async_,
-      dependsOn: existing?.dependsOn ?? const [],
-      enabled: existing?.enabled ?? true,
-      priority: existing?.priority ?? 0,
-      maxRetries: existing?.maxRetries ?? 5,
-      isCustom: existing?.isCustom ?? true,
-      managedSurfaceId: surfaceId,
-      systemPrompt: effectiveSystemPrompt,
-      eventSerializerName: existing?.eventSerializerName,
-    );
-
-    await saveAndReload(userId, config);
-    _logger.info(
-      'Installed Dynamic Surface page agent: $agentName for $surfaceId',
-    );
-    return config;
-  }
-
   /// Register all enabled custom agents on the GlobalEventBus.
   /// Call this at app init (after built-in subscriptions) and after any config change.
   Future<void> registerAll(String userId) async {
@@ -398,10 +354,6 @@ class CustomAgentConfigService {
 
   List<String> _eventTypesForConfig(CustomAgentConfig config) {
     final eventTypes = <String>{config.eventType};
-    final managedSurfaceId = config.managedSurfaceId?.trim();
-    if (managedSurfaceId != null && managedSurfaceId.isNotEmpty) {
-      eventTypes.add(SystemEventTypes.dynamicSurfaceRefreshRequested);
-    }
     return eventTypes
         .where((eventType) => eventType.trim().isNotEmpty)
         .toList();
@@ -417,9 +369,6 @@ class CustomAgentConfigService {
       'event_xml': serializer(event),
       'event_type': event.type,
       'event_id': event.eventId,
-      if (event.payload is DynamicSurfaceRefreshRequestedPayload)
-        'surface_id':
-            (event.payload as DynamicSurfaceRefreshRequestedPayload).surfaceId,
     };
   }
 
@@ -433,91 +382,6 @@ class CustomAgentConfigService {
   Future<void> deleteAndReload(String userId, String agentName) async {
     await delete(userId, agentName);
     await registerAll(userId);
-  }
-
-  Future<String?> deleteDynamicSurfacePageAgent({
-    required String userId,
-    required String surfaceId,
-  }) async {
-    _validateSurfaceId(surfaceId);
-    final config = await _findDynamicSurfacePageAgentConfig(
-      userId: userId,
-      surfaceId: surfaceId,
-    );
-
-    final agentName = config?.agentName ?? _agentNameForSurface(surfaceId);
-    await delete(userId, agentName);
-
-    final configuredSkillDirectoryPath =
-        config?.skillDirectoryPath.trim() ?? '';
-    final legacySkillDirectoryPath = configuredSkillDirectoryPath.isNotEmpty
-        ? configuredSkillDirectoryPath
-        : path.join('_UserSettings', 'skills', 'dynamic-surfaces', surfaceId);
-    final skillPath = FileSystemService.instance.resolveSkillPath(
-      userId,
-      legacySkillDirectoryPath,
-    );
-    final skillDir = Directory(skillPath);
-    if (await skillDir.exists()) {
-      await skillDir.delete(recursive: true);
-      _logger.info('Deleted Dynamic Surface page agent skill: $skillPath');
-    }
-
-    await registerAll(userId);
-    return config == null ? null : agentName;
-  }
-
-  Future<CustomAgentConfig?> _findDynamicSurfacePageAgentConfig({
-    required String userId,
-    required String surfaceId,
-  }) async {
-    final configs = await loadAll(userId);
-    for (final config in configs) {
-      if (config.managedSurfaceId == surfaceId) return config;
-    }
-    return null;
-  }
-
-  String _agentNameForSurface(String surfaceId) {
-    final normalized = surfaceId
-        .replaceAll(RegExp(r'[^a-zA-Z0-9]+'), '-')
-        .replaceAll(RegExp(r'-+'), '-')
-        .replaceAll(RegExp(r'^-|-$'), '');
-    final suffix = normalized.isEmpty ? 'page' : normalized;
-    return 'surface-$suffix';
-  }
-
-  void _validateSurfaceId(String surfaceId) {
-    if (!RegExp(r'^[a-zA-Z0-9_-]+$').hasMatch(surfaceId)) {
-      throw ArgumentError(
-        'Dynamic Surface id may only contain letters, numbers, "_" and "-".',
-      );
-    }
-  }
-
-  String _buildDynamicSurfacePageAgentSystemPrompt(String surfaceId) {
-    return '''
-You maintain the Memex Dynamic Surface "$surfaceId".
-
-This is a user-defined page, not a Timeline card and not PKM organization.
-Keep it useful by maintaining the declared page-owned Markdown source and its
-parser.js Markdown data contract.
-
-Native Memex directories may be origin evidence or trigger origins, but the
-surface source is the formatted Markdown mapping owned by this page. Runtime
-permissions restrict writes to that page-owned source.
-
-After updating, the page should still render from injected JSON:
-- `{{memex_data_json}}` is exactly the raw parser.js return value.
-- parser.js and view.html decide the JSON shape together; Memex does not wrap
-  the value or extract item arrays.
-- parser.js is the validation contract. Keep Markdown changes parseable by the
-  installed parser.js.
-
-If the user wants to change the page template, parser.js contract, trigger
-timing, or agent mechanism, that request should go to the Dynamic Surface
-authoring agent.
-''';
   }
 }
 

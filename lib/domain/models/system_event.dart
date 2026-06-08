@@ -23,8 +23,6 @@ class SystemEventTypes {
       'knowledge_insight_refresh_requested';
   static const String scheduleAggregationRequested =
       'schedule_aggregation_requested';
-  static const String dynamicSurfaceRefreshRequested =
-      'dynamic_surface_refresh_requested';
   static const String clarificationAnswered = 'clarification_answered';
   static const String dataChanged = 'data_changed';
 
@@ -34,7 +32,6 @@ class SystemEventTypes {
     cardUiConfigUpdated,
     knowledgeInsightRefreshRequested,
     scheduleAggregationRequested,
-    dynamicSurfaceRefreshRequested,
     clarificationAnswered,
     dataChanged,
   ];
@@ -110,21 +107,6 @@ class ClarificationAnsweredPayload {
 
   Map<String, dynamic> toJson() => {
         'request_id': requestId,
-      };
-}
-
-class DynamicSurfaceRefreshRequestedPayload {
-  DynamicSurfaceRefreshRequestedPayload({
-    required this.surfaceId,
-    this.reason,
-  });
-
-  final String surfaceId;
-  final String? reason;
-
-  Map<String, dynamic> toJson() => {
-        'surface_id': surfaceId,
-        if (reason != null && reason!.isNotEmpty) 'reason': reason,
       };
 }
 

@@ -183,61 +183,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get agentConfig => 'Agent config';
 
   @override
-  String get experimentalLab => 'Labs';
-
-  @override
-  String get experimentalLabDescription =>
-      'Experimental features that may change or move later.';
-
-  @override
-  String get customPages => 'Custom pages';
-
-  @override
-  String get customPagesLabDescription =>
-      'Design and maintain agent-powered custom pages.';
-
-  @override
-  String get designPage => 'Design page';
-
-  @override
-  String get pageDesigner => 'Page designer';
-
-  @override
-  String get dynamicSurfaceAuthorInputHint =>
-      'Describe the page you want to create or change...';
-
-  @override
-  String get runPageAgent => 'Run page agent';
-
-  @override
-  String get customPagesEmpty =>
-      'No custom pages yet. Tap \"Design page\" to describe the page and maintenance logic you want.';
-
-  @override
-  String get customPagesPreviewEmpty =>
-      'Select a custom page to preview it, or tap \"Design page\" to create and iterate on pages.';
-
-  @override
-  String get selectCustomPageBeforeRefresh =>
-      'Select a custom page before requesting refresh.';
-
-  @override
-  String get manualRefreshOnly => 'Manual refresh only';
-
-  @override
-  String get managedSurfaceIdLabel => 'Managed Surface ID';
-
-  @override
-  String get managedSurfaceIdHint => 'Optional, e.g. project_board';
-
-  @override
-  String get managedSurfaceIdInvalid =>
-      'Use only letters, numbers, \"_\" and \"-\".';
-
-  @override
-  String get managedSurfacePrefix => 'surface';
-
-  @override
   String get modelUsageStats => 'Model usage stats';
 
   @override
@@ -2470,6 +2415,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get eventType => 'Event Type';
 
   @override
+  String get manualRefreshOnly => 'Manual only';
+
+  @override
   String get executionMode => 'Execution Mode';
 
   @override
@@ -2980,7 +2928,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get locationStatusGeocodeUnavailableBody =>
-      'Memex has coordinates but will not inject GPS-only context into the agent. Check the reverse geocoding provider and try again.';
+      'Memex has coordinates and will inject GPS-only context without an address. Check the reverse geocoding provider if you want city or neighborhood context.';
 
   @override
   String get locationStatusUnavailableTitle => 'Location unavailable';

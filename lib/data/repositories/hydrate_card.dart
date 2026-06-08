@@ -2,7 +2,6 @@ import 'package:memex/domain/models/timeline_card_model.dart';
 import 'package:memex/domain/models/card_detail_model.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/card_renderer.dart';
-import 'package:memex/data/repositories/card_visibility.dart';
 import 'package:memex/utils/logger.dart';
 
 final _logger = getLogger('HydrateCard');
@@ -22,7 +21,6 @@ Future<TimelineCardModel?> hydrateCard(String userId, String factId) async {
   }
 
   if (cardData.deleted == true) return null;
-  if (shouldHideFromTimeline(cardData)) return null;
 
   final factInfo = await fs.extractFactContentFromFile(userId, factId);
   final factContent = factInfo?.content;

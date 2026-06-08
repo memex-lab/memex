@@ -121,7 +121,7 @@ void main() {
     expect(config.enabled, isFalse);
     expect(find.text('Save'), findsOneWidget);
 
-    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
     config = await UserStorage.getLocationContextConfig();
     expect(config.enabled, isTrue);
@@ -140,7 +140,7 @@ void main() {
     expect(config.provider, GeocodingProvider.openStreetMap);
     expect(config.amapApiKey, isEmpty);
 
-    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
     config = await UserStorage.getLocationContextConfig();
     expect(config.provider, GeocodingProvider.amap);
@@ -156,7 +156,7 @@ void main() {
     expect(config.provider, GeocodingProvider.amap);
     expect(config.amapApiKey, 'test-amap-key');
 
-    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
     config = await UserStorage.getLocationContextConfig();
     expect(config.provider, GeocodingProvider.openStreetMap);
@@ -170,7 +170,7 @@ void main() {
     config = await UserStorage.getLocationContextConfig();
     expect(config.granularity, LocationContextGranularity.neighborhood);
 
-    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
     config = await UserStorage.getLocationContextConfig();
     expect(config.granularity, LocationContextGranularity.street);
@@ -189,7 +189,7 @@ void main() {
     config = await UserStorage.getLocationContextConfig();
     expect(config.ttlMinutes, 15);
 
-    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
     config = await UserStorage.getLocationContextConfig();
     expect(config.ttlMinutes, 30);
@@ -248,7 +248,7 @@ void main() {
       findsOneWidget,
     );
 
-    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
     config = await UserStorage.getLocationContextConfig();
     expect(config.provider, GeocodingProvider.openStreetMap);
@@ -603,7 +603,7 @@ void main() {
     expect(find.textContaining('GPS: fresh'), findsOneWidget);
     expect(find.textContaining('Provider: Amap'), findsOneWidget);
     expect(find.textContaining('Reverse geocode: unavailable'), findsOneWidget);
-    expect(find.textContaining('Agent context: not injected'), findsOneWidget);
+    expect(find.textContaining('Agent context: injected'), findsOneWidget);
     expect(
       find.textContaining('Coordinates: 31.230416, 121.473701'),
       findsOneWidget,

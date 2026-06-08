@@ -178,54 +178,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get agentConfig => 'Agent配置';
 
   @override
-  String get experimentalLab => '实验室';
-
-  @override
-  String get experimentalLabDescription => '仍在实验中的能力，后续可能调整或移动。';
-
-  @override
-  String get customPages => '自定义页面';
-
-  @override
-  String get customPagesLabDescription => '创建和维护由 Agent 驱动的自定义页面。';
-
-  @override
-  String get designPage => '设计页面';
-
-  @override
-  String get pageDesigner => '页面设计师';
-
-  @override
-  String get dynamicSurfaceAuthorInputHint => '描述你想创建或修改的页面...';
-
-  @override
-  String get runPageAgent => '运行维护代理';
-
-  @override
-  String get customPagesEmpty => '还没有自定义页面。点“设计页面”，描述你想要的页面和维护逻辑。';
-
-  @override
-  String get customPagesPreviewEmpty => '选择一个自定义页面查看预览，或点击“设计页面”创建和迭代页面。';
-
-  @override
-  String get selectCustomPageBeforeRefresh => '请先选择一个自定义页面再请求刷新。';
-
-  @override
-  String get manualRefreshOnly => '仅手动刷新';
-
-  @override
-  String get managedSurfaceIdLabel => '关联页面 ID';
-
-  @override
-  String get managedSurfaceIdHint => '可选，例如 project_board';
-
-  @override
-  String get managedSurfaceIdInvalid => '仅支持字母、数字、“_” 和 “-”。';
-
-  @override
-  String get managedSurfacePrefix => '页面';
-
-  @override
   String get modelUsageStats => '模型使用统计';
 
   @override
@@ -2376,6 +2328,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get eventType => '事件类型';
 
   @override
+  String get manualRefreshOnly => '仅手动触发';
+
+  @override
   String get executionMode => '执行模式';
 
   @override
@@ -2864,7 +2819,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get locationStatusGeocodeUnavailableBody =>
-      'Memex 已拿到坐标，但不会把纯 GPS 坐标注入给 Agent。请检查逆地理编码服务商后再试。';
+      'Memex 已拿到坐标，会向 Agent 注入仅包含 GPS 的上下文；如需城市或街区信息，请检查逆地理编码服务商。';
 
   @override
   String get locationStatusUnavailableTitle => '位置不可用';

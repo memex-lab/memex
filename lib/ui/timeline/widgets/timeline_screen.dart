@@ -28,8 +28,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:memex/ui/settings/widgets/ai_service_setup_page.dart';
 import 'package:memex/ui/settings/widgets/model_config_list_page.dart';
 import 'package:memex/ui/settings/widgets/system_authorization_page.dart';
-import 'package:memex/ui/settings/view_models/dynamic_surface_preview_viewmodel.dart';
-import 'package:memex/ui/settings/widgets/dynamic_surface_preview_screen.dart';
 import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:memex/ui/core/widgets/memex_brand_title.dart';
 import 'package:memex/ui/core/widgets/character_avatar.dart';
@@ -40,7 +38,6 @@ import 'package:memex/ui/schedule/widgets/schedule_aggregator_screen.dart';
 class TimelineScreen extends StatefulWidget {
   final TimelineViewModel viewModel;
   final InsightViewModel insightViewModel;
-  final DynamicSurfacePreviewViewModel dynamicSurfaceViewModel;
   final VoidCallback onInputTap;
   final VoidCallback? onRefreshAction;
 
@@ -48,7 +45,6 @@ class TimelineScreen extends StatefulWidget {
     super.key,
     required this.viewModel,
     required this.insightViewModel,
-    required this.dynamicSurfaceViewModel,
     required this.onInputTap,
     this.onRefreshAction,
   });
@@ -228,37 +224,18 @@ class TimelineScreenState extends State<TimelineScreen> {
   static const int _allPageIndex = 0;
   static const int _insightPageIndex = 1;
   static const int _schedulePageIndex = 2;
-  static const int _dynamicSurfaceStartIndex = 3;
-
-  int get _userTagStartIndex =>
-      _dynamicSurfaceStartIndex +
-      widget.dynamicSurfaceViewModel.surfaces.length;
+  static const int _userTagStartIndex = 3;
 
   /// Get the total number of tab pages:
-  /// All + Insight + Schedule + Dynamic Surfaces + user tags.
+  /// All + Insight + Schedule + user tags.
   int _totalPageCount(TimelineViewModel vm) =>
       _userTagStartIndex + vm.tags.length;
-
-  bool _isDynamicSurfacePageIndex(int index) {
-    return index >= _dynamicSurfaceStartIndex && index < _userTagStartIndex;
-  }
-
-  int _dynamicSurfaceOffsetForIndex(int index) {
-    return index - _dynamicSurfaceStartIndex;
-  }
 
   /// Convert a page index to the corresponding filter string.
   String _pageIndexToFilter(int index, TimelineViewModel vm) {
     if (index == _allPageIndex) return 'all';
     if (index == _insightPageIndex) return 'insight';
     if (index == _schedulePageIndex) return 'schedule';
-    if (_isDynamicSurfacePageIndex(index)) {
-      final surface =
-          widget.dynamicSurfaceViewModel.surfaces[_dynamicSurfaceOffsetForIndex(
-        index,
-      )];
-      return 'surface:${surface.id}';
-    }
     return vm.tags[index - _userTagStartIndex].name;
   }
 
@@ -267,13 +244,6 @@ class TimelineScreenState extends State<TimelineScreen> {
     if (vm.viewMode == TimelineViewMode.insight) return _insightPageIndex;
     if (vm.activeFilter == 'schedule') return _schedulePageIndex;
     if (vm.activeFilter == 'all') return _allPageIndex;
-    if (vm.activeFilter.startsWith('surface:')) {
-      final surfaceId = vm.activeFilter.substring('surface:'.length);
-      final idx = widget.dynamicSurfaceViewModel.surfaces.indexWhere(
-        (surface) => surface.id == surfaceId,
-      );
-      return idx >= 0 ? _dynamicSurfaceStartIndex + idx : _allPageIndex;
-    }
     final idx = vm.tags.indexWhere((t) => t.name == vm.activeFilter);
     return idx >= 0 ? idx + _userTagStartIndex : _allPageIndex;
   }
@@ -287,14 +257,6 @@ class TimelineScreenState extends State<TimelineScreen> {
       vm.setViewMode(TimelineViewMode.insight);
       vm.setActiveFilter('insight');
       widget.insightViewModel.refreshStatsForVisibleInsightPage();
-    } else if (_isDynamicSurfacePageIndex(index)) {
-      vm.setViewMode(TimelineViewMode.timeline);
-      vm.setActiveFilter(filter);
-      final surface =
-          widget.dynamicSurfaceViewModel.surfaces[_dynamicSurfaceOffsetForIndex(
-        index,
-      )];
-      widget.dynamicSurfaceViewModel.renderSurface(surface.id);
     } else {
       vm.setViewMode(TimelineViewMode.timeline);
       vm.setActiveFilter(filter);
@@ -375,7 +337,6 @@ class TimelineScreenState extends State<TimelineScreen> {
       listenable: Listenable.merge([
         widget.viewModel,
         widget.viewModel.load,
-        widget.dynamicSurfaceViewModel,
       ]),
       builder: (context, _) {
         final vm = widget.viewModel;
@@ -820,18 +781,6 @@ class TimelineScreenState extends State<TimelineScreen> {
                         builder: (_) => const ScheduleAggregatorScreen(),
                       );
                     }
-                    if (_isDynamicSurfacePageIndex(index)) {
-                      final surface = widget.dynamicSurfaceViewModel
-                          .surfaces[_dynamicSurfaceOffsetForIndex(index)];
-                      return _DeferredActivePage(
-                        isActive: _currentPageIndex == index,
-                        builder: (_) => DynamicSurfacePreviewScreen(
-                          isEmbedded: true,
-                          surfaceId: surface.id,
-                          viewModel: widget.dynamicSurfaceViewModel,
-                        ),
-                      );
-                    }
                     // Timeline page (All or filtered by tag)
                     return _buildTimelineBody(vm);
                   },
@@ -846,7 +795,6 @@ class TimelineScreenState extends State<TimelineScreen> {
 
   Widget _buildInlineTagChips(TimelineViewModel vm) {
     final userTags = vm.tags;
-    final surfaces = widget.dynamicSurfaceViewModel.surfaces;
     final totalCount = _totalPageCount(vm);
 
     return ListView.separated(
@@ -904,24 +852,6 @@ class TimelineScreenState extends State<TimelineScreen> {
               _jumpToPage(_schedulePageIndex);
               vm.setViewMode(TimelineViewMode.timeline);
               vm.setActiveFilter('schedule');
-            },
-          );
-        }
-
-        if (_isDynamicSurfacePageIndex(index)) {
-          final surface = surfaces[_dynamicSurfaceOffsetForIndex(index)];
-          final filter = 'surface:${surface.id}';
-          final isSelected = vm.activeFilter == filter &&
-              vm.viewMode == TimelineViewMode.timeline;
-          return _buildTagChip(
-            label: surface.title,
-            icon: '▣',
-            isSelected: isSelected,
-            onTap: () {
-              vm.setViewMode(TimelineViewMode.timeline);
-              vm.setActiveFilter(filter);
-              widget.dynamicSurfaceViewModel.renderSurface(surface.id);
-              _jumpToPage(index);
             },
           );
         }

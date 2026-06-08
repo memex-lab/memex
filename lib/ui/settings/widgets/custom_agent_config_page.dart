@@ -135,8 +135,7 @@ class _CustomAgentConfigPageState extends State<CustomAgentConfigPage> {
                         title: Text(c.agentName),
                         subtitle: Text(
                           '${c.hostAgentType.name} · ${_eventTypeLabel(c.eventType)} · '
-                          '${c.executionMode == ExecutionMode.async_ ? l10n.executionModeAsync : l10n.executionModeSync}'
-                          '${c.managedSurfaceId == null ? '' : ' · ${l10n.managedSurfacePrefix}: ${c.managedSurfaceId}'}',
+                          '${c.executionMode == ExecutionMode.async_ ? l10n.executionModeAsync : l10n.executionModeSync}',
                         ),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -225,7 +224,6 @@ class _CustomAgentEditPageState extends State<_CustomAgentEditPage> {
   late TextEditingController _priorityCtrl;
   late TextEditingController _maxRetriesCtrl;
   late TextEditingController _systemPromptCtrl;
-  late TextEditingController _managedSurfaceIdCtrl;
 
   HostAgentType _hostType = HostAgentType.pure;
   String _eventType = SystemEventTypes.userInputSubmitted;
@@ -269,8 +267,6 @@ class _CustomAgentEditPageState extends State<_CustomAgentEditPage> {
     _maxRetriesCtrl =
         TextEditingController(text: (e?.maxRetries ?? 10).toString());
     _systemPromptCtrl = TextEditingController(text: e?.systemPrompt ?? '');
-    _managedSurfaceIdCtrl =
-        TextEditingController(text: e?.managedSurfaceId ?? '');
 
     if (e != null) {
       _hostType = e.hostAgentType;
@@ -349,7 +345,6 @@ class _CustomAgentEditPageState extends State<_CustomAgentEditPage> {
     _priorityCtrl.dispose();
     _maxRetriesCtrl.dispose();
     _systemPromptCtrl.dispose();
-    _managedSurfaceIdCtrl.dispose();
     super.dispose();
   }
 
@@ -368,7 +363,6 @@ class _CustomAgentEditPageState extends State<_CustomAgentEditPage> {
     final fullWorkDir = _workDirCtrl.text.trim();
     final workDirRelative =
         fullWorkDir.startsWith('~/') ? fullWorkDir.substring(2) : fullWorkDir;
-    final managedSurfaceId = _managedSurfaceIdCtrl.text.trim();
 
     final config = CustomAgentConfig(
       agentName: name,
@@ -386,7 +380,6 @@ class _CustomAgentEditPageState extends State<_CustomAgentEditPage> {
           ? null
           : _systemPromptCtrl.text.trim(),
       eventSerializerName: _selectedSerializer,
-      managedSurfaceId: managedSurfaceId.isEmpty ? null : managedSurfaceId,
     );
 
     Navigator.pop(context, config);
@@ -615,24 +608,6 @@ class _CustomAgentEditPageState extends State<_CustomAgentEditPage> {
               ),
               const SizedBox(height: 16),
             ],
-
-            TextFormField(
-              controller: _managedSurfaceIdCtrl,
-              decoration: InputDecoration(
-                labelText: l10n.managedSurfaceIdLabel,
-                hintText: l10n.managedSurfaceIdHint,
-                border: const OutlineInputBorder(),
-              ),
-              validator: (v) {
-                final value = v?.trim() ?? '';
-                if (value.isEmpty) return null;
-                if (!RegExp(r'^[a-zA-Z0-9_-]+$').hasMatch(value)) {
-                  return l10n.managedSurfaceIdInvalid;
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
 
             // System Prompt
             TextFormField(

@@ -404,102 +404,6 @@ abstract class AppLocalizations {
   /// **'Agent config'**
   String get agentConfig;
 
-  /// No description provided for @experimentalLab.
-  ///
-  /// In en, this message translates to:
-  /// **'Labs'**
-  String get experimentalLab;
-
-  /// No description provided for @experimentalLabDescription.
-  ///
-  /// In en, this message translates to:
-  /// **'Experimental features that may change or move later.'**
-  String get experimentalLabDescription;
-
-  /// No description provided for @customPages.
-  ///
-  /// In en, this message translates to:
-  /// **'Custom pages'**
-  String get customPages;
-
-  /// No description provided for @customPagesLabDescription.
-  ///
-  /// In en, this message translates to:
-  /// **'Design and maintain agent-powered custom pages.'**
-  String get customPagesLabDescription;
-
-  /// No description provided for @designPage.
-  ///
-  /// In en, this message translates to:
-  /// **'Design page'**
-  String get designPage;
-
-  /// No description provided for @pageDesigner.
-  ///
-  /// In en, this message translates to:
-  /// **'Page designer'**
-  String get pageDesigner;
-
-  /// No description provided for @dynamicSurfaceAuthorInputHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Describe the page you want to create or change...'**
-  String get dynamicSurfaceAuthorInputHint;
-
-  /// No description provided for @runPageAgent.
-  ///
-  /// In en, this message translates to:
-  /// **'Run page agent'**
-  String get runPageAgent;
-
-  /// No description provided for @customPagesEmpty.
-  ///
-  /// In en, this message translates to:
-  /// **'No custom pages yet. Tap \"Design page\" to describe the page and maintenance logic you want.'**
-  String get customPagesEmpty;
-
-  /// No description provided for @customPagesPreviewEmpty.
-  ///
-  /// In en, this message translates to:
-  /// **'Select a custom page to preview it, or tap \"Design page\" to create and iterate on pages.'**
-  String get customPagesPreviewEmpty;
-
-  /// No description provided for @selectCustomPageBeforeRefresh.
-  ///
-  /// In en, this message translates to:
-  /// **'Select a custom page before requesting refresh.'**
-  String get selectCustomPageBeforeRefresh;
-
-  /// No description provided for @manualRefreshOnly.
-  ///
-  /// In en, this message translates to:
-  /// **'Manual refresh only'**
-  String get manualRefreshOnly;
-
-  /// No description provided for @managedSurfaceIdLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Managed Surface ID'**
-  String get managedSurfaceIdLabel;
-
-  /// No description provided for @managedSurfaceIdHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Optional, e.g. project_board'**
-  String get managedSurfaceIdHint;
-
-  /// No description provided for @managedSurfaceIdInvalid.
-  ///
-  /// In en, this message translates to:
-  /// **'Use only letters, numbers, \"_\" and \"-\".'**
-  String get managedSurfaceIdInvalid;
-
-  /// No description provided for @managedSurfacePrefix.
-  ///
-  /// In en, this message translates to:
-  /// **'surface'**
-  String get managedSurfacePrefix;
-
   /// No description provided for @modelUsageStats.
   ///
   /// In en, this message translates to:
@@ -4478,6 +4382,12 @@ abstract class AppLocalizations {
   /// **'Event Type'**
   String get eventType;
 
+  /// No description provided for @manualRefreshOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual only'**
+  String get manualRefreshOnly;
+
   /// No description provided for @executionMode.
   ///
   /// In en, this message translates to:
@@ -5393,7 +5303,7 @@ abstract class AppLocalizations {
   /// No description provided for @locationStatusGeocodeUnavailableBody.
   ///
   /// In en, this message translates to:
-  /// **'Memex has coordinates but will not inject GPS-only context into the agent. Check the reverse geocoding provider and try again.'**
+  /// **'Memex has coordinates and will inject GPS-only context without an address. Check the reverse geocoding provider if you want city or neighborhood context.'**
   String get locationStatusGeocodeUnavailableBody;
 
   /// No description provided for @locationStatusUnavailableTitle.
