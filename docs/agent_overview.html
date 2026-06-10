@@ -1,0 +1,1041 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Memex Agent 能力地图</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f3;
+      --surface: #ffffff;
+      --surface-soft: #eef3ea;
+      --ink: #1b241d;
+      --muted: #5c665e;
+      --line: #d7ddd2;
+      --accent: #2d6a4f;
+      --accent-2: #c36a2d;
+      --accent-3: #3662a8;
+      --danger: #b54b4b;
+      --shadow: 0 16px 40px rgba(37, 50, 39, 0.08);
+      --radius: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+    }
+
+    a {
+      color: var(--accent-3);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    code {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #f8faf6;
+      padding: 0.08rem 0.32rem;
+      font-size: 0.92em;
+    }
+
+    .shell {
+      width: min(1180px, calc(100vw - 32px));
+      margin: 0 auto;
+    }
+
+    header {
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, #ffffff 0%, #f7f9f4 100%);
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+      gap: 28px;
+      padding: 56px 0 30px;
+      align-items: end;
+    }
+
+    .eyebrow {
+      margin: 0 0 12px;
+      color: var(--accent);
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 800px;
+      font-size: clamp(2.1rem, 5vw, 4.2rem);
+      line-height: 1.02;
+      letter-spacing: 0;
+    }
+
+    .intro {
+      max-width: 760px;
+      margin: 18px 0 0;
+      color: var(--muted);
+      font-size: 1.04rem;
+    }
+
+    .hero-panel {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .hero-panel h2 {
+      margin: 0 0 12px;
+      font-size: 1rem;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .metric {
+      min-height: 82px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fbfcfa;
+      padding: 12px;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 1.72rem;
+      line-height: 1.05;
+    }
+
+    .metric span {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    nav {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 12px 0;
+    }
+
+    nav a {
+      flex: 0 0 auto;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      color: var(--ink);
+      padding: 8px 12px;
+      font-size: 0.9rem;
+    }
+
+    main {
+      padding: 28px 0 64px;
+    }
+
+    section {
+      margin-top: 32px;
+    }
+
+    .section-heading {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      align-items: end;
+      margin-bottom: 14px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 1.55rem;
+      letter-spacing: 0;
+    }
+
+    .section-note {
+      max-width: 700px;
+      margin: 6px 0 0;
+      color: var(--muted);
+    }
+
+    .pipeline {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .flow-node {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      min-height: 112px;
+      padding: 14px;
+      box-shadow: 0 10px 24px rgba(37, 50, 39, 0.05);
+      position: relative;
+    }
+
+    .flow-node::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      right: -11px;
+      width: 10px;
+      border-top: 2px solid var(--line);
+    }
+
+    .flow-node:last-child::after,
+    .flow-node.no-arrow::after {
+      display: none;
+    }
+
+    .flow-node h3 {
+      margin: 0 0 6px;
+      font-size: 1rem;
+    }
+
+    .flow-node p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .span-3 { grid-column: span 3; }
+    .span-4 { grid-column: span 4; }
+    .span-6 { grid-column: span 6; }
+
+    .controls {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) auto;
+      gap: 10px;
+      margin: 16px 0;
+    }
+
+    .search {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      padding: 11px 12px;
+      color: var(--ink);
+      font: inherit;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .filter {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      color: var(--ink);
+      cursor: pointer;
+      font: inherit;
+      padding: 9px 12px;
+    }
+
+    .filter.active {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .agent-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .agent-card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .agent-card[hidden] {
+      display: none;
+    }
+
+    .agent-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .agent-title {
+      margin: 0;
+      font-size: 1.22rem;
+    }
+
+    .agent-id {
+      display: inline-block;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    .badge {
+      border-radius: 999px;
+      padding: 5px 9px;
+      background: var(--surface-soft);
+      color: var(--accent);
+      font-size: 0.78rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .badge.task { color: var(--accent); }
+    .badge.chat { color: var(--accent-3); }
+    .badge.support { color: var(--accent-2); }
+    .badge.experimental { color: var(--danger); }
+
+    .agent-summary {
+      margin: 12px 0 14px;
+      color: var(--ink);
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .detail {
+      border-top: 1px solid var(--line);
+      padding-top: 10px;
+    }
+
+    .detail strong {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0;
+    }
+
+    .detail p,
+    .detail ul {
+      margin: 0;
+      color: var(--ink);
+      font-size: 0.93rem;
+    }
+
+    .detail ul {
+      padding-left: 18px;
+    }
+
+    .detail li + li {
+      margin-top: 4px;
+    }
+
+    .wide {
+      grid-column: 1 / -1;
+    }
+
+    .source-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .source-list a,
+    .source-list span {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fbfcfa;
+      padding: 5px 9px;
+      font-size: 0.82rem;
+    }
+
+    .matrix {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .matrix th,
+    .matrix td {
+      border: 1px solid var(--line);
+      padding: 10px;
+      text-align: left;
+      vertical-align: top;
+      font-size: 0.92rem;
+    }
+
+    .matrix th {
+      background: var(--surface-soft);
+      color: var(--ink);
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0;
+    }
+
+    .read-order {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .step {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      padding: 16px;
+    }
+
+    .step-number {
+      display: inline-grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      margin-bottom: 10px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.86rem;
+    }
+
+    .step h3 {
+      margin: 0 0 8px;
+      font-size: 1rem;
+    }
+
+    .step p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .callout {
+      border-left: 4px solid var(--accent-2);
+      background: #fff9f2;
+      padding: 14px 16px;
+      border-radius: 0 var(--radius) var(--radius) 0;
+      color: #4c392a;
+    }
+
+    footer {
+      border-top: 1px solid var(--line);
+      padding: 24px 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 900px) {
+      .hero,
+      .agent-grid,
+      .detail-grid,
+      .read-order,
+      .controls {
+        grid-template-columns: 1fr;
+      }
+
+      .filter-group {
+        justify-content: flex-start;
+      }
+
+      .span-3,
+      .span-4,
+      .span-6 {
+        grid-column: 1 / -1;
+      }
+
+      .flow-node::after {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="shell">
+      <div class="hero">
+        <div>
+          <p class="eyebrow">Memex Agent Architecture</p>
+          <h1>当前所有 Agent 的能力、Prompt 和 Tools 地图</h1>
+          <p class="intro">这份页面基于当前代码梳理，不是产品说明稿。重点放在每个 Agent 何时触发、用哪些 prompt、拥有哪些工具、写入哪些数据，以及后续深挖源码的入口。</p>
+        </div>
+        <aside class="hero-panel" aria-label="Agent summary">
+          <h2>当前快照</h2>
+          <div class="metric-grid">
+            <div class="metric"><strong>12</strong><span>设置页可配置的内置 Agent ID</span></div>
+            <div class="metric"><strong>5</strong><span>用户输入后自动触发的主链路任务</span></div>
+            <div class="metric"><strong>8+</strong><span>核心 Skill 封装</span></div>
+            <div class="metric"><strong>3</strong><span>自定义/宿主型 Agent 路径</span></div>
+          </div>
+        </aside>
+      </div>
+      <nav aria-label="Page navigation">
+        <a href="#pipeline">输入管线</a>
+        <a href="#agents">Agent 清单</a>
+        <a href="#tools">工具矩阵</a>
+        <a href="#prompts">Prompt 深挖顺序</a>
+        <a href="#notes">架构观察</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section id="pipeline">
+      <div class="section-heading">
+        <div>
+          <h2>输入处理管线</h2>
+          <p class="section-note">`MemexRouter._registerEventSubscriptions()` 是主入口。用户提交输入后，系统通过 `GlobalEventBus` 投递持久任务到 `LocalTaskExecutor`，再由对应 handler 创建 Agent。</p>
+        </div>
+      </div>
+      <div class="pipeline" aria-label="User input pipeline">
+        <article class="flow-node span-3">
+          <h3>1. UserInputSubmitted</h3>
+          <p>原始输入写入 Facts，并发布系统事件。</p>
+        </article>
+        <article class="flow-node span-3">
+          <h3>2. analyze_assets</h3>
+          <p>先处理图片/音频、EXIF、GPS、OCR，输出 asset analysis。</p>
+        </article>
+        <article class="flow-node span-3">
+          <h3>3. Cards / PKM / Router</h3>
+          <p>CardAgent 和 PkmAgent 使用媒体分析结果；Post-Card Router 判断是否触发后续 Agent。</p>
+        </article>
+        <article class="flow-node span-3 no-arrow">
+          <h3>4. Comments / Schedule / Clarification</h3>
+          <p>评论在 PKM 后执行；路由按需触发日程聚合和澄清问题。</p>
+        </article>
+        <article class="flow-node span-6">
+          <h3>手动刷新</h3>
+          <p>KnowledgeInsightAgent 和 ScheduleAggregatorAgent 也可由设置页/页面按钮通过对应事件手动刷新。</p>
+        </article>
+        <article class="flow-node span-6 no-arrow">
+          <h3>对话入口</h3>
+          <p>ChatService 默认创建 SuperAgent；角色聊天走 CompanionAgent；自定义 Agent 走 Pure/Memex Skill Host。</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="agents">
+      <div class="section-heading">
+        <div>
+          <h2>Agent 清单</h2>
+          <p class="section-note">可用搜索或分类筛选。每张卡片都给出源码入口，方便继续读 prompt 和 tools。</p>
+        </div>
+      </div>
+      <div class="controls">
+        <input class="search" id="agentSearch" type="search" placeholder="搜索 Agent、工具、prompt、文件路径">
+        <div class="filter-group" aria-label="Agent filters">
+          <button class="filter active" data-filter="all">全部</button>
+          <button class="filter" data-filter="task">事件任务</button>
+          <button class="filter" data-filter="chat">交互/聊天</button>
+          <button class="filter" data-filter="support">支撑/宿主</button>
+          <button class="filter" data-filter="experimental">实验/未注册</button>
+        </div>
+      </div>
+
+      <div class="agent-grid" id="agentGrid">
+        <article class="agent-card" data-category="task" data-search="analyze_assets media analysis asset exif gps ocr asset_analysis_tool prompts assetAnalysisPrompt">
+          <div class="agent-head">
+            <div>
+              <h3 class="agent-title">Media analysis</h3>
+              <span class="agent-id">Agent ID: <code>analyze_assets</code></span>
+            </div>
+            <span class="badge task">事件任务</span>
+          </div>
+          <p class="agent-summary">对输入中的图片/音频做预处理和多模态分析。它不是 `StatefulAgent` 类，而是一个 LLM 工具型 handler，但在模型设置中作为 Agent 独立配置。</p>
+          <div class="detail-grid">
+            <div class="detail"><strong>触发</strong><p>`userInputSubmitted` 后第一阶段执行，后续 Card/PKM/Router 依赖其结果。</p></div>
+            <div class="detail"><strong>核心能力</strong><p>图片/音频安全检查、EXIF 尺寸和 GPS、反向地理编码、LLM 媒体描述、Google ML Kit OCR。</p></div>
+            <div class="detail"><strong>Prompt</strong><p>`Prompts.assetAnalysisPrompt()`，带语言指令和图片元数据补充。</p></div>
+            <div class="detail"><strong>输出</strong><p>写入 `{asset}.analysis.txt` 和可选 `{asset}.ocr.txt`，任务结果包含结构化 asset analyses。</p></div>
+            <div class="detail wide"><strong>源码</strong><div class="source-list"><a href="../lib/data/services/task_handlers/analyze_assets_handler.dart">analyze_assets_handler.dart</a><a href="../lib/agent/built_in_tools/asset_analysis_tool.dart">asset_analysis_tool.dart</a><a href="../lib/agent/prompts.dart">agent/prompts.dart</a></div></div>
+          </div>
+        </article>
+
+        <article class="agent-card" data-category="task" data-search="card_agent cards timeline card TimelineCardSkill save_timeline_card get_card_metadata">
+          <div class="agent-head">
+            <div>
+              <h3 class="agent-title">Cards</h3>
+              <span class="agent-id">Agent ID: <code>card_agent</code></span>
+            </div>
+            <span class="badge task">事件任务</span>
+          </div>
+          <p class="agent-summary">把每条原始输入转成时间线卡片。重点是理解多模态内容、选择 Native Card 模板、填充 `ui_configs`，并保证 `fact_id` 与卡片一致。</p>
+          <div class="detail-grid">
+            <div class="detail"><strong>触发</strong><p>`card_agent_task`，依赖 `analyze_assets`；LLM 未配置时回退到 rule-based 模板匹配。</p></div>
+            <div class="detail"><strong>Prompt</strong><p>`cardAgentSystemPrompt` + `TimelineCardSkill` 的模板/标签说明 + 动态发布时间和 fact 内容。</p></div>
+            <div class="detail"><strong>Tools / Skills</strong><p>强制启用 `manage_timeline_card`：`get_card_metadata`、`save_timeline_card`。Agent 自身无额外 tools。</p></div>
+            <div class="detail"><strong>边界</strong><p>只负责 Cards；用户长期记忆以 read-only reminder 形式进入上下文。</p></div>
+            <div class="detail wide"><strong>源码</strong><div class="source-list"><a href="../lib/agent/card_agent/card_agent.dart">card_agent.dart</a><a href="../lib/agent/card_agent/prompts.dart">card prompts</a><a href="../lib/agent/skills/manage_timeline_card/timeline_card_skill.dart">timeline_card_skill.dart</a><a href="../lib/data/services/task_handlers/card_agent_handler.dart">card handler</a></div></div>
+          </div>
+        </article>
+
+        <article class="agent-card" data-category="task" data-search="pkm_agent PKM PARA manage_pkm update_timeline_card_insight skip_pkm_organization file tools">
+          <div class="agent-head">
+            <div>
+              <h3 class="agent-title">PKM</h3>
+              <span class="agent-id">Agent ID: <code>pkm_agent</code></span>
+            </div>
+            <span class="badge task">事件任务</span>
+          </div>
+          <p class="agent-summary">将输入沉淀进 `/PKM` 的 P.A.R.A. 结构，并把知识化后的 insight 回写到对应卡片。它是当前最强的文件写入型自动 Agent。</p>
+          <div class="detail-grid">
+            <div class="detail"><strong>触发</strong><p>`pkm_agent_task`，依赖媒体分析，并通过 `getLastTaskByType('pkm_agent_task')` 串行化，避免并发改 PKM。</p></div>
+            <div class="detail"><strong>Prompt</strong><p>`pkmAgentSystemPrompt` + `Prompts.pkmSkillSystemPrompt()` + 当前 PKM overview + 用户长期记忆 read-only reminder。</p></div>
+            <div class="detail"><strong>Tools / Skills</strong><p>`Read`、`BatchRead`、`Write`、`Edit`、`Move`、`Remove`、`LS`、`Glob`、`Grep`；`manage_pkm` 工具：`update_timeline_card_insight`、`skip_pkm_organization`。</p></div>
+            <div class="detail"><strong>边界</strong><p>文件权限只写 `/PKM`；不允许写 memory。显式“不记/不保存”输入会在进 LLM 前或通过 skip tool 跳过。</p></div>
+            <div class="detail wide"><strong>源码</strong><div class="source-list"><a href="../lib/agent/pkm_agent/pkm_agent.dart">pkm_agent.dart</a><a href="../lib/agent/pkm_agent/prompts.dart">pkm prompts</a><a href="../lib/agent/skills/manage_pkm/pkm_skill.dart">pkm_skill.dart</a><a href="../lib/data/services/task_handlers/pkm_agent_handler.dart">pkm handler</a></div></div>
+          </div>
+        </article>
+
+        <article class="agent-card" data-category="task" data-search="knowledge_insight_agent insights update_knowledge_insight save_knowledge_insight_cards charts stats event logs">
+          <div class="agent-head">
+            <div>
+              <h3 class="agent-title">Insights</h3>
+              <span class="agent-id">Agent ID: <code>knowledge_insight_agent</code></span>
+            </div>
+            <span class="badge task">事件任务</span>
+          </div>
+          <p class="agent-summary">周期性或手动分析 Facts、Cards、PKM 和事件日志，维护 Knowledge Insight 卡片，用图表/地图/摘要呈现用户长期模式。</p>
+          <div class="detail-grid">
+            <div class="detail"><strong>触发</strong><p>`knowledgeInsightRefreshRequested` 事件进入 `knowledge_insight_task`；首次运行会要求全量分析。</p></div>
+            <div class="detail"><strong>Prompt</strong><p>`knowledgeInsightAgentSystemPrompt` + `KnowledgeInsightSkill` prompt + memory read-only prompt + run context。</p></div>
+            <div class="detail"><strong>Tools / Skills</strong><p>读文件工具、`search_workspace_event_logs`、`getCurrentTime`；`update_knowledge_insight` 工具组用于查、存、删洞察卡和读取用户活动统计。</p></div>
+            <div class="detail"><strong>边界</strong><p>工作区大部分只读；仅通过 insight skill 写 `/KnowledgeInsights`。允许 subagent clone 做大范围资料收集。</p></div>
+            <div class="detail wide"><strong>源码</strong><div class="source-list"><a href="../lib/agent/insight_agent/knowledge_insight_agent.dart">knowledge_insight_agent.dart</a><a href="../lib/agent/insight_agent/prompt.dart">insight prompt</a><a href="../lib/agent/skills/knowledge_insight/knowledge_insight_skill.dart">knowledge_insight_skill.dart</a><a href="../lib/agent/skills/knowledge_insight/native_widgets.dart">native_widgets.dart</a></div></div>
+          </div>
+        </article>
+
+        <article class="agent-card" data-category="task" data-search="comment_agent comments persona_comment SaveComment SkipComment character memory HistorySearch">
+          <div class="agent-head">
+            <div>
+              <h3 class="agent-title">Comments</h3>
+              <span class="agent-id">Agent ID: <code>comment_agent</code></span>
+            </div>
+            <span class="badge task">事件任务</span>
+          </div>
+          <p class="agent-summary">让虚拟角色在用户私密时间线下进行短评论，也处理用户对角色评论的回复。它强调角色边界、自然短文本和长期互动连续性。</p>
+          <div class="detail-grid">
+            <div class="detail"><strong>触发</strong><p>新输入在 PKM 后跑 `comment_agent_task`；用户回复评论会触发 `process_ai_reply`。</p></div>
+            <div class="detail"><strong>Prompt</strong><p>`commentAgentSystemPrompt` + `Prompts.commentSkillSystemPrompt()` + 角色 persona、角色记忆、近期互动、PKM/卡片上下文。</p></div>
+            <div class="detail"><strong>Tools / Skills</strong><p>`persona_comment`：`Read`、`Grep`、`SaveComment`、`SkipComment`；有角色时增加 `MemoryRead/Write/Edit/Remove` 和 `HistorySearch`；回复场景可启用用户级 `append_memories`。</p></div>
+            <div class="detail"><strong>边界</strong><p>可读工作区，评论写入卡片；角色记忆是 character-level，用户长期记忆只在特定回复场景开启。</p></div>
+            <div class="detail wide"><strong>源码</strong><div class="source-list"><a href="../lib/agent/comment_agent/comment_agent.dart">comment_agent.dart</a><a href="../lib/agent/comment_agent/prompts.dart">comment prompts</a><a href="../lib/agent/skills/comment_agent/comment_agent_skill.dart">comment_agent_skill.dart</a><a href="../lib/data/services/task_handlers/comment_agent_handler.dart">comment handler</a></div></div>
+          </div>
+        </article>
+
+        <article class="agent-card" data-category="chat" data-search="chat_agent SuperAgent memex_agent manage_timeline_card manage_pkm system action calendar reminders quick query">
+          <div class="agent-head">
+            <div>
+              <h3 class="agent-title">Chat / SuperAgent</h3>
+              <span class="agent-id">Agent ID: <code>chat_agent</code>，运行名通常是 <code>memex_agent</code></span>
+            </div>
+            <span class="badge chat">交互/聊天</span>
+          </div>
+          <p class="agent-summary">用户主动聊天的中央 Agent。它先判断意图，再按需调用检索、文件工具或业务 Skill；在不同页面会强制激活特定 Skill。</p>
+          <div class="detail-grid">
+            <div class="detail"><strong>触发</strong><p>`ChatService.sendMessage()` 默认创建 `SuperAgent`。时间线详情页会强制 `manage_timeline_card` 和 `manage_pkm`；洞察聊天会强制 `update_knowledge_insight`。</p></div>
+            <div class="detail"><strong>Prompt</strong><p>`superAgentSystemPrompt` + ChatService 注入的“综合纠错原则/交互准则” + memory prompt；Quick Query 追加只读约束。</p></div>
+            <div class="detail"><strong>Tools / Skills</strong><p>全工作区文件工具、`search_workspace_event_logs`、`getCurrentTime`、`get_pkm_overview`、memory tools；Skills：洞察、卡片、PKM、系统日历提醒、澄清。</p></div>
+            <div class="detail"><strong>边界</strong><p>普通聊天可写工作区；Quick Query 只保留 `LS/Glob/Grep/Read/BatchRead/search_event_logs/getCurrentTime/get_pkm_overview`。</p></div>
+            <div class="detail wide"><strong>源码</strong><div class="source-list"><a href="../lib/data/services/chat_service.dart">chat_service.dart</a><a href="../lib/agent/super_agent/super_agent.dart">super_agent.dart</a><a href="../lib/agent/super_agent/prompts.dart">super prompt</a></div></div>
+          </div>
+        </article>
+
+        <article class="agent-card" data-category="chat" data-search="companion_agent companion_chat character chat SendActionMessage character memory HistorySearch append_memories">
+          <div class="agent-head">
+            <div>
+              <h3 class="agent-title">Companion</h3>
+              <span class="agent-id">Agent ID: <code>companion_agent</code></span>
+            </div>
+            <span class="badge chat">交互/聊天</span>
+          </div>
+          <p class="agent-summary">角色私聊 Agent，强调持续关系、自然短回复、角色语气和安全边界。它同时能更新用户级长期记忆和角色级关系记忆。</p>
+          <div class="detail-grid">
+            <div class="detail"><strong>触发</strong><p>`CompanionAgent.chat()`，角色聊天界面直接流式调用。</p></div>
+            <div class="detail"><strong>Prompt</strong><p>`CompanionAgentSkill._buildSystemPrompt()` 动态拼接角色 persona、style examples、user profile、character memories、互动历史和 memory guidance。</p></div>
+            <div class="detail"><strong>Tools / Skills</strong><p>`companion_chat`：`MemoryRead/Write/Edit/Remove`、`HistorySearch`、`SendActionMessage`；Agent 外层增加用户级 `append_memories`。</p></div>
+            <div class="detail"><strong>边界</strong><p>角色记忆用于关系/支持偏好；用户级 memory 只记录跨角色长期事实。上下文过长后会触发 `CharacterContextCompressor`。</p></div>
+            <div class="detail wide"><strong>源码</strong><div class="source-list"><a href="../lib/agent/companion_agent/companion_agent.dart">companion_agent.dart</a><a href="../lib/agent/skills/companion_agent/companion_agent_skill.dart">companion_agent_skill.dart</a><a href="../lib/agent/skills/character_tools_factory.dart">character_tools_factory.dart</a></div></div>
+          </div>
+        </article>
+
+        <article class="agent-card" data-category="task" data-search="profile_agent memory_agent memory summary MemorySyncService append_memories ask_clarification">
+          <div class="agent-head">
+            <div>
+              <h3 class="agent-title">Memory summary</h3>
+              <span class="agent-id">Agent ID: <code>profile_agent</code>，实现类 <code>MemoryAgent</code></span>
+            </div>
+            <span class="badge task">事件任务</span>
+          </div>
+          <p class="agent-summary">批量从已沉淀输入中筛出“值得长期保存的用户属性”，写入用户级 memory。它采取 default-deny 策略，宁可不记也不污染记忆。</p>
+          <div class="detail-grid">
+            <div class="detail"><strong>触发</strong><p>`PkmAgent` 成功后把 fact 加入 `MemorySyncService`；累积 5 条触发批处理。</p></div>
+            <div class="detail"><strong>Prompt</strong><p>`MemoryAgent` 内联 Strict Memory Curator prompt，包含排除清单、纳入清单、同语言规则和澄清策略。</p></div>
+            <div class="detail"><strong>Tools / Skills</strong><p>用户级 `append_memories`；可用 `ask_clarification` skill 为高价值模糊事实创建问题。</p></div>
+            <div class="detail"><strong>边界</strong><p>只写稳定身份、偏好、长期资产、习惯、AI 交互偏好；任务、提醒、一次性事件不写 memory。</p></div>
+            <div class="detail wide"><strong>源码</strong><div class="source-list"><a href="../lib/agent/memory_agent/memory_agent.dart">memory_agent.dart</a><a href="../lib/data/services/memory_sync_service.dart">memory_sync_service.dart</a><a href="../lib/agent/memory/memory_management.dart">memory_management.dart</a></div></div>
+          </div>
+        </article>
+
+        <article class="agent-card" data-category="task" data-search="post_card_router_agent router select_downstream_agents schedule_aggregator ask_clarification">
+          <div class="agent-head">
+            <div>
+              <h3 class="agent-title">Post-Card Router</h3>
+              <span class="agent-id">Agent ID: <code>post_card_router_agent</code></span>
+            </div>
+            <span class="badge task">事件任务</span>
+          </div>
+          <p class="agent-summary">轻量级选择器。它不改数据，只判断新输入是否需要触发日程维护或澄清问题，并把后续任务入队。</p>
+          <div class="detail-grid">
+            <div class="detail"><strong>触发</strong><p>`post_card_router_task`，依赖 `analyze_assets`，priority 为 -1。</p></div>
+            <div class="detail"><strong>Prompt</strong><p>`postCardRouterSystemPrompt`：要求保守、一次性调用 `select_downstream_agents`。</p></div>
+            <div class="detail"><strong>Tools / Skills</strong><p>唯一工具 `select_downstream_agents`，候选为 `schedule_aggregator` 和 `ask_clarification`。</p></div>
+            <div class="detail"><strong>边界</strong><p>不能写 PKM、不能创建卡片、不能改 schedule；只发事件或入队。</p></div>
+            <div class="detail wide"><strong>源码</strong><div class="source-list"><a href="../lib/agent/post_card_router_agent/post_card_router_agent.dart">post_card_router_agent.dart</a><a href="../lib/agent/post_card_router_agent/prompt.dart">router prompt</a><a href="../lib/data/services/task_handlers/post_card_router_handler.dart">router handler</a></div></div>
+          </div>
+        </article>
+
+        <article class="agent-card" data-category="task" data-search="schedule_aggregator_agent schedule update_schedule_aggregation add_pending_item set_presentation todo event">
+          <div class="agent-head">
+            <div>
+              <h3 class="agent-title">Schedule</h3>
+              <span class="agent-id">Agent ID: <code>schedule_aggregator_agent</code></span>
+            </div>
+            <span class="badge task">事件任务</span>
+          </div>
+          <p class="agent-summary">维护 `schedule_state` 和日程杂志式呈现。它把输入中的任务、事件、完成、延期、取消等转换为 pending/completed 状态和展示文案。</p>
+          <div class="detail-grid">
+            <div class="detail"><strong>触发</strong><p>`scheduleAggregationRequested` 事件，可能来自 Post-Card Router，也可手动刷新。</p></div>
+            <div class="detail"><strong>Prompt</strong><p>`scheduleAggregatorSystemPrompt` + `Prompts.scheduleAggregatorSkillPrompt()` + 当前 schedule_state + router hint 或近期 schedule 输入。</p></div>
+            <div class="detail"><strong>Tools / Skills</strong><p>`update_schedule_aggregation`：`get_schedule_state`、`add_pending_item`、`update_pending_item`、`complete_pending_item`、`complete_subtask`、`set_presentation`、`search_completed`。</p></div>
+            <div class="detail"><strong>边界</strong><p>无外层 tools，所有状态变更走 `ScheduleStateService`。`set_presentation` 可结束 agent loop。</p></div>
+            <div class="detail wide"><strong>源码</strong><div class="source-list"><a href="../lib/agent/schedule_aggregator_agent/schedule_aggregator_agent.dart">schedule_aggregator_agent.dart</a><a href="../lib/agent/schedule_aggregator_agent/prompt.dart">schedule prompt</a><a href="../lib/agent/skills/schedule_aggregation/schedule_aggregation_skill.dart">schedule skill</a></div></div>
+          </div>
+        </article>
+
+        <article class="agent-card" data-category="task" data-search="ask_clarification_agent clarification create_clarification_request get_recent_clarification_requests">
+          <div class="agent-head">
+            <div>
+              <h3 class="agent-title">Ask Clarification</h3>
+              <span class="agent-id">Agent ID: <code>ask_clarification_agent</code></span>
+            </div>
+            <span class="badge task">事件任务</span>
+          </div>
+          <p class="agent-summary">判断是否需要向用户问一个高价值短问题，用来改善未来记忆、实体理解、PKM 组织、卡片修正或洞察质量。</p>
+          <div class="detail-grid">
+            <div class="detail"><strong>触发</strong><p>由 Post-Card Router 入队 `ask_clarification_task`。</p></div>
+            <div class="detail"><strong>Prompt</strong><p>`askClarificationAgentSystemPrompt` + read-only 用户 memory + pending/recent clarification 列表。</p></div>
+            <div class="detail"><strong>Tools / Skills</strong><p>强制 `ask_clarification`：`create_clarification_request`、`get_pending_clarification_requests`、`get_recent_clarification_requests`。</p></div>
+            <div class="detail"><strong>边界</strong><p>只创建澄清请求，不写长期 memory；回答后的落库由 Resolution Agent 处理。</p></div>
+            <div class="detail wide"><strong>源码</strong><div class="source-list"><a href="../lib/agent/ask_clarification_agent/ask_clarification_agent.dart">ask_clarification_agent.dart</a><a href="../lib/agent/ask_clarification_agent/prompt.dart">ask prompt</a><a href="../lib/agent/skills/ask_clarification/ask_clarification_skill.dart">ask skill</a></div></div>
+          </div>
+        </article>
+
+        <article class="agent-card" data-category="task" data-search="clarification_resolution_agent ask resolution append_memories proposed_memory fallback">
+          <div class="agent-head">
+            <div>
+              <h3 class="agent-title">Ask resolution</h3>
+              <span class="agent-id">Agent ID: <code>clarification_resolution_agent</code></span>
+            </div>
+            <span class="badge task">事件任务</span>
+          </div>
+          <p class="agent-summary">用户回答澄清问题后，判断答案是否应转成长期记忆。它负责从“问题/选项/答案/证据 fact”里提取可持久化事实。</p>
+          <div class="detail-grid">
+            <div class="detail"><strong>触发</strong><p>`clarificationAnswered` 事件进入 `clarification_resolution_task`。</p></div>
+            <div class="detail"><strong>Prompt</strong><p>内联系统 prompt：只把稳定事实、偏好、关系、身份、习惯、长期项目上下文写入 memory。</p></div>
+            <div class="detail"><strong>Tools / Skills</strong><p>用户级 `append_memories`。失败时 handler 有 deterministic fallback，优先使用 option.memory 或 proposed_memory。</p></div>
+            <div class="detail"><strong>边界</strong><p>不处理 card-only 修正、临时标签或低价值答案；会标记 clarification request completed。</p></div>
+            <div class="detail wide"><strong>源码</strong><div class="source-list"><a href="../lib/agent/clarification_resolution_agent/clarification_resolution_agent.dart">clarification_resolution_agent.dart</a><a href="../lib/data/services/task_handlers/clarification_resolution_handler.dart">resolution handler</a><a href="../lib/agent/memory/memory_management.dart">memory_management.dart</a></div></div>
+          </div>
+        </article>
+
+        <article class="agent-card" data-category="support" data-search="persona_agent character designer CreateOrUpdateCharacterPersona GetCharacterPersona PKM read">
+          <div class="agent-head">
+            <div>
+              <h3 class="agent-title">Persona Agent</h3>
+              <span class="agent-id">Runtime name: <code>persona_agent</code></span>
+            </div>
+            <span class="badge support">支撑/宿主</span>
+          </div>
+          <p class="agent-summary">角色设计 Agent。它读用户 PKM 和现有角色列表，生成或更新角色 persona，服务虚拟角色系统。</p>
+          <div class="detail-grid">
+            <div class="detail"><strong>触发</strong><p>由角色相关流程调用 `PersonaAgent.run()`，不是主输入管线中的固定订阅。</p></div>
+            <div class="detail"><strong>Prompt</strong><p>`_buildSystemPrompt()` 内联：强调私密记录场景、情感支持、短文本风格、不要在 persona 中写具体对话示例。</p></div>
+            <div class="detail"><strong>Tools</strong><p>PKM read-only 文件工具：`LS`、`Glob`、`Grep`、`Read`；角色工具：`GetCharacterPersona`、`CreateOrUpdateCharacterPersona`。</p></div>
+            <div class="detail"><strong>边界</strong><p>文件工具只能读 PKM；角色更新通过 `CharacterService` / YAML 写入。</p></div>
+            <div class="detail wide"><strong>源码</strong><div class="source-list"><a href="../lib/agent/persona_agent/persona_agent.dart">persona_agent.dart</a><a href="../lib/data/services/character_service.dart">character_service.dart</a></div></div>
+          </div>
+        </article>
+
+        <article class="agent-card" data-category="support" data-search="custom agents PureSkillHostAgent MemexSkillHostAgent skillDirectoryPath RunJavaScript custom_agent_config_service">
+          <div class="agent-head">
+            <div>
+              <h3 class="agent-title">Custom Agent Hosts</h3>
+              <span class="agent-id">Host types: <code>pure</code> / <code>memex</code></span>
+            </div>
+            <span class="badge support">支撑/宿主</span>
+          </div>
+          <p class="agent-summary">用户自定义 Agent 的执行宿主。配置文件声明事件、工作目录、skill 目录、host 类型和额外系统 prompt；运行时把事件序列化为 XML 交给宿主 Agent。</p>
+          <div class="detail-grid">
+            <div class="detail"><strong>触发</strong><p>`CustomAgentConfigService.registerAll()` 动态订阅任意 `SystemEventTypes`，可 async 或 sync 执行。</p></div>
+            <div class="detail"><strong>Prompt</strong><p>`PureSkillHostAgent` 使用简短个人助理 prompt；`MemexSkillHostAgent` 使用 Memex 语境 prompt；二者都可追加用户配置的 `systemPrompt`。</p></div>
+            <div class="detail"><strong>Tools</strong><p>工作目录内文件工具、`search_workspace_event_logs`、`getCurrentTime`、文件系统 Skill 和 `RunJavaScript` runtime。</p></div>
+            <div class="detail"><strong>边界</strong><p>权限限定在配置的 workingDirectory；媒体引用会从事件 XML 中抽取并以内联多模态 part 传给模型。</p></div>
+            <div class="detail wide"><strong>源码</strong><div class="source-list"><a href="../lib/data/services/custom_agent_config_service.dart">custom_agent_config_service.dart</a><a href="../lib/data/services/task_handlers/custom_agent_task_handler.dart">custom_agent_task_handler.dart</a><a href="../lib/agent/pure_skill_host_agent/pure_skill_host_agent.dart">pure host</a><a href="../lib/agent/memex_skill_host_agent/memex_skill_host_agent.dart">memex host</a></div></div>
+          </div>
+        </article>
+
+        <article class="agent-card" data-category="support" data-search="MemexSkillHostAgent full featured skill host file operations search event logs RunJavaScript">
+          <div class="agent-head">
+            <div>
+              <h3 class="agent-title">Memex Skill Host</h3>
+              <span class="agent-id">Runtime class: <code>MemexSkillHostAgent</code></span>
+            </div>
+            <span class="badge support">支撑/宿主</span>
+          </div>
+          <p class="agent-summary">带 Memex 世界观的技能宿主，用于自定义 Agent。它支持文件型 skill、JS runtime 和工作目录内读写，但不内置 memory management 或 PKM overview。</p>
+          <div class="detail-grid">
+            <div class="detail"><strong>Prompt</strong><p>`memexSkillHostAgentSystemPrompt`：解释 Memex 核心功能、意图识别职责、默认文件检索能力和工具使用建议。</p></div>
+            <div class="detail"><strong>Tools</strong><p>`LS/Glob/Grep/Read/BatchRead/Write/Move/Remove/Edit`、`search_workspace_event_logs`、`getCurrentTime`，另有 `skillDirectoryPath` 和 `FlutterJavaScriptRuntime`。</p></div>
+            <div class="detail wide"><strong>源码</strong><div class="source-list"><a href="../lib/agent/memex_skill_host_agent/memex_skill_host_agent.dart">memex_skill_host_agent.dart</a><a href="../lib/agent/memex_skill_host_agent/prompts.dart">host prompt</a></div></div>
+          </div>
+        </article>
+
+        <article class="agent-card" data-category="support" data-search="PureSkillHostAgent lightweight skill host RunJavaScript custom agent">
+          <div class="agent-head">
+            <div>
+              <h3 class="agent-title">Pure Skill Host</h3>
+              <span class="agent-id">Runtime class: <code>PureSkillHostAgent</code></span>
+            </div>
+            <span class="badge support">支撑/宿主</span>
+          </div>
+          <p class="agent-summary">更轻的自定义技能宿主，系统 prompt 只有“手机上的个人助理，简洁、有帮助、友好”。适合不需要 Memex 世界观的 custom agent。</p>
+          <div class="detail-grid">
+            <div class="detail"><strong>Prompt</strong><p>`pureSkillHostAgentSystemPrompt` + custom agent 配置中的额外 prompt。</p></div>
+            <div class="detail"><strong>Tools</strong><p>与 Memex Skill Host 相同的工作目录文件工具、事件日志、当前时间和 JS runtime。</p></div>
+            <div class="detail wide"><strong>源码</strong><div class="source-list"><a href="../lib/agent/pure_skill_host_agent/pure_skill_host_agent.dart">pure_skill_host_agent.dart</a></div></div>
+          </div>
+        </article>
+
+        <article class="agent-card" data-category="experimental" data-search="file_system_skill_agent submit_summary RunJavaScript unregistered experimental handler">
+          <div class="agent-head">
+            <div>
+              <h3 class="agent-title">File-system Skill Agent</h3>
+              <span class="agent-id">Runtime name: <code>file_system_skill_agent</code></span>
+            </div>
+            <span class="badge experimental">实验/未注册</span>
+          </div>
+          <p class="agent-summary">一个示例/实验 handler：动态创建 `submit_summary` 文件系统 Skill，要求 Agent 读取 `SKILL.md` 并通过 `RunJavaScript` 执行脚本。</p>
+          <div class="detail-grid">
+            <div class="detail"><strong>状态</strong><p>当前代码中未在 `MemexRouter._init()` 注册 `file_system_skill_agent_task`，因此不是默认运行链路。</p></div>
+            <div class="detail"><strong>Tools</strong><p>只读 `Read`、`LS`，外加 skillDirectoryPath 带来的 JS skill runtime。</p></div>
+            <div class="detail wide"><strong>源码</strong><div class="source-list"><a href="../lib/data/services/task_handlers/file_system_skill_agent_handler.dart">file_system_skill_agent_handler.dart</a></div></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="tools">
+      <div class="section-heading">
+        <div>
+          <h2>工具矩阵</h2>
+          <p class="section-note">把工具按“谁拥有”和“能写哪里”拆开看，最容易理解 Agent 的真实边界。</p>
+        </div>
+      </div>
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>工具 / Skill</th>
+            <th>主要使用者</th>
+            <th>关键工具名</th>
+            <th>数据边界</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>文件系统工具</td>
+            <td>PKM、Insights、SuperAgent、自定义宿主、Comment 部分场景</td>
+            <td><code>Read</code> <code>BatchRead</code> <code>Write</code> <code>Edit</code> <code>Move</code> <code>Remove</code> <code>LS</code> <code>Glob</code> <code>Grep</code></td>
+            <td>由 <code>FilePermissionManager</code> 按 Agent 配置具体 root 和 read/write 权限。</td>
+          </tr>
+          <tr>
+            <td>Timeline Card Skill</td>
+            <td>CardAgent、SuperAgent</td>
+            <td><code>get_card_metadata</code> <code>save_timeline_card</code></td>
+            <td>通过 <code>FileSystemService.updateCardFile</code> 写 Cards，并刷新 UI。</td>
+          </tr>
+          <tr>
+            <td>PKM Skill</td>
+            <td>PkmAgent、SuperAgent</td>
+            <td><code>update_timeline_card_insight</code> <code>skip_pkm_organization</code></td>
+            <td>PKM 文件写入依赖文件工具；卡片 insight 通过专用 tool 写入。</td>
+          </tr>
+          <tr>
+            <td>Knowledge Insight Skill</td>
+            <td>KnowledgeInsightAgent、SuperAgent</td>
+            <td><code>get_exists_knowledge_insight_cards</code> <code>save_knowledge_insight_cards</code> <code>delete_knowledge_insight_card</code> <code>delete_knowledge_insight_tags</code> <code>get_available_insight_card_templates</code> <code>get_user_activity_stats</code></td>
+            <td>只通过 skill 写 KnowledgeInsights，支持 native widget 图表模板。</td>
+          </tr>
+          <tr>
+            <td>Schedule Aggregation Skill</td>
+            <td>ScheduleAggregatorAgent</td>
+            <td><code>get_schedule_state</code> <code>add_pending_item</code> <code>update_pending_item</code> <code>complete_pending_item</code> <code>complete_subtask</code> <code>set_presentation</code> <code>search_completed</code></td>
+            <td>所有变更走 <code>ScheduleStateService</code>。</td>
+          </tr>
+          <tr>
+            <td>Ask Clarification Skill</td>
+            <td>AskClarificationAgent、MemoryAgent、SuperAgent</td>
+            <td><code>create_clarification_request</code> <code>get_pending_clarification_requests</code> <code>get_recent_clarification_requests</code></td>
+            <td>写入 ClarificationRequestService；真正 memory 写入延后到 Resolution。</td>
+          </tr>
+          <tr>
+            <td>角色评论/记忆工具</td>
+            <td>CommentAgent、CompanionAgent</td>
+            <td><code>SaveComment</code> <code>SkipComment</code> <code>MemoryRead</code> <code>MemoryWrite</code> <code>MemoryEdit</code> <code>MemoryRemove</code> <code>HistorySearch</code> <code>SendActionMessage</code></td>
+            <td>评论写 Cards；角色记忆写 character memory；action message 写 persona chat。</td>
+          </tr>
+          <tr>
+            <td>用户长期记忆工具</td>
+            <td>MemoryAgent、ClarificationResolutionAgent、SuperAgent、CompanionAgent、部分 Comment 回复</td>
+            <td><code>append_memories</code></td>
+            <td>写 <code>_System/memory/memory.json</code>，并由 memory prompt 控制何时可写。</td>
+          </tr>
+          <tr>
+            <td>系统动作 Skill</td>
+            <td>SuperAgent</td>
+            <td><code>create_calendar_event</code> <code>create_reminder</code> <code>get_recent_actions</code> <code>cancel_action</code></td>
+            <td>通过 <code>SystemActionService</code> 创建本机日历/提醒待执行动作。</td>
+          </tr>
+          <tr>
+            <td>通用上下文工具</td>
+            <td>SuperAgent、Insights、自定义宿主等</td>
+            <td><code>search_workspace_event_logs</code> <code>getCurrentTime</code> <code>get_pkm_overview</code></td>
+            <td>事件日志从 2026-01-23 起可用；PKM overview 是只读结构概览。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="prompts">
+      <div class="section-heading">
+        <div>
+          <h2>Prompt 深挖顺序</h2>
+          <p class="section-note">建议按这个顺序读，不要先陷进某个大 prompt。先理解事件、状态和工具边界，再看语言指令。</p>
+        </div>
+      </div>
+      <div class="read-order">
+        <article class="step">
+          <span class="step-number">1</span>
+          <h3>事件和任务入口</h3>
+          <p>先读 <a href="../lib/data/repositories/memex_router.dart">memex_router.dart</a> 的 handler 注册和事件订阅，确认谁会跑、依赖谁。</p>
+        </article>
+        <article class="step">
+          <span class="step-number">2</span>
+          <h3>Agent 构造函数</h3>
+          <p>读 <a href="../lib/agent/">lib/agent/</a> 下每个 Agent 的 `StatefulAgent` 参数：prompt、tools、skills、permission、memory。</p>
+        </article>
+        <article class="step">
+          <span class="step-number">3</span>
+          <h3>Skill prompt 和 schema</h3>
+          <p>重点读 <a href="../lib/agent/prompts.dart">agent/prompts.dart</a> 与 <a href="../lib/agent/skills/">agent/skills/</a>，这里定义了大部分 tool schema 和业务流程。</p>
+        </article>
+        <article class="step">
+          <span class="step-number">4</span>
+          <h3>上下文装配</h3>
+          <p>最后读 memory、character context、location context 和 run context，理解 prompt 里动态注入的内容。</p>
+        </article>
+      </div>
+      <p class="callout">关键判断：Memex 的 Agent 能力不是只由 system prompt 决定，而是由“事件触发 + 状态恢复 + 文件权限 + skill/tool schema + 动态 reminders”共同决定。读 prompt 时要同步看 tool 的 side effect。</p>
+    </section>
+
+    <section id="notes">
+      <div class="section-heading">
+        <div>
+          <h2>架构观察</h2>
+          <p class="section-note">这些点适合作为后续改 prompt/tools 前的检查清单。</p>
+        </div>
+      </div>
+      <table class="matrix">
+        <tbody>
+          <tr>
+            <th>最容易误解的点</th>
+            <td><code>chat_agent</code> 不是一个单独目录，而是 ChatService 默认创建的 <code>SuperAgent</code>；<code>profile_agent</code> 对应实现是 <code>MemoryAgent</code>。</td>
+          </tr>
+          <tr>
+            <th>写权限最大</th>
+            <td>普通 <code>SuperAgent</code> 和自定义宿主可在各自 working directory 写文件；<code>PkmAgent</code> 只写 PKM；<code>KnowledgeInsightAgent</code> 只通过 skill 写 KnowledgeInsights。</td>
+          </tr>
+          <tr>
+            <th>最强约束</th>
+            <td><code>PkmAgent</code> 串行执行，避免 PKM 并发编辑；<code>CardAgent</code> 会检查保存工具调用和卡片完整性；<code>AskClarificationAgent</code> 要求 aggressive skip。</td>
+          </tr>
+          <tr>
+            <th>Prompt 复用</th>
+            <td>很多 Agent 的短 prompt 只定义角色，真正业务步骤在 <code>agent/prompts.dart</code> 的 Skill prompt 中。</td>
+          </tr>
+          <tr>
+            <th>下一步深挖建议</th>
+            <td>如果要调 Agent 行为，优先定位对应 Skill 的 tool schema 和 stopFlag 逻辑，再改 system prompt。否则模型可能“想做”，但工具边界不允许。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <footer>
+    <div class="shell">Generated from the current repository structure under <code>lib/agent</code>, <code>lib/data/services/task_handlers</code>, and <code>lib/data/repositories/memex_router.dart</code>.</div>
+  </footer>
+
+  <script>
+    const searchInput = document.getElementById('agentSearch');
+    const cards = Array.from(document.querySelectorAll('.agent-card'));
+    const filters = Array.from(document.querySelectorAll('.filter'));
+    let activeFilter = 'all';
+
+    function applyFilters() {
+      const query = searchInput.value.trim().toLowerCase();
+      for (const card of cards) {
+        const categoryMatch = activeFilter === 'all' || card.dataset.category === activeFilter;
+        const haystack = `${card.innerText} ${card.dataset.search || ''}`.toLowerCase();
+        const queryMatch = query === '' || haystack.includes(query);
+        card.hidden = !(categoryMatch && queryMatch);
+      }
+    }
+
+    searchInput.addEventListener('input', applyFilters);
+    for (const button of filters) {
+      button.addEventListener('click', () => {
+        activeFilter = button.dataset.filter;
+        filters.forEach((item) => item.classList.toggle('active', item === button));
+        applyFilters();
+      });
+    }
+  </script>
+</body>
+</html>
