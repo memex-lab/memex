@@ -444,7 +444,48 @@ class AppLocalizationsZh extends AppLocalizations {
   String get actionCenterTitle => '待处理事项';
 
   @override
-  String get noPendingActions => '目前没有待处理的动作';
+  String get noPendingActions => '目前没有需要处理的事项';
+
+  @override
+  String get actionCenterBackgroundSection => '后台异常';
+
+  @override
+  String get actionCenterBackgroundSectionDescription => '失败的生成任务会单独保留，可重试处理。';
+
+  @override
+  String get actionCenterPendingActionsSection => '待确认动作';
+
+  @override
+  String get actionCenterPendingActionsSectionDescription =>
+      '未来的日程和提醒建议，需要确认或忽略。';
+
+  @override
+  String get actionCenterPastDueSection => '已过期建议';
+
+  @override
+  String get actionCenterPastDueSectionDescription => '时间已经过去的日程建议，不再作为强提醒。';
+
+  @override
+  String get actionCenterClarificationsSection => '澄清请求';
+
+  @override
+  String get actionCenterClarificationsSectionDescription =>
+      'Memex 需要你补充回答后才能继续。';
+
+  @override
+  String get actionCenterCardUpdatesSection => '卡片更新';
+
+  @override
+  String get actionCenterCardUpdatesSectionDescription => '普通信息更新，不计入主提醒红点。';
+
+  @override
+  String get actionCenterMarkAllCardUpdatesRead => '全部已读';
+
+  @override
+  String get systemActionPastDueTitle => '日程时间已过去';
+
+  @override
+  String get systemActionPastDueDescription => '这条建议已移出待确认动作';
 
   @override
   String get clarificationNeeded => 'Memex 想确认一下';

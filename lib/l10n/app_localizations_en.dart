@@ -453,7 +453,52 @@ class AppLocalizationsEn extends AppLocalizations {
   String get actionCenterTitle => 'Pending actions';
 
   @override
-  String get noPendingActions => 'No pending actions';
+  String get noPendingActions => 'No items need attention';
+
+  @override
+  String get actionCenterBackgroundSection => 'Background issues';
+
+  @override
+  String get actionCenterBackgroundSectionDescription =>
+      'Failed generation work that can be retried separately.';
+
+  @override
+  String get actionCenterPendingActionsSection => 'Actions to confirm';
+
+  @override
+  String get actionCenterPendingActionsSectionDescription =>
+      'Future calendar and reminder suggestions that need a decision.';
+
+  @override
+  String get actionCenterPastDueSection => 'Past suggestions';
+
+  @override
+  String get actionCenterPastDueSectionDescription =>
+      'Calendar suggestions whose time has already passed.';
+
+  @override
+  String get actionCenterClarificationsSection => 'Clarifications';
+
+  @override
+  String get actionCenterClarificationsSectionDescription =>
+      'Questions Memex needs answered before continuing.';
+
+  @override
+  String get actionCenterCardUpdatesSection => 'Card updates';
+
+  @override
+  String get actionCenterCardUpdatesSectionDescription =>
+      'Informational updates. These do not count toward the main badge.';
+
+  @override
+  String get actionCenterMarkAllCardUpdatesRead => 'Mark all read';
+
+  @override
+  String get systemActionPastDueTitle => 'Event time has passed';
+
+  @override
+  String get systemActionPastDueDescription =>
+      'This suggestion was moved out of pending actions';
 
   @override
   String get clarificationNeeded => 'Memex wants to confirm';

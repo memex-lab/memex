@@ -42,7 +42,9 @@ class _SystemActionCardState extends State<SystemActionCard> {
     bool success = false;
     if (isCalendar) {
       if (!await _checkAndRequestPermission(
-          Permission.calendarFullAccess, UserStorage.l10n.calendar)) {
+        Permission.calendarFullAccess,
+        UserStorage.l10n.calendar,
+      )) {
         setState(() => _isProcessing = false);
         return;
       }
@@ -66,7 +68,9 @@ class _SystemActionCardState extends State<SystemActionCard> {
           ? Permission.calendarFullAccess
           : Permission.reminders;
       if (!await _checkAndRequestPermission(
-          reminderPermission, UserStorage.l10n.reminders)) {
+        reminderPermission,
+        UserStorage.l10n.reminders,
+      )) {
         setState(() => _isProcessing = false);
         return;
       }
@@ -86,7 +90,8 @@ class _SystemActionCardState extends State<SystemActionCard> {
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(UserStorage.l10n.writeToSystemFailed)));
+          SnackBar(content: Text(UserStorage.l10n.writeToSystemFailed)),
+        );
       }
     }
 
@@ -104,7 +109,9 @@ class _SystemActionCardState extends State<SystemActionCard> {
   }
 
   Future<bool> _checkAndRequestPermission(
-      Permission permission, String name) async {
+    Permission permission,
+    String name,
+  ) async {
     var status = await permission.status;
     if (status.isGranted) return true;
 
@@ -169,7 +176,9 @@ class _SystemActionCardState extends State<SystemActionCard> {
         : UserStorage.l10n.addToReminders;
 
     final displayTime = _formatDisplayTime(isCalendar ? startTime : dueDate);
-    final isCompleted = widget.action.status == 'completed';
+    final isCompleted =
+        widget.action.status == SystemActionService.statusCompleted;
+    final isPastDue = widget.action.status == SystemActionService.statusPastDue;
 
     if (isCompleted) {
       return Container(
@@ -184,18 +193,74 @@ class _SystemActionCardState extends State<SystemActionCard> {
         ),
         child: Row(
           children: [
-            Icon(Icons.check_circle_rounded,
-                color: colorScheme.primary, size: 18),
+            Icon(
+              Icons.check_circle_rounded,
+              color: colorScheme.primary,
+              size: 18,
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                UserStorage.l10n.addedToSuccess(isCalendar
-                    ? UserStorage.l10n.calendar
-                    : UserStorage.l10n.reminders),
+                UserStorage.l10n.addedToSuccess(
+                  isCalendar
+                      ? UserStorage.l10n.calendar
+                      : UserStorage.l10n.reminders,
+                ),
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w500,
                     ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (isPastDue) {
+      return Container(
+        margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.35),
+          ),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              Icons.history_toggle_off_rounded,
+              color: colorScheme.onSurfaceVariant,
+              size: 18,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    UserStorage.l10n.systemActionPastDueTitle,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    displayTime == null
+                        ? UserStorage.l10n.systemActionPastDueDescription
+                        : '${UserStorage.l10n.systemActionPastDueDescription} - $displayTime',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant.withValues(
+                            alpha: 0.78,
+                          ),
+                        ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -258,17 +323,19 @@ class _SystemActionCardState extends State<SystemActionCard> {
               const SizedBox(height: 6),
               Row(
                 children: [
-                  Icon(Icons.access_time_rounded,
-                      size: 14,
-                      color:
-                          colorScheme.onSurfaceVariant.withValues(alpha: 0.7)),
+                  Icon(
+                    Icons.access_time_rounded,
+                    size: 14,
+                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                  ),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
                       displayTime,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurfaceVariant
-                                .withValues(alpha: 0.8),
+                            color: colorScheme.onSurfaceVariant.withValues(
+                              alpha: 0.8,
+                            ),
                           ),
                     ),
                   ),
@@ -283,10 +350,13 @@ class _SystemActionCardState extends State<SystemActionCard> {
                   onPressed: _isProcessing ? null : _handleIgnore,
                   style: TextButton.styleFrom(
                     foregroundColor: colorScheme.onSurfaceVariant,
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 0,
+                    ),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20)),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                   ),
                   child: Text(UserStorage.l10n.ignore),
                 ),
@@ -296,10 +366,13 @@ class _SystemActionCardState extends State<SystemActionCard> {
                   style: FilledButton.styleFrom(
                     backgroundColor: primaryColor,
                     foregroundColor: Colors.white,
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 0,
+                    ),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20)),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                     elevation: 0,
                   ),
                   child: _isProcessing
@@ -308,12 +381,15 @@ class _SystemActionCardState extends State<SystemActionCard> {
                           height: 16,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
                           ),
                         )
-                      : Text(buttonText,
-                          style: const TextStyle(fontWeight: FontWeight.w600)),
+                      : Text(
+                          buttonText,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
                 ),
               ],
             ),
@@ -326,8 +402,8 @@ class _SystemActionCardState extends State<SystemActionCard> {
   String? _formatDisplayTime(String? value) {
     final dateTime = parseLocalDateTime(value);
     if (dateTime == null) return value;
-    return DateFormat.yMd(UserStorage.l10n.localeName)
-        .add_Hm()
-        .format(dateTime);
+    return DateFormat.yMd(
+      UserStorage.l10n.localeName,
+    ).add_Hm().format(dateTime);
   }
 }

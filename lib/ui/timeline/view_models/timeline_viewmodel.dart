@@ -99,6 +99,7 @@ class TimelineViewModel extends ChangeNotifier {
 
   // Pending attachment count for notification badge.
   int pendingAttachmentCount = 0;
+  int actionCenterItemCount = 0;
 
   // View mode state
   TimelineViewMode viewMode = TimelineViewMode.timeline;
@@ -277,10 +278,15 @@ class TimelineViewModel extends ChangeNotifier {
   }
 
   Future<void> _refreshPendingCount() async {
-    final pending =
-        await CardAttachmentService.instance.getPendingAttachments();
+    final summary =
+        await CardAttachmentService.instance.getActionCenterSummary();
     final failedCardCount = await _router.countFailedCardGenerations();
-    pendingAttachmentCount = pending.length + (failedCardCount > 0 ? 1 : 0);
+    pendingAttachmentCount = CardAttachmentService.badgeCountFor(
+      primaryBadgeCount: summary.primaryBadgeCount,
+      failedCardCount: failedCardCount,
+    );
+    actionCenterItemCount =
+        summary.items.length + (failedCardCount > 0 ? 1 : 0);
     notifyListeners();
   }
 
@@ -401,14 +407,12 @@ class TimelineViewModel extends ChangeNotifier {
         final newCards = value;
         _currentPage++;
         final loadedHasMore = newCards.length >= pageLimit;
-        final nextCards = await _withScheduleBriefingCard([
-          ...cards,
-          ...newCards,
-        ],
-            hasMoreAfterList: loadedHasMore,
-            showScheduleBriefing:
-                viewModeAtRequest == TimelineViewMode.timeline &&
-                    filter == 'all');
+        final nextCards = await _withScheduleBriefingCard(
+          [...cards, ...newCards],
+          hasMoreAfterList: loadedHasMore,
+          showScheduleBriefing:
+              viewModeAtRequest == TimelineViewMode.timeline && filter == 'all',
+        );
         if (_isStaleTimelineLoad(generation, filter)) return;
         cards = nextCards;
         hasMore = loadedHasMore;
@@ -477,14 +481,12 @@ class TimelineViewModel extends ChangeNotifier {
         final newCards = value;
         _currentPage++;
         final loadedHasMore = newCards.length >= pageLimit;
-        final nextCards = await _withScheduleBriefingCard([
-          ...cards,
-          ...newCards,
-        ],
-            hasMoreAfterList: loadedHasMore,
-            showScheduleBriefing:
-                viewModeAtRequest == TimelineViewMode.timeline &&
-                    filter == 'all');
+        final nextCards = await _withScheduleBriefingCard(
+          [...cards, ...newCards],
+          hasMoreAfterList: loadedHasMore,
+          showScheduleBriefing:
+              viewModeAtRequest == TimelineViewMode.timeline && filter == 'all',
+        );
         if (_isStaleTimelineLoad(generation, filter)) return;
         cards = nextCards;
         hasMore = loadedHasMore;

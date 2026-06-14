@@ -1,7 +1,9 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:memex/data/services/card_attachment_service.dart';
+import 'package:memex/data/services/clarification_request_service.dart';
 import 'package:memex/data/services/system_action_service.dart';
+import 'package:memex/data/services/user_notification_service.dart';
 import 'package:memex/db/app_database.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -51,72 +53,177 @@ void main() {
       },
     );
 
-    test('hard rejection removes actions from fact and schedule visibility',
-        () async {
-      await SystemActionService.instance.createAction(
-        id: 'rejected-calendar',
-        type: 'calendar',
-        factId: '2026/05/25.md#ts_7',
-        data: const {
-          'title': '旧的小白院日程',
-          'start_time': '2026-06-06 09:00:00',
-        },
-      );
-      await SystemActionService.instance.updateActionStatus(
-        'rejected-calendar',
-        'rejected',
-      );
+    test(
+      'hard rejection removes actions from fact and schedule visibility',
+      () async {
+        await SystemActionService.instance.createAction(
+          id: 'rejected-calendar',
+          type: 'calendar',
+          factId: '2026/05/25.md#ts_7',
+          data: const {'title': '旧的小白院日程', 'start_time': '2026-06-06 09:00:00'},
+        );
+        await SystemActionService.instance.updateActionStatus(
+          'rejected-calendar',
+          'rejected',
+        );
 
-      expect(
-        await SystemActionService.instance.getVisibleForFact(
-          '2026/05/25.md#ts_7',
-        ),
-        isEmpty,
-      );
-      expect(
-          await SystemActionService.instance.getVisibleForSchedule(), isEmpty);
-    });
+        expect(
+          await SystemActionService.instance.getVisibleForFact(
+            '2026/05/25.md#ts_7',
+          ),
+          isEmpty,
+        );
+        expect(
+          await SystemActionService.instance.getVisibleForSchedule(),
+          isEmpty,
+        );
+      },
+    );
 
     test(
-        'schedule visibility includes completed and dismissed calendar/reminder only',
-        () async {
-      await SystemActionService.instance.createAction(
-        id: 'completed-calendar',
-        type: 'calendar',
-        data: const {
-          'title': '已添加日程',
-          'start_time': '2026-06-06 09:00:00',
-        },
-      );
-      await SystemActionService.instance.updateActionStatus(
-        'completed-calendar',
-        'completed',
-      );
-      await SystemActionService.instance.createAction(
-        id: 'dismissed-reminder',
-        type: 'reminder',
-        data: const {
-          'title': '已清掉提醒',
-          'due_date': '2026-06-07 12:00:00',
-        },
-      );
-      await SystemActionService.instance.updateActionStatus(
-        'dismissed-reminder',
-        'dismissed',
-      );
-      await SystemActionService.instance.createAction(
-        id: 'unsupported-action',
-        type: 'note',
-        data: const {'title': '不是日程动作'},
-      );
+      'schedule visibility includes completed and dismissed calendar/reminder only',
+      () async {
+        await SystemActionService.instance.createAction(
+          id: 'completed-calendar',
+          type: 'calendar',
+          data: const {'title': '已添加日程', 'start_time': '2026-06-06 09:00:00'},
+        );
+        await SystemActionService.instance.updateActionStatus(
+          'completed-calendar',
+          'completed',
+        );
+        await SystemActionService.instance.createAction(
+          id: 'dismissed-reminder',
+          type: 'reminder',
+          data: const {'title': '已清掉提醒', 'due_date': '2026-06-07 12:00:00'},
+        );
+        await SystemActionService.instance.updateActionStatus(
+          'dismissed-reminder',
+          'dismissed',
+        );
+        await SystemActionService.instance.createAction(
+          id: 'unsupported-action',
+          type: 'note',
+          data: const {'title': '不是日程动作'},
+        );
 
-      final visible =
-          await SystemActionService.instance.getVisibleForSchedule();
+        final visible =
+            await SystemActionService.instance.getVisibleForSchedule();
 
-      expect(
-        visible.map((action) => action.id),
-        ['completed-calendar', 'dismissed-reminder'],
-      );
-    });
+        expect(visible.map((action) => action.id), [
+          'completed-calendar',
+          'dismissed-reminder',
+        ]);
+      },
+    );
+
+    test(
+      'action center summary separates badge-worthy items from card updates and past actions',
+      () async {
+        final now = DateTime.parse('2026-06-14T10:00:00');
+        await SystemActionService.instance.createAction(
+          id: 'future-calendar',
+          type: 'calendar',
+          data: const {
+            'title': 'Future planning',
+            'start_time': '2026-06-15 09:00:00',
+          },
+        );
+        await SystemActionService.instance.createAction(
+          id: 'past-calendar',
+          type: 'calendar',
+          data: const {
+            'title': 'Expired planning',
+            'start_time': '2026-06-13 09:00:00',
+          },
+        );
+        await ClarificationRequestService.instance.createRequest(
+          id: 'clarification-1',
+          question: 'Which project is this about?',
+          responseType: 'short_text',
+        );
+        await UserNotificationService.instance.upsert(
+          userId: 'system-action-user',
+          notificationType: 'card_detail_update',
+          subjectKey: '2026/06/14.md#ts_1',
+          payload: const {
+            'signals': ['comments'],
+          },
+        );
+
+        final summary = await CardAttachmentService.instance
+            .getActionCenterSummary(now: now);
+
+        expect(summary.items, hasLength(4));
+        expect(summary.primaryBadgeCount, 2);
+        expect(
+          CardAttachmentService.badgeCountFor(
+            primaryBadgeCount: summary.primaryBadgeCount,
+            failedCardCount: 3,
+          ),
+          3,
+        );
+        expect(
+          summary.items.where(
+            (item) =>
+                item.type == CardAttachmentType.cardDetailNotification &&
+                CardAttachmentService.countsForPrimaryBadge(item, now: now),
+          ),
+          isEmpty,
+        );
+
+        final pastAction = await SystemActionService.instance.getAction(
+          'past-calendar',
+        );
+        expect(pastAction?.status, SystemActionService.statusPastDue);
+        expect(
+          await SystemActionService.instance.getPending(now: now),
+          hasLength(1),
+        );
+      },
+    );
+
+    test(
+      'clearing card-detail updates leaves system actions and failed-card badge semantics alone',
+      () async {
+        await SystemActionService.instance.createAction(
+          id: 'pending-calendar',
+          type: 'calendar',
+          data: const {
+            'title': 'Future planning',
+            'start_time': '2026-06-15 09:00:00',
+          },
+        );
+        await UserNotificationService.instance.upsert(
+          userId: 'system-action-user',
+          notificationType: 'card_detail_update',
+          subjectKey: '2026/06/14.md#ts_1',
+          payload: const {
+            'signals': ['insight'],
+          },
+        );
+
+        final cleared = await CardAttachmentService.instance.dismissAllPending(
+          type: CardAttachmentType.cardDetailNotification,
+        );
+
+        expect(cleared, 1);
+        expect(
+          await UserNotificationService.instance.list(
+            userId: 'system-action-user',
+            notificationType: 'card_detail_update',
+          ),
+          isEmpty,
+        );
+        expect(await SystemActionService.instance.getPending(), hasLength(1));
+        expect(
+          CardAttachmentService.badgeCountFor(
+            primaryBadgeCount: 1,
+            failedCardCount: 2,
+          ),
+          2,
+        );
+      },
+    );
   });
 }

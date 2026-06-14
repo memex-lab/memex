@@ -911,8 +911,86 @@ abstract class AppLocalizations {
   /// No description provided for @noPendingActions.
   ///
   /// In en, this message translates to:
-  /// **'No pending actions'**
+  /// **'No items need attention'**
   String get noPendingActions;
+
+  /// No description provided for @actionCenterBackgroundSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Background issues'**
+  String get actionCenterBackgroundSection;
+
+  /// No description provided for @actionCenterBackgroundSectionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed generation work that can be retried separately.'**
+  String get actionCenterBackgroundSectionDescription;
+
+  /// No description provided for @actionCenterPendingActionsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Actions to confirm'**
+  String get actionCenterPendingActionsSection;
+
+  /// No description provided for @actionCenterPendingActionsSectionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Future calendar and reminder suggestions that need a decision.'**
+  String get actionCenterPendingActionsSectionDescription;
+
+  /// No description provided for @actionCenterPastDueSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Past suggestions'**
+  String get actionCenterPastDueSection;
+
+  /// No description provided for @actionCenterPastDueSectionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar suggestions whose time has already passed.'**
+  String get actionCenterPastDueSectionDescription;
+
+  /// No description provided for @actionCenterClarificationsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Clarifications'**
+  String get actionCenterClarificationsSection;
+
+  /// No description provided for @actionCenterClarificationsSectionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Questions Memex needs answered before continuing.'**
+  String get actionCenterClarificationsSectionDescription;
+
+  /// No description provided for @actionCenterCardUpdatesSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Card updates'**
+  String get actionCenterCardUpdatesSection;
+
+  /// No description provided for @actionCenterCardUpdatesSectionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Informational updates. These do not count toward the main badge.'**
+  String get actionCenterCardUpdatesSectionDescription;
+
+  /// No description provided for @actionCenterMarkAllCardUpdatesRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark all read'**
+  String get actionCenterMarkAllCardUpdatesRead;
+
+  /// No description provided for @systemActionPastDueTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Event time has passed'**
+  String get systemActionPastDueTitle;
+
+  /// No description provided for @systemActionPastDueDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'This suggestion was moved out of pending actions'**
+  String get systemActionPastDueDescription;
 
   /// No description provided for @clarificationNeeded.
   ///
