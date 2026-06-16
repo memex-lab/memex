@@ -392,9 +392,11 @@ class TimelineScreenState extends State<TimelineScreen> {
                           Builder(
                             builder: (context) {
                               final pendingCount = vm.pendingAttachmentCount;
+                              final hasActionCenterItems =
+                                  vm.actionCenterItemCount > 0;
                               return GestureDetector(
                                 onTap: () {
-                                  if (pendingCount > 0) {
+                                  if (hasActionCenterItems) {
                                     showModalBottomSheet(
                                       context: context,
                                       isScrollControlled: true,

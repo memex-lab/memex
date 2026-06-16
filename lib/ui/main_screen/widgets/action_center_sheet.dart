@@ -5,6 +5,7 @@ import 'package:memex/utils/user_storage.dart';
 import 'package:memex/db/app_database.dart';
 import 'package:memex/data/services/card_attachment_service.dart';
 import 'package:memex/data/services/event_bus_service.dart';
+import 'package:memex/data/services/system_action_service.dart';
 import 'package:memex/ui/card_attachments/card_attachment_data.dart';
 import 'package:memex/ui/card_attachments/card_attachment_factory.dart';
 import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
@@ -17,11 +18,13 @@ class ActionCenterSheet extends StatefulWidget {
     this.loadPendingAttachments,
     this.loadFailedCardCount,
     this.retryAllFailedCards,
+    this.dismissPendingAttachments,
   });
 
   final Future<List<CardAttachmentData>> Function()? loadPendingAttachments;
   final Future<int> Function()? loadFailedCardCount;
   final Future<CardGenerationRetryResult> Function()? retryAllFailedCards;
+  final Future<int> Function(String? type)? dismissPendingAttachments;
 
   @override
   State<ActionCenterSheet> createState() => _ActionCenterSheetState();
@@ -83,8 +86,7 @@ class _ActionCenterSheetState extends State<ActionCenterSheet>
   }
 
   Future<void> _load() async {
-    final loadAttachments =
-        widget.loadPendingAttachments ??
+    final loadAttachments = widget.loadPendingAttachments ??
         CardAttachmentService.instance.getPendingAttachments;
     final loadFailedCount =
         widget.loadFailedCardCount ?? MemexRouter().countFailedCardGenerations;
@@ -144,9 +146,10 @@ class _ActionCenterSheetState extends State<ActionCenterSheet>
 
     HapticFeedback.mediumImpact();
 
-    final count = await CardAttachmentService.instance.dismissAllPending(
-      type: type,
-    );
+    final dismiss = widget.dismissPendingAttachments ??
+        (String? selectedType) => CardAttachmentService.instance
+            .dismissAllPending(type: selectedType);
+    final count = await dismiss(type);
 
     if (!mounted) return;
 
@@ -165,6 +168,7 @@ class _ActionCenterSheetState extends State<ActionCenterSheet>
           duration: const Duration(seconds: 2),
         ),
       );
+      await _load();
     }
   }
 
@@ -174,8 +178,7 @@ class _ActionCenterSheetState extends State<ActionCenterSheet>
     HapticFeedback.mediumImpact();
 
     try {
-      final retryAll =
-          widget.retryAllFailedCards ??
+      final retryAll = widget.retryAllFailedCards ??
           MemexRouter().retryAllFailedCardGenerations;
       final result = await retryAll();
       if (!mounted) return;
@@ -374,26 +377,204 @@ class _ActionCenterSheetState extends State<ActionCenterSheet>
       );
     }
 
-    return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(0, 12, 0, 24),
-      itemCount: items.length + (_failedCardCount > 0 ? 1 : 0),
-      separatorBuilder: (context, index) => const SizedBox(height: 6),
-      itemBuilder: (context, index) {
-        if (_failedCardCount > 0 && index == 0) {
-          return _FailedCardsRetryCard(
-            count: _failedCardCount,
-            isRetrying: _isRetryingFailedCards,
-            onRetryAll: _retryAllFailedCards,
-          );
-        }
+    final pendingActions = _itemsWhere(
+      (item) =>
+          item.type == CardAttachmentType.systemAction &&
+          !_isPastDueSystemAction(item),
+    );
+    final pastDueActions = _itemsWhere(_isPastDueSystemAction);
+    final clarifications = _itemsWhere(
+      (item) => item.type == CardAttachmentType.clarificationRequest,
+    );
+    final cardUpdates = _itemsWhere(
+      (item) => item.type == CardAttachmentType.cardDetailNotification,
+    );
+    final l10n = UserStorage.l10n;
 
-        final itemIndex = _failedCardCount > 0 ? index - 1 : index;
-        final item = items[itemIndex];
-        return KeyedSubtree(
-          key: ValueKey(item.id),
-          child: CardAttachmentFactory.build(item),
-        );
-      },
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(0, 12, 0, 24),
+      children: [
+        if (_failedCardCount > 0)
+          _ActionCenterSection(
+            title: l10n.actionCenterBackgroundSection,
+            subtitle: l10n.actionCenterBackgroundSectionDescription,
+            count: _failedCardCount,
+            icon: Icons.error_outline_rounded,
+            iconColor: const Color(0xFFD97706),
+            children: [
+              _FailedCardsRetryCard(
+                count: _failedCardCount,
+                isRetrying: _isRetryingFailedCards,
+                onRetryAll: _retryAllFailedCards,
+              ),
+            ],
+          ),
+        if (pendingActions.isNotEmpty)
+          _ActionCenterSection(
+            title: l10n.actionCenterPendingActionsSection,
+            subtitle: l10n.actionCenterPendingActionsSectionDescription,
+            count: pendingActions.length,
+            icon: Icons.event_available_rounded,
+            iconColor: const Color(0xFF10B981),
+            children: pendingActions.map(_buildAttachmentItem).toList(),
+          ),
+        if (pastDueActions.isNotEmpty)
+          _ActionCenterSection(
+            title: l10n.actionCenterPastDueSection,
+            subtitle: l10n.actionCenterPastDueSectionDescription,
+            count: pastDueActions.length,
+            icon: Icons.history_toggle_off_rounded,
+            iconColor: const Color(0xFF64748B),
+            children: pastDueActions.map(_buildAttachmentItem).toList(),
+          ),
+        if (clarifications.isNotEmpty)
+          _ActionCenterSection(
+            title: l10n.actionCenterClarificationsSection,
+            subtitle: l10n.actionCenterClarificationsSectionDescription,
+            count: clarifications.length,
+            icon: Icons.help_outline_rounded,
+            iconColor: const Color(0xFFF59E0B),
+            children: clarifications.map(_buildAttachmentItem).toList(),
+          ),
+        if (cardUpdates.isNotEmpty)
+          _ActionCenterSection(
+            title: l10n.actionCenterCardUpdatesSection,
+            subtitle: l10n.actionCenterCardUpdatesSectionDescription,
+            count: cardUpdates.length,
+            icon: Icons.article_outlined,
+            iconColor: const Color(0xFF6366F1),
+            trailing: TextButton.icon(
+              onPressed: _isDismissing
+                  ? null
+                  : () => _performDismiss(
+                        CardAttachmentType.cardDetailNotification,
+                      ),
+              icon: const Icon(Icons.done_all_rounded, size: 16),
+              label: Text(l10n.actionCenterMarkAllCardUpdatesRead),
+            ),
+            children: cardUpdates.map(_buildAttachmentItem).toList(),
+          ),
+      ],
+    );
+  }
+
+  List<CardAttachmentData> _itemsWhere(
+    bool Function(CardAttachmentData item) test,
+  ) {
+    return (_items ?? const <CardAttachmentData>[]).where(test).toList();
+  }
+
+  bool _isPastDueSystemAction(CardAttachmentData item) {
+    if (item.type != CardAttachmentType.systemAction) return false;
+    final action = item.data['action'];
+    return action is SystemAction &&
+        action.status == SystemActionService.statusPastDue;
+  }
+
+  Widget _buildAttachmentItem(CardAttachmentData item) {
+    return KeyedSubtree(
+      key: ValueKey(item.id),
+      child: CardAttachmentFactory.build(item),
+    );
+  }
+}
+
+class _ActionCenterSection extends StatelessWidget {
+  const _ActionCenterSection({
+    required this.title,
+    required this.subtitle,
+    required this.count,
+    required this.icon,
+    required this.iconColor,
+    required this.children,
+    this.trailing,
+  });
+
+  final String title;
+  final String subtitle;
+  final int count;
+  final IconData icon;
+  final Color iconColor;
+  final List<Widget> children;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 10, 16, 6),
+            child: Row(
+              children: [
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: iconColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, color: iconColor, size: 17),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            '$count',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: colorScheme.onSurfaceVariant.withValues(
+                                alpha: 0.72,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12,
+                          height: 1.25,
+                          color: colorScheme.onSurfaceVariant.withValues(
+                            alpha: 0.72,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (trailing != null) ...[const SizedBox(width: 8), trailing!],
+              ],
+            ),
+          ),
+          ...children,
+        ],
+      ),
     );
   }
 }

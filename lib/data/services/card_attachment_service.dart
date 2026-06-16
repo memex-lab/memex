@@ -3,6 +3,7 @@ import 'package:memex/data/services/clarification_request_service.dart';
 import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/data/services/table_change_notifier.dart';
 import 'package:memex/data/services/user_notification_service.dart';
+import 'package:memex/db/app_database.dart';
 import 'package:memex/ui/card_attachments/card_attachment_data.dart';
 import 'package:memex/utils/user_storage.dart';
 
@@ -11,6 +12,16 @@ class CardAttachmentType {
   static const systemAction = 'system_action';
   static const clarificationRequest = 'clarification_request';
   static const cardDetailNotification = 'card_detail_notification';
+}
+
+class ActionCenterSummary {
+  const ActionCenterSummary({
+    required this.items,
+    required this.primaryBadgeCount,
+  });
+
+  final List<CardAttachmentData> items;
+  final int primaryBadgeCount;
 }
 
 /// Aggregates all attachment data sources for a given factId into a single
@@ -61,11 +72,15 @@ class CardAttachmentService {
     return total;
   }
 
-  /// Fetches all pending attachments (for the action center / notification badge).
-  Future<List<CardAttachmentData>> getPendingAttachments() async {
+  /// Fetches all items that should be visible in the action center.
+  ///
+  /// [primaryBadgeCount] intentionally counts only strong action items:
+  /// future system actions and clarification requests. Informational card
+  /// detail updates remain visible here but do not light up the main badge.
+  Future<ActionCenterSummary> getActionCenterSummary({DateTime? now}) async {
     final userId = await UserStorage.getUserId();
     final results = await Future.wait([
-      _getPendingSystemActions(),
+      _getActionCenterSystemActions(now: now),
       _getPendingClarificationRequests(),
       if (userId != null)
         _getPendingCardDetailNotifications(userId)
@@ -80,7 +95,39 @@ class CardAttachmentService {
         final bUpdated = b.data['updated_at'] as int? ?? 0;
         return bUpdated.compareTo(aUpdated);
       });
-    return merged;
+    final primaryBadgeCount =
+        merged.where((item) => countsForPrimaryBadge(item, now: now)).length;
+    return ActionCenterSummary(
+      items: merged,
+      primaryBadgeCount: primaryBadgeCount,
+    );
+  }
+
+  /// Fetches all pending attachments (for existing call sites).
+  Future<List<CardAttachmentData>> getPendingAttachments() async {
+    return (await getActionCenterSummary()).items;
+  }
+
+  static bool countsForPrimaryBadge(CardAttachmentData item, {DateTime? now}) {
+    switch (item.type) {
+      case CardAttachmentType.systemAction:
+        final action = item.data['action'];
+        return action is SystemAction &&
+            SystemActionService.countsForPrimaryBadge(action, now: now);
+      case CardAttachmentType.clarificationRequest:
+        return true;
+      case CardAttachmentType.cardDetailNotification:
+        return false;
+      default:
+        return false;
+    }
+  }
+
+  static int badgeCountFor({
+    required int primaryBadgeCount,
+    required int failedCardCount,
+  }) {
+    return primaryBadgeCount + (failedCardCount > 0 ? 1 : 0);
   }
 
   /// Fetches all attachments for a single [factId], sorted by [sortKey].
@@ -112,53 +159,67 @@ class CardAttachmentService {
   // ---------------------------------------------------------------------------
 
   Future<List<CardAttachmentData>> _getSystemActions(String factId) async {
-    final actions =
-        await SystemActionService.instance.getVisibleForFact(factId);
+    final actions = await SystemActionService.instance.getVisibleForFact(
+      factId,
+    );
     return actions
-        .map((a) => CardAttachmentData(
-              id: 'system_action_${a.id}',
-              type: CardAttachmentType.systemAction,
-              data: {'action': a},
-              sortKey: 100,
-            ))
+        .map(
+          (a) => CardAttachmentData(
+            id: 'system_action_${a.id}',
+            type: CardAttachmentType.systemAction,
+            data: {'action': a},
+            sortKey: 100,
+          ),
+        )
         .toList();
   }
 
   Future<List<CardAttachmentData>> _getClarificationRequests(
-      String factId) async {
+    String factId,
+  ) async {
     final requests =
         await ClarificationRequestService.instance.getVisibleForFact(factId);
     return requests
-        .map((r) => CardAttachmentData(
-              id: 'clarification_${r.id}',
-              type: CardAttachmentType.clarificationRequest,
-              data: {'request': r},
-              sortKey: 50,
-            ))
+        .map(
+          (r) => CardAttachmentData(
+            id: 'clarification_${r.id}',
+            type: CardAttachmentType.clarificationRequest,
+            data: {'request': r},
+            sortKey: 50,
+          ),
+        )
         .toList();
   }
 
-  Future<List<CardAttachmentData>> _getPendingSystemActions() async {
-    final actions = await SystemActionService.instance.getPending();
+  Future<List<CardAttachmentData>> _getActionCenterSystemActions({
+    DateTime? now,
+  }) async {
+    final actions = await SystemActionService.instance.getActionCenterActions(
+      now: now,
+    );
     return actions
-        .map((a) => CardAttachmentData(
-              id: 'system_action_${a.id}',
-              type: CardAttachmentType.systemAction,
-              data: {'action': a},
-              sortKey: 100,
-            ))
+        .map(
+          (a) => CardAttachmentData(
+            id: 'system_action_${a.id}',
+            type: CardAttachmentType.systemAction,
+            data: {'action': a, 'action_center_status': a.status},
+            sortKey: a.status == SystemActionService.statusPastDue ? 150 : 100,
+          ),
+        )
         .toList();
   }
 
   Future<List<CardAttachmentData>> _getPendingClarificationRequests() async {
     final requests = await ClarificationRequestService.instance.getPending();
     return requests
-        .map((r) => CardAttachmentData(
-              id: 'clarification_${r.id}',
-              type: CardAttachmentType.clarificationRequest,
-              data: {'request': r},
-              sortKey: 50,
-            ))
+        .map(
+          (r) => CardAttachmentData(
+            id: 'clarification_${r.id}',
+            type: CardAttachmentType.clarificationRequest,
+            data: {'request': r},
+            sortKey: 50,
+          ),
+        )
         .toList();
   }
 
@@ -170,16 +231,18 @@ class CardAttachmentService {
       notificationType: 'card_detail_update',
     );
     return rows
-        .map((r) => CardAttachmentData(
-              id: 'card_detail_notification_${r.id}',
-              type: CardAttachmentType.cardDetailNotification,
-              data: {
-                'notification': r,
-                'fact_id': r.subjectKey,
-                'updated_at': r.updatedAt,
-              },
-              sortKey: 200,
-            ))
+        .map(
+          (r) => CardAttachmentData(
+            id: 'card_detail_notification_${r.id}',
+            type: CardAttachmentType.cardDetailNotification,
+            data: {
+              'notification': r,
+              'fact_id': r.subjectKey,
+              'updated_at': r.updatedAt,
+            },
+            sortKey: 200,
+          ),
+        )
         .toList();
   }
 }
