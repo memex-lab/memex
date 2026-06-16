@@ -29,11 +29,65 @@ abstract class AboutMemexViewModelContract implements Listenable {
   Future<void> updateAutoDownloadAndInstall(bool value);
 }
 
+typedef AppBuildInfoLoader = Future<Result<AppBuildInfo>> Function();
+typedef AppUpdateSettingsLoader = Future<AppUpdateSettings> Function();
+typedef AppUpdateSettingsSaver = Future<void> Function(
+  AppUpdateSettings settings,
+);
+typedef AppUpdateCacheInfoLoader = Future<AppUpdateCacheInfo> Function();
+typedef AppUpdateCacheClearer = Future<Result<int>> Function();
+typedef AppUpdateChecker = Future<Result<UnifiedAppUpdateCheckResult>>
+    Function({
+  bool manual,
+});
+typedef AppUpdateActionPerformer = Future<Result<AppUpdateActionResult>>
+    Function(
+  UnifiedAppUpdateCheckResult check, {
+  void Function(int receivedBytes, int totalBytes)? onProgress,
+});
+
 class AboutMemexViewModel extends ChangeNotifier
     implements AboutMemexViewModelContract {
-  AboutMemexViewModel({required MemexRouter router}) : _router = router;
+  AboutMemexViewModel({
+    MemexRouter? router,
+    AppBuildInfoLoader? getAppBuildInfo,
+    AppUpdateSettingsLoader? getAppUpdateSettings,
+    AppUpdateSettingsSaver? saveAppUpdateSettings,
+    AppUpdateCacheInfoLoader? getAppUpdateCacheInfo,
+    AppUpdateCacheClearer? clearAppUpdateCache,
+    AppUpdateChecker? checkAppUpdate,
+    AppUpdateActionPerformer? performAppUpdateAction,
+  })  : assert(
+          router != null ||
+              (getAppBuildInfo != null &&
+                  getAppUpdateSettings != null &&
+                  saveAppUpdateSettings != null &&
+                  getAppUpdateCacheInfo != null &&
+                  clearAppUpdateCache != null &&
+                  checkAppUpdate != null &&
+                  performAppUpdateAction != null),
+          'Provide a router or all test dependencies',
+        ),
+        _getAppBuildInfo = getAppBuildInfo ?? router!.getAppBuildInfo,
+        _getAppUpdateSettings =
+            getAppUpdateSettings ?? router!.getAppUpdateSettings,
+        _saveAppUpdateSettings =
+            saveAppUpdateSettings ?? router!.saveAppUpdateSettings,
+        _getAppUpdateCacheInfo =
+            getAppUpdateCacheInfo ?? router!.getAppUpdateCacheInfo,
+        _clearAppUpdateCache =
+            clearAppUpdateCache ?? router!.clearAppUpdateCache,
+        _checkAppUpdate = checkAppUpdate ?? router!.checkAppUpdate,
+        _performAppUpdateAction =
+            performAppUpdateAction ?? router!.performAppUpdateAction;
 
-  final MemexRouter _router;
+  final AppBuildInfoLoader _getAppBuildInfo;
+  final AppUpdateSettingsLoader _getAppUpdateSettings;
+  final AppUpdateSettingsSaver _saveAppUpdateSettings;
+  final AppUpdateCacheInfoLoader _getAppUpdateCacheInfo;
+  final AppUpdateCacheClearer _clearAppUpdateCache;
+  final AppUpdateChecker _checkAppUpdate;
+  final AppUpdateActionPerformer _performAppUpdateAction;
 
   @override
   AppBuildInfo? buildInfo;
@@ -73,7 +127,7 @@ class AboutMemexViewModel extends ChangeNotifier
     loading = true;
     notifyListeners();
 
-    final buildResult = await _router.getAppBuildInfo();
+    final buildResult = await _getAppBuildInfo();
     buildResult.when(
       onOk: (value) => buildInfo = value,
       onError: (error, _) =>
@@ -81,8 +135,8 @@ class AboutMemexViewModel extends ChangeNotifier
     );
 
     try {
-      settings = await _router.getAppUpdateSettings();
-      cacheInfo = await _router.getAppUpdateCacheInfo();
+      settings = await _getAppUpdateSettings();
+      cacheInfo = await _getAppUpdateCacheInfo();
     } catch (e) {
       statusText = UserStorage.l10n.appUpdateCheckFailed(e);
     } finally {
@@ -98,7 +152,7 @@ class AboutMemexViewModel extends ChangeNotifier
     statusText = UserStorage.l10n.appUpdateChecking;
     notifyListeners();
 
-    final result = await _router.checkAppUpdate(manual: true);
+    final result = await _checkAppUpdate(manual: true);
     result.when(
       onOk: (value) {
         updateCheck = value;
@@ -109,8 +163,8 @@ class AboutMemexViewModel extends ChangeNotifier
     );
 
     try {
-      settings = await _router.getAppUpdateSettings();
-      cacheInfo = await _router.getAppUpdateCacheInfo();
+      settings = await _getAppUpdateSettings();
+      cacheInfo = await _getAppUpdateCacheInfo();
     } catch (_) {
       // The check result is the user-facing state; cache refresh is best effort.
     }
@@ -131,13 +185,12 @@ class AboutMemexViewModel extends ChangeNotifier
         : UserStorage.l10n.appUpdateOpeningStore;
     notifyListeners();
 
-    final result = await _router.performAppUpdateAction(
+    final result = await _performAppUpdateAction(
       check,
       onProgress: (receivedBytes, totalBytes) {
         if (totalBytes <= 0) return;
-        downloadPercent = ((receivedBytes / totalBytes) * 100)
-            .clamp(0, 100)
-            .round();
+        downloadPercent =
+            ((receivedBytes / totalBytes) * 100).clamp(0, 100).round();
         statusText = UserStorage.l10n.appUpdateDownloadingPercent(
           downloadPercent,
         );
@@ -170,7 +223,7 @@ class AboutMemexViewModel extends ChangeNotifier
     );
 
     try {
-      cacheInfo = await _router.getAppUpdateCacheInfo();
+      cacheInfo = await _getAppUpdateCacheInfo();
     } catch (_) {
       // Best effort.
     }
@@ -184,7 +237,7 @@ class AboutMemexViewModel extends ChangeNotifier
     clearingCache = true;
     notifyListeners();
 
-    final result = await _router.clearAppUpdateCache();
+    final result = await _clearAppUpdateCache();
     result.when(
       onOk: (_) {
         cacheInfo = AppUpdateCacheInfo.empty;
@@ -227,7 +280,7 @@ class AboutMemexViewModel extends ChangeNotifier
     final current = settings;
     if (current == null || _busy) return;
     final updated = current.copyWith(autoCheckEnabled: value);
-    await _router.saveAppUpdateSettings(updated);
+    await _saveAppUpdateSettings(updated);
     settings = updated;
     notifyListeners();
   }
@@ -237,7 +290,7 @@ class AboutMemexViewModel extends ChangeNotifier
     final current = settings;
     if (current == null || _busy) return;
     final updated = current.copyWith(wifiOnlyDownloads: value);
-    await _router.saveAppUpdateSettings(updated);
+    await _saveAppUpdateSettings(updated);
     settings = updated;
     notifyListeners();
   }
@@ -247,7 +300,7 @@ class AboutMemexViewModel extends ChangeNotifier
     final current = settings;
     if (current == null || _busy) return;
     final updated = current.copyWith(autoDownloadAndInstall: value);
-    await _router.saveAppUpdateSettings(updated);
+    await _saveAppUpdateSettings(updated);
     settings = updated;
     notifyListeners();
   }
@@ -261,16 +314,15 @@ class AboutMemexViewModel extends ChangeNotifier
         UserStorage.l10n.appUpdateCheckFailed(
           check.error ?? 'manifest unavailable',
         ),
-      UnifiedAppUpdateStatus.updateAvailable =>
-        check.canDownloadApk
-            ? UserStorage.l10n.appUpdateApkFound(
-                check.latestVersionName ?? '-',
-                check.latestBuild ?? 0,
-              )
-            : UserStorage.l10n.appUpdateStoreFound(
-                check.latestVersionName ?? '-',
-                check.latestBuild ?? 0,
-              ),
+      UnifiedAppUpdateStatus.updateAvailable => check.canDownloadApk
+          ? UserStorage.l10n.appUpdateApkFound(
+              check.latestVersionName ?? '-',
+              check.latestBuild ?? 0,
+            )
+          : UserStorage.l10n.appUpdateStoreFound(
+              check.latestVersionName ?? '-',
+              check.latestBuild ?? 0,
+            ),
     };
   }
 }
