@@ -1,14 +1,15 @@
-import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:logging/logging.dart';
-import 'package:path/path.dart' as path;
 import 'package:memex/data/services/asset_safety_service.dart';
+import 'package:memex/data/services/realtime_speech_transcriber.dart';
+import 'package:memex/data/services/tencent_cloud_asr_service.dart';
 import 'package:memex/data/services/whisper_service.dart';
-import 'package:memex/domain/models/agent_definitions.dart';
+import 'package:memex/data/services/xiaomi_mimo_asr_service.dart';
 import 'package:memex/domain/models/llm_config.dart';
+import 'package:memex/domain/models/speech_recognition_config.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/user_storage.dart';
 
@@ -25,15 +26,32 @@ class SpeechTranscriptionResult {
 }
 
 class SpeechTranscriptionService {
-  SpeechTranscriptionService._();
+  SpeechTranscriptionService({
+    TencentCloudAsrService? tencentCloudAsrService,
+    XiaomiMimoAsrService? xiaomiMimoAsrService,
+  })  : _tencentCloudAsrService =
+            tencentCloudAsrService ?? TencentCloudAsrService.instance,
+        _xiaomiMimoAsrService =
+            xiaomiMimoAsrService ?? XiaomiMimoAsrService.instance;
+
+  SpeechTranscriptionService._()
+      : _tencentCloudAsrService = TencentCloudAsrService.instance,
+        _xiaomiMimoAsrService = XiaomiMimoAsrService.instance;
 
   static final SpeechTranscriptionService instance =
       SpeechTranscriptionService._();
 
+  final TencentCloudAsrService _tencentCloudAsrService;
+  final XiaomiMimoAsrService _xiaomiMimoAsrService;
   final Logger _logger = getLogger('SpeechTranscriptionService');
 
-  Future<bool> isUsingLocalModel() {
-    return UserStorage.getUseLocalSpeechToText();
+  Future<bool> isUsingLocalModel() async {
+    final config = await UserStorage.getSpeechRecognitionConfig();
+    return config.provider == SpeechRecognitionProvider.local;
+  }
+
+  Future<SpeechRecognitionConfig> getConfig() {
+    return UserStorage.getSpeechRecognitionConfig();
   }
 
   /// Whether the local speech model needs to be downloaded before recording.
@@ -44,10 +62,35 @@ class SpeechTranscriptionService {
   }
 
   /// Whether real-time streaming transcription is available.
-  /// Only supported with the local model.
   Future<bool> supportsStreamingTranscription() async {
-    if (!await isUsingLocalModel()) return false;
-    return await WhisperService.instance.isModelDownloaded();
+    final config = await getConfig();
+    switch (config.provider) {
+      case SpeechRecognitionProvider.local:
+        return await WhisperService.instance.isModelDownloaded();
+      case SpeechRecognitionProvider.tencentCloud:
+        return config.tencentCloud.isConfigured;
+      case SpeechRecognitionProvider.xiaomiMimo:
+        return false;
+    }
+  }
+
+  Future<RealtimeSpeechTranscriber?> createRealtimeTranscriber({
+    required void Function(String fullText) onTextChanged,
+  }) async {
+    final config = await getConfig();
+    switch (config.provider) {
+      case SpeechRecognitionProvider.local:
+        if (!await WhisperService.instance.isModelDownloaded()) return null;
+        return LocalRealtimeSpeechTranscriber(onTextChanged: onTextChanged);
+      case SpeechRecognitionProvider.tencentCloud:
+        if (!config.tencentCloud.isConfigured) return null;
+        return _tencentCloudAsrService.createRealtimeTranscriber(
+          config: config.tencentCloud,
+          onTextChanged: onTextChanged,
+        );
+      case SpeechRecognitionProvider.xiaomiMimo:
+        return null;
+    }
   }
 
   Future<String?> transcribeFile(
@@ -65,16 +108,19 @@ class SpeechTranscriptionService {
     String audioPath, {
     bool skipLengthCheck = false,
   }) async {
-    final useLocal = await UserStorage.getUseLocalSpeechToText();
+    final config = await UserStorage.getSpeechRecognitionConfig();
 
-    if (useLocal) {
-      return _transcribeFileLocally(
-        audioPath,
-        skipLengthCheck: skipLengthCheck,
-      );
+    switch (config.provider) {
+      case SpeechRecognitionProvider.local:
+        return _transcribeFileLocally(
+          audioPath,
+          skipLengthCheck: skipLengthCheck,
+        );
+      case SpeechRecognitionProvider.tencentCloud:
+        return _transcribeFileWithTencentCloud(audioPath, config.tencentCloud);
+      case SpeechRecognitionProvider.xiaomiMimo:
+        return _transcribeFileWithXiaomiMimo(audioPath, config.xiaomiMimo);
     }
-
-    return _transcribeFileWithCloud(audioPath);
   }
 
   Future<String?> transcribeSamples(Float32List samples) async {
@@ -85,13 +131,19 @@ class SpeechTranscriptionService {
   Future<SpeechTranscriptionResult> transcribeSamplesWithMetadata(
     Float32List samples,
   ) async {
-    final useLocal = await UserStorage.getUseLocalSpeechToText();
+    final config = await UserStorage.getSpeechRecognitionConfig();
 
-    if (useLocal) {
-      return _transcribeSamplesLocally(samples);
+    switch (config.provider) {
+      case SpeechRecognitionProvider.local:
+        return _transcribeSamplesLocally(samples);
+      case SpeechRecognitionProvider.tencentCloud:
+        return _transcribeSamplesWithTencentCloud(
+          samples,
+          config.tencentCloud,
+        );
+      case SpeechRecognitionProvider.xiaomiMimo:
+        return _transcribeSamplesWithXiaomiMimo(samples, config.xiaomiMimo);
     }
-
-    return _transcribeSamplesWithCloud(samples);
   }
 
   Future<SpeechTranscriptionResult> _transcribeFileLocally(
@@ -131,13 +183,14 @@ class SpeechTranscriptionService {
     );
   }
 
-  Future<SpeechTranscriptionResult> _transcribeFileWithCloud(
+  Future<SpeechTranscriptionResult> _transcribeFileWithTencentCloud(
     String audioPath,
+    TencentCloudAsrConfig config,
   ) async {
     final safety = await _inspectAudioForTranscription(audioPath);
     if (!safety.safeForAnalysis) {
       _logger.warning(
-        'Skipping unsafe cloud audio transcription for $audioPath: ${safety.reason}',
+        'Skipping unsafe Tencent Cloud audio transcription for $audioPath: ${safety.reason}',
       );
       return const SpeechTranscriptionResult(
         text: null,
@@ -145,10 +198,58 @@ class SpeechTranscriptionService {
         model: 'asset-safety',
       );
     }
-    final file = File(audioPath);
-    final bytes = await file.readAsBytes();
-    final mimeType = _mimeTypeForPath(audioPath);
-    return _transcribeAudioBytesWithCloud(bytes, mimeType: mimeType);
+    if (!config.isConfigured) {
+      _logger.warning('Tencent Cloud ASR is selected but not configured.');
+      return const SpeechTranscriptionResult(
+        text: null,
+        usage: null,
+        model: 'tencent-cloud-asr-unconfigured',
+      );
+    }
+    final text = await _tencentCloudAsrService.transcribeFile(
+      audioPath,
+      config: config,
+    );
+    return SpeechTranscriptionResult(
+      text: text,
+      usage: null,
+      model: 'tencent-cloud-asr/${config.engineType}',
+    );
+  }
+
+  Future<SpeechTranscriptionResult> _transcribeFileWithXiaomiMimo(
+    String audioPath,
+    XiaomiMimoAsrConfig config,
+  ) async {
+    final safety = await _inspectAudioForTranscription(audioPath);
+    if (!safety.safeForAnalysis) {
+      _logger.warning(
+        'Skipping unsafe Xiaomi MiMo audio transcription for $audioPath: ${safety.reason}',
+      );
+      return const SpeechTranscriptionResult(
+        text: null,
+        usage: null,
+        model: 'asset-safety',
+      );
+    }
+    final resolvedConfig = await _resolveXiaomiMimoConfig(config);
+    if (resolvedConfig == null) {
+      _logger.warning('Xiaomi MiMo ASR is selected but not configured.');
+      return const SpeechTranscriptionResult(
+        text: null,
+        usage: null,
+        model: 'xiaomi-mimo-asr-unconfigured',
+      );
+    }
+    final text = await _xiaomiMimoAsrService.transcribeFile(
+      audioPath,
+      config: resolvedConfig,
+    );
+    return SpeechTranscriptionResult(
+      text: text,
+      usage: null,
+      model: 'xiaomi-mimo-asr/${resolvedConfig.model}',
+    );
   }
 
   Future<AssetSafetyReport> _inspectAudioForTranscription(
@@ -161,123 +262,82 @@ class SpeechTranscriptionService {
     return AssetSafetyService.instance.inspectFile(audioPath);
   }
 
-  Future<SpeechTranscriptionResult> _transcribeSamplesWithCloud(
+  Future<SpeechTranscriptionResult> _transcribeSamplesWithTencentCloud(
     Float32List samples,
+    TencentCloudAsrConfig config,
   ) async {
+    if (!config.isConfigured) {
+      _logger.warning('Tencent Cloud ASR is selected but not configured.');
+      return const SpeechTranscriptionResult(
+        text: null,
+        usage: null,
+        model: 'tencent-cloud-asr-unconfigured',
+      );
+    }
     final bytes = _samplesToWavBytes(samples);
-    return _transcribeAudioBytesWithCloud(bytes, mimeType: 'audio/wav');
-  }
-
-  Future<SpeechTranscriptionResult> _transcribeAudioBytesWithCloud(
-    List<int> bytes, {
-    required String mimeType,
-  }) async {
-    final resources = await UserStorage.getAgentLLMResources(
-      AgentDefinitions.analyzeAssets,
-      defaultClientKey: LLMConfig.defaultClientKey,
+    final text = await _tencentCloudAsrService.transcribeBytes(
+      bytes,
+      config: config,
+      voiceFormat: 'wav',
     );
-
-    const systemPrompt = '''You are a speech transcription engine.
-Your job is to return only a transcript, never an explanation.''';
-    const prompt = '''Transcribe the spoken audio exactly.
-Return the result wrapped in XML tags as:
-<transcript>...</transcript>
-Rules:
-- Output exactly one transcript block.
-- Do not add any text before or after the transcript block.
-- Do not add introductions, labels, translations, summaries, notes, or quotes.
-- Preserve the spoken language as-is.
-- If the audio contains no recognizable speech, return <transcript></transcript>.''';
-    final response = await resources.client.generate([
-      SystemMessage(systemPrompt),
-      UserMessage([TextPart(prompt), AudioPart(base64Encode(bytes), mimeType)]),
-    ], modelConfig: resources.modelConfig);
-
     return SpeechTranscriptionResult(
-      text: _normalizeCloudTranscript(response.textOutput),
-      usage: response.usage,
-      model: response.model,
+      text: text,
+      usage: null,
+      model: 'tencent-cloud-asr/${config.engineType}',
     );
   }
 
-  String? _normalizeCloudTranscript(String? text) {
-    final trimmed = text?.trim();
-    if (trimmed == null || trimmed.isEmpty) return trimmed;
-
-    final tagged = _extractTaggedTranscript(trimmed);
-    if (tagged != null) {
-      return _trimOuterQuotes(tagged);
+  Future<SpeechTranscriptionResult> _transcribeSamplesWithXiaomiMimo(
+    Float32List samples,
+    XiaomiMimoAsrConfig config,
+  ) async {
+    final resolvedConfig = await _resolveXiaomiMimoConfig(config);
+    if (resolvedConfig == null) {
+      _logger.warning('Xiaomi MiMo ASR is selected but not configured.');
+      return const SpeechTranscriptionResult(
+        text: null,
+        usage: null,
+        model: 'xiaomi-mimo-asr-unconfigured',
+      );
     }
-
-    if (_looksLikePlainTranscript(trimmed)) {
-      return _trimOuterQuotes(trimmed);
-    }
-
-    _logger.warning(
-      'Cloud speech transcription returned non-transcript text: $trimmed',
+    final bytes = _samplesToWavBytes(samples);
+    final text = await _xiaomiMimoAsrService.transcribeBytes(
+      bytes,
+      config: resolvedConfig,
+      mimeType: 'audio/wav',
     );
-    return null;
+    return SpeechTranscriptionResult(
+      text: text,
+      usage: null,
+      model: 'xiaomi-mimo-asr/${resolvedConfig.model}',
+    );
   }
 
-  String? _extractTaggedTranscript(String text) {
-    final match = RegExp(
-      r'<transcript>([\s\S]*?)</transcript>',
-      caseSensitive: false,
-    ).firstMatch(text);
-    if (match == null) return null;
-    return match.group(1)?.trim();
-  }
-
-  bool _looksLikePlainTranscript(String text) {
-    final normalized = text.trim();
-    if (normalized.isEmpty) return true;
-
-    if (normalized.contains('```')) return false;
-
-    final nonEmptyLines = normalized
-        .split(RegExp(r'\r?\n'))
-        .map((line) => line.trim())
-        .where((line) => line.isNotEmpty)
-        .toList();
-    if (nonEmptyLines.isEmpty) return true;
-
-    final firstLine = nonEmptyLines.first;
-    final lowerFirstLine = firstLine.toLowerCase();
-    const explanatoryFragments = [
-      'here is',
-      'below is',
-      'the following',
-      'transcript of the speech',
-      'transcript:',
-      'transcription:',
-      'following is a transcript',
-      '以下是',
-      '文字稿',
-      '转写结果',
-      '识别结果',
-      '语音识别',
-      '语音转写',
-    ];
-
-    if (explanatoryFragments.any(lowerFirstLine.contains) &&
-        nonEmptyLines.length > 1) {
-      return false;
+  Future<XiaomiMimoAsrConfig?> _resolveXiaomiMimoConfig(
+    XiaomiMimoAsrConfig config,
+  ) async {
+    if (!config.usesLinkedConfig) {
+      return config.hasDirectCredentials ? config : null;
     }
 
-    if (RegExp(r'^[-*•]\s').hasMatch(firstLine)) return false;
-
-    return true;
-  }
-
-  String _trimOuterQuotes(String text) {
-    var normalized = text.trim();
-    if ((normalized.startsWith('"') && normalized.endsWith('"')) ||
-        (normalized.startsWith("'") && normalized.endsWith("'")) ||
-        (normalized.startsWith('“') && normalized.endsWith('”')) ||
-        (normalized.startsWith('‘') && normalized.endsWith('’'))) {
-      normalized = normalized.substring(1, normalized.length - 1).trim();
+    final configs = await UserStorage.getLLMConfigs();
+    LLMConfig? linkedConfig;
+    for (final llmConfig in configs) {
+      if (llmConfig.key == config.llmConfigKey &&
+          llmConfig.type == LLMConfig.typeMimo &&
+          llmConfig.isValid) {
+        linkedConfig = llmConfig;
+        break;
+      }
     }
-    return normalized;
+    if (linkedConfig == null) return null;
+
+    return config.copyWith(
+      apiKey: linkedConfig.apiKey,
+      baseUrl: linkedConfig.baseUrl.isEmpty
+          ? XiaomiMimoAsrConfig.defaultBaseUrl
+          : linkedConfig.baseUrl,
+    );
   }
 
   /// Save raw PCM 16-bit data (16kHz, mono) as a WAV file.
@@ -318,29 +378,6 @@ Rules:
     sink.add(header.buffer.asUint8List());
     sink.add(pcmData);
     await sink.close();
-  }
-
-  String _mimeTypeForPath(String audioPath) {
-    switch (path.extension(audioPath).toLowerCase()) {
-      case '.wav':
-        return 'audio/wav';
-      case '.mp3':
-      case '.m4a':
-        return 'audio/mp3';
-      case '.aiff':
-      case '.aif':
-        return 'audio/aiff';
-      case '.aac':
-        return 'audio/aac';
-      case '.ogg':
-        return 'audio/ogg';
-      case '.flac':
-        return 'audio/flac';
-      case '.wma':
-        throw Exception('Audio format .wma is not supported.');
-      default:
-        return 'audio/mp3';
-    }
   }
 
   List<int> _samplesToWavBytes(Float32List samples) {

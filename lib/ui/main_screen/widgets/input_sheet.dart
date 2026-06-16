@@ -16,7 +16,7 @@ import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/data/services/photo_suggestion_service.dart';
 import 'package:memex/data/services/whisper_service.dart';
-import 'package:memex/data/services/streaming_transcriber.dart';
+import 'package:memex/data/services/realtime_speech_transcriber.dart';
 import 'package:memex/data/services/speech_transcription_service.dart';
 import 'package:memex/data/services/input_draft_service.dart';
 import 'package:memex/data/services/clipboard_preview_service.dart';
@@ -103,7 +103,7 @@ class _InputSheetState extends State<InputSheet>
   final ClipboardPreviewService _clipboardPreviewService =
       ClipboardPreviewService.instance;
 
-  StreamingTranscriber? _streamingTranscriber;
+  RealtimeSpeechTranscriber? _streamingTranscriber;
   StreamSubscription<Uint8List>? _audioStreamSub;
   Timer? _draftSaveDebounce;
   // Accumulated PCM data for saving as WAV after recording stops
@@ -254,11 +254,8 @@ class _InputSheetState extends State<InputSheet>
     _audioPlayer.stop();
 
     final regex = RegExp(r'#([^\s#]+)');
-    final tags = regex
-        .allMatches(text)
-        .map((m) => m.group(1)!)
-        .toSet()
-        .toList();
+    final tags =
+        regex.allMatches(text).map((m) => m.group(1)!).toSet().toList();
 
     setState(() {
       _selectedImages = List<XFile>.from(data.images);
@@ -608,7 +605,10 @@ class _InputSheetState extends State<InputSheet>
       final speechService = SpeechTranscriptionService.instance;
 
       _logger.info('Starting input sheet recording');
-      if (!await _ensureLocalModelReady()) return;
+      if (await speechService.isUsingLocalModel() &&
+          !await _ensureLocalModelReady()) {
+        return;
+      }
 
       var status = await Permission.microphone.status;
       if (status.isDenied) {
@@ -628,13 +628,13 @@ class _InputSheetState extends State<InputSheet>
 
       if (await speechService.supportsStreamingTranscription()) {
         _logger.info('Initializing streaming transcriber for input sheet');
-        _streamingTranscriber = StreamingTranscriber(
+        _streamingTranscriber = await speechService.createRealtimeTranscriber(
           onTextChanged: (fullText) {
             if (mounted) {
               final separator =
                   _preRecordingText.isNotEmpty && fullText.isNotEmpty
-                  ? ' '
-                  : '';
+                      ? ' '
+                      : '';
               setState(() {
                 _textController.text = '$_preRecordingText$separator$fullText';
                 _textController.selection = TextSelection.collapsed(
@@ -645,8 +645,10 @@ class _InputSheetState extends State<InputSheet>
             }
           },
         );
-        await _streamingTranscriber!.init();
-        _logger.info('Streaming transcriber initialized for input sheet');
+        if (_streamingTranscriber != null) {
+          await _streamingTranscriber!.init();
+          _logger.info('Streaming transcriber initialized for input sheet');
+        }
       }
 
       _pcmBuffer.clear();
@@ -709,14 +711,15 @@ class _InputSheetState extends State<InputSheet>
 
   Future<void> _stopRecording() async {
     try {
-      final useLocal = await SpeechTranscriptionService.instance
-          .isUsingLocalModel();
+      final useLocal =
+          await SpeechTranscriptionService.instance.isUsingLocalModel();
 
       await _audioStreamSub?.cancel();
       _audioStreamSub = null;
       await _audioRecorder.stop();
 
-      // Stop streaming — final calibration from _pcmBuffer handles accuracy
+      // Stop streaming before final calibration.
+      final realtimeText = await _streamingTranscriber?.finish();
       _streamingTranscriber?.dispose();
       _streamingTranscriber = null;
 
@@ -729,23 +732,31 @@ class _InputSheetState extends State<InputSheet>
       if (_pcmBuffer.isNotEmpty) {
         final directory = await getTemporaryDirectory();
         final timestamp = DateTime.now().millisecondsSinceEpoch;
-        final wavPath = '${directory.path}/audio_$timestamp.wav';
+        final durationSeconds = _recordingDuration.inSeconds <= 0
+            ? (_pcmBuffer.length + 31999) ~/ 32000
+            : _recordingDuration.inSeconds;
+        final wavPath =
+            '${directory.path}/audio_${timestamp}_$durationSeconds.wav';
         await SpeechTranscriptionService.instance.savePcmAsWav(
           wavPath,
           Uint8List.fromList(_pcmBuffer),
         );
         _pcmBuffer.clear();
 
-        if (!useLocal) {
+        setState(() => _isTranscribing = true);
+        final transcribed = await _calibrateFromFile(
+          wavPath,
+          useLocal: useLocal,
+          realtimeText: realtimeText,
+        );
+        if (mounted) setState(() => _isTranscribing = false);
+        if (!transcribed && !useLocal && mounted) {
           setState(() {
             _audioPath = wavPath;
             _isPlaying = false;
             _audioDuration = _recordingDuration;
           });
         } else {
-          setState(() => _isTranscribing = true);
-          await _calibrateFromFile(wavPath);
-          if (mounted) setState(() => _isTranscribing = false);
           try {
             File(wavPath).deleteSync();
           } catch (_) {}
@@ -767,24 +778,22 @@ class _InputSheetState extends State<InputSheet>
 
   /// Final calibration from saved WAV file after recording stops.
   /// Uses background Isolate to avoid blocking UI.
-  Future<void> _calibrateFromFile(String wavPath) async {
+  Future<bool> _calibrateFromFile(
+    String wavPath, {
+    bool useLocal = true,
+    String? realtimeText,
+  }) async {
     _logger.info('Final calibration from file: $wavPath');
     // Read WAV and send samples to background isolate
     try {
-      final file = File(wavPath);
-      if (!file.existsSync()) return;
-      final bytes = await file.readAsBytes();
-      // Skip 44-byte WAV header, convert PCM16 to Float32
-      if (bytes.length <= 44) return;
-      final pcmBytes = bytes.sublist(44);
-      final int16Data = Int16List.view(Uint8List.fromList(pcmBytes).buffer);
-      final samples = Float32List(int16Data.length);
-      for (int i = 0; i < int16Data.length; i++) {
-        samples[i] = int16Data[i] / 32768.0;
-      }
-      final text = await SpeechTranscriptionService.instance.transcribeSamples(
-        samples,
-      );
+      final text = realtimeText?.trim().isNotEmpty == true
+          ? realtimeText!.trim()
+          : useLocal
+              ? await _transcribeLocalWavSamples(wavPath)
+              : await SpeechTranscriptionService.instance.transcribeFile(
+                  wavPath,
+                  skipLengthCheck: true,
+                );
       if (text != null && text.isNotEmpty && mounted) {
         final separator = _preRecordingText.isNotEmpty ? ' ' : '';
         setState(() {
@@ -794,10 +803,27 @@ class _InputSheetState extends State<InputSheet>
           );
         });
         _scrollTextToBottom();
+        return true;
       }
     } catch (e) {
       _logger.severe('Final calibration failed: $e');
     }
+    return false;
+  }
+
+  Future<String?> _transcribeLocalWavSamples(String wavPath) async {
+    final file = File(wavPath);
+    if (!file.existsSync()) return null;
+    final bytes = await file.readAsBytes();
+    // Skip 44-byte WAV header, convert PCM16 to Float32.
+    if (bytes.length <= 44) return null;
+    final pcmBytes = bytes.sublist(44);
+    final int16Data = Int16List.view(Uint8List.fromList(pcmBytes).buffer);
+    final samples = Float32List(int16Data.length);
+    for (int i = 0; i < int16Data.length; i++) {
+      samples[i] = int16Data[i] / 32768.0;
+    }
+    return SpeechTranscriptionService.instance.transcribeSamples(samples);
   }
 
   bool _isTranscribing = false;
@@ -823,17 +849,7 @@ class _InputSheetState extends State<InputSheet>
       final messenger = ScaffoldMessenger.of(context);
       final l10n = UserStorage.l10n;
 
-      if (!useLocal) {
-        setState(() {
-          _audioPath = filePath;
-          _isPlaying = false;
-          _audioDuration = Duration.zero;
-        });
-        await _loadAudioDuration();
-        return;
-      }
-
-      if (!await _ensureLocalModelReady()) return;
+      if (useLocal && !await _ensureLocalModelReady()) return;
 
       if (!mounted) return;
       final navigator = Navigator.of(context);
@@ -1493,8 +1509,7 @@ class _InputSheetState extends State<InputSheet>
                                           maxLines: 5,
                                           decoration: InputDecoration(
                                             hintText: UserStorage
-                                                .l10n
-                                                .tellAiWhatHappened,
+                                                .l10n.tellAiWhatHappened,
                                             hintStyle: const TextStyle(
                                               color: AppColors.textTertiary,
                                               fontSize: 18,
@@ -1517,9 +1532,9 @@ class _InputSheetState extends State<InputSheet>
                                               return Container(
                                                 padding:
                                                     const EdgeInsets.symmetric(
-                                                      horizontal: 12,
-                                                      vertical: 6,
-                                                    ),
+                                                  horizontal: 12,
+                                                  vertical: 6,
+                                                ),
                                                 decoration: BoxDecoration(
                                                   color: AppColors.iconBgLight,
                                                   borderRadius:
@@ -1572,28 +1587,28 @@ class _InputSheetState extends State<InputSheet>
                                                 return Padding(
                                                   padding:
                                                       const EdgeInsets.only(
-                                                        right: 8,
-                                                      ),
+                                                    right: 8,
+                                                  ),
                                                   child: Stack(
                                                     children: [
                                                       ClipRRect(
                                                         borderRadius:
-                                                            BorderRadius.circular(
-                                                              12,
-                                                            ),
+                                                            BorderRadius
+                                                                .circular(
+                                                          12,
+                                                        ),
                                                         child: GestureDetector(
                                                           onTap: () =>
                                                               _showImagePreview(
-                                                                index,
-                                                              ),
+                                                            index,
+                                                          ),
                                                           child:
                                                               _buildSelectedImagePreview(
-                                                                index: index,
-                                                                width: 100,
-                                                                height: 100,
-                                                                fit: BoxFit
-                                                                    .cover,
-                                                              ),
+                                                            index: index,
+                                                            width: 100,
+                                                            height: 100,
+                                                            fit: BoxFit.cover,
+                                                          ),
                                                         ),
                                                       ),
                                                       Positioned(
@@ -1602,20 +1617,21 @@ class _InputSheetState extends State<InputSheet>
                                                         child: GestureDetector(
                                                           onTap: () =>
                                                               _removeImage(
-                                                                index,
-                                                              ),
+                                                            index,
+                                                          ),
                                                           child: Container(
                                                             padding:
-                                                                const EdgeInsets.all(
-                                                                  4,
-                                                                ),
+                                                                const EdgeInsets
+                                                                    .all(
+                                                              4,
+                                                            ),
                                                             decoration:
                                                                 const BoxDecoration(
-                                                                  color: Colors
-                                                                      .black54,
-                                                                  shape: BoxShape
-                                                                      .circle,
-                                                                ),
+                                                              color: Colors
+                                                                  .black54,
+                                                              shape: BoxShape
+                                                                  .circle,
+                                                            ),
                                                             child: const Icon(
                                                               Icons.close,
                                                               size: 16,
@@ -1653,8 +1669,8 @@ class _InputSheetState extends State<InputSheet>
                                                       color: Colors.white,
                                                       borderRadius:
                                                           BorderRadius.circular(
-                                                            18,
-                                                          ),
+                                                        18,
+                                                      ),
                                                     ),
                                                     child: Icon(
                                                       _isPlaying
@@ -1675,8 +1691,7 @@ class _InputSheetState extends State<InputSheet>
                                                     children: [
                                                       Text(
                                                         UserStorage
-                                                            .l10n
-                                                            .recordedAudio,
+                                                            .l10n.recordedAudio,
                                                         style: const TextStyle(
                                                           fontSize: 14,
                                                           fontWeight:
@@ -1689,8 +1704,7 @@ class _InputSheetState extends State<InputSheet>
                                                       Text(
                                                         _isPlaying
                                                             ? UserStorage
-                                                                  .l10n
-                                                                  .playing
+                                                                .l10n.playing
                                                             : _formatDuration(
                                                                 _audioDuration,
                                                               ),
@@ -1710,10 +1724,9 @@ class _InputSheetState extends State<InputSheet>
                                                         const EdgeInsets.all(4),
                                                     decoration:
                                                         const BoxDecoration(
-                                                          color: Colors.white,
-                                                          shape:
-                                                              BoxShape.circle,
-                                                        ),
+                                                      color: Colors.white,
+                                                      shape: BoxShape.circle,
+                                                    ),
                                                     child: const Icon(
                                                       Icons.close,
                                                       size: 16,
@@ -1733,10 +1746,9 @@ class _InputSheetState extends State<InputSheet>
                                               onTap: _isTranscribing
                                                   ? null
                                                   : (_isRecording
-                                                        ? _stopRecording
-                                                        : _startRecording),
-                                              onLongPress:
-                                                  (_isRecording ||
+                                                      ? _stopRecording
+                                                      : _startRecording),
+                                              onLongPress: (_isRecording ||
                                                       _isTranscribing)
                                                   ? null
                                                   : _pickAudioFile,
@@ -1771,24 +1783,26 @@ class _InputSheetState extends State<InputSheet>
                                                         Container(
                                                           width: 48,
                                                           height: 48,
-                                                          decoration: BoxDecoration(
+                                                          decoration:
+                                                              BoxDecoration(
                                                             color: _isRecording
                                                                 ? AppColors
-                                                                      .primary
+                                                                    .primary
                                                                 : _isTranscribing
-                                                                ? AppColors
-                                                                      .primary
-                                                                      .withValues(
+                                                                    ? AppColors
+                                                                        .primary
+                                                                        .withValues(
                                                                         alpha:
                                                                             0.08,
                                                                       )
-                                                                : const Color(
-                                                                    0xFFF7F8FA,
-                                                                  ),
+                                                                    : const Color(
+                                                                        0xFFF7F8FA,
+                                                                      ),
                                                             borderRadius:
-                                                                BorderRadius.circular(
-                                                                  24,
-                                                                ),
+                                                                BorderRadius
+                                                                    .circular(
+                                                              24,
+                                                            ),
                                                           ),
                                                           child: Stack(
                                                             alignment: Alignment
@@ -1797,21 +1811,18 @@ class _InputSheetState extends State<InputSheet>
                                                               Icon(
                                                                 Icons.mic,
                                                                 size: 22,
-                                                                color:
-                                                                    _isRecording
-                                                                    ? Colors
-                                                                          .white
+                                                                color: _isRecording
+                                                                    ? Colors.white
                                                                     : _isTranscribing
-                                                                    ? AppColors
-                                                                          .primary
-                                                                    : AppColors
-                                                                          .textSecondary,
+                                                                        ? AppColors.primary
+                                                                        : AppColors.textSecondary,
                                                               ),
                                                               if (_isTranscribing)
                                                                 const SizedBox(
                                                                   width: 36,
                                                                   height: 36,
-                                                                  child: CircularProgressIndicator(
+                                                                  child:
+                                                                      CircularProgressIndicator(
                                                                     strokeWidth:
                                                                         2,
                                                                     color: AppColors
@@ -1877,8 +1888,7 @@ class _InputSheetState extends State<InputSheet>
                                             GestureDetector(
                                               key: DemoService.instance.isActive
                                                   ? DemoService
-                                                        .instance
-                                                        .sendButtonKey
+                                                      .instance.sendButtonKey
                                                   : const ValueKey(
                                                       'input_sheet_submit_button',
                                                     ),
@@ -1886,9 +1896,9 @@ class _InputSheetState extends State<InputSheet>
                                               child: Container(
                                                 padding:
                                                     const EdgeInsets.symmetric(
-                                                      horizontal: 24,
-                                                      vertical: 12,
-                                                    ),
+                                                  horizontal: 24,
+                                                  vertical: 12,
+                                                ),
                                                 decoration: BoxDecoration(
                                                   color: Colors.black,
                                                   borderRadius:
@@ -1898,8 +1908,7 @@ class _InputSheetState extends State<InputSheet>
                                                   children: [
                                                     Text(
                                                       UserStorage
-                                                          .l10n
-                                                          .recordLabel,
+                                                          .l10n.recordLabel,
                                                       style: const TextStyle(
                                                         color: Colors.white,
                                                         fontSize: 16,
@@ -2058,9 +2067,8 @@ class _InputSheetState extends State<InputSheet>
             Icon(
               isAllSelected ? Icons.check_circle : Icons.add_circle_outline,
               size: 20,
-              color: isAllSelected
-                  ? AppColors.primary
-                  : const Color(0xFFCBD5E1),
+              color:
+                  isAllSelected ? AppColors.primary : const Color(0xFFCBD5E1),
             ),
           ],
         ),

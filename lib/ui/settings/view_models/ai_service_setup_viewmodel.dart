@@ -3,6 +3,7 @@ import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/data/services/memex_cloud_service.dart';
 import 'package:memex/data/services/model_role_config_service.dart';
 import 'package:memex/domain/models/llm_config.dart';
+import 'package:memex/domain/models/speech_recognition_config.dart';
 import 'package:memex/utils/user_storage.dart';
 
 typedef AppConfigFetcher = Future<AppConfigResult?> Function(
@@ -40,6 +41,8 @@ class AiServiceSetupViewModel extends ChangeNotifier {
   bool isUpdatingTextModel = false;
   bool isUpdatingVisionModel = false;
   bool useLocalSpeechToText = true;
+  SpeechRecognitionConfig speechRecognitionConfig =
+      const SpeechRecognitionConfig();
   List<LLMConfig> llmConfigs = const [];
   ModelRoleSelection? roleSelection;
   MemexTopUpConfig? memexTopUpConfig;
@@ -88,6 +91,10 @@ class AiServiceSetupViewModel extends ChangeNotifier {
     return AiServiceConnectionMode.notConfigured;
   }
 
+  List<LLMConfig> get mimoModelConfigs => llmConfigs
+      .where((config) => config.type == LLMConfig.typeMimo && config.isValid)
+      .toList(growable: false);
+
   @override
   void dispose() {
     _isDisposed = true;
@@ -106,12 +113,13 @@ class AiServiceSetupViewModel extends ChangeNotifier {
 
     final configs = await _router.getLLMConfigs();
     final selection = await ModelRoleConfigService.loadSelection();
-    final useLocalSpeech = await UserStorage.getUseLocalSpeechToText();
+    final speechConfig = await UserStorage.getSpeechRecognitionConfig();
     if (_isDisposed) return;
 
     llmConfigs = configs;
     roleSelection = selection;
-    useLocalSpeechToText = useLocalSpeech;
+    speechRecognitionConfig = speechConfig;
+    useLocalSpeechToText = speechConfig.usesLocalModel;
     isRoleLoading = false;
     _notify();
   }
@@ -254,8 +262,68 @@ class AiServiceSetupViewModel extends ChangeNotifier {
   }
 
   Future<void> setUseLocalSpeechToText(bool value) async {
-    await UserStorage.setUseLocalSpeechToText(value);
-    useLocalSpeechToText = value;
+    await setSpeechRecognitionProvider(
+      value
+          ? SpeechRecognitionProvider.local
+          : SpeechRecognitionProvider.tencentCloud,
+    );
+  }
+
+  Future<void> setSpeechRecognitionProvider(
+    SpeechRecognitionProvider provider,
+  ) async {
+    final nextConfig = speechRecognitionConfig.copyWith(provider: provider);
+    await UserStorage.saveSpeechRecognitionConfig(nextConfig);
+    speechRecognitionConfig = nextConfig;
+    useLocalSpeechToText = nextConfig.usesLocalModel;
+    _notify();
+  }
+
+  Future<void> saveTencentCloudSpeechConfig({
+    required String appId,
+    required String secretId,
+    required String secretKey,
+    String? engineModel,
+    String? engineType,
+    String hotwordList = '',
+  }) async {
+    final resolvedEngineType = engineModel ??
+        engineType ??
+        speechRecognitionConfig.tencentCloud.engineType;
+    final nextConfig = speechRecognitionConfig.copyWith(
+      tencentCloud: speechRecognitionConfig.tencentCloud.copyWith(
+        appId: appId,
+        secretId: secretId,
+        secretKey: secretKey,
+        engineType: resolvedEngineType,
+        hotwordList: hotwordList,
+      ),
+    );
+    await UserStorage.saveSpeechRecognitionConfig(nextConfig);
+    speechRecognitionConfig = nextConfig;
+    useLocalSpeechToText = nextConfig.usesLocalModel;
+    _notify();
+  }
+
+  Future<void> saveXiaomiMimoSpeechConfig({
+    required String llmConfigKey,
+    required String apiKey,
+    required String baseUrl,
+    required String model,
+    required String language,
+  }) async {
+    final nextConfig = speechRecognitionConfig.copyWith(
+      xiaomiMimo: speechRecognitionConfig.xiaomiMimo.copyWith(
+        llmConfigKey: llmConfigKey,
+        apiKey: apiKey,
+        baseUrl: baseUrl,
+        model: model,
+        language: language,
+      ),
+    );
+    await UserStorage.saveSpeechRecognitionConfig(nextConfig);
+    speechRecognitionConfig = nextConfig;
+    useLocalSpeechToText = nextConfig.usesLocalModel;
     _notify();
   }
 }

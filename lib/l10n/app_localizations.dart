@@ -5391,6 +5391,204 @@ abstract class AppLocalizations {
   /// **'When enabled, audio is transcribed on-device before sending — useful for models that do not support audio input. When disabled, the original audio is sent directly to the model.'**
   String get useLocalSpeechToTextDesc;
 
+  /// No description provided for @speechRecognitionProviderLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'Local'**
+  String get speechRecognitionProviderLocal;
+
+  /// No description provided for @speechRecognitionProviderTencentCloud.
+  ///
+  /// In en, this message translates to:
+  /// **'Tencent Cloud'**
+  String get speechRecognitionProviderTencentCloud;
+
+  /// No description provided for @speechRecognitionProviderXiaomiMimo.
+  ///
+  /// In en, this message translates to:
+  /// **'Xiaomi MiMo'**
+  String get speechRecognitionProviderXiaomiMimo;
+
+  /// No description provided for @speechRecognitionLocalDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'On-device speech recognition keeps audio local and supports real-time preview.'**
+  String get speechRecognitionLocalDescription;
+
+  /// No description provided for @speechRecognitionTencentDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Tencent Cloud ASR uses your Tencent credentials for live preview and final transcription. Audio is uploaded directly to Tencent Cloud.'**
+  String get speechRecognitionTencentDescription;
+
+  /// No description provided for @speechRecognitionXiaomiMimoDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Xiaomi MiMo ASR uses mimo-v2.5-asr for final transcription through your MiMo API key or an existing Xiaomi MIMO model configuration.'**
+  String get speechRecognitionXiaomiMimoDescription;
+
+  /// No description provided for @speechRecognitionPreviewNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording preview updates in real time when the selected provider is ready. Imported audio files are transcribed before insertion.'**
+  String get speechRecognitionPreviewNote;
+
+  /// No description provided for @speechRecognitionXiaomiMimoPreviewNote.
+  ///
+  /// In en, this message translates to:
+  /// **'MiMo currently transcribes the completed WAV or MP3 recording after capture, so live preview is unavailable for this provider.'**
+  String get speechRecognitionXiaomiMimoPreviewNote;
+
+  /// No description provided for @speechRecognitionRealtimeAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Live preview'**
+  String get speechRecognitionRealtimeAvailable;
+
+  /// No description provided for @speechRecognitionRealtimeUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Final text only'**
+  String get speechRecognitionRealtimeUnavailable;
+
+  /// No description provided for @speechRecognitionImportedAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Imported audio'**
+  String get speechRecognitionImportedAudio;
+
+  /// No description provided for @speechRecognitionAudioLeavesDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud processing'**
+  String get speechRecognitionAudioLeavesDevice;
+
+  /// No description provided for @speechRecognitionLocalOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'On device'**
+  String get speechRecognitionLocalOnly;
+
+  /// No description provided for @tencentAsrConfigTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tencent Cloud ASR'**
+  String get tencentAsrConfigTitle;
+
+  /// No description provided for @tencentAsrAppIdLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'AppID'**
+  String get tencentAsrAppIdLabel;
+
+  /// No description provided for @tencentAsrSecretIdLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'SecretID'**
+  String get tencentAsrSecretIdLabel;
+
+  /// No description provided for @tencentAsrSecretKeyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'SecretKey'**
+  String get tencentAsrSecretKeyLabel;
+
+  /// No description provided for @tencentAsrEngineModelLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Engine model'**
+  String get tencentAsrEngineModelLabel;
+
+  /// No description provided for @tencentAsrEngine16kZhEn.
+  ///
+  /// In en, this message translates to:
+  /// **'16k_zh_en · Chinese/English/Cantonese'**
+  String get tencentAsrEngine16kZhEn;
+
+  /// No description provided for @tencentAsrEngine16kZh.
+  ///
+  /// In en, this message translates to:
+  /// **'16k_zh · Chinese'**
+  String get tencentAsrEngine16kZh;
+
+  /// No description provided for @tencentAsrEngine16kYue.
+  ///
+  /// In en, this message translates to:
+  /// **'16k_yue · Cantonese'**
+  String get tencentAsrEngine16kYue;
+
+  /// No description provided for @tencentAsrEngine16kEn.
+  ///
+  /// In en, this message translates to:
+  /// **'16k_en · English'**
+  String get tencentAsrEngine16kEn;
+
+  /// No description provided for @mimoAsrConfigTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Xiaomi MiMo ASR'**
+  String get mimoAsrConfigTitle;
+
+  /// No description provided for @mimoAsrConfigSourceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Credentials'**
+  String get mimoAsrConfigSourceLabel;
+
+  /// No description provided for @mimoAsrManualConfig.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual API key'**
+  String get mimoAsrManualConfig;
+
+  /// No description provided for @mimoAsrLinkedConfigNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Using the API key from the selected Xiaomi MIMO model configuration. ASR requests use MiMo\'s /v1 chat completions endpoint.'**
+  String get mimoAsrLinkedConfigNote;
+
+  /// No description provided for @mimoAsrApiKeyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'MiMo API key'**
+  String get mimoAsrApiKeyLabel;
+
+  /// No description provided for @mimoAsrBaseUrlLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'ASR base URL'**
+  String get mimoAsrBaseUrlLabel;
+
+  /// No description provided for @mimoAsrModelLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'ASR model'**
+  String get mimoAsrModelLabel;
+
+  /// No description provided for @mimoAsrLanguageLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Recognition language'**
+  String get mimoAsrLanguageLabel;
+
+  /// No description provided for @mimoAsrLanguageAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto detect'**
+  String get mimoAsrLanguageAuto;
+
+  /// No description provided for @mimoAsrLanguageZh.
+  ///
+  /// In en, this message translates to:
+  /// **'Chinese'**
+  String get mimoAsrLanguageZh;
+
+  /// No description provided for @mimoAsrLanguageEn.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get mimoAsrLanguageEn;
+
   /// No description provided for @pendingAiProcessingHint.
   ///
   /// In en, this message translates to:

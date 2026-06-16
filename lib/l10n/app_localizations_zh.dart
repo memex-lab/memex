@@ -2878,6 +2878,111 @@ class AppLocalizationsZh extends AppLocalizations {
       '开启时，会先在设备上把音频转成文字再发送，这适合不支持音频输入的模型。关闭后，会直接把原始音频发送给模型处理。';
 
   @override
+  String get speechRecognitionProviderLocal => '本地';
+
+  @override
+  String get speechRecognitionProviderTencentCloud => '腾讯云';
+
+  @override
+  String get speechRecognitionProviderXiaomiMimo => '小米 MiMo';
+
+  @override
+  String get speechRecognitionLocalDescription =>
+      '使用设备上的本地语音识别模型，音频不离开设备，并支持实时预览。';
+
+  @override
+  String get speechRecognitionTencentDescription =>
+      '使用腾讯云 ASR 凭证进行实时预览和最终转写。音频会直接上传至腾讯云。';
+
+  @override
+  String get speechRecognitionXiaomiMimoDescription =>
+      '使用小米 MiMo 的 mimo-v2.5-asr 进行最终转写，可复用已有 Xiaomi MIMO 模型配置，也可单独填写 API Key。';
+
+  @override
+  String get speechRecognitionPreviewNote =>
+      '所选服务商就绪后，录音预览会实时更新；导入的音频文件会先转写再插入。';
+
+  @override
+  String get speechRecognitionXiaomiMimoPreviewNote =>
+      'MiMo 当前会在录音结束后转写完整 WAV 或 MP3 音频，因此该服务商暂不提供录音中的实时预览。';
+
+  @override
+  String get speechRecognitionRealtimeAvailable => '实时预览';
+
+  @override
+  String get speechRecognitionRealtimeUnavailable => '仅最终文本';
+
+  @override
+  String get speechRecognitionImportedAudio => '导入音频';
+
+  @override
+  String get speechRecognitionAudioLeavesDevice => '云端处理';
+
+  @override
+  String get speechRecognitionLocalOnly => '本机处理';
+
+  @override
+  String get tencentAsrConfigTitle => '腾讯云 ASR';
+
+  @override
+  String get tencentAsrAppIdLabel => 'AppID';
+
+  @override
+  String get tencentAsrSecretIdLabel => 'SecretID';
+
+  @override
+  String get tencentAsrSecretKeyLabel => 'SecretKey';
+
+  @override
+  String get tencentAsrEngineModelLabel => '引擎模型';
+
+  @override
+  String get tencentAsrEngine16kZhEn => '16k_zh_en · 中英粤混合';
+
+  @override
+  String get tencentAsrEngine16kZh => '16k_zh · 中文';
+
+  @override
+  String get tencentAsrEngine16kYue => '16k_yue · 粤语';
+
+  @override
+  String get tencentAsrEngine16kEn => '16k_en · 英文';
+
+  @override
+  String get mimoAsrConfigTitle => '小米 MiMo ASR';
+
+  @override
+  String get mimoAsrConfigSourceLabel => '凭证来源';
+
+  @override
+  String get mimoAsrManualConfig => '手动填写 API Key';
+
+  @override
+  String get mimoAsrLinkedConfigNote =>
+      '将使用所选 Xiaomi MIMO 模型配置中的 API Key；语音识别请求会走 MiMo 的 /v1 chat completions 接口。';
+
+  @override
+  String get mimoAsrApiKeyLabel => 'MiMo API Key';
+
+  @override
+  String get mimoAsrBaseUrlLabel => 'ASR Base URL';
+
+  @override
+  String get mimoAsrModelLabel => 'ASR 模型';
+
+  @override
+  String get mimoAsrLanguageLabel => '识别语言';
+
+  @override
+  String get mimoAsrLanguageAuto => '自动识别';
+
+  @override
+  String get mimoAsrLanguageZh => '中文';
+
+  @override
+  String get mimoAsrLanguageEn => '英文';
+
+  @override
   String get pendingAiProcessingHint => '配置 AI 模型以自动整理此记录';
 
   @override

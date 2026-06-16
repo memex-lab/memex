@@ -5,6 +5,7 @@ import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/data/services/settings_registry.dart';
 import 'package:memex/domain/models/agent_definitions.dart';
 import 'package:memex/domain/models/llm_config.dart';
+import 'package:memex/domain/models/speech_recognition_config.dart';
 import 'package:memex/ui/settings/view_models/ai_service_setup_viewmodel.dart';
 import 'package:memex/ui/settings/widgets/agent_config_list_page.dart';
 import 'package:memex/ui/settings/widgets/ai_service_setup_page.dart';
@@ -275,21 +276,270 @@ void main() {
     );
   });
 
-  testWidgets('speech transcription switch persists the local setting', (
+  testWidgets('speech recognition provider and Tencent Cloud config persist', (
     tester,
   ) async {
-    await UserStorage.setUseLocalSpeechToText(true);
+    await UserStorage.saveSpeechRecognitionConfig(
+      const SpeechRecognitionConfig(),
+    );
     await _pumpCustomPage(tester);
 
-    final speechSwitch = find.byKey(
-      const ValueKey('ai-service-speech-local-switch'),
+    final speechSection = find.byKey(
+      const ValueKey('ai-service-speech-recognition-section'),
     );
-    await _centerFinder(tester, speechSwitch);
-    expect(speechSwitch, findsOneWidget);
-    await tester.tap(speechSwitch);
+    await _centerFinder(tester, speechSection);
+    await tester.pumpAndSettle();
+    expect(speechSection, findsOneWidget);
+
+    expect(find.text(UserStorage.l10n.speechProviderSettings), findsOneWidget);
+    expect(
+      find.text(UserStorage.l10n.speechRecognitionPreviewNote),
+      findsOneWidget,
+    );
+
+    await tester.tap(
+      find.text(UserStorage.l10n.speechRecognitionProviderTencentCloud),
+    );
     await tester.pumpAndSettle();
 
+    var config = await UserStorage.getSpeechRecognitionConfig();
+    expect(config.provider, SpeechRecognitionProvider.tencentCloud);
     expect(await UserStorage.getUseLocalSpeechToText(), isFalse);
+
+    final appIdField = find.byKey(
+      const ValueKey('ai-service-speech-tencent-app-id-field'),
+    );
+    final secretIdField = find.byKey(
+      const ValueKey('ai-service-speech-tencent-secret-id-field'),
+    );
+    final secretKeyField = find.byKey(
+      const ValueKey('ai-service-speech-tencent-secret-key-field'),
+    );
+    expect(appIdField, findsOneWidget);
+    expect(secretIdField, findsOneWidget);
+    expect(secretKeyField, findsOneWidget);
+    final secretKeyEditableText = find.descendant(
+      of: secretKeyField,
+      matching: find.byType(EditableText),
+    );
+    expect(
+      tester.widget<EditableText>(secretKeyEditableText).obscureText,
+      isTrue,
+    );
+
+    await tester.enterText(appIdField, '1250000000');
+    await tester.pumpAndSettle();
+    await tester.enterText(secretIdField, 'AKID-example');
+    await tester.pumpAndSettle();
+    await tester.enterText(secretKeyField, 'secret-key');
+    await tester.pumpAndSettle();
+
+    final engineDropdown = find.byKey(
+      const ValueKey('ai-service-speech-tencent-engine-dropdown'),
+    );
+    await tester.ensureVisible(engineDropdown);
+    await tester.pumpAndSettle();
+    await tester.tap(engineDropdown);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(UserStorage.l10n.tencentAsrEngine16kZh).last);
+    await tester.pumpAndSettle();
+
+    config = await UserStorage.getSpeechRecognitionConfig();
+    expect(config.tencentAppId, '1250000000');
+    expect(config.tencentSecretId, 'AKID-example');
+    expect(config.tencentSecretKey, 'secret-key');
+    expect(config.tencentEngineModel, '16k_zh');
+  });
+
+  testWidgets(
+      'Xiaomi MiMo speech config supports linked and manual credentials',
+      (tester) async {
+    const mimoConfig = LLMConfig(
+      key: 'mimo-main',
+      type: LLMConfig.typeMimo,
+      modelId: 'mimo-v2.5',
+      apiKey: 'mimo-key',
+      baseUrl: 'https://api.xiaomimimo.com/anthropic',
+    );
+    await UserStorage.saveLLMConfigs([
+      LLMConfig.createDefaultClientConfig(),
+      mimoConfig,
+    ]);
+    await UserStorage.saveSpeechRecognitionConfig(
+      const SpeechRecognitionConfig(),
+    );
+    await _pumpCustomPage(tester);
+
+    final speechSection = find.byKey(
+      const ValueKey('ai-service-speech-recognition-section'),
+    );
+    await _centerFinder(tester, speechSection);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(UserStorage.l10n.speechRecognitionProviderLocal),
+      findsOneWidget,
+    );
+    expect(
+      find.text(UserStorage.l10n.speechRecognitionProviderTencentCloud),
+      findsOneWidget,
+    );
+    expect(
+      find.text(UserStorage.l10n.speechRecognitionProviderXiaomiMimo),
+      findsOneWidget,
+    );
+
+    await tester.tap(
+      find.text(UserStorage.l10n.speechRecognitionProviderXiaomiMimo),
+    );
+    await tester.pumpAndSettle();
+
+    var config = await UserStorage.getSpeechRecognitionConfig();
+    expect(config.provider, SpeechRecognitionProvider.xiaomiMimo);
+    expect(await UserStorage.getUseLocalSpeechToText(), isFalse);
+    expect(find.text(UserStorage.l10n.mimoAsrConfigTitle), findsOneWidget);
+    expect(
+      find.text(UserStorage.l10n.speechRecognitionRealtimeUnavailable),
+      findsOneWidget,
+    );
+
+    final sourceDropdown = find.byKey(
+      const ValueKey('ai-service-speech-mimo-source-dropdown'),
+    );
+    await _centerFinder(tester, sourceDropdown);
+    await tester.tap(sourceDropdown);
+    await tester.pumpAndSettle();
+    await tester.tap(find.textContaining('mimo-main').last);
+    await tester.pumpAndSettle();
+
+    config = await UserStorage.getSpeechRecognitionConfig();
+    expect(config.xiaomiMimo.llmConfigKey, 'mimo-main');
+    expect(
+      find.byKey(const ValueKey('ai-service-speech-mimo-api-key-field')),
+      findsNothing,
+    );
+
+    await _centerFinder(tester, sourceDropdown);
+    await tester.tap(sourceDropdown);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(UserStorage.l10n.mimoAsrManualConfig).last);
+    await tester.pumpAndSettle();
+
+    final apiKeyField = find.byKey(
+      const ValueKey('ai-service-speech-mimo-api-key-field'),
+    );
+    final baseUrlField = find.byKey(
+      const ValueKey('ai-service-speech-mimo-base-url-field'),
+    );
+    expect(apiKeyField, findsOneWidget);
+    expect(baseUrlField, findsOneWidget);
+    final apiKeyEditableText = find.descendant(
+      of: apiKeyField,
+      matching: find.byType(EditableText),
+    );
+    expect(tester.widget<EditableText>(apiKeyEditableText).obscureText, isTrue);
+
+    await tester.enterText(apiKeyField, 'manual-mimo-key');
+    await tester.pumpAndSettle();
+    await tester.enterText(baseUrlField, 'https://mimo.example/v1');
+    await tester.pumpAndSettle();
+
+    final languageDropdown = find.byKey(
+      const ValueKey('ai-service-speech-mimo-language-dropdown'),
+    );
+    await tester.ensureVisible(languageDropdown);
+    await tester.pumpAndSettle();
+    await tester.tap(languageDropdown);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(UserStorage.l10n.mimoAsrLanguageEn).last);
+    await tester.pumpAndSettle();
+
+    config = await UserStorage.getSpeechRecognitionConfig();
+    expect(config.xiaomiMimo.llmConfigKey, isEmpty);
+    expect(config.xiaomiMimo.apiKey, 'manual-mimo-key');
+    expect(config.xiaomiMimo.baseUrl, 'https://mimo.example/v1');
+    expect(config.xiaomiMimo.language, 'en');
+  });
+
+  testWidgets('Xiaomi MiMo manual form is stable without linked configs',
+      (tester) async {
+    await UserStorage.saveLLMConfigs([LLMConfig.createDefaultClientConfig()]);
+    await UserStorage.saveSpeechRecognitionConfig(
+      const SpeechRecognitionConfig(
+        provider: SpeechRecognitionProvider.xiaomiMimo,
+        xiaomiMimo: XiaomiMimoAsrConfig(
+          apiKey: 'existing-key',
+          baseUrl: 'https://token-plan-sgp.xiaomimimo.com/anthropic',
+          language: 'zh',
+        ),
+      ),
+    );
+
+    await _pumpCustomPage(tester);
+    final speechSection = find.byKey(
+      const ValueKey('ai-service-speech-recognition-section'),
+    );
+    await _centerFinder(tester, speechSection);
+    await tester.pumpAndSettle();
+
+    expect(find.text(UserStorage.l10n.mimoAsrConfigTitle), findsOneWidget);
+    expect(
+      find.text(UserStorage.l10n.speechRecognitionXiaomiMimoPreviewNote),
+      findsOneWidget,
+    );
+    expect(
+      find.text(UserStorage.l10n.speechRecognitionRealtimeUnavailable),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('ai-service-speech-mimo-api-key-field')),
+      findsOneWidget,
+    );
+    final baseUrlField = find.byKey(
+      const ValueKey('ai-service-speech-mimo-base-url-field'),
+    );
+    expect(baseUrlField, findsOneWidget);
+    final baseUrlEditableText = find.descendant(
+      of: baseUrlField,
+      matching: find.byType(EditableText),
+    );
+    expect(
+      tester.widget<EditableText>(baseUrlEditableText).controller.text,
+      'https://token-plan-sgp.xiaomimimo.com/anthropic',
+    );
+
+    final languageDropdown = find.byKey(
+      const ValueKey('ai-service-speech-mimo-language-dropdown'),
+    );
+    await _centerFinder(tester, languageDropdown);
+    await tester.tap(languageDropdown);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(UserStorage.l10n.mimoAsrLanguageAuto).last);
+    await tester.pumpAndSettle();
+
+    var config = await UserStorage.getSpeechRecognitionConfig();
+    expect(config.provider, SpeechRecognitionProvider.xiaomiMimo);
+    expect(config.xiaomiMimo.language, 'auto');
+
+    await tester
+        .tap(find.text(UserStorage.l10n.speechRecognitionProviderLocal));
+    await tester.pumpAndSettle();
+
+    config = await UserStorage.getSpeechRecognitionConfig();
+    expect(config.provider, SpeechRecognitionProvider.local);
+    expect(await UserStorage.getUseLocalSpeechToText(), isTrue);
+    expect(
+      find.byKey(const ValueKey('ai-service-speech-mimo-api-key-field')),
+      findsNothing,
+    );
+    expect(
+      find.text(UserStorage.l10n.speechRecognitionRealtimeAvailable),
+      findsOneWidget,
+    );
+    expect(
+      find.text(UserStorage.l10n.speechRecognitionLocalOnly),
+      findsOneWidget,
+    );
   });
 
   testWidgets('custom provider action opens model configuration', (

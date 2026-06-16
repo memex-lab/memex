@@ -40,7 +40,7 @@ import 'package:memex/data/services/publish_timestamp_service.dart';
 import 'package:memex/data/services/health_service.dart';
 import 'package:memex/data/services/health_strategies.dart';
 import 'package:memex/data/services/whisper_service.dart';
-import 'package:memex/data/services/streaming_transcriber.dart';
+import 'package:memex/data/services/realtime_speech_transcriber.dart';
 import 'package:memex/ui/core/themes/app_colors.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:health/health.dart';
@@ -461,7 +461,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   final List<app_shortcut.ShortcutItem> _shortcuts = [];
   final AudioRecorder _audioRecorder = AudioRecorder();
   String? _recordingPath;
-  StreamingTranscriber? _quickTranscriber;
+  RealtimeSpeechTranscriber? _quickTranscriber;
   StreamSubscription<Uint8List>? _quickAudioSub;
   final List<int> _quickPcmBuffer = [];
   String _quickTranscribedText = '';
@@ -1065,21 +1065,24 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       }
 
       if (await Permission.microphone.request().isGranted) {
-        // Initialize streaming transcriber (only when local model is available)
+        // Initialize streaming transcriber when the selected provider supports it.
         _quickTranscribedText = '';
         _quickPcmBuffer.clear();
         if (await speechService.supportsStreamingTranscription()) {
           _logger.info(
             'Initializing streaming transcriber for quick recording',
           );
-          _quickTranscriber = StreamingTranscriber(
+          _quickTranscriber = await speechService.createRealtimeTranscriber(
             onTextChanged: (fullText) {
               _quickTranscribedText = fullText;
               if (mounted) setState(() {});
             },
           );
-          await _quickTranscriber!.init();
-          _logger.info('Streaming transcriber initialized for quick recording');
+          if (_quickTranscriber != null) {
+            await _quickTranscriber!.init();
+            _logger
+                .info('Streaming transcriber initialized for quick recording');
+          }
         }
 
         // Start streaming PCM recording
@@ -1285,6 +1288,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       _quickAudioSub = null;
       await _audioRecorder.stop();
 
+      final realtimeText = await _quickTranscriber?.finish();
       _quickTranscriber?.dispose();
       _quickTranscriber = null;
 
@@ -1314,15 +1318,31 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
             _quickTranscribedText = calibrated;
           }
         } else {
-          // Cloud mode: save WAV and submit as audio file
+          if (realtimeText != null && realtimeText.trim().isNotEmpty) {
+            _quickTranscribedText = realtimeText.trim();
+            _quickPcmBuffer.clear();
+            return;
+          }
+          // External ASR mode: save WAV, transcribe, then submit text.
           final directory = await getTemporaryDirectory();
           final timestamp = DateTime.now().millisecondsSinceEpoch;
-          final wavPath = '${directory.path}/quick_audio_$timestamp.wav';
+          final durationSeconds = (_quickPcmBuffer.length + 31999) ~/ 32000;
+          final wavPath =
+              '${directory.path}/quick_audio_${timestamp}_$durationSeconds.wav';
           await SpeechTranscriptionService.instance.savePcmAsWav(
             wavPath,
             Uint8List.fromList(_quickPcmBuffer),
           );
-          _quickAudioPath = wavPath;
+          final transcribed = await SpeechTranscriptionService.instance
+              .transcribeFile(wavPath, skipLengthCheck: true);
+          if (transcribed != null && transcribed.isNotEmpty) {
+            _quickTranscribedText = transcribed;
+            try {
+              File(wavPath).deleteSync();
+            } catch (_) {}
+          } else {
+            _quickAudioPath = wavPath;
+          }
         }
         _quickPcmBuffer.clear();
       }
