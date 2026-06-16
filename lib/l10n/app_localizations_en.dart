@@ -2990,6 +2990,111 @@ class AppLocalizationsEn extends AppLocalizations {
       'When enabled, audio is transcribed on-device before sending — useful for models that do not support audio input. When disabled, the original audio is sent directly to the model.';
 
   @override
+  String get speechRecognitionProviderLocal => 'Local';
+
+  @override
+  String get speechRecognitionProviderTencentCloud => 'Tencent Cloud';
+
+  @override
+  String get speechRecognitionProviderXiaomiMimo => 'Xiaomi MiMo';
+
+  @override
+  String get speechRecognitionLocalDescription =>
+      'On-device speech recognition keeps audio local and supports real-time preview.';
+
+  @override
+  String get speechRecognitionTencentDescription =>
+      'Tencent Cloud ASR uses your Tencent credentials for live preview and final transcription. Audio is uploaded directly to Tencent Cloud.';
+
+  @override
+  String get speechRecognitionXiaomiMimoDescription =>
+      'Xiaomi MiMo ASR uses mimo-v2.5-asr for final transcription through your MiMo API key or an existing Xiaomi MIMO model configuration.';
+
+  @override
+  String get speechRecognitionPreviewNote =>
+      'Recording preview updates in real time when the selected provider is ready. Imported audio files are transcribed before insertion.';
+
+  @override
+  String get speechRecognitionXiaomiMimoPreviewNote =>
+      'MiMo currently transcribes the completed WAV or MP3 recording after capture, so live preview is unavailable for this provider.';
+
+  @override
+  String get speechRecognitionRealtimeAvailable => 'Live preview';
+
+  @override
+  String get speechRecognitionRealtimeUnavailable => 'Final text only';
+
+  @override
+  String get speechRecognitionImportedAudio => 'Imported audio';
+
+  @override
+  String get speechRecognitionAudioLeavesDevice => 'Cloud processing';
+
+  @override
+  String get speechRecognitionLocalOnly => 'On device';
+
+  @override
+  String get tencentAsrConfigTitle => 'Tencent Cloud ASR';
+
+  @override
+  String get tencentAsrAppIdLabel => 'AppID';
+
+  @override
+  String get tencentAsrSecretIdLabel => 'SecretID';
+
+  @override
+  String get tencentAsrSecretKeyLabel => 'SecretKey';
+
+  @override
+  String get tencentAsrEngineModelLabel => 'Engine model';
+
+  @override
+  String get tencentAsrEngine16kZhEn => '16k_zh_en · Chinese/English/Cantonese';
+
+  @override
+  String get tencentAsrEngine16kZh => '16k_zh · Chinese';
+
+  @override
+  String get tencentAsrEngine16kYue => '16k_yue · Cantonese';
+
+  @override
+  String get tencentAsrEngine16kEn => '16k_en · English';
+
+  @override
+  String get mimoAsrConfigTitle => 'Xiaomi MiMo ASR';
+
+  @override
+  String get mimoAsrConfigSourceLabel => 'Credentials';
+
+  @override
+  String get mimoAsrManualConfig => 'Manual API key';
+
+  @override
+  String get mimoAsrLinkedConfigNote =>
+      'Using the API key from the selected Xiaomi MIMO model configuration. ASR requests use MiMo\'s /v1 chat completions endpoint.';
+
+  @override
+  String get mimoAsrApiKeyLabel => 'MiMo API key';
+
+  @override
+  String get mimoAsrBaseUrlLabel => 'ASR base URL';
+
+  @override
+  String get mimoAsrModelLabel => 'ASR model';
+
+  @override
+  String get mimoAsrLanguageLabel => 'Recognition language';
+
+  @override
+  String get mimoAsrLanguageAuto => 'Auto detect';
+
+  @override
+  String get mimoAsrLanguageZh => 'Chinese';
+
+  @override
+  String get mimoAsrLanguageEn => 'English';
+
+  @override
   String get pendingAiProcessingHint => 'Set up AI model to process';
 
   @override

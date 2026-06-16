@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:memex/config/app_config.dart';
 import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/domain/models/llm_config.dart';
+import 'package:memex/domain/models/speech_recognition_config.dart';
 import 'package:memex/ui/core/themes/app_colors.dart';
 import 'package:memex/ui/settings/view_models/ai_service_setup_viewmodel.dart';
 import 'package:memex/ui/settings/widgets/agent_config_list_page.dart';
@@ -453,24 +454,59 @@ class CustomAiServiceSetupPage extends StatefulWidget {
 }
 
 class _CustomAiServiceSetupPageState extends State<CustomAiServiceSetupPage> {
+  static const String _manualMimoSpeechConfigKey = '__manual_mimo_asr__';
+
   late final AiServiceSetupViewModel _viewModel;
   late final bool _ownsViewModel;
+  late final TextEditingController _speechAppIdController;
+  late final TextEditingController _speechSecretIdController;
+  late final TextEditingController _speechSecretKeyController;
+  late final TextEditingController _speechMimoApiKeyController;
+  late final TextEditingController _speechMimoBaseUrlController;
+  bool _isSyncingSpeechControllers = false;
+  SpeechRecognitionConfig? _lastSyncedSpeechConfig;
 
   @override
   void initState() {
     super.initState();
+    _speechAppIdController = TextEditingController();
+    _speechSecretIdController = TextEditingController();
+    _speechSecretKeyController = TextEditingController();
+    _speechMimoApiKeyController = TextEditingController();
+    _speechMimoBaseUrlController = TextEditingController();
     _ownsViewModel = widget.viewModel == null;
     _viewModel =
         widget.viewModel ?? AiServiceSetupViewModel(router: MemexRouter());
+    _viewModel.addListener(_syncSpeechControllersFromViewModel);
+    _syncSpeechControllersFromViewModel();
     unawaited(_viewModel.loadModelRoles(showLoading: _ownsViewModel));
   }
 
   @override
   void dispose() {
+    _viewModel.removeListener(_syncSpeechControllersFromViewModel);
+    _speechAppIdController.dispose();
+    _speechSecretIdController.dispose();
+    _speechSecretKeyController.dispose();
+    _speechMimoApiKeyController.dispose();
+    _speechMimoBaseUrlController.dispose();
     if (_ownsViewModel) {
       _viewModel.dispose();
     }
     super.dispose();
+  }
+
+  void _syncSpeechControllersFromViewModel() {
+    final config = _viewModel.speechRecognitionConfig;
+    if (config == _lastSyncedSpeechConfig) return;
+    _lastSyncedSpeechConfig = config;
+    _isSyncingSpeechControllers = true;
+    _speechAppIdController.text = config.tencentCloud.appId;
+    _speechSecretIdController.text = config.tencentCloud.secretId;
+    _speechSecretKeyController.text = config.tencentCloud.secretKey;
+    _speechMimoApiKeyController.text = config.xiaomiMimo.apiKey;
+    _speechMimoBaseUrlController.text = config.xiaomiMimo.baseUrl;
+    _isSyncingSpeechControllers = false;
   }
 
   Future<void> _openAdvancedConfig() async {
@@ -534,9 +570,46 @@ class _CustomAiServiceSetupPageState extends State<CustomAiServiceSetupPage> {
     }
   }
 
-  Future<void> _updateUseLocalSpeechToText(bool value) async {
+  Future<void> _updateSpeechRecognitionProvider(
+    SpeechRecognitionProvider provider,
+  ) async {
     try {
-      await _viewModel.setUseLocalSpeechToText(value);
+      await _viewModel.setSpeechRecognitionProvider(provider);
+    } catch (e) {
+      if (mounted) ToastHelper.showError(context, e);
+    }
+  }
+
+  Future<void> _persistTencentCloudSpeechConfig({String? engineType}) async {
+    if (_isSyncingSpeechControllers) return;
+    try {
+      await _viewModel.saveTencentCloudSpeechConfig(
+        appId: _speechAppIdController.text,
+        secretId: _speechSecretIdController.text,
+        secretKey: _speechSecretKeyController.text,
+        engineType: engineType ??
+            _viewModel.speechRecognitionConfig.tencentCloud.engineType,
+      );
+    } catch (e) {
+      if (mounted) ToastHelper.showError(context, e);
+    }
+  }
+
+  Future<void> _persistXiaomiMimoSpeechConfig({
+    String? llmConfigKey,
+    String? model,
+    String? language,
+  }) async {
+    if (_isSyncingSpeechControllers) return;
+    final config = _viewModel.speechRecognitionConfig.xiaomiMimo;
+    try {
+      await _viewModel.saveXiaomiMimoSpeechConfig(
+        llmConfigKey: llmConfigKey ?? config.llmConfigKey,
+        apiKey: _speechMimoApiKeyController.text,
+        baseUrl: _speechMimoBaseUrlController.text,
+        model: model ?? config.model,
+        language: language ?? config.language,
+      );
     } catch (e) {
       if (mounted) ToastHelper.showError(context, e);
     }
@@ -890,39 +963,426 @@ class _CustomAiServiceSetupPageState extends State<CustomAiServiceSetupPage> {
             onTap: _openLocationSettings,
           ),
           const Divider(height: 18),
-          Material(
-            color: Colors.transparent,
-            child: SwitchListTile(
-              key: const ValueKey('ai-service-speech-local-switch'),
-              contentPadding: EdgeInsets.zero,
-              secondary: const Icon(
-                Icons.graphic_eq,
-                color: AppColors.primary,
-                size: 22,
-              ),
-              title: Text(
-                UserStorage.l10n.speechProviderSettings,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
+          _buildSpeechRecognitionSettings(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSpeechRecognitionSettings() {
+    final l10n = UserStorage.l10n;
+    final speechConfig = _viewModel.speechRecognitionConfig;
+    final selectedProvider = speechConfig.provider;
+
+    return Container(
+      key: const ValueKey('ai-service-speech-recognition-section'),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.graphic_eq, color: AppColors.primary, size: 20),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.speechProviderSettings,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1A1C1E),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _speechProviderDescription(selectedProvider),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        height: 1.35,
+                        color: Color(0xFF5F6272),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              subtitle: Text(
-                UserStorage.l10n.useLocalSpeechToTextDesc,
-                style: const TextStyle(
-                  fontSize: 12,
-                  height: 1.35,
-                  color: AppColors.textSecondary,
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: SegmentedButton<SpeechRecognitionProvider>(
+              key: const ValueKey('ai-service-speech-provider-segments'),
+              segments: [
+                ButtonSegment<SpeechRecognitionProvider>(
+                  value: SpeechRecognitionProvider.local,
+                  icon: const Icon(Icons.phone_iphone_rounded, size: 18),
+                  label: Text(l10n.speechRecognitionProviderLocal),
                 ),
-              ),
-              value: _viewModel.useLocalSpeechToText,
-              onChanged: _updateUseLocalSpeechToText,
+                ButtonSegment<SpeechRecognitionProvider>(
+                  value: SpeechRecognitionProvider.tencentCloud,
+                  icon: const Icon(Icons.cloud_outlined, size: 18),
+                  label: Text(l10n.speechRecognitionProviderTencentCloud),
+                ),
+                ButtonSegment<SpeechRecognitionProvider>(
+                  value: SpeechRecognitionProvider.xiaomiMimo,
+                  icon: const Icon(Icons.auto_awesome_outlined, size: 18),
+                  label: Text(l10n.speechRecognitionProviderXiaomiMimo),
+                ),
+              ],
+              selected: {selectedProvider},
+              showSelectedIcon: false,
+              onSelectionChanged: (selection) {
+                final provider = selection.firstOrNull;
+                if (provider == null) return;
+                unawaited(_updateSpeechRecognitionProvider(provider));
+              },
+            ),
+          ),
+          const SizedBox(height: 10),
+          _buildSpeechCapabilityTags(selectedProvider),
+          const SizedBox(height: 10),
+          _buildInfoNote(_speechRecognitionNote(selectedProvider)),
+          if (selectedProvider == SpeechRecognitionProvider.tencentCloud) ...[
+            const SizedBox(height: 14),
+            _buildTencentCloudSpeechForm(speechConfig),
+          ] else if (selectedProvider ==
+              SpeechRecognitionProvider.xiaomiMimo) ...[
+            const SizedBox(height: 14),
+            _buildXiaomiMimoSpeechForm(speechConfig),
+          ],
+        ],
+      ),
+    );
+  }
+
+  String _speechProviderDescription(SpeechRecognitionProvider provider) {
+    final l10n = UserStorage.l10n;
+    return switch (provider) {
+      SpeechRecognitionProvider.local => l10n.speechRecognitionLocalDescription,
+      SpeechRecognitionProvider.tencentCloud =>
+        l10n.speechRecognitionTencentDescription,
+      SpeechRecognitionProvider.xiaomiMimo =>
+        l10n.speechRecognitionXiaomiMimoDescription,
+    };
+  }
+
+  String _speechRecognitionNote(SpeechRecognitionProvider provider) {
+    final l10n = UserStorage.l10n;
+    return switch (provider) {
+      SpeechRecognitionProvider.xiaomiMimo =>
+        l10n.speechRecognitionXiaomiMimoPreviewNote,
+      _ => l10n.speechRecognitionPreviewNote,
+    };
+  }
+
+  Widget _buildSpeechCapabilityTags(SpeechRecognitionProvider provider) {
+    final l10n = UserStorage.l10n;
+    final realtimeLabel = provider == SpeechRecognitionProvider.xiaomiMimo
+        ? l10n.speechRecognitionRealtimeUnavailable
+        : l10n.speechRecognitionRealtimeAvailable;
+    final privacyLabel = provider == SpeechRecognitionProvider.local
+        ? l10n.speechRecognitionLocalOnly
+        : l10n.speechRecognitionAudioLeavesDevice;
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        _buildCapabilityTag(Icons.graphic_eq_rounded, realtimeLabel),
+        _buildCapabilityTag(
+          Icons.audio_file_outlined,
+          l10n.speechRecognitionImportedAudio,
+        ),
+        _buildCapabilityTag(Icons.privacy_tip_outlined, privacyLabel),
+      ],
+    );
+  }
+
+  Widget _buildCapabilityTag(IconData icon, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: const Color(0xFF64748B)),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF475569),
             ),
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildInfoNote(String text) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Icon(
+          Icons.info_outline_rounded,
+          size: 16,
+          color: Color(0xFF64748B),
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(
+              fontSize: 12,
+              height: 1.35,
+              color: Color(0xFF64748B),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTencentCloudSpeechForm(SpeechRecognitionConfig speechConfig) {
+    final l10n = UserStorage.l10n;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          l10n.tencentAsrConfigTitle,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF334155),
+          ),
+        ),
+        const SizedBox(height: 10),
+        _buildCompactTextField(
+          key: const ValueKey('ai-service-speech-tencent-app-id-field'),
+          controller: _speechAppIdController,
+          labelText: l10n.tencentAsrAppIdLabel,
+          keyboardType: TextInputType.number,
+          onChanged: (_) => unawaited(_persistTencentCloudSpeechConfig()),
+        ),
+        const SizedBox(height: 10),
+        _buildCompactTextField(
+          key: const ValueKey('ai-service-speech-tencent-secret-id-field'),
+          controller: _speechSecretIdController,
+          labelText: l10n.tencentAsrSecretIdLabel,
+          onChanged: (_) => unawaited(_persistTencentCloudSpeechConfig()),
+        ),
+        const SizedBox(height: 10),
+        _buildCompactTextField(
+          key: const ValueKey('ai-service-speech-tencent-secret-key-field'),
+          controller: _speechSecretKeyController,
+          labelText: l10n.tencentAsrSecretKeyLabel,
+          obscureText: true,
+          onChanged: (_) => unawaited(_persistTencentCloudSpeechConfig()),
+        ),
+        const SizedBox(height: 10),
+        DropdownButtonFormField<String>(
+          key: const ValueKey('ai-service-speech-tencent-engine-dropdown'),
+          initialValue: speechConfig.tencentCloud.engineType,
+          isExpanded: true,
+          decoration: _compactInputDecoration(l10n.tencentAsrEngineModelLabel),
+          items: TencentCloudAsrConfig.supportedEngineTypes
+              .map(
+                (model) => DropdownMenuItem<String>(
+                  value: model,
+                  child: Text(_tencentEngineModelLabel(model)),
+                ),
+              )
+              .toList(),
+          onChanged: (model) {
+            if (model == null) return;
+            unawaited(_persistTencentCloudSpeechConfig(engineType: model));
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildXiaomiMimoSpeechForm(SpeechRecognitionConfig speechConfig) {
+    final l10n = UserStorage.l10n;
+    final mimoConfig = speechConfig.xiaomiMimo;
+    final linkedConfigs = _viewModel.mimoModelConfigs;
+    final hasLinkedSelection = linkedConfigs.any(
+      (config) => config.key == mimoConfig.llmConfigKey,
+    );
+    final sourceValue = hasLinkedSelection
+        ? mimoConfig.llmConfigKey
+        : _manualMimoSpeechConfigKey;
+    final usesManual = sourceValue == _manualMimoSpeechConfigKey;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          l10n.mimoAsrConfigTitle,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF334155),
+          ),
+        ),
+        const SizedBox(height: 10),
+        DropdownButtonFormField<String>(
+          key: const ValueKey('ai-service-speech-mimo-source-dropdown'),
+          initialValue: sourceValue,
+          isExpanded: true,
+          decoration: _compactInputDecoration(l10n.mimoAsrConfigSourceLabel),
+          items: [
+            ...linkedConfigs.map(
+              (config) => DropdownMenuItem<String>(
+                value: config.key,
+                child: Text(_mimoConfigLabel(config)),
+              ),
+            ),
+            DropdownMenuItem<String>(
+              value: _manualMimoSpeechConfigKey,
+              child: Text(l10n.mimoAsrManualConfig),
+            ),
+          ],
+          onChanged: (value) {
+            final nextKey =
+                value == _manualMimoSpeechConfigKey ? '' : value ?? '';
+            unawaited(_persistXiaomiMimoSpeechConfig(llmConfigKey: nextKey));
+          },
+        ),
+        if (usesManual) ...[
+          const SizedBox(height: 10),
+          _buildCompactTextField(
+            key: const ValueKey('ai-service-speech-mimo-api-key-field'),
+            controller: _speechMimoApiKeyController,
+            labelText: l10n.mimoAsrApiKeyLabel,
+            obscureText: true,
+            onChanged: (_) => unawaited(_persistXiaomiMimoSpeechConfig()),
+          ),
+          const SizedBox(height: 10),
+          _buildCompactTextField(
+            key: const ValueKey('ai-service-speech-mimo-base-url-field'),
+            controller: _speechMimoBaseUrlController,
+            labelText: l10n.mimoAsrBaseUrlLabel,
+            keyboardType: TextInputType.url,
+            onChanged: (_) => unawaited(_persistXiaomiMimoSpeechConfig()),
+          ),
+        ] else ...[
+          const SizedBox(height: 10),
+          _buildInfoNote(l10n.mimoAsrLinkedConfigNote),
+        ],
+        const SizedBox(height: 10),
+        DropdownButtonFormField<String>(
+          key: const ValueKey('ai-service-speech-mimo-model-dropdown'),
+          initialValue: mimoConfig.model,
+          isExpanded: true,
+          decoration: _compactInputDecoration(l10n.mimoAsrModelLabel),
+          items: XiaomiMimoAsrConfig.supportedModels
+              .map(
+                (model) => DropdownMenuItem<String>(
+                  value: model,
+                  child: Text(model),
+                ),
+              )
+              .toList(),
+          onChanged: (model) {
+            if (model == null) return;
+            unawaited(_persistXiaomiMimoSpeechConfig(model: model));
+          },
+        ),
+        const SizedBox(height: 10),
+        DropdownButtonFormField<String>(
+          key: const ValueKey('ai-service-speech-mimo-language-dropdown'),
+          initialValue: mimoConfig.language,
+          isExpanded: true,
+          decoration: _compactInputDecoration(l10n.mimoAsrLanguageLabel),
+          items: XiaomiMimoAsrConfig.supportedLanguages
+              .map(
+                (language) => DropdownMenuItem<String>(
+                  value: language,
+                  child: Text(_mimoAsrLanguageLabel(language)),
+                ),
+              )
+              .toList(),
+          onChanged: (language) {
+            if (language == null) return;
+            unawaited(_persistXiaomiMimoSpeechConfig(language: language));
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCompactTextField({
+    required Key key,
+    required TextEditingController controller,
+    required String labelText,
+    required ValueChanged<String> onChanged,
+    TextInputType? keyboardType,
+    bool obscureText = false,
+  }) {
+    return TextFormField(
+      key: key,
+      controller: controller,
+      keyboardType: keyboardType,
+      obscureText: obscureText,
+      enableSuggestions: !obscureText,
+      autocorrect: !obscureText,
+      decoration: _compactInputDecoration(labelText),
+      onChanged: onChanged,
+    );
+  }
+
+  InputDecoration _compactInputDecoration(String labelText) {
+    return InputDecoration(
+      labelText: labelText,
+      filled: true,
+      fillColor: Colors.white,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    );
+  }
+
+  String _tencentEngineModelLabel(String model) {
+    final l10n = UserStorage.l10n;
+    return switch (model) {
+      '16k_zh' => l10n.tencentAsrEngine16kZh,
+      _ => l10n.tencentAsrEngine16kZhEn,
+    };
+  }
+
+  String _mimoAsrLanguageLabel(String language) {
+    final l10n = UserStorage.l10n;
+    return switch (language) {
+      'zh' => l10n.mimoAsrLanguageZh,
+      'en' => l10n.mimoAsrLanguageEn,
+      _ => l10n.mimoAsrLanguageAuto,
+    };
+  }
+
+  String _mimoConfigLabel(LLMConfig config) {
+    final model = config.modelId.trim().isEmpty ? config.key : config.modelId;
+    return '${config.key} · $model';
   }
 
   Widget _buildAdvancedAgentSection() {
