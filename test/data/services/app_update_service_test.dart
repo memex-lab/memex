@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -384,6 +385,85 @@ void main() {
     );
 
     test(
+      'deletes corrupt partial APK when downloaded hash mismatches',
+      () async {
+        final service = buildService(
+          client: ControlledDownloadClient((_) async {
+            return http.StreamedResponse(
+              Stream.value([1, 2, 3, 4]),
+              200,
+              contentLength: 4,
+            );
+          }),
+        );
+        const update = AppUpdateInfo(
+          releaseName: 'Early',
+          tagName: 'v1.0.30+113',
+          versionName: '1.0.30',
+          buildNumber: 113,
+          assetName: 'memex_globalEarly_1.0.30_113.apk',
+          sizeBytes: 4,
+          downloadUrl: 'https://example.com/global.apk',
+          sha256:
+              '0000000000000000000000000000000000000000000000000000000000000000',
+          releaseNotes: '',
+        );
+
+        await expectLater(
+          service.downloadUpdate(update),
+          throwsA(isA<AppUpdateInvalidPackageException>()),
+        );
+
+        expect(
+          await File(p.join(tempDir.path, update.assetName)).exists(),
+          isFalse,
+        );
+        expect(
+          await File('${p.join(tempDir.path, update.assetName)}.part').exists(),
+          isFalse,
+        );
+      },
+    );
+
+    test(
+      'redownloads when cached APK hash does not match manifest hash',
+      () async {
+        final expectedHash = sha256.convert([1, 2, 3, 4]).toString();
+        final update = AppUpdateInfo(
+          releaseName: _testUpdate.releaseName,
+          tagName: _testUpdate.tagName,
+          versionName: _testUpdate.versionName,
+          buildNumber: _testUpdate.buildNumber,
+          assetName: _testUpdate.assetName,
+          sizeBytes: _testUpdate.sizeBytes,
+          downloadUrl: _testUpdate.downloadUrl,
+          sha256: expectedHash,
+          releaseNotes: _testUpdate.releaseNotes,
+        );
+        final apk = File(p.join(tempDir.path, update.assetName));
+        await apk.writeAsBytes([9, 9, 9, 9]);
+        var fetched = false;
+        final service = buildService(
+          client: MockClient((request) async {
+            fetched = true;
+            expect(request.url.toString(), update.downloadUrl);
+            return http.Response.bytes(
+              [1, 2, 3, 4],
+              200,
+              headers: {'content-length': '4'},
+            );
+          }),
+        );
+
+        final download = await service.downloadUpdate(update);
+
+        expect(fetched, isTrue);
+        expect(download.reusedExistingFile, isFalse);
+        expect(await File(download.apkPath).readAsBytes(), [1, 2, 3, 4]);
+      },
+    );
+
+    test(
       'redownloads when cached APK size does not match asset size',
       () async {
         final apk = File(p.join(tempDir.path, _testUpdate.assetName));
@@ -558,7 +638,7 @@ class ControlledDownloadClient extends http.BaseClient {
   ControlledDownloadClient(this.handler);
 
   final Future<http.StreamedResponse> Function(http.BaseRequest request)
-      handler;
+  handler;
   int requestCount = 0;
 
   @override

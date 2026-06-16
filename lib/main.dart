@@ -51,6 +51,7 @@ import 'package:memex/ui/agent_activity/widgets/agent_activity_widget.dart';
 import 'package:memex/ui/main_screen/widgets/ai_core_button.dart';
 import 'package:memex/db/app_database.dart';
 import 'package:memex/data/services/local_server_service.dart';
+import 'package:memex/data/services/app_update_router.dart';
 import 'package:memex/data/services/app_update_service.dart';
 import 'package:memex/data/services/backup_service.dart';
 import 'package:go_router/go_router.dart';
@@ -474,7 +475,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   final GlobalKey _mainStackKey = GlobalKey();
   bool _isInvalidConfigDialogShowing = false;
   bool _isErrorNotificationDialogShowing = false;
-  bool _earlyUpdateCheckStarted = false;
+  bool _appUpdateCheckStarted = false;
   late final ShareIntentHandler _shareIntentHandler;
   InputData? _sharedDraft;
   ClipboardPreviewCandidate? _homeClipboardCandidate;
@@ -549,44 +550,48 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) unawaited(_checkHomeClipboardPreview());
     });
-    _scheduleEarlyUpdateCheck();
+    _scheduleAppUpdateCheck();
   }
 
-  void _scheduleEarlyUpdateCheck() {
-    final service = AppUpdateService.instance;
-    if (!service.isSupported || _earlyUpdateCheckStarted) return;
-    _earlyUpdateCheckStarted = true;
+  void _scheduleAppUpdateCheck() {
+    if (_appUpdateCheckStarted) return;
+    _appUpdateCheckStarted = true;
     Future.delayed(const Duration(seconds: 3), () {
       if (!mounted) return;
-      unawaited(_checkEarlyUpdateInBackground());
+      unawaited(_checkAppUpdateInBackground());
     });
   }
 
-  Future<void> _checkEarlyUpdateInBackground() async {
-    final service = AppUpdateService.instance;
-    if (!await service.shouldRunAutoCheck()) return;
+  Future<void> _checkAppUpdateInBackground() async {
+    final updateRouter = AppUpdateRouter.instance;
 
     try {
-      final settings = await service.loadSettings();
-      final result = await service.checkForUpdate(manual: false);
-      if (!mounted || result.status != AppUpdateCheckStatus.updateAvailable) {
+      if (!await updateRouter.shouldRunAutoCheck()) return;
+      final settings = await updateRouter.loadSettings();
+      final result = await updateRouter.checkForUpdate(manual: false);
+      if (!mounted || !result.hasUpdate) {
         return;
       }
 
-      final update = result.update!;
-      if (settings.autoDownloadAndInstall) {
-        await _downloadAndInstallEarlyUpdate(update);
+      if (result.canDownloadApk) {
+        if (settings.autoDownloadAndInstall) {
+          await _performAppUpdateAction(result);
+        } else {
+          _showAppUpdateDialog(result);
+        }
       } else {
-        _showEarlyUpdateDialog(update);
+        _showStoreUpdateSnackBar(result);
       }
     } catch (e, st) {
-      _logger.warning('Early update check failed: $e', e, st);
+      _logger.warning('App update check failed: $e', e, st);
     }
   }
 
-  void _showEarlyUpdateDialog(AppUpdateInfo update) {
+  void _showAppUpdateDialog(UnifiedAppUpdateCheckResult check) {
     final context = rootNavigatorKey.currentContext;
     if (context == null) return;
+    final update = check.apkUpdate;
+    if (update == null) return;
 
     showDialog<void>(
       context: context,
@@ -625,10 +630,10 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
             FilledButton.icon(
               onPressed: () {
                 Navigator.of(context).pop();
-                unawaited(_downloadAndInstallEarlyUpdate(update));
+                unawaited(_performAppUpdateAction(check));
               },
               icon: const Icon(Icons.download, size: 18),
-              label: Text(UserStorage.l10n.earlyUpdateDownloadAndInstall),
+              label: Text(UserStorage.l10n.appUpdateDownloadAndInstall),
             ),
           ],
         );
@@ -636,32 +641,52 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     );
   }
 
-  Future<void> _downloadAndInstallEarlyUpdate(AppUpdateInfo update) async {
+  void _showStoreUpdateSnackBar(UnifiedAppUpdateCheckResult check) {
+    final latestVersion = check.latestVersionName ?? '-';
+    final latestBuild = check.latestBuild ?? 0;
+    rootScaffoldMessengerKey.currentState?.showSnackBar(
+      SnackBar(
+        content: Text(
+          UserStorage.l10n.appUpdateStoreFound(latestVersion, latestBuild),
+        ),
+        action: SnackBarAction(
+          label: UserStorage.l10n.appUpdateOpenUpdatePage,
+          onPressed: () => unawaited(_performAppUpdateAction(check)),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _performAppUpdateAction(
+    UnifiedAppUpdateCheckResult check,
+  ) async {
     final context = rootNavigatorKey.currentContext;
-    if (context != null) {
+    if (context != null && check.canDownloadApk) {
       ToastHelper.showInfo(
         context,
-        UserStorage.l10n.earlyUpdateDownloadingPercent(0),
+        UserStorage.l10n.appUpdateDownloadingPercent(0),
       );
     }
 
     try {
-      final download = await AppUpdateService.instance.downloadUpdate(update);
-      final install = await AppUpdateService.instance.installUpdate(
-        download.apkPath,
-      );
-      switch (install.status) {
-        case AppUpdateInstallStatus.started:
+      final action = await AppUpdateRouter.instance.performUpdateAction(check);
+      switch (action.status) {
+        case AppUpdateActionStatus.openedExternal:
+          ToastHelper.showSuccessWithKey(
+            rootScaffoldMessengerKey,
+            UserStorage.l10n.appUpdateStoreOpened,
+          );
+        case AppUpdateActionStatus.installStarted:
           ToastHelper.showSuccessWithKey(
             rootScaffoldMessengerKey,
             UserStorage.l10n.earlyUpdateInstallStarted,
           );
-        case AppUpdateInstallStatus.permissionRequired:
+        case AppUpdateActionStatus.permissionRequired:
           ToastHelper.showInfoWithKey(
             rootScaffoldMessengerKey,
             UserStorage.l10n.earlyUpdateInstallPermissionRequired,
           );
-        case AppUpdateInstallStatus.unsupported:
+        case AppUpdateActionStatus.unsupported:
           break;
       }
     } catch (e) {

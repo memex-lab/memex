@@ -21,6 +21,8 @@ import 'package:memex/data/services/clarification_request_service.dart';
 import 'package:memex/data/services/agent_background_coordinator.dart';
 import 'package:memex/data/services/agent_background_task_service.dart';
 import 'package:memex/data/services/event_bus_service.dart';
+import 'package:memex/data/services/app_info_service.dart';
+import 'package:memex/data/services/app_update_router.dart';
 import 'package:memex/data/services/app_update_service.dart';
 import 'package:memex/data/services/user_notification_service.dart';
 import 'package:path/path.dart' as path;
@@ -86,6 +88,7 @@ import 'package:memex/agent/skills/knowledge_insight/native_widgets.dart';
 import 'package:memex/utils/result.dart';
 import 'package:memex/domain/models/system_event.dart';
 import 'package:memex/domain/models/user_stats_model.dart';
+import 'package:memex/domain/models/app_build_info.dart';
 
 /// Local data service for Memex. Handles all data operations via local storage (FileSystemService, DB).
 class MemexRouter {
@@ -799,11 +802,43 @@ class MemexRouter {
   }
 
   Future<AppUpdateSettings> getAppUpdateSettings() {
-    return AppUpdateService.instance.loadSettings();
+    return AppUpdateRouter.instance.loadSettings();
   }
 
   Future<void> saveAppUpdateSettings(AppUpdateSettings settings) {
-    return AppUpdateService.instance.saveSettings(settings);
+    return AppUpdateRouter.instance.saveSettings(settings);
+  }
+
+  Future<Result<AppBuildInfo>> getAppBuildInfo() {
+    return runResult(() => AppInfoService.instance.loadBuildInfo());
+  }
+
+  Future<Result<UnifiedAppUpdateCheckResult>> checkAppUpdate({
+    bool manual = false,
+  }) {
+    return runResult(() {
+      return AppUpdateRouter.instance.checkForUpdate(manual: manual);
+    });
+  }
+
+  Future<Result<AppUpdateActionResult>> performAppUpdateAction(
+    UnifiedAppUpdateCheckResult check, {
+    void Function(int receivedBytes, int totalBytes)? onProgress,
+  }) {
+    return runResult(() {
+      return AppUpdateRouter.instance.performUpdateAction(
+        check,
+        onProgress: onProgress,
+      );
+    });
+  }
+
+  Future<AppUpdateCacheInfo> getAppUpdateCacheInfo() {
+    return AppUpdateRouter.instance.getDownloadedUpdateCacheInfo();
+  }
+
+  Future<Result<int>> clearAppUpdateCache() {
+    return runResult(() => AppUpdateRouter.instance.clearDownloadedUpdates());
   }
 
   Future<Result<AppUpdateCheckResult>> checkEarlyUpdate({

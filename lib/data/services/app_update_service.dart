@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/services.dart';
+import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path/path.dart' as path;
@@ -87,6 +88,7 @@ class AppUpdateInfo {
   final String assetName;
   final int sizeBytes;
   final String downloadUrl;
+  final String? sha256;
   final String releaseNotes;
   final DateTime? publishedAt;
 
@@ -98,6 +100,7 @@ class AppUpdateInfo {
     required this.assetName,
     required this.sizeBytes,
     required this.downloadUrl,
+    this.sha256,
     required this.releaseNotes,
     this.publishedAt,
   });
@@ -694,6 +697,17 @@ class AppUpdateService {
         );
         return false;
       }
+      final expectedSha256 = _normalizeSha256(update.sha256);
+      if (expectedSha256 != null) {
+        final actualSha256 = await _fileSha256(file);
+        if (actualSha256 != expectedSha256) {
+          _logger.info(
+            'Discarding cached APK with unexpected sha256 for '
+            '${update.displayVersion}',
+          );
+          return false;
+        }
+      }
       return true;
     } catch (e, st) {
       _logger.warning('Failed to inspect cached APK: ${file.path}', e, st);
@@ -720,6 +734,17 @@ class AppUpdateService {
         'Downloaded APK size mismatch for ${update.displayVersion}: '
         'expected $expectedBytes bytes, found ${stat.size}.',
       );
+    }
+
+    final expectedSha256 = _normalizeSha256(update.sha256);
+    if (expectedSha256 != null) {
+      final actualSha256 = await _fileSha256(file);
+      if (actualSha256 != expectedSha256) {
+        await _deleteIfExists(file);
+        throw AppUpdateInvalidPackageException(
+          'Downloaded APK sha256 mismatch for ${update.displayVersion}.',
+        );
+      }
     }
   }
 
@@ -829,11 +854,24 @@ class AppUpdateService {
     return fallback.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_');
   }
 
+  static String? _normalizeSha256(String? value) {
+    final normalized = value?.trim().toLowerCase();
+    if (normalized == null || normalized.isEmpty) return null;
+    return RegExp(r'^[a-f0-9]{64}$').hasMatch(normalized) ? normalized : null;
+  }
+
+  static Future<String> _fileSha256(File file) async {
+    final input = file.openRead();
+    final digest = await sha256.bind(input).first;
+    return digest.toString();
+  }
+
   static String _downloadKeyFor(AppUpdateInfo update) {
     return [
       _safeFileName(update.assetName),
       update.downloadUrl,
       update.sizeBytes,
+      update.sha256 ?? '',
     ].join('|');
   }
 }

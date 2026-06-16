@@ -1,9 +1,6 @@
-import 'dart:io';
-
 import 'package:memex/config/app_config.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:memex/config/app_flavor.dart';
 import 'package:memex/domain/models/settings_item.dart';
 import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/ui/settings/widgets/ai_service_setup_page.dart';
@@ -13,6 +10,8 @@ import 'package:memex/ui/settings/widgets/settings_page.dart';
 import 'package:memex/ui/settings/widgets/debug_settings_page.dart';
 import 'package:memex/ui/settings/widgets/data_storage_page.dart';
 import 'package:memex/ui/settings/widgets/backup_restore_page.dart';
+import 'package:memex/ui/settings/view_models/about_memex_viewmodel.dart';
+import 'package:memex/ui/settings/widgets/about_memex_page.dart';
 import 'package:memex/ui/settings/widgets/location_context_settings_page.dart';
 import 'package:memex/ui/settings/widgets/experimental_lab_page.dart';
 import 'package:memex/ui/memory/view_models/memory_viewmodel.dart';
@@ -366,37 +365,45 @@ class SettingsRegistry {
         UserStorage.l10n.settings,
       ],
     ),
-    if (Platform.isAndroid && AppFlavor.isEarly)
-      SettingsItem(
-        id: 'settings.early_updates',
-        titleGetter: () => UserStorage.l10n.earlyUpdateSettingsTitle,
-        descriptionGetter: () => UserStorage.l10n.earlyUpdateSettingsDesc,
-        keywords: const [
-          '更新',
-          '自动更新',
-          'Early',
-          '预发布',
-          '内测',
-          'APK',
-          'GitHub',
-          'Wi-Fi',
-          'update',
-          'auto update',
-          'pre-release',
-          'prerelease',
-          'download',
-          'install',
-          'wifi',
-        ],
-        icon: Icons.system_update_alt,
-        navigationTarget: NavigationTarget(
-          pageBuilder: (_) => const SettingsPage(),
+    SettingsItem(
+      id: 'settings.about_memex',
+      titleGetter: () => UserStorage.l10n.aboutMemexTitle,
+      descriptionGetter: () => UserStorage.l10n.aboutMemexDesc,
+      keywords: const [
+        '关于',
+        '版本',
+        '构建',
+        '渠道',
+        '安装来源',
+        '更新',
+        '自动更新',
+        'APK',
+        'App Store',
+        'Google Play',
+        'GitHub',
+        'Wi-Fi',
+        'about',
+        'version',
+        'build',
+        'channel',
+        'installer',
+        'update',
+        'auto update',
+        'download',
+        'install',
+        'diagnostics',
+      ],
+      icon: Icons.info_outline,
+      navigationTarget: NavigationTarget(
+        pageBuilder: (context) => AboutMemexPage(
+          viewModel: AboutMemexViewModel(router: context.read<MemexRouter>()),
         ),
-        parentPathGetter: () => [
-          UserStorage.l10n.personalCenter,
-          UserStorage.l10n.settings,
-        ],
       ),
+      parentPathGetter: () => [
+        UserStorage.l10n.personalCenter,
+        UserStorage.l10n.settings,
+      ],
+    ),
     SettingsItem(
       id: 'settings.show_insight',
       titleGetter: () => UserStorage.l10n.showInsightTextTitle,
