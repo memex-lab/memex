@@ -145,7 +145,9 @@ void main() {
         '## <id:ts_1> 09:00:00 "{}"\n\nold quoted empty\n'
         '## <id:ts_2> 10:00:00 {}\n\nold raw empty\n'
         '## <id:ts_3> 11:00:00\n\nold missing metadata\n'
-        '## <id:ts_4> 12:00:00 {"input_location":{"lat":1.0,"lng":2.0,"accuracy_meters":3.0,"source":"device_gps","coordinate_system":"WGS84","captured_at":"2026-06-16T12:00:00+08:00"}}\n\nnew metadata\n',
+        '## <id:ts_4> 12:00:00 {"input_location":{"lat":1.0,"lng":2.0,"accuracy_meters":3.0,"source":"device_gps","coordinate_system":"WGS84","captured_at":"2026-06-16T12:00:00+08:00"}}\n\nnew metadata\n'
+        '## <id:ts_5> 13:00:00 {not-json}\n\nmalformed metadata\n'
+        '## <id:ts_6> 14:00:00 "{\\"nested\\":{\\"value\\":1}}"\n\nquoted nested metadata\n',
       );
 
       final quoted = await fs.extractFactContentFromFile(
@@ -164,6 +166,14 @@ void main() {
         userId,
         '2026/06/16.md#ts_4',
       );
+      final malformed = await fs.extractFactContentFromFile(
+        userId,
+        '2026/06/16.md#ts_5',
+      );
+      final quotedNested = await fs.extractFactContentFromFile(
+        userId,
+        '2026/06/16.md#ts_6',
+      );
 
       expect(quoted!.metadata, isEmpty);
       expect(raw!.metadata, isEmpty);
@@ -175,6 +185,13 @@ void main() {
         withLocation!.metadata['input_location'],
         containsPair('source', 'device_gps'),
       );
+      expect(malformed!.metadata, isEmpty);
+      expect(malformed.content, 'malformed metadata');
+      expect(
+        quotedNested!.metadata['nested'],
+        containsPair('value', 1),
+      );
+      expect(quotedNested.content, 'quoted nested metadata');
     });
   });
 }
