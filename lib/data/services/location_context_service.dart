@@ -1,19 +1,152 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:memex/data/services/geocoding_service.dart';
+import 'package:memex/domain/models/input_location.dart';
 import 'package:memex/domain/models/location_context_config.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/user_storage.dart';
 
+typedef LocationServiceEnabledReader = Future<bool> Function();
+typedef LocationPermissionReader = Future<LocationPermission> Function();
+typedef DevicePositionReader = Future<Position> Function(
+    LocationSettings settings);
+typedef LastKnownDevicePositionReader = Future<Position?> Function();
+
 class LocationContextService {
   static final LocationContextService instance =
       LocationContextService._internal();
-  LocationContextService._internal();
+  LocationContextService._internal({
+    LocationServiceEnabledReader? isLocationServiceEnabled,
+    LocationPermissionReader? checkPermission,
+    LocationPermissionReader? requestPermission,
+    DevicePositionReader? getCurrentPosition,
+    LastKnownDevicePositionReader? getLastKnownPosition,
+  })  : _isLocationServiceEnabled =
+            isLocationServiceEnabled ?? Geolocator.isLocationServiceEnabled,
+        _checkPermission = checkPermission ?? Geolocator.checkPermission,
+        _requestPermission = requestPermission ?? Geolocator.requestPermission,
+        _getCurrentPosition = getCurrentPosition ??
+            ((settings) =>
+                Geolocator.getCurrentPosition(locationSettings: settings)),
+        _getLastKnownPosition =
+            getLastKnownPosition ?? Geolocator.getLastKnownPosition;
+
+  @visibleForTesting
+  factory LocationContextService.forTesting({
+    LocationServiceEnabledReader? isLocationServiceEnabled,
+    LocationPermissionReader? checkPermission,
+    LocationPermissionReader? requestPermission,
+    DevicePositionReader? getCurrentPosition,
+    LastKnownDevicePositionReader? getLastKnownPosition,
+  }) {
+    return LocationContextService._internal(
+      isLocationServiceEnabled: isLocationServiceEnabled,
+      checkPermission: checkPermission,
+      requestPermission: requestPermission,
+      getCurrentPosition: getCurrentPosition,
+      getLastKnownPosition: getLastKnownPosition,
+    );
+  }
 
   static const Duration _maxLastKnownPositionAge = Duration(minutes: 2);
+  static const Duration _inputLocationTimeout = Duration(seconds: 6);
 
   final _logger = getLogger('LocationContextService');
+  final LocationServiceEnabledReader _isLocationServiceEnabled;
+  final LocationPermissionReader _checkPermission;
+  final LocationPermissionReader _requestPermission;
+  final DevicePositionReader _getCurrentPosition;
+  final LastKnownDevicePositionReader _getLastKnownPosition;
   CurrentLocationContext? _cachedContext;
   String? _cachedConfigSignature;
+
+  Future<InputLocation?> captureInputLocation({
+    Duration timeout = _inputLocationTimeout,
+  }) {
+    return _captureInputLocation(timeout).timeout(
+      timeout + const Duration(seconds: 1),
+      onTimeout: () {
+        _logger.warning('Timed out while capturing input location');
+        return _recentLastKnownInputLocation();
+      },
+    );
+  }
+
+  Future<InputLocation?> _captureInputLocation(Duration timeout) async {
+    try {
+      final serviceEnabled = await _isLocationServiceEnabled();
+      if (!serviceEnabled) return null;
+
+      var permission = await _checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await _requestPermission();
+      }
+      if (!_isUsablePermission(permission)) return null;
+
+      final position = await _getCurrentPosition(
+        LocationSettings(accuracy: LocationAccuracy.high, timeLimit: timeout),
+      ).timeout(timeout);
+      return _inputLocationFromPosition(position);
+    } on TimeoutException {
+      _logger.warning('Timed out while capturing input location');
+      return _recentLastKnownInputLocation();
+    } catch (e, stackTrace) {
+      _logger.warning(
+        'Failed to capture input location; continuing without GPS metadata',
+        e,
+        stackTrace,
+      );
+      return _recentLastKnownInputLocation();
+    }
+  }
+
+  Future<InputLocation?> _recentLastKnownInputLocation() async {
+    try {
+      final position = await _getLastKnownPosition()
+          .timeout(const Duration(milliseconds: 700));
+      if (position == null) return null;
+
+      final age = DateTime.now().difference(position.timestamp);
+      if (age > _maxLastKnownPositionAge) {
+        _logger.info(
+          'Skipping stale last known input location from ${position.timestamp.toIso8601String()}',
+        );
+        return null;
+      }
+
+      return _inputLocationFromPosition(
+        position,
+        source: InputLocation.lastKnownDeviceGpsSource,
+      );
+    } catch (e, stackTrace) {
+      _logger.warning(
+        'Failed to use last known input location; continuing without GPS metadata',
+        e,
+        stackTrace,
+      );
+      return null;
+    }
+  }
+
+  InputLocation _inputLocationFromPosition(
+    Position position, {
+    String source = InputLocation.deviceGpsSource,
+  }) {
+    return InputLocation(
+      lat: position.latitude,
+      lng: position.longitude,
+      accuracyMeters: position.accuracy,
+      capturedAt: position.timestamp,
+      source: source,
+    );
+  }
+
+  bool _isUsablePermission(LocationPermission permission) {
+    return permission == LocationPermission.whileInUse ||
+        permission == LocationPermission.always;
+  }
 
   /// Device GPS is the only source for current location.
   /// IP-based fallback is intentionally not used because proxy/VPN/network
@@ -45,7 +178,7 @@ class LocationContextService {
     }
 
     try {
-      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      final serviceEnabled = await _isLocationServiceEnabled();
       if (!serviceEnabled) {
         return _unavailable(
           config,
@@ -55,9 +188,9 @@ class LocationContextService {
         );
       }
 
-      var permission = await Geolocator.checkPermission();
+      var permission = await _checkPermission();
       if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
+        permission = await _requestPermission();
       }
 
       if (permission == LocationPermission.denied) {
@@ -77,8 +210,8 @@ class LocationContextService {
         );
       }
 
-      final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
+      final position = await _getCurrentPosition(
+        const LocationSettings(
           accuracy: LocationAccuracy.high,
           timeLimit: Duration(seconds: 6),
         ),
@@ -128,7 +261,7 @@ class LocationContextService {
     String configSignature,
   ) async {
     try {
-      final position = await Geolocator.getLastKnownPosition();
+      final position = await _getLastKnownPosition();
       if (position == null) return null;
       final now = DateTime.now();
       final age = now.difference(position.timestamp);
