@@ -3586,6 +3586,125 @@ class AppLocalizationsEn extends AppLocalizations {
   String get earlyUpdateReleaseNotes => 'Release notes';
 
   @override
+  String get aboutMemexTitle => 'About Memex';
+
+  @override
+  String get aboutMemexDesc =>
+      'Version, channel, installer source, and update diagnostics.';
+
+  @override
+  String get appInfoUnknown => 'Unknown';
+
+  @override
+  String get appInfoVersion => 'Version';
+
+  @override
+  String get appInfoBuild => 'Build';
+
+  @override
+  String get appInfoFlavor => 'Flavor';
+
+  @override
+  String get appInfoChannel => 'Channel';
+
+  @override
+  String get appInfoInstallerSource => 'Installed from';
+
+  @override
+  String get appInfoPackage => 'Package';
+
+  @override
+  String get appUpdateSectionTitle => 'Updates';
+
+  @override
+  String get appUpdateAutoCheckTitle => 'Auto check for updates';
+
+  @override
+  String get appUpdateAutoCheckDesc =>
+      'Check at startup at most once every 12 hours.';
+
+  @override
+  String get appUpdateWifiOnlyTitle => 'Download on Wi-Fi only';
+
+  @override
+  String get appUpdateWifiOnlyDesc =>
+      'Skip direct package downloads while using mobile data.';
+
+  @override
+  String get appUpdateAutoInstallTitle => 'Auto download and install';
+
+  @override
+  String get appUpdateAutoInstallDesc =>
+      'For direct packages, download and open the system installer automatically.';
+
+  @override
+  String get appUpdateCheckNow => 'Check now';
+
+  @override
+  String get appUpdateChecking => 'Checking update manifest...';
+
+  @override
+  String get appUpdateOpeningStore => 'Opening update page...';
+
+  @override
+  String get appUpdateNoUpdate => 'You are already on the latest build.';
+
+  @override
+  String get appUpdateUnsupportedProvider =>
+      'This update path is not available for the current install source.';
+
+  @override
+  String appUpdateApkFound(Object version, Object build) {
+    return 'Build $version+$build is available for direct install.';
+  }
+
+  @override
+  String appUpdateStoreFound(Object version, Object build) {
+    return 'Build $version+$build is available from your app store.';
+  }
+
+  @override
+  String get appUpdateDownloadAndInstall => 'Download and install';
+
+  @override
+  String get appUpdateOpenUpdatePage => 'Open update page';
+
+  @override
+  String get appUpdateStoreOpened => 'Update page opened.';
+
+  @override
+  String appUpdateDownloadingPercent(Object percent) {
+    return 'Downloading update: $percent%';
+  }
+
+  @override
+  String get appUpdateCopyDiagnostics => 'Copy diagnostics';
+
+  @override
+  String get appUpdateDiagnosticsCopied => 'Version diagnostics copied.';
+
+  @override
+  String appUpdateDiagnosticsCopyFailed(Object error) {
+    return 'Failed to copy diagnostics: $error';
+  }
+
+  @override
+  String get appUpdateClearCache => 'Clear downloaded package';
+
+  @override
+  String get appUpdateCacheCleared => 'Downloaded update package cleared.';
+
+  @override
+  String appUpdateCacheInfo(Object count, Object bytes) {
+    return '$count downloaded update file(s), $bytes bytes.';
+  }
+
+  @override
+  String appUpdateCheckFailed(Object error) {
+    return 'Update check failed: $error';
+  }
+
+  @override
   String get dismissAllNotifications => 'Clear all';
 
   @override

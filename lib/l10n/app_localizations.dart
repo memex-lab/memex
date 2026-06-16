@@ -6435,6 +6435,210 @@ abstract class AppLocalizations {
   /// **'Release notes'**
   String get earlyUpdateReleaseNotes;
 
+  /// No description provided for @aboutMemexTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'About Memex'**
+  String get aboutMemexTitle;
+
+  /// No description provided for @aboutMemexDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Version, channel, installer source, and update diagnostics.'**
+  String get aboutMemexDesc;
+
+  /// No description provided for @appInfoUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get appInfoUnknown;
+
+  /// No description provided for @appInfoVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Version'**
+  String get appInfoVersion;
+
+  /// No description provided for @appInfoBuild.
+  ///
+  /// In en, this message translates to:
+  /// **'Build'**
+  String get appInfoBuild;
+
+  /// No description provided for @appInfoFlavor.
+  ///
+  /// In en, this message translates to:
+  /// **'Flavor'**
+  String get appInfoFlavor;
+
+  /// No description provided for @appInfoChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Channel'**
+  String get appInfoChannel;
+
+  /// No description provided for @appInfoInstallerSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Installed from'**
+  String get appInfoInstallerSource;
+
+  /// No description provided for @appInfoPackage.
+  ///
+  /// In en, this message translates to:
+  /// **'Package'**
+  String get appInfoPackage;
+
+  /// No description provided for @appUpdateSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Updates'**
+  String get appUpdateSectionTitle;
+
+  /// No description provided for @appUpdateAutoCheckTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto check for updates'**
+  String get appUpdateAutoCheckTitle;
+
+  /// No description provided for @appUpdateAutoCheckDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Check at startup at most once every 12 hours.'**
+  String get appUpdateAutoCheckDesc;
+
+  /// No description provided for @appUpdateWifiOnlyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Download on Wi-Fi only'**
+  String get appUpdateWifiOnlyTitle;
+
+  /// No description provided for @appUpdateWifiOnlyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip direct package downloads while using mobile data.'**
+  String get appUpdateWifiOnlyDesc;
+
+  /// No description provided for @appUpdateAutoInstallTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto download and install'**
+  String get appUpdateAutoInstallTitle;
+
+  /// No description provided for @appUpdateAutoInstallDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'For direct packages, download and open the system installer automatically.'**
+  String get appUpdateAutoInstallDesc;
+
+  /// No description provided for @appUpdateCheckNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Check now'**
+  String get appUpdateCheckNow;
+
+  /// No description provided for @appUpdateChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking update manifest...'**
+  String get appUpdateChecking;
+
+  /// No description provided for @appUpdateOpeningStore.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening update page...'**
+  String get appUpdateOpeningStore;
+
+  /// No description provided for @appUpdateNoUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'You are already on the latest build.'**
+  String get appUpdateNoUpdate;
+
+  /// No description provided for @appUpdateUnsupportedProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'This update path is not available for the current install source.'**
+  String get appUpdateUnsupportedProvider;
+
+  /// No description provided for @appUpdateApkFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Build {version}+{build} is available for direct install.'**
+  String appUpdateApkFound(Object version, Object build);
+
+  /// No description provided for @appUpdateStoreFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Build {version}+{build} is available from your app store.'**
+  String appUpdateStoreFound(Object version, Object build);
+
+  /// No description provided for @appUpdateDownloadAndInstall.
+  ///
+  /// In en, this message translates to:
+  /// **'Download and install'**
+  String get appUpdateDownloadAndInstall;
+
+  /// No description provided for @appUpdateOpenUpdatePage.
+  ///
+  /// In en, this message translates to:
+  /// **'Open update page'**
+  String get appUpdateOpenUpdatePage;
+
+  /// No description provided for @appUpdateStoreOpened.
+  ///
+  /// In en, this message translates to:
+  /// **'Update page opened.'**
+  String get appUpdateStoreOpened;
+
+  /// No description provided for @appUpdateDownloadingPercent.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading update: {percent}%'**
+  String appUpdateDownloadingPercent(Object percent);
+
+  /// No description provided for @appUpdateCopyDiagnostics.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy diagnostics'**
+  String get appUpdateCopyDiagnostics;
+
+  /// No description provided for @appUpdateDiagnosticsCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Version diagnostics copied.'**
+  String get appUpdateDiagnosticsCopied;
+
+  /// No description provided for @appUpdateDiagnosticsCopyFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to copy diagnostics: {error}'**
+  String appUpdateDiagnosticsCopyFailed(Object error);
+
+  /// No description provided for @appUpdateClearCache.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear downloaded package'**
+  String get appUpdateClearCache;
+
+  /// No description provided for @appUpdateCacheCleared.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded update package cleared.'**
+  String get appUpdateCacheCleared;
+
+  /// No description provided for @appUpdateCacheInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} downloaded update file(s), {bytes} bytes.'**
+  String appUpdateCacheInfo(Object count, Object bytes);
+
+  /// No description provided for @appUpdateCheckFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Update check failed: {error}'**
+  String appUpdateCheckFailed(Object error);
+
   /// No description provided for @dismissAllNotifications.
   ///
   /// In en, this message translates to:

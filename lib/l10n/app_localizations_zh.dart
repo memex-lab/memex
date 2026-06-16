@@ -3443,6 +3443,120 @@ class AppLocalizationsZh extends AppLocalizations {
   String get earlyUpdateReleaseNotes => '更新说明';
 
   @override
+  String get aboutMemexTitle => '关于 Memex';
+
+  @override
+  String get aboutMemexDesc => '查看版本、渠道、安装来源和更新诊断信息。';
+
+  @override
+  String get appInfoUnknown => '未知';
+
+  @override
+  String get appInfoVersion => '版本';
+
+  @override
+  String get appInfoBuild => '构建号';
+
+  @override
+  String get appInfoFlavor => 'Flavor';
+
+  @override
+  String get appInfoChannel => '渠道';
+
+  @override
+  String get appInfoInstallerSource => '安装来源';
+
+  @override
+  String get appInfoPackage => '包名';
+
+  @override
+  String get appUpdateSectionTitle => '检查更新';
+
+  @override
+  String get appUpdateAutoCheckTitle => '自动检测更新';
+
+  @override
+  String get appUpdateAutoCheckDesc => '启动时检测，每 12 小时最多一次。';
+
+  @override
+  String get appUpdateWifiOnlyTitle => '仅在 Wi-Fi 下载';
+
+  @override
+  String get appUpdateWifiOnlyDesc => '使用移动数据时跳过直装包下载。';
+
+  @override
+  String get appUpdateAutoInstallTitle => '自动下载并安装';
+
+  @override
+  String get appUpdateAutoInstallDesc => '仅对直装包生效，发现新版本后下载并打开系统安装器。';
+
+  @override
+  String get appUpdateCheckNow => '立即检查';
+
+  @override
+  String get appUpdateChecking => '正在检查更新 Manifest...';
+
+  @override
+  String get appUpdateOpeningStore => '正在打开更新页面...';
+
+  @override
+  String get appUpdateNoUpdate => '当前已经是最新构建。';
+
+  @override
+  String get appUpdateUnsupportedProvider => '当前安装来源不支持这个更新方式。';
+
+  @override
+  String appUpdateApkFound(Object version, Object build) {
+    return '发现可直装版本 $version+$build。';
+  }
+
+  @override
+  String appUpdateStoreFound(Object version, Object build) {
+    return '应用商店中有新版本 $version+$build。';
+  }
+
+  @override
+  String get appUpdateDownloadAndInstall => '下载并安装';
+
+  @override
+  String get appUpdateOpenUpdatePage => '打开更新页面';
+
+  @override
+  String get appUpdateStoreOpened => '已打开更新页面。';
+
+  @override
+  String appUpdateDownloadingPercent(Object percent) {
+    return '正在下载更新：$percent%';
+  }
+
+  @override
+  String get appUpdateCopyDiagnostics => '复制诊断信息';
+
+  @override
+  String get appUpdateDiagnosticsCopied => '已复制版本诊断信息。';
+
+  @override
+  String appUpdateDiagnosticsCopyFailed(Object error) {
+    return '复制诊断信息失败：$error';
+  }
+
+  @override
+  String get appUpdateClearCache => '清除下载包';
+
+  @override
+  String get appUpdateCacheCleared => '已清除下载包。';
+
+  @override
+  String appUpdateCacheInfo(Object count, Object bytes) {
+    return '已下载 $count 个更新文件，共 $bytes 字节。';
+  }
+
+  @override
+  String appUpdateCheckFailed(Object error) {
+    return '检查更新失败：$error';
+  }
+
+  @override
   String get dismissAllNotifications => '清除全部';
 
   @override

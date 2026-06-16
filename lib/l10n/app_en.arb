@@ -1609,6 +1609,73 @@
   "earlyUpdateCheckFailed": "Update check failed: {error}",
   "earlyUpdateDialogTitle": "Early update available",
   "earlyUpdateReleaseNotes": "Release notes",
+  "aboutMemexTitle": "About Memex",
+  "aboutMemexDesc": "Version, channel, installer source, and update diagnostics.",
+  "appInfoUnknown": "Unknown",
+  "appInfoVersion": "Version",
+  "appInfoBuild": "Build",
+  "appInfoFlavor": "Flavor",
+  "appInfoChannel": "Channel",
+  "appInfoInstallerSource": "Installed from",
+  "appInfoPackage": "Package",
+  "appUpdateSectionTitle": "Updates",
+  "appUpdateAutoCheckTitle": "Auto check for updates",
+  "appUpdateAutoCheckDesc": "Check at startup at most once every 12 hours.",
+  "appUpdateWifiOnlyTitle": "Download on Wi-Fi only",
+  "appUpdateWifiOnlyDesc": "Skip direct package downloads while using mobile data.",
+  "appUpdateAutoInstallTitle": "Auto download and install",
+  "appUpdateAutoInstallDesc": "For direct packages, download and open the system installer automatically.",
+  "appUpdateCheckNow": "Check now",
+  "appUpdateChecking": "Checking update manifest...",
+  "appUpdateOpeningStore": "Opening update page...",
+  "appUpdateNoUpdate": "You are already on the latest build.",
+  "appUpdateUnsupportedProvider": "This update path is not available for the current install source.",
+  "@appUpdateApkFound": {
+    "placeholders": {
+      "version": {},
+      "build": {}
+    }
+  },
+  "appUpdateApkFound": "Build {version}+{build} is available for direct install.",
+  "@appUpdateStoreFound": {
+    "placeholders": {
+      "version": {},
+      "build": {}
+    }
+  },
+  "appUpdateStoreFound": "Build {version}+{build} is available from your app store.",
+  "appUpdateDownloadAndInstall": "Download and install",
+  "appUpdateOpenUpdatePage": "Open update page",
+  "appUpdateStoreOpened": "Update page opened.",
+  "@appUpdateDownloadingPercent": {
+    "placeholders": {
+      "percent": {}
+    }
+  },
+  "appUpdateDownloadingPercent": "Downloading update: {percent}%",
+  "appUpdateCopyDiagnostics": "Copy diagnostics",
+  "appUpdateDiagnosticsCopied": "Version diagnostics copied.",
+  "@appUpdateDiagnosticsCopyFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "appUpdateDiagnosticsCopyFailed": "Failed to copy diagnostics: {error}",
+  "appUpdateClearCache": "Clear downloaded package",
+  "appUpdateCacheCleared": "Downloaded update package cleared.",
+  "@appUpdateCacheInfo": {
+    "placeholders": {
+      "count": {},
+      "bytes": {}
+    }
+  },
+  "appUpdateCacheInfo": "{count} downloaded update file(s), {bytes} bytes.",
+  "@appUpdateCheckFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "appUpdateCheckFailed": "Update check failed: {error}",
   "dismissAllNotifications": "Clear all",
   "dismissByType": "Clear by type",
   "dismissTypeSystemAction": "Reminders & events",

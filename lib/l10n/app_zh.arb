@@ -1572,6 +1572,73 @@
   "earlyUpdateCheckFailed": "检查更新失败：{error}",
   "earlyUpdateDialogTitle": "发现 Early 更新",
   "earlyUpdateReleaseNotes": "更新说明",
+  "aboutMemexTitle": "关于 Memex",
+  "aboutMemexDesc": "查看版本、渠道、安装来源和更新诊断信息。",
+  "appInfoUnknown": "未知",
+  "appInfoVersion": "版本",
+  "appInfoBuild": "构建号",
+  "appInfoFlavor": "Flavor",
+  "appInfoChannel": "渠道",
+  "appInfoInstallerSource": "安装来源",
+  "appInfoPackage": "包名",
+  "appUpdateSectionTitle": "检查更新",
+  "appUpdateAutoCheckTitle": "自动检测更新",
+  "appUpdateAutoCheckDesc": "启动时检测，每 12 小时最多一次。",
+  "appUpdateWifiOnlyTitle": "仅在 Wi-Fi 下载",
+  "appUpdateWifiOnlyDesc": "使用移动数据时跳过直装包下载。",
+  "appUpdateAutoInstallTitle": "自动下载并安装",
+  "appUpdateAutoInstallDesc": "仅对直装包生效，发现新版本后下载并打开系统安装器。",
+  "appUpdateCheckNow": "立即检查",
+  "appUpdateChecking": "正在检查更新 Manifest...",
+  "appUpdateOpeningStore": "正在打开更新页面...",
+  "appUpdateNoUpdate": "当前已经是最新构建。",
+  "appUpdateUnsupportedProvider": "当前安装来源不支持这个更新方式。",
+  "@appUpdateApkFound": {
+    "placeholders": {
+      "version": {},
+      "build": {}
+    }
+  },
+  "appUpdateApkFound": "发现可直装版本 {version}+{build}。",
+  "@appUpdateStoreFound": {
+    "placeholders": {
+      "version": {},
+      "build": {}
+    }
+  },
+  "appUpdateStoreFound": "应用商店中有新版本 {version}+{build}。",
+  "appUpdateDownloadAndInstall": "下载并安装",
+  "appUpdateOpenUpdatePage": "打开更新页面",
+  "appUpdateStoreOpened": "已打开更新页面。",
+  "@appUpdateDownloadingPercent": {
+    "placeholders": {
+      "percent": {}
+    }
+  },
+  "appUpdateDownloadingPercent": "正在下载更新：{percent}%",
+  "appUpdateCopyDiagnostics": "复制诊断信息",
+  "appUpdateDiagnosticsCopied": "已复制版本诊断信息。",
+  "@appUpdateDiagnosticsCopyFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "appUpdateDiagnosticsCopyFailed": "复制诊断信息失败：{error}",
+  "appUpdateClearCache": "清除下载包",
+  "appUpdateCacheCleared": "已清除下载包。",
+  "@appUpdateCacheInfo": {
+    "placeholders": {
+      "count": {},
+      "bytes": {}
+    }
+  },
+  "appUpdateCacheInfo": "已下载 {count} 个更新文件，共 {bytes} 字节。",
+  "@appUpdateCheckFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "appUpdateCheckFailed": "检查更新失败：{error}",
   "dismissAllNotifications": "清除全部",
   "dismissByType": "按类型清除",
   "dismissTypeSystemAction": "日程提醒",
