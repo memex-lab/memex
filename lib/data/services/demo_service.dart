@@ -11,7 +11,6 @@ import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/data/services/character_service.dart';
 import 'package:memex/domain/models/card_model.dart';
 import 'package:memex/domain/models/card_detail_model.dart';
-import 'package:memex/domain/models/event_bus_message.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/user_storage.dart';
 

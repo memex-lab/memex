@@ -254,7 +254,7 @@ class _RadarPainter extends CustomPainter {
       fontFamily: 'Inter',
       fontSize: 11,
       fontWeight: FontWeight.w400,
-      color: const Color(0xFF9CA3AF),
+      color: Color(0xFF9CA3AF),
     );
 
     for (int i = 0; i < n; i++) {
