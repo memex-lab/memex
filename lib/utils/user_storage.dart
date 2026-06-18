@@ -114,7 +114,7 @@ class UserStorage {
   }
 
   /// Language codes that have corresponding l10n files (must match app_localizations_ext).
-  static const List<String> _supportedLanguageCodes = ['en', 'zh'];
+  static const List<String> _supportedLanguageCodes = ['en', 'zh', 'de'];
 
   /// Returns [locale] if the app has l10n for it, otherwise English.
   static Locale _resolveToSupportedLocale(Locale locale) {

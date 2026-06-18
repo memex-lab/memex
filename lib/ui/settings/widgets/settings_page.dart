@@ -41,7 +41,7 @@ class _SettingsPageState extends State<SettingsPage> {
     final commentSettings = await MemexRouter().getCommentSettings();
     if (mounted) {
       setState(() {
-        _currentLang = locale.languageCode == 'zh' ? 'zh' : 'en';
+        _currentLang = ['zh', 'en', 'de'].contains(locale.languageCode) ? locale.languageCode : 'zh';
         _useLocalSpeechToText = useLocalSpeechToText;
         _commentSettings = commentSettings;
       });
@@ -119,7 +119,7 @@ class _SettingsPageState extends State<SettingsPage> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.language, color: AppColors.primary, size: 22),
+                    const Icon(Icons.language, color: AppColors.primary, size: 22),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -127,7 +127,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         children: [
                           Text(
                             UserStorage.l10n.languageSettings,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
                               color: AppColors.textPrimary,
@@ -149,9 +149,11 @@ class _SettingsPageState extends State<SettingsPage> {
                 const SizedBox(height: 16),
                 Row(
                   children: [
+                    _buildLangChip('中文', 'zh'),
+                    const SizedBox(width: 10),
                     _buildLangChip('English', 'en'),
                     const SizedBox(width: 10),
-                    _buildLangChip('中文', 'zh'),
+                    _buildLangChip('Deutsch', 'de'),
                   ],
                 ),
               ],
@@ -173,7 +175,7 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             child: SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              secondary: Icon(
+              secondary: const Icon(
                 Icons.graphic_eq,
                 color: AppColors.primary,
                 size: 22,
@@ -222,7 +224,7 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             child: SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              secondary: Icon(
+              secondary: const Icon(
                 Icons.lightbulb_outline,
                 color: AppColors.primary,
                 size: 22,
@@ -267,7 +269,7 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             child: SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              secondary: Icon(
+              secondary: const Icon(
                 Icons.chat_bubble_outline,
                 color: AppColors.primary,
                 size: 22,
@@ -316,7 +318,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 children: [
                   Row(
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.groups_outlined,
                         color: AppColors.primary,
                         size: 22,
@@ -357,7 +359,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         ),
                         child: Text(
                           '${_commentSettings.maxCommentCharacters}',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                             color: AppColors.primary,
@@ -409,7 +411,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                   child: Row(
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.folder_outlined,
                         color: AppColors.primary,
                         size: 22,
@@ -421,7 +423,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           children: [
                             Text(
                               UserStorage.l10n.dataStorage,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w500,
                                 color: AppColors.textPrimary,
@@ -541,7 +543,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 child: Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.backup_outlined,
                       color: AppColors.primary,
                       size: 22,
@@ -553,7 +555,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         children: [
                           Text(
                             UserStorage.l10n.backupAndRestore,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
                               color: AppColors.textPrimary,
@@ -607,7 +609,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 child: Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.privacy_tip_outlined,
                       color: AppColors.primary,
                       size: 22,
@@ -619,7 +621,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         children: [
                           Text(
                             UserStorage.l10n.privacyPolicy,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
                               color: AppColors.textPrimary,

@@ -3,6 +3,7 @@ import 'package:intl/intl.dart' as intl;
 import 'app_localizations.dart';
 import 'app_localizations_ext_en.dart';
 import 'app_localizations_ext_zh.dart';
+import 'app_localizations_ext_de.dart';
 import 'package:flutter/material.dart';
 
 // ignore_for_file: type=lint
@@ -62,6 +63,8 @@ AppLocalizationsExt lookupAppLocalizationsExt(Locale locale) {
       return AppLocalizationsExtEn();
     case 'zh':
       return AppLocalizationsExtZh();
+    case 'de':
+      return AppLocalizationsExtDe();
   }
 
   throw FlutterError(
