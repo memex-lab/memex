@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:memex/utils/platform_utils.dart';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -35,6 +36,7 @@ class ShareIntentHandler {
   });
 
   void init() {
+    if (!PlatformUtils.isMobile) return;
     final handler = ShareHandlerPlatform.instance;
 
     // Handle initial shared media when app is launched from share

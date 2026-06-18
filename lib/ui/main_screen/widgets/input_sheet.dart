@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:memex/utils/platform_utils.dart';
 import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
@@ -581,34 +582,58 @@ class _InputSheetState extends State<InputSheet>
       } else {
         // Gallery
         if (!mounted) return;
-        final List<AssetEntity>? result = await AssetPicker.pickAssets(
-          context,
-          pickerConfig: AssetPickerConfig(
-            maxAssets: 9,
-            requestType: RequestType.image,
-            filterOptions: FilterOptionGroup(
-              containsPathModified: true,
-              createTimeCond: DateTimeCond.def().copyWith(ignore: true),
-              updateTimeCond: DateTimeCond.def().copyWith(ignore: true),
-              videoOption: const FilterOption(
-                durationConstraint: DurationConstraint(
-                  min: Duration.zero,
-                  max: Duration.zero,
+        if (PlatformUtils.isMobile) {
+          final List<AssetEntity>? result = await AssetPicker.pickAssets(
+            context,
+            pickerConfig: AssetPickerConfig(
+              maxAssets: 9,
+              requestType: RequestType.image,
+              filterOptions: FilterOptionGroup(
+                containsPathModified: true,
+                createTimeCond: DateTimeCond.def().copyWith(ignore: true),
+                updateTimeCond: DateTimeCond.def().copyWith(ignore: true),
+                videoOption: const FilterOption(
+                  durationConstraint: DurationConstraint(
+                    min: Duration.zero,
+                    max: Duration.zero,
+                  ),
                 ),
               ),
             ),
-          ),
-        );
-        if (result != null) {
-          for (final asset in result) {
-            final xFile = await PhotoSuggestionService.assetToXFile(asset);
-            if (xFile != null) {
-              final originalName = await asset.titleAsync;
-              _originalFilenames[xFile.path] = originalName;
-              _assetsMap[xFile.path] = asset;
-              setState(() {
-                _selectedImages.add(xFile);
-              });
+          );
+          if (result != null) {
+            for (final asset in result) {
+              final xFile = await PhotoSuggestionService.assetToXFile(asset);
+              if (xFile != null) {
+                final originalName = await asset.titleAsync;
+                _originalFilenames[xFile.path] = originalName;
+                _assetsMap[xFile.path] = asset;
+                setState(() {
+                  _selectedImages.add(xFile);
+                });
+              }
+            }
+          }
+        } else {
+          final result = await FilePicker.platform.pickFiles(
+            type: FileType.image,
+            allowMultiple: true,
+          );
+          if (result != null) {
+            for (final file in result.files) {
+              if (file.path != null) {
+                final xFile = XFile(file.path!);
+                _originalFilenames[xFile.path] = file.name;
+                setState(() {
+                  _selectedImages.add(xFile);
+                });
+              } else if (file.bytes != null) {
+                final xFile = XFile.fromData(file.bytes!, name: file.name);
+                _originalFilenames[xFile.path] = file.name;
+                setState(() {
+                  _selectedImages.add(xFile);
+                });
+              }
             }
           }
         }

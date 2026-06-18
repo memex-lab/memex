@@ -1,6 +1,5 @@
 import 'dart:io';
-
-import 'package:health/health.dart';
+import 'package:memex/utils/platform_utils.dart';import 'package:health/health.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:logging/logging.dart';
 import 'package:workmanager/workmanager.dart'; // Added for Workmanager
@@ -44,7 +43,8 @@ class HealthService {
   List<HealthDataType> get registeredTypes => _configs.keys.toList();
 
   void _registerStrategies() {
-    if (kIsWeb || Platform.isWindows) return;
+    if (!PlatformUtils.isMobile) return;
+
     if (Platform.isAndroid) {
       // Android: Only steps via Pedometer (Health Connect permissions removed
       // to comply with Google Play policy).
@@ -102,6 +102,7 @@ class HealthService {
 
   /// Request all necessary permissions in one batch prompt
   Future<void> requestAllPermissions() async {
+    if (!PlatformUtils.isMobile) return;
     try {
       if (kIsWeb || Platform.isWindows) return;
       if (Platform.isAndroid) {

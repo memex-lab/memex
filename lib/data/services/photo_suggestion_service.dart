@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
+import 'package:memex/utils/platform_utils.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:image_picker/image_picker.dart';
@@ -26,7 +26,7 @@ class PhotoSuggestionService {
     int maxCount = 5,
     bool ignoreLastPublishTime = false,
   }) async {
-    if (kIsWeb || Platform.isWindows) return [];
+    if (!PlatformUtils.isMobile) return [];
     try {
       _logger.fine(
           'Fetching recent photos, platform: ${Platform.isAndroid ? "Android" : "iOS"}');
@@ -512,6 +512,15 @@ class PhotoSuggestionService {
         DateTime modifiedTime
       })> _processImageOCR(XFile xFile) async {
     _logger.info('--- Starting OCR + Labeling for ${xFile.name} ---');
+    if (!PlatformUtils.isMobile) {
+      final file = File(xFile.path);
+      final stat = await file.stat();
+      return (
+        ocrBlocks: <String>[],
+        labels: <String>[],
+        modifiedTime: stat.modified
+      );
+    }
     TextRecognizer? textRecognizer;
     ImageLabeler? imageLabeler;
     try {
