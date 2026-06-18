@@ -104,6 +104,7 @@ class HealthService {
   Future<void> requestAllPermissions() async {
     if (!PlatformUtils.isMobile) return;
     try {
+      if (kIsWeb || Platform.isWindows) return;
       if (Platform.isAndroid) {
         // Android: only Pedometer
         if (_configs.containsKey(HealthDataType.STEPS)) {
@@ -146,6 +147,7 @@ class HealthService {
   /// Generic Entry Point
   /// Returns data if reporting is needed and successful, null otherwise.
   Future<T?> checkAndPrepareData<T>(HealthDataType type) async {
+    if (kIsWeb || Platform.isWindows) return null;
     final config = _configs[type];
     if (config == null) {
       _logger.warning('No strategy configured for $type');

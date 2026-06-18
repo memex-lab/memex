@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:memex/utils/platform_utils.dart';
 import 'dart:async';
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:record/record.dart';
@@ -550,6 +551,24 @@ class _InputSheetState extends State<InputSheet>
 
   Future<void> _pickImage(ImageSource source) async {
     try {
+      final isDesktopOrWeb = kIsWeb || Platform.isWindows || Platform.isLinux || Platform.isMacOS;
+      if (isDesktopOrWeb) {
+        // Fallback for desktop/web: Use multi-image picker for both camera and gallery
+        // because ImageSource.camera and wechat_assets_picker are not well-supported on all desktop platforms.
+        final List<XFile> result = await _imagePicker.pickMultiImage(
+          imageQuality: 85,
+        );
+        if (result.isNotEmpty) {
+          for (final xFile in result) {
+            _originalFilenames[xFile.path] = xFile.name;
+            setState(() {
+              _selectedImages.add(xFile);
+            });
+          }
+        }
+        return;
+      }
+
       if (source == ImageSource.camera) {
         final image = await _imagePicker.pickImage(
           source: source,

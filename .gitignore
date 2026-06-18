@@ -99,3 +99,6 @@ android/app/*.jks
 # Local deploy scripts
 deploy_ios.sh
 deploy_android.sh
+
+# Windows
+**/windows/flutter/ephemeral/
