@@ -928,7 +928,7 @@ class TimelineScreenState extends State<TimelineScreen> {
         widget.onRefreshAction?.call();
       },
       child: ListView.builder(
-        scrollCacheExtent: ScrollCacheExtent.pixels(400), controller: _scrollController,
+        cacheExtent: 400.0, controller: _scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 220),
         itemCount: entries.length + (vm.hasMore ? 1 : 0),
