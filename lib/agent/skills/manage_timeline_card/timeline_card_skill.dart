@@ -180,9 +180,7 @@ class TimelineCardSkill extends Skill {
 
           try {
             // 1. Validate required fields
-            if (title.isEmpty) {
-              throw ArgumentError("title is required");
-            }
+            // Empty title is allowed if the LLM determines it's not needed (e.g., image-only cards)
             final uiConfigsList =
                 _normalizeListArgument(uiConfigs, 'ui_configs');
 
