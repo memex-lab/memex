@@ -471,7 +471,7 @@ class _SkillsManagementPageState extends State<SkillsManagementPage> {
           ),
           Expanded(
             child: _isLoading
-                ? Center(child: AgentLogoLoading())
+                ? const Center(child: AgentLogoLoading())
                 : _entries.isEmpty
                     ? Center(child: Text(l10n.skillsManagementEmpty))
                     : ListView.builder(
@@ -574,7 +574,7 @@ class _FileEditorPageState extends State<_FileEditorPage> {
         ],
       ),
       body: _isLoading
-          ? Center(child: AgentLogoLoading())
+          ? const Center(child: AgentLogoLoading())
           : Padding(
               padding: const EdgeInsets.all(12),
               child: TextField(

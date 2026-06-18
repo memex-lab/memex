@@ -971,8 +971,8 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                 children: [
                   Text(name, style: AppTextStyles.commentName),
                   if (replyToName != null) ...[
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 6),
                       child: Icon(
                         Icons.subdirectory_arrow_right_rounded,
                         size: 14,
@@ -1041,7 +1041,7 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return Scaffold(body: Center(child: AgentLogoLoading()));
+      return const Scaffold(body: Center(child: AgentLogoLoading()));
     }
 
     if (_errorMessage != null) {
@@ -1616,8 +1616,8 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                 children: [
                   Text(name, style: AppTextStyles.commentName),
                   if (replyToName != null) ...[
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 6),
                       child: Icon(
                         Icons.subdirectory_arrow_right_rounded,
                         size: 14,
@@ -1647,7 +1647,7 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                     ),
                     em: const TextStyle(fontStyle: FontStyle.italic),
                     listBullet: const TextStyle(color: AppColors.primary),
-                    code: TextStyle(
+                    code: const TextStyle(
                       fontSize: 13,
                       color: AppColors.textSecondary,
                       backgroundColor: AppColors.background,
@@ -1718,7 +1718,7 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                   ),
                   child: Row(
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.edit_outlined,
                         size: 16,
                         color: AppColors.textTertiary,
@@ -1726,7 +1726,7 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                       const SizedBox(width: 8),
                       Text(
                         UserStorage.l10n.saySomething,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 14,
                           color: AppColors.textTertiary,
                         ),
@@ -1842,13 +1842,13 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
         border: Border.all(
-          color: TimelineTheme.colors.textTertiary.withOpacity(0.05),
+          color: TimelineTheme.colors.textTertiary.withValues(alpha: 0.05),
         ),
       ),
       clipBehavior: Clip.antiAlias,
@@ -1969,7 +1969,7 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                         height: 1.6,
                       );
                       final tp = TextPainter(
-                        text: TextSpan(text: 'A', style: style),
+                        text: const TextSpan(text: 'A', style: style),
                         textDirection: ui.TextDirection.ltr,
                       )..layout();
                       final maxLines = (constraints.maxHeight / tp.height)
@@ -2311,12 +2311,12 @@ class _CommentInputWidgetState extends State<_CommentInputWidget> {
             ),
             child: Row(
               children: [
-                Icon(Icons.reply_rounded, size: 16, color: AppColors.primary),
+                const Icon(Icons.reply_rounded, size: 16, color: AppColors.primary),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     UserStorage.l10n.replyTo(widget.replyToName!),
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 13,
                       color: AppColors.primary,
                       fontWeight: FontWeight.w500,
@@ -2356,12 +2356,12 @@ class _CommentInputWidgetState extends State<_CommentInputWidget> {
                       horizontal: 16,
                       vertical: 12,
                     ),
-                    hintStyle: TextStyle(
+                    hintStyle: const TextStyle(
                       color: AppColors.textTertiary,
                       fontSize: 14,
                     ),
                   ),
-                  style: TextStyle(fontSize: 14, color: AppColors.textPrimary),
+                  style: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
                   maxLines: null,
                   textInputAction: TextInputAction.send,
                   onSubmitted: (_) => _postComment(),
@@ -2369,7 +2369,7 @@ class _CommentInputWidgetState extends State<_CommentInputWidget> {
               ),
               IconButton(
                 icon: _isPosting
-                    ? SizedBox(
+                    ? const SizedBox(
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
@@ -2379,7 +2379,7 @@ class _CommentInputWidgetState extends State<_CommentInputWidget> {
                           ),
                         ),
                       )
-                    : Icon(
+                    : const Icon(
                         Icons.send_rounded,
                         color: AppColors.primary,
                         size: 20,

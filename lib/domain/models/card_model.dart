@@ -1,6 +1,7 @@
 /// Typed model for timeline card YAML file (Cards/.../*.yaml).
 /// Used by FileSystemService.readCardFile / updateCardFile / safeWriteCardFile.
 /// UiConfig is shared with TimelineCardModel and event bus messages.
+library;
 
 /// Render configuration for a single card template (shared with timeline/event bus).
 class UiConfig {
@@ -180,13 +181,16 @@ class CardData {
     };
     if (title != null) m['title'] = title;
     if (address != null) m['address'] = address;
-    if (userFixedTimestamp != null)
+    if (userFixedTimestamp != null) {
       m['user_fixed_timestamp'] = userFixedTimestamp;
+    }
     if (userFixedAddress != null) m['user_fixed_address'] = userFixedAddress;
-    if (userFixedLocation != null)
+    if (userFixedLocation != null) {
       m['user_fixed_location'] = userFixedLocation!.toJson();
-    if (comments.isNotEmpty)
+    }
+    if (comments.isNotEmpty) {
       m['comments'] = comments.map((e) => e.toJson()).toList();
+    }
     if (insight != null) m['insight'] = insight!.toJson();
     if (deleted == true) m['deleted'] = deleted;
     if (failureReason != null) m['failure_reason'] = failureReason;

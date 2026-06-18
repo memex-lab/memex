@@ -102,7 +102,7 @@ class _LockScreenState extends State<LockScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(UserStorage.l10n.wrongPassword),
-            duration: Duration(milliseconds: 500),
+            duration: const Duration(milliseconds: 500),
             backgroundColor: Colors.red,
           ),
         );
@@ -136,7 +136,7 @@ class _LockScreenState extends State<LockScreen> {
             const SizedBox(height: 24),
             Text(
               UserStorage.l10n.enterPassword,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
@@ -197,7 +197,7 @@ class _LockScreenState extends State<LockScreen> {
                             alignment: Alignment.center,
                             child: Text(
                               UserStorage.l10n.cancel,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w500,
                                 color: AppColors.textSecondary,
@@ -272,7 +272,7 @@ class _LockScreenState extends State<LockScreen> {
         alignment: Alignment.center,
         child: Text(
           value,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.w400,
             color: AppColors.textPrimary,

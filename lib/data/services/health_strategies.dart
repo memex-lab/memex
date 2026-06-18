@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:memex/utils/platform_utils.dart';
 import 'dart:async'; // Added for TimeoutException
 import 'package:health/health.dart';
 import 'package:pedometer/pedometer.dart';
@@ -63,7 +64,7 @@ class HealthKitFetcher implements HealthDataFetcher {
           HealthDataType.SLEEP_LIGHT,
           HealthDataType.SLEEP_REM,
         ];
-        if (Platform.isIOS) {
+        if (PlatformUtils.isMobile && Platform.isIOS) {
           types.add(HealthDataType.SLEEP_IN_BED);
         }
       }
@@ -439,7 +440,7 @@ class PedometerFetcher implements HealthDataFetcher {
   static const String _iosBackgroundTaskName = 'workmanager.background.task';
 
   String get _backgroundTaskName =>
-      Platform.isIOS ? _iosBackgroundTaskName : _androidBackgroundTaskName;
+      (PlatformUtils.isMobile && Platform.isIOS) ? _iosBackgroundTaskName : _androidBackgroundTaskName;
   final Logger _logger = getLogger('PedometerFetcher');
 
   @override
@@ -455,7 +456,7 @@ class PedometerFetcher implements HealthDataFetcher {
     // Only check permission status — do NOT request.
     // Permissions are now requested via System Authorization page.
     Permission permission;
-    if (Platform.isIOS) {
+    if (PlatformUtils.isMobile && Platform.isIOS) {
       permission = Permission.sensors; // Motion & Fitness on iOS
     } else {
       permission =
@@ -682,7 +683,7 @@ class PedometerFetcher implements HealthDataFetcher {
 
       // 2. Load existing snapshots
       final prefs = await SharedPreferences.getInstance();
-      final key = 'daily_step_snapshots';
+      const key = 'daily_step_snapshots';
 
       final json = prefs.getString(key);
       Map<String, int> snapshots = {};

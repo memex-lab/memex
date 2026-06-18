@@ -50,10 +50,12 @@ interface MapCardData {
 }
 ''',
     validator: (data) {
-      if (data['locations'] is! List)
+      if (data['locations'] is! List) {
         return 'locations is required and must be a list';
-      if ((data['locations'] as List).isEmpty)
+      }
+      if ((data['locations'] as List).isEmpty) {
         return 'locations cannot be empty';
+      }
 
       return _validateList(data['locations'], 'locations', (item) {
         if (item['lat'] is! num) return 'lat is required and must be a number';
@@ -76,10 +78,12 @@ interface RouteMapCardData {
 }
 ''',
     validator: (data) {
-      if (data['locations'] is! List)
+      if (data['locations'] is! List) {
         return 'locations is required and must be a list';
-      if ((data['locations'] as List).length < 2)
+      }
+      if ((data['locations'] as List).length < 2) {
         return 'locations must have at least 2 points for a route';
+      }
 
       return _validateList(data['locations'], 'locations', (item) {
         if (item['lat'] is! num) return 'lat is required and must be a number';
@@ -131,8 +135,9 @@ interface CompositionCardData {
 
       return _validateList(data['items'], 'items', (item) {
         if (item['label'] is! String) return 'label is required';
-        if (item['percentage'] is! num)
+        if (item['percentage'] is! num) {
           return 'percentage is required and must be a number';
+        }
         if (!_isValidColor(item['color'])) return 'invalid color format';
         return null;
       });
@@ -182,12 +187,14 @@ interface GalleryCardData {
 }
 ''',
     validator: (data) {
-      if (data['images'] is! List)
+      if (data['images'] is! List) {
         return 'images is required and must be a list';
+      }
 
       return _validateList(data['images'], 'images', (item) {
-        if (item['url'] is! String || (item['url'] as String).isEmpty)
+        if (item['url'] is! String || (item['url'] as String).isEmpty) {
           return 'url is required';
+        }
         return null;
       });
     },
@@ -208,8 +215,9 @@ interface BubbleChartCardData {
 }
 ''',
     validator: (data) {
-      if (data['bubbles'] is! List)
+      if (data['bubbles'] is! List) {
         return 'bubbles is required and must be a list';
+      }
 
       return _validateList(data['bubbles'], 'bubbles', (item) {
         if (item['label'] is! String) return 'label is required';
@@ -264,10 +272,12 @@ interface RadarChartCardData {
 }
 ''',
     validator: (data) {
-      if (data['dimensions'] is! List)
+      if (data['dimensions'] is! List) {
         return 'dimensions is required and must be a list';
-      if ((data['dimensions'] as List).length < 3)
+      }
+      if ((data['dimensions'] as List).length < 3) {
         return 'radar chart requires at least 3 dimensions';
+      }
 
       return _validateList(data['dimensions'], 'dimensions', (item) {
         if (item['label'] is! String) return 'label is required';
@@ -296,10 +306,12 @@ interface TrendChartCardData {
 }
 ''',
     validator: (data) {
-      if (data['points'] is! List)
+      if (data['points'] is! List) {
         return 'points is required and must be a list';
-      if ((data['points'] as List).length < 2)
+      }
+      if ((data['points'] as List).length < 2) {
         return 'trend chart requires at least 2 points';
+      }
 
       return _validateList(data['points'], 'points', (item) {
         if (item['label'] is! String) return 'label is required';
@@ -387,8 +399,9 @@ interface SummaryCardData {
       if (data['metrics'] != null) {
         final error = _validateList(data['metrics'], 'metrics', (item) {
           if (item['label'] is! String) return 'label is required';
-          if (item['value'] is! String && item['value'] is! num)
+          if (item['value'] is! String && item['value'] is! num) {
             return 'value is required';
+          }
           return null;
         });
         if (error != null) return error;

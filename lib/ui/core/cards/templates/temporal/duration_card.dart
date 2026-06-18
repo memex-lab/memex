@@ -254,10 +254,10 @@ class _DurationCardState extends State<DurationCard>
                             const SizedBox(height: 2),
                             Text(
                               title,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
-                                color: const Color(0xFF99A1AF),
+                                color: Color(0xFF99A1AF),
                               ),
                             ),
                           ],
@@ -285,11 +285,11 @@ class _DurationCardState extends State<DurationCard>
                         const SizedBox(height: 2),
                         Text(
                           AppLocalizations.of(context)!.timesLabel,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
                             letterSpacing: 0.5,
-                            color: const Color(0xFF99A1AF),
+                            color: Color(0xFF99A1AF),
                           ),
                         ),
                       ],

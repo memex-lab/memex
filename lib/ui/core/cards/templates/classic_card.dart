@@ -534,7 +534,7 @@ class _ClassicCardState extends State<ClassicCard> {
           height: 100,
           child: Center(
               child: Icon(Icons.broken_image,
-                  color: TimelineTheme.colors.textTertiary.withOpacity(0.5))),
+                  color: TimelineTheme.colors.textTertiary.withValues(alpha: 0.5))),
         ),
       ),
     );
@@ -558,7 +558,7 @@ class AudioWaveformPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round
       ..strokeWidth = 4.0; // Thicker bars
 
-    final count = 24; // Less bars for chunkier look
+    const count = 24; // Less bars for chunkier look
     final spacing = size.width / count;
 
     for (int i = 0; i < count; i++) {
@@ -566,8 +566,9 @@ class AudioWaveformPainter extends CustomPainter {
       double heightPercent =
           0.4 + (0.6 * (i % 3 == 0 ? 0.8 : (i % 2 == 0 ? 0.5 : 0.3)));
       // Bump center bars
-      if (i > count * 0.3 && i < count * 0.7)
+      if (i > count * 0.3 && i < count * 0.7) {
         heightPercent = heightPercent * 1.2;
+      }
       if (heightPercent > 1.0) heightPercent = 1.0;
 
       final barHeight = size.height * heightPercent;

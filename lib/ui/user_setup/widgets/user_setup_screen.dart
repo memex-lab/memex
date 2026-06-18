@@ -190,7 +190,7 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.edit,
+                            const Icon(Icons.edit,
                                 size: 13, color: AppColors.textTertiary),
                             const SizedBox(width: 4),
                             Text(
@@ -238,11 +238,11 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
+                      boxShadow: const [
                         BoxShadow(
                           color: AppColors.shadowLight,
                           blurRadius: 16,
-                          offset: const Offset(0, 2),
+                          offset: Offset(0, 2),
                         ),
                       ],
                     ),
@@ -412,7 +412,7 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
   Widget _buildLanguageSelector() {
     return Row(
       children: [
-        Icon(Icons.language, size: 18, color: AppColors.textTertiary),
+        const Icon(Icons.language, size: 18, color: AppColors.textTertiary),
         const SizedBox(width: 10),
         Expanded(
           child: Text(

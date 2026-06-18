@@ -6,7 +6,7 @@ import 'package:memex/ui/core/themes/app_colors.dart';
 import 'dart:io' show Platform;
 
 class SystemAuthorizationPage extends StatefulWidget {
-  const SystemAuthorizationPage({Key? key}) : super(key: key);
+  const SystemAuthorizationPage({super.key});
 
   @override
   _SystemAuthorizationPageState createState() =>

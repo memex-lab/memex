@@ -501,23 +501,23 @@ class TimelineScreenState extends State<TimelineScreen> {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        Colors.white.withOpacity(0.92),
-                        Colors.white.withOpacity(0.82),
+                        Colors.white.withValues(alpha: 0.92),
+                        Colors.white.withValues(alpha: 0.82),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.6),
+                      color: Colors.white.withValues(alpha: 0.6),
                       width: 0.5,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.06),
+                        color: Colors.black.withValues(alpha: 0.06),
                         blurRadius: 16,
                         offset: const Offset(0, 4),
                       ),
                       BoxShadow(
-                        color: const Color(0xFF10B981).withOpacity(0.08),
+                        color: const Color(0xFF10B981).withValues(alpha: 0.08),
                         blurRadius: 24,
                         offset: const Offset(0, 2),
                       ),
@@ -589,7 +589,7 @@ class TimelineScreenState extends State<TimelineScreen> {
                                 style: TextStyle(
                                   fontSize: 12,
                                   color:
-                                      const Color(0xFF64748B).withOpacity(0.9),
+                                      const Color(0xFF64748B).withValues(alpha: 0.9),
                                   height: 1.3,
                                 ),
                               ),
@@ -604,7 +604,7 @@ class TimelineScreenState extends State<TimelineScreen> {
                           width: 28,
                           height: 28,
                           decoration: BoxDecoration(
-                            color: const Color(0xFF94A3B8).withOpacity(0.1),
+                            color: const Color(0xFF94A3B8).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Icon(Icons.close_rounded,
@@ -928,10 +928,9 @@ class TimelineScreenState extends State<TimelineScreen> {
         widget.onRefreshAction?.call();
       },
       child: ListView.builder(
-        controller: _scrollController,
+        cacheExtent: 400.0, controller: _scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 220),
-        cacheExtent: 400,
         itemCount: entries.length + (vm.hasMore ? 1 : 0),
         itemBuilder: (context, index) {
           if (index >= entries.length) {

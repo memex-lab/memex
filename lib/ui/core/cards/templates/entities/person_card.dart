@@ -73,9 +73,9 @@ class PersonCard extends StatelessWidget {
                       ),
                       child: Text(
                         relation,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 12,
-                          color: const Color(0xFF5B6CFF),
+                          color: Color(0xFF5B6CFF),
                           fontWeight: FontWeight.w500,
                         ),
                       ),

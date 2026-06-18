@@ -11,7 +11,6 @@ import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/data/services/character_service.dart';
 import 'package:memex/domain/models/card_model.dart';
 import 'package:memex/domain/models/card_detail_model.dart';
-import 'package:memex/domain/models/event_bus_message.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/user_storage.dart';
 
@@ -88,7 +87,7 @@ class DemoService extends ChangeNotifier {
 
   void advance() {
     if (_currentStep == null) return;
-    final steps = DemoStep.values;
+    const steps = DemoStep.values;
     final idx = steps.indexOf(_currentStep!);
     if (idx < steps.length - 1) {
       _currentStep = steps[idx + 1];
@@ -277,7 +276,7 @@ class DemoService extends ChangeNotifier {
       final kbFile =
           File(path.join(kbDir, _isZh ? 'Memex 指南.md' : 'Memex Guide.md'));
       final kbContent =
-          (_isZh ? _kbContentZh : _kbContentEn) + '\n<!-- fact_id: $factId -->';
+          '${_isZh ? _kbContentZh : _kbContentEn}\n<!-- fact_id: $factId -->';
       await kbFile.writeAsString(kbContent);
 
       // Ensure tags exist

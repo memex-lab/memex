@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:memex/utils/platform_utils.dart';
 import 'dart:io';
 import 'package:logging/logging.dart';
 import 'package:memex/agent/prompts.dart';
@@ -589,6 +590,7 @@ Future<void> _saveAssetAnalysisText({
 /// concatenated recognized text. Returns empty string on failure or if no
 /// text is found.
 Future<String> _performOnDeviceOcr(String imagePath) async {
+  if (!PlatformUtils.isMobile) return '';
   final textRecognizer = TextRecognizer(script: TextRecognitionScript.chinese);
   try {
     final inputImage = InputImage.fromFilePath(imagePath);

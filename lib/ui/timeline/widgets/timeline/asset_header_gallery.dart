@@ -295,13 +295,13 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
       padding: const EdgeInsets.all(24),
       margin: const EdgeInsets.symmetric(horizontal: 32),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.2)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
         // Glassmorphism effect
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -325,9 +325,9 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
               thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
               overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
               activeTrackColor: Colors.white,
-              inactiveTrackColor: Colors.white.withOpacity(0.3),
+              inactiveTrackColor: Colors.white.withValues(alpha: 0.3),
               thumbColor: Colors.white,
-              overlayColor: Colors.white.withOpacity(0.1),
+              overlayColor: Colors.white.withValues(alpha: 0.1),
             ),
             child: Slider(
               value: _position.inMilliseconds.toDouble(),
@@ -349,7 +349,7 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
                 Text(
                   _formatDuration(_position),
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
+                    color: Colors.white.withValues(alpha: 0.7),
                     fontSize: 12,
                     fontFeatures: const [FontFeature.tabularFigures()],
                   ),
@@ -357,7 +357,7 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
                 Text(
                   _formatDuration(_duration),
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
+                    color: Colors.white.withValues(alpha: 0.7),
                     fontSize: 12,
                     fontFeatures: const [FontFeature.tabularFigures()],
                   ),

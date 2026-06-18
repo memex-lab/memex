@@ -153,7 +153,7 @@ class _AppLockSettingsPageState extends State<AppLockSettingsPage> {
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
       ),
       body: _isLoading
-          ? Center(child: AgentLogoLoading())
+          ? const Center(child: AgentLogoLoading())
           : ListView(
               padding: const EdgeInsets.all(20),
               children: [
@@ -178,7 +178,7 @@ class _AppLockSettingsPageState extends State<AppLockSettingsPage> {
                         ),
                         value: _isLockEnabled,
                         onChanged: _toggleLock,
-                        activeColor: AppColors.primary,
+                        activeThumbColor: AppColors.primary,
                       ),
                       if (_canCheckBiometrics && _isLockEnabled) ...[
                         const Divider(height: 1),
@@ -200,7 +200,7 @@ class _AppLockSettingsPageState extends State<AppLockSettingsPage> {
                           ),
                           value: _isBiometricsEnabled,
                           onChanged: _toggleBiometrics,
-                          activeColor: AppColors.primary,
+                          activeThumbColor: AppColors.primary,
                         ),
                       ],
                     ],

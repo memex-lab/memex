@@ -126,12 +126,14 @@ void validateTemplateData(String templateId, Map<String, dynamic> data) {
       _optStr(data, 'location');
       if (data['items'] != null) {
         final itemsList = data['items'];
-        if (itemsList is! List)
+        if (itemsList is! List) {
           throw ArgumentError('Template $t: "items" must be List.');
+        }
         for (var i = 0; i < itemsList.length; i++) {
           final item = itemsList[i];
-          if (item is! Map)
+          if (item is! Map) {
             throw ArgumentError('Template $t: items[$i] must be Map.');
+          }
           final m = Map<String, dynamic>.from(item);
           _reqStr(m, 'name', t);
           _reqStr(m, 'amount', t);
@@ -144,8 +146,9 @@ void validateTemplateData(String templateId, Map<String, dynamic> data) {
       final items = data['items'];
       for (var i = 0; i < items.length; i++) {
         final item = items[i];
-        if (item is! Map)
+        if (item is! Map) {
           throw ArgumentError('Template $t: items[$i] must be Map.');
+        }
         final m = Map<String, dynamic>.from(item);
         _reqStr(m, 'title', t);
         _reqNum(m, 'value', t);
@@ -197,12 +200,14 @@ void validateTemplateData(String templateId, Map<String, dynamic> data) {
       _optStr(data, 'due_date');
       if (data['subtasks'] != null) {
         final subtasksList = data['subtasks'];
-        if (subtasksList is! List)
+        if (subtasksList is! List) {
           throw ArgumentError('Template $t: "subtasks" must be List.');
+        }
         for (var i = 0; i < subtasksList.length; i++) {
           final item = subtasksList[i];
-          if (item is! Map)
+          if (item is! Map) {
             throw ArgumentError('Template $t: subtasks[$i] must be Map.');
+          }
           final m = Map<String, dynamic>.from(item);
           _reqStr(m, 'title', t);
           _optBool(m, 'completed');
@@ -213,8 +218,9 @@ void validateTemplateData(String templateId, Map<String, dynamic> data) {
       _reqStr(data, 'habit_name', t);
       _reqNum(data, 'streak', t);
       if (data['history'] != null) {
-        if (data['history'] is! List)
+        if (data['history'] is! List) {
           throw ArgumentError('Template $t: "history" must be List.');
+        }
       }
       break;
     case 'procedure':
@@ -232,16 +238,18 @@ void validateTemplateData(String templateId, Map<String, dynamic> data) {
       _optStr(data, 'title');
       _optStr(data, 'icon');
       if (data['details'] != null) {
-        if (data['details'] is! List)
+        if (data['details'] is! List) {
           throw ArgumentError('Template $t: "details" must be List.');
+        }
       }
       break;
     case 'snippet':
       _reqStr(data, 'text', t);
       _optStr(data, 'style');
       if (data['tags'] != null) {
-        if (data['tags'] is! List)
+        if (data['tags'] is! List) {
           throw ArgumentError('Template $t: "tags" must be List.');
+        }
       }
       break;
     case 'article':
@@ -255,8 +263,9 @@ void validateTemplateData(String templateId, Map<String, dynamic> data) {
       final messagesList = data['messages'];
       for (var i = 0; i < messagesList.length; i++) {
         final msg = messagesList[i];
-        if (msg is! Map)
+        if (msg is! Map) {
           throw ArgumentError('Template $t: messages[$i] must be Map.');
+        }
         final m = Map<String, dynamic>.from(msg);
         _reqStr(m, 'text', t);
         _optStr(m, 'sender');

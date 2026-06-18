@@ -109,7 +109,7 @@ class _KnowledgeFilePageState extends State<KnowledgeFilePage> {
         iconTheme: const IconThemeData(color: Color(0xFF64748B)),
       ),
       body: _isLoading
-          ? Center(child: AgentLogoLoading())
+          ? const Center(child: AgentLogoLoading())
           : SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -159,9 +159,9 @@ class _KnowledgeFilePageState extends State<KnowledgeFilePage> {
                   if (_factIds.isNotEmpty) ...[
                     const SizedBox(height: 24),
                     Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8F9FA),
-                        borderRadius: const BorderRadius.vertical(
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFF8F9FA),
+                        borderRadius: BorderRadius.vertical(
                             top: Radius.circular(24)),
                       ),
                       child: Column(

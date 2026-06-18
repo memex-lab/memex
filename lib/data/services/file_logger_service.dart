@@ -137,7 +137,7 @@ class FileLoggerService {
 
     try {
       final now = DateTime.now();
-      final cutoffDate = now.subtract(Duration(days: _retentionDays));
+      final cutoffDate = now.subtract(const Duration(days: _retentionDays));
 
       final files = _logDirectory!.listSync();
       for (var file in files) {

@@ -249,7 +249,7 @@ class _LogViewerPageState extends State<LogViewerPage> {
           _buildControlBar(filteredLines.length),
           Expanded(
             child: _isLoading && _logLines.isEmpty
-                ? Center(child: AgentLogoLoading())
+                ? const Center(child: AgentLogoLoading())
                 : SelectionArea(
                     child: Scrollbar(
                       controller: _scrollController,

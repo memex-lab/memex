@@ -24,6 +24,7 @@ import 'package:memex/ui/app_lock/widgets/lock_screen_page.dart';
 import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:memex/ui/core/themes/app_theme.dart';
 import 'dart:io';
+import 'package:memex/utils/platform_utils.dart';
 import 'package:memex/ui/main_screen/widgets/radial_menu.dart';
 import 'package:memex/domain/models/shortcut_item.dart' as app_shortcut;
 import 'package:record/record.dart';
@@ -89,13 +90,15 @@ void main() async {
   await UserStorage.initL10n();
 
   // Initialize Workmanager (for background tasks)
-  await Workmanager().initialize(callbackDispatcher);
+  if (PlatformUtils.isMobile) {
+    await Workmanager().initialize(callbackDispatcher);
 
-  // Cancel legacy pedometer background tasks on iOS without wiping newer
-  // background registrations such as agent queue processing.
-  if (Platform.isIOS) {
-    await Workmanager().cancelByUniqueName('workmanager.background.task');
-    await Workmanager().cancelByUniqueName('dailyStepSnapshotTask');
+    // Cancel legacy pedometer background tasks on iOS without wiping newer
+    // background registrations such as agent queue processing.
+    if (Platform.isIOS) {
+      await Workmanager().cancelByUniqueName('workmanager.background.task');
+      await Workmanager().cancelByUniqueName('dailyStepSnapshotTask');
+    }
   }
   await AgentBackgroundTaskService.instance.initializeNativeBridge();
 
@@ -123,13 +126,15 @@ void main() async {
   );
 
   // Initialize quick actions (app icon long-press shortcuts).
-  const QuickActions quickActions = QuickActions();
-  quickActions.initialize((String shortcutType) {
-    AppActionService.instance.handleAction(
-      shortcutType,
-      source: 'quick_action',
-    );
-  });
+  if (PlatformUtils.isMobile) {
+    const QuickActions quickActions = QuickActions();
+    quickActions.initialize((String shortcutType) {
+      AppActionService.instance.handleAction(
+        shortcutType,
+        source: 'quick_action',
+      );
+    });
+  }
   unawaited(AppActionLinkService.instance.initialize());
 
   runApp(
