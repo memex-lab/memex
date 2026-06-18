@@ -44,6 +44,7 @@ class HealthService {
   List<HealthDataType> get registeredTypes => _configs.keys.toList();
 
   void _registerStrategies() {
+    if (kIsWeb || Platform.isWindows) return;
     if (Platform.isAndroid) {
       // Android: Only steps via Pedometer (Health Connect permissions removed
       // to comply with Google Play policy).
@@ -102,6 +103,7 @@ class HealthService {
   /// Request all necessary permissions in one batch prompt
   Future<void> requestAllPermissions() async {
     try {
+      if (kIsWeb || Platform.isWindows) return;
       if (Platform.isAndroid) {
         // Android: only Pedometer
         if (_configs.containsKey(HealthDataType.STEPS)) {
@@ -144,6 +146,7 @@ class HealthService {
   /// Generic Entry Point
   /// Returns data if reporting is needed and successful, null otherwise.
   Future<T?> checkAndPrepareData<T>(HealthDataType type) async {
+    if (kIsWeb || Platform.isWindows) return null;
     final config = _configs[type];
     if (config == null) {
       _logger.warning('No strategy configured for $type');

@@ -89,13 +89,15 @@ void main() async {
   await UserStorage.initL10n();
 
   // Initialize Workmanager (for background tasks)
-  await Workmanager().initialize(callbackDispatcher);
+  if (!kIsWeb && !Platform.isWindows) {
+    await Workmanager().initialize(callbackDispatcher);
 
-  // Cancel legacy pedometer background tasks on iOS without wiping newer
-  // background registrations such as agent queue processing.
-  if (Platform.isIOS) {
-    await Workmanager().cancelByUniqueName('workmanager.background.task');
-    await Workmanager().cancelByUniqueName('dailyStepSnapshotTask');
+    // Cancel legacy pedometer background tasks on iOS without wiping newer
+    // background registrations such as agent queue processing.
+    if (Platform.isIOS) {
+      await Workmanager().cancelByUniqueName('workmanager.background.task');
+      await Workmanager().cancelByUniqueName('dailyStepSnapshotTask');
+    }
   }
   await AgentBackgroundTaskService.instance.initializeNativeBridge();
 
@@ -123,13 +125,15 @@ void main() async {
   );
 
   // Initialize quick actions (app icon long-press shortcuts).
-  const QuickActions quickActions = QuickActions();
-  quickActions.initialize((String shortcutType) {
-    AppActionService.instance.handleAction(
-      shortcutType,
-      source: 'quick_action',
-    );
-  });
+  if (!kIsWeb && !Platform.isWindows) {
+    const QuickActions quickActions = QuickActions();
+    quickActions.initialize((String shortcutType) {
+      AppActionService.instance.handleAction(
+        shortcutType,
+        source: 'quick_action',
+      );
+    });
+  }
   unawaited(AppActionLinkService.instance.initialize());
 
   runApp(

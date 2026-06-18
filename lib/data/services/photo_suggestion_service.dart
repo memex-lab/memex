@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:image_picker/image_picker.dart';
@@ -25,6 +26,7 @@ class PhotoSuggestionService {
     int maxCount = 5,
     bool ignoreLastPublishTime = false,
   }) async {
+    if (kIsWeb || Platform.isWindows) return [];
     try {
       _logger.fine(
           'Fetching recent photos, platform: ${Platform.isAndroid ? "Android" : "iOS"}');
