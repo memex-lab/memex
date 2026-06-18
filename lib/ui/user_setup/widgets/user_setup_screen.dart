@@ -58,7 +58,13 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
     final systemLocale = PlatformDispatcher.instance.locale;
     final langCode = systemLocale.languageCode;
     setState(() {
-      _selectedLang = (langCode == 'zh') ? 'zh' : 'en';
+      if (langCode == 'zh') {
+        _selectedLang = 'zh';
+      } else if (langCode == 'de') {
+        _selectedLang = 'de';
+      } else {
+        _selectedLang = 'en';
+      }
     });
     _applyLanguage(_selectedLang);
   }
@@ -427,6 +433,8 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
         ),
         const SizedBox(width: 8),
         _buildLangChip('EN', 'en'),
+        const SizedBox(width: 8),
+        _buildLangChip('DE', 'de'),
         const SizedBox(width: 8),
         _buildLangChip('中文', 'zh'),
       ],

@@ -126,11 +126,13 @@ android {
             dimension = "market"
             applicationId = globalDevApplicationId
             manifestPlaceholders["appLabel"] = "Memex Dev"
+            signingConfig = signingConfigs.getByName("debug")
         }
         create("cnDev") {
             dimension = "market"
             applicationId = cnDevApplicationId
             manifestPlaceholders["appLabel"] = "Memex Dev CN"
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 
