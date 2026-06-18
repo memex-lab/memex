@@ -32,9 +32,10 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       widget.viewModel.loadSessions().catchError((e) {
-        if (mounted)
+        if (mounted) {
           ToastHelper.showError(
               context, UserStorage.l10n.loadSessionListFailed(e.toString()));
+        }
       });
     });
   }
@@ -64,12 +65,14 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
     if (confirmed == true) {
       try {
         await vm.deleteSession(sessionId, index);
-        if (mounted)
+        if (mounted) {
           ToastHelper.showSuccess(context, UserStorage.l10n.deleteSuccess);
+        }
       } catch (e) {
-        if (mounted)
+        if (mounted) {
           ToastHelper.showError(
               context, UserStorage.l10n.deleteFailed(e.toString()));
+        }
       }
     }
   }
@@ -140,7 +143,7 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
             leading: const AppBackButton(),
           ),
           body: vm.isLoading
-              ? Center(child: AgentLogoLoading())
+              ? const Center(child: AgentLogoLoading())
               : vm.sessions.isEmpty
                   ? Center(
                       child: Column(

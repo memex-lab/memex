@@ -45,7 +45,7 @@ class PhotoCollector implements DataCollector {
 
         // asset.title represents the original filename (e.g. IMG_1234.JPG).
         // xFile.name on iOS might be deeply cached and altered like `A15B..._o_IMG_1234.JPG`.
-        final String? trueTitle = await asset.titleAsync;
+        final String trueTitle = await asset.titleAsync;
         final String effectiveName = trueTitle ?? xFile.name;
 
         final rawHashStr = 'photo_${effectiveName}_$length';

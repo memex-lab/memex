@@ -34,8 +34,9 @@ class SaveTemplateTool {
       if (description.isEmpty) throw ArgumentError("description is required");
       if (fields.isEmpty) throw ArgumentError("fields is required");
       if (htmlContent.isEmpty) throw ArgumentError("htmlContent is required");
-      if (htmlContent.trim().isEmpty)
+      if (htmlContent.trim().isEmpty) {
         throw ArgumentError("HTML content cannot be empty or whitespace");
+      }
 
       // 2. Validate template variables
       final usedVariables = RegExp(r'\{\{(\w+)\}\}')

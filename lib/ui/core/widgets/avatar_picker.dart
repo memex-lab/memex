@@ -246,7 +246,7 @@ class _AvatarPickerSheetState extends State<_AvatarPickerSheet> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.refresh, size: 16, color: AppColors.primary),
+                    const Icon(Icons.refresh, size: 16, color: AppColors.primary),
                     const SizedBox(width: 4),
                     Text(
                       UserStorage.l10n.localeName == 'zh' ? '换一批' : 'Shuffle',

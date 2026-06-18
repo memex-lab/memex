@@ -262,9 +262,9 @@ void main() {
       );
       // nonCached = 1000 - 300 = 700
       // inputCost = 700 * 0.0000003 + 300 * 0.00000003
-      final expectedInput = 700 * 0.0000003 + 300 * 0.00000003;
+      const expectedInput = 700 * 0.0000003 + 300 * 0.00000003;
       // outputCost = (200 + 50) * 0.0000025
-      final expectedOutput = 250 * 0.0000025;
+      const expectedOutput = 250 * 0.0000025;
       expect(costs['input'], closeTo(expectedInput, 1e-10));
       expect(costs['output'], closeTo(expectedOutput, 1e-10));
       expect(costs['total'], closeTo(expectedInput + expectedOutput, 1e-10));
@@ -280,8 +280,8 @@ void main() {
         cachedTokensIncludedInPrompt: true,
       );
       // gpt-4o: input=0.0000025, output=0.00001
-      final expectedInput = 100 * 0.0000025;
-      final expectedOutput = 50 * 0.00001;
+      const expectedInput = 100 * 0.0000025;
+      const expectedOutput = 50 * 0.00001;
       expect(costs['total'], closeTo(expectedInput + expectedOutput, 1e-10));
     });
   });

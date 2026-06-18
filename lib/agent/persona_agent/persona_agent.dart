@@ -37,7 +37,7 @@ class PersonaAgent {
 
       // 2. Get user profile (if available)
       // Note: ProfileService might not exist in client yet, skip for now
-      final profileContent = ''; // TODO: Get from ProfileService when available
+      const profileContent = ''; // TODO: Get from ProfileService when available
 
       // 3. Get all characters
       final characters = await _characterService.getAllCharacters(userId);
@@ -206,7 +206,7 @@ Parameters:
           },
           'required': ['character_id'],
         },
-        executable: (String character_id) async {
+        executable: (String characterId) async {
           final context = AgentCallToolContext.current;
           if (context == null) {
             throw StateError(
@@ -220,9 +220,9 @@ Parameters:
 
           try {
             final character =
-                await _characterService.getCharacter(userId, character_id);
+                await _characterService.getCharacter(userId, characterId);
             if (character == null) {
-              return 'Error: character $character_id not found';
+              return 'Error: character $characterId not found';
             }
 
             final tagsStr =
@@ -277,10 +277,10 @@ Note:
           },
           'required': ['character_id', 'persona'],
         },
-        executable: (String character_id, String? character_name,
+        executable: (String characterId, String? characterName,
             String persona, List? tags) async {
           _logger.info(
-              "CreateOrUpdateCharacterPersona called: character_id=$character_id, persona=$persona, character_name=$character_name, tags=$tags");
+              "CreateOrUpdateCharacterPersona called: character_id=$characterId, persona=$persona, character_name=$characterName, tags=$tags");
           final context = AgentCallToolContext.current;
           if (context == null) {
             throw StateError(
@@ -298,11 +298,11 @@ Note:
           try {
             // Check if character exists
             final existingCharacter = await _characterService
-                .getCharacter(userId, character_id, returnPlaceholder: false);
+                .getCharacter(userId, characterId, returnPlaceholder: false);
 
             if (existingCharacter == null) {
               // Create new character
-              if (character_name == null || character_name.isEmpty) {
+              if (characterName == null || characterName.isEmpty) {
                 return 'Error: character_name is required when creating a new character';
               }
 
@@ -313,13 +313,13 @@ Note:
                 await charDir.create(recursive: true);
               }
 
-              final charFile = File('${charDir.path}/$character_id.yaml');
+              final charFile = File('${charDir.path}/$characterId.yaml');
               if (await charFile.exists()) {
-                return 'Error: character file $character_id.yaml already exists, use update instead';
+                return 'Error: character file $characterId.yaml already exists, use update instead';
               }
 
               final charData = {
-                'name': character_name,
+                'name': characterName,
                 'tags': tagsList,
                 'persona': persona,
                 'avatar': null,
@@ -328,12 +328,12 @@ Note:
 
               await _fileService.writeYamlFile(charFile.path, charData);
 
-              return 'Created character $character_id (name: $character_name) and set persona';
+              return 'Created character $characterId (name: $characterName) and set persona';
             } else {
               // Update existing character
               final updates = <String, dynamic>{'persona': persona};
-              if (character_name != null && character_name.isNotEmpty) {
-                updates['name'] = character_name;
+              if (characterName != null && characterName.isNotEmpty) {
+                updates['name'] = characterName;
               }
               if (tagsList.isNotEmpty) {
                 updates['tags'] = tagsList;
@@ -341,11 +341,11 @@ Note:
 
               await _characterService.updateCharacter(
                 userId: userId,
-                characterId: character_id,
+                characterId: characterId,
                 updates: updates,
               );
 
-              return 'Updated persona for character $character_id (name: ${existingCharacter.name})';
+              return 'Updated persona for character $characterId (name: ${existingCharacter.name})';
             }
           } catch (e) {
             return 'Error: failed to create or update character persona - $e';

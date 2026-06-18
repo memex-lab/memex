@@ -90,7 +90,7 @@ class _FilterBarState extends State<FilterBar> {
     return Container(
       height: 56,
       width: double.infinity,
-      color: const Color(0xFFFAFAFA).withOpacity(0.95),
+      color: const Color(0xFFFAFAFA).withValues(alpha: 0.95),
       child: SingleChildScrollView(
         controller: _scrollController,
         scrollDirection: Axis.horizontal,
@@ -117,12 +117,12 @@ class _FilterBarState extends State<FilterBar> {
                   decoration: BoxDecoration(
                     color: isActive
                         ? (isInsight
-                            ? premiumColor.withOpacity(0.1)
+                            ? premiumColor.withValues(alpha: 0.1)
                             : Colors.black)
                         : Colors.white,
                     border: Border.all(
                       color: isInsight
-                          ? premiumColor.withOpacity(0.5)
+                          ? premiumColor.withValues(alpha: 0.5)
                           : (isActive ? Colors.black : const Color(0xFFE2E8F0)),
                       width: isInsight ? 1.5 : 1.0,
                     ),
@@ -131,8 +131,8 @@ class _FilterBarState extends State<FilterBar> {
                         ? [
                             BoxShadow(
                               color: isInsight
-                                  ? premiumColor.withOpacity(0.15)
-                                  : Colors.black.withOpacity(0.15),
+                                  ? premiumColor.withValues(alpha: 0.15)
+                                  : Colors.black.withValues(alpha: 0.15),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
                             ),
@@ -158,7 +158,7 @@ class _FilterBarState extends State<FilterBar> {
                           color: isInsight
                               ? (isActive
                                   ? premiumColor
-                                  : premiumColor.withOpacity(0.8))
+                                  : premiumColor.withValues(alpha: 0.8))
                               : (isActive
                                   ? Colors.white
                                   : const Color(0xFF64748B)),

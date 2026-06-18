@@ -18,7 +18,7 @@ class ChatInputBar extends StatefulWidget {
   /// Callback when input is tapped (optional; default opens dialog)
   final VoidCallback? onTap;
 
-  ChatInputBar({
+  const ChatInputBar({
     super.key,
     this.hintText,
     this.agentName,
@@ -65,12 +65,12 @@ class _ChatInputBarState extends State<ChatInputBar> {
         margin: const EdgeInsets.fromLTRB(20, 8, 20, 16),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.9),
+          color: Colors.white.withValues(alpha: 0.9),
           border: Border.all(color: const Color(0xFFC7D2FE)),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF6366F1).withOpacity(0.15),
+              color: const Color(0xFF6366F1).withValues(alpha: 0.15),
               blurRadius: 32,
               offset: const Offset(0, 8),
             ),

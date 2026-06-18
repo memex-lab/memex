@@ -275,7 +275,7 @@ class LocalAssetServer {
             // Stream file to avoid loading into memory
             await file.openRead().pipe(request.response);
 
-            _logger.fine('Served file: $filePath (${fileLength} bytes)');
+            _logger.fine('Served file: $filePath ($fileLength bytes)');
             return;
           } catch (e) {
             _logger.warning('Failed to read file: $filePath, error: $e');

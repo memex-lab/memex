@@ -682,7 +682,7 @@ class PedometerFetcher implements HealthDataFetcher {
 
       // 2. Load existing snapshots
       final prefs = await SharedPreferences.getInstance();
-      final key = 'daily_step_snapshots';
+      const key = 'daily_step_snapshots';
 
       final json = prefs.getString(key);
       Map<String, int> snapshots = {};

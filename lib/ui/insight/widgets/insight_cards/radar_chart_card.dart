@@ -250,7 +250,7 @@ class _RadarPainter extends CustomPainter {
     canvas.drawPath(dataPath, borderPaint);
 
     // Draw labels
-    final labelStyle = TextStyle(
+    const labelStyle = TextStyle(
       fontFamily: 'Inter',
       fontSize: 11,
       fontWeight: FontWeight.w400,

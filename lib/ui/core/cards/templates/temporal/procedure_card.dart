@@ -51,10 +51,10 @@ class ProcedureCard extends StatelessWidget {
                           child: Center(
                             child: Text(
                               '${index + 1}',
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
-                                color: const Color(0xFF3730A3),
+                                color: Color(0xFF3730A3),
                               ),
                             ),
                           ),

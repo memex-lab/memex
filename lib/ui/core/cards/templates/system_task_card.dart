@@ -216,9 +216,9 @@ class _SystemTaskCardState extends State<SystemTaskCard>
                         widget.message.isNotEmpty)
                       Text(
                         widget.message,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 13,
-                          color: const Color(0xFF4A5565),
+                          color: Color(0xFF4A5565),
                         ),
                       ),
                   ],

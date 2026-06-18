@@ -55,12 +55,12 @@ class TimelineCard extends StatelessWidget {
         );
       case TimelineCardVariant.immersive:
         return BoxDecoration(
-          gradient: LinearGradient(
+          gradient: const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              const Color(0xFF0A0A0A), // Slate-800
-              const Color(0xFF0A0A0A), // Slate-900
+              Color(0xFF0A0A0A), // Slate-800
+              Color(0xFF0A0A0A), // Slate-900
             ],
           ),
           borderRadius: BorderRadius.circular(24),

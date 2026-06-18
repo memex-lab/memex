@@ -682,7 +682,7 @@ ${addLineNumbers(snippet, startLine: startLine)}''';
     } else if (resultList.length < maxFiles) {
       return _maskResult(treeStr, workingDirectory);
     } else {
-      final truncationMsg =
+      const truncationMsg =
           '\nThere are more than $maxFiles files in the directory. '
           'Use the LS tool (passing a specific path), and other tools to explore nested directories. '
           'The first $maxFiles files and directories are included below:\n\n';

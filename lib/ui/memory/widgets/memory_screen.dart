@@ -52,7 +52,7 @@ class _MemoryScreenState extends State<MemoryScreen> {
 
   Widget _buildBody(MemoryViewModel vm) {
     if (vm.isLoading) {
-      return Center(child: AgentLogoLoading());
+      return const Center(child: AgentLogoLoading());
     }
 
     if (vm.error != null) {

@@ -287,7 +287,7 @@ class _InsightDetailPageState extends State<InsightDetailPage> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return Scaffold(
+      return const Scaffold(
         backgroundColor: Colors.white,
         body: Center(child: AgentLogoLoading()),
       );
@@ -443,7 +443,7 @@ class _InsightDetailPageState extends State<InsightDetailPage> {
                 padding: const EdgeInsets.all(32.0),
                 child: Text(
                   UserStorage.l10n.noRelatedRecords,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 14,
                     color: Color(0xFF99A1AF),
                   ),

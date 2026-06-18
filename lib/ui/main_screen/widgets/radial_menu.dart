@@ -42,7 +42,7 @@ class RadialMenuState extends State<RadialMenu> with TickerProviderStateMixin {
   final double _cancelRadius = 120.0;
 
   // Cache layout to avoid recalculating every frame
-  List<_LayoutItem> _layoutItems = [];
+  final List<_LayoutItem> _layoutItems = [];
   Size? _lastScreenSize;
 
   late AnimationController _waveformController;
@@ -211,13 +211,13 @@ class RadialMenuState extends State<RadialMenu> with TickerProviderStateMixin {
               // Background overlay
               if (widget.visible)
                 Container(
-                  color: Colors.black.withOpacity(0.01),
+                  color: Colors.black.withValues(alpha: 0.01),
                   child: TweenAnimationBuilder<double>(
                     tween: Tween(begin: 0.0, end: widget.visible ? 1.0 : 0.0),
                     duration: const Duration(milliseconds: 300),
                     builder: (context, value, child) {
                       return Container(
-                        color: Colors.white.withOpacity(0.55 * value),
+                        color: Colors.white.withValues(alpha: 0.55 * value),
                       );
                     },
                   ),
@@ -262,7 +262,7 @@ class RadialMenuState extends State<RadialMenu> with TickerProviderStateMixin {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         )
@@ -346,7 +346,7 @@ class RadialMenuState extends State<RadialMenu> with TickerProviderStateMixin {
                                                   decoration: BoxDecoration(
                                                     color: TimelineTheme
                                                         .colors.primary
-                                                        .withOpacity(0.8),
+                                                        .withValues(alpha: 0.8),
                                                     borderRadius:
                                                         BorderRadius.circular(
                                                             2),
@@ -416,7 +416,7 @@ class RadialMenuState extends State<RadialMenu> with TickerProviderStateMixin {
       painter: _CurvedItemPainter(
         color: isHovered
             ? TimelineTheme.colors.danger // Red Active
-            : TimelineTheme.colors.danger.withOpacity(0.1), // Soft Red Default
+            : TimelineTheme.colors.danger.withValues(alpha: 0.1), // Soft Red Default
         isHovered: isHovered,
         curvatureRadius: radius,
         textColor: isHovered ? Colors.white : TimelineTheme.colors.danger,
@@ -472,7 +472,7 @@ class _CurvedItemPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
 
     // Add subtle shadow for the white cards
-    if (!isHovered && color == Colors.white.withOpacity(0.9)) {
+    if (!isHovered && color == Colors.white.withValues(alpha: 0.9)) {
       // Manual shadow drawing if needed, but might be complex with Stroke.
       // For now, clean flat look is better than messy shadow on stroke.
     }

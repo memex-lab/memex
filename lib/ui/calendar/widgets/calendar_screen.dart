@@ -50,7 +50,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             title: Text(
               DateFormat.yMMM(UserStorage.l10n.localeName)
                   .format(vm.focusedMonth),
-              style: TextStyle(
+              style: const TextStyle(
                   color: AppColors.textPrimary, fontWeight: FontWeight.bold),
             ),
             backgroundColor: AppColors.background,
@@ -236,7 +236,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final cards = vm.getSelectedDayCards();
 
     if (vm.isLoading) {
-      return Center(child: AgentLogoLoading());
+      return const Center(child: AgentLogoLoading());
     }
 
     if (cards.isEmpty) {

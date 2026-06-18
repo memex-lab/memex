@@ -53,8 +53,8 @@ class _RelatedFactsListState extends State<RelatedFactsList> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 20),
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 20),
         child: Center(child: AgentLogoLoading()),
       );
     }

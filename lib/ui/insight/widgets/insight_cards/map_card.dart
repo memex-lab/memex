@@ -22,7 +22,7 @@ class MapCard extends StatelessWidget {
   final List<MapLocation> locations;
   final bool isDetail;
 
-  MapCard({
+  const MapCard({
     super.key,
     this.title,
     this.infoTitle,
@@ -429,7 +429,7 @@ class MapCard extends StatelessWidget {
                 ],
               ),
             );
-          }).toList(),
+          }),
         ],
       ],
     );

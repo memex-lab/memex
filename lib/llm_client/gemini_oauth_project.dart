@@ -110,7 +110,7 @@ class GeminiOAuthProject {
         return [];
       }
       final projectId = await ensureProjectId();
-      final url = '$_codeAssistEndpoint/v1internal:retrieveUserQuota';
+      const url = '$_codeAssistEndpoint/v1internal:retrieveUserQuota';
       final response = await http.post(
         Uri.parse(url),
         headers: _headers(accessToken),
@@ -151,7 +151,7 @@ class GeminiOAuthProject {
 
   static Future<Map<String, dynamic>?> _loadCodeAssist(
       String accessToken) async {
-    final url = '$_codeAssistEndpoint/v1internal:loadCodeAssist';
+    const url = '$_codeAssistEndpoint/v1internal:loadCodeAssist';
     final response = await http.post(
       Uri.parse(url),
       headers: _headers(accessToken),
@@ -174,7 +174,7 @@ class GeminiOAuthProject {
   }
 
   static Future<String?> _onboardUser(String accessToken, String tierId) async {
-    final url = '$_codeAssistEndpoint/v1internal:onboardUser';
+    const url = '$_codeAssistEndpoint/v1internal:onboardUser';
     final response = await http.post(
       Uri.parse(url),
       headers: _headers(accessToken),

@@ -74,7 +74,7 @@ class _OpenAiConfigPageState extends State<OpenAiConfigPage> {
 
   Widget _buildContent() {
     if (_isLoading) {
-      return Center(child: AgentLogoLoading());
+      return const Center(child: AgentLogoLoading());
     }
 
     if (_error != null) {
@@ -136,7 +136,7 @@ class _OpenAiConfigPageState extends State<OpenAiConfigPage> {
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          tileColor: isSelected ? Colors.green.withOpacity(0.05) : null,
+          tileColor: isSelected ? Colors.green.withValues(alpha: 0.05) : null,
         );
       },
     );

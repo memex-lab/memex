@@ -51,11 +51,11 @@ class FileToolFactory {
         },
         'required': ['file_path']
       },
-      executable: (String file_path, int? offset, int? limit) {
-        file_path = _resolvePath(file_path);
-        permissionManager.checkPermission(file_path, FileAccessType.read);
+      executable: (String filePath, int? offset, int? limit) {
+        filePath = _resolvePath(filePath);
+        permissionManager.checkPermission(filePath, FileAccessType.read);
         return _fileOpService.readFile(
-          filePath: file_path,
+          filePath: filePath,
           workingDirectory: workingDirectory,
           offset: offset ?? 1,
           limit: limit,
@@ -80,10 +80,10 @@ class FileToolFactory {
         },
         'required': ['file_patterns']
       },
-      executable: (List<String> file_patterns) async {
+      executable: (List<String> filePatterns) async {
         final uniqueFilePaths = <String>{};
 
-        for (final pattern in file_patterns) {
+        for (final pattern in filePatterns) {
           // Simple check for glob wildcards
           if (pattern.contains('*') ||
               pattern.contains('?') ||
@@ -144,7 +144,7 @@ class FileToolFactory {
         var filesReadCount = 0;
 
         for (final filePath in uniqueFilePaths) {
-          buffer.writeln('=' * 20 + ' File: $filePath ' + '=' * 20);
+          buffer.writeln('${'=' * 20} File: $filePath ${'=' * 20}');
           try {
             // Double check just in case, though we checked above
             permissionManager.checkPermission(filePath, FileAccessType.read);
@@ -188,11 +188,11 @@ class FileToolFactory {
         },
         'required': ['file_path', 'content']
       },
-      executable: (String file_path, String content) async {
-        file_path = _resolvePath(file_path);
-        permissionManager.checkPermission(file_path, FileAccessType.write);
+      executable: (String filePath, String content) async {
+        filePath = _resolvePath(filePath);
+        permissionManager.checkPermission(filePath, FileAccessType.write);
         final result = await _fileOpService.writeFile(
-          filePath: file_path,
+          filePath: filePath,
           workingDirectory: workingDirectory,
           content: content,
         );
@@ -205,7 +205,7 @@ class FileToolFactory {
           if (userId != null) {
             final workspacePath = _fileSystem.getWorkspacePath(userId);
             final relativePath =
-                _fileSystem.toRelativePath(file_path, rootPath: workspacePath);
+                _fileSystem.toRelativePath(filePath, rootPath: workspacePath);
             final isCreate = result.contains('File created successfully');
             if (isCreate) {
               await _fileSystem.eventLogService.logFileCreated(
@@ -259,16 +259,16 @@ class FileToolFactory {
         },
         'required': ['file_path', 'old_string', 'new_string']
       },
-      executable: (String file_path, String old_string, String new_string,
-          bool? replace_all) async {
-        file_path = _resolvePath(file_path);
-        permissionManager.checkPermission(file_path, FileAccessType.write);
+      executable: (String filePath, String oldString, String newString,
+          bool? replaceAll) async {
+        filePath = _resolvePath(filePath);
+        permissionManager.checkPermission(filePath, FileAccessType.write);
         final result = await _fileOpService.editFile(
-          filePath: file_path,
+          filePath: filePath,
           workingDirectory: workingDirectory,
-          oldString: old_string,
-          newString: new_string,
-          replaceAll: replace_all ?? false,
+          oldString: oldString,
+          newString: newString,
+          replaceAll: replaceAll ?? false,
         );
 
         // Log event
@@ -278,7 +278,7 @@ class FileToolFactory {
           if (userId != null) {
             final workspacePath = _fileSystem.getWorkspacePath(userId);
             final relativePath =
-                _fileSystem.toRelativePath(file_path, rootPath: workspacePath);
+                _fileSystem.toRelativePath(filePath, rootPath: workspacePath);
             await _fileSystem.eventLogService.logFileModified(
               userId: userId,
               filePath: relativePath,
@@ -318,17 +318,17 @@ class FileToolFactory {
         'required': ['source_path', 'destination_path']
       },
       executable:
-          (String source_path, String destination_path, bool? overwrite) {
+          (String sourcePath, String destinationPath, bool? overwrite) {
         // Must have Write Access to BOTH source (to delete it) and destination (to create it)
-        source_path = _resolvePath(source_path);
-        destination_path = _resolvePath(destination_path);
-        permissionManager.checkPermission(source_path, FileAccessType.write);
+        sourcePath = _resolvePath(sourcePath);
+        destinationPath = _resolvePath(destinationPath);
+        permissionManager.checkPermission(sourcePath, FileAccessType.write);
         permissionManager.checkPermission(
-            destination_path, FileAccessType.write);
+            destinationPath, FileAccessType.write);
 
         return _fileOpService.moveFile(
-          sourcePath: source_path,
-          destinationPath: destination_path,
+          sourcePath: sourcePath,
+          destinationPath: destinationPath,
           workingDirectory: workingDirectory,
           overwrite: overwrite ?? false,
         );
@@ -534,14 +534,14 @@ class FileToolFactory {
       executable: (String pattern,
           String? path,
           String? include,
-          String? output_mode,
+          String? outputMode,
           int? B,
           int? A,
           int? C,
           bool? n,
           bool? i,
           String? type,
-          int? head_limit,
+          int? headLimit,
           bool? multiline) {
         // Check permission for the search path
         final searchPath = _resolvePath(path ?? workingDirectory);
@@ -552,14 +552,14 @@ class FileToolFactory {
           searchPath: path,
           workingDirectory: workingDirectory,
           include: include,
-          outputMode: output_mode ?? 'files_with_matches',
+          outputMode: outputMode ?? 'files_with_matches',
           n: n ?? false,
           i: i ?? true,
           B: B,
           A: A,
           C: C,
           type: type,
-          headLimit: head_limit,
+          headLimit: headLimit,
           multiline: multiline ?? false,
           accessScope: permissionManager.buildSearchAccessScope(searchPath),
         );

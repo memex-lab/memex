@@ -226,7 +226,7 @@ Future<void> _ensureCardExists(
     status: 'processing',
     tags: const [],
     uiConfigs: [
-      UiConfig(templateId: 'classic_card', data: {}),
+      const UiConfig(templateId: 'classic_card', data: {}),
     ],
   );
 

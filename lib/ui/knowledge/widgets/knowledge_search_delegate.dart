@@ -122,7 +122,7 @@ class _SearchResultsWidgetState extends State<_SearchResultsWidget> {
   @override
   Widget build(BuildContext context) {
     if (_isSearching && _results.isEmpty) {
-      return Center(child: AgentLogoLoading());
+      return const Center(child: AgentLogoLoading());
     }
 
     if (!_isSearching && _results.isEmpty && _lastQuery.isNotEmpty) {
@@ -159,7 +159,7 @@ class _SearchResultsWidgetState extends State<_SearchResultsWidget> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF64748B).withOpacity(0.05),
+            color: const Color(0xFF64748B).withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),

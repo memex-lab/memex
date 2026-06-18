@@ -67,9 +67,9 @@ class RoutineCard extends StatelessWidget {
               Container(
                 width: 44,
                 height: 44,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFFF7F8FA),
+                  color: Color(0xFFF7F8FA),
                 ),
                 child: const Center(
                   child: Icon(Icons.replay, color: Color(0xFF5B6CFF), size: 22),

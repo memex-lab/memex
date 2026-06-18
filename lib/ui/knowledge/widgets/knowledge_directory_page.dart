@@ -108,7 +108,7 @@ class _KnowledgeDirectoryPageState extends State<KnowledgeDirectoryPage> {
         leading: const AppBackButton(),
       ),
       body: _isLoading
-          ? Center(child: AgentLogoLoading())
+          ? const Center(child: AgentLogoLoading())
           : ListView(
               padding: const EdgeInsets.all(20),
               children: [
@@ -148,7 +148,7 @@ class _KnowledgeDirectoryPageState extends State<KnowledgeDirectoryPage> {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-                color: const Color(0xFF64748B).withOpacity(0.05),
+                color: const Color(0xFF64748B).withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4)),
           ],

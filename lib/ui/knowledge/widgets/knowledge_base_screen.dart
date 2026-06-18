@@ -77,7 +77,7 @@ class KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
                     physics: const AlwaysScrollableScrollPhysics(),
                     child: SizedBox(
                       height: MediaQuery.of(context).size.height * 0.6,
-                      child: Center(child: AgentLogoLoading()),
+                      child: const Center(child: AgentLogoLoading()),
                     ),
                   )
                 : SingleChildScrollView(
@@ -169,7 +169,7 @@ class KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
           borderRadius: BorderRadius.circular(28),
           boxShadow: [
             BoxShadow(
-                color: color.withOpacity(0.3),
+                color: color.withValues(alpha: 0.3),
                 blurRadius: 12,
                 offset: const Offset(0, 6)),
           ],
@@ -186,10 +186,10 @@ class KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(16),
                         border:
-                            Border.all(color: Colors.white.withOpacity(0.1)),
+                            Border.all(color: Colors.white.withValues(alpha: 0.1)),
                       ),
                       child: Icon(icon, color: Colors.white, size: 24),
                     ),
@@ -198,7 +198,7 @@ class KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
                         style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white.withOpacity(0.6),
+                            color: Colors.white.withValues(alpha: 0.6),
                             letterSpacing: 1.5)),
                     const SizedBox(height: 4),
                     Text(title,
@@ -214,13 +214,13 @@ class KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
                             child: Text(desc,
                                 style: TextStyle(
                                     fontSize: 11,
-                                    color: Colors.white.withOpacity(0.9)),
+                                    color: Colors.white.withValues(alpha: 0.9)),
                                 overflow: TextOverflow.ellipsis)),
                         Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.2),
+                            color: Colors.black.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text('$count',
@@ -282,7 +282,7 @@ class KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
         padding: const EdgeInsets.symmetric(vertical: 20),
         alignment: Alignment.center,
         child: Text(UserStorage.l10n.noRecentChangesInThreeDays,
-            style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 13)),
+            style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 13)),
       );
     }
 

@@ -9,7 +9,7 @@ part 'user_notifications_migration_test.g.dart';
 /// and indices in isolation.
 @DriftDatabase(tables: [UserNotifications])
 class TestNotificationsDb extends _$TestNotificationsDb {
-  TestNotificationsDb(QueryExecutor e) : super(e);
+  TestNotificationsDb(super.e);
 
   @override
   int get schemaVersion => 1;
