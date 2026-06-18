@@ -2328,10 +2328,13 @@ class FileSystemService {
         return null;
       }
 
-      // Find matching entry in body_content (format: ## <id:ts_3> HH:MM:SS). Pattern: ## <id:ts_3> or ## <id:2025/11/26.md#ts_3>
+      // Find matching entry in body_content (format: ## <id:ts_3> HH:MM:SS {metadata}).
+      // Older entries may have no metadata or the quoted empty marker "{}".
       final escapedFactId = RegExp.escape(simpleFactId);
-      final pattern =
-          RegExp('##\\s*<id:$escapedFactId>\\s*(\\d{2}:\\d{2}:\\d{2})');
+      final pattern = RegExp(
+        '^##\\s*<id:$escapedFactId>\\s*(\\d{2}:\\d{2}:\\d{2})(?:\\s+(.*))?\$',
+        multiLine: true,
+      );
 
       final match = pattern.firstMatch(bodyContent);
       if (match == null) {
@@ -2340,6 +2343,7 @@ class FileSystemService {
 
       // Extract time string (HH:MM:SS)
       final timeStr = match.group(1)!;
+      final metadata = _parseFactEntryMetadata(match.group(2));
 
       // Entry start position
       final startPos = match.start;
@@ -2436,6 +2440,7 @@ class FileSystemService {
         timestamp: timestamp,
         datetime: entryDatetime,
         content: entryContent,
+        metadata: metadata,
         assetAnalyses: assetAnalyses,
         assetOcrTexts: assetOcrTexts,
       );
@@ -2443,6 +2448,34 @@ class FileSystemService {
       _logger.severe('Failed to extract fact content $factId: $e');
       return null;
     }
+  }
+
+  Map<String, dynamic> _parseFactEntryMetadata(String? rawMetadata) {
+    final raw = rawMetadata?.trim();
+    if (raw == null || raw.isEmpty) return {};
+
+    var candidate = raw;
+    if (candidate == '"{}"' || candidate == '{}') return {};
+
+    if (candidate.startsWith('"') && candidate.endsWith('"')) {
+      try {
+        final decoded = jsonDecode(candidate);
+        if (decoded is String) {
+          candidate = decoded.trim();
+        }
+      } catch (_) {
+        return {};
+      }
+    }
+
+    try {
+      final decoded = jsonDecode(candidate);
+      if (decoded is Map<String, dynamic>) return decoded;
+      if (decoded is Map) return Map<String, dynamic>.from(decoded);
+    } catch (e) {
+      _logger.warning('Failed to parse fact entry metadata: $e');
+    }
+    return {};
   }
 
   /// Get agent state directory path and ensure it exists (creates if not found).
@@ -2720,6 +2753,7 @@ class FactContentResult {
   final int timestamp;
   final DateTime datetime;
   final String content;
+  final Map<String, dynamic> metadata;
   final List<Map<String, dynamic>> assetAnalyses;
 
   /// On-device OCR text extracted from image assets.
@@ -2731,6 +2765,7 @@ class FactContentResult {
     required this.timestamp,
     required this.datetime,
     required this.content,
+    this.metadata = const {},
     required this.assetAnalyses,
     this.assetOcrTexts = const [],
   });

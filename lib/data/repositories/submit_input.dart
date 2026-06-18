@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:synchronized/synchronized.dart';
 
@@ -16,11 +18,21 @@ FileSystemService get _fileSystem => FileSystemService.instance;
 AgentRunService? _agentRunServiceOverride;
 AgentRunService get _agentRunService =>
     _agentRunServiceOverride ?? AgentRunService.instance;
+LocationContextService? _locationContextServiceOverride;
+LocationContextService get _locationContextService =>
+    _locationContextServiceOverride ?? LocationContextService.instance;
 final _lock = Lock();
 
 @visibleForTesting
 void setSubmitInputAgentRunServiceForTesting(AgentRunService? service) {
   _agentRunServiceOverride = service;
+}
+
+@visibleForTesting
+void setSubmitInputLocationContextServiceForTesting(
+  LocationContextService? service,
+) {
+  _locationContextServiceOverride = service;
 }
 
 /// Submit input locally
@@ -137,10 +149,17 @@ Future<Map<String, dynamic>> submitInput(
         .join('\n\n');
     final pureTextContent = textContent.isEmpty ? '' : textContent;
 
+    final factMetadata = <String, dynamic>{};
+    final inputLocation = await _locationContextService.captureInputLocation();
+    if (inputLocation != null) {
+      factMetadata['input_location'] = inputLocation.toJson();
+    }
+
     // 3. Append to Daily Fact
-    // Format: ## <id:ts_X> HH:MM:SS "{}"\n\nContent
+    // Format: ## <id:ts_X> HH:MM:SS {...}\n\nContent
+    final metadataJson = jsonEncode(factMetadata);
     final markdownEntry =
-        '## <id:$simpleFactId> $timeStr "{}"\n\n$combinedText\n';
+        '## <id:$simpleFactId> $timeStr $metadataJson\n\n$combinedText\n';
     try {
       await _fileSystem.appendToDailyFactFile(userId, now, markdownEntry);
 
@@ -229,8 +248,7 @@ Future<Map<String, dynamic>> submitInput(
     String? locationContextReminder;
     String? locationContextStatus;
     try {
-      final locationContext =
-          await LocationContextService.instance.getCurrentContext();
+      final locationContext = await _locationContextService.getCurrentContext();
       locationContextReminder = locationContext.toAgentSystemReminderContent();
       locationContextStatus = locationContext.status;
     } catch (e) {
