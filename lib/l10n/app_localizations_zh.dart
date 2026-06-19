@@ -227,6 +227,21 @@ class AppLocalizationsZh extends AppLocalizations {
   String get logNoFileSelected => '未选择日志文件';
 
   @override
+  String get logExportTitle => '导出日志文件';
+
+  @override
+  String get logSaveToDownloads => '保存到下载目录';
+
+  @override
+  String get logShareFile => '分享';
+
+  @override
+  String get logSavedToPath => '保存位置：';
+
+  @override
+  String get logSavedOnMobileHint => '请在“文件”应用的“下载”文件夹中查看。';
+
+  @override
   String get autoRefresh => '自动刷新';
 
   @override

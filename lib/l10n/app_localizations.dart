@@ -496,6 +496,36 @@ abstract class AppLocalizations {
   /// **'No log file selected'**
   String get logNoFileSelected;
 
+  /// No description provided for @logExportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Export log file'**
+  String get logExportTitle;
+
+  /// No description provided for @logSaveToDownloads.
+  ///
+  /// In en, this message translates to:
+  /// **'Save to Downloads'**
+  String get logSaveToDownloads;
+
+  /// No description provided for @logShareFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get logShareFile;
+
+  /// No description provided for @logSavedToPath.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to:'**
+  String get logSavedToPath;
+
+  /// No description provided for @logSavedOnMobileHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the Files app and check the Downloads folder.'**
+  String get logSavedOnMobileHint;
+
   /// No description provided for @autoRefresh.
   ///
   /// In en, this message translates to:

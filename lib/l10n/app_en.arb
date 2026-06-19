@@ -98,6 +98,11 @@
     }
   },
   "logNoFileSelected": "No log file selected",
+  "logExportTitle": "Export log file",
+  "logSaveToDownloads": "Save to Downloads",
+  "logShareFile": "Share",
+  "logSavedToPath": "Saved to:",
+  "logSavedOnMobileHint": "Open the Files app and check the Downloads folder.",
   "autoRefresh": "Auto refresh",
   "lineCount": "Line count: ",
   "all": "All",

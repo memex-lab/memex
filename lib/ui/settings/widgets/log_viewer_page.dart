@@ -1,13 +1,18 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:memex/config/app_flavor.dart';
 import 'package:memex/data/services/file_logger_service.dart';
+import 'package:memex/data/services/log_export_service.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:memex/ui/core/themes/app_colors.dart';
+import 'package:memex/utils/platform_utils.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:memex/utils/toast_helper.dart';
 
 class LogViewerPage extends StatefulWidget {
@@ -212,24 +217,100 @@ class _LogViewerPageState extends State<LogViewerPage> {
       return;
     }
 
-    try {
-      final downloadsDir = await getDownloadsDirectory();
-      if (downloadsDir == null) {
-        throw StateError('Downloads directory unavailable');
-      }
-
-      final fileName = p.basename(_selectedFile!.path);
-      final destFile = File(p.join(downloadsDir.path, fileName));
-      await _selectedFile!.copy(destFile.path);
-
-      if (mounted) {
-        ToastHelper.showSuccess(
-          context,
-          UserStorage.l10n.logDownloadSuccess(fileName),
+    final l10n = UserStorage.l10n;
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  l10n.logExportTitle,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  onPressed: () {
+                    Navigator.pop(sheetContext);
+                    _saveLogToDownloads();
+                  },
+                  icon: const Icon(Icons.download_outlined),
+                  label: Text(l10n.logSaveToDownloads),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(sheetContext);
+                    _shareLogFile();
+                  },
+                  icon: const Icon(Icons.share_outlined),
+                  label: Text(l10n.logShareFile),
+                ),
+              ],
+            ),
+          ),
         );
+      },
+    );
+  }
+
+  Future<void> _saveLogToDownloads() async {
+    final sourceFile = _selectedFile;
+    if (sourceFile == null) {
+      return;
+    }
+
+    try {
+      final fileName = p.basename(sourceFile.path);
+      final bytes = await sourceFile.readAsBytes();
+      final String destPath;
+
+      if (LogExportService.isSupported) {
+        destPath = await LogExportService.saveToPublicDownloads(
+          fileName: fileName,
+          bytes: bytes,
+        );
+      } else if (PlatformUtils.isDesktop) {
+        final pickedPath = await FilePicker.platform.saveFile(
+          dialogTitle: UserStorage.l10n.logSaveToDownloads,
+          fileName: fileName,
+          type: FileType.custom,
+          allowedExtensions: const ['log'],
+        );
+        if (pickedPath == null || !mounted) {
+          return;
+        }
+        await File(pickedPath).writeAsBytes(bytes, flush: true);
+        destPath = pickedPath;
+      } else {
+        final pickedPath = await FilePicker.platform.saveFile(
+          dialogTitle: UserStorage.l10n.logSaveToDownloads,
+          fileName: fileName,
+          type: FileType.custom,
+          allowedExtensions: const ['log'],
+          bytes: bytes,
+        );
+        if (pickedPath == null || !mounted) {
+          return;
+        }
+        destPath = pickedPath;
       }
+
+      if (!mounted) {
+        return;
+      }
+
+      _showLogSavedSheet(fileName: fileName, displayPath: destPath);
     } catch (e) {
-      debugPrint('Error downloading log file: $e');
+      debugPrint('Error saving log file: $e');
       if (mounted) {
         ToastHelper.showError(
           context,
@@ -237,6 +318,112 @@ class _LogViewerPageState extends State<LogViewerPage> {
         );
       }
     }
+  }
+
+  Future<File> _copyLogToTempFile() async {
+    final sourceFile = _selectedFile!;
+    final tempDir = await getTemporaryDirectory();
+    final fileName = p.basename(sourceFile.path);
+    final tempFile = File(p.join(tempDir.path, fileName));
+    await sourceFile.copy(tempFile.path);
+    return tempFile;
+  }
+
+  Future<void> _shareLogFile() async {
+    if (_selectedFile == null) {
+      ToastHelper.showError(context, UserStorage.l10n.logNoFileSelected);
+      return;
+    }
+
+    try {
+      final tempFile = await _copyLogToTempFile();
+      if (!mounted) {
+        return;
+      }
+
+      final fileName = p.basename(tempFile.path);
+      final box = context.findRenderObject() as RenderBox?;
+
+      await Share.shareXFiles(
+        [
+          XFile(
+            tempFile.path,
+            mimeType: 'text/plain',
+            name: fileName,
+          ),
+        ],
+        text: fileName,
+        sharePositionOrigin: box != null
+            ? box.localToGlobal(Offset.zero) & box.size
+            : null,
+      );
+    } catch (e) {
+      debugPrint('Error sharing log file: $e');
+      if (mounted) {
+        ToastHelper.showError(
+          context,
+          UserStorage.l10n.downloadFailed('$e'),
+        );
+      }
+    }
+  }
+
+  void _showLogSavedSheet({
+    required String fileName,
+    required String displayPath,
+  }) {
+    final l10n = UserStorage.l10n;
+
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  l10n.logDownloadSuccess(fileName),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  l10n.logSavedToPath,
+                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 4),
+                SelectableText(
+                  displayPath,
+                  style: const TextStyle(fontFamily: 'Courier', fontSize: 12),
+                ),
+                if (PlatformUtils.isMobile) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    l10n.logSavedOnMobileHint,
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                ],
+                const SizedBox(height: 20),
+                FilledButton.icon(
+                  onPressed: () {
+                    Navigator.pop(sheetContext);
+                    _shareLogFile();
+                  },
+                  icon: const Icon(Icons.share_outlined),
+                  label: Text(l10n.logShareFile),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -259,6 +446,20 @@ class _LogViewerPageState extends State<LogViewerPage> {
               )
             : Text(UserStorage.l10n.logViewer),
         actions: [
+          if (AppFlavor.isDev)
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: Center(
+                child: Text(
+                  'LOG-EXPORT-2',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+            ),
           IconButton(
             icon: Icon(_isSearching ? Icons.close : Icons.search),
             onPressed: () {

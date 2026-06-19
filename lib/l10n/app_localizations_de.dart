@@ -238,6 +238,22 @@ class AppLocalizationsDe extends AppLocalizations {
   String get logNoFileSelected => 'Keine Protokolldatei ausgewählt';
 
   @override
+  String get logExportTitle => 'Protokolldatei exportieren';
+
+  @override
+  String get logSaveToDownloads => 'In Downloads speichern';
+
+  @override
+  String get logShareFile => 'Teilen';
+
+  @override
+  String get logSavedToPath => 'Gespeichert unter:';
+
+  @override
+  String get logSavedOnMobileHint =>
+      'Öffne die App „Dateien“ und schau im Ordner „Downloads“ nach.';
+
+  @override
   String get autoRefresh => 'Automatische Aktualisierung';
 
   @override

@@ -98,6 +98,11 @@
     }
   },
   "logNoFileSelected": "未选择日志文件",
+  "logExportTitle": "导出日志文件",
+  "logSaveToDownloads": "保存到下载目录",
+  "logShareFile": "分享",
+  "logSavedToPath": "保存位置：",
+  "logSavedOnMobileHint": "请在“文件”应用的“下载”文件夹中查看。",
   "autoRefresh": "自动刷新",
   "lineCount": "行数: ",
   "all": "全部",

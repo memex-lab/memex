@@ -233,6 +233,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logNoFileSelected => 'No log file selected';
 
   @override
+  String get logExportTitle => 'Export log file';
+
+  @override
+  String get logSaveToDownloads => 'Save to Downloads';
+
+  @override
+  String get logShareFile => 'Share';
+
+  @override
+  String get logSavedToPath => 'Saved to:';
+
+  @override
+  String get logSavedOnMobileHint =>
+      'Open the Files app and check the Downloads folder.';
+
+  @override
   String get autoRefresh => 'Auto refresh';
 
   @override
