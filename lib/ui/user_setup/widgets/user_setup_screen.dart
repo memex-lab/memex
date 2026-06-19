@@ -14,6 +14,8 @@ import 'package:memex/ui/settings/widgets/ai_service_setup_page.dart';
 import 'package:memex/ui/core/widgets/avatar_picker.dart';
 import 'package:memex/ui/core/widgets/character_avatar.dart';
 import 'package:memex/ui/core/themes/app_colors.dart';
+import 'package:memex/ui/core/widgets/memex_brand_title.dart';
+import 'package:memex/config/app_flavor.dart';
 
 /// User setup screen. Shown when user opens app for the first time or no local userId.
 class UserSetupScreen extends StatefulWidget {
@@ -215,16 +217,7 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
                   const SizedBox(height: 28),
 
                   // ── Title ──
-                  Text(
-                    UserStorage.l10n.welcomeToMemex,
-                    style: GoogleFonts.inter(
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                      letterSpacing: -0.5,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
+                  const Center(child: MemexBrandTitle()),
                   const SizedBox(height: 8),
                   Text(
                     UserStorage.l10n.createUserIdToStart,
@@ -235,6 +228,18 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
                     ),
                     textAlign: TextAlign.center,
                   ),
+
+                  const SizedBox(height: 16),
+
+                  if (AppFlavor.isDev || AppFlavor.isEarly)
+                    Text(
+                      'Build ${AppFlavor.name}',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        color: AppColors.textTertiary,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
 
                   const SizedBox(height: 36),
 
@@ -416,27 +421,36 @@ class _UserSetupScreenState extends State<UserSetupScreen> {
   }
 
   Widget _buildLanguageSelector() {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Icon(Icons.language, size: 18, color: AppColors.textTertiary),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            UserStorage.l10n.chooseLanguage,
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              color: AppColors.textSecondary,
+        Row(
+          children: [
+            const Icon(Icons.language, size: 18, color: AppColors.textTertiary),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                UserStorage.l10n.chooseLanguage,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
+          ],
         ),
-        const SizedBox(width: 8),
-        _buildLangChip('EN', 'en'),
-        const SizedBox(width: 8),
-        _buildLangChip('DE', 'de'),
-        const SizedBox(width: 8),
-        _buildLangChip('中文', 'zh'),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            _buildLangChip('EN', 'en'),
+            _buildLangChip('DE', 'de'),
+            _buildLangChip('中文', 'zh'),
+          ],
+        ),
       ],
     );
   }

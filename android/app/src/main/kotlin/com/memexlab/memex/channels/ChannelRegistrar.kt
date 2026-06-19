@@ -24,5 +24,6 @@ object ChannelRegistrar {
         AppActionChannelHandler.register(flutterEngine, activity)
         AgentBackgroundChannelHandler.register(flutterEngine, activity)
         ClipboardPreviewChannelHandler.register(flutterEngine, activity)
+        LogExportChannelHandler.register(flutterEngine, activity)
     }
 }
