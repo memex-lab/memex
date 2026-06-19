@@ -10,3 +10,5 @@
 - **[2026-06-19] Log Viewer Export**: Added a 'Share' button (share_plus) to the LogViewerPage to allow exporting/downloading log files directly from the app on mobile devices.
 
 - **[2026-06-19] Log Viewer Export Fix**: Updated LogViewerPage to copy the log file to getTemporaryDirectory() before sharing, resolving an issue where Android devices failed to share files directly from the app's internal documents directory.
+
+- **[2026-06-19] Log Viewer UI Update**: Moved the 'Share' button from the top AppBar to the bottom right FloatingActionButton stack, as requested by the user for better accessibility.
