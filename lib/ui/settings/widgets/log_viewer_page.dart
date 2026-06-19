@@ -239,24 +239,7 @@ class _LogViewerPageState extends State<LogViewerPage> {
               });
             },
           ),
-          if (!_isSearching && _selectedFile != null)
-            IconButton(
-              icon: const Icon(Icons.share_outlined),
-              onPressed: () async {
-                try {
-                  final tempDir = await getTemporaryDirectory();
-                  final fileName = _selectedFile!.path.split('/').last;
-                  final tempFile = File('${tempDir.path}/$fileName');
-                  await _selectedFile!.copy(tempFile.path);
-                  await Share.shareXFiles(
-                    [XFile(tempFile.path)],
-                    text: 'Memex Log: $fileName',
-                  );
-                } catch (e) {
-                  debugPrint('Error sharing log file: $e');
-                }
-              },
-            ),
+
           if (!_isSearching)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
@@ -299,6 +282,27 @@ class _LogViewerPageState extends State<LogViewerPage> {
       floatingActionButton: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
+          if (_selectedFile != null)
+            FloatingActionButton(
+              heroTag: 'share_log',
+              mini: true,
+              onPressed: () async {
+                try {
+                  final tempDir = await getTemporaryDirectory();
+                  final fileName = _selectedFile!.path.split('/').last;
+                  final tempFile = File('${tempDir.path}/$fileName');
+                  await _selectedFile!.copy(tempFile.path);
+                  await Share.shareXFiles(
+                    [XFile(tempFile.path)],
+                    text: 'Memex Log: $fileName',
+                  );
+                } catch (e) {
+                  debugPrint('Error sharing log file: $e');
+                }
+              },
+              child: const Icon(Icons.share_outlined),
+            ),
+          if (_selectedFile != null) const SizedBox(height: 10),
           FloatingActionButton(
             heroTag: 'scroll_up',
             mini: true,
