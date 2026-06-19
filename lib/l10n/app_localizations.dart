@@ -496,6 +496,60 @@ abstract class AppLocalizations {
   /// **'No log file selected'**
   String get logNoFileSelected;
 
+  /// No description provided for @logSaveDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Save log file'**
+  String get logSaveDialogTitle;
+
+  /// No description provided for @logExportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Export log file'**
+  String get logExportTitle;
+
+  /// No description provided for @logSaveToFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Save to file…'**
+  String get logSaveToFile;
+
+  /// No description provided for @logSavedToPath.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to:'**
+  String get logSavedToPath;
+
+  /// No description provided for @logSavedOnMobileHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the Files app and check the Downloads folder.'**
+  String get logSavedOnMobileHint;
+
+  /// No description provided for @logShareFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get logShareFile;
+
+  /// No description provided for @logShowInFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Show in folder'**
+  String get logShowInFolder;
+
+  /// No description provided for @logCopyPath.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy path'**
+  String get logCopyPath;
+
+  /// No description provided for @logPathCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Path copied to clipboard'**
+  String get logPathCopied;
+
   /// No description provided for @autoRefresh.
   ///
   /// In en, this message translates to:
