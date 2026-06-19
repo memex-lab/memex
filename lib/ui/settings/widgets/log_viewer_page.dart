@@ -280,12 +280,15 @@ class _LogViewerPageState extends State<LogViewerPage> {
         ],
       ),
       floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          if (_selectedFile != null)
+          if (_selectedFile != null) ...[
             FloatingActionButton(
               heroTag: 'share_log',
               mini: true,
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
               onPressed: () async {
                 try {
                   final tempDir = await getTemporaryDirectory();
@@ -302,7 +305,8 @@ class _LogViewerPageState extends State<LogViewerPage> {
               },
               child: const Icon(Icons.share_outlined),
             ),
-          if (_selectedFile != null) const SizedBox(height: 10),
+            const SizedBox(height: 10),
+          ],
           FloatingActionButton(
             heroTag: 'scroll_up',
             mini: true,
