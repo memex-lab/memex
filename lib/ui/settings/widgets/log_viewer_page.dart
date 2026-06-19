@@ -3,7 +3,6 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:memex/config/app_flavor.dart';
 import 'package:memex/data/services/file_logger_service.dart';
 import 'package:memex/data/services/log_export_service.dart';
 import 'package:memex/utils/user_storage.dart';
@@ -446,20 +445,6 @@ class _LogViewerPageState extends State<LogViewerPage> {
               )
             : Text(UserStorage.l10n.logViewer),
         actions: [
-          if (AppFlavor.isDev)
-            Padding(
-              padding: const EdgeInsets.only(right: 4),
-              child: Center(
-                child: Text(
-                  'LOG-EXPORT-2',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.primary,
-                  ),
-                ),
-              ),
-            ),
           IconButton(
             icon: Icon(_isSearching ? Icons.close : Icons.search),
             onPressed: () {

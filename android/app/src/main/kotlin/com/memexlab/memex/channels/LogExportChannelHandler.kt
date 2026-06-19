@@ -67,12 +67,6 @@ class LogExportChannelHandler(private val activity: Activity) {
                 saveLegacy(fileName, bytes)
             }
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
-                !verifyDownloadExists(fileName)
-            ) {
-                throw IOException("File not visible in public Downloads after save")
-            }
-
             Log.i(TAG, "Saved log to public Downloads: $savedPath")
             result.success(savedPath)
         } catch (e: SecurityException) {
@@ -90,7 +84,7 @@ class LogExportChannelHandler(private val activity: Activity) {
         val contentValues = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
             put(MediaStore.MediaColumns.MIME_TYPE, "text/plain")
-            put(MediaStore.MediaColumns.RELATIVE_PATH, "${Environment.DIRECTORY_DOWNLOADS}/")
+            put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
             put(MediaStore.MediaColumns.IS_PENDING, 1)
         }
 
@@ -111,6 +105,13 @@ class LogExportChannelHandler(private val activity: Activity) {
             put(MediaStore.MediaColumns.IS_PENDING, 0)
         }
         resolver.update(uri, publishValues, null, null)
+
+        // Verify via the URI we created (Samsung MediaStore queries can lag).
+        resolver.openInputStream(uri)?.use { input ->
+            if (input.read() == -1 && bytes.isNotEmpty()) {
+                throw IOException("Saved Downloads file is empty")
+            }
+        } ?: throw IOException("Failed to read back saved Downloads file")
 
         return publicDownloadsPath(fileName)
     }
@@ -183,29 +184,6 @@ class LogExportChannelHandler(private val activity: Activity) {
         if (legacyFile.exists()) {
             legacyFile.delete()
         }
-    }
-
-    private fun verifyDownloadExists(fileName: String): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-            @Suppress("DEPRECATION")
-            return File(
-                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-                fileName,
-            ).exists()
-        }
-
-        val resolver = activity.contentResolver
-        val collection = MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
-        resolver.query(
-            collection,
-            arrayOf(MediaStore.MediaColumns._ID),
-            "${MediaStore.MediaColumns.DISPLAY_NAME} = ?",
-            arrayOf(fileName),
-            null,
-        )?.use { cursor ->
-            return cursor.moveToFirst()
-        }
-        return false
     }
 
     @Suppress("DEPRECATION")
