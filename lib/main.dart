@@ -404,42 +404,48 @@ class _MemexAppState extends State<MemexApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'Memex',
-      debugShowCheckedModeBanner: false,
-      scaffoldMessengerKey: rootScaffoldMessengerKey,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode:
-          ThemeMode.light, // Unified light mode, disabling adaptive dark mode
-      routerConfig: widget.router,
-      builder: (context, child) {
-        return _AppActionReadiness(
-          canHandleActions: !_isLocked,
-          child: Stack(
-            children: [
-              if (child != null) child,
-              if (_isLocked && _hasUser)
-                _requiresAuth
-                    ? LockScreen(
-                        onUnlock: () {
-                          setState(() {
-                            _isLocked = false;
-                          });
-                        },
-                      )
-                    : const PrivacyScreen(),
-            ],
-          ),
+    return ValueListenableBuilder<Locale>(
+      valueListenable: UserStorage.localeNotifier,
+      builder: (context, locale, child) {
+        return MaterialApp.router(
+          title: 'Memex',
+          debugShowCheckedModeBanner: false,
+          scaffoldMessengerKey: rootScaffoldMessengerKey,
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode:
+              ThemeMode.light, // Unified light mode, disabling adaptive dark mode
+          locale: locale,
+          routerConfig: widget.router,
+          builder: (context, child) {
+            return _AppActionReadiness(
+              canHandleActions: !_isLocked,
+              child: Stack(
+                children: [
+                  if (child != null) child,
+                  if (_isLocked && _hasUser)
+                    _requiresAuth
+                        ? LockScreen(
+                            onUnlock: () {
+                              setState(() {
+                                _isLocked = false;
+                              });
+                            },
+                          )
+                        : const PrivacyScreen(),
+                ],
+              ),
+            );
+          },
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
         );
       },
-      localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: AppLocalizations.supportedLocales,
     );
   }
 }

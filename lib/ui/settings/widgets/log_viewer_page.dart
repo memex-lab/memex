@@ -6,6 +6,8 @@ import 'package:memex/data/services/file_logger_service.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:memex/ui/core/themes/app_colors.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:path_provider/path_provider.dart';
 
 class LogViewerPage extends StatefulWidget {
   const LogViewerPage({super.key});
@@ -237,6 +239,24 @@ class _LogViewerPageState extends State<LogViewerPage> {
               });
             },
           ),
+          if (!_isSearching && _selectedFile != null)
+            IconButton(
+              icon: const Icon(Icons.share_outlined),
+              onPressed: () async {
+                try {
+                  final tempDir = await getTemporaryDirectory();
+                  final fileName = _selectedFile!.path.split('/').last;
+                  final tempFile = File('${tempDir.path}/$fileName');
+                  await _selectedFile!.copy(tempFile.path);
+                  await Share.shareXFiles(
+                    [XFile(tempFile.path)],
+                    text: 'Memex Log: $fileName',
+                  );
+                } catch (e) {
+                  debugPrint('Error sharing log file: $e');
+                }
+              },
+            ),
           if (!_isSearching)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),

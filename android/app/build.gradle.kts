@@ -33,7 +33,7 @@ android {
 
     namespace = "com.memexlab.memex"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = "27.0.12077973"
+    ndkVersion = "28.2.13676358"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -126,11 +126,13 @@ android {
             dimension = "market"
             applicationId = globalDevApplicationId
             manifestPlaceholders["appLabel"] = "Memex Dev"
+            signingConfig = signingConfigs.getByName("debug")
         }
         create("cnDev") {
             dimension = "market"
             applicationId = cnDevApplicationId
             manifestPlaceholders["appLabel"] = "Memex Dev CN"
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 

@@ -113,6 +113,9 @@ class UserStorage {
     return _l10n!;
   }
 
+  /// Global notifier for the active locale, used to rebuild the app on change.
+  static final ValueNotifier<Locale> localeNotifier = ValueNotifier<Locale>(const Locale('en'));
+
   /// Language codes that have corresponding l10n files (must match app_localizations_ext).
   static const List<String> _supportedLanguageCodes = ['en', 'zh', 'de'];
 
@@ -131,6 +134,7 @@ class UserStorage {
     final locale = await getLocale();
     final resolved = _resolveToSupportedLocale(locale);
     _l10n = lookupAppLocalizationsExt(resolved);
+    localeNotifier.value = resolved;
   }
 
   /// Get stored userId
@@ -314,6 +318,7 @@ class UserStorage {
       await prefs.setString(_keyLanguage, localeString);
       // Update global l10n instance
       _l10n = lookupAppLocalizationsExt(resolved);
+      localeNotifier.value = resolved;
     } catch (e) {
       // Ignore errors
     }
