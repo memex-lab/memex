@@ -230,6 +230,14 @@ class AppLocalizationsDe extends AppLocalizations {
   String get logViewer => 'Protokollbetrachter';
 
   @override
+  String logDownloadSuccess(Object fileName) {
+    return 'Protokoll in Downloads gespeichert: $fileName';
+  }
+
+  @override
+  String get logNoFileSelected => 'Keine Protokolldatei ausgewählt';
+
+  @override
   String get autoRefresh => 'Automatische Aktualisierung';
 
   @override

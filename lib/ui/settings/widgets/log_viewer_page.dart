@@ -6,8 +6,9 @@ import 'package:memex/data/services/file_logger_service.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:memex/ui/core/themes/app_colors.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:memex/utils/toast_helper.dart';
 
 class LogViewerPage extends StatefulWidget {
   const LogViewerPage({super.key});
@@ -205,6 +206,39 @@ class _LogViewerPageState extends State<LogViewerPage> {
     return lines;
   }
 
+  Future<void> _downloadLogFile() async {
+    if (_selectedFile == null) {
+      ToastHelper.showError(context, UserStorage.l10n.logNoFileSelected);
+      return;
+    }
+
+    try {
+      final downloadsDir = await getDownloadsDirectory();
+      if (downloadsDir == null) {
+        throw StateError('Downloads directory unavailable');
+      }
+
+      final fileName = p.basename(_selectedFile!.path);
+      final destFile = File(p.join(downloadsDir.path, fileName));
+      await _selectedFile!.copy(destFile.path);
+
+      if (mounted) {
+        ToastHelper.showSuccess(
+          context,
+          UserStorage.l10n.logDownloadSuccess(fileName),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error downloading log file: $e');
+      if (mounted) {
+        ToastHelper.showError(
+          context,
+          UserStorage.l10n.downloadFailed('$e'),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final filteredLines = _getFilteredLines();
@@ -247,94 +281,89 @@ class _LogViewerPageState extends State<LogViewerPage> {
             ),
         ],
       ),
-      body: Column(
+      body: Stack(
         children: [
-          _buildControlBar(filteredLines.length),
-          Expanded(
-            child: _isLoading && _logLines.isEmpty
-                ? const Center(child: AgentLogoLoading())
-                : SelectionArea(
-                    child: Scrollbar(
-                      controller: _scrollController,
-                      thumbVisibility: true,
-                      radius: const Radius.circular(4),
-                      child: ListView.builder(
-                        controller: _scrollController,
-                        padding: const EdgeInsets.all(8),
-                        itemCount: filteredLines.length,
-                        itemBuilder: (context, index) {
-                          final line = filteredLines[index];
-                          return Text(
-                            line,
-                            style: TextStyle(
-                              fontFamily: 'Courier',
-                              fontSize: 12,
-                              color: _getLineColor(line),
-                            ),
-                          );
-                        },
+          Column(
+            children: [
+              _buildControlBar(filteredLines.length),
+              Expanded(
+                child: _isLoading && _logLines.isEmpty
+                    ? const Center(child: AgentLogoLoading())
+                    : SelectionArea(
+                        child: Scrollbar(
+                          controller: _scrollController,
+                          thumbVisibility: true,
+                          radius: const Radius.circular(4),
+                          child: ListView.builder(
+                            controller: _scrollController,
+                            padding: const EdgeInsets.all(8),
+                            itemCount: filteredLines.length,
+                            itemBuilder: (context, index) {
+                              final line = filteredLines[index];
+                              return Text(
+                                line,
+                                style: TextStyle(
+                                  fontFamily: 'Courier',
+                                  fontSize: 12,
+                                  color: _getLineColor(line),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
                       ),
-                    ),
+              ),
+            ],
+          ),
+          Positioned(
+            right: 16,
+            bottom: 16,
+            child: SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  FloatingActionButton(
+                    heroTag: 'log_download',
+                    mini: true,
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    onPressed: _downloadLogFile,
+                    child: const Icon(Icons.download_outlined),
                   ),
-          ),
-        ],
-      ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          if (_selectedFile != null) ...[
-            FloatingActionButton(
-              heroTag: 'share_log',
-              mini: true,
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              onPressed: () async {
-                try {
-                  final tempDir = await getTemporaryDirectory();
-                  final fileName = _selectedFile!.path.split('/').last;
-                  final tempFile = File('${tempDir.path}/$fileName');
-                  await _selectedFile!.copy(tempFile.path);
-                  await Share.shareXFiles(
-                    [XFile(tempFile.path)],
-                    text: 'Memex Log: $fileName',
-                  );
-                } catch (e) {
-                  debugPrint('Error sharing log file: $e');
-                }
-              },
-              child: const Icon(Icons.share_outlined),
+                  const SizedBox(height: 12),
+                  FloatingActionButton(
+                    heroTag: 'log_scroll_up',
+                    mini: true,
+                    onPressed: () {
+                      if (_scrollController.hasClients) {
+                        _scrollController.animateTo(
+                          0,
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeOut,
+                        );
+                      }
+                    },
+                    child: const Icon(Icons.arrow_upward),
+                  ),
+                  const SizedBox(height: 12),
+                  FloatingActionButton(
+                    heroTag: 'log_scroll_down',
+                    mini: true,
+                    onPressed: () {
+                      if (_scrollController.hasClients) {
+                        _scrollController.animateTo(
+                          _scrollController.position.maxScrollExtent,
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeOut,
+                        );
+                      }
+                    },
+                    child: const Icon(Icons.arrow_downward),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 10),
-          ],
-          FloatingActionButton(
-            heroTag: 'scroll_up',
-            mini: true,
-            onPressed: () {
-              if (_scrollController.hasClients) {
-                _scrollController.animateTo(
-                  0,
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeOut,
-                );
-              }
-            },
-            child: const Icon(Icons.arrow_upward),
-          ),
-          const SizedBox(height: 10),
-          FloatingActionButton(
-            heroTag: 'scroll_down',
-            mini: true,
-            onPressed: () {
-              if (_scrollController.hasClients) {
-                _scrollController.animateTo(
-                  _scrollController.position.maxScrollExtent,
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeOut,
-                );
-              }
-            },
-            child: const Icon(Icons.arrow_downward),
           ),
         ],
       ),

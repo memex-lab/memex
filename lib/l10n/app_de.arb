@@ -99,6 +99,13 @@
   "insightCardTemplates": "Insight-Kartenvorlagen",
   "timelineCardTemplates": "Vorlagen für Zeitleistenkarten",
   "logViewer": "Protokollbetrachter",
+  "logDownloadSuccess": "Protokoll in Downloads gespeichert: {fileName}",
+  "@logDownloadSuccess": {
+    "placeholders": {
+      "fileName": {}
+    }
+  },
+  "logNoFileSelected": "Keine Protokolldatei ausgewählt",
   "autoRefresh": "Automatische Aktualisierung",
   "lineCount": "Zeilenanzahl:",
   "all": "Alle",

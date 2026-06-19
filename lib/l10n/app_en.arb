@@ -91,6 +91,13 @@
   "insightCardTemplates": "Insight card templates",
   "timelineCardTemplates": "Timeline card templates",
   "logViewer": "Log viewer",
+  "logDownloadSuccess": "Log saved to Downloads: {fileName}",
+  "@logDownloadSuccess": {
+    "placeholders": {
+      "fileName": {}
+    }
+  },
+  "logNoFileSelected": "No log file selected",
   "autoRefresh": "Auto refresh",
   "lineCount": "Line count: ",
   "all": "All",

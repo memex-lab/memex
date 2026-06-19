@@ -219,6 +219,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get logViewer => '日志查看';
 
   @override
+  String logDownloadSuccess(Object fileName) {
+    return '日志已保存到下载目录：$fileName';
+  }
+
+  @override
+  String get logNoFileSelected => '未选择日志文件';
+
+  @override
   String get autoRefresh => '自动刷新';
 
   @override

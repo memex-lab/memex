@@ -91,6 +91,13 @@
   "insightCardTemplates": "洞察卡片模板展示",
   "timelineCardTemplates": "Timeline 卡片模板展示",
   "logViewer": "日志查看",
+  "logDownloadSuccess": "日志已保存到下载目录：{fileName}",
+  "@logDownloadSuccess": {
+    "placeholders": {
+      "fileName": {}
+    }
+  },
+  "logNoFileSelected": "未选择日志文件",
   "autoRefresh": "自动刷新",
   "lineCount": "行数: ",
   "all": "全部",

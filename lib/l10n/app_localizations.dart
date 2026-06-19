@@ -484,6 +484,18 @@ abstract class AppLocalizations {
   /// **'Log viewer'**
   String get logViewer;
 
+  /// No description provided for @logDownloadSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Log saved to Downloads: {fileName}'**
+  String logDownloadSuccess(Object fileName);
+
+  /// No description provided for @logNoFileSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'No log file selected'**
+  String get logNoFileSelected;
+
   /// No description provided for @autoRefresh.
   ///
   /// In en, this message translates to:

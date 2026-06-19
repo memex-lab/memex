@@ -225,6 +225,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logViewer => 'Log viewer';
 
   @override
+  String logDownloadSuccess(Object fileName) {
+    return 'Log saved to Downloads: $fileName';
+  }
+
+  @override
+  String get logNoFileSelected => 'No log file selected';
+
+  @override
   String get autoRefresh => 'Auto refresh';
 
   @override

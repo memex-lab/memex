@@ -12,4 +12,4 @@
 - **[2026-06-19] Log Viewer Export Fix**: Updated LogViewerPage to copy the log file to getTemporaryDirectory() before sharing, resolving an issue where Android devices failed to share files directly from the app's internal documents directory.
 
 - **[2026-06-19] Log Viewer UI Update**: Moved the 'Share' button from the top AppBar to the bottom right FloatingActionButton stack, as requested by the user for better accessibility.
-- **[2026-06-19] Log Viewer FAB Layout Fix**: Fixed a rendering issue where the Share FloatingActionButton was hidden on Android. Added `mainAxisSize: MainAxisSize.min` to the FAB Column to prevent layout boundary truncation.
+- **[2026-06-19] Log Viewer FAB Layout Fix**: Repositioned the Share FloatingActionButton to be located "links oberhalb" (left-above) of the 'scroll_up' button using `Padding(right: 52.0)` inside the FAB Column, matching the user's explicit request. Removed conditional rendering to guarantee visibility and prevent any future rendering bugs.
