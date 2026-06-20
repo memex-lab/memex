@@ -2962,10 +2962,43 @@ class AppLocalizationsEn extends AppLocalizations {
   String get speechModelChooseSource => 'Choose download source:';
 
   @override
-  String get speechModelChinaMirror => '🇨🇳 China Mirror (Faster in CN)';
+  String get speechModelSourceHint =>
+      'Outside China, tap GitHub. Use China Mirror only if GitHub is slow or blocked.';
 
   @override
-  String get speechModelGithub => '🌐 GitHub (Global)';
+  String get speechModelChooseModel => 'Choose speech model:';
+
+  @override
+  String get speechModelSenseVoiceTitle => 'SenseVoice';
+
+  @override
+  String get speechModelSenseVoiceDesc =>
+      'Optimized for Chinese, English, Japanese, Korean, and Cantonese.';
+
+  @override
+  String get speechModelWhisperSmallTitle => 'Whisper Small';
+
+  @override
+  String get speechModelWhisperSmallDesc =>
+      'Multilingual model including German, French, Spanish, and more.';
+
+  @override
+  String speechModelApproxSize(Object sizeMB) {
+    return '~$sizeMB MB';
+  }
+
+  @override
+  String get localSpeechModelTitle => 'On-device speech model';
+
+  @override
+  String get localSpeechModelDesc =>
+      'Choose which offline model to use for voice transcription.';
+
+  @override
+  String get speechModelChinaMirror => 'China Mirror (only in China)';
+
+  @override
+  String get speechModelGithub => 'GitHub (Recommended)';
 
   @override
   String get speechModelDownloading => 'Downloading model...';
@@ -2977,6 +3010,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String speechModelDownloadFailed(Object error) {
     return 'Download failed: $error';
   }
+
+  @override
+  String get speechModelDownloadSuccess =>
+      'Speech model downloaded. You can start recording now.';
 
   @override
   String get deleteSpeechModel => 'Delete speech model';

@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:logging/logging.dart';
 import 'package:memex/utils/logger.dart';
+import 'package:memex/domain/models/local_speech_model.dart';
 import 'package:memex/domain/models/llm_config.dart';
 import 'package:memex/domain/models/agent_config.dart';
 import 'package:memex/domain/models/location_context_config.dart';
@@ -366,6 +367,7 @@ class UserStorage {
 
   static const String _keyAgentConfigs = 'agent_configs';
   static const String _keyUseLocalSpeechToText = 'use_local_speech_to_text';
+  static const String _keyLocalSpeechModel = 'local_speech_model';
 
   /// Get specified agent config
   static Future<AgentConfig> getAgentConfig(String agentId) async {
@@ -434,6 +436,63 @@ class UserStorage {
       await prefs.remove(_keyUseLocalSpeechToText);
     } catch (e) {
       throw Exception('Failed to reset speech preference: $e');
+    }
+  }
+
+  static Future<LocalSpeechModelId> getLocalSpeechModel() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final stored = prefs.getString(_keyLocalSpeechModel);
+      if (stored != null) {
+        return LocalSpeechModelProfile.fromStorageValue(stored);
+      }
+
+      // Preserve existing installs that downloaded SenseVoice before model choice existed.
+      final supportDir = await getApplicationSupportDirectory();
+      final senseVoiceDir =
+          '${supportDir.path}/${LocalSpeechModelProfile.senseVoice.dirName}';
+      final senseVoiceOnnx =
+          File('$senseVoiceDir/${LocalSpeechModelProfile.senseVoice.senseVoiceModelFileName}');
+      final senseVoiceTokens =
+          File('$senseVoiceDir/${LocalSpeechModelProfile.senseVoice.tokensFileName}');
+      if (senseVoiceOnnx.existsSync() && senseVoiceTokens.existsSync()) {
+        return LocalSpeechModelId.senseVoice;
+      }
+
+      final whisperDir =
+          '${supportDir.path}/${LocalSpeechModelProfile.whisperSmall.dirName}';
+      final whisperProfile = LocalSpeechModelProfile.whisperSmall;
+      final whisperReady = whisperProfile.requiredFileNames.every(
+        (name) => File('$whisperDir/$name').existsSync(),
+      );
+      if (whisperReady) {
+        return LocalSpeechModelId.whisperSmall;
+      }
+
+      return LocalSpeechModelProfile.defaultForFlavor();
+    } catch (e) {
+      return LocalSpeechModelProfile.defaultForFlavor();
+    }
+  }
+
+  static Future<void> setLocalSpeechModel(LocalSpeechModelId model) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        _keyLocalSpeechModel,
+        LocalSpeechModelProfile.fromId(model).storageValue,
+      );
+    } catch (e) {
+      throw Exception('Failed to save local speech model preference: $e');
+    }
+  }
+
+  static Future<void> resetLocalSpeechModel() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_keyLocalSpeechModel);
+    } catch (e) {
+      throw Exception('Failed to reset local speech model preference: $e');
     }
   }
 

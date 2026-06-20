@@ -15,7 +15,7 @@ class _Segment {
   _Segment(this.samples, this.text);
 }
 
-/// Real-time streaming transcriber using VAD + SenseVoice.
+/// Real-time streaming transcriber using VAD + the selected local speech model.
 ///
 /// Uses a **confirmed / pending** model for safe text replacement:
 ///
@@ -52,7 +52,7 @@ class StreamingTranscriber {
   static const int _vadWindowSize = 512;
 
   /// Calibrate when pending audio reaches this duration.
-  /// 6s is enough context for SenseVoice to benefit from cross-segment
+  /// 6s is enough context for the local model to benefit from cross-segment
   /// combination, while keeping calibration fast (~0.3-0.8s on-device).
   /// With maxSpeechDuration=5s, this typically fires after 2 segments.
   static const double _calibrateMinSeconds = 6.0;

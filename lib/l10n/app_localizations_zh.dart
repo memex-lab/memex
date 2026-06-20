@@ -2850,10 +2850,40 @@ class AppLocalizationsZh extends AppLocalizations {
   String get speechModelChooseSource => '选择下载线路：';
 
   @override
-  String get speechModelChinaMirror => '🇨🇳 国内线路（推荐）';
+  String get speechModelSourceHint =>
+      '在中国以外请选择 GitHub。仅当 GitHub 较慢或被屏蔽时再选国内线路。';
 
   @override
-  String get speechModelGithub => '🌐 GitHub（海外线路）';
+  String get speechModelChooseModel => '选择语音识别模型：';
+
+  @override
+  String get speechModelSenseVoiceTitle => 'SenseVoice';
+
+  @override
+  String get speechModelSenseVoiceDesc => '适合中文、英文、日文、韩文和粤语。';
+
+  @override
+  String get speechModelWhisperSmallTitle => 'Whisper Small';
+
+  @override
+  String get speechModelWhisperSmallDesc => '多语言模型，支持德语、法语、西班牙语等。';
+
+  @override
+  String speechModelApproxSize(Object sizeMB) {
+    return '约 $sizeMB MB';
+  }
+
+  @override
+  String get localSpeechModelTitle => '本地语音识别模型';
+
+  @override
+  String get localSpeechModelDesc => '选择用于语音转文字的离线模型。';
+
+  @override
+  String get speechModelChinaMirror => '国内线路（仅在中国）';
+
+  @override
+  String get speechModelGithub => 'GitHub（推荐）';
 
   @override
   String get speechModelDownloading => '正在下载模型...';
@@ -2865,6 +2895,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String speechModelDownloadFailed(Object error) {
     return '下载失败: $error';
   }
+
+  @override
+  String get speechModelDownloadSuccess => '语音模型已下载，可以开始录音了。';
 
   @override
   String get deleteSpeechModel => '删除语音识别模型';

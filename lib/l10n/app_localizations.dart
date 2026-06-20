@@ -5345,16 +5345,70 @@ abstract class AppLocalizations {
   /// **'Choose download source:'**
   String get speechModelChooseSource;
 
+  /// No description provided for @speechModelSourceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Outside China, tap GitHub. Use China Mirror only if GitHub is slow or blocked.'**
+  String get speechModelSourceHint;
+
+  /// No description provided for @speechModelChooseModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose speech model:'**
+  String get speechModelChooseModel;
+
+  /// No description provided for @speechModelSenseVoiceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'SenseVoice'**
+  String get speechModelSenseVoiceTitle;
+
+  /// No description provided for @speechModelSenseVoiceDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Optimized for Chinese, English, Japanese, Korean, and Cantonese.'**
+  String get speechModelSenseVoiceDesc;
+
+  /// No description provided for @speechModelWhisperSmallTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Whisper Small'**
+  String get speechModelWhisperSmallTitle;
+
+  /// No description provided for @speechModelWhisperSmallDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Multilingual model including German, French, Spanish, and more.'**
+  String get speechModelWhisperSmallDesc;
+
+  /// No description provided for @speechModelApproxSize.
+  ///
+  /// In en, this message translates to:
+  /// **'~{sizeMB} MB'**
+  String speechModelApproxSize(Object sizeMB);
+
+  /// No description provided for @localSpeechModelTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'On-device speech model'**
+  String get localSpeechModelTitle;
+
+  /// No description provided for @localSpeechModelDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose which offline model to use for voice transcription.'**
+  String get localSpeechModelDesc;
+
   /// No description provided for @speechModelChinaMirror.
   ///
   /// In en, this message translates to:
-  /// **'🇨🇳 China Mirror (Faster in CN)'**
+  /// **'China Mirror (only in China)'**
   String get speechModelChinaMirror;
 
   /// No description provided for @speechModelGithub.
   ///
   /// In en, this message translates to:
-  /// **'🌐 GitHub (Global)'**
+  /// **'GitHub (Recommended)'**
   String get speechModelGithub;
 
   /// No description provided for @speechModelDownloading.
@@ -5374,6 +5428,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Download failed: {error}'**
   String speechModelDownloadFailed(Object error);
+
+  /// No description provided for @speechModelDownloadSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Speech model downloaded. You can start recording now.'**
+  String get speechModelDownloadSuccess;
 
   /// No description provided for @deleteSpeechModel.
   ///

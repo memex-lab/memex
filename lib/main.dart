@@ -40,7 +40,7 @@ import 'package:memex/utils/user_storage.dart';
 import 'package:memex/data/services/publish_timestamp_service.dart';
 import 'package:memex/data/services/health_service.dart';
 import 'package:memex/data/services/health_strategies.dart';
-import 'package:memex/data/services/whisper_service.dart';
+import 'package:memex/ui/core/widgets/speech_model_download_flow.dart';
 import 'package:memex/data/services/streaming_transcriber.dart';
 import 'package:memex/ui/core/themes/app_colors.dart';
 import 'package:workmanager/workmanager.dart';
@@ -1124,8 +1124,10 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       if (await speechService.requiresLocalModelDownload()) {
         setState(() => _isRadialMenuOpen = false);
         if (!mounted) return;
-        _showSpeechModelDownloadDialog();
-        return;
+        final ready = await SpeechModelDownloadFlow.ensureLocalModelReady(
+          context,
+        );
+        if (!ready || !mounted) return;
       }
 
       if (await Permission.microphone.request().isGranted) {
@@ -1165,181 +1167,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       }
     } catch (e, stackTrace) {
       _logger.severe('Error starting quick recording', e, stackTrace);
-    }
-  }
-
-  void _showSpeechModelDownloadDialog() {
-    final sizeMB = WhisperService.modelSizeMB.toInt();
-
-    // CN flavor: single download button
-    if (AppFlavor.isCN) {
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          backgroundColor: Colors.white,
-          title: Text(UserStorage.l10n.speechModelDownloadTitle),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(UserStorage.l10n.speechModelDownloadDesc(sizeMB)),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    _downloadSpeechModel(useChineseMirror: true);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: Text(UserStorage.l10n.speechModelStartDownload),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(UserStorage.l10n.cancel),
-            ),
-          ],
-        ),
-      );
-      return;
-    }
-
-    // Global flavor: two source options
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        title: Text(UserStorage.l10n.speechModelDownloadTitle),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(UserStorage.l10n.speechModelDownloadDesc(sizeMB)),
-            const SizedBox(height: 20),
-            Text(
-              UserStorage.l10n.speechModelChooseSource,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  _downloadSpeechModel(useChineseMirror: true);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: Text(UserStorage.l10n.speechModelChinaMirror),
-              ),
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  _downloadSpeechModel(useChineseMirror: false);
-                },
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: Text(UserStorage.l10n.speechModelGithub),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(UserStorage.l10n.cancel),
-          ),
-        ],
-      ),
-    );
-  }
-
-  double _speechDownloadProgress = 0;
-  StateSetter? _speechDownloadSetState;
-
-  Future<void> _downloadSpeechModel({required bool useChineseMirror}) async {
-    final l10n = UserStorage.l10n;
-    _speechDownloadProgress = 0;
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) {
-          _speechDownloadSetState = setDialogState;
-          return AlertDialog(
-            backgroundColor: Colors.white,
-            title: Text(l10n.speechModelDownloading),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                LinearProgressIndicator(
-                  value: _speechDownloadProgress > 0
-                      ? _speechDownloadProgress
-                      : null,
-                  backgroundColor: AppColors.background,
-                  color: AppColors.primary,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  _speechDownloadProgress > 0
-                      ? '${(_speechDownloadProgress * 100).toInt()}%'
-                      : l10n.speechModelConnecting,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-
-    try {
-      await WhisperService.instance.downloadModel(
-        useChineseMirror: useChineseMirror,
-        onProgress: (p) {
-          _speechDownloadSetState?.call(() {
-            _speechDownloadProgress = p;
-          });
-        },
-      );
-    } catch (e) {
-      _logger.severe('Speech model download failed: $e');
-    } finally {
-      _speechDownloadProgress = 0;
-      if (mounted) Navigator.of(context).pop();
     }
   }
 

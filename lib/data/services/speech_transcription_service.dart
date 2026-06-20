@@ -113,10 +113,11 @@ class SpeechTranscriptionService {
       audioPath,
       skipLengthCheck: skipLengthCheck,
     );
+    final profile = await WhisperService.instance.getSelectedProfile();
     return SpeechTranscriptionResult(
       text: text,
       usage: null,
-      model: 'sensevoice-local',
+      model: profile.metadataModelName(),
     );
   }
 
@@ -124,10 +125,11 @@ class SpeechTranscriptionService {
     Float32List samples,
   ) async {
     final text = await WhisperService.instance.transcribeSamples(samples);
+    final profile = await WhisperService.instance.getSelectedProfile();
     return SpeechTranscriptionResult(
       text: text,
       usage: null,
-      model: 'sensevoice-local',
+      model: profile.metadataModelName(),
     );
   }
 

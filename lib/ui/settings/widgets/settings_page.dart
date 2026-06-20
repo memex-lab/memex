@@ -15,6 +15,9 @@ import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/data/services/comment_settings_service.dart'
     show CommentSettings;
 import 'package:memex/data/repositories/memex_router.dart';
+import 'package:memex/data/services/whisper_service.dart';
+import 'package:memex/domain/models/local_speech_model.dart';
+import 'package:memex/ui/core/widgets/speech_model_download_flow.dart';
 import 'package:memex/main.dart' show rootShellKey;
 
 class SettingsPage extends StatefulWidget {
@@ -27,6 +30,8 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   String _currentLang = 'en';
   bool _useLocalSpeechToText = true;
+  LocalSpeechModelId _localSpeechModel = LocalSpeechModelProfile.defaultForFlavor();
+  bool _localSpeechModelDownloaded = false;
   CommentSettings _commentSettings = const CommentSettings();
 
   @override
@@ -38,11 +43,16 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _loadSettings() async {
     final locale = await UserStorage.getLocale();
     final useLocalSpeechToText = await UserStorage.getUseLocalSpeechToText();
+    final localSpeechModel = await UserStorage.getLocalSpeechModel();
+    final localSpeechModelDownloaded =
+        await WhisperService.instance.isModelDownloaded(localSpeechModel);
     final commentSettings = await MemexRouter().getCommentSettings();
     if (mounted) {
       setState(() {
         _currentLang = ['zh', 'en', 'de'].contains(locale.languageCode) ? locale.languageCode : 'zh';
         _useLocalSpeechToText = useLocalSpeechToText;
+        _localSpeechModel = localSpeechModel;
+        _localSpeechModelDownloaded = localSpeechModelDownloaded;
         _commentSettings = commentSettings;
       });
     }
@@ -64,6 +74,43 @@ class _SettingsPageState extends State<SettingsPage> {
       setState(() => _useLocalSpeechToText = value);
     }
   }
+
+  Future<void> _updateLocalSpeechModel(LocalSpeechModelId model) async {
+    if (_localSpeechModel == model) return;
+    await WhisperService.instance.setSelectedModel(model);
+    var downloaded = await WhisperService.instance.isModelDownloaded(model);
+    if (mounted) {
+      setState(() {
+        _localSpeechModel = model;
+        _localSpeechModelDownloaded = downloaded;
+      });
+    }
+    if (!downloaded) {
+      if (!mounted) return;
+      final flowCompleted =
+          await SpeechModelDownloadFlow.showDownloadDialog(context);
+      if (!mounted) return;
+      downloaded = flowCompleted &&
+          await WhisperService.instance.isModelDownloaded(model);
+      if (mounted) {
+        setState(() => _localSpeechModelDownloaded = downloaded);
+      }
+    }
+  }
+
+  String _speechModelTitle(LocalSpeechModelId id) => switch (id) {
+        LocalSpeechModelId.senseVoice =>
+          UserStorage.l10n.speechModelSenseVoiceTitle,
+        LocalSpeechModelId.whisperSmall =>
+          UserStorage.l10n.speechModelWhisperSmallTitle,
+      };
+
+  String _speechModelDesc(LocalSpeechModelId id) => switch (id) {
+        LocalSpeechModelId.senseVoice =>
+          UserStorage.l10n.speechModelSenseVoiceDesc,
+        LocalSpeechModelId.whisperSmall =>
+          UserStorage.l10n.speechModelWhisperSmallDesc,
+      };
 
   Future<void> _updateShowInsightText(bool value) async {
     final updated = _commentSettings.copyWith(showInsightText: value);
@@ -203,6 +250,75 @@ class _SettingsPageState extends State<SettingsPage> {
               onChanged: _updateUseLocalSpeechToText,
             ),
           ),
+          if (_useLocalSpeechToText) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.textSecondary.withValues(alpha: 0.08),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    UserStorage.l10n.localSpeechModelTitle,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    UserStorage.l10n.localSpeechModelDesc,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey[600],
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ...LocalSpeechModelProfile.selectableProfiles().map((profile) {
+                    final selected = _localSpeechModel == profile.id;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        dense: true,
+                        leading: Icon(
+                          selected
+                              ? Icons.radio_button_checked
+                              : Icons.radio_button_off,
+                          color: selected
+                              ? AppColors.primary
+                              : AppColors.textSecondary,
+                        ),
+                        title: Text(_speechModelTitle(profile.id)),
+                        subtitle: Text(_speechModelDesc(profile.id)),
+                        onTap: () => _updateLocalSpeechModel(profile.id),
+                      ),
+                    );
+                  }),
+                  if (!_localSpeechModelDownloaded)
+                    Text(
+                      UserStorage.l10n.speechModelNotDownloaded,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.orange[700],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
           if (Platform.isAndroid && AppFlavor.isEarly) ...[
             EarlyUpdateSettingsCard(),

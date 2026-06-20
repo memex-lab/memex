@@ -1347,8 +1347,22 @@
   },
   "speechModelStartDownload": "Starten Sie den Download",
   "speechModelChooseSource": "Download-Quelle wählen:",
-  "speechModelChinaMirror": "🇨🇳 China Mirror (Schneller in CN)",
-  "speechModelGithub": "🌐 GitHub (Global)",
+  "speechModelSourceHint": "Außerhalb Chinas: GitHub tippen. China-Spiegel nur, wenn GitHub langsam oder blockiert ist.",
+  "speechModelChooseModel": "Sprachmodell wählen:",
+  "speechModelSenseVoiceTitle": "SenseVoice",
+  "speechModelSenseVoiceDesc": "Optimiert für Chinesisch, Englisch, Japanisch, Koreanisch und Kantonesisch.",
+  "speechModelWhisperSmallTitle": "Whisper Small",
+  "speechModelWhisperSmallDesc": "Mehrsprachiges Modell inkl. Deutsch, Französisch, Spanisch und mehr.",
+  "speechModelApproxSize": "~{sizeMB} MB",
+  "@speechModelApproxSize": {
+    "placeholders": {
+      "sizeMB": {}
+    }
+  },
+  "localSpeechModelTitle": "Lokales Sprachmodell",
+  "localSpeechModelDesc": "Wählen Sie das Offline-Modell für die Spracherkennung.",
+  "speechModelChinaMirror": "China-Spiegel (nur in China)",
+  "speechModelGithub": "GitHub (Empfohlen)",
   "speechModelDownloading": "Modell wird heruntergeladen...",
   "speechModelConnecting": "Verbinden...",
   "speechModelDownloadFailed": "Download fehlgeschlagen: {error}",
@@ -1357,6 +1371,7 @@
       "error": {}
     }
   },
+  "speechModelDownloadSuccess": "Sprachmodell heruntergeladen. Sie können jetzt aufzeichnen.",
   "deleteSpeechModel": "Sprachmodell löschen",
   "confirmDeleteSpeechModelMessage": "Die heruntergeladenen lokalen Spracherkennungsmodelldateien löschen? Sie werden erneut heruntergeladen, wenn die lokale Spracherkennung das nächste Mal verwendet wird.",
   "speechModelDeletedSuccess": "Sprachmodelldateien gelöscht",

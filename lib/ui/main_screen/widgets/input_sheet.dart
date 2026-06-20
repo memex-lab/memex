@@ -17,12 +17,11 @@ import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/data/services/photo_suggestion_service.dart';
-import 'package:memex/data/services/whisper_service.dart';
+import 'package:memex/ui/core/widgets/speech_model_download_flow.dart';
 import 'package:memex/data/services/streaming_transcriber.dart';
 import 'package:memex/data/services/speech_transcription_service.dart';
 import 'package:memex/data/services/input_draft_service.dart';
 import 'package:memex/data/services/clipboard_preview_service.dart';
-import 'package:memex/config/app_flavor.dart';
 import 'package:memex/ui/core/themes/app_colors.dart';
 import 'package:memex/ui/core/widgets/local_image.dart';
 import 'package:memex/data/services/demo_service.dart';
@@ -986,193 +985,9 @@ class _InputSheetState extends State<InputSheet>
   /// Check if local model download is needed, prompt user if so.
   /// Returns true if ready to proceed, false if user declined or not mounted.
   Future<bool> _ensureLocalModelReady() async {
-    final speechService = SpeechTranscriptionService.instance;
-    if (!await speechService.requiresLocalModelDownload()) return true;
     if (!mounted) return false;
-    await _showModelDownloadDialog();
-    if (!mounted) return false;
-    return !await speechService.requiresLocalModelDownload();
+    return SpeechModelDownloadFlow.ensureLocalModelReady(context);
   }
-
-  Future<bool?> _showModelDownloadDialog() {
-    final l10n = UserStorage.l10n;
-    final sizeMB = WhisperService.modelSizeMB.toInt();
-
-    // CN flavor: single download button, no source choice
-    if (AppFlavor.isCN) {
-      return showDialog<bool>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          backgroundColor: Colors.white,
-          title: Text(l10n.speechModelDownloadTitle),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(l10n.speechModelDownloadDesc(sizeMB)),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    _downloadWhisperModel(useChineseMirror: true);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: Text(l10n.speechModelStartDownload),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text(l10n.cancel),
-            ),
-          ],
-        ),
-      );
-    }
-
-    // Global flavor: two source options
-    return showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        title: Text(l10n.speechModelDownloadTitle),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(l10n.speechModelDownloadDesc(sizeMB)),
-            const SizedBox(height: 20),
-            Text(
-              l10n.speechModelChooseSource,
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  _downloadWhisperModel(useChineseMirror: true);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: Text(l10n.speechModelChinaMirror),
-              ),
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  _downloadWhisperModel(useChineseMirror: false);
-                },
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: Text(l10n.speechModelGithub),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(l10n.cancel),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _downloadWhisperModel({required bool useChineseMirror}) async {
-    final l10n = UserStorage.l10n;
-
-    // Show progress dialog
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) {
-          _downloadDialogSetState = setDialogState;
-          return AlertDialog(
-            backgroundColor: Colors.white,
-            title: Text(l10n.speechModelDownloading),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                LinearProgressIndicator(
-                  value: _downloadProgress > 0 ? _downloadProgress : null,
-                  backgroundColor: AppColors.background,
-                  color: AppColors.primary,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  _downloadProgress > 0
-                      ? '${(_downloadProgress * 100).toInt()}%'
-                      : l10n.speechModelConnecting,
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-
-    _downloadProgress = 0;
-
-    try {
-      await WhisperService.instance.downloadModel(
-        useChineseMirror: useChineseMirror,
-        onProgress: (p) {
-          _downloadDialogSetState?.call(() {
-            _downloadProgress = p;
-          });
-        },
-      );
-    } catch (e) {
-      _logger.severe('Model download failed: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.speechModelDownloadFailed(e.toString()))),
-        );
-      }
-    } finally {
-      _downloadProgress = 0;
-      if (mounted) Navigator.of(context).pop();
-    }
-  }
-
-  StateSetter? _downloadDialogSetState;
-  double _downloadProgress = 0;
 
   void _removeImage(int index) {
     setState(() {

@@ -67,7 +67,7 @@ class DebugSettingsPage extends StatelessWidget {
     if (confirmed != true) return;
 
     try {
-      final deleted = await WhisperService.instance.deleteDownloadedModel();
+      final deleted = await WhisperService.instance.deleteAllDownloadedModels();
       if (!context.mounted) return;
 
       if (deleted) {
