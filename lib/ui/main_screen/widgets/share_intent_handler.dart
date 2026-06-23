@@ -7,6 +7,7 @@ import 'package:share_handler/share_handler.dart';
 
 import 'package:memex/data/services/backup_import_intent_service.dart';
 import 'package:memex/data/services/backup_service.dart';
+import 'package:memex/data/services/external_file_import_intent_service.dart';
 import 'package:memex/utils/toast_helper.dart';
 import 'package:memex/utils/user_storage.dart';
 
@@ -29,17 +30,21 @@ class ShareIntentHandler {
   final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey;
   final void Function(SharedDraft) onSharedDraft;
   final Future<void> Function(String backupFilePath) onBackupFileShared;
+  final Future<void> Function(List<String> filePaths) onImportFilesShared;
 
   StreamSubscription<SharedMedia>? _mediaSubscription;
   StreamSubscription<String>? _backupPathSubscription;
+  StreamSubscription<List<String>>? _externalFileSubscription;
   bool _isHandlingShare = false;
   bool _isHandlingBackupFile = false;
+  bool _isHandlingExternalFiles = false;
 
   ShareIntentHandler({
     required this.logger,
     required this.scaffoldMessengerKey,
     required this.onSharedDraft,
     required this.onBackupFileShared,
+    required this.onImportFilesShared,
   });
 
   void init() {
@@ -75,6 +80,21 @@ class ShareIntentHandler {
         logger.warning('Error in backupPathStream: $err');
       },
     );
+
+    final externalFileService = ExternalFileImportIntentService.instance;
+    externalFileService.consumeInitialFilePaths().then((paths) {
+      if (paths != null && paths.isNotEmpty) {
+        _handleExternalFiles(paths);
+      }
+    }).catchError((err, stack) {
+      logger.warning('Error reading initial external file import intent: $err');
+    });
+    _externalFileSubscription = externalFileService.filePathStream.listen(
+      _handleExternalFiles,
+      onError: (err) {
+        logger.warning('Error in external file import stream: $err');
+      },
+    );
   }
 
   Future<void> _handleSharedMedia(SharedMedia media) async {
@@ -87,6 +107,12 @@ class ShareIntentHandler {
       final backupFilePath = _firstBackupFilePath(attachments);
       if (backupFilePath != null) {
         await _handleBackupFile(backupFilePath);
+        return;
+      }
+
+      final importFilePaths = _sharedImportFilePaths(attachments);
+      if (importFilePaths.isNotEmpty) {
+        await _handleExternalFiles(importFilePaths);
         return;
       }
 
@@ -136,9 +162,14 @@ class ShareIntentHandler {
     }
   }
 
+  @visibleForTesting
+  Future<void> handleSharedMediaForTesting(SharedMedia media) =>
+      _handleSharedMedia(media);
+
   void dispose() {
     _mediaSubscription?.cancel();
     _backupPathSubscription?.cancel();
+    _externalFileSubscription?.cancel();
   }
 
   Future<void> _handleBackupFile(String rawPath) async {
@@ -163,6 +194,28 @@ class ShareIntentHandler {
     }
   }
 
+  Future<void> _handleExternalFiles(List<String> rawPaths) async {
+    if (_isHandlingExternalFiles) return;
+
+    final filePaths = rawPaths
+        .map(_normalizeFilePath)
+        .where((path) => path.trim().isNotEmpty)
+        .where((path) => !BackupService.isMemexBackupFile(path))
+        .toSet()
+        .toList(growable: false);
+    if (filePaths.isEmpty) return;
+
+    _isHandlingExternalFiles = true;
+    try {
+      await onImportFilesShared(filePaths);
+    } catch (e, stackTrace) {
+      logger.severe('Error handling external files: $e', e, stackTrace);
+      ToastHelper.showErrorWithKey(scaffoldMessengerKey, e);
+    } finally {
+      _isHandlingExternalFiles = false;
+    }
+  }
+
   String? _firstBackupFilePath(List<SharedAttachment?> attachments) {
     for (final attachment in attachments) {
       if (attachment == null) continue;
@@ -175,6 +228,30 @@ class ShareIntentHandler {
       }
     }
     return null;
+  }
+
+  List<String> _sharedImportFilePaths(List<SharedAttachment?> attachments) {
+    final filePaths = <String>[];
+    var hasNonDraftAttachment = false;
+
+    for (final attachment in attachments) {
+      if (attachment == null) continue;
+      final path = attachment.path;
+      if (path.isEmpty) continue;
+
+      final normalizedPath = _normalizeFilePath(path);
+      if (BackupService.isMemexBackupFile(normalizedPath)) continue;
+
+      final isImageAttachment = attachment.type == SharedAttachmentType.image ||
+          _looksLikeImageFile(normalizedPath);
+      if (!isImageAttachment) {
+        hasNonDraftAttachment = true;
+      }
+      filePaths.add(normalizedPath);
+    }
+
+    if (!hasNonDraftAttachment) return const [];
+    return filePaths.toSet().toList(growable: false);
   }
 
   String _normalizeFilePath(String filePath) {

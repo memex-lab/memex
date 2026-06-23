@@ -6,6 +6,7 @@ import com.memexlab.memex.channels.AppActionChannelHandler
 import com.memexlab.memex.channels.BackupImportChannelHandler
 import com.memexlab.memex.channels.BackupStorageChannelHandler
 import com.memexlab.memex.channels.ChannelRegistrar
+import com.memexlab.memex.channels.ExternalFileImportChannelHandler
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 
@@ -21,6 +22,7 @@ class MainActivity : FlutterFragmentActivity() {
         super.onCreate(savedInstanceState)
         AppActionChannelHandler.handleIntent(this, intent)
         BackupImportChannelHandler.handleIntent(this, intent)
+        ExternalFileImportChannelHandler.handleIntent(this, intent)
         AgentBackgroundChannelHandler.handleIntent(intent)
     }
 
@@ -29,6 +31,7 @@ class MainActivity : FlutterFragmentActivity() {
         setIntent(intent)
         AppActionChannelHandler.handleIntent(this, intent)
         BackupImportChannelHandler.handleIntent(this, intent)
+        ExternalFileImportChannelHandler.handleIntent(this, intent)
         AgentBackgroundChannelHandler.handleIntent(intent)
     }
 
