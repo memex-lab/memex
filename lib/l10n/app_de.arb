@@ -1480,5 +1480,49 @@
     "placeholders": {
       "count": {}
     }
-  }
+  },
+  "dataImportTitle": "Dateien importieren",
+  "dataImportSettingsDescription": "Bringe alte Dateien in Memex und entscheide danach, ob sie organisiert werden sollen.",
+  "dataImportDescription": "Wähle alte Notizen, exportierte Einträge, Dokumente oder ZIP-Archive aus. Memex speichert zuerst eine Kopie und lässt die Originaldateien unverändert. Danach kannst du entscheiden, ob Memex beim Organisieren helfen soll.",
+  "dataImportSelectFiles": "Dateien zum Importieren auswählen",
+  "dataImportImporting": "Dateien werden gespeichert...",
+  "dataImportSuccess": "Dateien in Memex gespeichert",
+  "dataImportOnlyStored": "Dateien gespeichert. Es wurde keine Organisation gestartet.",
+  "dataImportQueued": "Memex organisiert diesen Import im Hintergrund.",
+  "dataImportResultTitle": "Import abgeschlossen",
+  "dataImportResultSummary": "{count} Dateien wurden gespeichert. Du kannst sie jetzt organisieren oder als ursprüngliches Quellenmaterial behalten.",
+  "@dataImportResultSummary": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportRenamedConflicts": "{count} gleichnamige Elemente wurden umbenannt, damit nichts überschrieben wird.",
+  "@dataImportRenamedConflicts": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportSkippedUnsafeEntries": "{count} ungewöhnliche Archivelemente wurden übersprungen; der Rest wurde normal importiert.",
+  "@dataImportSkippedUnsafeEntries": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportChooseProcessing": "Diese Dateien organisieren",
+  "dataImportProcessTitle": "Diesen Import organisieren?",
+  "dataImportProcessPrompt": "Du hast {count} Dateien importiert. Wähle, ob Memex sie jetzt organisieren oder nur die Originale behalten soll.",
+  "@dataImportProcessPrompt": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportProcessKnowledgeBase": "In der Wissensbasis organisieren",
+  "dataImportProcessKnowledgeBaseDesc": "Geeignet für Dokumente, Notizen, Projektmaterial und Referenzen. Memex extrahiert nützliche Informationen und gruppiert sie für später.",
+  "dataImportProcessTimelineCards": "Timeline-Einträge erstellen",
+  "dataImportProcessTimelineCardsDesc": "Geeignet für Tagebücher, Chatverläufe, Aktivitätsverläufe und alte Exporte. Memex macht daraus zeitbezogene Einträge, wenn es sinnvoll ist.",
+  "dataImportImpactNone": "Memex behält nur diese Originaldateien. Es wird keine KI-Organisation gestartet.",
+  "dataImportImpactKnowledgeBase": "Memex liest diese Dateien und organisiert langfristig nützliche Informationen in der Wissensbasis. Timeline-Einträge werden nicht aktiv erstellt.",
+  "dataImportImpactTimelineCards": "Memex liest diese Dateien und erstellt bei passenden Lebensereignissen oder datierten Verläufen Timeline-Einträge. Die Wissensbasis wird nicht aktiv organisiert.",
+  "dataImportImpactBoth": "Memex versucht, Timeline-Einträge zu erstellen und wiederverwendbare Informationen in der Wissensbasis zu organisieren. Das passt gut zu vollständigen persönlichen Archiven.",
+  "dataImportFinish": "Nur speichern"
 }

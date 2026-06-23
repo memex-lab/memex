@@ -3259,4 +3259,93 @@ class AppLocalizationsRu extends AppLocalizations {
   String dismissedCount(Object count) {
     return 'Очищено: $count';
   }
+
+  @override
+  String get dataImportTitle => 'Импорт файлов';
+
+  @override
+  String get dataImportSettingsDescription =>
+      'Перенесите старые файлы в Memex, а затем решите, нужно ли их упорядочить.';
+
+  @override
+  String get dataImportDescription =>
+      'Выберите старые заметки, экспортированные записи, документы или ZIP-архивы. Memex сначала сохранит копию и не изменит исходные файлы. После импорта вы сможете решить, должен ли Memex помочь с организацией.';
+
+  @override
+  String get dataImportSelectFiles => 'Выбрать файлы для импорта';
+
+  @override
+  String get dataImportImporting => 'Сохранение файлов...';
+
+  @override
+  String get dataImportSuccess => 'Файлы сохранены в Memex';
+
+  @override
+  String get dataImportOnlyStored =>
+      'Файлы сохранены. Организация не запущена.';
+
+  @override
+  String get dataImportQueued => 'Memex упорядочит этот импорт в фоне.';
+
+  @override
+  String get dataImportResultTitle => 'Импорт завершён';
+
+  @override
+  String dataImportResultSummary(Object count) {
+    return 'Сохранено файлов: $count. Вы можете упорядочить их сейчас или оставить как исходные материалы.';
+  }
+
+  @override
+  String dataImportRenamedConflicts(Object count) {
+    return 'Элементы с одинаковыми именами переименованы, чтобы ничего не перезаписать. Количество: $count.';
+  }
+
+  @override
+  String dataImportSkippedUnsafeEntries(Object count) {
+    return 'Необычные элементы архива пропущены, остальное импортировано обычным образом. Количество: $count.';
+  }
+
+  @override
+  String get dataImportChooseProcessing => 'Упорядочить эти файлы';
+
+  @override
+  String get dataImportProcessTitle => 'Упорядочить этот импорт?';
+
+  @override
+  String dataImportProcessPrompt(Object count) {
+    return 'Вы импортировали файлов: $count. Выберите, должен ли Memex упорядочить их сейчас или просто сохранить оригиналы.';
+  }
+
+  @override
+  String get dataImportProcessKnowledgeBase => 'Упорядочить в базе знаний';
+
+  @override
+  String get dataImportProcessKnowledgeBaseDesc =>
+      'Подходит для документов, заметок, проектных материалов и справок. Memex извлечёт полезную информацию и сгруппирует её для дальнейшего использования.';
+
+  @override
+  String get dataImportProcessTimelineCards => 'Создать записи таймлайна';
+
+  @override
+  String get dataImportProcessTimelineCardsDesc =>
+      'Подходит для дневников, переписок, истории активности и старых экспортов. Memex превратит содержимое с временным смыслом в записи, когда это уместно.';
+
+  @override
+  String get dataImportImpactNone =>
+      'Memex только сохранит эти исходные файлы. Организация с помощью ИИ не начнётся.';
+
+  @override
+  String get dataImportImpactKnowledgeBase =>
+      'Memex прочитает эти файлы и упорядочит долгосрочно полезную информацию в базе знаний. Записи таймлайна не будут создаваться автоматически.';
+
+  @override
+  String get dataImportImpactTimelineCards =>
+      'Memex прочитает эти файлы и создаст записи таймлайна для жизненных событий или датированной истории, когда это уместно. База знаний не будет упорядочиваться автоматически.';
+
+  @override
+  String get dataImportImpactBoth =>
+      'Memex попробует создать записи таймлайна и упорядочить переиспользуемую информацию в базе знаний. Это лучше всего подходит для полного личного архива.';
+
+  @override
+  String get dataImportFinish => 'Только сохранить';
 }

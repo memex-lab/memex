@@ -1480,5 +1480,49 @@
     "placeholders": {
       "count": {}
     }
-  }
+  },
+  "dataImportTitle": "Importer des fichiers",
+  "dataImportSettingsDescription": "Ajoutez d'anciens fichiers à Memex, puis décidez s'il faut les organiser.",
+  "dataImportDescription": "Choisissez d'anciennes notes, des exports, des documents ou des archives ZIP. Memex enregistre d'abord une copie et ne modifie pas les originaux. Vous pourrez ensuite décider si Memex doit vous aider à les organiser.",
+  "dataImportSelectFiles": "Choisir les fichiers à importer",
+  "dataImportImporting": "Enregistrement des fichiers...",
+  "dataImportSuccess": "Fichiers enregistrés dans Memex",
+  "dataImportOnlyStored": "Fichiers enregistrés. Aucune organisation lancée.",
+  "dataImportQueued": "Memex organisera cet import en arrière-plan.",
+  "dataImportResultTitle": "Import terminé",
+  "dataImportResultSummary": "{count} fichiers ont été enregistrés. Vous pouvez les organiser maintenant ou les garder comme source d'origine.",
+  "@dataImportResultSummary": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportRenamedConflicts": "{count} éléments portant le même nom ont été renommés pour éviter tout écrasement.",
+  "@dataImportRenamedConflicts": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportSkippedUnsafeEntries": "{count} éléments inhabituels de l'archive ont été ignorés ; le reste a été importé normalement.",
+  "@dataImportSkippedUnsafeEntries": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportChooseProcessing": "Organiser ces fichiers",
+  "dataImportProcessTitle": "Organiser cet import ?",
+  "dataImportProcessPrompt": "Vous avez importé {count} fichiers. Choisissez si Memex doit les organiser maintenant ou simplement conserver les originaux.",
+  "@dataImportProcessPrompt": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportProcessKnowledgeBase": "Organiser dans la base de connaissances",
+  "dataImportProcessKnowledgeBaseDesc": "Idéal pour les documents, notes, ressources de projet et références. Memex extraira les informations utiles et les regroupera pour plus tard.",
+  "dataImportProcessTimelineCards": "Créer des entrées de chronologie",
+  "dataImportProcessTimelineCardsDesc": "Idéal pour les journaux, discussions, historiques d'activité et anciens exports. Memex transformera le contenu daté en entrées quand c'est pertinent.",
+  "dataImportImpactNone": "Memex conservera seulement ces fichiers originaux. Aucune organisation par IA ne sera lancée.",
+  "dataImportImpactKnowledgeBase": "Memex lira ces fichiers et organisera les informations utiles à long terme dans la base de connaissances. Il ne créera pas d'entrées de chronologie de lui-même.",
+  "dataImportImpactTimelineCards": "Memex lira ces fichiers et créera des entrées de chronologie pour les événements ou historiques datés quand c'est pertinent. Il n'organisera pas la base de connaissances de lui-même.",
+  "dataImportImpactBoth": "Memex essaiera de créer des entrées de chronologie et d'organiser les informations réutilisables dans la base de connaissances. C'est le meilleur choix pour une archive personnelle complète.",
+  "dataImportFinish": "Seulement enregistrer"
 }

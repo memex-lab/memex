@@ -1,0 +1,573 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:archive/archive_io.dart';
+import 'package:memex/utils/logger.dart';
+import 'package:path/path.dart' as p;
+import 'package:xml/xml.dart';
+
+class DocumentTextExtractionService {
+  DocumentTextExtractionService._();
+
+  static final DocumentTextExtractionService instance =
+      DocumentTextExtractionService._();
+
+  final _logger = getLogger('DocumentTextExtractionService');
+
+  Future<String?> extractForAgent(File file) async {
+    final extension = p.extension(file.path).toLowerCase();
+    try {
+      final body = switch (extension) {
+        '.docx' => await _extractDocxText(file),
+        '.xlsx' => await _extractXlsxText(file),
+        '.pdf' => await _extractPdfText(file),
+        '.doc' => _legacyDocMessage(),
+        '.xls' => _legacyXlsMessage(),
+        _ => null,
+      };
+      if (body == null) return null;
+      return _wrapExtractedText(
+        originalFileName: p.basename(file.path),
+        body: body,
+      );
+    } catch (e, st) {
+      _logger.warning('Failed to extract text from ${file.path}', e, st);
+      return _wrapExtractedText(
+        originalFileName: p.basename(file.path),
+        body:
+            'Memex tried to extract text from this file, but extraction failed. '
+            'Use the original file if you need to inspect it manually.',
+      );
+    }
+  }
+
+  Future<String> _extractDocxText(File file) async {
+    final archive = ZipDecoder().decodeBytes(await file.readAsBytes());
+    final sections = <String>[];
+    for (final entry in archive.files) {
+      final name = entry.name;
+      final isDocument = name == 'word/document.xml';
+      final isHeaderOrFooter =
+          RegExp(r'^word/(header|footer)\d+\.xml$').hasMatch(name);
+      if (!entry.isFile || (!isDocument && !isHeaderOrFooter)) continue;
+
+      final bytes = entry.readBytes();
+      if (bytes == null || bytes.isEmpty) continue;
+      final text = _wordXmlToText(utf8.decode(bytes, allowMalformed: true));
+      if (text.trim().isNotEmpty) sections.add(text.trim());
+    }
+
+    if (sections.isEmpty) {
+      return 'No readable DOCX text was found. The document may be empty, '
+          'encrypted, or contain only embedded images.';
+    }
+    return sections.join('\n\n');
+  }
+
+  Future<String> _extractXlsxText(File file) async {
+    final archive = ZipDecoder().decodeBytes(await file.readAsBytes());
+    final entries = {
+      for (final entry in archive.files)
+        if (entry.isFile) entry.name: entry,
+    };
+    final sharedStrings = _readXlsxSharedStrings(entries);
+    final sheets = _readXlsxSheetReferences(entries);
+    final sections = <String>[];
+
+    for (final sheet in sheets) {
+      final xml = _archiveEntryText(entries[sheet.path]);
+      if (xml == null || xml.trim().isEmpty) continue;
+
+      final markdown = _xlsxWorksheetToMarkdown(xml, sharedStrings);
+      if (markdown.trim().isEmpty) continue;
+      sections.add('## Sheet: ${sheet.name}\n\n$markdown');
+    }
+
+    if (sections.isEmpty) {
+      return 'No readable XLSX cell text was found. The workbook may be '
+          'empty, encrypted, or contain only charts, images, or unsupported '
+          'embedded objects.';
+    }
+    return sections.join('\n\n');
+  }
+
+  List<String> _readXlsxSharedStrings(Map<String, ArchiveFile> entries) {
+    final xml = _archiveEntryText(entries['xl/sharedStrings.xml']);
+    if (xml == null || xml.trim().isEmpty) return const [];
+
+    final document = XmlDocument.parse(xml);
+    return document
+        .findAllElements('si', namespace: '*')
+        .map(_xlsxTextRuns)
+        .toList();
+  }
+
+  List<_XlsxSheetReference> _readXlsxSheetReferences(
+    Map<String, ArchiveFile> entries,
+  ) {
+    final workbookXml = _archiveEntryText(entries['xl/workbook.xml']);
+    if (workbookXml == null || workbookXml.trim().isEmpty) {
+      return _fallbackXlsxSheetReferences(entries);
+    }
+
+    final rels = _readXlsxWorkbookRelationships(entries);
+    final workbook = XmlDocument.parse(workbookXml);
+    final sheets = <_XlsxSheetReference>[];
+    var fallbackIndex = 1;
+
+    for (final sheet in workbook.findAllElements('sheet', namespace: '*')) {
+      final name = sheet.getAttribute('name', namespace: '*')?.trim();
+      final relationshipId = sheet.getAttribute('id', namespace: '*');
+      final path = relationshipId == null ? null : rels[relationshipId];
+      if (path == null || !entries.containsKey(path)) continue;
+
+      sheets.add(
+        _XlsxSheetReference(
+          name: name == null || name.isEmpty ? 'Sheet $fallbackIndex' : name,
+          path: path,
+        ),
+      );
+      fallbackIndex += 1;
+    }
+
+    return sheets.isEmpty ? _fallbackXlsxSheetReferences(entries) : sheets;
+  }
+
+  Map<String, String> _readXlsxWorkbookRelationships(
+    Map<String, ArchiveFile> entries,
+  ) {
+    final relsXml = _archiveEntryText(entries['xl/_rels/workbook.xml.rels']);
+    if (relsXml == null || relsXml.trim().isEmpty) return const {};
+
+    final document = XmlDocument.parse(relsXml);
+    final relationships = <String, String>{};
+    for (final relationship
+        in document.findAllElements('Relationship', namespace: '*')) {
+      final id = relationship.getAttribute('Id', namespace: '*');
+      final target = relationship.getAttribute('Target', namespace: '*');
+      if (id == null || target == null || target.trim().isEmpty) continue;
+      relationships[id] = _xlsxWorkbookTargetToEntryPath(target);
+    }
+    return relationships;
+  }
+
+  String _xlsxWorkbookTargetToEntryPath(String target) {
+    final normalized = target.startsWith('/')
+        ? p.posix.normalize(target.substring(1))
+        : p.posix.normalize(p.posix.join('xl', target));
+    return normalized;
+  }
+
+  List<_XlsxSheetReference> _fallbackXlsxSheetReferences(
+    Map<String, ArchiveFile> entries,
+  ) {
+    final paths = entries.keys
+        .where((path) => RegExp(r'^xl/worksheets/[^/]+\.xml$').hasMatch(path))
+        .toList()
+      ..sort();
+
+    return [
+      for (var i = 0; i < paths.length; i += 1)
+        _XlsxSheetReference(
+          name: 'Sheet ${i + 1}',
+          path: paths[i],
+        ),
+    ];
+  }
+
+  String _xlsxWorksheetToMarkdown(
+    String xml,
+    List<String> sharedStrings,
+  ) {
+    final document = XmlDocument.parse(xml);
+    final rows = <List<String>>[];
+    var maxColumn = -1;
+
+    for (final rowElement in document.findAllElements('row', namespace: '*')) {
+      final rowValues = <int, String>{};
+      for (final cell in rowElement.findElements('c', namespace: '*')) {
+        final value = _xlsxCellValue(cell, sharedStrings).trim();
+        if (value.isEmpty) continue;
+
+        final columnIndex =
+            _xlsxColumnIndex(cell.getAttribute('r', namespace: '*')) ??
+                rowValues.length;
+        rowValues[columnIndex] = _normalizeExtractedText(value);
+        if (columnIndex > maxColumn) maxColumn = columnIndex;
+      }
+
+      if (rowValues.isEmpty) continue;
+      final rowMaxColumn = rowValues.keys.reduce((a, b) => a > b ? a : b);
+      final row = List<String>.filled(rowMaxColumn + 1, '');
+      for (final entry in rowValues.entries) {
+        row[entry.key] = entry.value;
+      }
+      rows.add(row);
+    }
+
+    if (rows.isEmpty || maxColumn < 0) return '';
+
+    final columnCount = maxColumn + 1;
+    final lines = <String>[];
+    lines.add(
+      '| ${List.generate(columnCount, _xlsxColumnLabel).join(' | ')} |',
+    );
+    lines.add('| ${List.filled(columnCount, '---').join(' | ')} |');
+    for (final row in rows) {
+      lines.add(
+        '| ${List.generate(
+          columnCount,
+          (index) => _escapeMarkdownTableCell(
+            index < row.length ? row[index] : '',
+          ),
+        ).join(' | ')} |',
+      );
+    }
+    return lines.join('\n');
+  }
+
+  String _xlsxCellValue(XmlElement cell, List<String> sharedStrings) {
+    final type = cell.getAttribute('t', namespace: '*');
+    if (type == 'inlineStr') {
+      final inlineString = _firstXmlElement(
+        cell.findElements('is', namespace: '*'),
+      );
+      return inlineString == null ? '' : _xlsxTextRuns(inlineString);
+    }
+
+    final value =
+        _firstXmlElement(cell.findElements('v', namespace: '*'))?.innerText;
+    if (value == null) return '';
+
+    return switch (type) {
+      's' => _xlsxSharedStringValue(value, sharedStrings),
+      'b' => value == '1' ? 'TRUE' : 'FALSE',
+      _ => value,
+    };
+  }
+
+  String _xlsxSharedStringValue(String value, List<String> sharedStrings) {
+    final index = int.tryParse(value.trim());
+    if (index == null || index < 0 || index >= sharedStrings.length) {
+      return value;
+    }
+    return sharedStrings[index];
+  }
+
+  String _xlsxTextRuns(XmlElement element) {
+    final textRuns = element.findAllElements('t', namespace: '*').toList();
+    if (textRuns.isEmpty) return element.innerText;
+    return textRuns.map((run) => run.innerText).join();
+  }
+
+  int? _xlsxColumnIndex(String? cellReference) {
+    if (cellReference == null) return null;
+    final match = RegExp(r'^[A-Za-z]+').firstMatch(cellReference);
+    final letters = match?.group(0);
+    if (letters == null || letters.isEmpty) return null;
+
+    var index = 0;
+    for (final codeUnit in letters.toUpperCase().codeUnits) {
+      index = index * 26 + (codeUnit - 0x41 + 1);
+    }
+    return index - 1;
+  }
+
+  String _xlsxColumnLabel(int zeroBasedIndex) {
+    var value = zeroBasedIndex + 1;
+    final chars = <int>[];
+    while (value > 0) {
+      value -= 1;
+      chars.insert(0, 0x41 + value % 26);
+      value ~/= 26;
+    }
+    return String.fromCharCodes(chars);
+  }
+
+  String _escapeMarkdownTableCell(String value) {
+    return value
+        .replaceAll('\r\n', '\n')
+        .replaceAll('\r', '\n')
+        .replaceAll('\n', '<br>')
+        .replaceAll('|', r'\|');
+  }
+
+  String? _archiveEntryText(ArchiveFile? entry) {
+    if (entry == null) return null;
+    final bytes = entry.readBytes();
+    if (bytes == null || bytes.isEmpty) return null;
+    return utf8.decode(bytes, allowMalformed: true);
+  }
+
+  XmlElement? _firstXmlElement(Iterable<XmlElement> elements) {
+    for (final element in elements) {
+      return element;
+    }
+    return null;
+  }
+
+  String _wordXmlToText(String xml) {
+    var text = xml
+        .replaceAll(RegExp(r'<w:tab\s*/>'), '\t')
+        .replaceAll(RegExp(r'<w:(br|cr)[^>]*/>'), '\n')
+        .replaceAll(RegExp(r'</w:tc>'), '\t')
+        .replaceAll(RegExp(r'</w:tr>'), '\n')
+        .replaceAll(RegExp(r'</w:p>'), '\n\n');
+
+    text = text.replaceAll(RegExp(r'<[^>]+>'), '');
+    text = _decodeXmlEntities(text);
+    return _normalizeExtractedText(text);
+  }
+
+  Future<String> _extractPdfText(File file) async {
+    final bytes = await file.readAsBytes();
+    final textPieces = <String>[];
+
+    for (final stream in _pdfContentStreams(bytes)) {
+      final extracted = _extractPdfTextOperators(stream);
+      if (extracted.trim().isNotEmpty) {
+        textPieces.add(extracted.trim());
+      }
+    }
+
+    if (textPieces.isEmpty) {
+      return 'No readable embedded PDF text was found. The PDF may be scanned, '
+          'image-only, encrypted, or use a font encoding that this local '
+          'extractor cannot decode.';
+    }
+    return _normalizeExtractedText(textPieces.join('\n\n'));
+  }
+
+  Iterable<String> _pdfContentStreams(List<int> bytes) sync* {
+    final raw = latin1.decode(bytes, allowInvalid: true);
+    var searchStart = 0;
+    while (true) {
+      final streamToken = raw.indexOf('stream', searchStart);
+      if (streamToken < 0) return;
+
+      var dataStart = streamToken + 'stream'.length;
+      if (dataStart < bytes.length && bytes[dataStart] == 13) dataStart += 1;
+      if (dataStart < bytes.length && bytes[dataStart] == 10) dataStart += 1;
+
+      final endToken = raw.indexOf('endstream', dataStart);
+      if (endToken < 0) return;
+      var dataEnd = endToken;
+      while (dataEnd > dataStart &&
+          (bytes[dataEnd - 1] == 10 || bytes[dataEnd - 1] == 13)) {
+        dataEnd -= 1;
+      }
+
+      final dictionaryStart = raw.lastIndexOf('<<', streamToken);
+      final dictionary = dictionaryStart >= 0
+          ? raw.substring(dictionaryStart, streamToken)
+          : '';
+      final streamBytes = bytes.sublist(dataStart, dataEnd);
+
+      if (dictionary.contains('/FlateDecode')) {
+        try {
+          yield latin1.decode(
+            const ZLibDecoder().decodeBytes(streamBytes),
+            allowInvalid: true,
+          );
+        } catch (_) {
+          // Some PDF streams are image data or use filters this lightweight
+          // extractor does not handle. Skip those and keep scanning.
+        }
+      } else {
+        yield latin1.decode(streamBytes, allowInvalid: true);
+      }
+
+      searchStart = endToken + 'endstream'.length;
+    }
+  }
+
+  String _extractPdfTextOperators(String content) {
+    final buffer = StringBuffer();
+    final textOperatorPattern = RegExp(
+      r'''(\[(?:.|\r|\n)*?\]|\((?:\\.|[^\\)])*\)|<([0-9A-Fa-f\s]+)>)\s*(?:Tj|TJ|'|")''',
+      dotAll: true,
+    );
+
+    for (final match in textOperatorPattern.allMatches(content)) {
+      final token = match.group(1);
+      if (token == null) continue;
+
+      final text = token.startsWith('[')
+          ? _decodePdfTextArray(token)
+          : _decodePdfTextToken(token);
+      if (text.trim().isEmpty) continue;
+      buffer.writeln(text.trim());
+    }
+
+    return buffer.toString();
+  }
+
+  String _decodePdfTextArray(String token) {
+    final inner = token.substring(1, token.length - 1);
+    final buffer = StringBuffer();
+    final stringPattern = RegExp(
+      r'\((?:\\.|[^\\)])*\)|<([0-9A-Fa-f\s]+)>',
+      dotAll: true,
+    );
+    for (final match in stringPattern.allMatches(inner)) {
+      buffer.write(_decodePdfTextToken(match.group(0)!));
+    }
+    return buffer.toString();
+  }
+
+  String _decodePdfTextToken(String token) {
+    if (token.startsWith('(') && token.endsWith(')')) {
+      return _decodePdfLiteralString(token.substring(1, token.length - 1));
+    }
+    if (token.startsWith('<') && token.endsWith('>')) {
+      return _decodePdfHexString(token.substring(1, token.length - 1));
+    }
+    return '';
+  }
+
+  String _decodePdfLiteralString(String value) {
+    final bytes = <int>[];
+    for (var i = 0; i < value.length; i += 1) {
+      final char = value.codeUnitAt(i);
+      if (char != 0x5c) {
+        bytes.add(char);
+        continue;
+      }
+
+      if (i + 1 >= value.length) break;
+      final next = value.codeUnitAt(++i);
+      switch (next) {
+        case 0x6e:
+          bytes.add(0x0a);
+        case 0x72:
+          bytes.add(0x0d);
+        case 0x74:
+          bytes.add(0x09);
+        case 0x62:
+          bytes.add(0x08);
+        case 0x66:
+          bytes.add(0x0c);
+        case 0x28:
+        case 0x29:
+        case 0x5c:
+          bytes.add(next);
+        case 0x0a:
+          break;
+        case 0x0d:
+          if (i + 1 < value.length && value.codeUnitAt(i + 1) == 0x0a) {
+            i += 1;
+          }
+        default:
+          if (_isOctalDigit(next)) {
+            final octal = StringBuffer()..writeCharCode(next);
+            for (var j = 0;
+                j < 2 &&
+                    i + 1 < value.length &&
+                    _isOctalDigit(value.codeUnitAt(i + 1));
+                j += 1) {
+              octal.writeCharCode(value.codeUnitAt(++i));
+            }
+            bytes.add(int.parse(octal.toString(), radix: 8));
+          } else {
+            bytes.add(next);
+          }
+      }
+    }
+    return _decodePossiblyUtf16(bytes);
+  }
+
+  bool _isOctalDigit(int char) => char >= 0x30 && char <= 0x37;
+
+  String _decodePdfHexString(String value) {
+    final hex = value.replaceAll(RegExp(r'\s+'), '');
+    final normalized = hex.length.isEven ? hex : '${hex}0';
+    final bytes = <int>[];
+    for (var i = 0; i + 1 < normalized.length; i += 2) {
+      bytes.add(int.parse(normalized.substring(i, i + 2), radix: 16));
+    }
+    return _decodePossiblyUtf16(bytes);
+  }
+
+  String _decodePossiblyUtf16(List<int> bytes) {
+    if (bytes.length >= 2 && bytes[0] == 0xfe && bytes[1] == 0xff) {
+      final codeUnits = <int>[];
+      for (var i = 2; i + 1 < bytes.length; i += 2) {
+        codeUnits.add((bytes[i] << 8) | bytes[i + 1]);
+      }
+      return String.fromCharCodes(codeUnits);
+    }
+
+    try {
+      return utf8.decode(bytes);
+    } catch (_) {
+      return latin1.decode(bytes, allowInvalid: true);
+    }
+  }
+
+  String _legacyDocMessage() {
+    return 'This is a legacy .doc Word file. Memex saved the original file, '
+        'but this version cannot reliably extract text from the old binary '
+        '.doc format on device. If possible, convert it to .docx or PDF and '
+        'import it again for better AI organization.';
+  }
+
+  String _legacyXlsMessage() {
+    return 'This is a legacy .xls Excel file. Memex saved the original file, '
+        'but this version cannot reliably extract text from the old binary '
+        '.xls format on device. If possible, convert it to .xlsx or CSV and '
+        'import it again for better AI organization.';
+  }
+
+  String _wrapExtractedText({
+    required String originalFileName,
+    required String body,
+  }) {
+    return '''
+# Text extracted from original file: $originalFileName
+
+Original file: `$originalFileName`
+
+This Markdown file was generated during import so Memex agents can read the text content of the original document. It is an extraction aid, not the original file. Layout, images, scanned pages, comments, and complex tables may be incomplete.
+
+$body
+''';
+  }
+
+  String _decodeXmlEntities(String value) {
+    return value.replaceAllMapped(
+      RegExp(r'&(#x[0-9A-Fa-f]+|#\d+|amp|lt|gt|quot|apos);'),
+      (match) {
+        final entity = match.group(1)!;
+        if (entity == 'amp') return '&';
+        if (entity == 'lt') return '<';
+        if (entity == 'gt') return '>';
+        if (entity == 'quot') return '"';
+        if (entity == 'apos') return "'";
+        if (entity.startsWith('#x')) {
+          return String.fromCharCode(int.parse(entity.substring(2), radix: 16));
+        }
+        if (entity.startsWith('#')) {
+          return String.fromCharCode(int.parse(entity.substring(1)));
+        }
+        return match.group(0)!;
+      },
+    );
+  }
+
+  String _normalizeExtractedText(String value) {
+    return value
+        .replaceAll(RegExp(r'[ \t]+\n'), '\n')
+        .replaceAll(RegExp(r'\n{3,}'), '\n\n')
+        .trim();
+  }
+}
+
+class _XlsxSheetReference {
+  const _XlsxSheetReference({
+    required this.name,
+    required this.path,
+  });
+
+  final String name;
+  final String path;
+}

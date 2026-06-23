@@ -5843,6 +5843,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} cleared'**
   String dismissedCount(Object count);
+
+  /// No description provided for @dataImportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Import files'**
+  String get dataImportTitle;
+
+  /// No description provided for @dataImportSettingsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Bring old files into Memex, then decide whether to organize them.'**
+  String get dataImportSettingsDescription;
+
+  /// No description provided for @dataImportDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose old notes, exported records, documents, or ZIP archives. Memex saves a copy first and leaves the original files untouched. After import, you can decide whether Memex should help organize them.'**
+  String get dataImportDescription;
+
+  /// No description provided for @dataImportSelectFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose files to import'**
+  String get dataImportSelectFiles;
+
+  /// No description provided for @dataImportImporting.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving files...'**
+  String get dataImportImporting;
+
+  /// No description provided for @dataImportSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Files saved in Memex'**
+  String get dataImportSuccess;
+
+  /// No description provided for @dataImportOnlyStored.
+  ///
+  /// In en, this message translates to:
+  /// **'Files saved. No organization started.'**
+  String get dataImportOnlyStored;
+
+  /// No description provided for @dataImportQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'Memex will organize this import in the background.'**
+  String get dataImportQueued;
+
+  /// No description provided for @dataImportResultTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Import complete'**
+  String get dataImportResultTitle;
+
+  /// No description provided for @dataImportResultSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} files have been saved. You can organize them now or leave them as original source material.'**
+  String dataImportResultSummary(Object count);
+
+  /// No description provided for @dataImportRenamedConflicts.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} item(s) had the same name and were renamed to avoid overwriting anything.'**
+  String dataImportRenamedConflicts(Object count);
+
+  /// No description provided for @dataImportSkippedUnsafeEntries.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} unusual archive item(s) were skipped; the rest was imported normally.'**
+  String dataImportSkippedUnsafeEntries(Object count);
+
+  /// No description provided for @dataImportChooseProcessing.
+  ///
+  /// In en, this message translates to:
+  /// **'Organize these files'**
+  String get dataImportChooseProcessing;
+
+  /// No description provided for @dataImportProcessTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Organize this import?'**
+  String get dataImportProcessTitle;
+
+  /// No description provided for @dataImportProcessPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'You imported {count} files. Choose whether Memex should organize them now, or just keep the originals.'**
+  String dataImportProcessPrompt(Object count);
+
+  /// No description provided for @dataImportProcessKnowledgeBase.
+  ///
+  /// In en, this message translates to:
+  /// **'Organize into knowledge base'**
+  String get dataImportProcessKnowledgeBase;
+
+  /// No description provided for @dataImportProcessKnowledgeBaseDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Best for documents, notes, project material, and references. Memex will extract useful information and group it for later use.'**
+  String get dataImportProcessKnowledgeBaseDesc;
+
+  /// No description provided for @dataImportProcessTimelineCards.
+  ///
+  /// In en, this message translates to:
+  /// **'Create timeline records'**
+  String get dataImportProcessTimelineCards;
+
+  /// No description provided for @dataImportProcessTimelineCardsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Best for diaries, chat logs, activity history, and old exports. Memex will turn time-based content into records when it makes sense.'**
+  String get dataImportProcessTimelineCardsDesc;
+
+  /// No description provided for @dataImportImpactNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Memex will only keep these original files. No AI organization will start.'**
+  String get dataImportImpactNone;
+
+  /// No description provided for @dataImportImpactKnowledgeBase.
+  ///
+  /// In en, this message translates to:
+  /// **'Memex will read these files and organize useful long-term information into the knowledge base. It will not proactively create timeline records.'**
+  String get dataImportImpactKnowledgeBase;
+
+  /// No description provided for @dataImportImpactTimelineCards.
+  ///
+  /// In en, this message translates to:
+  /// **'Memex will read these files and create timeline records for life events or dated history when appropriate. It will not proactively organize the knowledge base.'**
+  String get dataImportImpactTimelineCards;
+
+  /// No description provided for @dataImportImpactBoth.
+  ///
+  /// In en, this message translates to:
+  /// **'Memex will try to create timeline records and organize reusable information into the knowledge base. This is best for a complete personal archive.'**
+  String get dataImportImpactBoth;
+
+  /// No description provided for @dataImportFinish.
+  ///
+  /// In en, this message translates to:
+  /// **'Just save them'**
+  String get dataImportFinish;
 }
 
 class _AppLocalizationsDelegate

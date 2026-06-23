@@ -3155,4 +3155,92 @@ class AppLocalizationsJa extends AppLocalizations {
   String dismissedCount(Object count) {
     return '$count 件をクリアしました';
   }
+
+  @override
+  String get dataImportTitle => 'ファイルをインポート';
+
+  @override
+  String get dataImportSettingsDescription =>
+      '古いファイルを Memex に取り込み、整理するかどうかを後で選べます。';
+
+  @override
+  String get dataImportDescription =>
+      '古いメモ、エクスポートした記録、ドキュメント、ZIP アーカイブを選択できます。Memex はまずコピーを保存し、元のファイルは変更しません。取り込み後に、整理を Memex に任せるかどうかを選べます。';
+
+  @override
+  String get dataImportSelectFiles => 'インポートするファイルを選択';
+
+  @override
+  String get dataImportImporting => 'ファイルを保存中...';
+
+  @override
+  String get dataImportSuccess => 'ファイルを Memex に保存しました';
+
+  @override
+  String get dataImportOnlyStored => 'ファイルを保存しました。整理は開始していません。';
+
+  @override
+  String get dataImportQueued => 'Memex がこのインポートをバックグラウンドで整理します。';
+
+  @override
+  String get dataImportResultTitle => 'インポート完了';
+
+  @override
+  String dataImportResultSummary(Object count) {
+    return '$count 個のファイルを保存しました。今すぐ整理することも、元資料としてそのまま残すこともできます。';
+  }
+
+  @override
+  String dataImportRenamedConflicts(Object count) {
+    return '同じ名前の項目 $count 件は、上書きを避けるため名前を変更しました。';
+  }
+
+  @override
+  String dataImportSkippedUnsafeEntries(Object count) {
+    return 'アーカイブ内の通常と異なる項目 $count 件をスキップしました。その他は通常どおりインポートされました。';
+  }
+
+  @override
+  String get dataImportChooseProcessing => 'これらのファイルを整理';
+
+  @override
+  String get dataImportProcessTitle => 'このインポートを整理しますか？';
+
+  @override
+  String dataImportProcessPrompt(Object count) {
+    return '$count 個のファイルをインポートしました。Memex に今すぐ整理させるか、元の資料として保存するだけにするかを選択してください。';
+  }
+
+  @override
+  String get dataImportProcessKnowledgeBase => 'ナレッジベースに整理';
+
+  @override
+  String get dataImportProcessKnowledgeBaseDesc =>
+      'ドキュメント、メモ、プロジェクト資料、参考資料に向いています。Memex が有用な情報を抽出し、あとで使いやすいように分類します。';
+
+  @override
+  String get dataImportProcessTimelineCards => 'タイムライン記録を作成';
+
+  @override
+  String get dataImportProcessTimelineCardsDesc =>
+      '日記、チャット履歴、活動履歴、古いエクスポートに向いています。Memex が時間に関係する内容を記録に変換します。';
+
+  @override
+  String get dataImportImpactNone =>
+      'Memex はこれらの元ファイルだけを保存します。AI による整理は開始されません。';
+
+  @override
+  String get dataImportImpactKnowledgeBase =>
+      'Memex がこれらのファイルを読み、長く残したい情報をナレッジベースに整理します。タイムライン記録は自動では作成しません。';
+
+  @override
+  String get dataImportImpactTimelineCards =>
+      'Memex がこれらのファイルを読み、生活上の出来事や日付のある履歴をタイムライン記録にします。ナレッジベースは自動では整理しません。';
+
+  @override
+  String get dataImportImpactBoth =>
+      'Memex がタイムライン記録の作成と、再利用できる情報のナレッジベース整理を両方試みます。まとまった個人アーカイブの取り込みに適しています。';
+
+  @override
+  String get dataImportFinish => '保存だけする';
 }

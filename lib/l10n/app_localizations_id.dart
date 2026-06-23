@@ -3249,4 +3249,94 @@ class AppLocalizationsId extends AppLocalizations {
   String dismissedCount(Object count) {
     return '$count dihapus';
   }
+
+  @override
+  String get dataImportTitle => 'Impor file';
+
+  @override
+  String get dataImportSettingsDescription =>
+      'Bawa file lama ke Memex, lalu putuskan apakah ingin mengaturnya.';
+
+  @override
+  String get dataImportDescription =>
+      'Pilih catatan lama, rekaman ekspor, dokumen, atau arsip ZIP. Memex menyimpan salinan terlebih dahulu dan tidak mengubah file asli. Setelah impor, Anda bisa memilih apakah Memex perlu membantu mengaturnya.';
+
+  @override
+  String get dataImportSelectFiles => 'Pilih file untuk diimpor';
+
+  @override
+  String get dataImportImporting => 'Menyimpan file...';
+
+  @override
+  String get dataImportSuccess => 'File disimpan di Memex';
+
+  @override
+  String get dataImportOnlyStored =>
+      'File disimpan. Tidak ada pengaturan yang dimulai.';
+
+  @override
+  String get dataImportQueued =>
+      'Memex akan mengatur impor ini di latar belakang.';
+
+  @override
+  String get dataImportResultTitle => 'Impor selesai';
+
+  @override
+  String dataImportResultSummary(Object count) {
+    return '$count file telah disimpan. Anda bisa mengaturnya sekarang atau membiarkannya sebagai bahan sumber asli.';
+  }
+
+  @override
+  String dataImportRenamedConflicts(Object count) {
+    return '$count item memiliki nama yang sama dan diganti nama agar tidak menimpa apa pun.';
+  }
+
+  @override
+  String dataImportSkippedUnsafeEntries(Object count) {
+    return '$count item arsip yang tidak biasa dilewati; sisanya diimpor seperti biasa.';
+  }
+
+  @override
+  String get dataImportChooseProcessing => 'Atur file ini';
+
+  @override
+  String get dataImportProcessTitle => 'Atur impor ini?';
+
+  @override
+  String dataImportProcessPrompt(Object count) {
+    return 'Anda mengimpor $count file. Pilih apakah Memex perlu mengaturnya sekarang atau hanya menyimpan aslinya.';
+  }
+
+  @override
+  String get dataImportProcessKnowledgeBase => 'Atur ke basis pengetahuan';
+
+  @override
+  String get dataImportProcessKnowledgeBaseDesc =>
+      'Cocok untuk dokumen, catatan, materi proyek, dan referensi. Memex akan mengambil informasi berguna dan mengelompokkannya untuk dipakai nanti.';
+
+  @override
+  String get dataImportProcessTimelineCards => 'Buat catatan timeline';
+
+  @override
+  String get dataImportProcessTimelineCardsDesc =>
+      'Cocok untuk jurnal, riwayat chat, riwayat aktivitas, dan ekspor lama. Memex akan mengubah konten berbasis waktu menjadi catatan bila masuk akal.';
+
+  @override
+  String get dataImportImpactNone =>
+      'Memex hanya akan menyimpan file asli ini. Tidak ada pengaturan AI yang dimulai.';
+
+  @override
+  String get dataImportImpactKnowledgeBase =>
+      'Memex akan membaca file ini dan mengatur informasi jangka panjang yang berguna ke basis pengetahuan. Catatan timeline tidak akan dibuat secara proaktif.';
+
+  @override
+  String get dataImportImpactTimelineCards =>
+      'Memex akan membaca file ini dan membuat catatan timeline untuk peristiwa hidup atau riwayat bertanggal bila sesuai. Basis pengetahuan tidak akan diatur secara proaktif.';
+
+  @override
+  String get dataImportImpactBoth =>
+      'Memex akan mencoba membuat catatan timeline dan mengatur informasi yang dapat digunakan kembali ke basis pengetahuan. Ini cocok untuk arsip pribadi yang lengkap.';
+
+  @override
+  String get dataImportFinish => 'Simpan saja';
 }

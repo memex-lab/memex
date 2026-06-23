@@ -12,9 +12,11 @@ import 'package:memex/ui/settings/widgets/agent_config_list_page.dart';
 import 'package:memex/ui/settings/widgets/settings_page.dart';
 import 'package:memex/ui/settings/widgets/debug_settings_screen.dart';
 import 'package:memex/ui/settings/widgets/data_storage_page.dart';
+import 'package:memex/ui/settings/widgets/data_import_page.dart';
 import 'package:memex/ui/settings/widgets/backup_restore_page.dart';
 import 'package:memex/ui/settings/widgets/location_context_settings_page.dart';
 import 'package:memex/ui/settings/widgets/experimental_lab_page.dart';
+import 'package:memex/ui/settings/view_models/data_import_viewmodel.dart';
 import 'package:memex/ui/memory/view_models/memory_viewmodel.dart';
 import 'package:memex/ui/memory/widgets/memory_screen.dart';
 import 'package:memex/ui/character/view_models/character_viewmodel.dart';
@@ -320,6 +322,35 @@ class SettingsRegistry {
           icon: Icons.language,
           navigationTarget: NavigationTarget(
             pageBuilder: (_) => const SettingsPage(),
+          ),
+          parentPathGetter: () => [
+            UserStorage.l10n.personalCenter,
+            UserStorage.l10n.settings,
+          ],
+        ),
+        SettingsItem(
+          id: 'settings.data_import',
+          titleGetter: () => UserStorage.l10n.dataImportTitle,
+          descriptionGetter: () =>
+              UserStorage.l10n.dataImportSettingsDescription,
+          keywords: const [
+            '导入',
+            '文件',
+            '压缩包',
+            '知识库',
+            '资源',
+            'import',
+            'files',
+            'zip',
+            'archive',
+            'knowledge base',
+            'resources',
+          ],
+          icon: Icons.upload_file_outlined,
+          navigationTarget: NavigationTarget(
+            pageBuilder: (_) => DataImportPage(
+              viewModel: DataImportViewModel(router: MemexRouter()),
+            ),
           ),
           parentPathGetter: () => [
             UserStorage.l10n.personalCenter,
