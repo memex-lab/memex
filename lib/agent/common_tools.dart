@@ -1,4 +1,5 @@
 import 'package:dart_agent_core/dart_agent_core.dart';
+import 'package:memex/agent/run_mode/agent_action_approval_service.dart';
 import 'package:memex/utils/date_util.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/utils/logger.dart';
@@ -51,6 +52,13 @@ final mintRecordFactIdTool = Tool(
       throw StateError(
           "mint_record_fact_id must be called within an agent execution context.");
     }
+
+    final denied = await gateMutatingToolCall(
+      toolName: 'mint_record_fact_id',
+      summary: 'Reserve a new card id (processing placeholder)',
+    );
+    if (denied != null) return denied;
+
     final userId = context.state.metadata['userId'] as String;
     final factId = await FileSystemService.instance.allocateCardFactId(userId);
     getLogger('CommonTools').info('Minted fact_id: $factId');

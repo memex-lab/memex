@@ -41,16 +41,31 @@ Future<bool> reportDailyHealthSummaryEndpoint(
           continue;
         }
 
+        final yamlData = {
+          'health': healthData,
+          'health_updated_at': DateTime.now().toIso8601String(),
+        };
+
+        await _fileSystemService.updateDailyFactYamlData(
+          userId,
+          parsedDate,
+          yamlData,
+        );
+
         // Log event
         try {
+          final monthStr = month.toString().padLeft(2, '0');
+          final dayStr = day.toString().padLeft(2, '0');
+          final factPath = 'Facts/$year/$monthStr/$dayStr.md';
+
           await _fileSystemService.eventLogService.logEvent(
             userId: userId,
             eventType: 'health_data_update',
             description: 'Updated comprehensive health summary',
+            filePath: factPath,
             metadata: {
               'date': dateStr,
               'keys_updated': healthData.keys.toList(),
-              'health': healthData,
             },
           );
         } catch (e) {
@@ -66,6 +81,9 @@ Future<bool> reportDailyHealthSummaryEndpoint(
     }
 
     _logger.info('Reported health for ${updatedDates.length} days');
+    if (dailySummary.isNotEmpty && updatedDates.isEmpty) {
+      return false;
+    }
     return true;
   } catch (e) {
     _logger.severe('Failed to report daily health summary locally: $e');

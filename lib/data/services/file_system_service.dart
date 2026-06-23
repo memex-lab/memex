@@ -1656,6 +1656,82 @@ class FileSystemService {
     return DateTime(year, month, day);
   }
 
+  /// Daily fact file path (`Facts/YYYY/MM/DD.md`).
+  String getDailyFactPath(String userId, DateTime date) {
+    final factsPath = getFactsPath(userId);
+    final year = date.year.toString();
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+
+    return path.join(factsPath, year, month, '$day.md');
+  }
+
+  /// Read daily fact file and parse YAML frontmatter.
+  Future<({Map<String, dynamic>? yamlData, String bodyContent})>
+      readDailyFactFile(String userId, DateTime date) async {
+    final filePath = getDailyFactPath(userId, date);
+
+    if (!await _baseService.exists(filePath)) {
+      return (yamlData: null, bodyContent: '');
+    }
+
+    try {
+      final content = await _baseService.readFile(filePath);
+
+      final yamlPattern =
+          RegExp(r'^---\s*\n(.*?)\n---\s*\n(.*)$', dotAll: true);
+      final match = yamlPattern.firstMatch(content);
+
+      if (match != null) {
+        final yamlStr = match.group(1)!;
+        final bodyContent = match.group(2)!;
+
+        try {
+          final yamlData = _parseYaml(yamlStr);
+          return (
+            yamlData: yamlData.isEmpty ? null : yamlData,
+            bodyContent: bodyContent,
+          );
+        } catch (e) {
+          _logger.warning('Failed to parse yaml frontmatter: $e');
+          return (yamlData: null, bodyContent: content);
+        }
+      } else {
+        return (yamlData: null, bodyContent: content);
+      }
+    } catch (e) {
+      _logger.severe('Failed to read fact file: $e');
+      return (yamlData: null, bodyContent: '');
+    }
+  }
+
+  /// Merge [data] into the daily fact YAML frontmatter under `Facts/`.
+  Future<void> updateDailyFactYamlData(
+    String userId,
+    DateTime date,
+    Map<String, dynamic> data,
+  ) async {
+    final filePath = getDailyFactPath(userId, date);
+    final parentDir = path.dirname(filePath);
+
+    await ensureDirectory(parentDir);
+
+    final result = await readDailyFactFile(userId, date);
+    var yamlData = result.yamlData ?? <String, dynamic>{};
+    yamlData.addAll(data);
+
+    final yamlStr = _mapToYaml(yamlData);
+    final yamlContent = yamlStr.endsWith('\n') ? yamlStr : '$yamlStr\n';
+
+    final bodyContent = result.bodyContent;
+    final newContent = bodyContent.isNotEmpty
+        ? '---\n$yamlContent---\n$bodyContent'
+        : '---\n$yamlContent---\n';
+
+    await _baseService.writeFile(filePath, newContent);
+    _logger.info('Updated yaml frontmatter in fact file: $filePath');
+  }
+
   /// GetPKMdirectory path
   String getPkmPath(String userId) {
     return path.join(getWorkspacePath(userId), 'PKM');

@@ -387,10 +387,12 @@ void validateUiConfig(
         'ui_configs entry for template "$templateId": "data" must be an object (Map).');
   }
   final dataMap = Map<String, dynamic>.from(data);
-  if (customFields != null) {
-    validateCustomTemplateData(templateId, dataMap, customFields);
-  } else {
+  // Built-in template IDs always use native validators, even when a custom
+  // template metadata entry reuses the same template_id.
+  if (allowedTemplateIds.contains(templateId)) {
     validateTemplateData(templateId, dataMap);
+  } else if (customFields != null) {
+    validateCustomTemplateData(templateId, dataMap, customFields);
   }
 }
 

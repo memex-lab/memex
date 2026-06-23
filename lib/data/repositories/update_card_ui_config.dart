@@ -62,11 +62,6 @@ Future<bool> updateCardUiConfigEndpoint(
     }
 
     _logger.info('Updated ui_config at index $configIndex for $cardId');
-    await emitTimelineCardUpdated(
-      userId: userId,
-      cardId: cardId,
-      cardData: updatedCardData,
-    );
     await _publishCardUiConfigUpdated(
       userId: userId,
       cardId: cardId,
@@ -84,6 +79,15 @@ Future<bool> updateCardUiConfigEndpoint(
       previousData: previousData,
       updatedData: updatedData,
     );
+    try {
+      await emitTimelineCardUpdated(
+        userId: userId,
+        cardId: cardId,
+        cardData: updatedCardData,
+      );
+    } catch (e, st) {
+      _logger.warning('Failed to emit timeline card updated event', e, st);
+    }
     return true;
   } catch (e) {
     _logger.severe('Failed to update card ui config for $cardId: $e');
