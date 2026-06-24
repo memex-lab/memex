@@ -53,6 +53,7 @@ void main() {
 
     expect(result.sourceName, startsWith('Selected Files '));
     expect(result.importedFileCount, 2);
+    expect(result.generatedTextFileCount, 0);
     expect(result.renamedConflictCount, 1);
     expect(
       result.workspaceRelativeDirectoryPath,
@@ -86,6 +87,13 @@ void main() {
     );
     expect(await importedFileA.readAsString(), 'legacy note a');
     expect(await importedFileB.readAsString(), 'legacy note b');
+    expect(
+      await File(p.join(
+        result.absoluteDirectoryPath,
+        'notes.txt.extracted-text-for-agent.md',
+      )).exists(),
+      isFalse,
+    );
   });
 
   test('creates agent-readable extracted text files next to documents',
@@ -132,6 +140,28 @@ void main() {
         'report.pdf.extracted-text-for-agent.md',
       )).readAsString(),
       contains('extracted body'),
+    );
+  });
+
+  test('creates unsupported extracted text helpers for pdf files', () async {
+    final sourcePdf = File(p.join(tempDir.path, 'sources', 'report.pdf'));
+    await sourcePdf.create(recursive: true);
+    await sourcePdf.writeAsBytes(latin1.encode('%PDF-1.4\n%%EOF'));
+
+    final result = await service().importToUserSettingsImported([
+      sourcePdf.path,
+    ]);
+
+    expect(result.importedFileCount, 1);
+    expect(result.generatedTextFileCount, 1);
+    final helperFile = File(p.join(
+      result.absoluteDirectoryPath,
+      'report.pdf.extracted-text-for-agent.md',
+    ));
+    expect(await helperFile.exists(), isTrue);
+    expect(
+      await helperFile.readAsString(),
+      contains('Memex could not parse readable text content'),
     );
   });
 
@@ -293,19 +323,40 @@ void main() {
     );
 
     expect(message, contains('`/_UserSettings/Imported/my-export`'));
-    expect(message, contains('not as knowledge-base content'));
+    expect(message, isNot(contains('Generated extracted-text helper files')));
+    expect(message,
+        isNot(contains('Generated image asset-reference helper files')));
+    expect(message, isNot(contains('Renamed conflicts')));
+    expect(message, isNot(contains('not as knowledge-base content')));
+    expect(message,
+        isNot(contains('Do not assume the app categorized the files')));
     expect(message, contains('Timeline Cards'));
     expect(message, contains('knowledge base'));
     expect(message, isNot(contains('delegate_to_subagent')));
     expect(message, isNot(contains('manage_timeline_card')));
     expect(message, isNot(contains('manage_pkm')));
+    expect(
+      message,
+      isNot(contains('written next to the original imported file')),
+    );
+    expect(
+      message,
+      isNot(contains('Treat the imported folder as source material')),
+    );
     expect(message, contains('.extracted-text-for-agent.md'));
+    expect(
+      message,
+      isNot(contains('Memex could not parse readable text content')),
+    );
+    expect(message, isNot(contains('Plain-text formats')));
     expect(message, contains('.asset-reference-for-agent.md'));
-    expect(message, contains('view_image'));
-    expect(message, contains('Do not invent fact_ids'));
+    expect(message, isNot(contains('view_image')));
+    expect(message, isNot(contains('Do not invent or rewrite')));
+    expect(message, isNot(contains('Do not invent fact_ids')));
+    expect(message, isNot(contains('imported-only material')));
+    expect(message, isNot(contains('pretending it is known')));
     expect(message, contains('process it in chunks'));
     expect(message, contains('context window'));
-    expect(message, contains('Do not assume the app categorized the files'));
   });
 }
 

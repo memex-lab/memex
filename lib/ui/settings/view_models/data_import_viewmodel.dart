@@ -174,9 +174,6 @@ String buildSuperAgentImportReference(
     'Imported source folder: $path',
     'Source name: ${result.sourceName}',
     'Imported files: ${result.importedFileCount}',
-    'Generated extracted-text helper files: ${result.generatedTextFileCount}',
-    'Generated image asset-reference helper files: ${result.generatedAssetReferenceFileCount}',
-    'Renamed conflicts: ${result.renamedConflictCount}',
     'Skipped unsafe archive entries: ${result.skippedUnsafeArchiveEntries}',
     'Requested processing: $requested',
   ].join('\n');
@@ -196,27 +193,20 @@ I imported external files into my local Memex workspace.
 Imported source folder: `$path`
 Source name: `${result.sourceName}`
 Imported files: ${result.importedFileCount}
-Generated extracted-text helper files: ${result.generatedTextFileCount}
-Generated image asset-reference helper files: ${result.generatedAssetReferenceFileCount}
-Renamed conflicts: ${result.renamedConflictCount}
 Skipped unsafe archive entries: ${result.skippedUnsafeArchiveEntries}
 
 Requested processing: $requested
 
-Please inspect the imported source folder yourself before deciding what the data means. It is stored under `/_UserSettings/Imported` as source material, not as knowledge-base content. Do not assume the app categorized the files for you. Do not move, delete, or rewrite the imported source folder unless I explicitly ask.
+Please inspect the imported source folder yourself before deciding what the data means. Do not move, delete, or rewrite the imported source folder unless I explicitly ask.
 
-When a file is named like `<original filename>.extracted-text-for-agent.md`, it is a text extraction generated from the original imported document so you can understand PDFs, Word documents, and similar files. Use it as a reading aid, and treat the original file as the source of truth.
+For non-plain-text documents, look for `<original filename>.extracted-text-for-agent.md` beside the original file. Use it as a reading aid, and treat the original file as the source of truth.
 
-When a file is named like `<original filename>.asset-reference-for-agent.md`, it is a persistent mapping from an imported image file to a canonical Memex `fs://...` asset reference. Use the exact `fs://...` value in that helper file when you need to inspect the image with `view_image` or attach it to Timeline Cards. Do not invent or rewrite the `fs://...` value.
+For image assets, look for `<original filename>.asset-reference-for-agent.md` beside the original file. It maps the imported image to a canonical Memex `fs://...` asset reference.
 
 $workerGuidance
 
 Important boundaries:
-- Treat the imported folder as source material.
 - If the imported folder is large, inspect and process it in chunks. Do not read every file or load all full file contents into one turn, because that can exceed the context window.
-- Do not invent fact_ids. Only use a fact_id after you create or find a real Timeline Card.
-- If organizing imported-only material into PKM without a related Timeline Card, omit fact_id markers for that material.
-- Preserve the user's original wording and timestamps when the files provide them; if a timestamp is unclear, say so in the resulting card or note instead of pretending it is known.
 ''';
 }
 

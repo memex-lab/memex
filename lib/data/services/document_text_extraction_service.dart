@@ -20,7 +20,7 @@ class DocumentTextExtractionService {
       final body = switch (extension) {
         '.docx' => await _extractDocxText(file),
         '.xlsx' => await _extractXlsxText(file),
-        '.pdf' => await _extractPdfText(file),
+        '.pdf' => _unsupportedExtractionMessage(),
         '.doc' => _legacyDocMessage(),
         '.xls' => _legacyXlsMessage(),
         _ => null,
@@ -34,9 +34,7 @@ class DocumentTextExtractionService {
       _logger.warning('Failed to extract text from ${file.path}', e, st);
       return _wrapExtractedText(
         originalFileName: p.basename(file.path),
-        body:
-            'Memex tried to extract text from this file, but extraction failed. '
-            'Use the original file if you need to inspect it manually.',
+        body: _failedExtractionMessage(),
       );
     }
   }
@@ -307,215 +305,56 @@ class DocumentTextExtractionService {
   }
 
   String _wordXmlToText(String xml) {
-    var text = xml
-        .replaceAll(RegExp(r'<w:tab\s*/>'), '\t')
-        .replaceAll(RegExp(r'<w:(br|cr)[^>]*/>'), '\n')
-        .replaceAll(RegExp(r'</w:tc>'), '\t')
-        .replaceAll(RegExp(r'</w:tr>'), '\n')
-        .replaceAll(RegExp(r'</w:p>'), '\n\n');
-
-    text = text.replaceAll(RegExp(r'<[^>]+>'), '');
-    text = _decodeXmlEntities(text);
-    return _normalizeExtractedText(text);
-  }
-
-  Future<String> _extractPdfText(File file) async {
-    final bytes = await file.readAsBytes();
-    final textPieces = <String>[];
-
-    for (final stream in _pdfContentStreams(bytes)) {
-      final extracted = _extractPdfTextOperators(stream);
-      if (extracted.trim().isNotEmpty) {
-        textPieces.add(extracted.trim());
-      }
-    }
-
-    if (textPieces.isEmpty) {
-      return 'No readable embedded PDF text was found. The PDF may be scanned, '
-          'image-only, encrypted, or use a font encoding that this local '
-          'extractor cannot decode.';
-    }
-    return _normalizeExtractedText(textPieces.join('\n\n'));
-  }
-
-  Iterable<String> _pdfContentStreams(List<int> bytes) sync* {
-    final raw = latin1.decode(bytes, allowInvalid: true);
-    var searchStart = 0;
-    while (true) {
-      final streamToken = raw.indexOf('stream', searchStart);
-      if (streamToken < 0) return;
-
-      var dataStart = streamToken + 'stream'.length;
-      if (dataStart < bytes.length && bytes[dataStart] == 13) dataStart += 1;
-      if (dataStart < bytes.length && bytes[dataStart] == 10) dataStart += 1;
-
-      final endToken = raw.indexOf('endstream', dataStart);
-      if (endToken < 0) return;
-      var dataEnd = endToken;
-      while (dataEnd > dataStart &&
-          (bytes[dataEnd - 1] == 10 || bytes[dataEnd - 1] == 13)) {
-        dataEnd -= 1;
-      }
-
-      final dictionaryStart = raw.lastIndexOf('<<', streamToken);
-      final dictionary = dictionaryStart >= 0
-          ? raw.substring(dictionaryStart, streamToken)
-          : '';
-      final streamBytes = bytes.sublist(dataStart, dataEnd);
-
-      if (dictionary.contains('/FlateDecode')) {
-        try {
-          yield latin1.decode(
-            const ZLibDecoder().decodeBytes(streamBytes),
-            allowInvalid: true,
-          );
-        } catch (_) {
-          // Some PDF streams are image data or use filters this lightweight
-          // extractor does not handle. Skip those and keep scanning.
-        }
-      } else {
-        yield latin1.decode(streamBytes, allowInvalid: true);
-      }
-
-      searchStart = endToken + 'endstream'.length;
-    }
-  }
-
-  String _extractPdfTextOperators(String content) {
-    final buffer = StringBuffer();
-    final textOperatorPattern = RegExp(
-      r'''(\[(?:.|\r|\n)*?\]|\((?:\\.|[^\\)])*\)|<([0-9A-Fa-f\s]+)>)\s*(?:Tj|TJ|'|")''',
-      dotAll: true,
-    );
-
-    for (final match in textOperatorPattern.allMatches(content)) {
-      final token = match.group(1);
-      if (token == null) continue;
-
-      final text = token.startsWith('[')
-          ? _decodePdfTextArray(token)
-          : _decodePdfTextToken(token);
-      if (text.trim().isEmpty) continue;
-      buffer.writeln(text.trim());
-    }
-
-    return buffer.toString();
-  }
-
-  String _decodePdfTextArray(String token) {
-    final inner = token.substring(1, token.length - 1);
-    final buffer = StringBuffer();
-    final stringPattern = RegExp(
-      r'\((?:\\.|[^\\)])*\)|<([0-9A-Fa-f\s]+)>',
-      dotAll: true,
-    );
-    for (final match in stringPattern.allMatches(inner)) {
-      buffer.write(_decodePdfTextToken(match.group(0)!));
-    }
-    return buffer.toString();
-  }
-
-  String _decodePdfTextToken(String token) {
-    if (token.startsWith('(') && token.endsWith(')')) {
-      return _decodePdfLiteralString(token.substring(1, token.length - 1));
-    }
-    if (token.startsWith('<') && token.endsWith('>')) {
-      return _decodePdfHexString(token.substring(1, token.length - 1));
-    }
-    return '';
-  }
-
-  String _decodePdfLiteralString(String value) {
-    final bytes = <int>[];
-    for (var i = 0; i < value.length; i += 1) {
-      final char = value.codeUnitAt(i);
-      if (char != 0x5c) {
-        bytes.add(char);
-        continue;
-      }
-
-      if (i + 1 >= value.length) break;
-      final next = value.codeUnitAt(++i);
-      switch (next) {
-        case 0x6e:
-          bytes.add(0x0a);
-        case 0x72:
-          bytes.add(0x0d);
-        case 0x74:
-          bytes.add(0x09);
-        case 0x62:
-          bytes.add(0x08);
-        case 0x66:
-          bytes.add(0x0c);
-        case 0x28:
-        case 0x29:
-        case 0x5c:
-          bytes.add(next);
-        case 0x0a:
-          break;
-        case 0x0d:
-          if (i + 1 < value.length && value.codeUnitAt(i + 1) == 0x0a) {
-            i += 1;
-          }
-        default:
-          if (_isOctalDigit(next)) {
-            final octal = StringBuffer()..writeCharCode(next);
-            for (var j = 0;
-                j < 2 &&
-                    i + 1 < value.length &&
-                    _isOctalDigit(value.codeUnitAt(i + 1));
-                j += 1) {
-              octal.writeCharCode(value.codeUnitAt(++i));
-            }
-            bytes.add(int.parse(octal.toString(), radix: 8));
-          } else {
-            bytes.add(next);
-          }
-      }
-    }
-    return _decodePossiblyUtf16(bytes);
-  }
-
-  bool _isOctalDigit(int char) => char >= 0x30 && char <= 0x37;
-
-  String _decodePdfHexString(String value) {
-    final hex = value.replaceAll(RegExp(r'\s+'), '');
-    final normalized = hex.length.isEven ? hex : '${hex}0';
-    final bytes = <int>[];
-    for (var i = 0; i + 1 < normalized.length; i += 2) {
-      bytes.add(int.parse(normalized.substring(i, i + 2), radix: 16));
-    }
-    return _decodePossiblyUtf16(bytes);
-  }
-
-  String _decodePossiblyUtf16(List<int> bytes) {
-    if (bytes.length >= 2 && bytes[0] == 0xfe && bytes[1] == 0xff) {
-      final codeUnits = <int>[];
-      for (var i = 2; i + 1 < bytes.length; i += 2) {
-        codeUnits.add((bytes[i] << 8) | bytes[i + 1]);
-      }
-      return String.fromCharCodes(codeUnits);
-    }
-
     try {
-      return utf8.decode(bytes);
+      final document = XmlDocument.parse(xml);
+      final paragraphs = <String>[];
+      for (final paragraph in document.findAllElements('p', namespace: '*')) {
+        final buffer = StringBuffer();
+        for (final node in paragraph.descendants.whereType<XmlElement>()) {
+          switch (node.localName) {
+            case 't':
+            case 'instrText':
+              buffer.write(node.innerText);
+            case 'tab':
+              buffer.write('\t');
+            case 'br':
+            case 'cr':
+              buffer.write('\n');
+          }
+        }
+        final text = _normalizeExtractedText(buffer.toString());
+        if (text.isNotEmpty) paragraphs.add(text);
+      }
+      return paragraphs.join('\n\n');
     } catch (_) {
-      return latin1.decode(bytes, allowInvalid: true);
+      var text = xml
+          .replaceAll(RegExp(r'<w:tab\s*/>'), '\t')
+          .replaceAll(RegExp(r'<w:(br|cr)[^>]*/>'), '\n')
+          .replaceAll(RegExp(r'</w:tc>'), '\t')
+          .replaceAll(RegExp(r'</w:tr>'), '\n')
+          .replaceAll(RegExp(r'</w:p>'), '\n\n');
+
+      text = text.replaceAll(RegExp(r'<[^>]+>'), '');
+      text = _decodeXmlEntities(text);
+      return _normalizeExtractedText(text);
     }
   }
 
   String _legacyDocMessage() {
-    return 'This is a legacy .doc Word file. Memex saved the original file, '
-        'but this version cannot reliably extract text from the old binary '
-        '.doc format on device. If possible, convert it to .docx or PDF and '
-        'import it again for better AI organization.';
+    return _unsupportedExtractionMessage();
   }
 
   String _legacyXlsMessage() {
-    return 'This is a legacy .xls Excel file. Memex saved the original file, '
-        'but this version cannot reliably extract text from the old binary '
-        '.xls format on device. If possible, convert it to .xlsx or CSV and '
-        'import it again for better AI organization.';
+    return _unsupportedExtractionMessage();
+  }
+
+  String _unsupportedExtractionMessage() {
+    return 'Memex could not parse readable text content from this document.';
+  }
+
+  String _failedExtractionMessage() {
+    return 'Memex tried to parse readable text content from this document, '
+        'but parsing failed.';
   }
 
   String _wrapExtractedText({
@@ -524,8 +363,6 @@ class DocumentTextExtractionService {
   }) {
     return '''
 # Text extracted from original file: $originalFileName
-
-Original file: `$originalFileName`
 
 $body
 ''';
@@ -552,7 +389,7 @@ $body
     );
   }
 
-  String _normalizeExtractedText(String value) {
+  static String _normalizeExtractedText(String value) {
     return value
         .replaceAll(RegExp(r'[ \t]+\n'), '\n')
         .replaceAll(RegExp(r'\n{3,}'), '\n\n')

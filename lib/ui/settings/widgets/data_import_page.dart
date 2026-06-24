@@ -58,29 +58,6 @@ class _DataImportPageState extends State<DataImportPage> {
     }
   }
 
-  Future<void> _showProcessingDialog(FileImportResult result) async {
-    final options = await showDialog<ImportProcessingOptions>(
-      context: context,
-      builder: (context) => ImportProcessingOptionsDialog(result: result),
-    );
-    if (!mounted || options == null) return;
-    if (!options.hasProcessing) return;
-
-    final queued =
-        await widget.viewModel.startSuperAgentProcessing(result, options);
-    if (!mounted) return;
-    if (queued) {
-      ToastHelper.showSuccess(context, UserStorage.l10n.dataImportQueued);
-    } else {
-      ToastHelper.showError(
-        context,
-        UserStorage.l10n.operationFailed(
-          widget.viewModel.errorMessage ?? 'Failed to queue processing',
-        ),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -92,7 +69,6 @@ class _DataImportPageState extends State<DataImportPage> {
       body: ListenableBuilder(
         listenable: widget.viewModel,
         builder: (context, _) {
-          final result = widget.viewModel.lastImportResult;
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
@@ -174,102 +150,9 @@ class _DataImportPageState extends State<DataImportPage> {
                   ],
                 ),
               ),
-              if (result != null) ...[
-                const SizedBox(height: 16),
-                _ImportResultPanel(
-                  result: result,
-                  onProcess: widget.viewModel.isQueueingProcessing
-                      ? null
-                      : () => _showProcessingDialog(result),
-                ),
-              ],
             ],
           );
         },
-      ),
-    );
-  }
-}
-
-class _ImportResultPanel extends StatelessWidget {
-  const _ImportResultPanel({
-    required this.result,
-    required this.onProcess,
-  });
-
-  final FileImportResult result;
-  final VoidCallback? onProcess;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = UserStorage.l10n;
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.textSecondary.withValues(alpha: 0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            l10n.dataImportResultTitle,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            l10n.dataImportResultSummary(result.importedFileCount),
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.grey[700],
-              height: 1.4,
-            ),
-          ),
-          if (result.renamedConflictCount > 0) ...[
-            const SizedBox(height: 6),
-            Text(
-              l10n.dataImportRenamedConflicts(result.renamedConflictCount),
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey[600],
-                height: 1.4,
-              ),
-            ),
-          ],
-          if (result.skippedUnsafeArchiveEntries > 0) ...[
-            const SizedBox(height: 6),
-            Text(
-              l10n.dataImportSkippedUnsafeEntries(
-                result.skippedUnsafeArchiveEntries,
-              ),
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey[600],
-                height: 1.4,
-              ),
-            ),
-          ],
-          const SizedBox(height: 16),
-          Align(
-            alignment: Alignment.centerRight,
-            child: OutlinedButton.icon(
-              onPressed: onProcess,
-              icon: const Icon(Icons.auto_awesome_outlined),
-              label: Text(l10n.dataImportChooseProcessing),
-            ),
-          ),
-        ],
       ),
     );
   }

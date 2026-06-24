@@ -36,11 +36,35 @@ void main() {
 
     expect(
         extracted, contains('Text extracted from original file: notes.docx'));
-    expect(extracted, contains('Original file: `notes.docx`'));
+    expect(extracted, isNot(contains('Original file: `notes.docx`')));
     expect(extracted, isNot(contains('This Markdown file was generated')));
     expect(extracted, isNot(contains('It is an extraction aid')));
     expect(extracted, contains('Hello & welcome'));
     expect(extracted, contains('Second paragraph'));
+  });
+
+  test('extracts Chinese text from docx without garbling', () async {
+    final archive = Archive()
+      ..addFile(_archiveFile(
+        'word/document.xml',
+        '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'
+            '<w:p><w:r><w:t>王成明的项目复盘</w:t></w:r></w:p>'
+            '<w:p><w:r><w:t>今天整理了导入流程和知识库资料。</w:t></w:r></w:p>'
+            '</w:body></w:document>',
+      ));
+    final docxPath = p.join(tempDir.path, '中文文档.docx');
+    await File(docxPath).writeAsBytes(ZipEncoder().encode(archive));
+
+    final extracted =
+        await DocumentTextExtractionService.instance.extractForAgent(
+      File(docxPath),
+    );
+
+    expect(extracted, contains('Text extracted from original file: 中文文档.docx'));
+    expect(extracted, contains('王成明的项目复盘'));
+    expect(extracted, contains('今天整理了导入流程和知识库资料。'));
+    expect(extracted, isNot(contains('ç')));
+    expect(extracted, isNot(contains('<w:')));
   });
 
   test('extracts workbook sheets from xlsx files as markdown tables', () async {
@@ -114,7 +138,7 @@ void main() {
     expect(extracted, contains('| Coffee | Rich text | TRUE |'));
   });
 
-  test('extracts simple embedded text from text-based pdf streams', () async {
+  test('creates an unsupported note for pdf files', () async {
     const pdf = '''
 %PDF-1.4
 1 0 obj
@@ -138,8 +162,27 @@ endobj
     );
 
     expect(
-        extracted, contains('Text extracted from original file: report.pdf'));
-    expect(extracted, contains('Hello from PDF'));
+      extracted,
+      contains('Text extracted from original file: report.pdf'),
+    );
+    expect(
+      extracted,
+      contains('Memex could not parse readable text content'),
+    );
+    expect(extracted, isNot(contains('Hello from PDF')));
+  });
+
+  test('does not generate helper content for directly readable text files',
+      () async {
+    final textPath = p.join(tempDir.path, 'notes.md');
+    await File(textPath).writeAsString('# Notes\n\nRead me directly.');
+
+    final extracted =
+        await DocumentTextExtractionService.instance.extractForAgent(
+      File(textPath),
+    );
+
+    expect(extracted, isNull);
   });
 
   test('creates a clear note for legacy doc files', () async {
@@ -151,7 +194,7 @@ endobj
       File(docPath),
     );
 
-    expect(extracted, contains('legacy .doc Word file'));
+    expect(extracted, contains('Memex could not parse readable text content'));
     expect(extracted, contains('legacy.doc'));
   });
 
@@ -164,7 +207,7 @@ endobj
       File(xlsPath),
     );
 
-    expect(extracted, contains('legacy .xls Excel file'));
+    expect(extracted, contains('Memex could not parse readable text content'));
     expect(extracted, contains('legacy.xls'));
   });
 }
