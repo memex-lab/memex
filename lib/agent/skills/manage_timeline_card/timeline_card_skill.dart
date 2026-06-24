@@ -250,9 +250,7 @@ class TimelineCardSkill extends Skill {
             // triggers below.
             final isNewCard = priorCard.status != 'completed';
             final isEmptyProcessingPlaceholder =
-                priorCard.status == 'processing' &&
-                    (priorCard.fact?.trim().isEmpty ?? true) &&
-                    priorCard.uiConfigs.isEmpty;
+                _isEmptyProcessingPlaceholder(priorCard);
             if (isEmptyProcessingPlaceholder) {
               rollbackPlaceholderFactId = resolvedFactId;
             }
@@ -623,6 +621,33 @@ class TimelineCardSkill extends Skill {
     }
     throw ArgumentError(
         '$name must be an array or a JSON-encoded array string, got ${value.runtimeType}.');
+  }
+
+  static bool _isEmptyProcessingPlaceholder(CardData card) {
+    if (card.status != 'processing') return false;
+    if (card.fact?.trim().isNotEmpty ?? false) return false;
+    if (card.title?.trim().isNotEmpty ?? false) return false;
+    if (card.assets.isNotEmpty) return false;
+    if (card.uiConfigs.isEmpty) return true;
+    if (card.uiConfigs.length != 1) return false;
+
+    final config = card.uiConfigs.single;
+    if (config.templateId != 'classic_card') return false;
+
+    final content = config.data['content'];
+    if (content != null && content.toString().trim().isNotEmpty) {
+      return false;
+    }
+
+    return config.data.entries.every((entry) {
+      if (entry.key == 'content') return true;
+      final value = entry.value;
+      if (value == null) return true;
+      if (value is String) return value.trim().isEmpty;
+      if (value is Iterable) return value.isEmpty;
+      if (value is Map) return value.isEmpty;
+      return false;
+    });
   }
 
   static Future<void> _validateUiConfigMediaReferences({

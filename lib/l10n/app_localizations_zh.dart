@@ -3120,6 +3120,92 @@ class AppLocalizationsZh extends AppLocalizations {
   String dismissedCount(Object count) {
     return '已清除 $count 条';
   }
+
+  @override
+  String get dataImportTitle => '导入文件';
+
+  @override
+  String get dataImportSettingsDescription => '把旧文件带进 Memex，再决定要不要整理。';
+
+  @override
+  String get dataImportDescription =>
+      '可以选择以前的笔记、导出的记录、文档或 ZIP 压缩包。Memex 会先保存一份副本，不会修改原文件；导入后你再决定是否让 Memex 帮你整理。';
+
+  @override
+  String get dataImportSelectFiles => '选择要导入的文件';
+
+  @override
+  String get dataImportImporting => '正在保存文件...';
+
+  @override
+  String get dataImportSuccess => '文件已保存到 Memex';
+
+  @override
+  String get dataImportOnlyStored => '文件已保存，暂不进行整理。';
+
+  @override
+  String get dataImportQueued => 'Memex 会在后台整理这次导入。';
+
+  @override
+  String get dataImportResultTitle => '导入完成';
+
+  @override
+  String dataImportResultSummary(Object count) {
+    return '已保存 $count 个文件。你可以现在开始整理，也可以先把它们作为原始资料保留。';
+  }
+
+  @override
+  String dataImportRenamedConflicts(Object count) {
+    return '有 $count 个同名项目已自动改名，避免覆盖已有内容。';
+  }
+
+  @override
+  String dataImportSkippedUnsafeEntries(Object count) {
+    return '压缩包中有 $count 个异常项目已跳过，其余内容已正常导入。';
+  }
+
+  @override
+  String get dataImportChooseProcessing => '整理这些内容';
+
+  @override
+  String get dataImportProcessTitle => '要整理这次导入吗？';
+
+  @override
+  String dataImportProcessPrompt(Object count) {
+    return '这次导入了 $count 个文件。你可以让 Memex 现在帮你整理，也可以只保存原始资料。';
+  }
+
+  @override
+  String get dataImportProcessKnowledgeBase => '整理到知识库';
+
+  @override
+  String get dataImportProcessKnowledgeBaseDesc =>
+      '适合文档、资料、笔记、项目素材。Memex 会提取有用信息并归类，方便以后查找和复用。';
+
+  @override
+  String get dataImportProcessTimelineCards => '生成时间线记录';
+
+  @override
+  String get dataImportProcessTimelineCardsDesc =>
+      '适合日记、聊天记录、活动记录、历史导出。Memex 会把有时间意义的内容整理成记录。';
+
+  @override
+  String get dataImportImpactNone => 'Memex 只会保存这批原始文件，不会启动 AI 整理。';
+
+  @override
+  String get dataImportImpactKnowledgeBase =>
+      'Memex 会阅读这批文件，把值得长期保存的信息整理进知识库；不会主动生成时间线记录。';
+
+  @override
+  String get dataImportImpactTimelineCards =>
+      'Memex 会阅读这批文件，把适合记录生活或事件的内容生成时间线记录；不会主动整理知识库。';
+
+  @override
+  String get dataImportImpactBoth =>
+      'Memex 会同时尝试生成时间线记录，并把可复用的信息整理进知识库。适合导入比较完整的历史资料。';
+
+  @override
+  String get dataImportFinish => '先保存即可';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -6242,4 +6328,90 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String dismissedCount(Object count) {
     return '已清除 $count 項';
   }
+
+  @override
+  String get dataImportTitle => '匯入檔案';
+
+  @override
+  String get dataImportSettingsDescription => '把舊檔案帶進 Memex，再決定要不要整理。';
+
+  @override
+  String get dataImportDescription =>
+      '可以選擇以前的筆記、匯出的記錄、文件或 ZIP 壓縮包。Memex 會先保存一份副本，不會修改原檔；匯入後你再決定是否讓 Memex 幫你整理。';
+
+  @override
+  String get dataImportSelectFiles => '選擇要匯入的檔案';
+
+  @override
+  String get dataImportImporting => '正在保存檔案...';
+
+  @override
+  String get dataImportSuccess => '檔案已保存到 Memex';
+
+  @override
+  String get dataImportOnlyStored => '檔案已保存，暫不進行整理。';
+
+  @override
+  String get dataImportQueued => 'Memex 會在背景整理這次匯入。';
+
+  @override
+  String get dataImportResultTitle => '匯入完成';
+
+  @override
+  String dataImportResultSummary(Object count) {
+    return '已保存 $count 個檔案。你可以現在開始整理，也可以先把它們作為原始資料保留。';
+  }
+
+  @override
+  String dataImportRenamedConflicts(Object count) {
+    return '有 $count 個同名項目已自動改名，避免覆蓋已有內容。';
+  }
+
+  @override
+  String dataImportSkippedUnsafeEntries(Object count) {
+    return '壓縮包中有 $count 個異常項目已略過，其餘內容已正常匯入。';
+  }
+
+  @override
+  String get dataImportChooseProcessing => '整理這些內容';
+
+  @override
+  String get dataImportProcessTitle => '要整理這次匯入嗎？';
+
+  @override
+  String dataImportProcessPrompt(Object count) {
+    return '這次匯入了 $count 個檔案。你可以讓 Memex 現在幫你整理，也可以只保存原始資料。';
+  }
+
+  @override
+  String get dataImportProcessKnowledgeBase => '整理到知識庫';
+
+  @override
+  String get dataImportProcessKnowledgeBaseDesc =>
+      '適合文件、資料、筆記、專案素材。Memex 會提取有用資訊並分類，方便以後查找和複用。';
+
+  @override
+  String get dataImportProcessTimelineCards => '生成時間線記錄';
+
+  @override
+  String get dataImportProcessTimelineCardsDesc =>
+      '適合日記、聊天記錄、活動記錄、歷史匯出。Memex 會把有時間意義的內容整理成記錄。';
+
+  @override
+  String get dataImportImpactNone => 'Memex 只會保存這批原始檔案，不會啟動 AI 整理。';
+
+  @override
+  String get dataImportImpactKnowledgeBase =>
+      'Memex 會閱讀這批檔案，把值得長期保存的資訊整理進知識庫；不會主動生成時間線記錄。';
+
+  @override
+  String get dataImportImpactTimelineCards =>
+      'Memex 會閱讀這批檔案，把適合記錄生活或事件的內容生成時間線記錄；不會主動整理知識庫。';
+
+  @override
+  String get dataImportImpactBoth =>
+      'Memex 會同時嘗試生成時間線記錄，並把可複用的資訊整理進知識庫。適合匯入比較完整的歷史資料。';
+
+  @override
+  String get dataImportFinish => '先保存即可';
 }

@@ -32,6 +32,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:memex/ui/settings/widgets/ai_service_setup_page.dart';
 import 'package:memex/ui/settings/widgets/model_config_list_page.dart';
 import 'package:memex/data/repositories/memex_router.dart';
+import 'package:memex/data/services/file_import_service.dart';
 import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/data/services/agent_background_task_service.dart';
 import 'package:memex/data/services/local_task_executor.dart';
@@ -58,6 +59,8 @@ import 'package:memex/data/services/demo_service.dart';
 import 'package:memex/ui/core/widgets/demo_overlay.dart';
 import 'package:memex/ui/main_screen/widgets/share_intent_handler.dart';
 import 'package:memex/ui/settings/widgets/backup_restore_confirm_dialog.dart';
+import 'package:memex/ui/settings/view_models/data_import_viewmodel.dart';
+import 'package:memex/ui/settings/widgets/data_import_page.dart';
 import 'package:memex/ui/chat/widgets/open_super_agent_dialog.dart';
 import 'package:quick_actions/quick_actions.dart';
 import 'package:memex/data/services/app_action_link_service.dart';
@@ -66,6 +69,7 @@ import 'package:memex/data/services/speech_transcription_service.dart';
 import 'package:memex/utils/wakelock_manager.dart';
 import 'package:memex/data/services/clipboard_preview_service.dart';
 import 'package:memex/ui/main_screen/widgets/clipboard_preview_card.dart';
+import 'package:memex/utils/result.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey =
@@ -485,6 +489,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   Timer? _memoryButtonTapTimer;
   int _memoryButtonTapCount = 0;
   bool _isRestoringExternalBackup = false;
+  bool _isImportingSharedFiles = false;
   Timer? _knowledgeBaseButtonTapTimer;
   int _knowledgeBaseButtonTapCount = 0;
   final Logger _logger = getLogger('MainScreen');
@@ -576,6 +581,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         });
       },
       onBackupFileShared: _handleExternalBackupFile,
+      onImportFilesShared: _handleSharedImportFiles,
     )..init();
 
     AppActionService.instance.attach();
@@ -1462,6 +1468,153 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       }
     } finally {
       _isRestoringExternalBackup = false;
+    }
+  }
+
+  Future<void> _handleSharedImportFiles(List<String> filePaths) async {
+    if (_isImportingSharedFiles) return;
+
+    final importPaths = filePaths
+        .where((path) => path.trim().isNotEmpty)
+        .toSet()
+        .toList(growable: false);
+    if (importPaths.isEmpty) return;
+
+    _isImportingSharedFiles = true;
+    try {
+      if (!mounted) return;
+      final confirmed = await _confirmSharedFileImport();
+      if (confirmed != true || !mounted) return;
+
+      await _importSharedFiles(importPaths);
+    } catch (e, stackTrace) {
+      _logger.severe('Error importing shared files: $e', e, stackTrace);
+      if (mounted) {
+        ToastHelper.showError(context, UserStorage.l10n.operationFailed(e));
+      }
+    } finally {
+      _isImportingSharedFiles = false;
+    }
+  }
+
+  Future<bool?> _confirmSharedFileImport() {
+    final dialogContext = rootNavigatorKey.currentContext ?? context;
+
+    return showDialog<bool>(
+      context: dialogContext,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        title: Text(UserStorage.l10n.dataImportTitle),
+        content: Text(UserStorage.l10n.dataImportDescription),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(UserStorage.l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(UserStorage.l10n.confirmImport),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _importSharedFiles(List<String> filePaths) async {
+    final dialogContext = rootNavigatorKey.currentContext ?? context;
+    final rootNavigator = Navigator.of(dialogContext, rootNavigator: true);
+    var statusText = UserStorage.l10n.dataImportImporting;
+    StateSetter? setProgressState;
+    var progressDialogOpen = false;
+
+    showDialog<void>(
+      context: dialogContext,
+      barrierDismissible: false,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          setProgressState = setState;
+          return AlertDialog(
+            backgroundColor: Colors.white,
+            content: Row(
+              children: [
+                const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                const SizedBox(width: 16),
+                Expanded(child: Text(statusText)),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+    progressDialogOpen = true;
+
+    try {
+      final result = await _memexRouter.importFilesToUserSettingsImported(
+        filePaths,
+        onProgress: (status) {
+          setProgressState?.call(() {
+            statusText = status;
+          });
+        },
+      );
+
+      if (!mounted || !rootNavigator.mounted) return;
+      if (progressDialogOpen) {
+        rootNavigator.pop();
+        progressDialogOpen = false;
+      }
+
+      await result.when<Future<void>>(
+        onOk: (importResult) async {
+          ToastHelper.showSuccess(context, UserStorage.l10n.dataImportSuccess);
+          await _chooseSharedImportProcessing(importResult);
+        },
+        onError: (error, _) async {
+          ToastHelper.showError(
+            context,
+            UserStorage.l10n.operationFailed(error),
+          );
+        },
+      );
+    } catch (_) {
+      if (mounted && rootNavigator.mounted && progressDialogOpen) {
+        rootNavigator.pop();
+      }
+      rethrow;
+    }
+  }
+
+  Future<void> _chooseSharedImportProcessing(FileImportResult result) async {
+    final dialogContext = rootNavigatorKey.currentContext ?? context;
+    final options = await showDialog<ImportProcessingOptions>(
+      context: dialogContext,
+      builder: (context) => ImportProcessingOptionsDialog(result: result),
+    );
+
+    if (!mounted || options == null) return;
+
+    if (!options.hasProcessing) {
+      ToastHelper.showSuccess(context, UserStorage.l10n.dataImportOnlyStored);
+      return;
+    }
+
+    final viewModel = DataImportViewModel(router: _memexRouter);
+    final queued = await viewModel.startSuperAgentProcessing(result, options);
+    if (!mounted) return;
+
+    if (queued) {
+      ToastHelper.showSuccess(context, UserStorage.l10n.dataImportQueued);
+    } else {
+      ToastHelper.showError(
+        context,
+        UserStorage.l10n.operationFailed(
+          viewModel.errorMessage ?? 'Failed to queue processing',
+        ),
+      );
     }
   }
 

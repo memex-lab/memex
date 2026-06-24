@@ -3156,4 +3156,90 @@ class AppLocalizationsKo extends AppLocalizations {
   String dismissedCount(Object count) {
     return '$count개를 지웠습니다';
   }
+
+  @override
+  String get dataImportTitle => '파일 가져오기';
+
+  @override
+  String get dataImportSettingsDescription => '예전 파일을 Memex로 가져온 뒤 정리할지 선택하세요.';
+
+  @override
+  String get dataImportDescription =>
+      '예전 노트, 내보낸 기록, 문서, ZIP 압축 파일을 선택할 수 있습니다. Memex는 먼저 복사본을 저장하고 원본 파일은 변경하지 않습니다. 가져온 뒤 Memex가 정리하도록 할지 선택할 수 있습니다.';
+
+  @override
+  String get dataImportSelectFiles => '가져올 파일 선택';
+
+  @override
+  String get dataImportImporting => '파일 저장 중...';
+
+  @override
+  String get dataImportSuccess => '파일이 Memex에 저장되었습니다';
+
+  @override
+  String get dataImportOnlyStored => '파일이 저장되었습니다. 정리는 시작하지 않았습니다.';
+
+  @override
+  String get dataImportQueued => 'Memex가 이 가져오기를 백그라운드에서 정리합니다.';
+
+  @override
+  String get dataImportResultTitle => '가져오기 완료';
+
+  @override
+  String dataImportResultSummary(Object count) {
+    return '$count개 파일이 저장되었습니다. 지금 정리하거나 원본 자료로 그대로 둘 수 있습니다.';
+  }
+
+  @override
+  String dataImportRenamedConflicts(Object count) {
+    return '같은 이름의 항목 $count개는 덮어쓰기를 피하도록 이름을 바꿨습니다.';
+  }
+
+  @override
+  String dataImportSkippedUnsafeEntries(Object count) {
+    return '압축 파일 안의 특이한 항목 $count개는 건너뛰었고, 나머지는 정상적으로 가져왔습니다.';
+  }
+
+  @override
+  String get dataImportChooseProcessing => '이 파일 정리하기';
+
+  @override
+  String get dataImportProcessTitle => '이번 가져오기를 정리할까요?';
+
+  @override
+  String dataImportProcessPrompt(Object count) {
+    return '$count개 파일을 가져왔습니다. Memex가 지금 정리하게 할지, 원본만 보관할지 선택하세요.';
+  }
+
+  @override
+  String get dataImportProcessKnowledgeBase => '지식 베이스에 정리';
+
+  @override
+  String get dataImportProcessKnowledgeBaseDesc =>
+      '문서, 노트, 프로젝트 자료, 참고 자료에 적합합니다. Memex가 유용한 정보를 뽑아 나중에 쓰기 좋게 묶어 둡니다.';
+
+  @override
+  String get dataImportProcessTimelineCards => '타임라인 기록 만들기';
+
+  @override
+  String get dataImportProcessTimelineCardsDesc =>
+      '일기, 채팅 기록, 활동 내역, 예전 내보내기에 적합합니다. Memex가 시간 의미가 있는 내용을 기록으로 정리합니다.';
+
+  @override
+  String get dataImportImpactNone => 'Memex는 이 원본 파일만 보관합니다. AI 정리는 시작되지 않습니다.';
+
+  @override
+  String get dataImportImpactKnowledgeBase =>
+      'Memex가 이 파일을 읽고 오래 보관할 만한 정보를 지식 베이스에 정리합니다. 타임라인 기록은 먼저 만들지 않습니다.';
+
+  @override
+  String get dataImportImpactTimelineCards =>
+      'Memex가 이 파일을 읽고 생활 이벤트나 날짜가 있는 기록을 타임라인 기록으로 만듭니다. 지식 베이스는 먼저 정리하지 않습니다.';
+
+  @override
+  String get dataImportImpactBoth =>
+      'Memex가 타임라인 기록을 만들고 재사용할 수 있는 정보를 지식 베이스에 정리합니다. 완전한 개인 아카이브를 가져올 때 적합합니다.';
+
+  @override
+  String get dataImportFinish => '저장만 하기';
 }

@@ -6,9 +6,11 @@ import 'package:memex/ui/core/themes/app_colors.dart';
 import 'package:memex/ui/core/widgets/language_picker.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/ui/settings/widgets/backup_restore_page.dart';
+import 'package:memex/ui/settings/widgets/data_import_page.dart';
 import 'package:memex/ui/settings/widgets/data_storage_page.dart';
 import 'package:memex/ui/settings/widgets/location_context_settings_page.dart';
 import 'package:memex/ui/settings/widgets/early_update_settings_card.dart';
+import 'package:memex/ui/settings/view_models/data_import_viewmodel.dart';
 import 'package:memex/db/app_database.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/local_task_executor.dart';
@@ -136,7 +138,11 @@ class _SettingsPageState extends State<SettingsPage> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.language, color: AppColors.primary, size: 22),
+                    const Icon(
+                      Icons.language,
+                      color: AppColors.primary,
+                      size: 22,
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -144,7 +150,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         children: [
                           Text(
                             UserStorage.l10n.languageSettings,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
                               color: AppColors.textPrimary,
@@ -184,7 +190,7 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             child: SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              secondary: Icon(
+              secondary: const Icon(
                 Icons.graphic_eq,
                 color: AppColors.primary,
                 size: 22,
@@ -233,7 +239,7 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             child: SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              secondary: Icon(
+              secondary: const Icon(
                 Icons.lightbulb_outline,
                 color: AppColors.primary,
                 size: 22,
@@ -278,7 +284,7 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             child: SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              secondary: Icon(
+              secondary: const Icon(
                 Icons.chat_bubble_outline,
                 color: AppColors.primary,
                 size: 22,
@@ -327,7 +333,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 children: [
                   Row(
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.groups_outlined,
                         color: AppColors.primary,
                         size: 22,
@@ -368,7 +374,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         ),
                         child: Text(
                           '${_commentSettings.maxCommentCharacters}',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                             color: AppColors.primary,
@@ -420,7 +426,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                   child: Row(
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.folder_outlined,
                         color: AppColors.primary,
                         size: 22,
@@ -432,7 +438,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           children: [
                             Text(
                               UserStorage.l10n.dataStorage,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w500,
                                 color: AppColors.textPrimary,
@@ -524,6 +530,73 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ),
           const SizedBox(height: 16),
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => DataImportPage(
+                      viewModel: DataImportViewModel(router: MemexRouter()),
+                    ),
+                  ),
+                );
+              },
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.textSecondary.withValues(alpha: 0.08),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.upload_file_outlined,
+                      color: AppColors.primary,
+                      size: 22,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            UserStorage.l10n.dataImportTitle,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            UserStorage.l10n.dataImportSettingsDescription,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[500],
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right, color: Color(0xFFCBD5E1)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
           // Backup & Restore
           Material(
             color: Colors.transparent,
@@ -552,7 +625,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 child: Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.backup_outlined,
                       color: AppColors.primary,
                       size: 22,
@@ -564,7 +637,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         children: [
                           Text(
                             UserStorage.l10n.backupAndRestore,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
                               color: AppColors.textPrimary,
@@ -618,7 +691,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 child: Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.privacy_tip_outlined,
                       color: AppColors.primary,
                       size: 22,
@@ -630,7 +703,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         children: [
                           Text(
                             UserStorage.l10n.privacyPolicy,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
                               color: AppColors.textPrimary,
@@ -726,6 +799,7 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _showDeleteAccountDialog() async {
     final l10n = UserStorage.l10n;
     final userId = await UserStorage.getUserId() ?? '';
+    if (!mounted) return;
     final controller = TextEditingController();
 
     final confirmed = await showDialog<bool>(

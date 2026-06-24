@@ -57,6 +57,7 @@ dependencies:
   logging: ^1.2.0
   share_handler: ^0.0.25
   archive: ^4.0.0
+  xml: ^6.6.1
   yaml: ^3.1.2
   audioplayers: ^6.5.1
   flutter_markdown: ^0.7.7+1
@@ -64,7 +65,7 @@ dependencies:
   health: ^13.2.1
   pedometer: ^4.0.0
   workmanager: ^0.9.0
-  dart_agent_core: ^1.0.14
+  dart_agent_core: ^2.0.2
   flutter_js: ^0.8.7
   drift: ^2.30.0
   sqlite3_flutter_libs: ^0.5.41

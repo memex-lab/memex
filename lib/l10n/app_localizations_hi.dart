@@ -3239,4 +3239,94 @@ class AppLocalizationsHi extends AppLocalizations {
   String dismissedCount(Object count) {
     return '$count साफ़ किए गए';
   }
+
+  @override
+  String get dataImportTitle => 'फ़ाइलें आयात करें';
+
+  @override
+  String get dataImportSettingsDescription =>
+      'पुरानी फ़ाइलें Memex में लाएँ, फिर तय करें कि उन्हें व्यवस्थित करना है या नहीं।';
+
+  @override
+  String get dataImportDescription =>
+      'पुराने नोट्स, निर्यात किए गए रिकॉर्ड, दस्तावेज़ या ZIP आर्काइव चुनें। Memex पहले एक कॉपी सुरक्षित रखता है और मूल फ़ाइलों को नहीं बदलता। आयात के बाद आप तय कर सकते हैं कि Memex उन्हें व्यवस्थित करे या नहीं।';
+
+  @override
+  String get dataImportSelectFiles => 'आयात करने के लिए फ़ाइलें चुनें';
+
+  @override
+  String get dataImportImporting => 'फ़ाइलें सहेजी जा रही हैं...';
+
+  @override
+  String get dataImportSuccess => 'फ़ाइलें Memex में सहेजी गईं';
+
+  @override
+  String get dataImportOnlyStored =>
+      'फ़ाइलें सहेजी गईं। कोई व्यवस्था शुरू नहीं हुई।';
+
+  @override
+  String get dataImportQueued =>
+      'Memex इस आयात को पृष्ठभूमि में व्यवस्थित करेगा।';
+
+  @override
+  String get dataImportResultTitle => 'आयात पूरा हुआ';
+
+  @override
+  String dataImportResultSummary(Object count) {
+    return '$count फ़ाइलें सहेजी गईं। आप उन्हें अभी व्यवस्थित कर सकते हैं या मूल स्रोत सामग्री के रूप में रख सकते हैं।';
+  }
+
+  @override
+  String dataImportRenamedConflicts(Object count) {
+    return 'एक ही नाम वाले $count आइटमों का नाम बदला गया ताकि कुछ भी ओवरराइट न हो।';
+  }
+
+  @override
+  String dataImportSkippedUnsafeEntries(Object count) {
+    return 'आर्काइव के $count असामान्य आइटम छोड़े गए; बाकी सामग्री सामान्य रूप से आयात हुई।';
+  }
+
+  @override
+  String get dataImportChooseProcessing => 'इन फ़ाइलों को व्यवस्थित करें';
+
+  @override
+  String get dataImportProcessTitle => 'इस आयात को व्यवस्थित करना है?';
+
+  @override
+  String dataImportProcessPrompt(Object count) {
+    return 'आपने $count फ़ाइलें आयात की हैं। चुनें कि Memex उन्हें अभी व्यवस्थित करे या केवल मूल फ़ाइलें रखे।';
+  }
+
+  @override
+  String get dataImportProcessKnowledgeBase => 'ज्ञान आधार में व्यवस्थित करें';
+
+  @override
+  String get dataImportProcessKnowledgeBaseDesc =>
+      'दस्तावेज़, नोट्स, प्रोजेक्ट सामग्री और संदर्भों के लिए अच्छा है। Memex उपयोगी जानकारी निकालेगा और बाद में उपयोग के लिए समूहित करेगा।';
+
+  @override
+  String get dataImportProcessTimelineCards => 'टाइमलाइन रिकॉर्ड बनाएँ';
+
+  @override
+  String get dataImportProcessTimelineCardsDesc =>
+      'डायरी, चैट लॉग, गतिविधि इतिहास और पुराने निर्यातों के लिए अच्छा है। Memex समय-आधारित सामग्री को उचित होने पर रिकॉर्ड में बदलेगा।';
+
+  @override
+  String get dataImportImpactNone =>
+      'Memex केवल इन मूल फ़ाइलों को रखेगा। कोई AI व्यवस्था शुरू नहीं होगी।';
+
+  @override
+  String get dataImportImpactKnowledgeBase =>
+      'Memex इन फ़ाइलों को पढ़ेगा और लंबे समय तक काम आने वाली जानकारी को ज्ञान आधार में व्यवस्थित करेगा। यह अपने आप टाइमलाइन रिकॉर्ड नहीं बनाएगा।';
+
+  @override
+  String get dataImportImpactTimelineCards =>
+      'Memex इन फ़ाइलों को पढ़ेगा और जीवन की घटनाओं या तारीख वाले इतिहास के लिए टाइमलाइन रिकॉर्ड बनाएगा। यह अपने आप ज्ञान आधार व्यवस्थित नहीं करेगा।';
+
+  @override
+  String get dataImportImpactBoth =>
+      'Memex टाइमलाइन रिकॉर्ड बनाने और दोबारा उपयोग होने वाली जानकारी को ज्ञान आधार में व्यवस्थित करने की कोशिश करेगा। यह पूर्ण निजी आर्काइव के लिए सबसे उपयुक्त है।';
+
+  @override
+  String get dataImportFinish => 'केवल सहेजें';
 }

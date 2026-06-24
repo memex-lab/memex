@@ -7,7 +7,7 @@
 		<key>NSExtensionAttributes</key>
 		<dict>
 			<key>NSExtensionActivationRule</key>
-			<!-- Only allow sharing images + text into Memex -->
+			<!-- Allow sharing drafts and importable files into Memex. -->
 			<string>SUBQUERY (
 				extensionItems,
 				$extensionItem,
@@ -17,6 +17,7 @@
 					(
 							ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.image"
 							|| ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.text"
+							|| ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.data"
 							|| ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "com.memexlab.memex.backup"
 						)
 					).@count > 0

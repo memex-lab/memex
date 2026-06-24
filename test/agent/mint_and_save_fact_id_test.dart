@@ -9,6 +9,7 @@ import 'package:memex/agent/common_tools.dart';
 import 'package:memex/agent/skills/manage_timeline_card/timeline_card_skill.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/db/app_database.dart';
+import 'package:memex/domain/models/card_model.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -64,6 +65,8 @@ void main() {
 
       final factId = _artifactId(mintResult);
       expect(factId, isNotNull);
+      expect(_text(mintResult), factId);
+      expect(_text(mintResult), isNot(contains('Use this exact id')));
 
       final card =
           await FileSystemService.instance.readCardFile(userId, factId!);
@@ -71,6 +74,29 @@ void main() {
       expect(card!.status, 'processing');
       expect(card.createdAt, isNotNull);
       expect(card.createdAt, greaterThan(0));
+      _expectClassicProcessingPlaceholder(card);
+    });
+
+    test('mint can reserve multiple processing placeholder cards', () async {
+      final mintResult = await _runToolCall(
+        tool: _tool('mint_record_fact_id'),
+        arguments: const {'count': 3},
+        metadata: {'userId': userId},
+      );
+      expect(mintResult.isError, isFalse);
+
+      final factIds = _text(mintResult).split('\n');
+      expect(factIds, hasLength(3));
+      expect(factIds.toSet(), hasLength(3));
+      expect(_artifactIds(mintResult), factIds);
+
+      for (final factId in factIds) {
+        final card =
+            await FileSystemService.instance.readCardFile(userId, factId);
+        expect(card, isNotNull);
+        expect(card!.status, 'processing');
+        _expectClassicProcessingPlaceholder(card);
+      }
     });
 
     test('mint then save completes the card and enqueues memory once',
@@ -350,10 +376,25 @@ Tool _tool(String name) {
       .singleWhere((t) => t.name == name);
 }
 
+void _expectClassicProcessingPlaceholder(CardData card) {
+  expect(card.uiConfigs, hasLength(1));
+  final config = card.uiConfigs.single;
+  expect(config.templateId, 'classic_card');
+  expect(config.data, containsPair('content', ''));
+}
+
 String? _artifactId(FunctionExecutionResult result) {
   final artifact = result.metadata?['artifact'];
   if (artifact is Map && artifact['id'] is String) {
     return artifact['id'] as String;
+  }
+  return null;
+}
+
+List<String>? _artifactIds(FunctionExecutionResult result) {
+  final artifact = result.metadata?['artifact'];
+  if (artifact is Map && artifact['ids'] is List) {
+    return (artifact['ids'] as List).cast<String>();
   }
   return null;
 }

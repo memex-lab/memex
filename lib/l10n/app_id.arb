@@ -1480,5 +1480,49 @@
     "placeholders": {
       "count": {}
     }
-  }
+  },
+  "dataImportTitle": "Impor file",
+  "dataImportSettingsDescription": "Bawa file lama ke Memex, lalu putuskan apakah ingin mengaturnya.",
+  "dataImportDescription": "Pilih catatan lama, rekaman ekspor, dokumen, atau arsip ZIP. Memex menyimpan salinan terlebih dahulu dan tidak mengubah file asli. Setelah impor, Anda bisa memilih apakah Memex perlu membantu mengaturnya.",
+  "dataImportSelectFiles": "Pilih file untuk diimpor",
+  "dataImportImporting": "Menyimpan file...",
+  "dataImportSuccess": "File disimpan di Memex",
+  "dataImportOnlyStored": "File disimpan. Tidak ada pengaturan yang dimulai.",
+  "dataImportQueued": "Memex akan mengatur impor ini di latar belakang.",
+  "dataImportResultTitle": "Impor selesai",
+  "dataImportResultSummary": "{count} file telah disimpan. Anda bisa mengaturnya sekarang atau membiarkannya sebagai bahan sumber asli.",
+  "@dataImportResultSummary": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportRenamedConflicts": "{count} item memiliki nama yang sama dan diganti nama agar tidak menimpa apa pun.",
+  "@dataImportRenamedConflicts": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportSkippedUnsafeEntries": "{count} item arsip yang tidak biasa dilewati; sisanya diimpor seperti biasa.",
+  "@dataImportSkippedUnsafeEntries": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportChooseProcessing": "Atur file ini",
+  "dataImportProcessTitle": "Atur impor ini?",
+  "dataImportProcessPrompt": "Anda mengimpor {count} file. Pilih apakah Memex perlu mengaturnya sekarang atau hanya menyimpan aslinya.",
+  "@dataImportProcessPrompt": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportProcessKnowledgeBase": "Atur ke basis pengetahuan",
+  "dataImportProcessKnowledgeBaseDesc": "Cocok untuk dokumen, catatan, materi proyek, dan referensi. Memex akan mengambil informasi berguna dan mengelompokkannya untuk dipakai nanti.",
+  "dataImportProcessTimelineCards": "Buat catatan timeline",
+  "dataImportProcessTimelineCardsDesc": "Cocok untuk jurnal, riwayat chat, riwayat aktivitas, dan ekspor lama. Memex akan mengubah konten berbasis waktu menjadi catatan bila masuk akal.",
+  "dataImportImpactNone": "Memex hanya akan menyimpan file asli ini. Tidak ada pengaturan AI yang dimulai.",
+  "dataImportImpactKnowledgeBase": "Memex akan membaca file ini dan mengatur informasi jangka panjang yang berguna ke basis pengetahuan. Catatan timeline tidak akan dibuat secara proaktif.",
+  "dataImportImpactTimelineCards": "Memex akan membaca file ini dan membuat catatan timeline untuk peristiwa hidup atau riwayat bertanggal bila sesuai. Basis pengetahuan tidak akan diatur secara proaktif.",
+  "dataImportImpactBoth": "Memex akan mencoba membuat catatan timeline dan mengatur informasi yang dapat digunakan kembali ke basis pengetahuan. Ini cocok untuk arsip pribadi yang lengkap.",
+  "dataImportFinish": "Simpan saja"
 }

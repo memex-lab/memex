@@ -374,10 +374,7 @@ void main() {
           toolName: tool.name,
           arguments: {
             'task_brief': 'Capture this image: ![image](fs://missing.jpg)',
-            'profile': 'none',
-            'skills': [
-              {'name': 'manage_timeline_card', 'force_activate': true},
-            ],
+            'agent_type': 'timeline_card',
           },
         ),
         modelConfig: ModelConfig(model: 'test'),
@@ -419,8 +416,7 @@ void main() {
           toolName: tool.name,
           arguments: {
             'task_brief': 'Capture this image attachment `fs://photo.jpg`）。',
-            'profile': 'read',
-            'skills': <dynamic>[],
+            'agent_type': 'research',
           },
           finalText:
               '```json\n{"status":"completed","summary":"asset ok"}\n```',
@@ -443,20 +439,19 @@ void main() {
       expect(_text(result), contains('asset ok'));
     });
 
-    test('delegate rejects a skill-less worker on the none profile', () async {
+    test('delegate rejects unknown agent types', () async {
       final tool = buildDelegateToSubagentTool();
       final state = AgentState(
-        sessionId: 'delegate_no_skill_none_test',
+        sessionId: 'delegate_unknown_agent_type_test',
         metadata: {'userId': userId},
       );
       final agent = StatefulAgent(
-        name: 'delegate_no_skill_none_agent',
+        name: 'delegate_unknown_agent_type_agent',
         client: _SingleToolCallClient(
           toolName: tool.name,
           arguments: {
             'task_brief': 'Look around the knowledge base.',
-            'profile': 'none',
-            'skills': <dynamic>[],
+            'agent_type': 'custom_combo',
           },
         ),
         modelConfig: ModelConfig(model: 'test'),
@@ -474,11 +469,10 @@ void main() {
           .results
           .single;
       expect(result.isError, isTrue);
-      expect(_text(result), contains('read'));
+      expect(_text(result), contains('Unknown agent_type'));
     });
 
-    test('delegate allows a skill-less research worker on the read profile',
-        () async {
+    test('delegate allows the fixed research agent type', () async {
       await Directory(FileSystemService.instance.getWorkspacePath(userId))
           .create(recursive: true);
       final tool = buildDelegateToSubagentTool();
@@ -492,8 +486,7 @@ void main() {
           toolName: tool.name,
           arguments: {
             'task_brief': 'Summarize what is in the knowledge base.',
-            'profile': 'read',
-            'skills': <dynamic>[],
+            'agent_type': 'research',
           },
           finalText:
               '```json\n{"status":"completed","summary":"nothing yet"}\n```',
@@ -512,17 +505,38 @@ void main() {
           .single
           .results
           .single;
-      // The validation gate let the skill-less worker through: the result is a
-      // normal child report (its name carries the profile), not a rejection.
+      // The validation gate let the fixed research child through: the result is
+      // a normal child report, not a rejection.
       expect(result.isError, isFalse);
-      expect(_text(result), contains('read_child'));
+      expect(_text(result), contains('research_child'));
     });
 
-    test('delegate accepts a call that omits the skills field entirely',
+    test('delegate schema exposes agent_type instead of profile and skills',
+        () {
+      final tool = buildDelegateToSubagentTool();
+      final properties = tool.parameters['properties'] as Map;
+
+      expect(properties.keys, contains('agent_type'));
+      expect(properties.keys, isNot(contains('profile')));
+      expect(properties.keys, isNot(contains('skills')));
+      expect(tool.parameters['required'], ['task_brief', 'agent_type']);
+
+      final agentType = properties['agent_type'] as Map;
+      expect(
+        agentType['enum'],
+        containsAll([
+          'timeline_card',
+          'pkm',
+          'knowledge_insight',
+          'schedule',
+          'timeline_diagnostics',
+          'research',
+        ]),
+      );
+    });
+
+    test('delegate accepts a fixed agent_type call without profile or skills',
         () async {
-      // `skills` is not in the schema's `required` list, so the model may leave
-      // it out. The runtime must treat an absent field the same as an empty
-      // list (a skill-less read worker), not crash on a null arg.
       await Directory(FileSystemService.instance.getWorkspacePath(userId))
           .create(recursive: true);
       final tool = buildDelegateToSubagentTool();
@@ -536,8 +550,7 @@ void main() {
           toolName: tool.name,
           arguments: {
             'task_brief': 'Summarize what is in the knowledge base.',
-            'profile': 'read',
-            // no 'skills' key at all
+            'agent_type': 'research',
           },
           finalText:
               '```json\n{"status":"completed","summary":"nothing yet"}\n```',
@@ -557,7 +570,7 @@ void main() {
           .results
           .single;
       expect(result.isError, isFalse);
-      expect(_text(result), contains('read_child'));
+      expect(_text(result), contains('research_child'));
     });
   });
 }

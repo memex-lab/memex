@@ -93,6 +93,13 @@ void main() {
     });
   });
 
+  group('SuperAgent run limits', () {
+    test('root agent allows long import and organization runs', () {
+      expect(SuperAgent.rootMaxTurns, greaterThan(20));
+      expect(SuperAgent.rootMaxTurns, 80);
+    });
+  });
+
   group('SuperAgent legacy active skills', () {
     test('drops stale active skill names before agent tools are composed', () {
       final state = AgentState(

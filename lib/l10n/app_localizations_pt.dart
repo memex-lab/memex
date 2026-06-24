@@ -3258,4 +3258,96 @@ class AppLocalizationsPt extends AppLocalizations {
   String dismissedCount(Object count) {
     return '$count limpos';
   }
+
+  @override
+  String get dataImportTitle => 'Importar arquivos';
+
+  @override
+  String get dataImportSettingsDescription =>
+      'Traga arquivos antigos para o Memex e depois decida se quer organizá-los.';
+
+  @override
+  String get dataImportDescription =>
+      'Escolha anotações antigas, registros exportados, documentos ou arquivos ZIP. O Memex salva uma cópia primeiro e não altera os arquivos originais. Depois você decide se quer ajuda do Memex para organizar tudo.';
+
+  @override
+  String get dataImportSelectFiles => 'Escolher arquivos para importar';
+
+  @override
+  String get dataImportImporting => 'Salvando arquivos...';
+
+  @override
+  String get dataImportSuccess => 'Arquivos salvos no Memex';
+
+  @override
+  String get dataImportOnlyStored =>
+      'Arquivos salvos. Nenhuma organização iniciada.';
+
+  @override
+  String get dataImportQueued =>
+      'O Memex organizará esta importação em segundo plano.';
+
+  @override
+  String get dataImportResultTitle => 'Importação concluída';
+
+  @override
+  String dataImportResultSummary(Object count) {
+    return '$count arquivos foram salvos. Você pode organizá-los agora ou mantê-los como material original.';
+  }
+
+  @override
+  String dataImportRenamedConflicts(Object count) {
+    return '$count itens tinham o mesmo nome e foram renomeados para evitar sobrescrever qualquer coisa.';
+  }
+
+  @override
+  String dataImportSkippedUnsafeEntries(Object count) {
+    return '$count itens incomuns do arquivo compactado foram ignorados; o restante foi importado normalmente.';
+  }
+
+  @override
+  String get dataImportChooseProcessing => 'Organizar estes arquivos';
+
+  @override
+  String get dataImportProcessTitle => 'Organizar esta importação?';
+
+  @override
+  String dataImportProcessPrompt(Object count) {
+    return 'Você importou $count arquivos. Escolha se o Memex deve organizá-los agora ou apenas manter os originais.';
+  }
+
+  @override
+  String get dataImportProcessKnowledgeBase =>
+      'Organizar na base de conhecimento';
+
+  @override
+  String get dataImportProcessKnowledgeBaseDesc =>
+      'Ideal para documentos, notas, material de projetos e referências. O Memex extrairá informações úteis e as agrupará para uso futuro.';
+
+  @override
+  String get dataImportProcessTimelineCards =>
+      'Criar registros da linha do tempo';
+
+  @override
+  String get dataImportProcessTimelineCardsDesc =>
+      'Ideal para diários, conversas, histórico de atividades e exportações antigas. O Memex transformará conteúdo com data em registros quando fizer sentido.';
+
+  @override
+  String get dataImportImpactNone =>
+      'O Memex manterá apenas estes arquivos originais. Nenhuma organização por IA será iniciada.';
+
+  @override
+  String get dataImportImpactKnowledgeBase =>
+      'O Memex lerá estes arquivos e organizará informações úteis de longo prazo na base de conhecimento. Ele não criará registros da linha do tempo de forma proativa.';
+
+  @override
+  String get dataImportImpactTimelineCards =>
+      'O Memex lerá estes arquivos e criará registros da linha do tempo para eventos ou históricos com data quando apropriado. Ele não organizará a base de conhecimento de forma proativa.';
+
+  @override
+  String get dataImportImpactBoth =>
+      'O Memex tentará criar registros da linha do tempo e organizar informações reutilizáveis na base de conhecimento. É a melhor opção para um arquivo pessoal completo.';
+
+  @override
+  String get dataImportFinish => 'Apenas salvar';
 }

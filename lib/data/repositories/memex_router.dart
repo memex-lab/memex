@@ -8,6 +8,7 @@ import 'package:memex/data/repositories/update_card_ui_config.dart'
     as update_config_endpoint;
 import 'package:memex/data/services/search_service.dart';
 import 'package:memex/data/services/backup_service.dart';
+import 'package:memex/data/services/file_import_service.dart';
 import 'package:memex/data/services/user_stats_service.dart';
 import 'package:memex/domain/models/calendar_model.dart';
 import 'package:memex/data/repositories/hydrate_card.dart';
@@ -1306,6 +1307,19 @@ class MemexRouter {
     final userId = await UserStorage.getUserId();
     if (userId == null) return;
     await SearchService.instance.rebuildPkmFtsIndex(userId);
+  }
+
+  Future<Result<FileImportResult>> importFilesToUserSettingsImported(
+    List<String> sourcePaths, {
+    void Function(String status)? onProgress,
+  }) {
+    return runResult(() async {
+      await _ensureInitialized();
+      return FileImportService.instance.importToUserSettingsImported(
+        sourcePaths,
+        onProgress: onProgress,
+      );
+    });
   }
 
   /// Rebuild all FTS indexes (card + PKM). Intended for debugging / manual trigger.

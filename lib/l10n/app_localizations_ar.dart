@@ -3212,4 +3212,92 @@ class AppLocalizationsAr extends AppLocalizations {
   String dismissedCount(Object count) {
     return 'تم مسح $count';
   }
+
+  @override
+  String get dataImportTitle => 'استيراد الملفات';
+
+  @override
+  String get dataImportSettingsDescription =>
+      'أضف ملفاتك القديمة إلى Memex ثم قرر إن كنت تريد تنظيمها.';
+
+  @override
+  String get dataImportDescription =>
+      'اختر ملاحظات قديمة أو سجلات مصدّرة أو مستندات أو أرشيفات ZIP. يحفظ Memex نسخة أولًا ولا يغيّر الملفات الأصلية. بعد الاستيراد يمكنك اختيار ما إذا كان Memex سيساعدك في تنظيمها.';
+
+  @override
+  String get dataImportSelectFiles => 'اختيار الملفات للاستيراد';
+
+  @override
+  String get dataImportImporting => 'جارٍ حفظ الملفات...';
+
+  @override
+  String get dataImportSuccess => 'تم حفظ الملفات في Memex';
+
+  @override
+  String get dataImportOnlyStored => 'تم حفظ الملفات. لم يبدأ أي تنظيم.';
+
+  @override
+  String get dataImportQueued => 'سينظم Memex هذا الاستيراد في الخلفية.';
+
+  @override
+  String get dataImportResultTitle => 'اكتمل الاستيراد';
+
+  @override
+  String dataImportResultSummary(Object count) {
+    return 'تم حفظ $count ملفات. يمكنك تنظيمها الآن أو إبقاؤها كمواد أصلية.';
+  }
+
+  @override
+  String dataImportRenamedConflicts(Object count) {
+    return 'كانت هناك $count عناصر بالاسم نفسه، فتمت إعادة تسميتها حتى لا يتم استبدال أي شيء.';
+  }
+
+  @override
+  String dataImportSkippedUnsafeEntries(Object count) {
+    return 'تم تخطي $count عناصر غير معتادة داخل الأرشيف؛ وتم استيراد الباقي بشكل طبيعي.';
+  }
+
+  @override
+  String get dataImportChooseProcessing => 'تنظيم هذه الملفات';
+
+  @override
+  String get dataImportProcessTitle => 'هل تريد تنظيم هذا الاستيراد؟';
+
+  @override
+  String dataImportProcessPrompt(Object count) {
+    return 'لقد استوردت $count ملفات. اختر ما إذا كان Memex سينظمها الآن أو سيحتفظ بالملفات الأصلية فقط.';
+  }
+
+  @override
+  String get dataImportProcessKnowledgeBase => 'تنظيمها في قاعدة المعرفة';
+
+  @override
+  String get dataImportProcessKnowledgeBaseDesc =>
+      'مناسب للمستندات والملاحظات ومواد المشاريع والمراجع. سيستخرج Memex المعلومات المفيدة ويجمعها لاستخدامها لاحقًا.';
+
+  @override
+  String get dataImportProcessTimelineCards => 'إنشاء سجلات زمنية';
+
+  @override
+  String get dataImportProcessTimelineCardsDesc =>
+      'مناسب للمذكرات وسجلات المحادثات وسجل النشاط والتصديرات القديمة. سيحوّل Memex المحتوى المرتبط بالوقت إلى سجلات عند الحاجة.';
+
+  @override
+  String get dataImportImpactNone =>
+      'سيحتفظ Memex بهذه الملفات الأصلية فقط. لن يبدأ أي تنظيم بالذكاء الاصطناعي.';
+
+  @override
+  String get dataImportImpactKnowledgeBase =>
+      'سيقرأ Memex هذه الملفات وينظم المعلومات المفيدة على المدى الطويل في قاعدة المعرفة. لن ينشئ سجلات زمنية تلقائيًا.';
+
+  @override
+  String get dataImportImpactTimelineCards =>
+      'سيقرأ Memex هذه الملفات وينشئ سجلات زمنية لأحداث الحياة أو السجل المؤرخ عندما يكون ذلك مناسبًا. لن ينظم قاعدة المعرفة تلقائيًا.';
+
+  @override
+  String get dataImportImpactBoth =>
+      'سيحاول Memex إنشاء سجلات زمنية وتنظيم المعلومات القابلة لإعادة الاستخدام في قاعدة المعرفة. هذا مناسب للأرشيف الشخصي الكامل.';
+
+  @override
+  String get dataImportFinish => 'الحفظ فقط';
 }

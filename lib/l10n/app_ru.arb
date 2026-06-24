@@ -1480,5 +1480,49 @@
     "placeholders": {
       "count": {}
     }
-  }
+  },
+  "dataImportTitle": "Импорт файлов",
+  "dataImportSettingsDescription": "Перенесите старые файлы в Memex, а затем решите, нужно ли их упорядочить.",
+  "dataImportDescription": "Выберите старые заметки, экспортированные записи, документы или ZIP-архивы. Memex сначала сохранит копию и не изменит исходные файлы. После импорта вы сможете решить, должен ли Memex помочь с организацией.",
+  "dataImportSelectFiles": "Выбрать файлы для импорта",
+  "dataImportImporting": "Сохранение файлов...",
+  "dataImportSuccess": "Файлы сохранены в Memex",
+  "dataImportOnlyStored": "Файлы сохранены. Организация не запущена.",
+  "dataImportQueued": "Memex упорядочит этот импорт в фоне.",
+  "dataImportResultTitle": "Импорт завершён",
+  "dataImportResultSummary": "Сохранено файлов: {count}. Вы можете упорядочить их сейчас или оставить как исходные материалы.",
+  "@dataImportResultSummary": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportRenamedConflicts": "Элементы с одинаковыми именами переименованы, чтобы ничего не перезаписать. Количество: {count}.",
+  "@dataImportRenamedConflicts": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportSkippedUnsafeEntries": "Необычные элементы архива пропущены, остальное импортировано обычным образом. Количество: {count}.",
+  "@dataImportSkippedUnsafeEntries": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportChooseProcessing": "Упорядочить эти файлы",
+  "dataImportProcessTitle": "Упорядочить этот импорт?",
+  "dataImportProcessPrompt": "Вы импортировали файлов: {count}. Выберите, должен ли Memex упорядочить их сейчас или просто сохранить оригиналы.",
+  "@dataImportProcessPrompt": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportProcessKnowledgeBase": "Упорядочить в базе знаний",
+  "dataImportProcessKnowledgeBaseDesc": "Подходит для документов, заметок, проектных материалов и справок. Memex извлечёт полезную информацию и сгруппирует её для дальнейшего использования.",
+  "dataImportProcessTimelineCards": "Создать записи таймлайна",
+  "dataImportProcessTimelineCardsDesc": "Подходит для дневников, переписок, истории активности и старых экспортов. Memex превратит содержимое с временным смыслом в записи, когда это уместно.",
+  "dataImportImpactNone": "Memex только сохранит эти исходные файлы. Организация с помощью ИИ не начнётся.",
+  "dataImportImpactKnowledgeBase": "Memex прочитает эти файлы и упорядочит долгосрочно полезную информацию в базе знаний. Записи таймлайна не будут создаваться автоматически.",
+  "dataImportImpactTimelineCards": "Memex прочитает эти файлы и создаст записи таймлайна для жизненных событий или датированной истории, когда это уместно. База знаний не будет упорядочиваться автоматически.",
+  "dataImportImpactBoth": "Memex попробует создать записи таймлайна и упорядочить переиспользуемую информацию в базе знаний. Это лучше всего подходит для полного личного архива.",
+  "dataImportFinish": "Только сохранить"
 }

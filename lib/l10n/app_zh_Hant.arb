@@ -1480,5 +1480,49 @@
     "placeholders": {
       "count": {}
     }
-  }
+  },
+  "dataImportTitle": "匯入檔案",
+  "dataImportSettingsDescription": "把舊檔案帶進 Memex，再決定要不要整理。",
+  "dataImportDescription": "可以選擇以前的筆記、匯出的記錄、文件或 ZIP 壓縮包。Memex 會先保存一份副本，不會修改原檔；匯入後你再決定是否讓 Memex 幫你整理。",
+  "dataImportSelectFiles": "選擇要匯入的檔案",
+  "dataImportImporting": "正在保存檔案...",
+  "dataImportSuccess": "檔案已保存到 Memex",
+  "dataImportOnlyStored": "檔案已保存，暫不進行整理。",
+  "dataImportQueued": "Memex 會在背景整理這次匯入。",
+  "dataImportResultTitle": "匯入完成",
+  "dataImportResultSummary": "已保存 {count} 個檔案。你可以現在開始整理，也可以先把它們作為原始資料保留。",
+  "@dataImportResultSummary": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportRenamedConflicts": "有 {count} 個同名項目已自動改名，避免覆蓋已有內容。",
+  "@dataImportRenamedConflicts": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportSkippedUnsafeEntries": "壓縮包中有 {count} 個異常項目已略過，其餘內容已正常匯入。",
+  "@dataImportSkippedUnsafeEntries": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportChooseProcessing": "整理這些內容",
+  "dataImportProcessTitle": "要整理這次匯入嗎？",
+  "dataImportProcessPrompt": "這次匯入了 {count} 個檔案。你可以讓 Memex 現在幫你整理，也可以只保存原始資料。",
+  "@dataImportProcessPrompt": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportProcessKnowledgeBase": "整理到知識庫",
+  "dataImportProcessKnowledgeBaseDesc": "適合文件、資料、筆記、專案素材。Memex 會提取有用資訊並分類，方便以後查找和複用。",
+  "dataImportProcessTimelineCards": "生成時間線記錄",
+  "dataImportProcessTimelineCardsDesc": "適合日記、聊天記錄、活動記錄、歷史匯出。Memex 會把有時間意義的內容整理成記錄。",
+  "dataImportImpactNone": "Memex 只會保存這批原始檔案，不會啟動 AI 整理。",
+  "dataImportImpactKnowledgeBase": "Memex 會閱讀這批檔案，把值得長期保存的資訊整理進知識庫；不會主動生成時間線記錄。",
+  "dataImportImpactTimelineCards": "Memex 會閱讀這批檔案，把適合記錄生活或事件的內容生成時間線記錄；不會主動整理知識庫。",
+  "dataImportImpactBoth": "Memex 會同時嘗試生成時間線記錄，並把可複用的資訊整理進知識庫。適合匯入比較完整的歷史資料。",
+  "dataImportFinish": "先保存即可"
 }

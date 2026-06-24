@@ -1480,5 +1480,49 @@
     "placeholders": {
       "count": {}
     }
-  }
+  },
+  "dataImportTitle": "استيراد الملفات",
+  "dataImportSettingsDescription": "أضف ملفاتك القديمة إلى Memex ثم قرر إن كنت تريد تنظيمها.",
+  "dataImportDescription": "اختر ملاحظات قديمة أو سجلات مصدّرة أو مستندات أو أرشيفات ZIP. يحفظ Memex نسخة أولًا ولا يغيّر الملفات الأصلية. بعد الاستيراد يمكنك اختيار ما إذا كان Memex سيساعدك في تنظيمها.",
+  "dataImportSelectFiles": "اختيار الملفات للاستيراد",
+  "dataImportImporting": "جارٍ حفظ الملفات...",
+  "dataImportSuccess": "تم حفظ الملفات في Memex",
+  "dataImportOnlyStored": "تم حفظ الملفات. لم يبدأ أي تنظيم.",
+  "dataImportQueued": "سينظم Memex هذا الاستيراد في الخلفية.",
+  "dataImportResultTitle": "اكتمل الاستيراد",
+  "dataImportResultSummary": "تم حفظ {count} ملفات. يمكنك تنظيمها الآن أو إبقاؤها كمواد أصلية.",
+  "@dataImportResultSummary": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportRenamedConflicts": "كانت هناك {count} عناصر بالاسم نفسه، فتمت إعادة تسميتها حتى لا يتم استبدال أي شيء.",
+  "@dataImportRenamedConflicts": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportSkippedUnsafeEntries": "تم تخطي {count} عناصر غير معتادة داخل الأرشيف؛ وتم استيراد الباقي بشكل طبيعي.",
+  "@dataImportSkippedUnsafeEntries": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportChooseProcessing": "تنظيم هذه الملفات",
+  "dataImportProcessTitle": "هل تريد تنظيم هذا الاستيراد؟",
+  "dataImportProcessPrompt": "لقد استوردت {count} ملفات. اختر ما إذا كان Memex سينظمها الآن أو سيحتفظ بالملفات الأصلية فقط.",
+  "@dataImportProcessPrompt": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportProcessKnowledgeBase": "تنظيمها في قاعدة المعرفة",
+  "dataImportProcessKnowledgeBaseDesc": "مناسب للمستندات والملاحظات ومواد المشاريع والمراجع. سيستخرج Memex المعلومات المفيدة ويجمعها لاستخدامها لاحقًا.",
+  "dataImportProcessTimelineCards": "إنشاء سجلات زمنية",
+  "dataImportProcessTimelineCardsDesc": "مناسب للمذكرات وسجلات المحادثات وسجل النشاط والتصديرات القديمة. سيحوّل Memex المحتوى المرتبط بالوقت إلى سجلات عند الحاجة.",
+  "dataImportImpactNone": "سيحتفظ Memex بهذه الملفات الأصلية فقط. لن يبدأ أي تنظيم بالذكاء الاصطناعي.",
+  "dataImportImpactKnowledgeBase": "سيقرأ Memex هذه الملفات وينظم المعلومات المفيدة على المدى الطويل في قاعدة المعرفة. لن ينشئ سجلات زمنية تلقائيًا.",
+  "dataImportImpactTimelineCards": "سيقرأ Memex هذه الملفات وينشئ سجلات زمنية لأحداث الحياة أو السجل المؤرخ عندما يكون ذلك مناسبًا. لن ينظم قاعدة المعرفة تلقائيًا.",
+  "dataImportImpactBoth": "سيحاول Memex إنشاء سجلات زمنية وتنظيم المعلومات القابلة لإعادة الاستخدام في قاعدة المعرفة. هذا مناسب للأرشيف الشخصي الكامل.",
+  "dataImportFinish": "الحفظ فقط"
 }

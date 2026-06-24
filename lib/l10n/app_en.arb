@@ -1445,5 +1445,49 @@
     "placeholders": {
       "count": {}
     }
-  }
+  },
+  "dataImportTitle": "Import files",
+  "dataImportSettingsDescription": "Bring old files into Memex, then decide whether to organize them.",
+  "dataImportDescription": "Choose old notes, exported records, documents, or ZIP archives. Memex saves a copy first and leaves the original files untouched. After import, you can decide whether Memex should help organize them.",
+  "dataImportSelectFiles": "Choose files to import",
+  "dataImportImporting": "Saving files...",
+  "dataImportSuccess": "Files saved in Memex",
+  "dataImportOnlyStored": "Files saved. No organization started.",
+  "dataImportQueued": "Memex will organize this import in the background.",
+  "dataImportResultTitle": "Import complete",
+  "dataImportResultSummary": "{count} files have been saved. You can organize them now or leave them as original source material.",
+  "@dataImportResultSummary": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportRenamedConflicts": "{count} item(s) had the same name and were renamed to avoid overwriting anything.",
+  "@dataImportRenamedConflicts": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportSkippedUnsafeEntries": "{count} unusual archive item(s) were skipped; the rest was imported normally.",
+  "@dataImportSkippedUnsafeEntries": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportChooseProcessing": "Organize these files",
+  "dataImportProcessTitle": "Organize this import?",
+  "dataImportProcessPrompt": "You imported {count} files. Choose whether Memex should organize them now, or just keep the originals.",
+  "@dataImportProcessPrompt": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportProcessKnowledgeBase": "Organize into knowledge base",
+  "dataImportProcessKnowledgeBaseDesc": "Best for documents, notes, project material, and references. Memex will extract useful information and group it for later use.",
+  "dataImportProcessTimelineCards": "Create timeline records",
+  "dataImportProcessTimelineCardsDesc": "Best for diaries, chat logs, activity history, and old exports. Memex will turn time-based content into records when it makes sense.",
+  "dataImportImpactNone": "Memex will only keep these original files. No AI organization will start.",
+  "dataImportImpactKnowledgeBase": "Memex will read these files and organize useful long-term information into the knowledge base. It will not proactively create timeline records.",
+  "dataImportImpactTimelineCards": "Memex will read these files and create timeline records for life events or dated history when appropriate. It will not proactively organize the knowledge base.",
+  "dataImportImpactBoth": "Memex will try to create timeline records and organize reusable information into the knowledge base. This is best for a complete personal archive.",
+  "dataImportFinish": "Just save them"
 }
