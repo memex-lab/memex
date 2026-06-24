@@ -350,6 +350,8 @@ class AgentChatDialog extends StatefulWidget {
 
 class _AgentChatDialogState extends State<AgentChatDialog>
     with SingleTickerProviderStateMixin {
+  static const bool _showRunModeSelector = false;
+
   final Logger _logger = getLogger('AgentChatDialog');
 
   // Services
@@ -1896,7 +1898,9 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                     Expanded(
                       child: Align(
                         alignment: Alignment.centerLeft,
-                        child: _buildRunModeChip(),
+                        child: _showRunModeSelector
+                            ? _buildRunModeChip()
+                            : const SizedBox.shrink(),
                       ),
                     ),
                     const SizedBox(width: 12),

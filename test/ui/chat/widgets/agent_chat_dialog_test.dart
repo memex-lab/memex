@@ -286,6 +286,10 @@ void main() {
       );
       expect(find.byIcon(Icons.open_in_full), findsOneWidget);
       expect(find.byTooltip(UserStorage.l10n.close), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('super_agent_run_mode_chip')),
+        findsNothing,
+      );
 
       final container = tester.widget<AnimatedContainer>(
         find.byKey(const ValueKey('agent_chat_dialog_container')),
