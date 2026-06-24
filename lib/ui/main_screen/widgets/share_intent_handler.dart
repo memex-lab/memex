@@ -116,17 +116,6 @@ class ShareIntentHandler {
         return;
       }
 
-      // Ensure model is configured before accepting shared content
-      final configs = await UserStorage.getLLMConfigs();
-      final hasValidConfig = configs.any((c) => c.isValid);
-      if (!hasValidConfig) {
-        ToastHelper.showErrorWithKey(
-          scaffoldMessengerKey,
-          UserStorage.l10n.modelNotConfiguredSubmitHint,
-        );
-        return;
-      }
-
       final trimmedText = media.content == null || media.content!.trim().isEmpty
           ? null
           : media.content!.trim();
@@ -165,6 +154,10 @@ class ShareIntentHandler {
   @visibleForTesting
   Future<void> handleSharedMediaForTesting(SharedMedia media) =>
       _handleSharedMedia(media);
+
+  @visibleForTesting
+  Future<void> handleExternalFilesForTesting(List<String> rawPaths) =>
+      _handleExternalFiles(rawPaths);
 
   void dispose() {
     _mediaSubscription?.cancel();
@@ -205,9 +198,30 @@ class ShareIntentHandler {
         .toList(growable: false);
     if (filePaths.isEmpty) return;
 
+    var hasNonImageFile = false;
+    for (final path in filePaths) {
+      if (!_looksLikeImageFile(path)) {
+        hasNonImageFile = true;
+        break;
+      }
+    }
+
     _isHandlingExternalFiles = true;
     try {
-      await onImportFilesShared(filePaths);
+      if (hasNonImageFile) {
+        await onImportFilesShared(filePaths);
+        return;
+      }
+
+      if (filePaths.isNotEmpty) {
+        onSharedDraft(
+          SharedDraft(
+            images: filePaths
+                .map((path) => XFile(path))
+                .toList(growable: false),
+          ),
+        );
+      }
     } catch (e, stackTrace) {
       logger.severe('Error handling external files: $e', e, stackTrace);
       ToastHelper.showErrorWithKey(scaffoldMessengerKey, e);
@@ -232,7 +246,7 @@ class ShareIntentHandler {
 
   List<String> _sharedImportFilePaths(List<SharedAttachment?> attachments) {
     final filePaths = <String>[];
-    var hasNonDraftAttachment = false;
+    var hasNonImageFile = false;
 
     for (final attachment in attachments) {
       if (attachment == null) continue;
@@ -245,12 +259,13 @@ class ShareIntentHandler {
       final isImageAttachment = attachment.type == SharedAttachmentType.image ||
           _looksLikeImageFile(normalizedPath);
       if (!isImageAttachment) {
-        hasNonDraftAttachment = true;
+        hasNonImageFile = true;
       }
+
       filePaths.add(normalizedPath);
     }
 
-    if (!hasNonDraftAttachment) return const [];
+    if (!hasNonImageFile) return const [];
     return filePaths.toSet().toList(growable: false);
   }
 
