@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:logging/logging.dart';
-import 'package:memex/domain/models/llm_config.dart';
 import 'package:memex/ui/main_screen/widgets/share_intent_handler.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:share_handler/share_handler.dart';
@@ -72,8 +71,7 @@ void main() {
     expect(importedPaths, isEmpty);
   });
 
-  test('image-only shares still open a draft', () async {
-    await UserStorage.saveLLMConfigs(const [_validLocalModelConfig]);
+  test('image-only shares still open a draft without model config', () async {
     final importedPaths = <List<String>>[];
     final drafts = <SharedDraft>[];
     final handler = _handler(
@@ -98,6 +96,139 @@ void main() {
     expect(drafts.single.text, 'photo note');
     expect(drafts.single.images.single.path, '/tmp/photo.png');
   });
+
+  test('file attachments with image extensions still open a draft', () async {
+    final importedPaths = <List<String>>[];
+    final drafts = <SharedDraft>[];
+    final handler = _handler(
+      onSharedDraft: drafts.add,
+      onImportFilesShared: (paths) async => importedPaths.add(paths),
+    );
+
+    await handler.handleSharedMediaForTesting(
+      SharedMedia(
+        attachments: [
+          SharedAttachment(
+            path: '/tmp/photo.heic',
+            type: SharedAttachmentType.file,
+          ),
+        ],
+      ),
+    );
+
+    expect(importedPaths, isEmpty);
+    expect(drafts, hasLength(1));
+    expect(drafts.single.images.single.path, '/tmp/photo.heic');
+  });
+
+  test('generic non-image file shares route to import', () async {
+    final importedPaths = <List<String>>[];
+    final drafts = <SharedDraft>[];
+    final handler = _handler(
+      onSharedDraft: drafts.add,
+      onImportFilesShared: (paths) async => importedPaths.add(paths),
+    );
+
+    await handler.handleSharedMediaForTesting(
+      SharedMedia(
+        attachments: [
+          SharedAttachment(
+            path: '/tmp/shared_payload',
+            type: SharedAttachmentType.file,
+          ),
+        ],
+      ),
+    );
+
+    expect(importedPaths, [
+      ['/tmp/shared_payload'],
+    ]);
+    expect(drafts, isEmpty);
+  });
+
+  test('mixed file shares import all attachments', () async {
+    final importedPaths = <List<String>>[];
+    final drafts = <SharedDraft>[];
+    final handler = _handler(
+      onSharedDraft: drafts.add,
+      onImportFilesShared: (paths) async => importedPaths.add(paths),
+    );
+
+    await handler.handleSharedMediaForTesting(
+      SharedMedia(
+        attachments: [
+          SharedAttachment(
+            path: '/tmp/photo.png',
+            type: SharedAttachmentType.file,
+          ),
+          SharedAttachment(
+            path: '/tmp/archive.zip',
+            type: SharedAttachmentType.file,
+          ),
+        ],
+      ),
+    );
+
+    expect(importedPaths, [
+      ['/tmp/photo.png', '/tmp/archive.zip'],
+    ]);
+    expect(drafts, isEmpty);
+  });
+
+  test('external opened image files open a draft without model config',
+      () async {
+    final importedPaths = <List<String>>[];
+    final drafts = <SharedDraft>[];
+    final handler = _handler(
+      onSharedDraft: drafts.add,
+      onImportFilesShared: (paths) async => importedPaths.add(paths),
+    );
+
+    await handler.handleExternalFilesForTesting([
+      'file:///tmp/opened_photo.jpg',
+    ]);
+
+    expect(importedPaths, isEmpty);
+    expect(drafts, hasLength(1));
+    expect(drafts.single.images.single.path, '/tmp/opened_photo.jpg');
+  });
+
+  test('external opened non-image files route to import', () async {
+    final importedPaths = <List<String>>[];
+    final drafts = <SharedDraft>[];
+    final handler = _handler(
+      onSharedDraft: drafts.add,
+      onImportFilesShared: (paths) async => importedPaths.add(paths),
+    );
+
+    await handler.handleExternalFilesForTesting([
+      '/tmp/opened_document.pdf',
+    ]);
+
+    expect(importedPaths, [
+      ['/tmp/opened_document.pdf'],
+    ]);
+    expect(drafts, isEmpty);
+  });
+
+  test('external opened mixed files route all files to import', () async {
+    final importedPaths = <List<String>>[];
+    final drafts = <SharedDraft>[];
+    final handler = _handler(
+      onSharedDraft: drafts.add,
+      onImportFilesShared: (paths) async => importedPaths.add(paths),
+    );
+
+    await handler.handleExternalFilesForTesting([
+      '/tmp/opened_photo.jpg',
+      '/tmp/opened_document.pdf',
+    ]);
+
+    expect(importedPaths, [
+      ['/tmp/opened_photo.jpg', '/tmp/opened_document.pdf'],
+    ]);
+    expect(drafts, isEmpty);
+  });
 }
 
 ShareIntentHandler _handler({
@@ -113,11 +244,3 @@ ShareIntentHandler _handler({
     onImportFilesShared: onImportFilesShared ?? (_) async {},
   );
 }
-
-const _validLocalModelConfig = LLMConfig(
-  key: 'local-ollama',
-  type: LLMConfig.typeOllama,
-  modelId: 'llama3',
-  apiKey: '',
-  baseUrl: 'http://127.0.0.1:11434',
-);
