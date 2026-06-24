@@ -6,7 +6,6 @@ import 'package:memex/domain/models/knowledge_insight_card.dart';
 import 'package:memex/domain/models/user_stats_model.dart';
 import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/data/services/event_bus_service.dart';
-import 'package:memex/data/services/local_task_executor.dart';
 import 'package:memex/utils/result.dart';
 import 'package:memex/utils/user_storage.dart';
 
@@ -46,9 +45,7 @@ class InsightViewModel extends ChangeNotifier {
   String? errorMessage;
   String? activeCardId;
   bool isDeleting = false;
-  bool isRefreshing = false;
   bool isReordering = false;
-  TaskActivitySnapshot taskActivity = const TaskActivitySnapshot.empty();
   final Set<String> pinningIds = {};
   UserStatsDateRange statsRange = UserStatsDateRange.lastDays(7);
   UserStatsSnapshot? statsSnapshot;
@@ -56,9 +53,6 @@ class InsightViewModel extends ChangeNotifier {
   String? statsErrorMessage;
   UserStatsMetric selectedStatsMetric = UserStatsMetric.inputs;
   int _statsLoadGeneration = 0;
-
-  int get activeTaskCount => taskActivity.total;
-  bool get hasActiveTaskBacklog => activeTaskCount > 0;
 
   void _handleNewInsightEvent(EventBusMessage message) {
     if (message is! NewInsightMessage) return;
@@ -71,10 +65,6 @@ class InsightViewModel extends ChangeNotifier {
 
   Future<void> _reloadAfterInsightUpdated() async {
     await loadData();
-    if (isRefreshing) {
-      isRefreshing = false;
-      notifyListeners();
-    }
   }
 
   Future<void> loadData() async {
@@ -82,7 +72,6 @@ class InsightViewModel extends ChangeNotifier {
     errorMessage = null;
     notifyListeners();
     final result = await _router.fetchKnowledgeInsights();
-    await refreshTaskActivity(notify: false);
     await loadStats(notify: false);
     result.when(
       onOk: (list) {
@@ -95,15 +84,6 @@ class InsightViewModel extends ChangeNotifier {
     );
     isLoading = false;
     notifyListeners();
-  }
-
-  Future<void> refreshTaskActivity({bool notify = true}) async {
-    try {
-      taskActivity = await _router.getTaskActivitySnapshot();
-    } catch (_) {
-      taskActivity = const TaskActivitySnapshot.empty();
-    }
-    if (notify) notifyListeners();
   }
 
   Future<void> loadStats({
@@ -183,16 +163,6 @@ class InsightViewModel extends ChangeNotifier {
       insights![index] = item;
     }
     pinningIds.remove(item.id);
-    notifyListeners();
-  }
-
-  Future<void> refreshInsights() async {
-    if (isRefreshing) return;
-    isRefreshing = true;
-    await refreshTaskActivity(notify: false);
-    notifyListeners();
-    await loadData();
-    isRefreshing = false;
     notifyListeners();
   }
 

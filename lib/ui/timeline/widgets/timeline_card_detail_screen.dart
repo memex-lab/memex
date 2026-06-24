@@ -23,6 +23,7 @@ import 'package:memex/ui/core/widgets/local_image.dart';
 
 import 'package:memex/ui/chat/widgets/open_super_agent_dialog.dart';
 import 'package:memex/ui/chat/widgets/reference_asset_formatter.dart';
+import 'package:memex/data/services/demo_service.dart';
 import 'package:memex/data/services/event_bus_service.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
@@ -66,7 +67,8 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _showDemoHint = widget.showDemoHint;
+    _showDemoHint = widget.showDemoHint &&
+        DemoService.instance.currentStep == DemoStep.tapCard;
     _memexRouter = MemexRouter();
     _memexRouter.registerCardDetailForeground(widget.cardId);
     _fetchDetail();

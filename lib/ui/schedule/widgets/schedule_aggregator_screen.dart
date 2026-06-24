@@ -106,11 +106,6 @@ class _ScheduleAggregatorScreenState
     await vm.loadAggregation();
   }
 
-  Future<void> _onUpdate() async {
-    final vm = context.read<ScheduleAggregatorViewModel>();
-    await vm.refreshAggregation();
-  }
-
   void _toggleTaskCompletion(String itemId) {
     final vm = context.read<ScheduleAggregatorViewModel>();
     final index = vm.items.indexWhere((item) => item.itemId == itemId);
@@ -235,12 +230,6 @@ class _ScheduleAggregatorScreenState
                 color: AppColors.textTertiary,
               ),
             ),
-            const SizedBox(height: 18),
-            FilledButton.icon(
-              onPressed: _onUpdate,
-              icon: const Icon(Icons.auto_awesome, size: 18),
-              label: Text(UserStorage.l10n.update),
-            ),
           ],
         ),
       ),
@@ -289,77 +278,6 @@ class _ScheduleAggregatorScreenState
                 ),
               ],
             ),
-          ),
-          const SizedBox(width: 12),
-          // AI refresh button
-          Consumer<ScheduleAggregatorViewModel>(
-            builder: (context, vm, child) {
-              return GestureDetector(
-                onTap: vm.isLoading ? null : _onUpdate,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF5B6CFF), Color(0xFF8B5CF6)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF5B6CFF).withValues(alpha: 0.25),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: vm.isRefreshing
-                        ? [
-                            const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              UserStorage.l10n.updating,
-                              style: GoogleFonts.inter(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ]
-                        : [
-                            const Icon(
-                              Icons.auto_awesome,
-                              size: 16,
-                              color: Colors.white,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              UserStorage.l10n.update,
-                              style: GoogleFonts.inter(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                  ),
-                ),
-              );
-            },
           ),
         ],
       ),

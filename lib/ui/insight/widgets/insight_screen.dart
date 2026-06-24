@@ -6,7 +6,6 @@ import 'insight_detail_page.dart';
 import 'package:memex/utils/toast_helper.dart';
 import 'package:memex/ui/core/cards/native_widget_factory.dart';
 import 'package:memex/utils/user_storage.dart';
-import 'package:memex/data/services/demo_service.dart';
 import 'package:memex/ui/insight/widgets/insight_preview_data.dart';
 import 'package:memex/ui/insight/widgets/user_stats_overview_card.dart';
 import 'package:memex/ui/insight/widgets/user_stats_page.dart';
@@ -27,13 +26,6 @@ class InsightScreen extends StatefulWidget {
 }
 
 class _InsightScreenState extends State<InsightScreen> {
-  Offset? _fabPosition;
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
   Future<void> _onTogglePin(
       InsightViewModel vm, KnowledgeInsightCard item) async {
     try {
@@ -49,31 +41,6 @@ class _InsightScreenState extends State<InsightScreen> {
       if (mounted)
         ToastHelper.showError(
             context, UserStorage.l10n.operationFailed(e.toString()));
-    }
-  }
-
-  Future<void> _onRefreshInsights(InsightViewModel vm) async {
-    // During demo: don't hit the backend, just advance the demo step.
-    if (DemoService.instance.tryAdvance(DemoStep.tapInsightUpdate)) {
-      return;
-    }
-    try {
-      await vm.refreshTaskActivity();
-      if (!mounted) {
-        return;
-      }
-      ToastHelper.showInfo(
-          context,
-          vm.hasActiveTaskBacklog
-              ? UserStorage.l10n
-                  .insightProcessingBacklogMessage(vm.activeTaskCount)
-              : UserStorage.l10n.refreshingInsightData);
-      await vm.refreshInsights();
-    } catch (e) {
-      if (mounted) {
-        ToastHelper.showError(
-            context, UserStorage.l10n.refreshFailed(e.toString()));
-      }
     }
   }
 
@@ -270,47 +237,6 @@ class _InsightScreenState extends State<InsightScreen> {
     return const SizedBox.shrink();
   }
 
-  Widget _buildBacklogBanner(InsightViewModel vm) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF59E0B).withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: const Color(0xFFF59E0B).withValues(alpha: 0.18),
-        ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(
-            padding: EdgeInsets.only(top: 1),
-            child: Icon(
-              Icons.hourglass_top_rounded,
-              size: 17,
-              color: Color(0xFFD97706),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              UserStorage.l10n
-                  .insightProcessingBacklogMessage(vm.activeTaskCount),
-              style: const TextStyle(
-                fontSize: 13,
-                height: 1.4,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF92400E),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildSectionSwitcher(InsightViewModel vm) {
     final items = [
       (
@@ -396,9 +322,6 @@ class _InsightScreenState extends State<InsightScreen> {
         final vm = widget.viewModel;
         return LayoutBuilder(
           builder: (context, constraints) {
-            final maxWidth = constraints.maxWidth;
-            final maxHeight = constraints.maxHeight;
-
             final content = Stack(
               children: [
                 RefreshIndicator(
@@ -512,9 +435,6 @@ class _InsightScreenState extends State<InsightScreen> {
 
                                 const SizedBox(height: 16),
 
-                                if (vm.hasActiveTaskBacklog)
-                                  _buildBacklogBanner(vm),
-
                                 if (vm.isLoading)
                                   const Center(
                                     child: Padding(
@@ -589,62 +509,11 @@ class _InsightScreenState extends State<InsightScreen> {
                                           ),
                                         )))
                                   else
-                                  // During demo: hide preview until user taps the update button.
-                                  // After demo (or on subsequent launches): always show preview.
-                                  if (!DemoService.instance.isActive ||
-                                      DemoService.instance.currentStep!.index >
-                                          DemoStep.tapInsightUpdate.index)
-                                    _buildPreviewCards()
-                                  else
-                                    Center(
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(32.0),
-                                        child: Text(UserStorage
-                                            .l10n.noKnowledgeInsight),
-                                      ),
-                                    ),
+                                    _buildPreviewCards(),
                                 ],
                               ],
                             ),
                 ),
-                if (!vm.isReordering &&
-                    vm.selectedSection == InsightSection.insights)
-                  Positioned(
-                    left: _fabPosition?.dx,
-                    top: _fabPosition?.dy,
-                    right: _fabPosition == null ? 20 : null,
-                    bottom: _fabPosition == null ? 140 : null,
-                    child: GestureDetector(
-                      onPanUpdate: (details) {
-                        setState(() {
-                          Offset newPos;
-                          if (_fabPosition == null) {
-                            // Find initial position: right: 20, bottom: 100 from SafeArea edges
-                            // We can use maxWidth/Height to estimate
-                            newPos = Offset(
-                              maxWidth - 140 - 20, // 140 is approx width
-                              maxHeight - 48 - 100, // 48 is approx height
-                            );
-                          } else {
-                            newPos = _fabPosition! + details.delta;
-                          }
-
-                          // Clamp to avoid bottom bar (approx 120px from bottom)
-                          const btnWidth = 120.0;
-                          const btnHeight = 48.0;
-                          final left =
-                              newPos.dx.clamp(16.0, maxWidth - btnWidth - 16.0);
-                          final top = newPos.dy
-                              .clamp(16.0, maxHeight - btnHeight - 120.0);
-                          _fabPosition = Offset(left, top);
-                        });
-                      },
-                      child: KeyedSubtree(
-                        key: DemoService.instance.insightUpdateKey,
-                        child: _buildPremiumUpdateFab(vm),
-                      ),
-                    ),
-                  ),
               ],
             );
 
@@ -716,69 +585,6 @@ class _InsightScreenState extends State<InsightScreen> {
           );
         }),
       ],
-    );
-  }
-
-  Widget _buildPremiumUpdateFab(InsightViewModel vm) {
-    return Container(
-      height: 48,
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            const Color(0xFF5B6CFF),
-            const Color(0xFF8B5CF6),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.2),
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF5B6CFF).withOpacity(0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: InkWell(
-        onTap: vm.isRefreshing ? null : () => _onRefreshInsights(vm),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            vm.isRefreshing
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  )
-                : const Icon(
-                    Icons.auto_awesome,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-            const SizedBox(width: 10),
-            Text(
-              vm.isRefreshing
-                  ? UserStorage.l10n.updating
-                  : UserStorage.l10n.update,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-                fontSize: 14,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

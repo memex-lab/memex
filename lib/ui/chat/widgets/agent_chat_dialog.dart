@@ -10,6 +10,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
+import 'package:memex/l10n/app_localizations_ext.dart';
 import 'package:memex/agent/run_mode/agent_action_approval_service.dart';
 import 'package:memex/agent/run_mode/agent_run_mode.dart';
 import 'package:memex/data/repositories/memex_router.dart';
@@ -1717,7 +1718,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
             const SizedBox(width: 10),
             Flexible(
               child: Text(
-                _label(en: 'Finding recent photos...', zh: '正在推荐照片...'),
+                _agentChat.findingRecentPhotos,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -1953,31 +1954,22 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   String _runModeLabel(AgentRunMode mode) {
     switch (mode) {
       case AgentRunMode.auto:
-        return _label(en: 'Auto', zh: '自动');
+        return _agentChat.runModeAuto;
       case AgentRunMode.confirm:
-        return _label(en: 'Ask first', zh: '先询问');
+        return _agentChat.runModeAskFirst;
       case AgentRunMode.readOnly:
-        return _label(en: 'Read-only', zh: '只读');
+        return _agentChat.runModeReadOnly;
     }
   }
 
   String _runModeDescription(AgentRunMode mode) {
     switch (mode) {
       case AgentRunMode.auto:
-        return _label(
-          en: 'Records, cards and documents update directly.',
-          zh: '记录、卡片、文档等会直接更新。',
-        );
+        return _agentChat.runModeAutoDescription;
       case AgentRunMode.confirm:
-        return _label(
-          en: 'Each change waits for your approval before running.',
-          zh: '每个修改动作都先经你批准再执行。',
-        );
+        return _agentChat.runModeConfirmDescription;
       case AgentRunMode.readOnly:
-        return _label(
-          en: 'Answers questions only, never modifies data.',
-          zh: '只查询和回答,不修改任何数据。',
-        );
+        return _agentChat.runModeReadOnlyDescription;
     }
   }
 
@@ -2061,7 +2053,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _label(en: 'Run mode', zh: '运行方式'),
+                  _agentChat.runModeTitle,
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
@@ -2595,13 +2587,12 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                       Expanded(
                         child: Text(
                           isPending
-                              ? _label(
-                                  en: 'Approve: ${_toolDisplayName(item.request.toolName)}?',
-                                  zh: '是否执行:${_toolDisplayName(item.request.toolName)}?',
+                              ? _agentChat.approvalPrompt(
+                                  _toolDisplayName(item.request.toolName),
                                 )
                               : isApproved
-                                  ? _label(en: 'Approved', zh: '已允许')
-                                  : _label(en: 'Denied', zh: '已拒绝'),
+                                  ? _agentChat.approved
+                                  : _agentChat.denied,
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
@@ -2668,7 +2659,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                               ),
                             ),
                             child: Text(
-                              _label(en: 'Deny', zh: '拒绝'),
+                              _agentChat.deny,
                               style: const TextStyle(fontSize: 13),
                             ),
                           ),
@@ -2689,7 +2680,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                               ),
                             ),
                             child: Text(
-                              _label(en: 'Allow', zh: '允许'),
+                              _agentChat.allow,
                               style: const TextStyle(fontSize: 13),
                             ),
                           ),
@@ -2711,25 +2702,25 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   String _artifactHeading(ChatArtifact artifact) {
     switch (artifact.type) {
       case ChatArtifact.typeRecord:
-        return _label(en: 'Record saved', zh: '已记录到时间线');
+        return _agentChat.recordSaved;
       case ChatArtifact.typeHtmlCard:
         return artifact.updated
-            ? _label(en: 'Card updated', zh: '卡片已更新')
-            : _label(en: 'Card created', zh: '卡片已生成');
+            ? _agentChat.cardUpdated
+            : _agentChat.cardCreated;
       case ChatArtifact.typeCard:
-        return _label(en: 'Card saved', zh: '卡片已保存');
+        return _agentChat.cardSaved;
       case ChatArtifact.typeFile:
         return artifact.updated
-            ? _label(en: 'Document updated', zh: '文档已更新')
-            : _label(en: 'Document created', zh: '文档已创建');
+            ? _agentChat.documentUpdated
+            : _agentChat.documentCreated;
       case ChatArtifact.typeSystemAction:
         return artifact.kind == 'calendar'
-            ? _label(en: 'Calendar event created', zh: '日历事件已创建')
-            : _label(en: 'Reminder created', zh: '提醒已创建');
+            ? _agentChat.calendarEventCreated
+            : _agentChat.reminderCreated;
       case ChatArtifact.typeInsight:
-        return _label(en: 'Insight saved', zh: '洞察已保存');
+        return _agentChat.insightSaved;
       default:
-        return _label(en: 'Done', zh: '已完成');
+        return _agentChat.done;
     }
   }
 
@@ -3049,10 +3040,10 @@ class _AgentChatDialogState extends State<AgentChatDialog>
 
   Widget _buildProcessStatePill(ProcessItem item) {
     final label = item.hasToolError
-        ? _label(en: 'Issue', zh: '需处理')
+        ? _agentChat.issue
         : item.hasRunningTool || !item.isFinished
-            ? _label(en: 'Running', zh: '执行中')
-            : _label(en: 'Done', zh: '完成');
+            ? _agentChat.running
+            : _agentChat.done;
     final color = item.hasToolError
         ? const Color(0xFFEF4444)
         : item.hasRunningTool || !item.isFinished
@@ -3080,39 +3071,30 @@ class _AgentChatDialogState extends State<AgentChatDialog>
     final toolCount = item.allTraceCalls.length;
     if (toolCount == 0) {
       return item.isFinished
-          ? _label(en: 'Reasoning complete', zh: '思考完成')
-          : _label(en: 'Thinking through request', zh: '正在理解需求');
+          ? _agentChat.reasoningComplete
+          : _agentChat.thinkingThroughRequest;
     }
     if (item.hasToolError) {
-      return _label(en: 'Action needs attention', zh: '有动作需要处理');
+      return _agentChat.actionNeedsAttention;
     }
     if (item.hasRunningTool || !item.isFinished) {
-      return _label(
-        en: 'Working through ${_pluralizeAction(toolCount)}',
-        zh: '正在执行 $toolCount 个动作',
-      );
+      return _agentChat.workingThroughActions(toolCount);
     }
-    return _label(
-      en: 'Completed ${_pluralizeAction(toolCount)}',
-      zh: '已完成 $toolCount 个动作',
-    );
+    return _agentChat.completedActions(toolCount);
   }
 
   String _processSubtitle(ProcessItem item) {
     final toolCounts = _toolCounts(item.allTraceCalls);
     if (toolCounts.isEmpty) {
       return item.isFinished
-          ? _label(en: 'Internal reasoning finished', zh: '内部推理已完成')
-          : _label(en: 'Planning next step', zh: '正在规划下一步');
+          ? _agentChat.internalReasoningFinished
+          : _agentChat.planningNextStep;
     }
     return toolCounts.entries
         .take(4)
         .map((entry) => '${_toolDisplayName(entry.key)} x${entry.value}')
         .join(' · ');
   }
-
-  String _pluralizeAction(int count) =>
-      count == 1 ? '1 action' : '$count actions';
 
   Widget _buildToolSummaryChips(ProcessItem item) {
     final entries = _toolCounts(item.allTraceCalls).entries.toList();
@@ -3181,7 +3163,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
             child: Text(
-              _label(en: 'Tool activity', zh: '工具活动'),
+              _agentChat.toolActivity,
               style: const TextStyle(
                 fontSize: 11,
                 color: AppColors.textTertiary,
@@ -3307,55 +3289,55 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   String _toolDisplayName(String toolName) {
     switch (toolName.toLowerCase()) {
       case 'grep':
-        return _label(en: 'Search', zh: '搜索');
+        return _agentChat.toolSearch;
       case 'glob':
-        return _label(en: 'Find files', zh: '找文件');
+        return _agentChat.toolFindFiles;
       case 'read':
-        return _label(en: 'Read', zh: '读取');
+        return _agentChat.toolRead;
       case 'batchread':
-        return _label(en: 'Read batch', zh: '批量读取');
+        return _agentChat.toolReadBatch;
       case 'write':
-        return _label(en: 'Write', zh: '写入');
+        return _agentChat.toolWrite;
       case 'edit':
-        return _label(en: 'Edit', zh: '编辑');
+        return _agentChat.toolEdit;
       case 'ls':
-        return _label(en: 'List', zh: '列表');
+        return _agentChat.toolList;
       case 'move':
-        return _label(en: 'Move', zh: '移动');
+        return _agentChat.toolMove;
       case 'remove':
-        return _label(en: 'Delete', zh: '删除');
+        return _agentChat.toolDelete;
       case 'delegate_to_subagent':
-        return _label(en: 'Delegate task', zh: '委派任务');
+        return _agentChat.toolDelegateTask;
       case 'create_dynamic_timeline_card':
-        return _label(en: 'Create UI', zh: '生成 UI');
+        return _agentChat.toolCreateUi;
       case 'update_dynamic_timeline_card':
-        return _label(en: 'Update UI', zh: '更新 UI');
+        return _agentChat.toolUpdateUi;
       case 'recommend_dynamic_timeline_design_patterns':
-        return _label(en: 'Find styles', zh: '找样式');
+        return _agentChat.toolFindStyles;
       case 'get_dynamic_timeline_design_pattern':
-        return _label(en: 'Read style', zh: '读样式');
+        return _agentChat.toolReadStyle;
       case 'list_dynamic_timeline_design_patterns':
-        return _label(en: 'Style library', zh: '样式库');
+        return _agentChat.toolStyleLibrary;
       case 'save_timeline_card':
-        return _label(en: 'Save card', zh: '保存卡片');
+        return _agentChat.toolSaveCard;
       case 'create_calendar_event':
-        return _label(en: 'Create event', zh: '创建日历事件');
+        return _agentChat.toolCreateEvent;
       case 'create_reminder':
-        return _label(en: 'Create reminder', zh: '创建提醒');
+        return _agentChat.toolCreateReminder;
       case 'cancel_action':
-        return _label(en: 'Cancel reminder/event', zh: '取消提醒/日程');
+        return _agentChat.toolCancelReminderEvent;
       case 'search_timeline_cards':
-        return _label(en: 'Search cards', zh: '搜索卡片');
+        return _agentChat.toolSearchCards;
       case 'inspect_timeline_card':
-        return _label(en: 'Inspect card', zh: '查看卡片');
+        return _agentChat.toolInspectCard;
       case 'update_timeline_card_insight':
-        return _label(en: 'Update insight', zh: '更新洞察');
+        return _agentChat.toolUpdateInsight;
       case 'save_knowledge_insight_cards':
-        return _label(en: 'Save insights', zh: '保存洞察卡片');
+        return _agentChat.toolSaveInsights;
       case 'delete_knowledge_insight_card':
-        return _label(en: 'Delete insight card', zh: '删除洞察卡片');
+        return _agentChat.toolDeleteInsightCard;
       case 'delete_knowledge_insight_tags':
-        return _label(en: 'Delete insight tags', zh: '删除洞察标签');
+        return _agentChat.toolDeleteInsightTags;
       default:
         return toolName;
     }
@@ -3364,29 +3346,24 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   String _toolStatusLabel(ToolCallItem item) {
     if (item.isDelegate && item.status != null) {
       final status = item.status!;
-      if (status == 'running') return _label(en: 'Running', zh: '执行中');
-      if (status == 'completed') return _label(en: 'Done', zh: '完成');
-      if (status == 'failed') return _label(en: 'Failed', zh: '失败');
-      if (status == 'noOp') return _label(en: 'No-op', zh: '无需处理');
+      if (status == 'running') return _agentChat.running;
+      if (status == 'completed') return _agentChat.done;
+      if (status == 'failed') return _agentChat.failed;
+      if (status == 'noOp') return _agentChat.noOp;
       if (status == 'needsParentInput') {
-        return _label(en: 'Needs input', zh: '需要信息');
+        return _agentChat.needsInput;
       }
     }
-    if (item.isRunning) return _label(en: 'Running', zh: '执行中');
-    if (item.isError) return _label(en: 'Failed', zh: '失败');
+    if (item.isRunning) return _agentChat.running;
+    if (item.isError) return _agentChat.failed;
     final duration = item.duration;
-    if (duration == null) return _label(en: 'Done', zh: '完成');
+    if (duration == null) return _agentChat.done;
     final milliseconds = duration.inMilliseconds;
     if (milliseconds < 1000) return '${milliseconds}ms';
     return '${(milliseconds / 1000).toStringAsFixed(1)}s';
   }
 
-  bool get _isZhLocale =>
-      Localizations.maybeLocaleOf(context)?.languageCode == 'zh';
-
-  String _label({required String en, required String zh}) {
-    return _isZhLocale ? zh : en;
-  }
+  AgentChatCopy get _agentChat => UserStorage.l10n.agentChat;
 
   String _compactPreview(String value, {int maxLength = 96}) {
     final compact = value.replaceAll(RegExp(r'\s+'), ' ').trim();
@@ -3395,9 +3372,9 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   }
 
   String _delegatePreview(ToolCallItem item) {
-    final childName = item.label ?? _label(en: 'Worker', zh: '子任务');
+    final childName = item.label ?? _agentChat.worker;
     final count = item.childTraceCount;
-    final countLabel = _isZhLocale ? '已执行 $count 次工具调用' : '$count tool calls';
+    final countLabel = _agentChat.toolCallCount(count);
     return '$childName · $countLabel';
   }
 
@@ -3412,7 +3389,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
               const Icon(Icons.psychology, size: 12, color: Color(0xFFCBD5E1)),
               const SizedBox(width: 6),
               Text(
-                _label(en: 'Thinking...', zh: '思考中...'),
+                _agentChat.thinking,
                 style: const TextStyle(
                   fontSize: 11,
                   color: AppColors.textTertiary,
@@ -3541,7 +3518,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
               children: [
                 if (item.childToolCalls.isNotEmpty) ...[
                   Text(
-                    _label(en: 'Worker tool calls', zh: '子任务工具调用'),
+                    _agentChat.workerToolCalls,
                     style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
@@ -3575,7 +3552,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                 ],
                 if (item.isDelegate && item.result != null) ...[
                   Text(
-                    _label(en: 'Worker result', zh: '子任务结果'),
+                    _agentChat.workerResult,
                     style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
@@ -3594,7 +3571,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                   const SizedBox(height: 10),
                 ],
                 Text(
-                  _label(en: 'Arguments', zh: '参数'),
+                  _agentChat.arguments,
                   style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
@@ -3614,7 +3591,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                 if (item.result != null && !item.isDelegate) ...[
                   const SizedBox(height: 10),
                   Text(
-                    _label(en: 'Result', zh: '结果'),
+                    _agentChat.result,
                     style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,

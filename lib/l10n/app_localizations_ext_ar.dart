@@ -231,4 +231,147 @@ class AppLocalizationsExtAr extends AppLocalizationsAr
 
   @override
   String get shareShowBranding => 'إظهار العلامة';
+
+  @override
+  MemexDemoCopy get demoCopy => const MemexDemoCopy(
+        introText:
+            'مرحباً بك في Memex - مساعد الذاكرة الشخصي المدعوم بالذكاء الاصطناعي.',
+        introTitle: 'Memex - يوميات حياتك بالذكاء الاصطناعي',
+        introInsight:
+            'Memex هو مساعد الذاكرة بالذكاء الاصطناعي. سجّل النصوص والصور والصوت؛ ينظمها الذكاء الاصطناعي في بطاقات منظمة ومعرفة ورؤى عابرة للسجلات.',
+        introInsightSummary: 'نظرة عامة على ميزات Memex',
+        introComment:
+            'مرحباً. انشر سجلك الأول وشاهد كيف ينظمه الذكاء الاصطناعي.',
+        kbFileName: 'دليل Memex.md',
+        firstRecordTitle: 'سجلي الأول',
+        firstRecordInsight:
+            'وصل سجلك الأول. من الآن يمكن لـ Memex تنظيم ملاحظاتك وتصنيفها وربطها.',
+        firstRecordSummary: 'السجل الأول',
+        firstRecordComment: 'تم حفظ السجل الأول. تابع.',
+        firstRecordKbTitle: 'السجل الأول للمستخدم',
+        introHeroCaption: 'يوميات حياتك بالذكاء الاصطناعي',
+        introSnippetText:
+            'اكتب فكرة، التقط صورة، أو قل شيئاً بصوتك. يحول Memex ذلك تلقائياً إلى بطاقة منظمة. يستخرج الذكاء الاصطناعي المعرفة أيضاً، وينظم الملاحظات، ويكشف أنماطاً ربما لم تلاحظها.\n\nكل شيء يبقى على جهازك.',
+        smartCardTypesTitle: '22 نوعاً من البطاقات الذكية',
+        productivityTitle: 'الإنتاجية',
+        productivityLabel: 'مهمة · عادة · حدث · مدة · تقدم',
+        knowledgeTitle: 'المعرفة',
+        knowledgeLabel: 'مقال · مقتطف · اقتباس · رابط · محادثة · إجراء',
+        dataTitle: 'البيانات',
+        dataLabel: 'مؤشر · تقييم · معاملة · مواصفة',
+        peoplePlacesTitle: 'الأشخاص والأماكن',
+        peoplePlacesLabel: 'شخص · مكان · مزاج · مختصر',
+        visualTitle: 'مرئي',
+        visualLabel: 'لقطة · معرض · فيديو',
+        insightTypesSubject: '12 نوعاً من الرؤى العابرة للسجلات',
+        insightTypesComment:
+            'مخططات · سرد · خرائط · جداول زمنية - يكتشف الذكاء الاصطناعي الأنماط في سجلاتك',
+        gettingStartedTitle: 'البدء',
+        configureModelTask:
+            'إعداد نموذج الذكاء الاصطناعي (الصورة -> إعداد النموذج)',
+        postFirstRecordTask: 'انشر سجلك الأول',
+        viewGeneratedTask:
+            'اعرض البطاقات وملفات المعرفة التي أنشأها الذكاء الاصطناعي',
+        sloganContent:
+            'كل سجل تنشئه اليوم يصبح خيطاً مفيداً لنسختك المستقبلية.',
+        kbContent: '''# دليل Memex
+
+Memex تطبيق محلي أولاً وأصلي للذكاء الاصطناعي لتسجيل الحياة الشخصية.
+
+## ما يمكنك فعله
+
+- التقاط النصوص والصور والصوت في مسار واحد.
+- ترك الذكاء الاصطناعي ينظم السجلات في بطاقات خط زمني وملاحظات معرفة.
+- اكتشاف الأنماط بين السجلات من خلال بطاقات الرؤى.
+- إبقاء البيانات على جهازك وتصديرها كملفات Markdown.
+
+## البدء
+
+1. أعد نموذج ذكاء اصطناعي.
+2. انشر سجلك الأول.
+3. افتح البطاقات والرؤى وملفات المعرفة التي تم إنشاؤها.
+''',
+      );
+
+  @override
+  String timelineWeekdayLabel(String shortWeekday) => shortWeekday;
+
+  @override
+  AvatarPickerCopy get avatarPicker => const AvatarPickerCopy(
+        currentAvatar: 'الحالي',
+        shuffle: 'تبديل',
+      );
+
+  @override
+  AgentChatCopy get agentChat => AgentChatCopy(
+        findingRecentPhotos: 'جارٍ البحث عن الصور الحديثة...',
+        runModeAuto: 'تلقائي',
+        runModeAskFirst: 'اسأل أولاً',
+        runModeReadOnly: 'للقراءة فقط',
+        runModeAutoDescription:
+            'يتم تحديث السجلات والبطاقات والمستندات مباشرة.',
+        runModeConfirmDescription: 'ينتظر كل تغيير موافقتك قبل التنفيذ.',
+        runModeReadOnlyDescription: 'يجيب عن الأسئلة فقط ولا يغيّر البيانات.',
+        runModeTitle: 'وضع التشغيل',
+        approved: 'تمت الموافقة',
+        denied: 'مرفوض',
+        deny: 'رفض',
+        allow: 'سماح',
+        recordSaved: 'تم حفظ السجل',
+        cardUpdated: 'تم تحديث البطاقة',
+        cardCreated: 'تم إنشاء البطاقة',
+        cardSaved: 'تم حفظ البطاقة',
+        documentUpdated: 'تم تحديث المستند',
+        documentCreated: 'تم إنشاء المستند',
+        calendarEventCreated: 'تم إنشاء حدث التقويم',
+        reminderCreated: 'تم إنشاء التذكير',
+        insightSaved: 'تم حفظ الرؤية',
+        done: 'تم',
+        issue: 'يحتاج معالجة',
+        running: 'قيد التشغيل',
+        reasoningComplete: 'اكتمل التفكير',
+        thinkingThroughRequest: 'جارٍ فهم الطلب',
+        actionNeedsAttention: 'هناك إجراء يحتاج انتباهك',
+        internalReasoningFinished: 'اكتمل التفكير الداخلي',
+        planningNextStep: 'جارٍ تخطيط الخطوة التالية',
+        toolActivity: 'نشاط الأدوات',
+        toolSearch: 'بحث',
+        toolFindFiles: 'بحث عن ملفات',
+        toolRead: 'قراءة',
+        toolReadBatch: 'قراءة دفعة',
+        toolWrite: 'كتابة',
+        toolEdit: 'تعديل',
+        toolList: 'قائمة',
+        toolMove: 'نقل',
+        toolDelete: 'حذف',
+        toolDelegateTask: 'تفويض مهمة',
+        toolCreateUi: 'إنشاء UI',
+        toolUpdateUi: 'تحديث UI',
+        toolFindStyles: 'بحث عن أنماط',
+        toolReadStyle: 'قراءة النمط',
+        toolStyleLibrary: 'مكتبة الأنماط',
+        toolSaveCard: 'حفظ البطاقة',
+        toolCreateEvent: 'إنشاء حدث',
+        toolCreateReminder: 'إنشاء تذكير',
+        toolCancelReminderEvent: 'إلغاء تذكير/حدث',
+        toolSearchCards: 'بحث في البطاقات',
+        toolInspectCard: 'فحص البطاقة',
+        toolUpdateInsight: 'تحديث الرؤية',
+        toolSaveInsights: 'حفظ الرؤى',
+        toolDeleteInsightCard: 'حذف بطاقة الرؤية',
+        toolDeleteInsightTags: 'حذف وسوم الرؤية',
+        failed: 'فشل',
+        noOp: 'لا إجراء',
+        needsInput: 'يحتاج إدخالاً',
+        worker: 'مهمة فرعية',
+        thinking: 'جارٍ التفكير...',
+        workerToolCalls: 'استدعاءات أدوات المهمة الفرعية',
+        workerResult: 'نتيجة المهمة الفرعية',
+        arguments: 'المعاملات',
+        result: 'النتيجة',
+        approvalPrompt: (toolName) => 'الموافقة على: $toolName؟',
+        toolCallCount: (count) => '$count استدعاءات أدوات',
+        workingThroughActions: (count) => 'جارٍ تنفيذ $count إجراءات',
+        completedActions: (count) => 'اكتمل $count إجراءات',
+      );
 }

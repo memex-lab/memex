@@ -236,4 +236,148 @@ class AppLocalizationsExtId extends AppLocalizationsId
 
   @override
   String get shareShowBranding => 'Tampilkan tanda';
+
+  @override
+  MemexDemoCopy get demoCopy => const MemexDemoCopy(
+        introText:
+            'Selamat datang di Memex - asisten memori pribadi berbasis AI.',
+        introTitle: 'Memex - Jurnal hidup AI Anda',
+        introInsight:
+            'Memex adalah asisten memori AI Anda. Catat teks, foto, dan suara; AI mengaturnya menjadi kartu terstruktur, pengetahuan, dan insight lintas catatan.',
+        introInsightSummary: 'Ringkasan fitur Memex',
+        introComment:
+            'Selamat datang. Buat catatan pertama dan lihat bagaimana AI mengaturnya.',
+        kbFileName: 'Panduan Memex.md',
+        firstRecordTitle: 'Catatan pertama saya',
+        firstRecordInsight:
+            'Catatan pertama Anda sudah ada. Mulai sekarang, Memex dapat mengatur, mengelompokkan, dan menghubungkan catatan Anda.',
+        firstRecordSummary: 'Catatan pertama',
+        firstRecordComment: 'Catatan pertama tersimpan. Lanjutkan.',
+        firstRecordKbTitle: 'Catatan pertama pengguna',
+        introHeroCaption: 'Jurnal hidup AI Anda',
+        introSnippetText:
+            'Tulis sebuah pikiran, ambil foto, atau ucapkan sesuatu. Memex otomatis mengubahnya menjadi kartu terstruktur. AI juga mengekstrak pengetahuan, mengatur catatan, dan menemukan pola yang mungkin terlewat.\n\nSemuanya tetap berada di perangkat Anda.',
+        smartCardTypesTitle: '22 jenis kartu pintar',
+        productivityTitle: 'Produktivitas',
+        productivityLabel: 'tugas · rutinitas · acara · durasi · progres',
+        knowledgeTitle: 'Pengetahuan',
+        knowledgeLabel:
+            'artikel · cuplikan · kutipan · tautan · percakapan · prosedur',
+        dataTitle: 'Data',
+        dataLabel: 'metrik · penilaian · transaksi · spesifikasi',
+        peoplePlacesTitle: 'Orang & tempat',
+        peoplePlacesLabel: 'orang · tempat · suasana · ringkas',
+        visualTitle: 'Visual',
+        visualLabel: 'snapshot · galeri · video',
+        insightTypesSubject: '12 jenis insight lintas catatan',
+        insightTypesComment:
+            'Bagan · Narasi · Peta · Linimasa - AI menemukan pola di catatan Anda',
+        gettingStartedTitle: 'Mulai',
+        configureModelTask: 'Konfigurasikan model AI (Avatar -> Model)',
+        postFirstRecordTask: 'Buat catatan pertama',
+        viewGeneratedTask: 'Lihat kartu dan file pengetahuan yang dibuat AI',
+        sloganContent:
+            'Setiap catatan hari ini menjadi petunjuk berguna bagi diri Anda di masa depan.',
+        kbContent: '''# Panduan Memex
+
+Memex adalah aplikasi pencatat kehidupan pribadi yang local-first dan native AI.
+
+## Yang bisa Anda lakukan
+
+- Mencatat teks, foto, dan suara dalam satu alur.
+- Membiarkan AI mengatur catatan menjadi kartu linimasa dan catatan pengetahuan.
+- Menemukan pola lintas catatan melalui kartu insight.
+- Menyimpan data di perangkat dan mengekspornya sebagai Markdown.
+
+## Mulai
+
+1. Konfigurasikan model AI.
+2. Buat catatan pertama.
+3. Buka kartu, insight, dan file pengetahuan yang dihasilkan.
+''',
+      );
+
+  @override
+  String timelineWeekdayLabel(String shortWeekday) => shortWeekday;
+
+  @override
+  AvatarPickerCopy get avatarPicker => const AvatarPickerCopy(
+        currentAvatar: 'Saat ini',
+        shuffle: 'Acak',
+      );
+
+  @override
+  AgentChatCopy get agentChat => AgentChatCopy(
+        findingRecentPhotos: 'Mencari foto terbaru...',
+        runModeAuto: 'Otomatis',
+        runModeAskFirst: 'Tanya dulu',
+        runModeReadOnly: 'Baca saja',
+        runModeAutoDescription:
+            'Catatan, kartu, dan dokumen diperbarui langsung.',
+        runModeConfirmDescription:
+            'Setiap perubahan menunggu persetujuan Anda sebelum berjalan.',
+        runModeReadOnlyDescription:
+            'Hanya menjawab pertanyaan, tidak pernah mengubah data.',
+        runModeTitle: 'Mode jalan',
+        approved: 'Disetujui',
+        denied: 'Ditolak',
+        deny: 'Tolak',
+        allow: 'Izinkan',
+        recordSaved: 'Catatan disimpan',
+        cardUpdated: 'Kartu diperbarui',
+        cardCreated: 'Kartu dibuat',
+        cardSaved: 'Kartu disimpan',
+        documentUpdated: 'Dokumen diperbarui',
+        documentCreated: 'Dokumen dibuat',
+        calendarEventCreated: 'Acara kalender dibuat',
+        reminderCreated: 'Pengingat dibuat',
+        insightSaved: 'Insight disimpan',
+        done: 'Selesai',
+        issue: 'Perlu ditangani',
+        running: 'Berjalan',
+        reasoningComplete: 'Penalaran selesai',
+        thinkingThroughRequest: 'Memahami permintaan',
+        actionNeedsAttention: 'Ada tindakan yang perlu perhatian',
+        internalReasoningFinished: 'Penalaran internal selesai',
+        planningNextStep: 'Merencanakan langkah berikutnya',
+        toolActivity: 'Aktivitas alat',
+        toolSearch: 'Cari',
+        toolFindFiles: 'Cari file',
+        toolRead: 'Baca',
+        toolReadBatch: 'Baca batch',
+        toolWrite: 'Tulis',
+        toolEdit: 'Edit',
+        toolList: 'Daftar',
+        toolMove: 'Pindah',
+        toolDelete: 'Hapus',
+        toolDelegateTask: 'Delegasikan tugas',
+        toolCreateUi: 'Buat UI',
+        toolUpdateUi: 'Perbarui UI',
+        toolFindStyles: 'Cari gaya',
+        toolReadStyle: 'Baca gaya',
+        toolStyleLibrary: 'Pustaka gaya',
+        toolSaveCard: 'Simpan kartu',
+        toolCreateEvent: 'Buat acara',
+        toolCreateReminder: 'Buat pengingat',
+        toolCancelReminderEvent: 'Batalkan pengingat/acara',
+        toolSearchCards: 'Cari kartu',
+        toolInspectCard: 'Periksa kartu',
+        toolUpdateInsight: 'Perbarui insight',
+        toolSaveInsights: 'Simpan insight',
+        toolDeleteInsightCard: 'Hapus kartu insight',
+        toolDeleteInsightTags: 'Hapus tag insight',
+        failed: 'Gagal',
+        noOp: 'Tidak ada tindakan',
+        needsInput: 'Butuh masukan',
+        worker: 'Subtugas',
+        thinking: 'Berpikir...',
+        workerToolCalls: 'Panggilan alat subtugas',
+        workerResult: 'Hasil subtugas',
+        arguments: 'Argumen',
+        result: 'Hasil',
+        approvalPrompt: (toolName) => 'Setujui: $toolName?',
+        toolCallCount: (count) => '$count panggilan alat',
+        workingThroughActions: (count) => 'Menjalankan $count tindakan',
+        completedActions: (count) => '$count tindakan selesai',
+      );
 }

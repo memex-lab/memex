@@ -236,4 +236,149 @@ class AppLocalizationsExtPt extends AppLocalizationsPt
 
   @override
   String get shareShowBranding => 'Mostrar marca';
+
+  @override
+  MemexDemoCopy get demoCopy => const MemexDemoCopy(
+        introText:
+            'Bem-vindo ao Memex - seu assistente pessoal de memória com IA.',
+        introTitle: 'Memex - Seu diário de vida com IA',
+        introInsight:
+            'Memex é seu assistente de memória com IA. Registre texto, fotos e voz; a IA organiza tudo em cartões estruturados, conhecimento e insights entre registros.',
+        introInsightSummary: 'Visão geral dos recursos do Memex',
+        introComment:
+            'Bem-vindo. Publique seu primeiro registro e veja como a IA organiza.',
+        kbFileName: 'Guia do Memex.md',
+        firstRecordTitle: 'Meu primeiro registro',
+        firstRecordInsight:
+            'Seu primeiro registro chegou. A partir de agora, o Memex pode organizar, classificar e conectar suas notas.',
+        firstRecordSummary: 'Primeiro registro',
+        firstRecordComment: 'Primeiro registro salvo. Continue.',
+        firstRecordKbTitle: 'Primeiro registro do usuário',
+        introHeroCaption: 'Seu diário de vida com IA',
+        introSnippetText:
+            'Anote uma ideia, tire uma foto ou fale em voz alta. O Memex transforma isso automaticamente em um cartão estruturado. A IA também extrai conhecimento, organiza notas e revela padrões que você talvez não tenha percebido.\n\nTudo fica no seu dispositivo.',
+        smartCardTypesTitle: '22 tipos de cartões inteligentes',
+        productivityTitle: 'Produtividade',
+        productivityLabel: 'tarefa · rotina · evento · duração · progresso',
+        knowledgeTitle: 'Conhecimento',
+        knowledgeLabel:
+            'artigo · trecho · citação · link · conversa · procedimento',
+        dataTitle: 'Dados',
+        dataLabel: 'métrica · avaliação · transação · especificação',
+        peoplePlacesTitle: 'Pessoas e lugares',
+        peoplePlacesLabel: 'pessoa · lugar · humor · compacto',
+        visualTitle: 'Visual',
+        visualLabel: 'instantâneo · galeria · vídeo',
+        insightTypesSubject: '12 tipos de insights entre registros',
+        insightTypesComment:
+            'Gráficos · Narrativas · Mapas · Linhas do tempo - a IA descobre padrões nos seus registros',
+        gettingStartedTitle: 'Primeiros passos',
+        configureModelTask: 'Configurar modelo de IA (Avatar -> Modelo)',
+        postFirstRecordTask: 'Publicar seu primeiro registro',
+        viewGeneratedTask:
+            'Ver cartões e arquivos de conhecimento gerados por IA',
+        sloganContent:
+            'Cada registro feito hoje vira uma pista útil para o seu eu do futuro.',
+        kbContent: '''# Guia do Memex
+
+Memex é um aplicativo local-first e nativo de IA para registrar sua vida pessoal.
+
+## O que você pode fazer
+
+- Capturar texto, fotos e voz em um único fluxo.
+- Deixar a IA organizar registros em cartões de linha do tempo e notas de conhecimento.
+- Descobrir padrões entre registros por meio de cartões de insights.
+- Manter os dados no dispositivo e exportá-los como Markdown.
+
+## Primeiros passos
+
+1. Configure um modelo de IA.
+2. Publique seu primeiro registro.
+3. Abra os cartões, insights e arquivos de conhecimento gerados.
+''',
+      );
+
+  @override
+  String timelineWeekdayLabel(String shortWeekday) => shortWeekday;
+
+  @override
+  AvatarPickerCopy get avatarPicker => const AvatarPickerCopy(
+        currentAvatar: 'Atual',
+        shuffle: 'Misturar',
+      );
+
+  @override
+  AgentChatCopy get agentChat => AgentChatCopy(
+        findingRecentPhotos: 'Procurando fotos recentes...',
+        runModeAuto: 'Auto',
+        runModeAskFirst: 'Perguntar antes',
+        runModeReadOnly: 'Somente leitura',
+        runModeAutoDescription:
+            'Registros, cartões e documentos são atualizados diretamente.',
+        runModeConfirmDescription:
+            'Cada alteração aguarda sua aprovação antes de executar.',
+        runModeReadOnlyDescription:
+            'Responde apenas perguntas; nunca modifica dados.',
+        runModeTitle: 'Modo de execução',
+        approved: 'Aprovado',
+        denied: 'Negado',
+        deny: 'Negar',
+        allow: 'Permitir',
+        recordSaved: 'Registro salvo',
+        cardUpdated: 'Cartão atualizado',
+        cardCreated: 'Cartão criado',
+        cardSaved: 'Cartão salvo',
+        documentUpdated: 'Documento atualizado',
+        documentCreated: 'Documento criado',
+        calendarEventCreated: 'Evento de calendário criado',
+        reminderCreated: 'Lembrete criado',
+        insightSaved: 'Insight salvo',
+        done: 'Concluído',
+        issue: 'Atenção',
+        running: 'Executando',
+        reasoningComplete: 'Raciocínio concluído',
+        thinkingThroughRequest: 'Analisando a solicitação',
+        actionNeedsAttention: 'Uma ação precisa de atenção',
+        internalReasoningFinished: 'Raciocínio interno concluído',
+        planningNextStep: 'Planejando o próximo passo',
+        toolActivity: 'Atividade de ferramentas',
+        toolSearch: 'Pesquisar',
+        toolFindFiles: 'Encontrar arquivos',
+        toolRead: 'Ler',
+        toolReadBatch: 'Ler em lote',
+        toolWrite: 'Escrever',
+        toolEdit: 'Editar',
+        toolList: 'Listar',
+        toolMove: 'Mover',
+        toolDelete: 'Excluir',
+        toolDelegateTask: 'Delegar tarefa',
+        toolCreateUi: 'Criar UI',
+        toolUpdateUi: 'Atualizar UI',
+        toolFindStyles: 'Encontrar estilos',
+        toolReadStyle: 'Ler estilo',
+        toolStyleLibrary: 'Biblioteca de estilos',
+        toolSaveCard: 'Salvar cartão',
+        toolCreateEvent: 'Criar evento',
+        toolCreateReminder: 'Criar lembrete',
+        toolCancelReminderEvent: 'Cancelar lembrete/evento',
+        toolSearchCards: 'Pesquisar cartões',
+        toolInspectCard: 'Inspecionar cartão',
+        toolUpdateInsight: 'Atualizar insight',
+        toolSaveInsights: 'Salvar insights',
+        toolDeleteInsightCard: 'Excluir cartão de insight',
+        toolDeleteInsightTags: 'Excluir tags de insight',
+        failed: 'Falhou',
+        noOp: 'Sem ação',
+        needsInput: 'Precisa de informação',
+        worker: 'Subtarefa',
+        thinking: 'Pensando...',
+        workerToolCalls: 'Chamadas de ferramenta da subtarefa',
+        workerResult: 'Resultado da subtarefa',
+        arguments: 'Argumentos',
+        result: 'Resultado',
+        approvalPrompt: (toolName) => 'Aprovar: $toolName?',
+        toolCallCount: (count) => '$count chamadas de ferramenta',
+        workingThroughActions: (count) => 'Executando $count ações',
+        completedActions: (count) => '$count ações concluídas',
+      );
 }

@@ -227,4 +227,139 @@ class AppLocalizationsExtZh extends AppLocalizationsZh
 
   @override
   String get shareShowBranding => '显示水印';
+
+  @override
+  MemexDemoCopy get demoCopy => const MemexDemoCopy(
+        introText: '欢迎来到 Memex —— 你的 AI 个人记忆助手。',
+        introTitle: 'Memex — 你的 AI 生活记录本',
+        introInsight:
+            'Memex 是你的 AI 记忆助手。记录文字、照片、语音，AI 会自动整理成结构化卡片、提取知识，并生成跨记录洞察。',
+        introInsightSummary: 'Memex 功能概览',
+        introComment: '欢迎！试试发表你的第一条记录，看看 AI 如何帮你整理。',
+        kbFileName: 'Memex 指南.md',
+        firstRecordTitle: '我的第一条记录',
+        firstRecordInsight: '收到了你的第一条记录。以后你记下的每一笔，我都会帮你整理、归类，并把相关内容串联起来。',
+        firstRecordSummary: '第一条记录',
+        firstRecordComment: '第一条记录已保存，继续写下去吧。',
+        firstRecordKbTitle: '用户的第一条记录',
+        introHeroCaption: '你的 AI 生活记录本',
+        introSnippetText:
+            '随手记下一段文字、拍张照片、或者说一句话，Memex 会自动把它变成一张结构化卡片。AI 还会帮你提取知识、整理到笔记里，并发现你自己可能没注意到的规律。\n\n所有数据都保存在你的设备上。',
+        smartCardTypesTitle: '22 种智能卡片',
+        productivityTitle: '生活效率',
+        productivityLabel: '任务 · 习惯 · 日程 · 计时 · 进度',
+        knowledgeTitle: '知识媒体',
+        knowledgeLabel: '文章 · 片段 · 语录 · 链接 · 对话 · 流程',
+        dataTitle: '数据度量',
+        dataLabel: '指标 · 评分 · 账单 · 规格',
+        peoplePlacesTitle: '人物地点',
+        peoplePlacesLabel: '联系人 · 地点 · 情绪 · 紧凑',
+        visualTitle: '视觉记录',
+        visualLabel: '快照 · 相册 · 视频',
+        insightTypesSubject: '12 种跨记录洞察',
+        insightTypesComment: '图表 · 叙事 · 地图 · 时间线 - AI 自动发现你记录中的规律',
+        gettingStartedTitle: '开始使用',
+        configureModelTask: '配置 AI 模型（头像 -> 模型配置）',
+        postFirstRecordTask: '发表第一条记录',
+        viewGeneratedTask: '查看 AI 生成的卡片和知识文件',
+        sloganContent: '每一条今天写下的记录，都会成为未来的你回望生活时有用的线索。',
+        kbContent: '''# Memex 指南
+
+Memex 是一个本地优先、AI 原生的个人生活记录应用。
+
+## 你可以做什么
+
+- 在同一个输入流程里记录文字、照片和语音。
+- 让 AI 把记录整理成时间线卡片和知识笔记。
+- 通过洞察卡片发现跨记录的规律。
+- 数据保存在你的设备上，并可导出为 Markdown。
+
+## 开始使用
+
+1. 配置一个 AI 模型。
+2. 发表你的第一条记录。
+3. 查看自动生成的卡片、洞察和知识文件。
+''',
+      );
+
+  @override
+  String timelineWeekdayLabel(String shortWeekday) => '周$shortWeekday';
+
+  @override
+  AvatarPickerCopy get avatarPicker => const AvatarPickerCopy(
+        currentAvatar: '当前头像',
+        shuffle: '换一批',
+      );
+
+  @override
+  AgentChatCopy get agentChat => AgentChatCopy(
+        findingRecentPhotos: '正在推荐照片...',
+        runModeAuto: '自动',
+        runModeAskFirst: '先询问',
+        runModeReadOnly: '只读',
+        runModeAutoDescription: '记录、卡片、文档等会直接更新。',
+        runModeConfirmDescription: '每个修改动作都先经你批准再执行。',
+        runModeReadOnlyDescription: '只查询和回答，不修改任何数据。',
+        runModeTitle: '运行方式',
+        approved: '已允许',
+        denied: '已拒绝',
+        deny: '拒绝',
+        allow: '允许',
+        recordSaved: '已记录到时间线',
+        cardUpdated: '卡片已更新',
+        cardCreated: '卡片已生成',
+        cardSaved: '卡片已保存',
+        documentUpdated: '文档已更新',
+        documentCreated: '文档已创建',
+        calendarEventCreated: '日历事件已创建',
+        reminderCreated: '提醒已创建',
+        insightSaved: '洞察已保存',
+        done: '完成',
+        issue: '需处理',
+        running: '执行中',
+        reasoningComplete: '思考完成',
+        thinkingThroughRequest: '正在理解需求',
+        actionNeedsAttention: '有动作需要处理',
+        internalReasoningFinished: '内部推理已完成',
+        planningNextStep: '正在规划下一步',
+        toolActivity: '工具活动',
+        toolSearch: '搜索',
+        toolFindFiles: '找文件',
+        toolRead: '读取',
+        toolReadBatch: '批量读取',
+        toolWrite: '写入',
+        toolEdit: '编辑',
+        toolList: '列表',
+        toolMove: '移动',
+        toolDelete: '删除',
+        toolDelegateTask: '委派任务',
+        toolCreateUi: '生成 UI',
+        toolUpdateUi: '更新 UI',
+        toolFindStyles: '找样式',
+        toolReadStyle: '读样式',
+        toolStyleLibrary: '样式库',
+        toolSaveCard: '保存卡片',
+        toolCreateEvent: '创建日历事件',
+        toolCreateReminder: '创建提醒',
+        toolCancelReminderEvent: '取消提醒/日程',
+        toolSearchCards: '搜索卡片',
+        toolInspectCard: '查看卡片',
+        toolUpdateInsight: '更新洞察',
+        toolSaveInsights: '保存洞察卡片',
+        toolDeleteInsightCard: '删除洞察卡片',
+        toolDeleteInsightTags: '删除洞察标签',
+        failed: '失败',
+        noOp: '无需处理',
+        needsInput: '需要信息',
+        worker: '子任务',
+        thinking: '思考中...',
+        workerToolCalls: '子任务工具调用',
+        workerResult: '子任务结果',
+        arguments: '参数',
+        result: '结果',
+        approvalPrompt: (toolName) => '是否执行：$toolName？',
+        toolCallCount: (count) => '已执行 $count 次工具调用',
+        workingThroughActions: (count) => '正在执行 $count 个动作',
+        completedActions: (count) => '已完成 $count 个动作',
+      );
 }

@@ -234,4 +234,148 @@ class AppLocalizationsExtHi extends AppLocalizationsHi
 
   @override
   String get shareShowBranding => 'Branding दिखाएँ';
+
+  @override
+  MemexDemoCopy get demoCopy => const MemexDemoCopy(
+        introText:
+            'Memex में आपका स्वागत है - आपका AI आधारित निजी memory assistant.',
+        introTitle: 'Memex - आपका AI life journal',
+        introInsight:
+            'Memex आपका AI memory assistant है। Text, photos और voice record करें; AI उन्हें structured cards, knowledge और cross-record insights में व्यवस्थित करता है।',
+        introInsightSummary: 'Memex features का overview',
+        introComment:
+            'स्वागत है। अपना पहला record post करें और देखें AI इसे कैसे organize करता है।',
+        kbFileName: 'Memex गाइड.md',
+        firstRecordTitle: 'मेरा पहला record',
+        firstRecordInsight:
+            'आपका पहला record आ गया है। अब Memex आपकी notes को organize, categorize और connect कर सकता है।',
+        firstRecordSummary: 'पहला record',
+        firstRecordComment: 'पहला record save हो गया। आगे बढ़ें।',
+        firstRecordKbTitle: 'User का पहला record',
+        introHeroCaption: 'आपका AI life journal',
+        introSnippetText:
+            'कोई thought लिखें, photo लें या voice में बोलें। Memex इसे automatically structured card में बदल देता है। AI knowledge भी निकालता है, notes organize करता है और ऐसे patterns दिखाता है जिन्हें आप शायद miss कर गए हों।\n\nसब कुछ आपके device पर रहता है।',
+        smartCardTypesTitle: '22 smart card types',
+        productivityTitle: 'Productivity',
+        productivityLabel: 'task · routine · event · duration · progress',
+        knowledgeTitle: 'Knowledge',
+        knowledgeLabel:
+            'article · snippet · quote · link · conversation · procedure',
+        dataTitle: 'Data',
+        dataLabel: 'metric · rating · transaction · spec',
+        peoplePlacesTitle: 'People & places',
+        peoplePlacesLabel: 'person · place · mood · compact',
+        visualTitle: 'Visual',
+        visualLabel: 'snapshot · gallery · video',
+        insightTypesSubject: '12 cross-record insight types',
+        insightTypesComment:
+            'Charts · Narratives · Maps · Timelines - AI आपके records में patterns खोजता है',
+        gettingStartedTitle: 'शुरू करें',
+        configureModelTask: 'AI model configure करें (Avatar -> Model Config)',
+        postFirstRecordTask: 'अपना पहला record post करें',
+        viewGeneratedTask: 'AI generated cards और knowledge files देखें',
+        sloganContent:
+            'आज का हर record आपके future self के लिए उपयोगी clue बनता है।',
+        kbContent: '''# Memex गाइड
+
+Memex एक local-first, AI-native personal life recording app है।
+
+## आप क्या कर सकते हैं
+
+- Text, photos और voice को एक ही flow में capture करें।
+- AI से records को timeline cards और knowledge notes में organize कराएँ।
+- Insight cards के ज़रिए records के बीच patterns खोजें।
+- Data को अपने device पर रखें और Markdown के रूप में export करें।
+
+## शुरू करें
+
+1. एक AI model configure करें।
+2. अपना पहला record post करें।
+3. Generated cards, insights और knowledge files खोलें।
+''',
+      );
+
+  @override
+  String timelineWeekdayLabel(String shortWeekday) => shortWeekday;
+
+  @override
+  AvatarPickerCopy get avatarPicker => const AvatarPickerCopy(
+        currentAvatar: 'वर्तमान',
+        shuffle: 'बदलें',
+      );
+
+  @override
+  AgentChatCopy get agentChat => AgentChatCopy(
+        findingRecentPhotos: 'हाल की फ़ोटो ढूँढी जा रही हैं...',
+        runModeAuto: 'ऑटो',
+        runModeAskFirst: 'पहले पूछें',
+        runModeReadOnly: 'केवल पढ़ें',
+        runModeAutoDescription:
+            'रिकॉर्ड, कार्ड और दस्तावेज़ सीधे अपडेट होते हैं।',
+        runModeConfirmDescription:
+            'हर बदलाव चलने से पहले आपकी मंज़ूरी का इंतज़ार करता है।',
+        runModeReadOnlyDescription:
+            'सिर्फ़ सवालों का जवाब देता है, डेटा नहीं बदलता।',
+        runModeTitle: 'रन मोड',
+        approved: 'मंज़ूर',
+        denied: 'अस्वीकृत',
+        deny: 'अस्वीकार',
+        allow: 'अनुमति दें',
+        recordSaved: 'रिकॉर्ड सेव हुआ',
+        cardUpdated: 'कार्ड अपडेट हुआ',
+        cardCreated: 'कार्ड बना',
+        cardSaved: 'कार्ड सेव हुआ',
+        documentUpdated: 'दस्तावेज़ अपडेट हुआ',
+        documentCreated: 'दस्तावेज़ बना',
+        calendarEventCreated: 'कैलेंडर इवेंट बना',
+        reminderCreated: 'रिमाइंडर बना',
+        insightSaved: 'इनसाइट सेव हुई',
+        done: 'पूरा',
+        issue: 'ध्यान चाहिए',
+        running: 'चल रहा है',
+        reasoningComplete: 'सोचना पूरा हुआ',
+        thinkingThroughRequest: 'अनुरोध समझा जा रहा है',
+        actionNeedsAttention: 'एक कार्रवाई पर ध्यान चाहिए',
+        internalReasoningFinished: 'आंतरिक reasoning पूरी हुई',
+        planningNextStep: 'अगला कदम प्लान हो रहा है',
+        toolActivity: 'टूल गतिविधि',
+        toolSearch: 'खोज',
+        toolFindFiles: 'फ़ाइलें ढूँढें',
+        toolRead: 'पढ़ें',
+        toolReadBatch: 'बैच पढ़ें',
+        toolWrite: 'लिखें',
+        toolEdit: 'संपादित करें',
+        toolList: 'सूची',
+        toolMove: 'स्थानांतरित करें',
+        toolDelete: 'हटाएँ',
+        toolDelegateTask: 'कार्य सौंपें',
+        toolCreateUi: 'UI बनाएँ',
+        toolUpdateUi: 'UI अपडेट करें',
+        toolFindStyles: 'स्टाइल ढूँढें',
+        toolReadStyle: 'स्टाइल पढ़ें',
+        toolStyleLibrary: 'स्टाइल लाइब्रेरी',
+        toolSaveCard: 'कार्ड सेव करें',
+        toolCreateEvent: 'इवेंट बनाएँ',
+        toolCreateReminder: 'रिमाइंडर बनाएँ',
+        toolCancelReminderEvent: 'रिमाइंडर/इवेंट रद्द करें',
+        toolSearchCards: 'कार्ड खोजें',
+        toolInspectCard: 'कार्ड देखें',
+        toolUpdateInsight: 'इनसाइट अपडेट करें',
+        toolSaveInsights: 'इनसाइट सेव करें',
+        toolDeleteInsightCard: 'इनसाइट कार्ड हटाएँ',
+        toolDeleteInsightTags: 'इनसाइट टैग हटाएँ',
+        failed: 'विफल',
+        noOp: 'कुछ नहीं करना',
+        needsInput: 'इनपुट चाहिए',
+        worker: 'उपकार्य',
+        thinking: 'सोचा जा रहा है...',
+        workerToolCalls: 'उपकार्य टूल कॉल',
+        workerResult: 'उपकार्य परिणाम',
+        arguments: 'आर्ग्युमेंट',
+        result: 'परिणाम',
+        approvalPrompt: (toolName) => '$toolName चलाएँ?',
+        toolCallCount: (count) => '$count टूल कॉल',
+        workingThroughActions: (count) => '$count कार्रवाइयाँ चल रही हैं',
+        completedActions: (count) => '$count कार्रवाइयाँ पूरी हुईं',
+      );
 }

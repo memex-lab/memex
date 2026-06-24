@@ -235,4 +235,149 @@ class AppLocalizationsExtRu extends AppLocalizationsRu
 
   @override
   String get shareShowBranding => 'С отметкой';
+
+  @override
+  MemexDemoCopy get demoCopy => const MemexDemoCopy(
+        introText:
+            'Добро пожаловать в Memex - ваш персональный AI-помощник памяти.',
+        introTitle: 'Memex - ваш AI-дневник жизни',
+        introInsight:
+            'Memex помогает запоминать жизнь с помощью AI. Записывайте текст, фото и голос; AI организует их в структурированные карточки, знания и межзаписные инсайты.',
+        introInsightSummary: 'Обзор возможностей Memex',
+        introComment:
+            'Добро пожаловать. Создайте первую запись и посмотрите, как AI ее организует.',
+        kbFileName: 'Руководство Memex.md',
+        firstRecordTitle: 'Моя первая запись',
+        firstRecordInsight:
+            'Ваша первая запись готова. Теперь Memex может упорядочивать, классифицировать и связывать ваши заметки.',
+        firstRecordSummary: 'Первая запись',
+        firstRecordComment: 'Первая запись сохранена. Продолжайте.',
+        firstRecordKbTitle: 'Первая запись пользователя',
+        introHeroCaption: 'Ваш AI-дневник жизни',
+        introSnippetText:
+            'Запишите мысль, сделайте фото или произнесите что-то вслух. Memex автоматически превратит это в структурированную карточку. AI также извлекает знания, организует заметки и находит закономерности, которые вы могли не заметить.\n\nВсе остается на вашем устройстве.',
+        smartCardTypesTitle: '22 типа умных карточек',
+        productivityTitle: 'Продуктивность',
+        productivityLabel:
+            'задача · рутина · событие · длительность · прогресс',
+        knowledgeTitle: 'Знания',
+        knowledgeLabel:
+            'статья · фрагмент · цитата · ссылка · разговор · процедура',
+        dataTitle: 'Данные',
+        dataLabel: 'метрика · оценка · транзакция · спецификация',
+        peoplePlacesTitle: 'Люди и места',
+        peoplePlacesLabel: 'человек · место · настроение · компактно',
+        visualTitle: 'Визуальное',
+        visualLabel: 'снимок · галерея · видео',
+        insightTypesSubject: '12 типов инсайтов между записями',
+        insightTypesComment:
+            'Диаграммы · Истории · Карты · Таймлайны - AI находит паттерны в ваших записях',
+        gettingStartedTitle: 'Начало работы',
+        configureModelTask: 'Настроить AI-модель (Аватар -> Модель)',
+        postFirstRecordTask: 'Создать первую запись',
+        viewGeneratedTask: 'Посмотреть карточки и файлы знаний, созданные AI',
+        sloganContent:
+            'Каждая запись, сделанная сегодня, станет полезной нитью для вашего будущего я.',
+        kbContent: '''# Руководство Memex
+
+Memex - локальное AI-native приложение для личных жизненных записей.
+
+## Что можно делать
+
+- Записывать текст, фото и голос в одном потоке.
+- Позволить AI организовать записи в карточки таймлайна и заметки знаний.
+- Находить закономерности между записями с помощью карточек инсайтов.
+- Хранить данные на устройстве и экспортировать их как Markdown.
+
+## Начало работы
+
+1. Настройте AI-модель.
+2. Создайте первую запись.
+3. Откройте созданные карточки, инсайты и файлы знаний.
+''',
+      );
+
+  @override
+  String timelineWeekdayLabel(String shortWeekday) => shortWeekday;
+
+  @override
+  AvatarPickerCopy get avatarPicker => const AvatarPickerCopy(
+        currentAvatar: 'Текущий',
+        shuffle: 'Перемешать',
+      );
+
+  @override
+  AgentChatCopy get agentChat => AgentChatCopy(
+        findingRecentPhotos: 'Ищу недавние фото...',
+        runModeAuto: 'Авто',
+        runModeAskFirst: 'Сначала спросить',
+        runModeReadOnly: 'Только чтение',
+        runModeAutoDescription:
+            'Записи, карточки и документы обновляются напрямую.',
+        runModeConfirmDescription:
+            'Каждое изменение ждёт вашего одобрения перед запуском.',
+        runModeReadOnlyDescription:
+            'Только отвечает на вопросы и не меняет данные.',
+        runModeTitle: 'Режим запуска',
+        approved: 'Разрешено',
+        denied: 'Отклонено',
+        deny: 'Отклонить',
+        allow: 'Разрешить',
+        recordSaved: 'Запись сохранена',
+        cardUpdated: 'Карточка обновлена',
+        cardCreated: 'Карточка создана',
+        cardSaved: 'Карточка сохранена',
+        documentUpdated: 'Документ обновлён',
+        documentCreated: 'Документ создан',
+        calendarEventCreated: 'Событие календаря создано',
+        reminderCreated: 'Напоминание создано',
+        insightSaved: 'Инсайт сохранён',
+        done: 'Готово',
+        issue: 'Требует внимания',
+        running: 'Выполняется',
+        reasoningComplete: 'Рассуждение завершено',
+        thinkingThroughRequest: 'Разбираю запрос',
+        actionNeedsAttention: 'Действие требует внимания',
+        internalReasoningFinished: 'Внутреннее рассуждение завершено',
+        planningNextStep: 'Планирую следующий шаг',
+        toolActivity: 'Активность инструментов',
+        toolSearch: 'Поиск',
+        toolFindFiles: 'Найти файлы',
+        toolRead: 'Чтение',
+        toolReadBatch: 'Пакетное чтение',
+        toolWrite: 'Запись',
+        toolEdit: 'Редактирование',
+        toolList: 'Список',
+        toolMove: 'Переместить',
+        toolDelete: 'Удалить',
+        toolDelegateTask: 'Делегировать задачу',
+        toolCreateUi: 'Создать UI',
+        toolUpdateUi: 'Обновить UI',
+        toolFindStyles: 'Найти стили',
+        toolReadStyle: 'Прочитать стиль',
+        toolStyleLibrary: 'Библиотека стилей',
+        toolSaveCard: 'Сохранить карточку',
+        toolCreateEvent: 'Создать событие',
+        toolCreateReminder: 'Создать напоминание',
+        toolCancelReminderEvent: 'Отменить напоминание/событие',
+        toolSearchCards: 'Искать карточки',
+        toolInspectCard: 'Проверить карточку',
+        toolUpdateInsight: 'Обновить инсайт',
+        toolSaveInsights: 'Сохранить инсайты',
+        toolDeleteInsightCard: 'Удалить карточку инсайта',
+        toolDeleteInsightTags: 'Удалить теги инсайта',
+        failed: 'Сбой',
+        noOp: 'Без изменений',
+        needsInput: 'Нужны данные',
+        worker: 'Подзадача',
+        thinking: 'Думаю...',
+        workerToolCalls: 'Вызовы инструментов подзадачи',
+        workerResult: 'Результат подзадачи',
+        arguments: 'Аргументы',
+        result: 'Результат',
+        approvalPrompt: (toolName) => 'Разрешить: $toolName?',
+        toolCallCount: (count) => '$count вызовов инструмента',
+        workingThroughActions: (count) => 'Выполняется действий: $count',
+        completedActions: (count) => 'Выполнено действий: $count',
+      );
 }

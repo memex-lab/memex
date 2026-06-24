@@ -228,4 +228,139 @@ class AppLocalizationsExtKo extends AppLocalizationsKo
 
   @override
   String get shareShowBranding => '마크 표시';
+
+  @override
+  MemexDemoCopy get demoCopy => const MemexDemoCopy(
+        introText: 'Memex에 오신 것을 환영합니다. AI 기반 개인 기억 도우미입니다.',
+        introTitle: 'Memex - AI 라이프 저널',
+        introInsight:
+            'Memex는 AI 기억 도우미입니다. 텍스트, 사진, 음성을 기록하면 AI가 구조화된 카드, 지식, 기록 간 인사이트로 정리합니다.',
+        introInsightSummary: 'Memex 기능 개요',
+        introComment: '환영합니다. 첫 기록을 올리고 AI가 어떻게 정리하는지 확인해 보세요.',
+        kbFileName: 'Memex 가이드.md',
+        firstRecordTitle: '첫 번째 기록',
+        firstRecordInsight: '첫 기록을 받았습니다. 이제부터 메모를 정리하고 분류하며 관련 내용을 이어 드릴게요.',
+        firstRecordSummary: '첫 기록',
+        firstRecordComment: '첫 기록이 저장되었습니다. 계속 이어가 보세요.',
+        firstRecordKbTitle: '사용자의 첫 번째 기록',
+        introHeroCaption: 'AI 라이프 저널',
+        introSnippetText:
+            '생각을 적고, 사진을 찍고, 목소리로 남겨 보세요. Memex는 이를 자동으로 구조화된 카드로 바꿉니다. AI는 지식을 추출하고 노트로 정리하며 놓쳤을 수 있는 패턴을 찾아냅니다.\n\n모든 데이터는 기기에 저장됩니다.',
+        smartCardTypesTitle: '22가지 스마트 카드',
+        productivityTitle: '생산성',
+        productivityLabel: '작업 · 루틴 · 일정 · 시간 · 진행',
+        knowledgeTitle: '지식',
+        knowledgeLabel: '글 · 스니펫 · 인용 · 링크 · 대화 · 절차',
+        dataTitle: '데이터',
+        dataLabel: '지표 · 평가 · 거래 · 사양',
+        peoplePlacesTitle: '사람과 장소',
+        peoplePlacesLabel: '사람 · 장소 · 기분 · 간단',
+        visualTitle: '비주얼',
+        visualLabel: '스냅샷 · 갤러리 · 비디오',
+        insightTypesSubject: '12가지 기록 간 인사이트',
+        insightTypesComment: '차트 · 내러티브 · 지도 · 타임라인 - AI가 기록 사이의 패턴을 발견합니다',
+        gettingStartedTitle: '시작하기',
+        configureModelTask: 'AI 모델 설정(아바타 -> 모델 설정)',
+        postFirstRecordTask: '첫 기록 올리기',
+        viewGeneratedTask: 'AI가 생성한 카드와 지식 파일 보기',
+        sloganContent: '오늘 남긴 기록은 미래의 나에게 유용한 단서가 됩니다.',
+        kbContent: '''# Memex 가이드
+
+Memex는 로컬 우선, AI 네이티브 개인 라이프 기록 앱입니다.
+
+## 할 수 있는 일
+
+- 텍스트, 사진, 음성을 한 흐름에서 기록합니다.
+- AI가 기록을 타임라인 카드와 지식 노트로 정리합니다.
+- 인사이트 카드로 기록을 가로지르는 패턴을 발견합니다.
+- 데이터는 기기에 저장되며 Markdown으로 내보낼 수 있습니다.
+
+## 시작하기
+
+1. AI 모델을 설정합니다.
+2. 첫 기록을 올립니다.
+3. 자동 생성된 카드, 인사이트, 지식 파일을 확인합니다.
+''',
+      );
+
+  @override
+  String timelineWeekdayLabel(String shortWeekday) => shortWeekday;
+
+  @override
+  AvatarPickerCopy get avatarPicker => const AvatarPickerCopy(
+        currentAvatar: '현재 아바타',
+        shuffle: '섞기',
+      );
+
+  @override
+  AgentChatCopy get agentChat => AgentChatCopy(
+        findingRecentPhotos: '최근 사진을 찾는 중...',
+        runModeAuto: '자동',
+        runModeAskFirst: '먼저 묻기',
+        runModeReadOnly: '읽기 전용',
+        runModeAutoDescription: '기록, 카드, 문서를 바로 업데이트합니다.',
+        runModeConfirmDescription: '각 변경은 실행 전에 승인을 기다립니다.',
+        runModeReadOnlyDescription: '질문에만 답하고 데이터는 수정하지 않습니다.',
+        runModeTitle: '실행 모드',
+        approved: '승인됨',
+        denied: '거부됨',
+        deny: '거부',
+        allow: '허용',
+        recordSaved: '기록 저장됨',
+        cardUpdated: '카드 업데이트됨',
+        cardCreated: '카드 생성됨',
+        cardSaved: '카드 저장됨',
+        documentUpdated: '문서 업데이트됨',
+        documentCreated: '문서 생성됨',
+        calendarEventCreated: '캘린더 일정 생성됨',
+        reminderCreated: '알림 생성됨',
+        insightSaved: '인사이트 저장됨',
+        done: '완료',
+        issue: '확인 필요',
+        running: '실행 중',
+        reasoningComplete: '추론 완료',
+        thinkingThroughRequest: '요청을 이해하는 중',
+        actionNeedsAttention: '확인이 필요한 작업이 있습니다',
+        internalReasoningFinished: '내부 추론 완료',
+        planningNextStep: '다음 단계 계획 중',
+        toolActivity: '도구 활동',
+        toolSearch: '검색',
+        toolFindFiles: '파일 찾기',
+        toolRead: '읽기',
+        toolReadBatch: '일괄 읽기',
+        toolWrite: '쓰기',
+        toolEdit: '편집',
+        toolList: '목록',
+        toolMove: '이동',
+        toolDelete: '삭제',
+        toolDelegateTask: '작업 위임',
+        toolCreateUi: 'UI 생성',
+        toolUpdateUi: 'UI 업데이트',
+        toolFindStyles: '스타일 찾기',
+        toolReadStyle: '스타일 읽기',
+        toolStyleLibrary: '스타일 라이브러리',
+        toolSaveCard: '카드 저장',
+        toolCreateEvent: '일정 생성',
+        toolCreateReminder: '알림 생성',
+        toolCancelReminderEvent: '알림/일정 취소',
+        toolSearchCards: '카드 검색',
+        toolInspectCard: '카드 확인',
+        toolUpdateInsight: '인사이트 업데이트',
+        toolSaveInsights: '인사이트 저장',
+        toolDeleteInsightCard: '인사이트 카드 삭제',
+        toolDeleteInsightTags: '인사이트 태그 삭제',
+        failed: '실패',
+        noOp: '처리 없음',
+        needsInput: '입력 필요',
+        worker: '하위 작업',
+        thinking: '생각 중...',
+        workerToolCalls: '하위 작업 도구 호출',
+        workerResult: '하위 작업 결과',
+        arguments: '인수',
+        result: '결과',
+        approvalPrompt: (toolName) => '$toolName 실행을 허용할까요?',
+        toolCallCount: (count) => '도구 호출 $count회',
+        workingThroughActions: (count) => '$count개 작업 실행 중',
+        completedActions: (count) => '$count개 작업 완료',
+      );
 }

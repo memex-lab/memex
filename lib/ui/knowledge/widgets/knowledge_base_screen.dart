@@ -77,7 +77,7 @@ class KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
                     physics: const AlwaysScrollableScrollPhysics(),
                     child: SizedBox(
                       height: MediaQuery.of(context).size.height * 0.6,
-                      child: Center(child: AgentLogoLoading()),
+                      child: const Center(child: AgentLogoLoading()),
                     ),
                   )
                 : SingleChildScrollView(
@@ -88,6 +88,11 @@ class KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildParaGrid(context, vm),
+                        if (vm.additionalRootFolders.isNotEmpty ||
+                            vm.rootLevelFiles.isNotEmpty) ...[
+                          const SizedBox(height: 16),
+                          _buildAdditionalRootItems(context, vm),
+                        ],
                         const SizedBox(height: 32),
                         _buildRecentChangesHeader(),
                         const SizedBox(height: 16),
@@ -110,7 +115,7 @@ class KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
       crossAxisCount: 2,
       mainAxisSpacing: 16,
       crossAxisSpacing: 16,
-      childAspectRatio: 0.85,
+      childAspectRatio: 0.8,
       children: [
         _buildParaCard(
           title: UserStorage.l10n.pkmCategoryProject,
@@ -169,7 +174,7 @@ class KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
           borderRadius: BorderRadius.circular(28),
           boxShadow: [
             BoxShadow(
-                color: color.withOpacity(0.3),
+                color: color.withValues(alpha: 0.3),
                 blurRadius: 12,
                 offset: const Offset(0, 6)),
           ],
@@ -186,41 +191,54 @@ class KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(16),
-                        border:
-                            Border.all(color: Colors.white.withOpacity(0.1)),
+                        border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.1)),
                       ),
                       child: Icon(icon, color: Colors.white, size: 24),
                     ),
                     const Spacer(),
-                    Text(engTitle,
-                        style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white.withOpacity(0.6),
-                            letterSpacing: 1.5)),
+                    Text(
+                      engTitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white.withValues(alpha: 0.6),
+                        letterSpacing: 1.5,
+                      ),
+                    ),
                     const SizedBox(height: 4),
-                    Text(title,
-                        style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white)),
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Expanded(
-                            child: Text(desc,
-                                style: TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.white.withOpacity(0.9)),
-                                overflow: TextOverflow.ellipsis)),
+                            child: Text(
+                          desc,
+                          maxLines: 1,
+                          style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.white.withValues(alpha: 0.9)),
+                          overflow: TextOverflow.ellipsis,
+                        )),
                         Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.2),
+                            color: Colors.black.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text('$count',
@@ -236,6 +254,91 @@ class KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAdditionalRootItems(
+    BuildContext context,
+    KnowledgeBaseViewModel vm,
+  ) {
+    return Column(
+      children: [
+        ...vm.additionalRootFolders
+            .map((folder) => _buildRootFolderCard(context, folder)),
+        ...vm.rootLevelFiles.map((file) => KnowledgeFileCard(item: file)),
+      ],
+    );
+  }
+
+  Widget _buildRootFolderCard(
+    BuildContext context,
+    Map<String, dynamic> item,
+  ) {
+    final name = (item['name'] ?? item['path'] ?? '').toString();
+    final path = (item['path'] ?? name).toString();
+    final count = item['item_count'] ?? 0;
+
+    return GestureDetector(
+      onTap: () => _navigateToFolder(context, path: path),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF64748B).withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF6FF),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.folder_rounded,
+                color: Color(0xFF3B82F6),
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1E293B),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '$count items',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF94A3B8),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: Color(0xFFCBD5E1)),
+          ],
         ),
       ),
     );
@@ -282,7 +385,7 @@ class KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
         padding: const EdgeInsets.symmetric(vertical: 20),
         alignment: Alignment.center,
         child: Text(UserStorage.l10n.noRecentChangesInThreeDays,
-            style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 13)),
+            style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 13)),
       );
     }
 

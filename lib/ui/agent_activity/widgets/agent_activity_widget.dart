@@ -41,23 +41,14 @@ class _AgentActivityWidgetState extends State<AgentActivityWidget>
   StreamSubscription<AgentRunSnapshot?>? _runSubscription;
   StreamSubscription<void>? _openActivitySubscription;
   Timer? _historyLoadTimer;
+  Timer? _initRetryTimer;
   TaskActivitySnapshot _taskSnapshot = const TaskActivitySnapshot.empty();
   AgentRunSnapshot? _runSnapshot;
 
   late AnimationController _bounceController;
 
-  bool get _hasRunningAgent {
-    if (_latestMessage == null) return false;
-    final t = _latestMessage!.type;
-    return t != AgentActivityType.agent_stop && t != AgentActivityType.error;
-  }
-
   bool get _isActive {
-    final status = _status;
-    return widget.forceVisible ||
-        _hasRunningAgent ||
-        _taskSnapshot.hasActiveTasks ||
-        status.shouldShowSystemSurface;
+    return widget.forceVisible || _taskSnapshot.hasActiveTasks;
   }
 
   AgentBackgroundStatus get _status => AgentBackgroundStatus.fromActivity(
@@ -84,11 +75,16 @@ class _AgentActivityWidgetState extends State<AgentActivityWidget>
           .listen((_) => _showDetail());
       _subscribeToService();
     } catch (_) {
-      _historyLoadTimer = Timer(const Duration(seconds: 3), () {
-        if (mounted) _initService();
-      });
+      _scheduleInitRetry();
       return;
     }
+  }
+
+  void _scheduleInitRetry() {
+    _initRetryTimer?.cancel();
+    _initRetryTimer = Timer(const Duration(seconds: 1), () {
+      if (mounted) _initService();
+    });
   }
 
   void _initService() {
@@ -99,41 +95,74 @@ class _AgentActivityWidgetState extends State<AgentActivityWidget>
           .instance.openActivityRequests
           .listen((_) => _showDetail());
       _subscribeToService();
-    } catch (_) {}
+    } catch (_) {
+      _scheduleInitRetry();
+    }
   }
 
   void _subscribeToService() {
-    _subscription = _service?.messageStream.listen((message) {
+    _initRetryTimer?.cancel();
+    _initRetryTimer = null;
+    var needsRetry = false;
+
+    _subscription ??= _service?.messageStream.listen((message) {
       if (mounted) setState(() => _latestMessage = message);
     });
 
     try {
       final taskStream = widget.taskActivitySnapshotStream ??
           _executor?.taskActivitySnapshotStream;
-      _taskSubscription = taskStream?.listen((snapshot) {
+      _taskSubscription ??= taskStream?.listen((snapshot) {
         if (mounted) {
           setState(() => _taskSnapshot = snapshot);
         }
       });
-    } catch (_) {}
+    } catch (_) {
+      needsRetry = true;
+    }
 
     try {
       final runStream = widget.runSnapshotStream ??
           AgentRunService.instance.watchLatestVisibleRun();
-      _runSubscription = runStream.listen((snapshot) {
+      _runSubscription ??= runStream.listen((snapshot) {
         if (mounted) {
           setState(() => _runSnapshot = snapshot);
         }
       });
-    } catch (_) {}
+    } catch (_) {
+      needsRetry = true;
+    }
 
-    _historyLoadTimer = Timer(const Duration(seconds: 3), () {
+    _historyLoadTimer ??= Timer(const Duration(seconds: 3), () {
       if (mounted) _loadLatestFromDb();
     });
+    unawaited(_loadCurrentState());
+    if (needsRetry) _scheduleInitRetry();
+  }
+
+  Future<void> _loadCurrentState() async {
+    try {
+      if (widget.taskActivitySnapshotStream == null && _executor != null) {
+        final snapshot = await _executor!.getTaskActivitySnapshot();
+        if (mounted) {
+          setState(() => _taskSnapshot = snapshot);
+        }
+      }
+    } catch (_) {}
+
+    try {
+      if (widget.runSnapshotStream == null) {
+        final snapshot = await AgentRunService.instance.getLatestVisibleRun();
+        if (mounted) {
+          setState(() => _runSnapshot = snapshot);
+        }
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadLatestFromDb() async {
     try {
+      if (!_taskSnapshot.hasActiveTasks) return;
       final history = await _service?.getHistory(limit: 1) ?? [];
       if (history.isNotEmpty && mounted) {
         setState(() => _latestMessage = history.first);
@@ -148,6 +177,7 @@ class _AgentActivityWidgetState extends State<AgentActivityWidget>
     _runSubscription?.cancel();
     _openActivitySubscription?.cancel();
     _historyLoadTimer?.cancel();
+    _initRetryTimer?.cancel();
     _bounceController.dispose();
     super.dispose();
   }
@@ -315,6 +345,7 @@ class _DetailSheetState extends State<_DetailSheet>
           AgentRunService.instance.watchLatestVisibleRun();
       _runSubscription = runStream.listen(_handleRunSnapshot);
     } catch (_) {}
+    unawaited(_loadCurrentState());
   }
 
   Future<void> _loadHistory() async {
@@ -324,6 +355,26 @@ class _DetailSheetState extends State<_DetailSheet>
         setState(() => _message = history.first);
       }
     }
+  }
+
+  Future<void> _loadCurrentState() async {
+    try {
+      if (widget.taskActivitySnapshotStream == null && _executor != null) {
+        final snapshot = await _executor!.getTaskActivitySnapshot();
+        if (mounted) {
+          setState(() => _taskSnapshot = snapshot);
+        }
+      }
+    } catch (_) {}
+
+    try {
+      if (widget.runSnapshotStream == null) {
+        final snapshot = await AgentRunService.instance.getLatestVisibleRun();
+        if (mounted) {
+          setState(() => _runSnapshot = snapshot);
+        }
+      }
+    } catch (_) {}
   }
 
   void _handleNewMessage(AgentActivityMessageModel newMessage) {

@@ -230,4 +230,139 @@ class AppLocalizationsExtJa extends AppLocalizationsJa
 
   @override
   String get shareShowBranding => 'マークあり';
+
+  @override
+  MemexDemoCopy get demoCopy => const MemexDemoCopy(
+        introText: 'Memex へようこそ。AI 搭載の個人記憶アシスタントです。',
+        introTitle: 'Memex - AI ライフジャーナル',
+        introInsight:
+            'Memex はあなたの AI 記憶アシスタントです。テキスト、写真、音声を記録すると、AI が構造化カード、知識、横断インサイトに整理します。',
+        introInsightSummary: 'Memex 機能概要',
+        introComment: 'ようこそ。最初の記録を投稿して、AI の整理を試してみてください。',
+        kbFileName: 'Memex ガイド.md',
+        firstRecordTitle: '最初の記録',
+        firstRecordInsight: '最初の記録を受け取りました。これからのメモを整理し、分類し、関連する内容をつなげます。',
+        firstRecordSummary: '最初の記録',
+        firstRecordComment: '最初の記録を保存しました。続けていきましょう。',
+        firstRecordKbTitle: 'ユーザーの最初の記録',
+        introHeroCaption: 'AI ライフジャーナル',
+        introSnippetText:
+            '思いつきを書く、写真を撮る、声で残す。Memex はそれを自動で構造化カードに変えます。AI は知識を抽出し、ノートに整理し、見落としていたパターンも見つけます。\n\nデータはすべてあなたのデバイス上に保存されます。',
+        smartCardTypesTitle: '22 種類のスマートカード',
+        productivityTitle: '生産性',
+        productivityLabel: 'タスク · 習慣 · 予定 · 時間 · 進捗',
+        knowledgeTitle: '知識',
+        knowledgeLabel: '記事 · スニペット · 引用 · リンク · 会話 · 手順',
+        dataTitle: 'データ',
+        dataLabel: '指標 · 評価 · 取引 · 仕様',
+        peoplePlacesTitle: '人と場所',
+        peoplePlacesLabel: '人物 · 場所 · 気分 · コンパクト',
+        visualTitle: 'ビジュアル',
+        visualLabel: 'スナップショット · ギャラリー · 動画',
+        insightTypesSubject: '12 種類の横断インサイト',
+        insightTypesComment: 'グラフ · ナラティブ · 地図 · タイムライン - AI が記録間のパターンを発見します',
+        gettingStartedTitle: 'はじめに',
+        configureModelTask: 'AI モデルを設定（アバター -> モデル設定）',
+        postFirstRecordTask: '最初の記録を投稿',
+        viewGeneratedTask: 'AI が生成したカードと知識ファイルを確認',
+        sloganContent: '今日残した記録は、未来の自分に役立つ手がかりになります。',
+        kbContent: '''# Memex ガイド
+
+Memex はローカルファーストで AI ネイティブな個人ライフログアプリです。
+
+## できること
+
+- テキスト、写真、音声を同じ流れで記録できます。
+- AI が記録をタイムラインカードと知識ノートに整理します。
+- インサイトカードで記録をまたいだパターンを見つけられます。
+- データはデバイス上に保存され、Markdown として書き出せます。
+
+## はじめに
+
+1. AI モデルを設定します。
+2. 最初の記録を投稿します。
+3. 自動生成されたカード、インサイト、知識ファイルを確認します。
+''',
+      );
+
+  @override
+  String timelineWeekdayLabel(String shortWeekday) => shortWeekday;
+
+  @override
+  AvatarPickerCopy get avatarPicker => const AvatarPickerCopy(
+        currentAvatar: '現在のアバター',
+        shuffle: 'シャッフル',
+      );
+
+  @override
+  AgentChatCopy get agentChat => AgentChatCopy(
+        findingRecentPhotos: '最近の写真を探しています...',
+        runModeAuto: '自動',
+        runModeAskFirst: '先に確認',
+        runModeReadOnly: '読み取り専用',
+        runModeAutoDescription: '記録、カード、ドキュメントを直接更新します。',
+        runModeConfirmDescription: '各変更は実行前に承認を待ちます。',
+        runModeReadOnlyDescription: '質問に答えるだけで、データは変更しません。',
+        runModeTitle: '実行モード',
+        approved: '承認済み',
+        denied: '拒否済み',
+        deny: '拒否',
+        allow: '許可',
+        recordSaved: '記録を保存しました',
+        cardUpdated: 'カードを更新しました',
+        cardCreated: 'カードを作成しました',
+        cardSaved: 'カードを保存しました',
+        documentUpdated: 'ドキュメントを更新しました',
+        documentCreated: 'ドキュメントを作成しました',
+        calendarEventCreated: 'カレンダー予定を作成しました',
+        reminderCreated: 'リマインダーを作成しました',
+        insightSaved: 'インサイトを保存しました',
+        done: '完了',
+        issue: '要対応',
+        running: '実行中',
+        reasoningComplete: '思考完了',
+        thinkingThroughRequest: '依頼を理解しています',
+        actionNeedsAttention: '対応が必要な操作があります',
+        internalReasoningFinished: '内部推論が完了しました',
+        planningNextStep: '次の手順を計画中',
+        toolActivity: 'ツール活動',
+        toolSearch: '検索',
+        toolFindFiles: 'ファイル検索',
+        toolRead: '読み取り',
+        toolReadBatch: '一括読み取り',
+        toolWrite: '書き込み',
+        toolEdit: '編集',
+        toolList: '一覧',
+        toolMove: '移動',
+        toolDelete: '削除',
+        toolDelegateTask: 'タスク委任',
+        toolCreateUi: 'UI 作成',
+        toolUpdateUi: 'UI 更新',
+        toolFindStyles: 'スタイル検索',
+        toolReadStyle: 'スタイル読み取り',
+        toolStyleLibrary: 'スタイルライブラリ',
+        toolSaveCard: 'カード保存',
+        toolCreateEvent: '予定作成',
+        toolCreateReminder: 'リマインダー作成',
+        toolCancelReminderEvent: 'リマインダー/予定をキャンセル',
+        toolSearchCards: 'カード検索',
+        toolInspectCard: 'カード確認',
+        toolUpdateInsight: 'インサイト更新',
+        toolSaveInsights: 'インサイト保存',
+        toolDeleteInsightCard: 'インサイトカード削除',
+        toolDeleteInsightTags: 'インサイトタグ削除',
+        failed: '失敗',
+        noOp: '処理不要',
+        needsInput: '入力が必要',
+        worker: '子タスク',
+        thinking: '思考中...',
+        workerToolCalls: '子タスクのツール呼び出し',
+        workerResult: '子タスクの結果',
+        arguments: '引数',
+        result: '結果',
+        approvalPrompt: (toolName) => '$toolName を実行しますか？',
+        toolCallCount: (count) => '$count 回のツール呼び出し',
+        workingThroughActions: (count) => '$count 件の操作を実行中',
+        completedActions: (count) => '$count 件の操作が完了',
+      );
 }

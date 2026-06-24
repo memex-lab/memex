@@ -228,46 +228,61 @@ class _ActionCenterSheetState extends State<ActionCenterSheet>
       child: Row(
         children: [
           // Title + count badge
-          Text(
-            l10n.actionCenterTitle,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-              letterSpacing: -0.3,
+          Expanded(
+            child: Row(
+              children: [
+                Flexible(
+                  child: Text(
+                    l10n.actionCenterTitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                ),
+                if (hasItems) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '$itemCount',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
-          if (hasItems) ...[
+
+          // Clear button
+          if (hasDismissibleItems) ...[
             const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                '$itemCount',
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.primary,
+            Flexible(
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: _ClearButtonGroup(
+                  isDismissing: _isDismissing,
+                  hasMultipleTypes: hasMultipleTypes,
+                  onClearAll: _clearAll,
+                  onShowTypeMenu: _showTypeMenu,
                 ),
               ),
             ),
           ],
-
-          const Spacer(),
-
-          // Clear button
-          if (hasDismissibleItems) ...[
-            _ClearButtonGroup(
-              isDismissing: _isDismissing,
-              hasMultipleTypes: hasMultipleTypes,
-              onClearAll: _clearAll,
-              onShowTypeMenu: _showTypeMenu,
-            ),
-            const SizedBox(width: 8),
-          ],
+          const SizedBox(width: 8),
 
           // Close button
           GestureDetector(
@@ -362,60 +377,69 @@ class _ClearButtonGroup extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = UserStorage.l10n;
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Main clear text button
-        GestureDetector(
-          onTap: isDismissing ? null : onClearAll,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (isDismissing)
-                const SizedBox(
-                  width: 13,
-                  height: 13,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 1.5,
-                    color: AppColors.textTertiary,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 156),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Main clear text button
+          Flexible(
+            child: GestureDetector(
+              onTap: isDismissing ? null : onClearAll,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (isDismissing)
+                    const SizedBox(
+                      width: 13,
+                      height: 13,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 1.5,
+                        color: AppColors.textTertiary,
+                      ),
+                    )
+                  else
+                    const Icon(
+                      Icons.clear_all_rounded,
+                      size: 16,
+                      color: AppColors.textSecondary,
+                    ),
+                  const SizedBox(width: 3),
+                  Flexible(
+                    child: Text(
+                      l10n.dismissAllNotifications,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
                   ),
-                )
-              else
-                const Icon(
-                  Icons.clear_all_rounded,
-                  size: 16,
-                  color: AppColors.textSecondary,
-                ),
-              const SizedBox(width: 3),
-              Text(
-                l10n.dismissAllNotifications,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        // Dropdown arrow (only if multiple types)
-        if (hasMultipleTypes) ...[
-          const SizedBox(width: 4),
-          GestureDetector(
-            onTap: isDismissing ? null : onShowTypeMenu,
-            behavior: HitTestBehavior.opaque,
-            child: const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-              child: Icon(
-                Icons.keyboard_arrow_down_rounded,
-                size: 20,
-                color: AppColors.textTertiary,
+                ],
               ),
             ),
           ),
+
+          // Dropdown arrow (only if multiple types)
+          if (hasMultipleTypes) ...[
+            const SizedBox(width: 4),
+            GestureDetector(
+              onTap: isDismissing ? null : onShowTypeMenu,
+              behavior: HitTestBehavior.opaque,
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                child: Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  size: 20,
+                  color: AppColors.textTertiary,
+                ),
+              ),
+            ),
+          ],
         ],
-      ],
+      ),
     );
   }
 }

@@ -181,7 +181,7 @@ class _AvatarPickerSheetState extends State<_AvatarPickerSheet> {
               ),
               const SizedBox(height: 4),
               Text(
-                UserStorage.l10n.localeName == 'zh' ? '当前头像' : 'Current',
+                UserStorage.l10n.avatarPicker.currentAvatar,
                 style: GoogleFonts.inter(
                   fontSize: 11,
                   color: AppColors.textTertiary,
@@ -246,10 +246,14 @@ class _AvatarPickerSheetState extends State<_AvatarPickerSheet> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.refresh, size: 16, color: AppColors.primary),
+                    const Icon(
+                      Icons.refresh,
+                      size: 16,
+                      color: AppColors.primary,
+                    ),
                     const SizedBox(width: 4),
                     Text(
-                      UserStorage.l10n.localeName == 'zh' ? '换一批' : 'Shuffle',
+                      UserStorage.l10n.avatarPicker.shuffle,
                       style: GoogleFonts.inter(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,

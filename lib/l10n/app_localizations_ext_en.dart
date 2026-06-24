@@ -236,4 +236,149 @@ class AppLocalizationsExtEn extends AppLocalizationsEn
 
   @override
   String get shareShowBranding => 'Mark';
+
+  @override
+  MemexDemoCopy get demoCopy => const MemexDemoCopy(
+        introText:
+            'Welcome to Memex - your AI-powered personal memory assistant.',
+        introTitle: 'Memex - Your AI Life Journal',
+        introInsight:
+            'Memex is your AI memory assistant. Record text, photos, and voice; AI organizes them into structured cards, knowledge, and cross-record insights.',
+        introInsightSummary: 'Memex feature overview',
+        introComment:
+            'Welcome! Try posting your first record and see how AI organizes it.',
+        kbFileName: 'Memex Guide.md',
+        firstRecordTitle: 'My First Record',
+        firstRecordInsight:
+            'Your first record is here. From now on, Memex can organize, categorize, and connect your notes.',
+        firstRecordSummary: 'First record',
+        firstRecordComment: 'First record saved. Keep going.',
+        firstRecordKbTitle: 'User First Record',
+        introHeroCaption: 'Your AI life journal',
+        introSnippetText:
+            'Jot down a thought, snap a photo, or speak out loud. Memex turns it into a structured card automatically. AI can also extract knowledge, organize notes, and surface patterns you may have missed.\n\nEverything stays on your device.',
+        smartCardTypesTitle: '22 Smart Card Types',
+        productivityTitle: 'Productivity',
+        productivityLabel: 'task · routine · event · duration · progress',
+        knowledgeTitle: 'Knowledge',
+        knowledgeLabel:
+            'article · snippet · quote · link · conversation · procedure',
+        dataTitle: 'Data',
+        dataLabel: 'metric · rating · transaction · spec',
+        peoplePlacesTitle: 'People & Places',
+        peoplePlacesLabel: 'person · place · mood · compact',
+        visualTitle: 'Visual',
+        visualLabel: 'snapshot · gallery · video',
+        insightTypesSubject: '12 Cross-Record Insight Types',
+        insightTypesComment:
+            'Charts · Narratives · Maps · Timelines - AI discovers patterns across your records',
+        gettingStartedTitle: 'Getting Started',
+        configureModelTask: 'Configure AI model (Avatar -> Model Config)',
+        postFirstRecordTask: 'Post your first record',
+        viewGeneratedTask: 'View AI-generated cards and knowledge files',
+        sloganContent:
+            'Every record you make today becomes a useful thread for your future self.',
+        kbContent: '''# Memex Guide
+
+Memex is a local-first, AI-native personal life recording app.
+
+## What you can do
+
+- Capture text, photos, and voice in one flow.
+- Let AI organize records into timeline cards and knowledge notes.
+- Discover patterns across records through insight cards.
+- Keep data on your device and export it as Markdown.
+
+## Getting started
+
+1. Configure an AI model.
+2. Post your first record.
+3. Open the generated cards, insights, and knowledge files.
+''',
+      );
+
+  @override
+  String timelineWeekdayLabel(String shortWeekday) => shortWeekday;
+
+  @override
+  AvatarPickerCopy get avatarPicker => const AvatarPickerCopy(
+        currentAvatar: 'Current',
+        shuffle: 'Shuffle',
+      );
+
+  @override
+  AgentChatCopy get agentChat => AgentChatCopy(
+        findingRecentPhotos: 'Finding recent photos...',
+        runModeAuto: 'Auto',
+        runModeAskFirst: 'Ask first',
+        runModeReadOnly: 'Read-only',
+        runModeAutoDescription: 'Records, cards and documents update directly.',
+        runModeConfirmDescription:
+            'Each change waits for your approval before running.',
+        runModeReadOnlyDescription:
+            'Answers questions only, never modifies data.',
+        runModeTitle: 'Run mode',
+        approved: 'Approved',
+        denied: 'Denied',
+        deny: 'Deny',
+        allow: 'Allow',
+        recordSaved: 'Record saved',
+        cardUpdated: 'Card updated',
+        cardCreated: 'Card created',
+        cardSaved: 'Card saved',
+        documentUpdated: 'Document updated',
+        documentCreated: 'Document created',
+        calendarEventCreated: 'Calendar event created',
+        reminderCreated: 'Reminder created',
+        insightSaved: 'Insight saved',
+        done: 'Done',
+        issue: 'Issue',
+        running: 'Running',
+        reasoningComplete: 'Reasoning complete',
+        thinkingThroughRequest: 'Thinking through request',
+        actionNeedsAttention: 'Action needs attention',
+        internalReasoningFinished: 'Internal reasoning finished',
+        planningNextStep: 'Planning next step',
+        toolActivity: 'Tool activity',
+        toolSearch: 'Search',
+        toolFindFiles: 'Find files',
+        toolRead: 'Read',
+        toolReadBatch: 'Read batch',
+        toolWrite: 'Write',
+        toolEdit: 'Edit',
+        toolList: 'List',
+        toolMove: 'Move',
+        toolDelete: 'Delete',
+        toolDelegateTask: 'Delegate task',
+        toolCreateUi: 'Create UI',
+        toolUpdateUi: 'Update UI',
+        toolFindStyles: 'Find styles',
+        toolReadStyle: 'Read style',
+        toolStyleLibrary: 'Style library',
+        toolSaveCard: 'Save card',
+        toolCreateEvent: 'Create event',
+        toolCreateReminder: 'Create reminder',
+        toolCancelReminderEvent: 'Cancel reminder/event',
+        toolSearchCards: 'Search cards',
+        toolInspectCard: 'Inspect card',
+        toolUpdateInsight: 'Update insight',
+        toolSaveInsights: 'Save insights',
+        toolDeleteInsightCard: 'Delete insight card',
+        toolDeleteInsightTags: 'Delete insight tags',
+        failed: 'Failed',
+        noOp: 'No-op',
+        needsInput: 'Needs input',
+        worker: 'Worker',
+        thinking: 'Thinking...',
+        workerToolCalls: 'Worker tool calls',
+        workerResult: 'Worker result',
+        arguments: 'Arguments',
+        result: 'Result',
+        approvalPrompt: (toolName) => 'Approve: $toolName?',
+        toolCallCount: (count) => '$count tool calls',
+        workingThroughActions: (count) =>
+            'Working through ${count == 1 ? '1 action' : '$count actions'}',
+        completedActions: (count) =>
+            'Completed ${count == 1 ? '1 action' : '$count actions'}',
+      );
 }

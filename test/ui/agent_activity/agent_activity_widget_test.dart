@@ -153,7 +153,7 @@ void main() {
     await tester.pump();
   });
 
-  testWidgets('shows durable run status after returning from notification', (
+  testWidgets('shows active task status after returning from notification', (
     tester,
   ) async {
     final run = AgentRunSnapshot(
@@ -171,7 +171,16 @@ void main() {
       updatedAt: DateTime(2026, 1, 1),
     );
 
-    await tester.pumpWidget(buildHost(initialRunSnapshot: run));
+    await tester.pumpWidget(
+      buildHost(
+        initialTaskSnapshot: const TaskActivitySnapshot(
+          pending: 4,
+          processing: 0,
+          retrying: 0,
+        ),
+        initialRunSnapshot: run,
+      ),
+    );
     await tester.pump(const Duration(milliseconds: 350));
 
     expect(find.text('AI is processing...'), findsOneWidget);
@@ -187,6 +196,77 @@ void main() {
     await tester.pump(const Duration(milliseconds: 350));
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
+  });
+
+  testWidgets('does not show stale non-terminal history without active work', (
+    tester,
+  ) async {
+    final activity = _FakeActivityService(history: [
+      _activityMessage(
+        id: 1,
+        type: AgentActivityType.info,
+        title: 'Old activity',
+        content: 'This should not reopen the processing affordance.',
+      ),
+    ]);
+    AgentActivityService.setInstance(activity);
+
+    await tester.pumpWidget(buildHost());
+    await tester.pump(const Duration(seconds: 4));
+
+    expect(find.text('AI is processing...'), findsNothing);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+    activity.dispose();
+  });
+
+  testWidgets('shows and hides from active task snapshots only', (
+    tester,
+  ) async {
+    final activity = _FakeActivityService();
+    AgentActivityService.setInstance(activity);
+    final taskSnapshots = StreamController<TaskActivitySnapshot>.broadcast();
+
+    await tester.pumpWidget(
+      buildHost(
+        taskActivitySnapshotStream: taskSnapshots.stream,
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 350));
+
+    expect(find.text('AI is processing...'), findsNothing);
+
+    await activity.pushMessage(
+      type: AgentActivityType.info,
+      title: 'Still working',
+      content: 'A non-terminal activity update.',
+      agentName: 'Worker Agent',
+      agentId: 'worker-agent',
+      userId: 'agent-activity-test',
+    );
+    await tester.pump();
+
+    expect(find.text('AI is processing...'), findsNothing);
+
+    taskSnapshots.add(
+      const TaskActivitySnapshot(pending: 1, processing: 0, retrying: 0),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 350));
+
+    expect(find.text('AI is processing...'), findsOneWidget);
+
+    taskSnapshots.add(const TaskActivitySnapshot.empty());
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 350));
+
+    expect(find.text('AI is processing...'), findsNothing);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+    await taskSnapshots.close();
+    activity.dispose();
   });
 
   testWidgets('opens detail sheet from a buffered notification action', (
@@ -265,6 +345,74 @@ void main() {
       platform.dispose();
     },
   );
+}
+
+AgentActivityMessageModel _activityMessage({
+  required int id,
+  required AgentActivityType type,
+  required String title,
+  String? content,
+}) {
+  return AgentActivityMessageModel(
+    id: id,
+    type: type,
+    title: title,
+    content: content,
+    agentName: 'Worker Agent',
+    agentId: 'worker-agent',
+    userId: 'agent-activity-test',
+    timestamp: DateTime(2026, 1, 1),
+  );
+}
+
+class _FakeActivityService implements AgentActivityService {
+  _FakeActivityService({List<AgentActivityMessageModel> history = const []})
+      : _history = List<AgentActivityMessageModel>.from(history);
+
+  final _controller = StreamController<AgentActivityMessageModel>.broadcast();
+  final List<AgentActivityMessageModel> _history;
+  var _nextId = 100;
+
+  @override
+  Stream<AgentActivityMessageModel> get messageStream => _controller.stream;
+
+  @override
+  Future<List<AgentActivityMessageModel>> getHistory({int limit = 10}) async {
+    return _history.take(limit).toList();
+  }
+
+  @override
+  Future<void> pushMessage({
+    required AgentActivityType type,
+    required String title,
+    String? content,
+    String? icon,
+    required String agentName,
+    required String agentId,
+    String? scene,
+    String? sceneId,
+    String? userId,
+  }) async {
+    final message = AgentActivityMessageModel(
+      id: _nextId++,
+      type: type,
+      title: title,
+      content: content,
+      icon: icon,
+      agentName: agentName,
+      agentId: agentId,
+      scene: scene,
+      sceneId: sceneId,
+      userId: userId,
+      timestamp: DateTime(2026, 1, 1),
+    );
+    _history.insert(0, message);
+    _controller.add(message);
+  }
+
+  void dispose() {
+    unawaited(_controller.close());
+  }
 }
 
 class _FakePlatform implements AgentBackgroundPlatform {

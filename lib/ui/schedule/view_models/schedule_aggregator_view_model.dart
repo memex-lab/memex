@@ -75,7 +75,6 @@ class ScheduleAggregatorViewModel extends ChangeNotifier {
 
   ScheduleViewData? _aggregation;
   bool _isLoading = false;
-  bool _isRefreshing = false;
   bool _hasLoaded = false;
   String? _error;
   final Map<String, ScheduleItemStatus> _statusOverrides = {};
@@ -83,7 +82,6 @@ class ScheduleAggregatorViewModel extends ChangeNotifier {
 
   ScheduleViewData? get aggregation => _aggregation;
   bool get isLoading => _isLoading;
-  bool get isRefreshing => _isRefreshing;
   bool get hasLoaded => _hasLoaded;
   String? get error => _error;
   bool get hasData => _aggregation != null;
@@ -140,22 +138,6 @@ class ScheduleAggregatorViewModel extends ChangeNotifier {
     } finally {
       _hasLoaded = true;
       _setLoading(false);
-    }
-  }
-
-  /// Refresh schedule aggregation by reloading local schedule view data.
-  Future<void> refreshAggregation() async {
-    _setRefreshing(true);
-    try {
-      await loadAggregation();
-    } catch (e) {
-      _logger.severe('Failed to refresh schedule aggregation: $e');
-      _error = _localizedOrFallback(
-        (l10n) => l10n.scheduleAggregationRefreshFailed,
-        'Failed to refresh schedule data',
-      );
-    } finally {
-      _setRefreshing(false);
     }
   }
 
@@ -315,12 +297,6 @@ class ScheduleAggregatorViewModel extends ChangeNotifier {
   void _setLoading(bool value) {
     if (_isLoading == value) return;
     _isLoading = value;
-    notifyListeners();
-  }
-
-  void _setRefreshing(bool value) {
-    if (_isRefreshing == value) return;
-    _isRefreshing = value;
     notifyListeners();
   }
 

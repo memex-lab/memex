@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/domain/models/schedule_state.dart' show ScheduleSubtask;
@@ -61,68 +59,6 @@ void main() {
       expect(loadCount, 2);
       expect(vm.aggregation?.id, 'agg_2');
       expect(vm.items.single.title, '任务 2');
-
-      vm.dispose();
-    });
-
-    test('refresh reloads local aggregation data', () async {
-      var loadCount = 0;
-      final vm = ScheduleAggregatorViewModel(
-        loadAggregation: () async {
-          loadCount += 1;
-          return _aggregation(id: 'fresh');
-        },
-        listenToEvents: false,
-      );
-
-      await vm.refreshAggregation();
-
-      expect(loadCount, 1);
-      expect(vm.aggregation?.id, 'fresh');
-      expect(vm.isLoading, isFalse);
-      expect(vm.isRefreshing, isFalse);
-      expect(vm.hasLoaded, isTrue);
-      expect(vm.error, isNull);
-
-      vm.dispose();
-    });
-
-    test('refreshing state tracks local reload', () async {
-      final loadCompleter = Completer<ScheduleViewData?>();
-      final vm = ScheduleAggregatorViewModel(
-        loadAggregation: () => loadCompleter.future,
-        listenToEvents: false,
-      );
-
-      final refresh = vm.refreshAggregation();
-
-      expect(vm.isLoading, isTrue);
-      expect(vm.isRefreshing, isTrue);
-      loadCompleter.complete(_aggregation(id: 'refreshed'));
-      await refresh;
-      await Future<void>.delayed(Duration.zero);
-
-      expect(vm.aggregation?.id, 'refreshed');
-      expect(vm.isLoading, isFalse);
-      expect(vm.isRefreshing, isFalse);
-
-      vm.dispose();
-    });
-
-    test('refresh reports local load failures', () async {
-      final vm = ScheduleAggregatorViewModel(
-        loadAggregation: () async {
-          throw Exception('failed');
-        },
-        listenToEvents: false,
-      );
-
-      await vm.refreshAggregation();
-
-      expect(vm.hasData, isFalse);
-      expect(vm.isLoading, isFalse);
-      expect(vm.isRefreshing, isFalse);
-      expect(vm.error, 'Failed to load schedule data');
 
       vm.dispose();
     });

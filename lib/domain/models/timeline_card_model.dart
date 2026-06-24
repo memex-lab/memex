@@ -1,5 +1,5 @@
 import 'package:intl/intl.dart';
-import 'package:memex/l10n/app_localizations.dart';
+import 'package:memex/l10n/app_localizations_ext.dart';
 
 import 'card_detail_model.dart';
 import 'card_model.dart';
@@ -87,7 +87,7 @@ class TimelineCardModel {
     };
   }
 
-  String displayTime(AppLocalizations l10n) {
+  String displayTime(AppLocalizationsExt l10n) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final cardDate = DateTime(timestamp.year, timestamp.month, timestamp.day);
@@ -114,9 +114,7 @@ class TimelineCardModel {
           DateTime.sunday => l10n.calendarShortSun,
           _ => DateFormat.E(locale).format(timestamp),
         };
-        if (locale.startsWith('zh')) {
-          weekdayText = '周$weekdayText';
-        }
+        weekdayText = l10n.timelineWeekdayLabel(weekdayText);
         return '$weekdayText ${DateFormat.Hm(locale).format(timestamp)}';
       } else if (cardDate.year == today.year) {
         // Same year: show month/day
