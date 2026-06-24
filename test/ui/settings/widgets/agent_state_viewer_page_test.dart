@@ -51,7 +51,7 @@ void main() {
                 'id': 'call_delegate',
                 'name': 'delegate_to_subagent',
                 'arguments': jsonEncode({
-                  'profile': 'none',
+                  'agent_type': 'timeline_card',
                   'task_brief': 'Record dinner as a card.',
                 }),
               },
@@ -70,12 +70,12 @@ void main() {
                 'content': [
                   {
                     'type': 'text',
-                    'text': '[manage_card_child] status=completed\nsaved',
+                    'text': '[timeline_card_child] status=completed\nsaved',
                   },
                 ],
                 'metadata': {
                   'child_result': {
-                    'child': 'manage_card_child',
+                    'child': 'timeline_card_child',
                     'status': 'completed',
                     'summary': 'saved',
                     'child_session_id': 'manage_card_child_1',

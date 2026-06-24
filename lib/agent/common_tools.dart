@@ -37,33 +37,48 @@ final mintRecordFactIdTool = Tool(
   description:
       "Mint a fresh fact_id for a brand-new record BEFORE creating its card. "
       "The system reserves the id (it never collides and is never guessed by "
-      "you). Pass the returned fact_id into the task_brief of every worker for "
-      "this record (card / PKM / schedule) so they all link to one identity. "
-      "Use this only for a NEW record — to edit an existing card, reuse that "
-      "card's id instead.",
+      "you). Use count when you need ids for multiple new records; the tool "
+      "returns one fact_id per line. Pass each returned fact_id into the "
+      "task_brief of every worker for that record (card / PKM / schedule) so "
+      "they all link to one identity. Use this only for NEW records — to edit "
+      "an existing card, reuse that card's id instead.",
   parameters: {
     'type': 'object',
-    'properties': {},
+    'properties': {
+      'count': {
+        'type': 'integer',
+        'description':
+            'How many fact_ids to mint. Omit or pass 1 for a single new record.',
+        'minimum': 1,
+      },
+    },
   },
-  executable: () async {
+  executable: (int? count) async {
     final context = AgentCallToolContext.current;
     if (context == null) {
       throw StateError(
           "mint_record_fact_id must be called within an agent execution context.");
     }
     final userId = context.state.metadata['userId'] as String;
-    final factId = await FileSystemService.instance.allocateCardFactId(userId);
-    getLogger('CommonTools').info('Minted fact_id: $factId');
+    final requestedCount = count ?? 1;
+    if (requestedCount < 1) {
+      throw ArgumentError('count must be at least 1.');
+    }
+
+    final factIds = <String>[];
+    for (var i = 0; i < requestedCount; i += 1) {
+      factIds.add(
+        await FileSystemService.instance.allocateCardFactId(userId),
+      );
+    }
+    getLogger('CommonTools').info('Minted fact_id(s): ${factIds.join(', ')}');
     return AgentToolResult(
-      content: TextPart(
-          "Minted fact_id: $factId. Use this exact id when saving the card "
-          "(save_timeline_card), organizing it into PKM "
-          "(`<!-- fact_id: $factId -->`), and updating the schedule, so every "
-          "part of this record shares one identity."),
+      content: TextPart(factIds.join('\n')),
       metadata: {
         'artifact': {
-          'type': 'fact_id',
-          'id': factId,
+          'type': requestedCount == 1 ? 'fact_id' : 'fact_ids',
+          if (requestedCount == 1) 'id': factIds.single,
+          'ids': factIds,
         },
       },
     );

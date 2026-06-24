@@ -1553,7 +1553,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     progressDialogOpen = true;
 
     try {
-      final result = await _memexRouter.importFilesToResources(
+      final result = await _memexRouter.importFilesToUserSettingsImported(
         filePaths,
         onProgress: (status) {
           setProgressState?.call(() {

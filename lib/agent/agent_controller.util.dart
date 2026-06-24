@@ -75,7 +75,7 @@ void addAgentActivityCollector(AgentController controller) {
           case StepStatus.completed:
             icon = "✅";
             break;
-          case StepStatus.in_progress:
+          case StepStatus.inProgress:
             icon = "👉";
             break;
           case StepStatus.cancelled:

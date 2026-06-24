@@ -19,6 +19,7 @@ import 'package:memex/agent/super_agent/prompts.dart';
 import 'package:memex/agent/super_agent/pending_tool_image_buffer.dart';
 import 'package:memex/agent/super_agent/subagent/delegate_subagent_tool.dart';
 import 'package:memex/agent/super_agent/super_agent_harness.dart';
+import 'package:memex/agent/super_agent/super_agent_loop_detector.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:logging/logging.dart';
 import 'package:memex/utils/logger.dart';
@@ -55,6 +56,9 @@ const _cloneSubAgentPromptLine =
 
 class SuperAgent {
   static final Logger _logger = getLogger('SuperAgent');
+
+  @visibleForTesting
+  static const int rootMaxTurns = 80;
 
   @visibleForTesting
   static bool isQuickQueryToolAllowed(String toolName) {
@@ -136,8 +140,8 @@ class SuperAgent {
       // _readOnlyToolNames and the Quick Query filter below drops it.
       mintRecordFactIdTool,
       // Generic sub-agent delegation: spawn ONE child worker per call, shaped
-      // by a base-tool profile + a skills list. The model runs several in
-      // parallel by emitting multiple calls in one turn. Not in
+      // by a fixed agent_type preset. The model runs several in parallel by
+      // emitting multiple calls in one turn. Not in
       // _readOnlyToolNames, so the Quick Query whitelist filter below drops it.
       buildDelegateToSubagentTool(),
     ];
@@ -238,6 +242,8 @@ class SuperAgent {
         systemPrompts: systemPrompts,
         disableSubAgents: true,
         controller: controller,
+        loopDetector: SuperAgentLoopDetector(),
+        maxTurns: rootMaxTurns,
         withGeneralPrinciples: true,
         planMode: PlanMode.none,
         autoSaveStateFunc: (state) async {

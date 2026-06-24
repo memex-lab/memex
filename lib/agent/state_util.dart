@@ -15,8 +15,7 @@ Future<AgentState> loadOrCreateAgentState(
   final stateDirPath = await FileSystemService.instance.getAgentStateDirectory(
     userId,
   );
-  final stateDir = Directory(stateDirPath);
-  final storage = FileStateStorage(stateDir);
+  final storage = FileStateStorage(stateDirPath);
   final state = await storage.loadOrCreate(sessionId, initialMetadata);
   if (_repairLegacyAssistantContentBlocks(state)) {
     await storage.save(state);
@@ -29,8 +28,7 @@ Future<void> saveAgentState(AgentState state) async {
   final stateDirPath = await FileSystemService.instance.getAgentStateDirectory(
     userId,
   );
-  final stateDir = Directory(stateDirPath);
-  final storage = FileStateStorage(stateDir);
+  final storage = FileStateStorage(stateDirPath);
   await storage.save(state);
 }
 
@@ -146,8 +144,7 @@ Future<void> deleteAgentState(String userId, String sessionId) async {
   final stateDirPath = await FileSystemService.instance.getAgentStateDirectory(
     userId,
   );
-  final stateDir = Directory(stateDirPath);
-  final storage = FileStateStorage(stateDir);
+  final storage = FileStateStorage(stateDirPath);
   await storage.delete(sessionId);
 }
 
@@ -163,7 +160,7 @@ Future<List<String>> deleteAgentStatesWhere(
     return const [];
   }
 
-  final storage = FileStateStorage(stateDir);
+  final storage = FileStateStorage(stateDirPath);
   final deletedSessionIds = <String>[];
   await for (final entity in stateDir.list(followLinks: false)) {
     if (entity is! File) continue;
@@ -245,7 +242,7 @@ Future<({String sessionId, bool isExisting})> resolveCharacterSessionId({
   }
 
   // Check if the latest session is still running (interrupted).
-  final storage = FileStateStorage(stateDir);
+  final storage = FileStateStorage(stateDirPath);
   try {
     final state = await storage.loadOrCreate(latestFile, null);
     if (state.isRunning) {

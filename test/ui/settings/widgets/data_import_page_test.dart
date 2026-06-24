@@ -56,12 +56,12 @@ void main() {
 
 const _result = FileImportResult(
   sourceName: 'my-export',
-  pkmRelativeDirectoryPath: 'Resources/Imported/my-export',
-  workspaceRelativeDirectoryPath: 'PKM/Resources/Imported/my-export',
-  absoluteDirectoryPath: '/tmp/workspace/PKM/Resources/Imported/my-export',
+  settingsRelativeDirectoryPath: 'Imported/my-export',
+  workspaceRelativeDirectoryPath: '_UserSettings/Imported/my-export',
+  absoluteDirectoryPath: '/tmp/workspace/_UserSettings/Imported/my-export',
   files: [
     ImportedFileRecord(
-      relativePath: 'Resources/Imported/my-export/a.md',
+      relativePath: '_UserSettings/Imported/my-export/a.md',
       sizeBytes: 4,
     ),
   ],

@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:memex/data/services/asset_safety_service.dart';
 import 'package:memex/data/services/document_text_extraction_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
-import 'package:memex/data/services/search_service.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:path/path.dart' as p;
@@ -23,7 +22,7 @@ class ImportedFileRecord {
     this.sourceRelativePath,
   });
 
-  /// Path relative to the user's PKM root.
+  /// Path relative to the user's workspace root.
   final String relativePath;
   final int sizeBytes;
 
@@ -40,7 +39,7 @@ class ImportedFileRecord {
 class FileImportResult {
   const FileImportResult({
     required this.sourceName,
-    required this.pkmRelativeDirectoryPath,
+    required this.settingsRelativeDirectoryPath,
     required this.workspaceRelativeDirectoryPath,
     required this.absoluteDirectoryPath,
     required this.files,
@@ -50,10 +49,11 @@ class FileImportResult {
 
   final String sourceName;
 
-  /// Path relative to `/PKM`, e.g. `Resources/Imported/My Export`.
-  final String pkmRelativeDirectoryPath;
+  /// Path relative to `/_UserSettings`, e.g. `Imported/My Export`.
+  final String settingsRelativeDirectoryPath;
 
-  /// Path relative to the workspace, e.g. `PKM/Resources/Imported/My Export`.
+  /// Path relative to the workspace, e.g.
+  /// `_UserSettings/Imported/My Export`.
   final String workspaceRelativeDirectoryPath;
   final String absoluteDirectoryPath;
   final List<ImportedFileRecord> files;
@@ -73,36 +73,29 @@ class FileImportResult {
       .length;
 }
 
-typedef PkmIndexRebuilder = Future<void> Function(String userId);
 typedef ImportedDocumentTextExtractor = Future<String?> Function(File file);
 
 class FileImportService {
   FileImportService._({
-    PkmIndexRebuilder? rebuildPkmIndex,
     ImportedDocumentTextExtractor? extractDocumentText,
-  })  : _rebuildPkmIndex = rebuildPkmIndex ??
-            ((userId) => SearchService.instance.rebuildPkmFtsIndex(userId)),
-        _extractDocumentText = extractDocumentText ??
+  }) : _extractDocumentText = extractDocumentText ??
             DocumentTextExtractionService.instance.extractForAgent;
 
   static final FileImportService instance = FileImportService._();
 
   @visibleForTesting
   factory FileImportService.forTesting({
-    PkmIndexRebuilder? rebuildPkmIndex,
     ImportedDocumentTextExtractor? extractDocumentText,
   }) {
     return FileImportService._(
-      rebuildPkmIndex: rebuildPkmIndex,
       extractDocumentText: extractDocumentText,
     );
   }
 
-  final PkmIndexRebuilder _rebuildPkmIndex;
   final ImportedDocumentTextExtractor _extractDocumentText;
   final _logger = getLogger('FileImportService');
 
-  Future<FileImportResult> importToResourcesImported(
+  Future<FileImportResult> importToUserSettingsImported(
     List<String> sourcePaths, {
     void Function(String status)? onProgress,
   }) async {
@@ -126,8 +119,9 @@ class FileImportService {
     }
 
     final fs = FileSystemService.instance;
-    final pkmRoot = fs.getPkmPath(userId);
-    final importRoot = p.join(pkmRoot, 'Resources', 'Imported');
+    final workspaceRoot = fs.getWorkspacePath(userId);
+    final settingsRoot = fs.getUserSettingsPath(userId);
+    final importRoot = fs.getImportedFilesPath(userId);
     final importRootDir = Directory(importRoot);
     if (!await importRootDir.exists()) {
       await importRootDir.create(recursive: true);
@@ -148,7 +142,7 @@ class FileImportService {
         final result = await _extractZipSource(
           source,
           targetDirPath,
-          pkmRoot,
+          workspaceRoot,
           userId: userId,
           nestedDirectory: existingSources.length > 1,
         );
@@ -159,7 +153,7 @@ class FileImportService {
         final result = await _copyFileSource(
           source,
           targetDirPath,
-          pkmRoot,
+          workspaceRoot,
           userId,
         );
         files.addAll(result.files);
@@ -167,18 +161,12 @@ class FileImportService {
       }
     }
 
-    onProgress?.call('Updating search index...');
-    try {
-      await _rebuildPkmIndex(userId);
-    } catch (e, st) {
-      _logger.warning('Failed to rebuild PKM index after import', e, st);
-    }
-
-    final pkmRelative = p.relative(targetDirPath, from: pkmRoot);
+    final settingsRelative = p.relative(targetDirPath, from: settingsRoot);
+    final workspaceRelative = p.relative(targetDirPath, from: workspaceRoot);
     return FileImportResult(
       sourceName: p.basename(targetDirPath),
-      pkmRelativeDirectoryPath: pkmRelative,
-      workspaceRelativeDirectoryPath: p.join('PKM', pkmRelative),
+      settingsRelativeDirectoryPath: settingsRelative,
+      workspaceRelativeDirectoryPath: workspaceRelative,
       absoluteDirectoryPath: targetDirPath,
       files: List<ImportedFileRecord>.unmodifiable(files),
       renamedConflictCount: renamedConflicts,
@@ -189,7 +177,7 @@ class FileImportService {
   Future<_CopyResult> _copyFileSource(
     File source,
     String targetDirPath,
-    String pkmRoot,
+    String workspaceRoot,
     String userId,
   ) async {
     final desiredPath = p.join(targetDirPath, p.basename(source.path));
@@ -198,13 +186,13 @@ class FileImportService {
     await source.copy(targetPath);
     final stat = await File(targetPath).stat();
     final importedFile = ImportedFileRecord(
-      relativePath: p.relative(targetPath, from: pkmRoot),
+      relativePath: p.relative(targetPath, from: workspaceRoot),
       sizeBytes: stat.size,
     );
     final files = <ImportedFileRecord>[importedFile];
     final extractedTextFile = await _createExtractedTextFile(
       File(targetPath),
-      pkmRoot: pkmRoot,
+      workspaceRoot: workspaceRoot,
       sourceRelativePath: importedFile.relativePath,
     );
     if (extractedTextFile != null) {
@@ -212,7 +200,7 @@ class FileImportService {
     }
     final assetReferenceFile = await _createAssetReferenceFile(
       File(targetPath),
-      pkmRoot: pkmRoot,
+      workspaceRoot: workspaceRoot,
       userId: userId,
       sourceRelativePath: importedFile.relativePath,
     );
@@ -228,7 +216,7 @@ class FileImportService {
   Future<_ZipExtractResult> _extractZipSource(
     File source,
     String targetDirPath,
-    String pkmRoot, {
+    String workspaceRoot, {
     required String userId,
     required bool nestedDirectory,
   }) async {
@@ -280,13 +268,13 @@ class FileImportService {
       }
       final stat = await File(uniqueTargetPath).stat();
       final importedFile = ImportedFileRecord(
-        relativePath: p.relative(uniqueTargetPath, from: pkmRoot),
+        relativePath: p.relative(uniqueTargetPath, from: workspaceRoot),
         sizeBytes: stat.size,
       );
       files.add(importedFile);
       final extractedTextFile = await _createExtractedTextFile(
         File(uniqueTargetPath),
-        pkmRoot: pkmRoot,
+        workspaceRoot: workspaceRoot,
         sourceRelativePath: importedFile.relativePath,
       );
       if (extractedTextFile != null) {
@@ -294,7 +282,7 @@ class FileImportService {
       }
       final assetReferenceFile = await _createAssetReferenceFile(
         File(uniqueTargetPath),
-        pkmRoot: pkmRoot,
+        workspaceRoot: workspaceRoot,
         userId: userId,
         sourceRelativePath: importedFile.relativePath,
       );
@@ -315,7 +303,7 @@ class FileImportService {
 
   Future<ImportedFileRecord?> _createExtractedTextFile(
     File importedFile, {
-    required String pkmRoot,
+    required String workspaceRoot,
     required String sourceRelativePath,
   }) async {
     final extractedText = await _extractDocumentText(importedFile);
@@ -329,7 +317,7 @@ class FileImportService {
     await File(targetPath).writeAsString(extractedText);
     final stat = await File(targetPath).stat();
     return ImportedFileRecord(
-      relativePath: p.relative(targetPath, from: pkmRoot),
+      relativePath: p.relative(targetPath, from: workspaceRoot),
       sizeBytes: stat.size,
       generatedKind: ImportedGeneratedFileKind.extractedText,
       sourceRelativePath: sourceRelativePath,
@@ -338,7 +326,7 @@ class FileImportService {
 
   Future<ImportedFileRecord?> _createAssetReferenceFile(
     File importedFile, {
-    required String pkmRoot,
+    required String workspaceRoot,
     required String userId,
     required String sourceRelativePath,
   }) async {
@@ -364,7 +352,7 @@ class FileImportService {
       await File(targetPath).writeAsString(helperContent);
       final stat = await File(targetPath).stat();
       return ImportedFileRecord(
-        relativePath: p.relative(targetPath, from: pkmRoot),
+        relativePath: p.relative(targetPath, from: workspaceRoot),
         sizeBytes: stat.size,
         generatedKind: ImportedGeneratedFileKind.assetReference,
         sourceRelativePath: sourceRelativePath,
@@ -383,9 +371,6 @@ class FileImportService {
     final extension = p.extension(filePath).toLowerCase();
     if (AssetSafetyService.imageExtensions.contains(extension)) {
       return 'img';
-    }
-    if (AssetSafetyService.audioExtensions.contains(extension)) {
-      return 'audio';
     }
     return null;
   }

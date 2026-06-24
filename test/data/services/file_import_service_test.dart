@@ -15,7 +15,6 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late Directory tempDir;
-  late List<String> rebuildCalls;
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({'language': 'en'});
@@ -23,7 +22,6 @@ void main() {
     await UserStorage.saveUser('import-user');
     tempDir = await Directory.systemTemp.createTemp('memex_file_import_');
     await FileSystemService.init(tempDir.path);
-    rebuildCalls = <String>[];
   });
 
   tearDown(() async {
@@ -31,14 +29,11 @@ void main() {
   });
 
   FileImportService service() {
-    return FileImportService.forTesting(
-      rebuildPkmIndex: (userId) async {
-        rebuildCalls.add(userId);
-      },
-    );
+    return FileImportService.forTesting();
   }
 
-  test('copies arbitrary files into Resources/Imported and renames conflicts',
+  test(
+      'copies arbitrary files into _UserSettings/Imported and renames conflicts',
       () async {
     final sourceFileA = File(
       p.join(tempDir.path, 'sources', 'a', 'notes.txt'),
@@ -51,7 +46,7 @@ void main() {
     await sourceFileA.writeAsString('legacy note a');
     await sourceFileB.writeAsString('legacy note b');
 
-    final result = await service().importToResourcesImported([
+    final result = await service().importToUserSettingsImported([
       sourceFileA.path,
       sourceFileB.path,
     ]);
@@ -61,9 +56,27 @@ void main() {
     expect(result.renamedConflictCount, 1);
     expect(
       result.workspaceRelativeDirectoryPath,
-      p.join('PKM', 'Resources', 'Imported', result.sourceName),
+      p.join('_UserSettings', 'Imported', result.sourceName),
     );
-    expect(rebuildCalls, ['import-user']);
+    expect(
+      result.settingsRelativeDirectoryPath,
+      p.join('Imported', result.sourceName),
+    );
+    expect(
+      result.absoluteDirectoryPath,
+      p.join(
+        FileSystemService.instance.getImportedFilesPath('import-user'),
+        result.sourceName,
+      ),
+    );
+    expect(
+      await Directory(p.join(
+        FileSystemService.instance.getPkmPath('import-user'),
+        'Resources',
+        'Imported',
+      )).exists(),
+      isFalse,
+    );
 
     final importedFileA = File(
       p.join(result.absoluteDirectoryPath, 'notes.txt'),
@@ -82,15 +95,12 @@ void main() {
     await sourcePdf.writeAsString('fake pdf bytes');
 
     final importService = FileImportService.forTesting(
-      rebuildPkmIndex: (userId) async {
-        rebuildCalls.add(userId);
-      },
       extractDocumentText: (file) async =>
           '# Text extracted from original file: ${p.basename(file.path)}\n\n'
           'extracted body',
     );
 
-    final result = await importService.importToResourcesImported([
+    final result = await importService.importToUserSettingsImported([
       sourcePdf.path,
     ]);
 
@@ -101,7 +111,7 @@ void main() {
     expect(
       generated.relativePath,
       p.join(
-        'Resources',
+        '_UserSettings',
         'Imported',
         'report',
         'report.pdf.extracted-text-for-agent.md',
@@ -109,7 +119,12 @@ void main() {
     );
     expect(
       generated.sourceRelativePath,
-      p.join('Resources', 'Imported', 'report', 'report.pdf'),
+      p.join(
+        '_UserSettings',
+        'Imported',
+        'report',
+        'report.pdf',
+      ),
     );
     expect(
       await File(p.join(
@@ -126,7 +141,7 @@ void main() {
     await sourceImage.create(recursive: true);
     await sourceImage.writeAsBytes(_pngHeader(width: 320, height: 240));
 
-    final result = await service().importToResourcesImported([
+    final result = await service().importToUserSettingsImported([
       sourceImage.path,
     ]);
 
@@ -140,7 +155,7 @@ void main() {
     expect(
       generated.relativePath,
       p.join(
-        'Resources',
+        '_UserSettings',
         'Imported',
         'photo',
         'photo.png.asset-reference-for-agent.md',
@@ -148,7 +163,7 @@ void main() {
     );
     expect(
       generated.sourceRelativePath,
-      p.join('Resources', 'Imported', 'photo', 'photo.png'),
+      p.join('_UserSettings', 'Imported', 'photo', 'photo.png'),
     );
 
     final helperContent = await File(p.join(
@@ -161,6 +176,7 @@ void main() {
     );
     expect(helperContent, isNot(contains('view_image')));
     expect(helperContent, isNot(contains('/PKM/Resources/Imported')));
+    expect(helperContent, isNot(contains('/_UserSettings/Imported')));
     expect(helperContent, isNot(contains('/Facts/assets')));
     expect(helperContent, isNot(contains('Asset type')));
 
@@ -176,6 +192,39 @@ void main() {
     );
   });
 
+  test('does not create asset reference helpers for imported audio files',
+      () async {
+    final sourceAudio = File(p.join(tempDir.path, 'sources', 'voice.m4a'));
+    await sourceAudio.create(recursive: true);
+    await sourceAudio.writeAsBytes(
+      const [0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70],
+    );
+
+    final result = await service().importToUserSettingsImported([
+      sourceAudio.path,
+    ]);
+
+    expect(result.importedFileCount, 1);
+    expect(result.generatedAssetReferenceFileCount, 0);
+    expect(
+      result.files.map((file) => file.relativePath),
+      contains(p.join('_UserSettings', 'Imported', 'voice', 'voice.m4a')),
+    );
+    expect(
+      await File(
+        p.join(result.absoluteDirectoryPath, 'voice.m4a'),
+      ).exists(),
+      isTrue,
+    );
+    expect(
+      await File(p.join(
+        result.absoluteDirectoryPath,
+        'voice.m4a.asset-reference-for-agent.md',
+      )).exists(),
+      isFalse,
+    );
+  });
+
   test('extracts zip files safely and skips unsafe entries', () async {
     final archive = Archive()
       ..addFile(_archiveFile('folder/a.md', 'first'))
@@ -186,7 +235,7 @@ void main() {
     final zipPath = p.join(tempDir.path, 'my-export.zip');
     await File(zipPath).writeAsBytes(ZipEncoder().encode(archive));
 
-    final result = await service().importToResourcesImported([zipPath]);
+    final result = await service().importToUserSettingsImported([zipPath]);
 
     expect(result.sourceName, 'my-export');
     expect(result.importedFileCount, 2);
@@ -195,8 +244,8 @@ void main() {
     expect(
       result.files.map((file) => file.relativePath).toList(),
       containsAll([
-        p.join('Resources', 'Imported', 'my-export', 'folder', 'a.md'),
-        p.join('Resources', 'Imported', 'my-export', 'folder', 'b.md'),
+        p.join('_UserSettings', 'Imported', 'my-export', 'folder', 'a.md'),
+        p.join('_UserSettings', 'Imported', 'my-export', 'folder', 'b.md'),
       ]),
     );
 
@@ -212,7 +261,7 @@ void main() {
     );
     expect(
       await File(p.join(
-        FileSystemService.instance.getPkmPath('import-user'),
+        FileSystemService.instance.getUserSettingsPath('import-user'),
         'escape.md',
       )).exists(),
       isFalse,
@@ -222,12 +271,12 @@ void main() {
   test('super agent import message scopes processing to selected options', () {
     const result = FileImportResult(
       sourceName: 'my-export',
-      pkmRelativeDirectoryPath: 'Resources/Imported/my-export',
-      workspaceRelativeDirectoryPath: 'PKM/Resources/Imported/my-export',
-      absoluteDirectoryPath: '/tmp/workspace/PKM/Resources/Imported/my-export',
+      settingsRelativeDirectoryPath: 'Imported/my-export',
+      workspaceRelativeDirectoryPath: '_UserSettings/Imported/my-export',
+      absoluteDirectoryPath: '/tmp/workspace/_UserSettings/Imported/my-export',
       files: [
         ImportedFileRecord(
-          relativePath: 'Resources/Imported/my-export/a.md',
+          relativePath: '_UserSettings/Imported/my-export/a.md',
           sizeBytes: 4,
         ),
       ],
@@ -243,13 +292,19 @@ void main() {
       ),
     );
 
-    expect(message, contains('`/PKM/Resources/Imported/my-export`'));
-    expect(message, contains('manage_timeline_card'));
-    expect(message, contains('manage_pkm'));
+    expect(message, contains('`/_UserSettings/Imported/my-export`'));
+    expect(message, contains('not as knowledge-base content'));
+    expect(message, contains('Timeline Cards'));
+    expect(message, contains('knowledge base'));
+    expect(message, isNot(contains('delegate_to_subagent')));
+    expect(message, isNot(contains('manage_timeline_card')));
+    expect(message, isNot(contains('manage_pkm')));
     expect(message, contains('.extracted-text-for-agent.md'));
     expect(message, contains('.asset-reference-for-agent.md'));
     expect(message, contains('view_image'));
     expect(message, contains('Do not invent fact_ids'));
+    expect(message, contains('process it in chunks'));
+    expect(message, contains('context window'));
     expect(message, contains('Do not assume the app categorized the files'));
   });
 }

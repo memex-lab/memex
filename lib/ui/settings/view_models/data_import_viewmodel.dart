@@ -59,7 +59,7 @@ class DataImportViewModel extends ChangeNotifier {
     errorMessage = null;
     notifyListeners();
 
-    final result = await _router.importFilesToResources(
+    final result = await _router.importFilesToUserSettingsImported(
       paths,
       onProgress: (status) {
         statusText = status;
@@ -171,11 +171,11 @@ String buildSuperAgentImportReference(
   final path = _workspacePathForAgent(result);
   final requested = _requestedProcessing(options);
   return [
-    'Imported folder: $path',
+    'Imported source folder: $path',
     'Source name: ${result.sourceName}',
     'Imported files: ${result.importedFileCount}',
     'Generated extracted-text helper files: ${result.generatedTextFileCount}',
-    'Generated asset-reference helper files: ${result.generatedAssetReferenceFileCount}',
+    'Generated image asset-reference helper files: ${result.generatedAssetReferenceFileCount}',
     'Renamed conflicts: ${result.renamedConflictCount}',
     'Skipped unsafe archive entries: ${result.skippedUnsafeArchiveEntries}',
     'Requested processing: $requested',
@@ -193,26 +193,27 @@ String buildSuperAgentImportMessage(
   return '''
 I imported external files into my local Memex workspace.
 
-Imported folder: `$path`
+Imported source folder: `$path`
 Source name: `${result.sourceName}`
 Imported files: ${result.importedFileCount}
 Generated extracted-text helper files: ${result.generatedTextFileCount}
-Generated asset-reference helper files: ${result.generatedAssetReferenceFileCount}
+Generated image asset-reference helper files: ${result.generatedAssetReferenceFileCount}
 Renamed conflicts: ${result.renamedConflictCount}
 Skipped unsafe archive entries: ${result.skippedUnsafeArchiveEntries}
 
 Requested processing: $requested
 
-Please inspect the imported folder yourself before deciding what the data means. Do not assume the app categorized the files for you. Do not move, delete, or rewrite the imported source folder unless I explicitly ask.
+Please inspect the imported source folder yourself before deciding what the data means. It is stored under `/_UserSettings/Imported` as source material, not as knowledge-base content. Do not assume the app categorized the files for you. Do not move, delete, or rewrite the imported source folder unless I explicitly ask.
 
 When a file is named like `<original filename>.extracted-text-for-agent.md`, it is a text extraction generated from the original imported document so you can understand PDFs, Word documents, and similar files. Use it as a reading aid, and treat the original file as the source of truth.
 
-When a file is named like `<original filename>.asset-reference-for-agent.md`, it is a persistent mapping from an imported media file to a canonical Memex `fs://...` asset reference. Use the exact `fs://...` value in that helper file when you need to inspect the media with `view_image` or attach it to Timeline Cards. Do not invent or rewrite the `fs://...` value.
+When a file is named like `<original filename>.asset-reference-for-agent.md`, it is a persistent mapping from an imported image file to a canonical Memex `fs://...` asset reference. Use the exact `fs://...` value in that helper file when you need to inspect the image with `view_image` or attach it to Timeline Cards. Do not invent or rewrite the `fs://...` value.
 
 $workerGuidance
 
 Important boundaries:
 - Treat the imported folder as source material.
+- If the imported folder is large, inspect and process it in chunks. Do not read every file or load all full file contents into one turn, because that can exceed the context window.
 - Do not invent fact_ids. Only use a fact_id after you create or find a real Timeline Card.
 - If organizing imported-only material into PKM without a related Timeline Card, omit fact_id markers for that material.
 - Preserve the user's original wording and timestamps when the files provide them; if a timestamp is unclear, say so in the resulting card or note instead of pretending it is known.
@@ -241,20 +242,18 @@ String _requestedProcessing(ImportProcessingOptions options) {
 String _workerGuidance(ImportProcessingOptions options) {
   if (options.processKnowledgeBase && options.processTimelineCards) {
     return '''
-Plan the import as one coherent job. When work can be split safely, dispatch independent child workers in parallel:
-- Timeline Card work: use `delegate_to_subagent` with `manage_timeline_card` for records that should become Timeline Cards.
-- PKM work: use `delegate_to_subagent` with `manage_pkm` to organize useful imported information into PARA files.
+Plan the import as one coherent job. Create Timeline Cards for records worth preserving in the timeline, and organize useful imported information into the knowledge base.
 Coordinate the two directions so PKM references real card fact_ids only when those cards exist.''';
   }
 
   if (options.processTimelineCards) {
     return '''
-Focus only on Timeline Card work. Use `delegate_to_subagent` with `manage_timeline_card` for records that should become Timeline Cards. Do not request PKM organization for this import.''';
+Focus only on records that should become Timeline Cards. Do not request PKM organization for this import.''';
   }
 
   if (options.processKnowledgeBase) {
     return '''
-Focus only on knowledge-base organization. Use `delegate_to_subagent` with `manage_pkm` to organize useful imported information into PARA files. Do not create Timeline Cards unless you need to ask me first.''';
+Focus only on knowledge-base organization. Do not create Timeline Cards unless you need to ask me first.''';
   }
 
   return 'No processing was requested.';

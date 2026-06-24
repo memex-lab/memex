@@ -1309,13 +1309,13 @@ class MemexRouter {
     await SearchService.instance.rebuildPkmFtsIndex(userId);
   }
 
-  Future<Result<FileImportResult>> importFilesToResources(
+  Future<Result<FileImportResult>> importFilesToUserSettingsImported(
     List<String> sourcePaths, {
     void Function(String status)? onProgress,
   }) {
     return runResult(() async {
       await _ensureInitialized();
-      return FileImportService.instance.importToResourcesImported(
+      return FileImportService.instance.importToUserSettingsImported(
         sourcePaths,
         onProgress: onProgress,
       );

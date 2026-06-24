@@ -316,7 +316,8 @@ class FileToolFactory {
         var filesReadCount = 0;
 
         for (final filePath in uniqueFilePaths) {
-          buffer.writeln('${'=' * 20} File: $filePath ${'=' * 20}');
+          buffer.writeln(
+              '${'=' * 20} File: ${_displayPath(filePath)} ${'=' * 20}');
           try {
             // Double check just in case, though we checked above
             permissionManager.checkPermission(filePath, FileAccessType.read);

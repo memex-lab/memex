@@ -135,6 +135,68 @@ void main() {
       expect(pending.single.image.base64Data, base64Encode(compressed));
     });
   });
+
+  group('BatchRead tool', () {
+    late Directory tempDir;
+    late FileToolFactory factory;
+
+    setUp(() async {
+      tempDir = await Directory.systemTemp.createTemp('memex_batch_read_');
+      factory = FileToolFactory(
+        permissionManager: FilePermissionManager(
+          'test_user',
+          [
+            PermissionRule(
+              rootPath: tempDir.path,
+              access: FileAccessType.read,
+            ),
+          ],
+          withDefaultRules: false,
+        ),
+        workingDirectory: tempDir.path,
+      );
+    });
+
+    tearDown(() async {
+      if (await tempDir.exists()) {
+        await tempDir.delete(recursive: true);
+      }
+    });
+
+    test('uses workspace paths in file headers for direct reads', () async {
+      final note = File('${tempDir.path}/PKM/Resources/finance/summary.md');
+      await note.create(recursive: true);
+      await note.writeAsString('balance notes');
+
+      final output = await Function.apply(
+        factory.buildBatchReadTool().executable!,
+        [
+          ['/PKM/Resources/finance/summary.md'],
+        ],
+      ) as String;
+
+      expect(output, contains('File: /PKM/Resources/finance/summary.md'));
+      expect(output, isNot(contains(tempDir.path)));
+      expect(output, contains('balance notes'));
+    });
+
+    test('uses workspace paths in file headers for glob reads', () async {
+      final note = File('${tempDir.path}/PKM/Projects/aurora/plan.md');
+      await note.create(recursive: true);
+      await note.writeAsString('project plan');
+
+      final output = await Function.apply(
+        factory.buildBatchReadTool().executable!,
+        [
+          ['PKM/Projects/**/*.md'],
+        ],
+      ) as String;
+
+      expect(output, contains('File: /PKM/Projects/aurora/plan.md'));
+      expect(output, isNot(contains(tempDir.path)));
+      expect(output, contains('project plan'));
+    });
+  });
 }
 
 Future<FunctionExecutionResult> _runToolCall({

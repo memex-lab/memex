@@ -36,6 +36,9 @@ void main() {
 
     expect(
         extracted, contains('Text extracted from original file: notes.docx'));
+    expect(extracted, contains('Original file: `notes.docx`'));
+    expect(extracted, isNot(contains('This Markdown file was generated')));
+    expect(extracted, isNot(contains('It is an extraction aid')));
     expect(extracted, contains('Hello & welcome'));
     expect(extracted, contains('Second paragraph'));
   });

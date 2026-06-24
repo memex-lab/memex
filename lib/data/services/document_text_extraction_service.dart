@@ -527,8 +527,6 @@ class DocumentTextExtractionService {
 
 Original file: `$originalFileName`
 
-This Markdown file was generated during import so Memex agents can read the text content of the original document. It is an extraction aid, not the original file. Layout, images, scanned pages, comments, and complex tables may be incomplete.
-
 $body
 ''';
   }

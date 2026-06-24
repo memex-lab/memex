@@ -394,13 +394,9 @@ class FileSystemService {
       if (priorData == null) {
         if (createIfNotExists) {
           // No prior file and caller wants creation → insert.
-          currentData = CardData(
-            factId: cardId,
-            createdAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
-            timestamp: DateTime.now().millisecondsSinceEpoch ~/ 1000,
-            status: 'processing',
-            tags: const [],
-            uiConfigs: const [],
+          currentData = _buildProcessingPlaceholderCard(
+            cardId,
+            DateTime.now(),
           );
           op = DataChangeOp.insert;
           beforeMap = null;
@@ -944,6 +940,11 @@ class FileSystemService {
   /// User settings directory path
   String getUserSettingsPath(String userId) {
     return path.join(getWorkspacePath(userId), '_UserSettings');
+  }
+
+  /// Imported source files waiting for optional agent organization.
+  String getImportedFilesPath(String userId) {
+    return path.join(getUserSettingsPath(userId), 'Imported');
   }
 
   /// Resolve a skill directory path (relative to workspace) to an absolute path.
@@ -1626,18 +1627,25 @@ class FileSystemService {
       await safeWriteCardFile(
         userId,
         factId,
-        CardData(
-          factId: factId,
-          createdAt: now.millisecondsSinceEpoch ~/ 1000,
-          timestamp: now.millisecondsSinceEpoch ~/ 1000,
-          status: 'processing',
-          tags: const [],
-          uiConfigs: const [],
-        ),
+        _buildProcessingPlaceholderCard(factId, now),
       );
 
       return factId;
     });
+  }
+
+  CardData _buildProcessingPlaceholderCard(String factId, DateTime createdAt) {
+    final timestamp = createdAt.millisecondsSinceEpoch ~/ 1000;
+    return CardData(
+      factId: factId,
+      createdAt: timestamp,
+      timestamp: timestamp,
+      status: 'processing',
+      tags: const [],
+      uiConfigs: const [
+        UiConfig(templateId: 'classic_card', data: {'content': ''}),
+      ],
+    );
   }
 
   /// Parse date from fact_id
