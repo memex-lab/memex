@@ -48,15 +48,17 @@ void main() {
       );
       final agent = _agent(state);
 
-      await SuperAgentHarness.buildPostToolCallHook('test_user')(
-        agent,
-        state,
-        FunctionExecutionResult(
-          id: 'call_1',
-          name: 'optional_tool',
-          isError: false,
-          arguments: '{}',
-          content: [TextPart('ok')],
+      await SuperAgentHarness.buildParentHook('test_user').afterToolCall(
+        ToolResultHookContext(
+          agent,
+          result: FunctionExecutionResult(
+            id: 'call_1',
+            name: 'optional_tool',
+            isError: false,
+            arguments: '{}',
+            content: [TextPart('ok')],
+          ),
+          modelMessage: ModelMessage(model: 'test-model'),
         ),
       );
       await _completeTurn(agent);
@@ -69,10 +71,13 @@ void main() {
 }
 
 Future<void> _completeTurn(StatefulAgent agent) async {
-  await SuperAgentHarness.buildTurnCompletionHook('test_user')(
-    agent,
-    agent.state,
-    ModelMessage(model: 'test-model', textOutput: 'done'),
+  await SuperAgentHarness.buildParentHook('test_user').onTurnCompletion(
+    TurnCompletionHookContext(
+      agent,
+      finalMessage: ModelMessage(model: 'test-model', textOutput: 'done'),
+      continuationCount: 0,
+      maxContinuations: 3,
+    ),
   );
 }
 

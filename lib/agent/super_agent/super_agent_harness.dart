@@ -6,6 +6,10 @@ import 'package:path/path.dart' as p;
 import 'package:memex/data/services/file_operation_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/agent/super_agent/pkm_stats_service.dart';
+import 'package:memex/agent/super_agent/pending_tool_image_buffer.dart';
+import 'package:memex/utils/logger.dart';
+
+final _logger = getLogger('SuperAgentHarness');
 
 /// Harness control plane for the SuperAgent and its capture child workers.
 ///
@@ -15,7 +19,7 @@ import 'package:memex/agent/super_agent/pkm_stats_service.dart';
 /// - **PKM structural-health reminders**: when an agent reads a `/PKM` file,
 ///   append "file too long / fragmented / churned" advice. PKM organization
 ///   can happen in child workers or in parent repair flows, so this is wired
-///   into both [buildPostToolCallHook] and [buildChildPostToolCallHook].
+///   into both [buildParentHook] and [buildChildHook].
 /// - **Idle-skill reminder** (parent only): when the parent keeps a skill
 ///   active but unused for several turns, gently suggest deactivating it.
 ///
@@ -50,63 +54,29 @@ class SuperAgentHarness {
   static _CaptureTurnState _stateFor(String sessionId) =>
       _captureState.putIfAbsent(sessionId, () => _CaptureTurnState());
 
-  /// Parent post-tool hook: idle-skill tracking + PKM structural-health
-  /// reminders on `/PKM` reads.
-  static PostToolCallHook buildPostToolCallHook(String userId) {
-    return (StatefulAgent agent, AgentState state,
-        FunctionExecutionResult result) async {
-      final sessionId = state.sessionId;
-
-      // Note which optional skill (if any) this tool belongs to, so the
-      // turn-completion hook can age idle-skill counters.
-      if (!result.isError) {
-        final owningSkill = _optionalSkillForTool(agent, result.name);
-        if (owningSkill != null) {
-          _stateFor(sessionId).usedSkills.add(owningSkill);
-        }
-      }
-
-      return _pkmHealthPostToolResult(userId, result);
-    };
+  /// Parent hook: idle-skill tracking + PKM structural-health reminders on
+  /// `/PKM` reads + end-of-turn idle reminder maintenance.
+  static AgentHook buildParentHook(String userId) {
+    return _SuperAgentHarnessHook(userId: userId, trackIdleSkills: true);
   }
 
-  /// Child-worker post-tool hook: PKM structural-health reminders only. Child
+  /// Child-worker hook: PKM structural-health reminders only. Child
   /// workers don't persist across turns and don't manage their own skill
   /// lifecycle, so the idle-skill tracking does not apply to them. Harmless on
   /// card/schedule workers — it only fires when a `/PKM` file is actually read.
-  static PostToolCallHook buildChildPostToolCallHook(String userId) {
-    return (StatefulAgent agent, AgentState state,
-            FunctionExecutionResult result) async =>
-        _pkmHealthPostToolResult(userId, result);
+  static AgentHook buildChildHook(String userId) {
+    return _SuperAgentHarnessHook(userId: userId, trackIdleSkills: false);
   }
 
-  static Future<PostToolCallResult> _pkmHealthPostToolResult(
+  static Future<List<LLMMessage>> _pkmHealthInjectedMessages(
       String userId, FunctionExecutionResult result) async {
     if (result.name == 'Read' && !result.isError) {
       final reminder = await _buildPkmHealthReminder(userId, result);
       if (reminder != null) {
-        return PostToolCallResult(reminderMessage: UserMessage.text(reminder));
+        return [UserMessage.text(reminder)];
       }
     }
-    return const PostToolCallResult();
-  }
-
-  /// Build the turn-completion hook for a given user. Ages the idle-skill
-  /// counters and (re)builds or clears the deactivate reminder.
-  static TurnCompletionHook buildTurnCompletionHook(String userId) {
-    return (StatefulAgent agent, AgentState state,
-        ModelMessage finalMessage) async {
-      final sessionId = state.sessionId;
-      final turn = _captureState[sessionId];
-
-      _ageIdleSkillsAndBuildReminder(
-        agent,
-        state,
-        turn?.usedSkills ?? const <String>{},
-      );
-      _captureState.remove(sessionId);
-      return const TurnCompletionResult.accept();
-    };
+    return const [];
   }
 
   // --- helpers ---
@@ -324,4 +294,82 @@ class SuperAgentHarness {
 class _CaptureTurnState {
   /// Optional skills whose tools were used during this user turn.
   final Set<String> usedSkills = {};
+}
+
+class _SuperAgentHarnessHook extends AgentHook {
+  final String userId;
+  final bool trackIdleSkills;
+
+  _SuperAgentHarnessHook({
+    required this.userId,
+    required this.trackIdleSkills,
+  });
+
+  @override
+  Future<ToolResultHookResult> afterToolCall(
+    ToolResultHookContext context,
+  ) async {
+    try {
+      final result = context.result;
+      if (trackIdleSkills && !result.isError) {
+        final owningSkill = SuperAgentHarness._optionalSkillForTool(
+          context.agent,
+          result.name,
+        );
+        if (owningSkill != null) {
+          SuperAgentHarness._stateFor(context.state.sessionId)
+              .usedSkills
+              .add(owningSkill);
+        }
+      }
+
+      final injectedMessages = <LLMMessage>[
+        ...PendingToolImageBuffer.instance.drainAsMessages(
+          context.state.sessionId,
+        ),
+        ...await SuperAgentHarness._pkmHealthInjectedMessages(userId, result),
+      ];
+
+      return ToolResultHookResult.proceed(
+        result: result,
+        injectedMessages: injectedMessages,
+      );
+    } catch (e, st) {
+      _logger.warning(
+        '[${context.agent.name}] super agent after-tool hook failed; skipping reminder.',
+        e,
+        st,
+      );
+      return ToolResultHookResult.proceed(result: context.result);
+    }
+  }
+
+  @override
+  TurnCompletionHookResult onTurnCompletion(
+    TurnCompletionHookContext context,
+  ) {
+    if (!trackIdleSkills) {
+      return const TurnCompletionHookResult.accept();
+    }
+
+    try {
+      final sessionId = context.state.sessionId;
+      final turn = SuperAgentHarness._captureState[sessionId];
+
+      SuperAgentHarness._ageIdleSkillsAndBuildReminder(
+        context.agent,
+        context.state,
+        turn?.usedSkills ?? const <String>{},
+      );
+      SuperAgentHarness._captureState.remove(sessionId);
+    } catch (e, st) {
+      _logger.warning(
+        '[${context.agent.name}] super agent turn-completion hook failed; accepting completion.',
+        e,
+        st,
+      );
+    }
+
+    return const TurnCompletionHookResult.accept();
+  }
 }

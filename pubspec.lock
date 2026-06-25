@@ -357,10 +357,10 @@ packages:
     dependency: "direct main"
     description:
       name: dart_agent_core
-      sha256: c156fa735a0743670215a2d013cb31193b97af0e868703089cd91d7da6e22fc6
+      sha256: "5828c4de2fc89b3c7b3b4c4268b1805930aa8730a12c24686f61e6a98c927889"
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.2"
+    version: "2.0.3"
   dart_jsonwebtoken:
     dependency: "direct main"
     description:

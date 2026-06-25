@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dart_agent_core/dart_agent_core.dart';
+import 'package:dio/dio.dart' show CancelToken;
 import 'package:image_picker/image_picker.dart';
 import 'package:logging/logging.dart';
 import 'package:memex/agent/memex_skill_host_agent/memex_skill_host_agent.dart';
@@ -836,9 +837,15 @@ class ChatService {
 
     await DelegateProgressContext.run(progressSink, () async {
       try {
+        final cancelToken = CancelToken();
         final agentFuture = resumeExistingRun
-            ? activeAgent.resume()
-            : activeAgent.run(userMessages);
+            ? activeAgent.resume(
+                cancelToken: cancelToken,
+              )
+            : activeAgent.run(
+                userMessages,
+                cancelToken: cancelToken,
+              );
         await agentFuture.whenComplete(() async {
           if (activeAgent.state.metadata[_runningChatTurnIdKey] == turnId) {
             activeAgent.state.metadata.remove(_runningChatTurnIdKey);

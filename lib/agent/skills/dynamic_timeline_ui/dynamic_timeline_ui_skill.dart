@@ -63,7 +63,7 @@ You are a template designer. Your job is to create or update reusable HTML templ
 - The template is display-only. If the user asks for actual system actions, use the appropriate action/tool skill instead of faking controls in HTML.
 - Before generating HTML, call `recommend_dynamic_timeline_design_patterns` or `get_dynamic_timeline_design_pattern` unless the user explicitly provides a complete design direction.
 - Treat design patterns as reference material, not rigid templates. Adapt the HTML to the user content and constraints.
-- After generating HTML and BEFORE calling `save_timeline_template`, call `preview_dynamic_timeline_card_render` to render the template exactly as the Timeline WebView card will show it. Use plausible sample text in placeholders before previewing if needed. The rendered image arrives as the next message and is provided ONLY ONCE this turn — inspect it in the same turn (layout, spacing, overflow, contrast, clipped/empty content) and decide right then whether to revise the HTML, re-preview, or save. Do not assume the image will still be visible on a later turn; if you need to look again, call `preview_dynamic_timeline_card_render` again. If the preview tool reports that rendering is unavailable, fall back to checking the HTML against the rules above.
+- After generating HTML and BEFORE calling `save_timeline_template`, call `preview_dynamic_timeline_card_render` to render the template exactly as the Timeline WebView card will show it. Use plausible sample text in placeholders before previewing if needed. The rendered image arrives as the next message, so inspect it for layout, spacing, overflow, contrast, and clipped/empty content before deciding whether to revise the HTML, re-preview, or save. If the preview tool reports that rendering is unavailable, fall back to checking the HTML against the rules above.
 - The outermost element must not set border-radius; Flutter applies the card radius. Inner elements may use rounded corners.
 - When updating an existing template_id, `save_timeline_template` overwrites the old template.
 
@@ -350,24 +350,21 @@ Finish by returning a concise result: what template was saved, template_id, use_
 
     // Do NOT return the image inside the tool result: OpenAI-compatible
     // providers reject images in a function-result message. Instead stash it in
-    // the per-session buffer; the SuperAgent systemCallback injects it as a
-    // UserMessage on the next LLM call (supported by every provider). The image
-    // is delivered exactly once — the model must inspect it this turn.
+    // the per-session buffer; the SuperAgent after-tool hook injects it as a
+    // UserMessage (supported by every provider).
     final sessionId = AgentCallToolContext.current?.state.sessionId ?? '';
     PendingToolImageBuffer.instance.add(
       sessionId,
       ImagePart(base64Png, 'image/png'),
       message: 'Rendered preview(s) of the dynamic timeline card HTML you '
-          'generated. Inspect now and decide this turn:',
+          'generated. Inspect the preview before deciding:',
     );
 
     return AgentToolResult(
       content: TextPart(
         '$summary The rendered image is attached as the next message — inspect '
         'it now for layout, spacing, overflow, contrast, and clipped/empty '
-        'content. The image is provided only once this turn, so decide within '
-        'this turn whether to revise the HTML, re-preview, or call '
-        'save_timeline_template.',
+        'content.',
       ),
     );
   }

@@ -56,7 +56,7 @@ void main() {
       expect(result.systemMessage?.content, 'third prompt');
     });
 
-    test('returns SystemCallbackResult and preserves tool parameter mode', () {
+    test('returns AgentPromptHookResult and preserves tool parameter mode', () {
       final config = AgentPromptConfig();
       config.systemPrompt.replacements.add(('old system', 'new system'));
       config.toolOverrides['object_tool'] = ToolOverride(
@@ -87,7 +87,7 @@ void main() {
         requestMessages,
       );
 
-      expect(result, isA<SystemCallbackResult>());
+      expect(result, isA<AgentPromptHookResult>());
       expect(result.systemMessage?.content, 'new system prompt');
       expect(result.tools, hasLength(1));
       expect(result.tools.single.description, 'Updated description');

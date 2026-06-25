@@ -78,8 +78,9 @@ class MemexSkillHostAgent {
       autoSaveStateFunc: (state) async {
         await saveAgentState(state);
       },
-      systemCallback:
-          createSystemCallbackWithWorkingDirectory(userId, workingDirectory),
+      hooks: [
+        createAgentPromptHookWithWorkingDirectory(userId, workingDirectory),
+      ],
     );
 
     _logger.info(

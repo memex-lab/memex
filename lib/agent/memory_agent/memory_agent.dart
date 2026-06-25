@@ -90,7 +90,7 @@ If a batch contains only casual chat, tasks, or temporary context, **DO NOT call
       autoSaveStateFunc: (s) async {
         await saveAgentState(state);
       },
-      systemCallback: createSystemCallback(userId),
+      hooks: [createAgentPromptHook(userId)],
     );
 
     _logger.info('MemoryAgent running analysis on buffer...');
