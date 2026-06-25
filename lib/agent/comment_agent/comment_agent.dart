@@ -148,7 +148,7 @@ class CommentAgent {
       autoSaveStateFunc: (state) async {
         await saveAgentState(state);
       },
-      systemCallback: createSystemCallback(userId),
+      hooks: [createAgentPromptHook(userId)],
     );
 
     _logger.info(

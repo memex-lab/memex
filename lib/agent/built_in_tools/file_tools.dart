@@ -115,15 +115,10 @@ class FileToolFactory {
   Tool buildViewImageTool() {
     return Tool(
       name: 'view_image',
-      description:
-          'View a local image file by attaching it to the next model message. '
+      description: 'View a local image file. '
           'Use this when you need to view an image that is not already in your '
           'context. Provide the image by its `fs://<filename>` reference (the '
-          'same form used in card media and in-text attachments). Images loaded '
-          'by this tool are visible for the next model call only and are not '
-          'kept in message history; if you need to compare multiple images, '
-          'call view_image for all of them in the same turn before inspecting '
-          'them.',
+          'same form used in card media and in-text attachments).',
       parameters: {
         'type': 'object',
         'properties': {
@@ -185,7 +180,7 @@ class FileToolFactory {
           message: message.toString(),
         );
 
-        return 'Image attached to the next model message (${_formatBytes(originalSize)}).'
+        return 'Image attached to the next message (${_formatBytes(originalSize)}).'
             '${exifInfo == null || exifInfo.isEmpty ? '' : ' EXIF metadata is included.'}';
       },
     );

@@ -407,7 +407,7 @@ StatefulAgent createSuperAgentChild({
     },
     // PKM organization now happens inside these workers, so the PKM
     // structural-health reminders ride along here (only fire on /PKM reads).
-    postToolCallHook: SuperAgentHarness.buildChildPostToolCallHook(userId),
+    hooks: [SuperAgentHarness.buildChildHook(userId)],
   );
 }
 

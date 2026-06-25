@@ -43,6 +43,18 @@ class AgentPromptConfig {
   final Map<String, ToolOverride> toolOverrides = {};
 }
 
+class AgentPromptHookResult {
+  final SystemMessage? systemMessage;
+  final List<Tool> tools;
+  final List<LLMMessage> requestMessages;
+
+  const AgentPromptHookResult({
+    required this.systemMessage,
+    required this.tools,
+    required this.requestMessages,
+  });
+}
+
 /// Extract content from lines[start] up to (but not including) the endTag line.
 /// Returns (content, nextLineIndex).
 (String, int) _extractBlock(List<String> lines, int start, String endTag) {
@@ -158,7 +170,7 @@ Future<AgentPromptConfig?> loadAgentPromptConfig(
   }
 }
 
-SystemCallbackResult applyPromptConfig(
+AgentPromptHookResult applyPromptConfig(
   AgentPromptConfig config,
   SystemMessage? systemMessage,
   List<Tool> tools,
@@ -198,61 +210,73 @@ SystemCallbackResult applyPromptConfig(
     }
   }
 
-  return SystemCallbackResult(
+  return AgentPromptHookResult(
     systemMessage: newSystemMessage,
     tools: newTools,
     requestMessages: newRequestMessages,
   );
 }
 
-/// Create a systemCallback to pass to StatefulAgent.
-/// user_id is captured by closure; agent_name is taken from agent.name at callback time.
+/// Create a prompt hook to pass to StatefulAgent.
+/// user_id is captured by closure; agent_name is taken from agent.name at hook time.
 ///
-/// Usage: StatefulAgent(..., systemCallback: createSystemCallback(userId))
-SystemCallback createSystemCallback(String userId) {
-  return (
-    StatefulAgent agent,
-    SystemMessage? systemMessage,
-    List<Tool> tools,
-    List<LLMMessage> requestMessages,
-  ) async {
-    final config = await loadAgentPromptConfig(userId, agent.name);
-    if (config == null) {
-      return SystemCallbackResult(
-        systemMessage: systemMessage,
-        tools: tools,
-        requestMessages: requestMessages,
-      );
-    }
-    return applyPromptConfig(config, systemMessage, tools, requestMessages);
-  };
+/// Usage: StatefulAgent(..., hooks: [createAgentPromptHook(userId)])
+AgentHook createAgentPromptHook(String userId) {
+  return _AgentPromptHook(userId: userId);
 }
 
-/// Create a systemCallback that also masks [workingDirectory] from all paths
+/// Create a prompt hook that also masks [workingDirectory] from all paths
 /// visible to the model (system prompt, skill instructions, RunJavaScript tool).
 ///
 /// This keeps the model's view consistent with file tools that already strip
 /// the workingDirectory prefix, so the model always sees virtual paths like
 /// `/skills/my_skill/SKILL.md` instead of real absolute paths.
 ///
-/// Usage: StatefulAgent(..., systemCallback: createSystemCallbackWithWorkingDirectory(userId, workingDirectory))
-SystemCallback createSystemCallbackWithWorkingDirectory(
+/// Usage: StatefulAgent(..., hooks: [createAgentPromptHookWithWorkingDirectory(userId, workingDirectory)])
+AgentHook createAgentPromptHookWithWorkingDirectory(
   String userId,
   String workingDirectory,
 ) {
-  // Ensure workingDirectory doesn't end with '/' for consistent replacement.
-  final wd = workingDirectory.endsWith('/')
-      ? workingDirectory.substring(0, workingDirectory.length - 1)
-      : workingDirectory;
+  return _AgentPromptHook(userId: userId, workingDirectory: workingDirectory);
+}
 
-  return (
-    StatefulAgent agent,
-    SystemMessage? systemMessage,
-    List<Tool> tools,
-    List<LLMMessage> requestMessages,
+class _AgentPromptHook extends AgentHook {
+  final String userId;
+  final String? workingDirectory;
+
+  _AgentPromptHook({required this.userId, this.workingDirectory});
+
+  @override
+  Future<ModelCallHookResult> beforeModelCall(
+    ModelCallHookContext context,
   ) async {
-    // 1. Apply user prompt config first (same as createSystemCallback).
-    final config = await loadAgentPromptConfig(userId, agent.name);
+    try {
+      final result = await _apply(context);
+      return ModelCallHookResult.proceed(
+        request: context.request.copyWith(
+          systemMessage: result.systemMessage,
+          clearSystemMessage: result.systemMessage == null,
+          tools: result.tools,
+          requestMessages: result.requestMessages,
+        ),
+      );
+    } catch (e, st) {
+      _logger.warning(
+        '[${context.agent.name}] agent prompt hook failed; using original model request.',
+        e,
+        st,
+      );
+      return ModelCallHookResult.proceed(request: context.request);
+    }
+  }
+
+  Future<AgentPromptHookResult> _apply(ModelCallHookContext context) async {
+    var systemMessage = context.request.systemMessage;
+    var tools = List<Tool>.from(context.request.tools);
+    var requestMessages =
+        List<LLMMessage>.from(context.request.requestMessages);
+
+    final config = await loadAgentPromptConfig(userId, context.agent.name);
     if (config != null) {
       final result = applyPromptConfig(
         config,
@@ -265,26 +289,40 @@ SystemCallback createSystemCallbackWithWorkingDirectory(
       requestMessages = result.requestMessages;
     }
 
-    // 2. Mask workingDirectory in system message (skill paths appear here).
+    final wd = workingDirectory;
+    if (wd == null) {
+      return AgentPromptHookResult(
+        systemMessage: systemMessage,
+        tools: tools,
+        requestMessages: requestMessages,
+      );
+    }
+
+    final normalizedWd = wd.endsWith('/') ? wd.substring(0, wd.length - 1) : wd;
+
+    // Skill paths appear in the system prompt.
     if (systemMessage != null) {
-      final masked = _maskWorkingDirectory(systemMessage.content, wd);
+      final masked = _maskWorkingDirectory(systemMessage.content, normalizedWd);
       if (masked != systemMessage.content) {
         systemMessage = SystemMessage(masked);
       }
     }
 
-    // 3. Mask workingDirectory in request messages (skill injection messages).
-    requestMessages = _maskMessagesWorkingDirectory(requestMessages, wd);
+    // Skill injection messages may contain absolute workspace paths.
+    requestMessages = _maskMessagesWorkingDirectory(
+      requestMessages,
+      normalizedWd,
+    );
 
-    // 4. Wrap RunJavaScript tool to resolve virtual paths back to absolute.
-    tools = _wrapRunJavaScriptTool(tools, wd);
+    // Resolve virtual paths back to absolute paths before executing JS tools.
+    tools = _wrapRunJavaScriptTool(tools, normalizedWd);
 
-    return SystemCallbackResult(
+    return AgentPromptHookResult(
       systemMessage: systemMessage,
       tools: tools,
       requestMessages: requestMessages,
     );
-  };
+  }
 }
 
 /// Replace `workingDirectory` prefix with `/` in a string, matching the

@@ -118,7 +118,7 @@ class CompanionAgent {
       withGeneralPrinciples: true,
       planMode: PlanMode.none,
       autoSaveStateFunc: (s) async => saveAgentState(s),
-      systemCallback: createSystemCallback(userId),
+      hooks: [createAgentPromptHook(userId)],
     );
   }
 

@@ -16,7 +16,6 @@ import 'package:memex/agent/skills/timeline_diagnostics/timeline_diagnostics_ski
 import 'package:memex/agent/common_tools.dart';
 import 'package:memex/agent/state_util.dart';
 import 'package:memex/agent/super_agent/prompts.dart';
-import 'package:memex/agent/super_agent/pending_tool_image_buffer.dart';
 import 'package:memex/agent/super_agent/subagent/delegate_subagent_tool.dart';
 import 'package:memex/agent/super_agent/super_agent_harness.dart';
 import 'package:memex/agent/super_agent/super_agent_loop_detector.dart';
@@ -249,74 +248,15 @@ class SuperAgent {
         autoSaveStateFunc: (state) async {
           await saveAgentState(state);
         },
-        // Harness control plane: PKM structural-health reminders on /PKM reads,
-        // and a one-shot "you saved a card but didn't organize it" nudge when a
-        // capture turn ends. Both default to no-op on non-capture turns.
-        postToolCallHook: SuperAgentHarness.buildPostToolCallHook(userId),
-        turnCompletionHook: SuperAgentHarness.buildTurnCompletionHook(userId),
-        systemCallback: _createSuperAgentSystemCallback(userId));
+        hooks: [
+          createAgentPromptHook(userId),
+          _SuperAgentPromptHook(),
+          SuperAgentHarness.buildParentHook(userId),
+        ]);
 
     _logger.info(
         'SuperAgent created, userId: $userId, sessionId: ${state.sessionId}');
     return agent;
-  }
-
-  static SystemCallback _createSuperAgentSystemCallback(String userId) {
-    final baseCallback = createSystemCallback(userId);
-    return (
-      StatefulAgent agent,
-      SystemMessage? systemMessage,
-      List<Tool> tools,
-      List<LLMMessage> requestMessages,
-    ) async {
-      final result = await baseCallback(
-        agent,
-        systemMessage,
-        tools,
-        requestMessages,
-      );
-
-      var nextSystemMessage = result.systemMessage;
-      var nextTools = result.tools;
-
-      if (nextSystemMessage != null && nextSystemMessage.content.isNotEmpty) {
-        final systemLines = nextSystemMessage.content.split('\n');
-        final sanitizedLines = <String>[];
-        for (final line in systemLines) {
-          if (line.trim() == _cloneSubAgentPromptLine) continue;
-          sanitizedLines.add(line);
-        }
-        final sanitizedContent = sanitizedLines.join('\n').trimRight();
-        if (sanitizedContent != nextSystemMessage.content) {
-          nextSystemMessage = SystemMessage(sanitizedContent);
-        }
-      }
-
-      // Deliver any images a tool stashed for the model (e.g. the dynamic
-      // timeline UI render preview). They cannot ride in the tool result —
-      // OpenAI-compatible providers reject images there — so inject them as a
-      // UserMessage on this call only. requestMessages is a per-call copy of
-      // state.history, so this is never persisted into the agent state.
-      var nextRequestMessages = result.requestMessages;
-      final pendingToolImages =
-          PendingToolImageBuffer.instance.drain(agent.state.sessionId);
-      if (pendingToolImages.isNotEmpty) {
-        nextRequestMessages = [
-          ...nextRequestMessages,
-          for (final pending in pendingToolImages)
-            UserMessage([
-              TextPart(pending.message),
-              pending.image,
-            ]),
-        ];
-      }
-
-      return SystemCallbackResult(
-        systemMessage: nextSystemMessage,
-        tools: nextTools,
-        requestMessages: nextRequestMessages,
-      );
-    };
   }
 
   @visibleForTesting
@@ -341,5 +281,41 @@ class SuperAgent {
       '${state.sessionId}: $removed',
     );
     return true;
+  }
+}
+
+class _SuperAgentPromptHook extends AgentHook {
+  @override
+  ModelCallHookResult beforeModelCall(ModelCallHookContext context) {
+    try {
+      var nextSystemMessage = context.request.systemMessage;
+
+      if (nextSystemMessage != null && nextSystemMessage.content.isNotEmpty) {
+        final systemLines = nextSystemMessage.content.split('\n');
+        final sanitizedLines = <String>[];
+        for (final line in systemLines) {
+          if (line.trim() == _cloneSubAgentPromptLine) continue;
+          sanitizedLines.add(line);
+        }
+        final sanitizedContent = sanitizedLines.join('\n').trimRight();
+        if (sanitizedContent != nextSystemMessage.content) {
+          nextSystemMessage = SystemMessage(sanitizedContent);
+        }
+      }
+
+      return ModelCallHookResult.proceed(
+        request: context.request.copyWith(
+          systemMessage: nextSystemMessage,
+          clearSystemMessage: nextSystemMessage == null,
+        ),
+      );
+    } catch (e, st) {
+      SuperAgent._logger.warning(
+        '[${context.agent.name}] super agent prompt hook failed; using original model request.',
+        e,
+        st,
+      );
+      return ModelCallHookResult.proceed(request: context.request);
+    }
   }
 }

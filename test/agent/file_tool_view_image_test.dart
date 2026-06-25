@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:memex/agent/built_in_tools/file_tools.dart';
 import 'package:memex/agent/security/file_permission_manager.dart';
 import 'package:memex/agent/super_agent/pending_tool_image_buffer.dart';
+import 'package:memex/agent/super_agent/super_agent_harness.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -25,7 +26,7 @@ void main() {
       }
     });
 
-    test('compresses image and queues it for the next model message', () async {
+    test('compresses image and queues it for model-visible messages', () async {
       final image = File('${tempDir.path}/sample.png');
       await image.writeAsBytes(_pngHeader(width: 320, height: 240));
       final compressed = Uint8List.fromList([1, 2, 3, 4]);
@@ -63,6 +64,8 @@ void main() {
       final properties = tool.parameters['properties'] as Map;
       expect(properties.keys, contains('path'));
       expect(properties.keys, isNot(contains('detail')));
+      expect(tool.description, isNot(contains('next model call only')));
+      expect(tool.description, startsWith('View a local image file.'));
       final state = AgentState(
         sessionId: 'view_image_test',
         metadata: const {'userId': 'test_user'},
@@ -76,7 +79,9 @@ void main() {
 
       expect(result.isError, isFalse);
       expect(
-          _text(result), contains('Image attached to the next model message'));
+        _text(result),
+        contains('Image attached to the next message'),
+      );
       expect(_text(result), contains('EXIF metadata is included'));
       expect(compressedPath, image.path);
       expect(targetSizeSeen, 2048);
@@ -128,11 +133,79 @@ void main() {
 
       expect(result.isError, isFalse);
       expect(
-          _text(result), contains('Image attached to the next model message'));
+        _text(result),
+        contains('Image attached to the next message'),
+      );
 
       final pending = PendingToolImageBuffer.instance.drain(state.sessionId);
       expect(pending, hasLength(1));
       expect(pending.single.image.base64Data, base64Encode(compressed));
+    });
+
+    test('after-tool hook persists viewed image into agent history', () async {
+      final image = File('${tempDir.path}/Facts/assets/persisted.png');
+      await image.create(recursive: true);
+      await image.writeAsBytes(_pngHeader(width: 80, height: 80));
+      final compressed = Uint8List.fromList([4, 3, 2, 1]);
+
+      final factory = FileToolFactory(
+        permissionManager: FilePermissionManager(
+          'test_user',
+          const [],
+          withDefaultRules: false,
+        ),
+        workingDirectory: tempDir.path,
+        viewImageCompressor: (
+          String filePath, {
+          int targetSize = 2048,
+          int quality = 85,
+        }) async {
+          expect(filePath, image.path);
+          return compressed;
+        },
+      );
+      final tool = factory.buildViewImageTool();
+      final state = AgentState(
+        sessionId: 'view_image_persisted_test',
+        metadata: const {'userId': 'test_user'},
+      );
+      final client = _SingleToolCallClient(
+        toolName: tool.name,
+        arguments: {'path': 'fs://persisted.png'},
+      );
+      final agent = StatefulAgent(
+        name: 'view_image_test_agent',
+        client: client,
+        modelConfig: ModelConfig(model: 'test-model'),
+        state: state,
+        tools: [tool],
+        hooks: [SuperAgentHarness.buildChildHook('test_user')],
+        withGeneralPrinciples: false,
+        maxTurns: 3,
+      );
+
+      await agent.run([UserMessage.text('run the tool')], useStream: false);
+
+      final imageMessages =
+          state.history.messages.whereType<UserMessage>().where(
+                (message) => message.contents.any((part) => part is ImagePart),
+              );
+      expect(imageMessages, hasLength(1));
+      final imagePart =
+          imageMessages.single.contents.whereType<ImagePart>().single;
+      expect(imagePart.mimeType, 'image/webp');
+      expect(imagePart.base64Data, base64Encode(compressed));
+
+      expect(client.capturedMessages, hasLength(2));
+      final secondRequestImageMessages =
+          client.capturedMessages.last.whereType<UserMessage>().where(
+                (message) => message.contents.any((part) => part is ImagePart),
+              );
+      expect(secondRequestImageMessages, hasLength(1));
+      expect(
+        PendingToolImageBuffer.instance.drain(state.sessionId),
+        isEmpty,
+      );
     });
   });
 
@@ -245,6 +318,7 @@ class _SingleToolCallClient extends LLMClient {
 
   final String toolName;
   final Map<String, dynamic> arguments;
+  final capturedMessages = <List<LLMMessage>>[];
   var _callCount = 0;
 
   @override
@@ -256,6 +330,7 @@ class _SingleToolCallClient extends LLMClient {
     bool? jsonOutput,
     CancelToken? cancelToken,
   }) async {
+    capturedMessages.add(List<LLMMessage>.from(messages));
     _callCount += 1;
     if (_callCount == 1) {
       return ModelMessage(
