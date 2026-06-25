@@ -77,6 +77,29 @@ void main() {
     await tester.pump();
   });
 
+  testWidgets('uses fixed app logo instead of rotating processing frames', (
+    tester,
+  ) async {
+    await tester.pumpWidget(buildHost(forceVisible: true));
+    await tester.pump();
+
+    expect(_assetImage('assets/icon.png'), findsOneWidget);
+    expect(_assetImage('assets/icons/processing_1.png'), findsNothing);
+    expect(_assetImage('assets/icons/processing_2.png'), findsNothing);
+
+    await tester.tap(find.text('AI is processing...'));
+    await tester.pump(const Duration(milliseconds: 350));
+
+    expect(_assetImage('assets/icon.png'), findsNWidgets(2));
+    expect(_assetImage('assets/icons/processing_1.png'), findsNothing);
+    expect(_assetImage('assets/icons/processing_2.png'), findsNothing);
+
+    Navigator.of(tester.element(find.text('Activity Detail'))).pop();
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+  });
+
   testWidgets('updates background task count while detail sheet is open', (
     tester,
   ) async {
@@ -345,6 +368,14 @@ void main() {
       platform.dispose();
     },
   );
+}
+
+Finder _assetImage(String assetName) {
+  return find.byWidgetPredicate((widget) {
+    if (widget is! Image) return false;
+    final image = widget.image;
+    return image is AssetImage && image.assetName == assetName;
+  });
 }
 
 AgentActivityMessageModel _activityMessage({

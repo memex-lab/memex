@@ -44,6 +44,8 @@ class UserStorage {
   static const String _keyUserAvatar = 'user_avatar';
   static const String _keyLocationContextConfig = 'location_context_config';
   static const String _keyGeocodingCache = 'geocoding_cache';
+  static const String _keyLatestSuperAgentHomeSessionIdPrefix =
+      'latest_super_agent_home_session_id_';
 
   /// Per-user workspace storage preference keys.
   static const String _keyStorageLocationPrefix = 'memex_storage_location_';
@@ -213,6 +215,54 @@ class UserStorage {
       await prefs.remove(_keyUserId);
     } catch (e) {
       // ignore error
+    }
+  }
+
+  static String _latestSuperAgentHomeSessionIdKey(String userId) {
+    return '$_keyLatestSuperAgentHomeSessionIdPrefix$userId';
+  }
+
+  static Future<String?> getLatestSuperAgentHomeSessionId() async {
+    try {
+      final userId = await getUserId();
+      if (userId == null || userId.isEmpty) return null;
+
+      final prefs = await SharedPreferences.getInstance();
+      final sessionId =
+          prefs.getString(_latestSuperAgentHomeSessionIdKey(userId))?.trim();
+      return sessionId == null || sessionId.isEmpty ? null : sessionId;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  static Future<void> setLatestSuperAgentHomeSessionId(String sessionId) async {
+    final normalized = sessionId.trim();
+    if (normalized.isEmpty) return;
+
+    try {
+      final userId = await getUserId();
+      if (userId == null || userId.isEmpty) return;
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        _latestSuperAgentHomeSessionIdKey(userId),
+        normalized,
+      );
+    } catch (e) {
+      // Cache misses are non-fatal; callers fall back to session discovery.
+    }
+  }
+
+  static Future<void> clearLatestSuperAgentHomeSessionId() async {
+    try {
+      final userId = await getUserId();
+      if (userId == null || userId.isEmpty) return;
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_latestSuperAgentHomeSessionIdKey(userId));
+    } catch (e) {
+      // Cache misses are non-fatal.
     }
   }
 

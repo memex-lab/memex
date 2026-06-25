@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -20,13 +19,13 @@ import 'package:memex/data/services/demo_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/input_draft_service.dart';
 import 'package:memex/ui/core/widgets/html_webview_card.dart';
+import 'package:memex/ui/core/widgets/local_image.dart';
 import 'package:memex/ui/timeline/widgets/timeline_card_detail_screen.dart';
 import 'package:memex/data/services/photo_suggestion_service.dart';
 import 'package:memex/utils/toast_helper.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/result.dart';
 import 'package:memex/utils/user_storage.dart';
-import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:memex/ui/core/themes/app_colors.dart';
 import 'package:memex/utils/token_usage_utils.dart';
 import 'package:memex/utils/time_context.dart';
@@ -185,6 +184,11 @@ const Duration _agentChatKeyboardHideAnimationDuration = Duration.zero;
 const BorderRadius _agentChatSheetBorderRadius = BorderRadius.vertical(
   top: Radius.circular(32),
 );
+@visibleForTesting
+const Key superAgentPhotoSuggestionSlotKey =
+    ValueKey('super_agent_photo_suggestion_slot');
+@visibleForTesting
+const double superAgentPhotoSuggestionSlotHeight = 68;
 
 @visibleForTesting
 double resolveAgentChatDialogHeight(
@@ -287,11 +291,12 @@ Duration resolveSuperAgentKeyboardInsetAnimationDuration({
 }
 
 @visibleForTesting
-bool shouldShowSuperAgentPhotoSuggestions({
+bool shouldShowSuperAgentPhotoSuggestionStatus({
   required bool isLoading,
   required bool hasSuggestions,
+  required bool hasLoadedSuggestions,
 }) {
-  return isLoading || hasSuggestions;
+  return !hasSuggestions && (isLoading || !hasLoadedSuggestions);
 }
 
 @visibleForTesting
@@ -387,6 +392,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   Timer? _draftSaveDebounce;
   bool _isApplyingDraft = false;
   bool _isLoadingPhotoSuggestions = false;
+  bool _hasLoadedPhotoSuggestions = false;
   List<List<EnhancedPhoto>> _photoSuggestionClusters = [];
   double _lastKeyboardBottomOffset = 0;
 
@@ -416,7 +422,6 @@ class _AgentChatDialogState extends State<AgentChatDialog>
       ),
     );
     unawaited(_loadActiveDraftIfNeeded());
-    unawaited(_loadPhotoSuggestions());
 
     // Animations
     _controller = AnimationController(
@@ -431,13 +436,8 @@ class _AgentChatDialogState extends State<AgentChatDialog>
       begin: 0,
       end: 1,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+    _controller.addStatusListener(_handleEntranceAnimationStatus);
     _controller.forward();
-
-    UserStorage.getSuperAgentRunMode().then((value) {
-      if (mounted) {
-        setState(() => _runMode = AgentRunMode.fromWire(value));
-      }
-    });
 
     final sessionId = _currentSessionId;
     if (sessionId != null) {
@@ -448,6 +448,13 @@ class _AgentChatDialogState extends State<AgentChatDialog>
 
     if (_currentSessionId != null) {
       _loadSessionHistory();
+    }
+  }
+
+  void _handleEntranceAnimationStatus(AnimationStatus status) {
+    if (status == AnimationStatus.completed) {
+      _controller.removeStatusListener(_handleEntranceAnimationStatus);
+      unawaited(_loadPhotoSuggestions());
     }
   }
 
@@ -467,6 +474,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
     _flushDraftOnDispose();
     _messageController.removeListener(_handleDraftTextChanged);
     _scrollController.removeListener(_handleHistoryScroll);
+    _controller.removeStatusListener(_handleEntranceAnimationStatus);
     _controller.dispose();
     _messageController.dispose();
     _scrollController.dispose();
@@ -535,6 +543,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
       _scrollToBottom();
     } catch (e) {
       _logger.severe('Error loading history', e);
+      unawaited(_clearLatestSuperAgentHomeSessionIdIfCurrent());
       setState(() => _isLoading = false);
       if (mounted) ToastHelper.showError(context, 'Failed to load history: $e');
     }
@@ -705,11 +714,15 @@ class _AgentChatDialogState extends State<AgentChatDialog>
         _photoSuggestionClusters =
             clusters.where((cluster) => cluster.isNotEmpty).take(8).toList();
         _isLoadingPhotoSuggestions = false;
+        _hasLoadedPhotoSuggestions = true;
       });
     } catch (e, st) {
       _logger.warning('Failed to load photo suggestions: $e', e, st);
       if (!mounted) return;
-      setState(() => _isLoadingPhotoSuggestions = false);
+      setState(() {
+        _isLoadingPhotoSuggestions = false;
+        _hasLoadedPhotoSuggestions = true;
+      });
     }
   }
 
@@ -971,6 +984,17 @@ class _AgentChatDialogState extends State<AgentChatDialog>
     _scrollToBottom();
   }
 
+  Future<void> _clearLatestSuperAgentHomeSessionIdIfCurrent() async {
+    final sessionId = _currentSessionId;
+    if (sessionId == null || sessionId.isEmpty) return;
+
+    final cachedSessionId =
+        await UserStorage.getLatestSuperAgentHomeSessionId();
+    if (cachedSessionId == sessionId) {
+      await UserStorage.clearLatestSuperAgentHomeSessionId();
+    }
+  }
+
   Future<void> _handleRefreshAgentState() async {
     final sessionId = _currentSessionId;
     if (sessionId == null || sessionId.isEmpty || _isRefreshingAgentState) {
@@ -1170,6 +1194,9 @@ class _AgentChatDialogState extends State<AgentChatDialog>
       if (event is ChatSessionCreatedEvent) {
         _currentSessionId = event.sessionId;
         AgentActionApprovalService.instance.attachSession(event.sessionId);
+        unawaited(
+          UserStorage.setLatestSuperAgentHomeSessionId(event.sessionId),
+        );
         return;
       }
 
@@ -1480,39 +1507,38 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                             onTap: _messageFocusNode.unfocus,
                             child: Container(
                               color: Colors.white,
-                              child: _isLoading
-                                  ? const Center(child: AgentLogoLoading())
-                                  : _items.isEmpty
-                                      ? _buildEmptyState()
-                                      : ListView.builder(
-                                          controller: _scrollController,
-                                          reverse: true,
-                                          keyboardDismissBehavior:
-                                              ScrollViewKeyboardDismissBehavior
-                                                  .onDrag,
-                                          padding: const EdgeInsets.all(24),
-                                          itemCount: _agentChatListItemCount(),
-                                          itemBuilder: (context, index) {
-                                            final extraItems =
-                                                _showAgentThinkingRow ? 1 : 0;
-                                            if (extraItems == 1 && index == 0) {
-                                              return _buildAgentThinkingItem();
-                                            }
-                                            if (_shouldShowHistoryLoaderAt(
-                                                index)) {
-                                              return _buildHistoryLoadMoreIndicator();
-                                            }
-                                            final itemIndex =
-                                                superAgentItemIndexForReversedList(
-                                              listIndex: index,
-                                              itemCount: _items.length,
-                                              extraItems: extraItems,
-                                            );
-                                            return _buildItemWithTimeDivider(
-                                              itemIndex,
-                                            );
-                                          },
-                                        ),
+                              child: _items.isEmpty
+                                  ? _isLoading
+                                      ? const SizedBox.expand()
+                                      : _buildEmptyState()
+                                  : ListView.builder(
+                                      controller: _scrollController,
+                                      reverse: true,
+                                      keyboardDismissBehavior:
+                                          ScrollViewKeyboardDismissBehavior
+                                              .onDrag,
+                                      padding: const EdgeInsets.all(24),
+                                      itemCount: _agentChatListItemCount(),
+                                      itemBuilder: (context, index) {
+                                        final extraItems =
+                                            _showAgentThinkingRow ? 1 : 0;
+                                        if (extraItems == 1 && index == 0) {
+                                          return _buildAgentThinkingItem();
+                                        }
+                                        if (_shouldShowHistoryLoaderAt(index)) {
+                                          return _buildHistoryLoadMoreIndicator();
+                                        }
+                                        final itemIndex =
+                                            superAgentItemIndexForReversedList(
+                                          listIndex: index,
+                                          itemCount: _items.length,
+                                          extraItems: extraItems,
+                                        );
+                                        return _buildItemWithTimeDivider(
+                                          itemIndex,
+                                        );
+                                      },
+                                    ),
                             ),
                           ),
                         ),
@@ -1707,45 +1733,56 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   }
 
   Widget _buildPhotoSuggestionRow() {
-    if (_isLoadingPhotoSuggestions) {
-      return SizedBox(
-        height: 48,
-        child: Row(
-          children: [
-            Icon(
-              Icons.photo_library_outlined,
-              size: 18,
-              color: AppColors.primary.withValues(alpha: 0.55),
-            ),
-            const SizedBox(width: 10),
-            Flexible(
-              child: Text(
-                _agentChat.findingRecentPhotos,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: AppColors.textTertiary,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (_photoSuggestionClusters.isEmpty) return const SizedBox.shrink();
+    final showStatus = shouldShowSuperAgentPhotoSuggestionStatus(
+      isLoading: _isLoadingPhotoSuggestions,
+      hasSuggestions: _photoSuggestionClusters.isNotEmpty,
+      hasLoadedSuggestions: _hasLoadedPhotoSuggestions,
+    );
 
     return SizedBox(
-      height: 68,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: _photoSuggestionClusters.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          return _buildPhotoSuggestionChip(_photoSuggestionClusters[index]);
-        },
+      key: superAgentPhotoSuggestionSlotKey,
+      height: superAgentPhotoSuggestionSlotHeight,
+      child: Stack(
+        alignment: Alignment.centerLeft,
+        children: [
+          ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: _photoSuggestionClusters.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            itemBuilder: (context, index) {
+              return _buildPhotoSuggestionChip(_photoSuggestionClusters[index]);
+            },
+          ),
+          if (showStatus) _buildPhotoSuggestionStatus(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPhotoSuggestionStatus() {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Row(
+        children: [
+          Icon(
+            Icons.photo_library_outlined,
+            size: 18,
+            color: AppColors.primary.withValues(alpha: 0.55),
+          ),
+          const SizedBox(width: 10),
+          Flexible(
+            child: Text(
+              _agentChat.findingRecentPhotos,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: AppColors.textTertiary,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1813,11 +1850,6 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   }
 
   Widget _buildSuperAgentInput() {
-    final showPhotoSuggestions = shouldShowSuperAgentPhotoSuggestions(
-      isLoading: _isLoadingPhotoSuggestions,
-      hasSuggestions: _photoSuggestionClusters.isNotEmpty,
-    );
-
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       decoration: const BoxDecoration(
@@ -1828,10 +1860,8 @@ class _AgentChatDialogState extends State<AgentChatDialog>
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (showPhotoSuggestions) ...[
-            _buildPhotoSuggestionRow(),
-            const SizedBox(height: 10),
-          ],
+          _buildPhotoSuggestionRow(),
+          const SizedBox(height: 10),
           if (_selectedImages.isNotEmpty) ...[
             SizedBox(
               height: 72,
@@ -2170,8 +2200,8 @@ class _AgentChatDialogState extends State<AgentChatDialog>
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(14),
-          child: Image.file(
-            File(image.path),
+          child: LocalImage(
+            url: image.path,
             width: 72,
             height: 72,
             fit: BoxFit.cover,
@@ -2204,8 +2234,8 @@ class _AgentChatDialogState extends State<AgentChatDialog>
       children: imagePaths.map((imagePath) {
         return ClipRRect(
           borderRadius: BorderRadius.circular(10),
-          child: Image.file(
-            File(imagePath),
+          child: LocalImage(
+            url: imagePath,
             width: 88,
             height: 88,
             fit: BoxFit.cover,
@@ -2918,8 +2948,8 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                       _resolveDisplayImagePath(artifact.imagePaths[index]);
                   return ClipRRect(
                     borderRadius: BorderRadius.circular(10),
-                    child: Image.file(
-                      File(path),
+                    child: LocalImage(
+                      url: path,
                       width: 64,
                       height: 64,
                       fit: BoxFit.cover,
