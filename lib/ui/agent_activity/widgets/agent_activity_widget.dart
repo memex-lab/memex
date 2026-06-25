@@ -31,8 +31,7 @@ class AgentActivityWidget extends StatefulWidget {
   State<AgentActivityWidget> createState() => _AgentActivityWidgetState();
 }
 
-class _AgentActivityWidgetState extends State<AgentActivityWidget>
-    with SingleTickerProviderStateMixin {
+class _AgentActivityWidgetState extends State<AgentActivityWidget> {
   AgentActivityMessageModel? _latestMessage;
   AgentActivityService? _service;
   LocalTaskExecutor? _executor;
@@ -44,8 +43,6 @@ class _AgentActivityWidgetState extends State<AgentActivityWidget>
   Timer? _initRetryTimer;
   TaskActivitySnapshot _taskSnapshot = const TaskActivitySnapshot.empty();
   AgentRunSnapshot? _runSnapshot;
-
-  late AnimationController _bounceController;
 
   bool get _isActive {
     return widget.forceVisible || _taskSnapshot.hasActiveTasks;
@@ -60,10 +57,6 @@ class _AgentActivityWidgetState extends State<AgentActivityWidget>
   @override
   void initState() {
     super.initState();
-    _bounceController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 400),
-    )..repeat(reverse: true);
     _taskSnapshot = widget.initialTaskSnapshot;
     _runSnapshot = widget.initialRunSnapshot;
 
@@ -178,7 +171,6 @@ class _AgentActivityWidgetState extends State<AgentActivityWidget>
     _openActivitySubscription?.cancel();
     _historyLoadTimer?.cancel();
     _initRetryTimer?.cancel();
-    _bounceController.dispose();
     super.dispose();
   }
 
@@ -233,16 +225,7 @@ class _AgentActivityWidgetState extends State<AgentActivityWidget>
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Animated writing icon (alternates between two frames)
-            AnimatedBuilder(
-              animation: _bounceController,
-              builder: (context, child) {
-                final frame = _bounceController.value < 0.5
-                    ? 'assets/icons/processing_1.png'
-                    : 'assets/icons/processing_2.png';
-                return Image.asset(frame, width: 36, height: 36);
-              },
-            ),
+            const _AgentActivityLogo(size: 36),
             const SizedBox(width: 8),
             // Text
             Flexible(
@@ -306,8 +289,7 @@ class _DetailSheet extends StatefulWidget {
   State<_DetailSheet> createState() => _DetailSheetState();
 }
 
-class _DetailSheetState extends State<_DetailSheet>
-    with SingleTickerProviderStateMixin {
+class _DetailSheetState extends State<_DetailSheet> {
   AgentActivityMessageModel? _message;
   TaskActivitySnapshot _taskSnapshot = const TaskActivitySnapshot.empty();
   AgentRunSnapshot? _runSnapshot;
@@ -317,15 +299,9 @@ class _DetailSheetState extends State<_DetailSheet>
   AgentActivityService? _service;
   LocalTaskExecutor? _executor;
 
-  late AnimationController _pulseController;
-
   @override
   void initState() {
     super.initState();
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 400),
-    )..repeat(reverse: true);
     _message = widget.initialMessage;
     _taskSnapshot = widget.initialTaskSnapshot;
     _runSnapshot = widget.initialRunSnapshot;
@@ -397,7 +373,6 @@ class _DetailSheetState extends State<_DetailSheet>
     _subscription?.cancel();
     _taskSubscription?.cancel();
     _runSubscription?.cancel();
-    _pulseController.dispose();
     super.dispose();
   }
 
@@ -432,15 +407,7 @@ class _DetailSheetState extends State<_DetailSheet>
               children: [
                 Row(
                   children: [
-                    AnimatedBuilder(
-                      animation: _pulseController,
-                      builder: (context, child) {
-                        final frame = _pulseController.value < 0.5
-                            ? 'assets/icons/processing_1.png'
-                            : 'assets/icons/processing_2.png';
-                        return Image.asset(frame, width: 38, height: 38);
-                      },
-                    ),
+                    const _AgentActivityLogo(size: 38),
                     const SizedBox(width: 10),
                     Text(
                       UserStorage.l10n.activityDetail,
@@ -684,6 +651,25 @@ class _DetailSheetState extends State<_DetailSheet>
       ),
       alignment: Alignment.center,
       child: Icon(iconData, size: 24, color: color),
+    );
+  }
+}
+
+class _AgentActivityLogo extends StatelessWidget {
+  final double size;
+
+  const _AgentActivityLogo({required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(size * 0.28),
+      child: Image.asset(
+        'assets/icon.png',
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+      ),
     );
   }
 }

@@ -6,6 +6,8 @@ import 'package:memex/data/model/chat_events.dart';
 import 'package:memex/data/services/demo_service.dart';
 import 'package:memex/l10n/app_localizations.dart';
 import 'package:memex/ui/chat/widgets/agent_chat_dialog.dart';
+import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
+import 'package:memex/ui/core/widgets/local_image.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -172,28 +174,30 @@ void main() {
       expect(text, isNot(contains('0.12345')));
     });
 
-    test('keeps photo suggestions available while the super agent is sending',
-        () {
+    test('shows the photo suggestion status until suggestions resolve', () {
       expect(
-        shouldShowSuperAgentPhotoSuggestions(
+        shouldShowSuperAgentPhotoSuggestionStatus(
           isLoading: true,
           hasSuggestions: false,
+          hasLoadedSuggestions: false,
         ),
         isTrue,
       );
       expect(
-        shouldShowSuperAgentPhotoSuggestions(
+        shouldShowSuperAgentPhotoSuggestionStatus(
           isLoading: false,
           hasSuggestions: true,
+          hasLoadedSuggestions: true,
         ),
-        isTrue,
+        isFalse,
       );
       expect(
-        shouldShowSuperAgentPhotoSuggestions(
-          isLoading: true,
-          hasSuggestions: true,
+        shouldShowSuperAgentPhotoSuggestionStatus(
+          isLoading: false,
+          hasSuggestions: false,
+          hasLoadedSuggestions: true,
         ),
-        isTrue,
+        isFalse,
       );
     });
 
@@ -364,6 +368,48 @@ void main() {
       expect(find.byIcon(Icons.open_in_full), findsOneWidget);
     });
 
+    testWidgets('does not show a loading logo while opening a session', (
+      tester,
+    ) async {
+      await _pumpDialogFrame(
+        tester,
+        dialog: const AgentChatDialog(initialSessionId: 'session-1'),
+      );
+
+      expect(find.byType(AgentLogoLoading), findsNothing);
+    });
+
+    testWidgets('reserves the photo suggestion slot on the first frame', (
+      tester,
+    ) async {
+      await _pumpDialogFrame(tester);
+
+      final slotFinder = find.byKey(superAgentPhotoSuggestionSlotKey);
+
+      expect(slotFinder, findsOneWidget);
+      expect(
+        tester.getSize(slotFinder).height,
+        superAgentPhotoSuggestionSlotHeight,
+      );
+      expect(
+        find.text(UserStorage.l10n.agentChat.findingRecentPhotos),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('renders selected images through the cached image widget', (
+      tester,
+    ) async {
+      await _pumpDialogFrame(
+        tester,
+        dialog: AgentChatDialog(
+          initialImages: [XFile('/tmp/memex-selected-image.jpg')],
+        ),
+      );
+
+      expect(find.byType(LocalImage), findsOneWidget);
+    });
+
     testWidgets(
       'keeps header actions inside the compact header on narrow screens',
       (tester) async {
@@ -450,19 +496,28 @@ Future<void> _pumpDialog(
   WidgetTester tester, {
   Size viewportSize = const Size(390, 800),
 }) async {
+  await _pumpDialogFrame(tester, viewportSize: viewportSize);
+  await tester.pumpAndSettle();
+}
+
+Future<void> _pumpDialogFrame(
+  WidgetTester tester, {
+  Size viewportSize = const Size(390, 800),
+  Widget dialog = const AgentChatDialog(),
+}) async {
   tester.view.physicalSize = viewportSize;
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
 
   await tester.pumpWidget(
-    const MaterialApp(
+    MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(
-        body: AgentChatDialog(),
+        body: dialog,
       ),
     ),
   );
-  await tester.pumpAndSettle();
+  await tester.pump();
 }
