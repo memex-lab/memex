@@ -1522,6 +1522,14 @@ class AppLocalizationsAr extends AppLocalizations {
   String get notificationPermissionReason => 'لإرسال الجداول والتذكيرات المهمة';
 
   @override
+  String get memexAgentNotificationPermissionTitle =>
+      'إبقاء Memex Agent يعمل في الخلفية';
+
+  @override
+  String get memexAgentNotificationPermissionMessage =>
+      'يعمل Memex Agent محليا على جهازك. عند السماح بالإشعارات، يستطيع Memex عرض التقدم ومتابعة المعالجة بعد مغادرة التطبيق أو إيقاف الشاشة. إذا كانت الإشعارات متوقفة، أبق Memex مفتوحا في الواجهة حتى تكتمل المهمة.';
+
+  @override
   String get loadDetailFailedRetryShort =>
       'فشل تحميل التفاصيل، يرجى المحاولة لاحقا.';
 

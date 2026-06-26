@@ -6,9 +6,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:memex/data/services/agent_activity_service.dart';
 import 'package:memex/data/services/agent_background_platform.dart';
 import 'package:memex/data/services/agent_background_status.dart';
+import 'package:memex/data/services/agent_foreground_task_tracker.dart';
 import 'package:memex/data/services/agent_queue_background_worker.dart';
 import 'package:memex/data/services/agent_queue_drain_scheduler.dart';
-import 'package:memex/data/services/agent_run_service.dart';
 import 'package:memex/data/services/local_task_executor.dart';
 import 'package:memex/db/app_database.dart';
 import 'package:memex/utils/user_storage.dart';
@@ -22,6 +22,7 @@ void main() {
     late AppDatabase db;
     late LocalTaskExecutor executor;
     late _FakeDrainScheduler scheduler;
+    late AgentForegroundTaskTracker tracker;
 
     setUp(() async {
       SharedPreferences.setMockInitialValues({
@@ -33,6 +34,7 @@ void main() {
       AppDatabase.setTestInstance(db);
       executor = LocalTaskExecutor.forTesting();
       scheduler = _FakeDrainScheduler();
+      tracker = AgentForegroundTaskTracker.forTesting(db: db);
     });
 
     tearDown(() async {
@@ -152,19 +154,29 @@ void main() {
               createdAt: Value(now),
             ),
           );
+      await tracker.trackTask('foreground-owned-task');
+      final platform = _FakeBackgroundPlatform();
 
       final completed = await AgentQueueBackgroundWorker.run(
         initializeTaskQueue: (_) async {},
         executor: executor,
         scheduler: scheduler,
-        backgroundPlatform: _FakeBackgroundPlatform(),
+        backgroundPlatform: platform,
         databaseRetryDelay: Duration.zero,
       );
 
+      final snapshot = await tracker.getSnapshot();
+
       expect(completed, isTrue);
+      expect(snapshot.paused, isTrue);
+      expect(
+        snapshot.pausedMessage,
+        UserStorage.l10n.agentBackgroundPausedDetail,
+      );
       expect(scheduler.scheduleCalls, 1);
       expect(scheduler.initialDelays.single, const Duration(seconds: 30));
       expect(scheduler.expeditedValues.single, isFalse);
+      expect(platform.updates.single.state, AgentBackgroundRunState.paused);
       final task = await (db.select(
         db.tasks,
       )..where((row) => row.id.equals('foreground-owned-task')))
@@ -201,6 +213,7 @@ void main() {
               scheduledAt: Value(now + 600),
             ),
           );
+      await tracker.trackTask('future-retry');
       final platform = _FakeBackgroundPlatform();
 
       final completed = await AgentQueueBackgroundWorker.run(
@@ -224,24 +237,23 @@ void main() {
     });
 
     test(
-      'marks durable run paused when background slice ends with work left',
+      'marks tracked foreground work paused when background slice ends with work left',
       () async {
-        await AgentRunService.instance.createForSubmittedInput(
-          userId: 'worker-user',
-          factId: 'fact-paused',
-        );
+        executor.registerHandler('slice_task', (_, __, ___) async {});
         final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-        await db.into(db.tasks).insert(
-              TasksCompanion.insert(
-                id: 'future-retry',
-                type: 'super_agent_chat_turn_task',
-                payload: const Value('{}'),
-                runId: const Value('fact-paused'),
-                status: 'retrying',
-                createdAt: Value(now),
-                scheduledAt: Value(now + 600),
-              ),
-            );
+        for (var i = 0; i < 6; i++) {
+          final taskId = 'slice-task-$i';
+          await db.into(db.tasks).insert(
+                TasksCompanion.insert(
+                  id: taskId,
+                  type: 'slice_task',
+                  payload: const Value('{}'),
+                  status: 'pending',
+                  createdAt: Value(now + i),
+                ),
+              );
+          await tracker.trackTask(taskId);
+        }
         final platform = _FakeBackgroundPlatform();
 
         final completed = await AgentQueueBackgroundWorker.run(
@@ -249,19 +261,19 @@ void main() {
           executor: executor,
           scheduler: scheduler,
           backgroundPlatform: platform,
+          maxRunDuration: Duration.zero,
           databaseRetryDelay: Duration.zero,
         );
 
-        final run = await (db.select(
-          db.agentRuns,
-        )..where((row) => row.id.equals('fact-paused')))
-            .getSingle();
+        final snapshot = await tracker.getSnapshot();
 
         expect(completed, isTrue);
-        expect(run.state, 'paused_by_system');
-        expect(run.message, UserStorage.l10n.agentBackgroundQueuedDetail);
+        expect(snapshot.paused, isTrue);
+        expect(
+          snapshot.pausedMessage,
+          UserStorage.l10n.agentBackgroundPausedDetail,
+        );
         expect(platform.updates.single.state, AgentBackgroundRunState.paused);
-        expect(platform.updates.single.runId, 'fact-paused');
         expect(scheduler.scheduleCalls, 1);
       },
     );
@@ -291,6 +303,7 @@ void main() {
               createdAt: Value(now),
             ),
           );
+      await tracker.trackTask('activity-task');
       final platform = _FakeBackgroundPlatform();
 
       final completed = await AgentQueueBackgroundWorker.run(
@@ -347,6 +360,7 @@ void main() {
                 createdAt: Value(now),
               ),
             );
+        await tracker.trackTask('live-activity-task');
         final platform = _FakeBackgroundPlatform();
 
         final runFuture = AgentQueueBackgroundWorker.run(
@@ -412,6 +426,7 @@ void main() {
                 createdAt: Value(now),
               ),
             );
+        await tracker.trackTask('multi-live-activity-task');
         final platform = _FakeBackgroundPlatform();
 
         final runFuture = AgentQueueBackgroundWorker.run(
@@ -483,6 +498,7 @@ void main() {
                 scheduledAt: Value(now + 600),
               ),
             );
+        await tracker.trackTask('future-retry-after-activity');
         final platform = _FakeBackgroundPlatform();
 
         final completed = await AgentQueueBackgroundWorker.run(

@@ -710,6 +710,8 @@
   "fitnessPermissionReason": "स्वास्थ्य और गतिविधि डेटा रिकॉर्ड करने के लिए",
   "notification": "सूचना",
   "notificationPermissionReason": "अनुसूची और महत्वपूर्ण रिमाइंडर भेजने के लिए",
+  "memexAgentNotificationPermissionTitle": "Memex Agent को बैकग्राउंड में चलने दें",
+  "memexAgentNotificationPermissionMessage": "Memex Agent आपके डिवाइस पर लोकल रूप से चलता है। नोटिफिकेशन अनुमति देने पर Memex प्रगति दिखा सकता है और ऐप छोड़ने या स्क्रीन बंद करने के बाद भी प्रोसेसिंग जारी रख सकता है। नोटिफिकेशन बंद हों तो काम पूरा होने तक Memex को सामने खुला रखें।",
   "loadDetailFailedRetryShort": "विवरण लोड नहीं हो सका, कृपया बाद में फिर कोशिश करें।",
   "total": "कुल",
   "estimatedCost": "अनुमानित लागत",

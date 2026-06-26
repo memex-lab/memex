@@ -1500,6 +1500,14 @@ class AppLocalizationsJa extends AppLocalizations {
   String get notificationPermissionReason => '予定や重要なリマインダーを送信するため';
 
   @override
+  String get memexAgentNotificationPermissionTitle =>
+      'Memex Agent をバックグラウンドで実行する';
+
+  @override
+  String get memexAgentNotificationPermissionMessage =>
+      'Memex Agent はデバイス上でローカルに動作します。通知を許可すると、Memex は進行状況を表示し、アプリを離れたり画面をオフにした後も処理を続けられます。通知を許可しない場合は、タスクが完了するまで Memex を前面に表示してください。';
+
+  @override
   String get loadDetailFailedRetryShort => '詳細の読み込みに失敗しました。後でもう一度お試しください。';
 
   @override

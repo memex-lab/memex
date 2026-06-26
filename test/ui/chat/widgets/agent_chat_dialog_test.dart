@@ -9,6 +9,7 @@ import 'package:memex/ui/chat/widgets/agent_chat_dialog.dart';
 import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:memex/ui/core/widgets/local_image.dart';
 import 'package:memex/utils/user_storage.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -233,6 +234,65 @@ void main() {
           hasChatSubscription: true,
         ),
         isTrue,
+      );
+    });
+
+    test(
+        'explains notification permission only for first eligible Android send',
+        () {
+      expect(
+        shouldExplainMemexAgentNotificationPermission(
+          platform: TargetPlatform.android,
+          isDemoActive: false,
+          alreadyPrompted: false,
+          notificationStatus: PermissionStatus.denied,
+        ),
+        isTrue,
+      );
+      expect(
+        shouldExplainMemexAgentNotificationPermission(
+          platform: TargetPlatform.iOS,
+          isDemoActive: false,
+          alreadyPrompted: false,
+          notificationStatus: PermissionStatus.denied,
+        ),
+        isFalse,
+      );
+      expect(
+        shouldExplainMemexAgentNotificationPermission(
+          platform: TargetPlatform.android,
+          isDemoActive: true,
+          alreadyPrompted: false,
+          notificationStatus: PermissionStatus.denied,
+        ),
+        isFalse,
+      );
+      expect(
+        shouldExplainMemexAgentNotificationPermission(
+          platform: TargetPlatform.android,
+          isDemoActive: false,
+          alreadyPrompted: true,
+          notificationStatus: PermissionStatus.denied,
+        ),
+        isFalse,
+      );
+      expect(
+        shouldExplainMemexAgentNotificationPermission(
+          platform: TargetPlatform.android,
+          isDemoActive: false,
+          alreadyPrompted: false,
+          notificationStatus: PermissionStatus.granted,
+        ),
+        isFalse,
+      );
+      expect(
+        shouldExplainMemexAgentNotificationPermission(
+          platform: TargetPlatform.android,
+          isDemoActive: false,
+          alreadyPrompted: false,
+          notificationStatus: PermissionStatus.permanentlyDenied,
+        ),
+        isFalse,
       );
     });
 

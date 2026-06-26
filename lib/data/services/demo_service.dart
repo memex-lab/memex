@@ -189,6 +189,27 @@ class DemoService extends ChangeNotifier {
   String get skipText => UserStorage.l10n.demoSkip;
   String get prefillText => UserStorage.l10n.demoPrefillText;
 
+  @visibleForTesting
+  void setStepForTesting(
+    DemoStep? step, {
+    bool cardReady = false,
+    bool overlaySuspended = false,
+  }) {
+    _currentStep = step;
+    _cardReady = cardReady;
+    _isOverlaySuspended = overlaySuspended;
+    notifyListeners();
+  }
+
+  @visibleForTesting
+  void resetForTesting() {
+    _currentStep = null;
+    _isOverlaySuspended = false;
+    _cardReady = false;
+    _demoCardId = null;
+    notifyListeners();
+  }
+
   // ---------------------------------------------------------------------------
   // Data writing
   // ---------------------------------------------------------------------------

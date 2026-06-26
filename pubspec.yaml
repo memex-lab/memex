@@ -56,6 +56,8 @@ dependencies:
   dart_jsonwebtoken: ^2.9.1
   logging: ^1.2.0
   share_handler: ^0.0.25
+  agent_background_android:
+    path: plugins/agent_background_android
   archive: ^4.0.0
   xml: ^6.6.1
   yaml: ^3.1.2

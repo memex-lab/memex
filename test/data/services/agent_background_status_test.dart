@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:memex/data/services/agent_activity_service.dart';
 import 'package:memex/data/services/agent_background_status.dart';
-import 'package:memex/data/services/agent_run_service.dart';
+import 'package:memex/data/services/agent_foreground_task_tracker.dart';
 import 'package:memex/data/services/local_task_executor.dart';
 import 'package:memex/l10n/app_localizations_zh.dart';
 
@@ -147,7 +147,8 @@ void main() {
       expect(status.summary, 'Reading workspace');
     });
 
-    test('marks terminal error as failed when the queue is empty', () {
+    test('treats an empty-queue activity error as stale without a run snapshot',
+        () {
       final status = AgentBackgroundStatus.fromActivity(
         taskSnapshot: const TaskActivitySnapshot.empty(),
         latestMessage: AgentActivityMessageModel(
@@ -162,10 +163,9 @@ void main() {
         now: DateTime(2026, 1, 1),
       );
 
-      expect(status.state, AgentBackgroundRunState.failed);
-      expect(status.shouldShowSystemSurface, isTrue);
-      expect(status.title, 'Memex Agent needs attention');
-      expect(status.stage, 'Provider error');
+      expect(status.state, AgentBackgroundRunState.idle);
+      expect(status.shouldShowSystemSurface, isFalse);
+      expect(status.title, 'Memex Agent');
       expect(status.detail, 'API key is missing');
       expect(status.summary, 'API key is missing');
     });
@@ -252,53 +252,51 @@ void main() {
       );
     });
 
-    test('prefers durable run stage and progress over generic task detail', () {
+    test('uses foreground tracker task counts for platform status', () {
       final status = AgentBackgroundStatus.fromActivity(
         taskSnapshot: const TaskActivitySnapshot(
           pending: 1,
           processing: 1,
           retrying: 0,
         ),
-        runSnapshot: AgentRunSnapshot(
-          id: 'run-1',
-          userId: 'user-a',
-          factId: 'fact-1',
-          state: AgentRunState.running,
-          stage: 'Generating card',
-          message: 'Turning the record into a timeline card.',
-          completedUnits: 30,
-          totalUnits: 100,
-          remainingTasks: 2,
+        foregroundSnapshot: AgentForegroundTaskSnapshot(
+          taskSnapshot: const TaskActivitySnapshot(
+            pending: 3,
+            processing: 1,
+            retrying: 0,
+          ),
+          activeTaskIds: const {'a', 'b', 'c', 'd'},
+          attentionTaskErrors: const {},
+          paused: false,
           updatedAt: DateTime(2026, 1, 1),
         ),
         now: DateTime(2026, 1, 1),
       );
 
       expect(status.state, AgentBackgroundRunState.active);
-      expect(status.stage, 'Generating card');
-      expect(status.detail, 'Turning the record into a timeline card.');
-      expect(status.progressCompleted, 30);
-      expect(status.progressTotal, 100);
-      expect(status.runId, 'run-1');
-      expect(status.factId, 'fact-1');
-      expect(status.taskSummary, 'Running 1, Pending 1, Retry 0');
+      expect(status.remainingTasks, 4);
+      expect(status.taskSummary, 'Running 1, Pending 3, Retry 0');
       expect(status.toPlatformMap(), containsPair('state', 'active'));
-      expect(status.toPlatformMap(), containsPair('progressCompleted', 30));
+      expect(
+        status.toPlatformMap(),
+        containsPair('taskSummary', 'Running 1, Pending 3, Retry 0'),
+      );
     });
 
-    test('maps paused durable run to a visible paused platform status', () {
+    test('maps foreground tracker pause to a visible paused platform status',
+        () {
       final status = AgentBackgroundStatus.fromActivity(
         taskSnapshot: const TaskActivitySnapshot.empty(),
-        runSnapshot: AgentRunSnapshot(
-          id: 'run-2',
-          userId: 'user-a',
-          factId: 'fact-2',
-          state: AgentRunState.pausedBySystem,
-          stage: 'Paused',
-          message: 'Background time expired. Memex will continue later.',
-          completedUnits: 65,
-          totalUnits: 100,
-          remainingTasks: 3,
+        foregroundSnapshot: AgentForegroundTaskSnapshot(
+          taskSnapshot: const TaskActivitySnapshot(
+            pending: 3,
+            processing: 0,
+            retrying: 0,
+          ),
+          activeTaskIds: const {'a', 'b', 'c'},
+          attentionTaskErrors: const {},
+          paused: true,
+          pausedMessage: 'Background time expired. Memex will continue later.',
           updatedAt: DateTime(2026, 1, 1),
         ),
         now: DateTime(2026, 1, 1),
@@ -313,6 +311,39 @@ void main() {
       expect(
         status.toPlatformMap(),
         containsPair('taskSummary', 'Running 0, Pending 3, Retry 0'),
+      );
+    });
+
+    test(
+        'maps foreground tracker attention to a visible needs-attention status',
+        () {
+      final status = AgentBackgroundStatus.fromActivity(
+        taskSnapshot: const TaskActivitySnapshot(
+          pending: 2,
+          processing: 1,
+          retrying: 0,
+        ),
+        foregroundSnapshot: AgentForegroundTaskSnapshot(
+          taskSnapshot: const TaskActivitySnapshot.empty(),
+          activeTaskIds: const {},
+          attentionTaskErrors: const {'failed-task': 'API key is missing'},
+          paused: false,
+          updatedAt: DateTime(2026, 1, 1),
+        ),
+        now: DateTime(2026, 1, 1),
+      );
+
+      expect(status.state, AgentBackgroundRunState.failed);
+      expect(status.shouldShowSystemSurface, isTrue);
+      expect(status.title, 'Memex Agent needs attention');
+      expect(status.stage, 'Needs attention');
+      expect(status.detail, 'API key is missing');
+      expect(status.summary, 'API key is missing');
+      expect(status.statusText, 'Needs attention');
+      expect(status.toPlatformMap(), containsPair('state', 'failed'));
+      expect(
+        status.toPlatformMap(),
+        containsPair('statusText', 'Needs attention'),
       );
     });
   });

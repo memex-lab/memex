@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:memex/utils/user_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   group('UserStorage locale resolution', () {
@@ -92,6 +93,48 @@ void main() {
       final locale = UserStorage.resolveToSupportedLocale(const Locale('it'));
 
       expect(locale.languageCode, 'en');
+    });
+  });
+
+  group('UserStorage Memex Agent notification permission marker', () {
+    setUp(() {
+      SharedPreferences.setMockInitialValues({});
+    });
+
+    test('is scoped to the active user', () async {
+      await UserStorage.saveUser('user-a');
+
+      expect(
+        await UserStorage.hasPromptedMemexAgentNotificationPermission(),
+        isFalse,
+      );
+
+      await UserStorage.setMemexAgentNotificationPermissionPrompted();
+      expect(
+        await UserStorage.hasPromptedMemexAgentNotificationPermission(),
+        isTrue,
+      );
+
+      await UserStorage.saveUser('user-b');
+      expect(
+        await UserStorage.hasPromptedMemexAgentNotificationPermission(),
+        isFalse,
+      );
+
+      await UserStorage.saveUser('user-a');
+      expect(
+        await UserStorage.hasPromptedMemexAgentNotificationPermission(),
+        isTrue,
+      );
+    });
+
+    test('does not set a marker without a user', () async {
+      await UserStorage.setMemexAgentNotificationPermissionPrompted();
+
+      expect(
+        await UserStorage.hasPromptedMemexAgentNotificationPermission(),
+        isFalse,
+      );
     });
   });
 }

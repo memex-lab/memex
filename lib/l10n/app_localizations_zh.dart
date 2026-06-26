@@ -1488,6 +1488,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get notificationPermissionReason => '用于发送日程提醒等重要通知';
 
   @override
+  String get memexAgentNotificationPermissionTitle => '让 Memex Agent 在后台继续运行';
+
+  @override
+  String get memexAgentNotificationPermissionMessage =>
+      'Memex Agent 在你的设备本地运行。开启通知权限后，Memex 可以显示后台执行进度，让任务在你退到后台或关闭屏幕时继续处理。不开启时，请保持 Memex 在前台，直到任务完成。';
+
+  @override
   String get loadDetailFailedRetryShort => '加载详情失败，请稍后重试';
 
   @override
@@ -4689,6 +4696,13 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get notificationPermissionReason => '用於傳送日程提醒等重要通知';
+
+  @override
+  String get memexAgentNotificationPermissionTitle => '讓 Memex Agent 在背景繼續執行';
+
+  @override
+  String get memexAgentNotificationPermissionMessage =>
+      'Memex Agent 在你的裝置本地執行。開啟通知權限後，Memex 可以顯示背景執行進度，讓任務在你退到背景或關閉螢幕時繼續處理。未開啟時，請保持 Memex 在前景，直到任務完成。';
 
   @override
   String get loadDetailFailedRetryShort => '載入詳情失敗，請稍後重試';

@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 import 'package:memex/data/services/agent_activity_service.dart';
+import 'package:memex/data/services/agent_foreground_task_tracker.dart';
 import 'package:memex/data/services/agent_background_platform.dart';
 import 'package:memex/data/services/agent_background_status.dart';
 import 'package:memex/data/services/agent_queue_drain_scheduler.dart';
-import 'package:memex/data/services/agent_run_service.dart';
 import 'package:memex/data/services/local_task_executor.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/user_storage.dart';
@@ -14,11 +14,11 @@ class AgentBackgroundCoordinator with WidgetsBindingObserver {
   AgentBackgroundCoordinator({
     AgentBackgroundPlatform? platform,
     AgentQueueDrainScheduler? scheduler,
-    AgentRunService? runService,
+    AgentForegroundTaskTracker? tracker,
     AppLifecycleState? initialLifecycleState,
   })  : _platform = platform ?? MethodChannelAgentBackgroundPlatform(),
         _scheduler = scheduler ?? WorkmanagerAgentQueueDrainScheduler(),
-        _runService = runService ?? AgentRunService.instance,
+        _tracker = tracker ?? AgentForegroundTaskTracker.instance,
         _initialLifecycleState = initialLifecycleState;
 
   static AgentBackgroundCoordinator? _instance;
@@ -29,12 +29,12 @@ class AgentBackgroundCoordinator with WidgetsBindingObserver {
 
   final AgentBackgroundPlatform _platform;
   final AgentQueueDrainScheduler _scheduler;
-  final AgentRunService _runService;
+  final AgentForegroundTaskTracker _tracker;
   final _logger = getLogger('AgentBackgroundCoordinator');
 
   StreamSubscription<TaskActivitySnapshot>? _taskSubscription;
   StreamSubscription<AgentActivityMessageModel>? _messageSubscription;
-  StreamSubscription<AgentRunSnapshot?>? _runSubscription;
+  StreamSubscription<AgentForegroundTaskSnapshot>? _trackerSubscription;
   StreamSubscription<String>? _actionSubscription;
   late final StreamController<void> _openActivityController =
       StreamController<void>.broadcast(
@@ -43,7 +43,8 @@ class AgentBackgroundCoordinator with WidgetsBindingObserver {
 
   TaskActivitySnapshot _taskSnapshot = const TaskActivitySnapshot.empty();
   AgentActivityMessageModel? _latestMessage;
-  AgentRunSnapshot? _runSnapshot;
+  AgentForegroundTaskSnapshot _foregroundSnapshot =
+      const AgentForegroundTaskSnapshot.empty();
   AgentBackgroundStatus? _lastPublishedStatus;
   bool? _lastPublishedIsInBackground;
   Future<void> _publishChain = Future<void>.value();
@@ -74,12 +75,15 @@ class AgentBackgroundCoordinator with WidgetsBindingObserver {
     _messageSubscription = activityService.messageStream.listen(
       _handleActivityMessage,
     );
-    _runSubscription = _runService.watchLatestVisibleRun().listen(
-          _handleRunSnapshot,
+    _trackerSubscription = _tracker.watchSnapshot().listen(
+          _handleForegroundSnapshot,
         );
     _actionSubscription = _platform.actionStream.listen(_handleAction);
 
     unawaited(_consumeInitialAction());
+    if (_lifecycleState == AppLifecycleState.resumed) {
+      unawaited(_clearUserVisibleTerminalState());
+    }
     _queuePublishStatus();
   }
 
@@ -90,15 +94,15 @@ class AgentBackgroundCoordinator with WidgetsBindingObserver {
     _terminalStopTimer = null;
     await _taskSubscription?.cancel();
     await _messageSubscription?.cancel();
-    await _runSubscription?.cancel();
+    await _trackerSubscription?.cancel();
     await _actionSubscription?.cancel();
     _taskSubscription = null;
     _messageSubscription = null;
-    _runSubscription = null;
+    _trackerSubscription = null;
     _actionSubscription = null;
     _taskSnapshot = const TaskActivitySnapshot.empty();
     _latestMessage = null;
-    _runSnapshot = null;
+    _foregroundSnapshot = const AgentForegroundTaskSnapshot.empty();
     _lastPublishedStatus = null;
     _lastPublishedIsInBackground = null;
     _drainWorkScheduledForCurrentRun = false;
@@ -109,6 +113,9 @@ class AgentBackgroundCoordinator with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _lifecycleState = state;
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_clearUserVisibleTerminalState());
+    }
     _queuePublishStatus();
     if (_started &&
         state != AppLifecycleState.resumed &&
@@ -121,6 +128,8 @@ class AgentBackgroundCoordinator with WidgetsBindingObserver {
     _taskSnapshot = snapshot;
     if (!snapshot.hasActiveTasks) {
       _drainWorkScheduledForCurrentRun = false;
+    } else if (_lifecycleState != AppLifecycleState.resumed) {
+      unawaited(_scheduleDrainIfNeeded());
     }
     _queuePublishStatus();
   }
@@ -130,13 +139,14 @@ class AgentBackgroundCoordinator with WidgetsBindingObserver {
     _queuePublishStatus();
   }
 
-  void _handleRunSnapshot(AgentRunSnapshot? snapshot) {
-    _runSnapshot = snapshot;
+  void _handleForegroundSnapshot(AgentForegroundTaskSnapshot snapshot) {
+    _foregroundSnapshot = snapshot;
     _queuePublishStatus();
   }
 
   void _handleAction(String action) {
     if (action == 'agent_activity') {
+      unawaited(_clearUserVisibleTerminalState());
       if (_openActivityController.hasListener) {
         _openActivityController.add(null);
       } else {
@@ -179,9 +189,9 @@ class AgentBackgroundCoordinator with WidgetsBindingObserver {
     if (!_started || generation != _publishGeneration) return;
 
     final status = AgentBackgroundStatus.fromActivity(
-      taskSnapshot: _taskSnapshot,
+      taskSnapshot: _foregroundSnapshot.taskSnapshot,
       latestMessage: _latestMessage,
-      runSnapshot: _runSnapshot,
+      foregroundSnapshot: _foregroundSnapshot,
       labels: _statusLabels(),
     );
     final isInBackground = _lifecycleState != AppLifecycleState.resumed;
@@ -202,7 +212,11 @@ class AgentBackgroundCoordinator with WidgetsBindingObserver {
     try {
       if (status.state == AgentBackgroundRunState.idle) {
         await _safeStopPlatform();
-        await _scheduler.cancel();
+        if (_taskSnapshot.hasActiveTasks) {
+          await _scheduleDrainIfNeeded();
+        } else {
+          await _scheduler.cancel();
+        }
         return;
       }
 
@@ -219,14 +233,22 @@ class AgentBackgroundCoordinator with WidgetsBindingObserver {
       }
 
       if (status.state == AgentBackgroundRunState.completed) {
-        await _scheduler.cancel();
         await _safeStopPlatform();
+        if (_taskSnapshot.hasActiveTasks) {
+          await _scheduleDrainIfNeeded();
+        } else {
+          await _scheduler.cancel();
+        }
         return;
       }
 
       await _platform.finishStatus(status, isInBackground: isInBackground);
       if (!_started || generation != _publishGeneration) return;
-      await _scheduler.cancel();
+      if (_taskSnapshot.hasActiveTasks) {
+        await _scheduleDrainIfNeeded();
+      } else {
+        await _scheduler.cancel();
+      }
       _terminalStopTimer = Timer(const Duration(seconds: 5), () {
         unawaited(_safeStopPlatform());
       });
@@ -255,7 +277,8 @@ class AgentBackgroundCoordinator with WidgetsBindingObserver {
   Future<void> _scheduleDrainIfNeeded() async {
     if (!_started ||
         _drainWorkScheduledForCurrentRun ||
-        _lifecycleState == AppLifecycleState.resumed) {
+        _lifecycleState == AppLifecycleState.resumed ||
+        !_taskSnapshot.hasActiveTasks) {
       return;
     }
 
@@ -273,6 +296,16 @@ class AgentBackgroundCoordinator with WidgetsBindingObserver {
       return AgentBackgroundStatusLabels.fromL10n(UserStorage.l10n);
     } catch (_) {
       return const AgentBackgroundStatusLabels();
+    }
+  }
+
+  Future<void> _clearUserVisibleTerminalState() async {
+    try {
+      await _tracker.clearAttention();
+      await _tracker.clearPause();
+    } catch (e, stackTrace) {
+      _logger.fine(
+          'Failed to clear foreground tracker terminal state', e, stackTrace);
     }
   }
 }

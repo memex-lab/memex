@@ -710,6 +710,8 @@
   "fitnessPermissionReason": "Para registrar datos de salud y movimiento",
   "notification": "Notificación",
   "notificationPermissionReason": "Para enviar agenda y recordatorios importantes",
+  "memexAgentNotificationPermissionTitle": "Mantener Memex Agent en segundo plano",
+  "memexAgentNotificationPermissionMessage": "Memex Agent se ejecuta localmente en tu dispositivo. Con las notificaciones, Memex puede mostrar el progreso y seguir procesando después de salir de la app o apagar la pantalla. Si las notificaciones están desactivadas, mantén Memex abierto en primer plano hasta que la tarea termine.",
   "loadDetailFailedRetryShort": "No se pudo cargar el detalle; inténtalo de nuevo más tarde.",
   "total": "Total general",
   "estimatedCost": "Costo estimado",

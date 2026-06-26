@@ -46,6 +46,8 @@ class UserStorage {
   static const String _keyGeocodingCache = 'geocoding_cache';
   static const String _keyLatestSuperAgentHomeSessionIdPrefix =
       'latest_super_agent_home_session_id_';
+  static const String _keyMemexAgentNotificationPermissionPromptedPrefix =
+      'memex_agent_notification_permission_prompted_';
 
   /// Per-user workspace storage preference keys.
   static const String _keyStorageLocationPrefix = 'memex_storage_location_';
@@ -222,6 +224,10 @@ class UserStorage {
     return '$_keyLatestSuperAgentHomeSessionIdPrefix$userId';
   }
 
+  static String _memexAgentNotificationPermissionPromptedKey(String userId) {
+    return '$_keyMemexAgentNotificationPermissionPromptedPrefix$userId';
+  }
+
   static Future<String?> getLatestSuperAgentHomeSessionId() async {
     try {
       final userId = await getUserId();
@@ -263,6 +269,36 @@ class UserStorage {
       await prefs.remove(_latestSuperAgentHomeSessionIdKey(userId));
     } catch (e) {
       // Cache misses are non-fatal.
+    }
+  }
+
+  static Future<bool> hasPromptedMemexAgentNotificationPermission() async {
+    try {
+      final userId = await getUserId();
+      if (userId == null || userId.isEmpty) return false;
+
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getBool(
+            _memexAgentNotificationPermissionPromptedKey(userId),
+          ) ??
+          false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  static Future<void> setMemexAgentNotificationPermissionPrompted() async {
+    try {
+      final userId = await getUserId();
+      if (userId == null || userId.isEmpty) return;
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(
+        _memexAgentNotificationPermissionPromptedKey(userId),
+        true,
+      );
+    } catch (e) {
+      // Cache misses are non-fatal; callers can continue without the marker.
     }
   }
 

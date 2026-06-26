@@ -8,8 +8,8 @@ import 'package:memex/data/services/agent_activity_service.dart';
 import 'package:memex/data/services/agent_background_coordinator.dart';
 import 'package:memex/data/services/agent_background_platform.dart';
 import 'package:memex/data/services/agent_background_status.dart';
+import 'package:memex/data/services/agent_foreground_task_tracker.dart';
 import 'package:memex/data/services/agent_queue_drain_scheduler.dart';
-import 'package:memex/data/services/agent_run_service.dart';
 import 'package:memex/data/services/local_task_executor.dart';
 import 'package:memex/db/app_database.dart';
 
@@ -21,7 +21,7 @@ void main() {
   late _FakeActivityService activityService;
   late _FakePlatform platform;
   late _FakeScheduler scheduler;
-  late AgentRunService runService;
+  late AgentForegroundTaskTracker tracker;
   late AgentBackgroundCoordinator coordinator;
 
   setUp(() {
@@ -31,11 +31,11 @@ void main() {
     activityService = _FakeActivityService();
     platform = _FakePlatform();
     scheduler = _FakeScheduler();
-    runService = AgentRunService.forTesting(db: db);
+    tracker = AgentForegroundTaskTracker.forTesting(db: db);
     coordinator = AgentBackgroundCoordinator(
       platform: platform,
       scheduler: scheduler,
-      runService: runService,
+      tracker: tracker,
       initialLifecycleState: AppLifecycleState.paused,
     );
   });
@@ -50,7 +50,7 @@ void main() {
   test('publishes active status and schedules one drain for a run', () async {
     coordinator.start(executor: executor, activityService: activityService);
 
-    await _insertTask(db, id: 'pending-a', status: 'pending');
+    await _insertTrackedTask(db, tracker, id: 'pending-a', status: 'pending');
     await _waitUntil(() => platform.updates.isNotEmpty);
 
     expect(platform.updates.single.state, AgentBackgroundRunState.active);
@@ -78,16 +78,31 @@ void main() {
     expect(scheduler.scheduleCount, 1);
   });
 
+  test(
+    'schedules drain from local tasks even when foreground tracker is empty',
+    () async {
+      coordinator.start(executor: executor, activityService: activityService);
+
+      await _insertTask(db, id: 'untracked-task', status: 'pending');
+      await _waitUntil(() => scheduler.scheduleCount == 1);
+
+      expect(platform.updates, isEmpty);
+      expect(platform.finished, isEmpty);
+      expect(platform.stopCount, greaterThanOrEqualTo(1));
+      expect(scheduler.events.last, 'schedule:true:0');
+    },
+  );
+
   test('defers WorkManager drain while app is foregrounded', () async {
     coordinator = AgentBackgroundCoordinator(
       platform: platform,
       scheduler: scheduler,
-      runService: runService,
+      tracker: tracker,
       initialLifecycleState: AppLifecycleState.resumed,
     );
     coordinator.start(executor: executor, activityService: activityService);
 
-    await _insertTask(db, id: 'pending-a', status: 'pending');
+    await _insertTrackedTask(db, tracker, id: 'pending-a', status: 'pending');
     await _waitUntil(() => platform.updates.isNotEmpty);
 
     expect(platform.updates.single.state, AgentBackgroundRunState.active);
@@ -106,7 +121,7 @@ void main() {
     'clears completed status and cancels drain when queue empties',
     () async {
       coordinator.start(executor: executor, activityService: activityService);
-      await _insertTask(db, id: 'pending-a', status: 'pending');
+      await _insertTrackedTask(db, tracker, id: 'pending-a', status: 'pending');
       await _waitUntil(() => platform.updates.isNotEmpty);
       final stopCountBeforeCompletion = platform.stopCount;
 
@@ -166,7 +181,7 @@ void main() {
     'keeps system surface active when error arrives with retryable tasks',
     () async {
       coordinator.start(executor: executor, activityService: activityService);
-      await _insertTask(db, id: 'retry-a', status: 'retrying');
+      await _insertTrackedTask(db, tracker, id: 'retry-a', status: 'retrying');
       await _waitUntil(() => platform.updates.isNotEmpty);
       final cancelCountBeforeError = scheduler.cancelCount;
 
@@ -195,11 +210,11 @@ void main() {
     coordinator.start(executor: executor, activityService: activityService);
     platform.failNextUpdate = true;
 
-    await _insertTask(db, id: 'pending-a', status: 'pending');
+    await _insertTrackedTask(db, tracker, id: 'pending-a', status: 'pending');
     await _waitUntil(() => platform.updateAttempts == 1);
 
     expect(platform.updates, isEmpty);
-    expect(scheduler.scheduleCount, 0);
+    expect(scheduler.scheduleCount, 1);
 
     activityService.emit(
       AgentActivityMessageModel(
@@ -216,14 +231,14 @@ void main() {
 
     expect(platform.updateAttempts, 2);
     expect(platform.updates.single.detail, 'The platform recovered');
-    expect(scheduler.scheduleCount, 1);
+    expect(scheduler.scheduleCount, greaterThanOrEqualTo(1));
   });
 
   test('serializes delayed active publish before terminal publish', () async {
     platform.updateGate = Completer<void>();
     coordinator.start(executor: executor, activityService: activityService);
 
-    await _insertTask(db, id: 'pending-a', status: 'pending');
+    await _insertTrackedTask(db, tracker, id: 'pending-a', status: 'pending');
     await _waitUntil(() => platform.updateAttempts == 1);
     final stopCountBeforeTerminal = platform.stopCount;
     platform.events.clear();
@@ -258,52 +273,38 @@ void main() {
   });
 
   test(
-    'normal app launch keeps durable run progress visible in foreground',
+    'normal app launch keeps tracked task progress visible in foreground',
     () async {
       coordinator = AgentBackgroundCoordinator(
         platform: platform,
         scheduler: scheduler,
-        runService: runService,
+        tracker: tracker,
         initialLifecycleState: AppLifecycleState.resumed,
-      );
-      await runService.createForSubmittedInput(
-        userId: 'user-a',
-        factId: 'fact-1',
       );
       await _insertTask(
         db,
         id: 'turn',
         status: 'processing',
-        runId: 'fact-1',
         type: 'super_agent_chat_turn_task',
       );
-      await runService.markTaskStarted(
-        runId: 'fact-1',
-        taskId: 'turn',
-        taskType: 'super_agent_chat_turn_task',
-      );
+      await tracker.trackTask('turn');
 
       coordinator.start(executor: executor, activityService: activityService);
 
       await _waitUntil(() => platform.updates.isNotEmpty);
       expect(platform.updates.last.state, AgentBackgroundRunState.active);
-      expect(platform.updates.last.runId, 'fact-1');
-      expect(platform.updates.last.stage, 'Running Super Agent');
-      expect(platform.updates.last.progressCompleted, 20);
+      expect(platform.updates.last.remainingTasks, 1);
       expect(platform.updateBackgroundFlags.last, isFalse);
       expect(scheduler.scheduleCount, 0);
     },
   );
 
   test(
-    'paused durable run remains visible without live task snapshot',
+    'paused tracked work remains visible and keeps drain scheduled',
     () async {
-      await runService.createForSubmittedInput(
-        userId: 'user-a',
-        factId: 'fact-2',
-      );
-      await runService.markActiveRunsPausedBySystem(
-        userId: 'user-a',
+      await _insertTask(db, id: 'paused-task', status: 'pending');
+      await tracker.trackTask('paused-task');
+      await tracker.markPaused(
         message: 'Background time expired. Memex will continue later.',
       );
 
@@ -311,10 +312,9 @@ void main() {
 
       await _waitUntil(() => platform.updates.isNotEmpty);
       expect(platform.updates.last.state, AgentBackgroundRunState.paused);
-      expect(platform.updates.last.runId, 'fact-2');
       expect(platform.updates.last.detail, contains('continue later'));
       expect(platform.updateBackgroundFlags.last, isTrue);
-      expect(scheduler.scheduleCount, 0);
+      expect(scheduler.scheduleCount, 1);
     },
   );
 }
@@ -473,6 +473,17 @@ Future<void> _insertTask(
           updatedAt: Value(now),
         ),
       );
+}
+
+Future<void> _insertTrackedTask(
+  AppDatabase db,
+  AgentForegroundTaskTracker tracker, {
+  required String id,
+  required String status,
+  String type = 'agent_task',
+}) async {
+  await _insertTask(db, id: id, status: status, type: type);
+  await tracker.trackTask(id);
 }
 
 Future<void> _waitUntil(

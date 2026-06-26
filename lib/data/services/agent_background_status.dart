@@ -1,5 +1,5 @@
 import 'package:memex/data/services/agent_activity_service.dart';
-import 'package:memex/data/services/agent_run_service.dart';
+import 'package:memex/data/services/agent_foreground_task_tracker.dart';
 import 'package:memex/data/services/local_task_executor.dart';
 import 'package:memex/l10n/app_localizations.dart';
 
@@ -21,8 +21,6 @@ class AgentBackgroundStatus {
     this.statusText = '',
     this.progressCompleted = 0,
     this.progressTotal = 0,
-    this.runId,
-    this.factId,
     this.scene,
     this.sceneId,
   });
@@ -30,62 +28,76 @@ class AgentBackgroundStatus {
   factory AgentBackgroundStatus.fromActivity({
     required TaskActivitySnapshot taskSnapshot,
     AgentActivityMessageModel? latestMessage,
-    AgentRunSnapshot? runSnapshot,
+    AgentForegroundTaskSnapshot foregroundSnapshot =
+        const AgentForegroundTaskSnapshot.empty(),
     DateTime? now,
     AgentBackgroundStatusLabels labels = const AgentBackgroundStatusLabels(),
   }) {
-    if (runSnapshot != null) {
-      return _fromRunSnapshot(
-        runSnapshot: runSnapshot,
-        taskSnapshot: taskSnapshot,
-        latestMessage: latestMessage,
-        now: now,
-        labels: labels,
-      );
-    }
-
+    final effectiveTaskSnapshot =
+        foregroundSnapshot.hasActiveTasks || foregroundSnapshot.hasAttention
+            ? foregroundSnapshot.taskSnapshot
+            : taskSnapshot;
     final messageType = latestMessage?.type;
-    final hasTasks = taskSnapshot.hasActiveTasks;
-    final state = switch (messageType) {
-      AgentActivityType.error when !hasTasks => AgentBackgroundRunState.failed,
-      AgentActivityType.agent_stop when !hasTasks =>
-        AgentBackgroundRunState.completed,
-      _ when hasTasks => AgentBackgroundRunState.active,
-      _ => AgentBackgroundRunState.idle,
-    };
+    final hasTasks = effectiveTaskSnapshot.hasActiveTasks;
+    final state = foregroundSnapshot.hasAttention
+        ? AgentBackgroundRunState.failed
+        : foregroundSnapshot.paused && hasTasks
+            ? AgentBackgroundRunState.paused
+            : switch (messageType) {
+                AgentActivityType.agent_stop when !hasTasks =>
+                  AgentBackgroundRunState.completed,
+                _ when hasTasks => AgentBackgroundRunState.active,
+                _ => AgentBackgroundRunState.idle,
+              };
 
     final fallbackStage = _stageForState(state, labels);
     final title = _titleForState(state, labels);
-    final stage = _localizeKnownStatusText(
-          _firstNonBlank([latestMessage?.title, latestMessage?.agentName]),
+    final stage = state == AgentBackgroundRunState.failed ||
+            state == AgentBackgroundRunState.paused
+        ? fallbackStage
+        : _localizeKnownStatusText(
+              _firstNonBlank([latestMessage?.title, latestMessage?.agentName]),
+              labels,
+            ) ??
+            fallbackStage;
+    final attentionDetail = foregroundSnapshot.latestAttentionDetail;
+    final pausedDetail = _localizeKnownStatusText(
+          foregroundSnapshot.pausedMessage,
           labels,
         ) ??
-        fallbackStage;
-    final detail = _detailFor(
-      taskSnapshot: taskSnapshot,
-      latestMessage: latestMessage,
-      state: state,
-      labels: labels,
-    );
+        foregroundSnapshot.pausedMessage;
+    final detail = state == AgentBackgroundRunState.failed
+        ? _trimToSingleLine(attentionDetail) ?? labels.failedDetail
+        : state == AgentBackgroundRunState.paused
+            ? _trimToSingleLine(pausedDetail) ?? labels.pausedDetail
+            : _detailFor(
+                taskSnapshot: effectiveTaskSnapshot,
+                latestMessage: latestMessage,
+                state: state,
+                labels: labels,
+              );
     final summary = _summaryFor(
-      taskSnapshot: taskSnapshot,
-      latestMessage: latestMessage,
+      taskSnapshot: effectiveTaskSnapshot,
+      latestMessage: state == AgentBackgroundRunState.failed ||
+              state == AgentBackgroundRunState.paused
+          ? null
+          : latestMessage,
       fallbackStage: fallbackStage,
       detail: detail,
       labels: labels,
     );
     final taskSummary = formatAgentTaskSummary(
-      pending: taskSnapshot.pending,
-      processing: taskSnapshot.processing,
-      retrying: taskSnapshot.retrying,
+      pending: effectiveTaskSnapshot.pending,
+      processing: effectiveTaskSnapshot.processing,
+      retrying: effectiveTaskSnapshot.retrying,
       labels: labels,
     );
 
     return AgentBackgroundStatus(
       state: state,
-      pending: taskSnapshot.pending,
-      processing: taskSnapshot.processing,
-      retrying: taskSnapshot.retrying,
+      pending: effectiveTaskSnapshot.pending,
+      processing: effectiveTaskSnapshot.processing,
+      retrying: effectiveTaskSnapshot.retrying,
       title: title,
       stage: stage,
       detail: detail,
@@ -93,14 +105,14 @@ class AgentBackgroundStatus {
       taskSummary: taskSummary,
       statusText: _statusTextFor(
         state: state,
-        remainingTasks: taskSnapshot.total,
+        remainingTasks: effectiveTaskSnapshot.total,
         taskSummary: taskSummary,
         labels: labels,
       ),
       agentName: latestMessage?.agentName ?? '',
       scene: latestMessage?.scene,
       sceneId: latestMessage?.sceneId,
-      updatedAt: now ?? DateTime.now(),
+      updatedAt: now ?? foregroundSnapshot.updatedAt ?? DateTime.now(),
     );
   }
 
@@ -120,8 +132,6 @@ class AgentBackgroundStatus {
   final DateTime updatedAt;
   final int progressCompleted;
   final int progressTotal;
-  final String? runId;
-  final String? factId;
 
   int get remainingTasks => pending + processing + retrying;
 
@@ -148,8 +158,6 @@ class AgentBackgroundStatus {
       'agentName': agentName,
       'scene': scene,
       'sceneId': sceneId,
-      'runId': runId,
-      'factId': factId,
       'progressCompleted': progressCompleted,
       'progressTotal': progressTotal,
       'updatedAtMs': updatedAt.millisecondsSinceEpoch,
@@ -174,9 +182,7 @@ class AgentBackgroundStatus {
         other.scene == scene &&
         other.sceneId == sceneId &&
         other.progressCompleted == progressCompleted &&
-        other.progressTotal == progressTotal &&
-        other.runId == runId &&
-        other.factId == factId;
+        other.progressTotal == progressTotal;
   }
 
   @override
@@ -196,8 +202,6 @@ class AgentBackgroundStatus {
         sceneId,
         progressCompleted,
         progressTotal,
-        runId,
-        factId,
       ]);
 }
 
@@ -304,79 +308,6 @@ class AgentBackgroundStatusLabels {
   final String routingFollowUpsDetail;
   final String Function(Object summary) pausedStatus;
   final String Function(Object summary) needsAttentionStatus;
-}
-
-AgentBackgroundStatus _fromRunSnapshot({
-  required AgentRunSnapshot runSnapshot,
-  required TaskActivitySnapshot taskSnapshot,
-  required AgentActivityMessageModel? latestMessage,
-  required AgentBackgroundStatusLabels labels,
-  DateTime? now,
-}) {
-  final state = switch (runSnapshot.state) {
-    AgentRunState.queued ||
-    AgentRunState.running =>
-      AgentBackgroundRunState.active,
-    AgentRunState.pausedBySystem => AgentBackgroundRunState.paused,
-    AgentRunState.completed => AgentBackgroundRunState.completed,
-    AgentRunState.failed => AgentBackgroundRunState.failed,
-  };
-
-  final fallbackDetail = _detailFor(
-    taskSnapshot: taskSnapshot,
-    latestMessage: latestMessage,
-    state: state,
-    labels: labels,
-  );
-  final pending = taskSnapshot.total == 0
-      ? runSnapshot.remainingTasks
-      : taskSnapshot.pending;
-  final taskSummary = formatAgentTaskSummary(
-    pending: pending,
-    processing: taskSnapshot.processing,
-    retrying: taskSnapshot.retrying,
-    labels: labels,
-  );
-  final stage =
-      _localizeKnownStatusText(runSnapshot.stage, labels) ?? runSnapshot.stage;
-  final detail = _trimToSingleLine(
-        _localizeKnownStatusText(runSnapshot.message, labels) ??
-            runSnapshot.message,
-      ) ??
-      fallbackDetail;
-  final summary = _summaryFor(
-    taskSnapshot: taskSnapshot,
-    latestMessage: latestMessage,
-    fallbackStage: _stageForState(state, labels),
-    detail: detail,
-    labels: labels,
-  );
-
-  return AgentBackgroundStatus(
-    state: state,
-    pending: pending,
-    processing: taskSnapshot.processing,
-    retrying: taskSnapshot.retrying,
-    title: _titleForState(state, labels),
-    stage: stage,
-    detail: detail,
-    summary: summary,
-    taskSummary: taskSummary,
-    statusText: _statusTextFor(
-      state: state,
-      remainingTasks: pending + taskSnapshot.processing + taskSnapshot.retrying,
-      taskSummary: taskSummary,
-      labels: labels,
-    ),
-    agentName: latestMessage?.agentName ?? '',
-    scene: latestMessage?.scene,
-    sceneId: latestMessage?.sceneId ?? runSnapshot.factId,
-    updatedAt: now ?? runSnapshot.updatedAt,
-    progressCompleted: runSnapshot.completedUnits,
-    progressTotal: runSnapshot.totalUnits,
-    runId: runSnapshot.id,
-    factId: runSnapshot.factId,
-  );
 }
 
 String _detailFor({

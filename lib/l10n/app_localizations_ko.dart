@@ -1499,6 +1499,14 @@ class AppLocalizationsKo extends AppLocalizations {
   String get notificationPermissionReason => '일정 및 중요한 미리 알림을 보내기 위해';
 
   @override
+  String get memexAgentNotificationPermissionTitle =>
+      'Memex Agent를 백그라운드에서 계속 실행';
+
+  @override
+  String get memexAgentNotificationPermissionMessage =>
+      'Memex Agent는 기기에서 로컬로 실행됩니다. 알림을 허용하면 Memex가 진행 상황을 표시하고 앱을 벗어나거나 화면을 꺼도 작업을 계속 처리할 수 있습니다. 알림을 허용하지 않으면 작업이 끝날 때까지 Memex를 전면에 유지해 주세요.';
+
+  @override
   String get loadDetailFailedRetryShort => '세부 정보를 불러오지 못했습니다. 나중에 다시 시도해 주세요.';
 
   @override
