@@ -569,6 +569,7 @@ class ChatService {
     StatefulAgent? agent;
     AgentController? controller;
     SkillSyncResult? skillSync;
+    SuperAgentPreMintedRecordHook? preMintedRecordHook;
 
     try {
       // Check if this session belongs to a custom agent by reading session metadata,
@@ -657,6 +658,12 @@ class ChatService {
             break;
         }
       } else {
+        preMintedRecordHook = isQuickQuery
+            ? null
+            : SuperAgentPreMintedRecordHook(
+                userId: userId,
+                turnId: turnId,
+              );
         // Default: use SuperAgent for normal chat sessions. Behavioral
         // guidance (orchestration, truthfulness, comprehensive correction,
         // tone, judgment) lives in superAgentSystemPrompt; only the dynamic
@@ -679,6 +686,9 @@ class ChatService {
           name: agentName,
           state: state,
           controller: controller,
+          extraHooks: [
+            if (preMintedRecordHook != null) preMintedRecordHook,
+          ],
           forceActiveSkills: forceActiveSkills,
           quickQuery: isQuickQuery,
           additionalSystemPrompt: additionalSystemPrompt,
@@ -825,17 +835,24 @@ class ChatService {
         }
       }
 
-      userMessages = [
-        UserMessage(
-          userContentParts,
-          metadata: {
-            // Lets the context compressor replace archived image bytes with
-            // fs:// filename placeholders (see SuperAgentContextCompressor).
-            if (inlinedImageFileNames.isNotEmpty)
-              'image_fs_paths': inlinedImageFileNames,
-          },
-        ),
-      ];
+      final userMessage = UserMessage(
+        userContentParts,
+        metadata: {
+          // Lets the context compressor replace archived image bytes with
+          // fs:// filename placeholders (see SuperAgentContextCompressor).
+          if (inlinedImageFileNames.isNotEmpty)
+            'image_fs_paths': inlinedImageFileNames,
+        },
+      );
+      try {
+        await preMintedRecordHook?.preallocate(activeAgent.state);
+        if (preMintedRecordHook != null) {
+          await saveAgentState(activeAgent.state);
+        }
+      } catch (e) {
+        _logger.warning('Failed to pre-mint record fact_id: $e');
+      }
+      userMessages = [userMessage];
     }
 
     await DelegateProgressContext.run(progressSink, () async {

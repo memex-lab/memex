@@ -23,6 +23,8 @@ import 'package:memex/data/services/file_system_service.dart';
 import 'package:logging/logging.dart';
 import 'package:memex/utils/logger.dart';
 
+export 'package:memex/agent/super_agent/super_agent_pre_minted_record_hook.dart';
+
 /// Read-only tool names available in Quick Query mode.
 const _readOnlyToolNames = {
   'LS',
@@ -96,6 +98,7 @@ class SuperAgent {
       required String name,
       required AgentState state,
       AgentController? controller,
+      List<AgentHook> extraHooks = const [],
       List<String>? forceActiveSkills,
       bool quickQuery = false,
       String? additionalSystemPrompt,
@@ -251,6 +254,7 @@ class SuperAgent {
         hooks: [
           createAgentPromptHook(userId),
           _SuperAgentPromptHook(),
+          ...extraHooks,
           SuperAgentHarness.buildParentHook(userId),
         ]);
 

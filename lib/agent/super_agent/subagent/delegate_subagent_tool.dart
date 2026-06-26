@@ -53,7 +53,10 @@ final Map<String, _SubagentPreset> _subagentPresets = {
         'Creates or updates Timeline Cards. Skills: manage_timeline_card active, dynamic_timeline_ui available.',
     toolProfile: ChildToolProfile.none,
     buildSkills: () => [
-      TimelineCardSkill(forceActivate: true),
+      TimelineCardSkill(
+        forceActivate: true,
+        enableFinishSummary: true,
+      ),
       DynamicTimelineUiSkill(forceActivate: false),
     ],
     writeRoots: const ['/_UserSettings/Templates'],
@@ -63,8 +66,13 @@ final Map<String, _SubagentPreset> _subagentPresets = {
     description:
         'Organizes information into the P.A.R.A knowledge base. Skills: manage_pkm active.',
     toolProfile: ChildToolProfile.full,
-    buildSkills: () =>
-        [PkmSkill(forceActivate: true, workingDirectory: '/PKM')],
+    buildSkills: () => [
+      PkmSkill(
+        forceActivate: true,
+        workingDirectory: '/PKM',
+        enableFinishSummary: true,
+      )
+    ],
     readRoots: const ['/PKM'],
     writeRoots: const ['/PKM'],
   ),
@@ -224,6 +232,29 @@ Tool buildDelegateToSubagentTool() {
         contextPacket['attachment_exif'] = exifBlocks;
       }
 
+      if (agent_type == 'pkm') {
+        try {
+          final overview = await buildPkmOverviewForUser(userId);
+          if (overview.trim().isNotEmpty) {
+            contextPacket['pkm_overview'] = overview.trim();
+          }
+        } catch (e) {
+          _logger.warning('Failed to attach PKM overview to child: $e');
+        }
+      }
+
+      if (agent_type == 'timeline_card') {
+        try {
+          final metadata =
+              await TimelineCardSkill.getTimelineCardMetadata(userId);
+          if (metadata.trim().isNotEmpty) {
+            contextPacket['card_metadata'] = metadata.trim();
+          }
+        } catch (e) {
+          _logger.warning('Failed to attach card metadata to child: $e');
+        }
+      }
+
       final config = SuperAgentChildConfig(
         childName: preset.childName,
         taskBrief: task_brief,
@@ -268,10 +299,30 @@ Tool buildDelegateToSubagentTool() {
       }
 
       return AgentToolResult(
-        content: TextPart(
-            '[${preset.childName}] status=${result.status.name}\n${result.summary}'),
+        content: TextPart(_formatSubagentResultForParent(
+          agentType: agent_type,
+          result: result,
+        )),
         metadata: {'child_result': result.toJson()},
       );
     },
   );
+}
+
+String _formatSubagentResultForParent({
+  required String agentType,
+  required SuperAgentChildResult result,
+}) {
+  return '<subagent_result agent_type="${_escapeAttr(agentType)}" '
+      'status="${result.status.name}">\n'
+      '${result.summary.trim()}\n'
+      '</subagent_result>';
+}
+
+String _escapeAttr(String value) {
+  return value
+      .replaceAll('&', '&amp;')
+      .replaceAll('"', '&quot;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;');
 }

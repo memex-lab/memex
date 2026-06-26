@@ -7,12 +7,15 @@ import 'package:dio/dio.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:memex/agent/skills/dynamic_timeline_ui/dynamic_timeline_ui_skill.dart';
+import 'package:memex/agent/skills/manage_pkm/pkm_skill.dart';
+import 'package:memex/agent/skills/manage_timeline_card/timeline_card_skill.dart';
 import 'package:memex/agent/super_agent/subagent/delegate_progress.dart';
 import 'package:memex/agent/super_agent/subagent/delegate_subagent_tool.dart';
 import 'package:memex/agent/super_agent/subagent/super_agent_child.dart';
 import 'package:memex/data/services/api_exception.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/db/app_database.dart';
+import 'package:memex/domain/models/card_model.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -132,9 +135,12 @@ void main() {
           (agent.tools ?? const []).singleWhere((t) => t.name == 'LS');
       final rootList = await _callTool<String>(lsTool, {'path': '/'});
       expect(rootList, contains('PKM'));
-      expect(rootList, contains('note.md'));
       expect(rootList, isNot(contains('Cards')));
       expect(rootList, isNot(contains('card.yaml')));
+
+      final pkmList = await _callTool<String>(lsTool, {'path': '/PKM'});
+      expect(pkmList, contains('note.md'));
+      expect(pkmList, contains('new.md'));
 
       expect(
         () => _callTool<String>(lsTool, {'path': '/Cards'}),
@@ -262,8 +268,7 @@ void main() {
         client: _SingleToolCallClient(
           toolName: 'LS',
           arguments: {'path': '/'},
-          finalText:
-              '```json\n{"status":"completed","summary":"listed workspace"}\n```',
+          finalText: 'Listed the workspace.',
         ),
         modelConfig: ModelConfig(model: 'test'),
         userId: userId,
@@ -278,19 +283,209 @@ void main() {
       expect(sink.events, contains('finish:delegate_1:LS:false'));
     });
 
-    test('run extracts a structured no_op result from the final message',
+    test('pkm overview formats a model-oriented structure tree', () async {
+      final workspace = FileSystemService.instance.getWorkspacePath(userId);
+      await Directory('$workspace/PKM/Projects/App').create(recursive: true);
+      await File('$workspace/PKM/Projects/App/note.md').writeAsString('note');
+      await Directory('$workspace/Cards').create(recursive: true);
+      await File('$workspace/Cards/card.yaml').writeAsString('secret');
+
+      final overview = await buildPkmOverviewForUser(userId);
+
+      expect(overview, contains('PKM structure tree'));
+      expect(overview, contains('Root: /PKM'));
+      expect(overview, contains('Projects/'));
+      expect(overview, contains('App/'));
+      expect(overview, contains('note.md'));
+      expect(overview, contains('Summary:'));
+      expect(overview, contains('complete PKM structure'));
+      expect(overview, contains('no additional LS or Glob'));
+      expect(overview, isNot(contains('Cards')));
+      expect(overview, isNot(contains('card.yaml')));
+    });
+
+    test('pkm overview reports an empty PKM when the root is missing',
         () async {
+      final overview = await buildPkmOverview(
+        pkmRootPath: '${tempRoot.path}/missing/PKM',
+      );
+
+      expect(
+        overview,
+        'P.A.R.A. knowledge base has not been created yet, currently empty.',
+      );
+    });
+
+    test('pkm overview marks incomplete trees when truncated', () async {
+      final workspace = FileSystemService.instance.getWorkspacePath(userId);
+      await Directory('$workspace/PKM/Projects/App').create(recursive: true);
+      await File('$workspace/PKM/Projects/App/a.md').writeAsString('a');
+      await File('$workspace/PKM/Projects/App/b.md').writeAsString('b');
+
+      final overview = await buildPkmOverviewForUser(userId, maxEntries: 1);
+
+      expect(overview, contains('PKM structure tree'));
+      expect(overview, contains('... truncated after 1 entries'));
+      expect(
+        overview,
+        contains('Note: overview truncated; use file tools to inspect deeper.'),
+      );
+      expect(overview, isNot(contains('complete PKM structure')));
+    });
+
+    test('delegate injects PKM overview reminder into pkm child', () async {
+      final workspace = FileSystemService.instance.getWorkspacePath(userId);
+      await Directory('$workspace/PKM/Projects/App').create(recursive: true);
+      await File('$workspace/PKM/Projects/App/note.md').writeAsString('note');
+      await Directory('$workspace/Cards').create(recursive: true);
+      await File('$workspace/Cards/card.yaml').writeAsString('secret');
+
+      final tool = buildDelegateToSubagentTool();
+      final state = AgentState(
+        sessionId: 'delegate_pkm_overview_test',
+        metadata: {'userId': userId},
+      );
+      final client = _SingleToolCallClient(
+        toolName: tool.name,
+        arguments: {
+          'task_brief': 'File this record in PKM.',
+          'agent_type': 'pkm',
+        },
+        finalText: 'Filed the record in PKM.',
+      );
+      final agent = StatefulAgent(
+        name: 'delegate_pkm_overview_agent',
+        client: client,
+        modelConfig: ModelConfig(model: 'test'),
+        state: state,
+        tools: [tool],
+        withGeneralPrinciples: false,
+        maxTurns: 3,
+      );
+
+      await agent.run([UserMessage.text('delegate')], useStream: false);
+
+      expect(client.generateInputs.length, greaterThanOrEqualTo(2));
+      final childPrompt = _messagesText(client.generateInputs[1]);
+      expect(childPrompt, contains('Current PKM structure tree'));
+      expect(childPrompt, contains('Projects/'));
+      expect(childPrompt, contains('App/'));
+      expect(childPrompt, contains('note.md'));
+      expect(childPrompt, isNot(contains('Cards')));
+      expect(childPrompt, isNot(contains('card.yaml')));
+    });
+
+    test('delegate injects latest card metadata reminder into card child',
+        () async {
+      final tool = buildDelegateToSubagentTool();
+      final state = AgentState(
+        sessionId: 'delegate_card_metadata_test',
+        metadata: {'userId': userId},
+      );
+      final client = _SingleToolCallClient(
+        toolName: tool.name,
+        arguments: {
+          'task_brief': 'Create a timeline card for this record.',
+          'agent_type': 'timeline_card',
+        },
+        finalText: 'Created the timeline card.',
+      );
+      final agent = StatefulAgent(
+        name: 'delegate_card_metadata_agent',
+        client: client,
+        modelConfig: ModelConfig(model: 'test'),
+        state: state,
+        tools: [tool],
+        withGeneralPrinciples: false,
+        maxTurns: 3,
+      );
+
+      await agent.run([UserMessage.text('delegate')], useStream: false);
+
+      expect(client.generateInputs.length, greaterThanOrEqualTo(2));
+      final childPrompt = _messagesText(client.generateInputs[1]);
+      expect(
+        childPrompt,
+        contains('Latest get_card_metadata result.'),
+      );
+      expect(
+        childPrompt,
+        contains(
+            'Use this metadata instead of calling get_card_metadata again'),
+      );
+      expect(childPrompt, contains('# Available Templates'));
+      expect(childPrompt, contains('## template_id: article'));
+      expect(childPrompt, contains('# Existing Tags'));
+    });
+
+    test('run infers no_op from the final plain-text message', () async {
       final result = await runSuperAgentChild(
         config: cfg(ChildToolProfile.read),
         client: _ScriptedClient(texts: const [
-          'Nothing schedule-related here.\n\n'
-              '```json\n{"status":"no_op","summary":"no dated content"}\n```',
+          'no_op: no dated content',
         ]),
         modelConfig: ModelConfig(model: 'test'),
         userId: userId,
       );
       expect(result.status, SuperAgentChildStatus.noOp);
-      expect(result.summary, 'no dated content');
+      expect(result.summary, 'no_op: no dated content');
+    });
+
+    test('terminal tool finish_summary completes child without final LLM call',
+        () async {
+      const factId = '2026/06/26.md#ts_1';
+      await FileSystemService.instance.safeWriteCardFile(
+        userId,
+        factId,
+        CardData(
+          factId: factId,
+          timestamp: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+          status: 'completed',
+          tags: const [],
+          uiConfigs: const [
+            UiConfig(templateId: 'classic_card', data: {'content': 'before'}),
+          ],
+          fact: 'record content',
+        ),
+      );
+      final client = _SingleToolCallClient(
+        toolName: 'update_timeline_card_insight',
+        arguments: {
+          'fact_id': factId,
+          'insight_text': 'A useful insight.',
+          'related_fact_ids': [],
+          'finish_summary':
+              'Updated the card insight and found no related facts.',
+        },
+        finalText: 'should not be called',
+      );
+
+      final result = await runSuperAgentChild(
+        config: SuperAgentChildConfig(
+          childName: 'pkm_child',
+          taskBrief: 'Update insight.',
+          skills: [
+            PkmSkill(
+              forceActivate: true,
+              workingDirectory: '/PKM',
+              enableFinishSummary: true,
+            )
+          ],
+          toolProfile: ChildToolProfile.none,
+        ),
+        client: client,
+        modelConfig: ModelConfig(model: 'test'),
+        userId: userId,
+      );
+
+      expect(client.generateInputs, hasLength(1));
+      expect(result.status, SuperAgentChildStatus.completed);
+      expect(
+        result.summary,
+        'Updated the card insight and found no related facts.',
+      );
+      expect(result.structured['fact_id'], factId);
+      expect(result.structured['pkm_changed'], isTrue);
     });
 
     test('run reports failed when the child errors out', () async {
@@ -418,8 +613,7 @@ void main() {
             'task_brief': 'Capture this image attachment `fs://photo.jpg`）。',
             'agent_type': 'research',
           },
-          finalText:
-              '```json\n{"status":"completed","summary":"asset ok"}\n```',
+          finalText: 'Asset reference accepted.',
         ),
         modelConfig: ModelConfig(model: 'test'),
         state: state,
@@ -436,7 +630,7 @@ void main() {
           .results
           .single;
       expect(result.isError, isFalse);
-      expect(_text(result), contains('asset ok'));
+      expect(_text(result), contains('Asset reference accepted.'));
     });
 
     test('delegate rejects unknown agent types', () async {
@@ -488,8 +682,7 @@ void main() {
             'task_brief': 'Summarize what is in the knowledge base.',
             'agent_type': 'research',
           },
-          finalText:
-              '```json\n{"status":"completed","summary":"nothing yet"}\n```',
+          finalText: 'Nothing yet.',
         ),
         modelConfig: ModelConfig(model: 'test'),
         state: state,
@@ -508,7 +701,9 @@ void main() {
       // The validation gate let the fixed research child through: the result is
       // a normal child report, not a rejection.
       expect(result.isError, isFalse);
-      expect(_text(result), contains('research_child'));
+      expect(_text(result), contains('agent_type="research"'));
+      expect(_text(result), contains('Nothing yet.'));
+      expect(_text(result), isNot(contains('child=')));
     });
 
     test('delegate schema exposes agent_type instead of profile and skills',
@@ -535,6 +730,37 @@ void main() {
       );
     });
 
+    test('finish_summary is only exposed by child-specialized skills', () {
+      Tool saveTool(Skill skill) =>
+          skill.tools!.singleWhere((tool) => tool.name == 'save_timeline_card');
+      Tool updateInsightTool(Skill skill) => skill.tools!
+          .singleWhere((tool) => tool.name == 'update_timeline_card_insight');
+
+      final rootSaveProperties =
+          saveTool(TimelineCardSkill()).parameters['properties'] as Map;
+      final childSaveProperties = saveTool(TimelineCardSkill(
+        enableFinishSummary: true,
+      )).parameters['properties'] as Map;
+      final rootInsightProperties =
+          updateInsightTool(PkmSkill()).parameters['properties'] as Map;
+      final childInsightProperties = updateInsightTool(PkmSkill(
+        enableFinishSummary: true,
+      )).parameters['properties'] as Map;
+
+      expect(rootSaveProperties, isNot(contains('finish_summary')));
+      expect(rootInsightProperties, isNot(contains('finish_summary')));
+      expect(childSaveProperties, contains('finish_summary'));
+      expect(childInsightProperties, contains('finish_summary'));
+      expect(
+        (childSaveProperties['finish_summary'] as Map)['description'],
+        isNot(contains('parent')),
+      );
+      expect(
+        (childInsightProperties['finish_summary'] as Map)['description'],
+        isNot(contains('child')),
+      );
+    });
+
     test('delegate accepts a fixed agent_type call without profile or skills',
         () async {
       await Directory(FileSystemService.instance.getWorkspacePath(userId))
@@ -552,8 +778,7 @@ void main() {
             'task_brief': 'Summarize what is in the knowledge base.',
             'agent_type': 'research',
           },
-          finalText:
-              '```json\n{"status":"completed","summary":"nothing yet"}\n```',
+          finalText: 'Nothing yet.',
         ),
         modelConfig: ModelConfig(model: 'test'),
         state: state,
@@ -570,7 +795,9 @@ void main() {
           .results
           .single;
       expect(result.isError, isFalse);
-      expect(_text(result), contains('research_child'));
+      expect(_text(result), contains('agent_type="research"'));
+      expect(_text(result), contains('Nothing yet.'));
+      expect(_text(result), isNot(contains('child=')));
     });
   });
 }
@@ -653,6 +880,26 @@ String _text(FunctionExecutionResult result) {
       .join('\n');
 }
 
+String _messagesText(List<LLMMessage> messages) {
+  final buffer = StringBuffer();
+  for (final message in messages) {
+    if (message is SystemMessage) {
+      buffer.writeln(message.content);
+    } else if (message is UserMessage) {
+      for (final part in message.contents) {
+        if (part is TextPart) buffer.writeln(part.text);
+      }
+    } else if (message is ModelMessage) {
+      if (message.textOutput != null) buffer.writeln(message.textOutput);
+    } else if (message is FunctionExecutionResultMessage) {
+      for (final result in message.results) {
+        buffer.writeln(_text(result));
+      }
+    }
+  }
+  return buffer.toString();
+}
+
 /// Returns the i-th scripted text as a plain (no tool call) model message, so
 /// the agent run ends immediately.
 class _ScriptedClient extends LLMClient {
@@ -701,6 +948,7 @@ class _SingleToolCallClient extends LLMClient {
   final String toolName;
   final Map<String, dynamic> arguments;
   final String finalText;
+  final generateInputs = <List<LLMMessage>>[];
   var _callCount = 0;
 
   @override
@@ -712,6 +960,7 @@ class _SingleToolCallClient extends LLMClient {
     bool? jsonOutput,
     CancelToken? cancelToken,
   }) async {
+    generateInputs.add(List<LLMMessage>.from(messages));
     _callCount += 1;
     if (_callCount == 1) {
       return ModelMessage(

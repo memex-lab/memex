@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:memex/agent/prompts.dart';
 import 'package:memex/agent/run_mode/agent_action_approval_service.dart';
@@ -6,6 +8,7 @@ import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/user_storage.dart';
+import 'package:path/path.dart' as p;
 
 // Tool executable parameter names mirror JSON schema keys.
 // ignore_for_file: non_constant_identifier_names
@@ -18,6 +21,7 @@ class PkmSkill extends Skill {
   PkmSkill({
     super.forceActivate,
     List<bool>? stopAfterUpdateCardInsightRef,
+    bool enableFinishSummary = false,
     String? workingDirectory,
   }) : super(
           name: "manage_pkm", // Renamed to capability-focused name
@@ -31,22 +35,61 @@ class PkmSkill extends Skill {
             UserStorage.l10n.pkmFileLanguageInstruction,
             UserStorage.l10n.pkmInsightLanguageInstruction,
           ),
-          tools: _buildTools(stopAfterUpdateCardInsightRef),
+          tools: _buildTools(
+            stopAfterUpdateCardInsightRef,
+            enableFinishSummary: enableFinishSummary,
+          ),
         );
 
-  static List<Tool> _buildTools(List<bool>? stopAfterUpdateCardInsightRef) {
+  static List<Tool> _buildTools(
+    List<bool>? stopAfterUpdateCardInsightRef, {
+    required bool enableFinishSummary,
+  }) {
     final logger = getLogger('PkmSkill');
+    final updateInsightParameters = Map<String, dynamic>.from(
+        Prompts.pkmSkillUpdateCardInsightToolParameters);
+    final updateInsightProperties =
+        Map<String, dynamic>.from(updateInsightParameters['properties'] as Map);
+    if (enableFinishSummary) {
+      updateInsightProperties['finish_summary'] = {
+        'type': 'string',
+        'description':
+            'If this successful update completes the requested work, set this to the exact concise final summary to return. Include relevant work already done in this run. Omit it if another tool call, inspection, or repair is still needed.',
+      };
+    }
+    updateInsightParameters['properties'] = updateInsightProperties;
+
+    final getPkmOverviewTool = Tool(
+      name: 'get_pkm_overview',
+      description:
+          'Get current directory structure and file information of the PKM knowledge base.',
+      parameters: {
+        'type': 'object',
+        'properties': {},
+      },
+      executable: () async {
+        final context = AgentCallToolContext.current;
+        if (context == null) {
+          throw StateError(
+              "get_pkm_overview must be called within an agent execution context.");
+        }
+        final userId = context.state.metadata['userId'] as String;
+        return buildPkmOverviewForUser(userId);
+      },
+    );
 
     return [
+      getPkmOverviewTool,
       Tool(
         name: 'update_timeline_card_insight',
         description: Prompts.pkmSkillUpdateCardInsightToolDescription,
-        parameters: Prompts.pkmSkillUpdateCardInsightToolParameters,
+        parameters: updateInsightParameters,
         executable: (
           String fact_id,
           String insight_text,
-          List? related_fact_ids,
-        ) async {
+          List? related_fact_ids, [
+          String? finish_summary,
+        ]) async {
           final context = AgentCallToolContext.current;
           if (context == null) {
             throw StateError(
@@ -122,9 +165,13 @@ class PkmSkill extends Skill {
             (card) => card.copyWith(insight: insightData),
           );
 
-          final stopFlag = stopAfterUpdateCardInsightRef != null
-              ? stopAfterUpdateCardInsightRef[0]
-              : false;
+          final isSubAgent = context.state.metadata['sub_agent_mode'] == true;
+          final hasFinishSummary =
+              finish_summary != null && finish_summary.trim().isNotEmpty;
+          final stopFlag = (stopAfterUpdateCardInsightRef != null
+                  ? stopAfterUpdateCardInsightRef[0]
+                  : false) ||
+              (isSubAgent && hasFinishSummary);
 
           if (updatedCardData == null) {
             logger.warning(
@@ -142,6 +189,16 @@ class PkmSkill extends Skill {
             content: TextPart(Prompts.pkmSkillUpdateCardInsightSuccess(
                 cardPath, fact_id, relatedCount)),
             stopFlag: stopFlag,
+            metadata: {
+              if (isSubAgent && hasFinishSummary)
+                'child_terminal_result': {
+                  'status': 'completed',
+                  'summary': finish_summary.trim(),
+                  'fact_id': fact_id,
+                  'pkm_changed': true,
+                  'related_count': relatedCount,
+                },
+            },
           );
         },
       ),
@@ -165,9 +222,137 @@ class PkmSkill extends Skill {
               'PKM organization skipped. evidence=$evidence',
             ),
             stopFlag: true,
+            metadata: {
+              'child_terminal_result': {
+                'status': 'no_op',
+                'summary': 'PKM organization skipped. evidence=$evidence',
+                if (factId is String) 'fact_id': factId,
+                'pkm_changed': false,
+              },
+            },
           );
         },
       ),
     ];
   }
 }
+
+Future<String> buildPkmOverviewForUser(
+  String userId, {
+  int maxEntries = 800,
+}) {
+  return buildPkmOverview(
+    pkmRootPath: FileSystemService.instance.getPkmPath(userId),
+    maxEntries: maxEntries,
+  );
+}
+
+Future<String> buildPkmOverview({
+  required String pkmRootPath,
+  int maxEntries = 800,
+}) async {
+  try {
+    final rootType =
+        await FileSystemEntity.type(pkmRootPath, followLinks: false);
+    if (rootType == FileSystemEntityType.notFound) {
+      return 'P.A.R.A. knowledge base has not been created yet, currently empty.';
+    }
+    if (rootType != FileSystemEntityType.directory) {
+      return _formatPkmOverviewError('/PKM is not a directory.');
+    }
+
+    return _buildPkmOverviewTree(
+      root: Directory(pkmRootPath),
+      maxEntries: maxEntries,
+    );
+  } catch (e) {
+    return _formatPkmOverviewError(e.toString());
+  }
+}
+
+Future<String> _buildPkmOverviewTree({
+  required Directory root,
+  required int maxEntries,
+}) async {
+  final buffer = StringBuffer()
+    ..writeln('PKM structure tree')
+    ..writeln('Root: /PKM')
+    ..writeln('Legend: directories end with /')
+    ..writeln();
+
+  var directoryCount = 1;
+  var fileCount = 0;
+  var emitted = 0;
+  var truncated = false;
+
+  buffer.writeln('/PKM/');
+
+  Future<void> visit(Directory dir, int depth) async {
+    if (truncated) return;
+
+    final children = <FileSystemEntity>[];
+    try {
+      await for (final entity
+          in dir.list(recursive: false, followLinks: false)) {
+        final name = p.basename(entity.path);
+        if (name.startsWith('.')) continue;
+        children.add(entity);
+      }
+    } catch (e) {
+      buffer.writeln('${'  ' * depth}(unreadable: $e)');
+      return;
+    }
+
+    children.sort((a, b) {
+      final aIsDir = a is Directory;
+      final bIsDir = b is Directory;
+      if (aIsDir && !bIsDir) return -1;
+      if (!aIsDir && bIsDir) return 1;
+      return p.basename(a.path).compareTo(p.basename(b.path));
+    });
+
+    if (children.isEmpty && depth == 1) {
+      buffer.writeln('  (empty)');
+      return;
+    }
+
+    for (final child in children) {
+      if (emitted >= maxEntries) {
+        truncated = true;
+        buffer
+            .writeln('${'  ' * depth}... truncated after $maxEntries entries');
+        return;
+      }
+
+      final name = p.basename(child.path);
+      final isDir = child is Directory;
+      buffer.writeln('${'  ' * depth}$name${isDir ? '/' : ''}');
+      emitted++;
+
+      if (isDir) {
+        directoryCount++;
+        await visit(child, depth + 1);
+      } else {
+        fileCount++;
+      }
+    }
+  }
+
+  await visit(root, 1);
+
+  buffer
+    ..writeln()
+    ..writeln('Summary: $directoryCount directories, $fileCount files');
+  if (truncated) {
+    buffer
+        .writeln('Note: overview truncated; use file tools to inspect deeper.');
+  } else {
+    buffer.writeln(
+      'Note: this overview contains the complete PKM structure; usually no additional LS or Glob call is needed to inspect the tree.',
+    );
+  }
+  return buffer.toString().trimRight();
+}
+
+String _formatPkmOverviewError(String error) =>
+    'Unable to get P.A.R.A. knowledge base structure: $error';

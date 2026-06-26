@@ -627,14 +627,10 @@ class FileToolFactory {
             'items': {'type': 'string'},
             'description': 'List of glob patterns to ignore'
           },
-          'depth': {
-            'type': 'integer',
-            'description': 'Depth to list files and directories, default is 3'
-          },
         },
         'required': ['path']
       },
-      executable: (String path, List? ignore, int? depth) {
+      executable: (String path, List? ignore) {
         path = _resolvePath(path);
         if (!permissionManager.canTraverseForRead(path)) {
           throw ApiException(
@@ -645,7 +641,7 @@ class FileToolFactory {
           dirPath: path,
           workingDirectory: workingDirectory,
           ignore: ignore?.cast<String>(),
-          depth: depth ?? 3,
+          depth: 1,
           filter: (p) => permissionManager.allowsRead(p),
           traversalFilter: (p) => permissionManager.canTraverseForRead(p),
         );

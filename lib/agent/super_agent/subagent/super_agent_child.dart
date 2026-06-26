@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:dio/dio.dart';
@@ -121,9 +120,8 @@ class SuperAgentChildResult {
   /// to the separate child state file.
   final String? childSessionId;
 
-  /// Best-effort structured payload parsed from the child's final message
-  /// (the child is asked to end with a JSON object). Empty when the child
-  /// returned plain prose or nothing parseable.
+  /// Runtime-provided structured payload, usually from the terminal tool
+  /// result. Kept separate from the model-written summary.
   final Map<String, dynamic> structured;
 
   /// Set when the run threw / timed out before the child could report.
@@ -137,6 +135,24 @@ class SuperAgentChildResult {
     this.structured = const {},
     this.error,
   });
+
+  SuperAgentChildResult copyWith({
+    String? childName,
+    SuperAgentChildStatus? status,
+    String? summary,
+    String? childSessionId,
+    Map<String, dynamic>? structured,
+    String? error,
+  }) {
+    return SuperAgentChildResult(
+      childName: childName ?? this.childName,
+      status: status ?? this.status,
+      summary: summary ?? this.summary,
+      childSessionId: childSessionId ?? this.childSessionId,
+      structured: structured ?? this.structured,
+      error: error ?? this.error,
+    );
+  }
 
   factory SuperAgentChildResult.failed(
     String childName,
@@ -192,15 +208,14 @@ message is parsed by the parent runtime.
   provide, return `needs_parent_input` naming the exact missing field.
 
 ## Output
-End your run with a concise plain-text summary, then a single fenced JSON object
-on its own describing the structured result, e.g.:
+When a successful terminal tool call completes your task, pass
+`finish_summary` on that tool call. Use it for the exact concise final summary,
+including relevant work already done in this run. Leave it unset if another
+tool call, inspection, or repair is still needed.
 
-```json
-{"status": "completed | no_op | failed | needs_parent_input", "summary": "..."}
-```
-
-Include any branch-specific fields your skill instructions ask for (such as
-`fact_id`, `card_changed`, `pkm_changed`, `schedule_changed`, `changed_files`).
+If no terminal tool applies, end with a concise plain-text summary. For no-op
+work, explicitly say `no_op` and the reason. If you genuinely need missing
+parent input, explicitly say `needs_parent_input` and name the missing field.
 ''';
 }
 
@@ -235,6 +250,19 @@ String _buildContextReminder(Map<String, dynamic> packet) {
     if (blocks.isNotEmpty) {
       sections.add(blocks.join('\n\n'));
     }
+  }
+
+  final pkmOverview = packet['pkm_overview'];
+  if (pkmOverview is String && pkmOverview.trim().isNotEmpty) {
+    sections.add('Current PKM structure tree:\n${pkmOverview.trim()}');
+  }
+
+  final cardMetadata = packet['card_metadata'];
+  if (cardMetadata is String && cardMetadata.trim().isNotEmpty) {
+    sections.add(
+      'Latest get_card_metadata result. Use this metadata instead of calling '
+      'get_card_metadata again:\n${cardMetadata.trim()}',
+    );
   }
 
   return '<system-reminder>\n${sections.join('\n\n')}\n</system-reminder>';
@@ -456,18 +484,26 @@ Future<SuperAgentChildResult> runSuperAgentChild({
     final messages = await agent.run([initial],
         cancelToken: cancelToken, useStream: false).timeout(config.timeout);
 
+    final terminalResult = _terminalResultFromMessages(messages);
+    if (terminalResult != null) {
+      _logger.info(
+          'Child ${config.childName} finished: status=${terminalResult.status.name}');
+      return terminalResult.copyWith(
+        childName: config.childName,
+        childSessionId: agent.state.sessionId,
+      );
+    }
+
     final finalText = _lastText(messages);
-    final structured = _extractJson(finalText);
-    final status = _statusFromWire(structured['status'] as String?);
+    final status = _statusFromPlainText(finalText);
 
     _logger.info('Child ${config.childName} finished: status=${status.name}');
 
     return SuperAgentChildResult(
       childName: config.childName,
       status: status,
-      summary: (structured['summary'] as String?) ?? finalText,
+      summary: finalText,
       childSessionId: agent.state.sessionId,
-      structured: structured,
     );
   } on TimeoutException {
     final message = 'child timed out after ${_formatTimeout(config.timeout)}';
@@ -520,26 +556,43 @@ String _lastText(List<LLMMessage> messages) {
   return '';
 }
 
-/// Pull the first {...} JSON object out of [text]. Tolerant of markdown fences
-/// and surrounding prose. Returns an empty map when nothing parses.
-Map<String, dynamic> _extractJson(String text) {
-  if (text.isEmpty) return const {};
-  var s = text;
-  final fence = text.indexOf('```');
-  if (fence >= 0) {
-    final after = text.substring(fence + 3);
-    final lf = after.indexOf('\n');
-    final body = lf >= 0 ? after.substring(lf + 1) : after;
-    final end = body.indexOf('```');
-    s = end >= 0 ? body.substring(0, end) : body;
+SuperAgentChildResult? _terminalResultFromMessages(List<LLMMessage> messages) {
+  for (var i = messages.length - 1; i >= 0; i -= 1) {
+    final message = messages[i];
+    if (message is! FunctionExecutionResultMessage) continue;
+    for (var j = message.results.length - 1; j >= 0; j -= 1) {
+      final result = message.results[j];
+      if (result.isError) continue;
+      final metadata = result.metadata;
+      final raw = metadata?['child_terminal_result'];
+      if (raw is! Map) continue;
+      final terminal = Map<String, dynamic>.from(raw);
+      final summary = terminal['summary']?.toString().trim();
+      if (summary == null || summary.isEmpty) continue;
+      return SuperAgentChildResult(
+        childName: '',
+        status: _statusFromWire(terminal['status']?.toString()),
+        summary: summary,
+        structured: terminal,
+      );
+    }
   }
-  final lo = s.indexOf('{');
-  final hi = s.lastIndexOf('}');
-  if (lo < 0 || hi <= lo) return const {};
-  try {
-    final decoded = jsonDecode(s.substring(lo, hi + 1));
-    return decoded is Map<String, dynamic> ? decoded : const {};
-  } catch (_) {
-    return const {};
+  return null;
+}
+
+SuperAgentChildStatus _statusFromPlainText(String text) {
+  final normalized = text.toLowerCase().replaceAll('-', '_');
+  if (normalized.contains('needs_parent_input') ||
+      normalized.contains('needs parent input')) {
+    return SuperAgentChildStatus.needsParentInput;
   }
+  if (normalized.contains('no_op') || normalized.contains('no op')) {
+    return SuperAgentChildStatus.noOp;
+  }
+  if (normalized.contains('failed') || normalized.contains('error')) {
+    return SuperAgentChildStatus.failed;
+  }
+  return text.trim().isEmpty
+      ? SuperAgentChildStatus.failed
+      : SuperAgentChildStatus.completed;
 }

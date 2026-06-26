@@ -18,11 +18,14 @@ import 'package:memex/utils/user_storage.dart';
 
 final logger = Logger('TimelineCardSkill');
 
+bool _nonEmpty(String? value) => value != null && value.trim().isNotEmpty;
+
 /// Skill for managing Timeline Cards
 class TimelineCardSkill extends Skill {
   TimelineCardSkill({
     super.forceActivate,
     bool stopAfterSuccessSaveCard = false,
+    bool enableFinishSummary = false,
   }) : super(
           name: "manage_timeline_card", // Renamed as requested
           description:
@@ -30,7 +33,10 @@ class TimelineCardSkill extends Skill {
               "Handles information extraction, template selection, and card data persistence for the Timeline view. "
               "Use when: 1. User posts new content needing a timeline card. 2. User provides feedback to modify an existing timeline card.",
           systemPrompt: _buildSystemPrompt(),
-          tools: _buildTools(stopAfterSuccessSaveCard),
+          tools: _buildTools(
+            stopAfterSuccessSaveCard,
+            enableFinishSummary: enableFinishSummary,
+          ),
         );
 
   static String _buildSystemPrompt() {
@@ -89,7 +95,92 @@ class TimelineCardSkill extends Skill {
     return sb.toString();
   }
 
-  static List<Tool> _buildTools(bool stopAfterSuccessSaveCard) {
+  static List<Tool> _buildTools(
+    bool stopAfterSuccessSaveCard, {
+    required bool enableFinishSummary,
+  }) {
+    final saveProperties = <String, dynamic>{
+      'fact_id': {
+        'type': 'string',
+        'description':
+            'REQUIRED. For a brand-new record: the id you minted with `mint_record_fact_id` first. For editing/repairing: the existing card id (e.g. 2025/01/01.md#ts_123). Never invent an id — it must come from mint_record_fact_id or be an existing card.'
+      },
+      'title': {
+        'type': 'string',
+        'description':
+            'A concise summary displayed on detail page header. Required for a new card; omit when editing to keep the existing title.'
+      },
+      'ui_configs': {
+        'type': 'array',
+        'description':
+            'UI rendering configuration list. Required for a new card; omit when editing to keep the existing layout. When provided, you MUST give the full data object for the selected template.',
+        'items': {
+          'type': 'object',
+          'properties': {
+            'template_id': {'type': 'string', 'description': 'Template ID'},
+            'data': {
+              'type': 'object',
+              'description':
+                  'Template data object. CRITICAL: This MUST NOT be empty. You must populate all required fields for the chosen template_id as defined in the available templates.'
+            }
+          },
+          'required': ['template_id', 'data']
+        }
+      },
+      'address': {
+        'type': 'string',
+        'description':
+            'Location information for where the recorded card actually happened. Use raw input named places only when they are the actual occurrence, check-in, visit, photo capture, or activity location. For tasks, todos, reminders, plans, wishes, future destinations, or places the user merely wants to go to, omit address even if a place is mentioned. If raw input describes an immediate present-time event, check-in, photo capture, or daily activity and current_location_context is available, use its location_summary or full_address_candidate as a conservative default. Do not use current_location_context for memories, plans, remote events, or when raw input names a conflicting place. Do not be too specific. Use the format "City · Specific Location" (e.g., Beijing · Chaoyang Park) if possible, otherwise just the specific location name is fine.'
+      },
+      'user_mark_address': {
+        'type': 'string',
+        'description':
+            'User-marked location information, set when raw input contains very close user-marked location'
+      },
+      'content_creation_date': {
+        'type': 'string',
+        'description':
+            'The creation date of the content (e.g. image capture time), in format "YYYY-MM-DD HH:MM:SS". If not provided, current time will be used.'
+      },
+      'tags': {
+        'type': 'array',
+        'description':
+            'Select 1-3 most appropriate tags strictly from internal pre-defined list. Do not invent new tags.',
+        'items': {
+          'type': 'object',
+          'properties': {
+            'name': {
+              'type': 'string',
+              'description':
+                  "Tag name. MUST be one of: 'Project', 'Trip', 'Milestone', 'Health', 'Relationship', 'Finance', 'Knowledge', 'Emotion', 'Visual', 'Audio'."
+            },
+            'icon': {
+              'type': 'string',
+              'description': 'Not used anymore, internal icons are hardcoded.'
+            },
+          },
+          'required': ['name']
+        }
+      },
+      'fact': {
+        'type': 'string',
+        'description':
+            "The source-of-truth record content. Write a coherent record in the user's own words and speaking/writing style, combining the user's text with the image/audio content that matters to this record. This is the faithful original content, not a summary, paraphrase, or your own commentary. If the user wrote text, preserve their wording where it matters. Do NOT put an `fs://` reference here — attachment references go only in `assets`. Required for a new card; omit when editing to keep the existing fact."
+      },
+      'assets': {
+        'type': 'array',
+        'description':
+            "The image and audio files attached to this card, as bare `fs://...` references extracted from the attachment markers in the user message (for example `fs://photo.jpg`) — copied exactly, never invented or altered. Omit this field entirely to keep the card's existing assets unchanged; pass the full list to replace them. Required only when a new card has attachments.",
+        'items': {'type': 'string'}
+      },
+      if (enableFinishSummary)
+        'finish_summary': {
+          'type': 'string',
+          'description':
+              'If this successful save completes the requested work, set this to the exact concise final summary to return. Include relevant work already done in this run. Omit it if another tool call, inspection, or repair is still needed.',
+        },
+    };
+
     return [
       Tool(
         name: 'get_card_metadata',
@@ -114,85 +205,7 @@ class TimelineCardSkill extends Skill {
             "`fact`.",
         parameters: {
           'type': 'object',
-          'properties': {
-            'fact_id': {
-              'type': 'string',
-              'description':
-                  'REQUIRED. For a brand-new record: the id you minted with `mint_record_fact_id` first. For editing/repairing: the existing card id (e.g. 2025/01/01.md#ts_123). Never invent an id — it must come from mint_record_fact_id or be an existing card.'
-            },
-            'title': {
-              'type': 'string',
-              'description':
-                  'A concise summary displayed on detail page header. Required for a new card; omit when editing to keep the existing title.'
-            },
-            'ui_configs': {
-              'type': 'array',
-              'description':
-                  'UI rendering configuration list. Required for a new card; omit when editing to keep the existing layout. When provided, you MUST give the full data object for the selected template.',
-              'items': {
-                'type': 'object',
-                'properties': {
-                  'template_id': {
-                    'type': 'string',
-                    'description': 'Template ID'
-                  },
-                  'data': {
-                    'type': 'object',
-                    'description':
-                        'Template data object. CRITICAL: This MUST NOT be empty. You must populate all required fields for the chosen template_id as defined in the available templates.'
-                  }
-                },
-                'required': ['template_id', 'data']
-              }
-            },
-            'address': {
-              'type': 'string',
-              'description':
-                  'Location information for where the recorded card actually happened. Use raw input named places only when they are the actual occurrence, check-in, visit, photo capture, or activity location. For tasks, todos, reminders, plans, wishes, future destinations, or places the user merely wants to go to, omit address even if a place is mentioned. If raw input describes an immediate present-time event, check-in, photo capture, or daily activity and current_location_context is available, use its location_summary or full_address_candidate as a conservative default. Do not use current_location_context for memories, plans, remote events, or when raw input names a conflicting place. Do not be too specific. Use the format "City · Specific Location" (e.g., Beijing · Chaoyang Park) if possible, otherwise just the specific location name is fine.'
-            },
-            'user_mark_address': {
-              'type': 'string',
-              'description':
-                  'User-marked location information, set when raw input contains very close user-marked location'
-            },
-            'content_creation_date': {
-              'type': 'string',
-              'description':
-                  'The creation date of the content (e.g. image capture time), in format "YYYY-MM-DD HH:MM:SS". If not provided, current time will be used.'
-            },
-            'tags': {
-              'type': 'array',
-              'description':
-                  'Select 1-3 most appropriate tags strictly from internal pre-defined list. Do not invent new tags.',
-              'items': {
-                'type': 'object',
-                'properties': {
-                  'name': {
-                    'type': 'string',
-                    'description':
-                        "Tag name. MUST be one of: 'Project', 'Trip', 'Milestone', 'Health', 'Relationship', 'Finance', 'Knowledge', 'Emotion', 'Visual', 'Audio'."
-                  },
-                  'icon': {
-                    'type': 'string',
-                    'description':
-                        'Not used anymore, internal icons are hardcoded.'
-                  },
-                },
-                'required': ['name']
-              }
-            },
-            'fact': {
-              'type': 'string',
-              'description':
-                  "The source-of-truth record content. Write a coherent record in the user's own words and speaking/writing style, combining the user's text with the image/audio content that matters to this record. This is the faithful original content, not a summary, paraphrase, or your own commentary. If the user wrote text, preserve their wording where it matters. Do NOT put an `fs://` reference here — attachment references go only in `assets`. Required for a new card; omit when editing to keep the existing fact."
-            },
-            'assets': {
-              'type': 'array',
-              'description':
-                  "The image and audio files attached to this card, as bare `fs://...` references extracted from the attachment markers in the user message (for example `fs://photo.jpg`) — copied exactly, never invented or altered. Omit this field entirely to keep the card's existing assets unchanged; pass the full list to replace them. Required only when a new card has attachments.",
-              'items': {'type': 'string'}
-            },
-          },
+          'properties': saveProperties,
           'required': ['fact_id']
         },
         executable: (String? fact_id,
@@ -203,7 +216,8 @@ class TimelineCardSkill extends Skill {
             String? content_creation_date,
             dynamic tags,
             String? fact,
-            dynamic assets) async {
+            dynamic assets,
+            [String? finish_summary]) async {
           final fileService = FileSystemService.instance;
 
           // Access context
@@ -218,6 +232,9 @@ class TimelineCardSkill extends Skill {
           logger.info("Saving card for fact: ${fact_id ?? '(new)'}");
 
           final userId = AgentCallToolContext.current!.state.metadata['userId'];
+          final isSubAgent =
+              AgentCallToolContext.current!.state.metadata['sub_agent_mode'] ==
+                  true;
 
           final denied = await gateMutatingToolCall(
             toolName: 'save_timeline_card',
@@ -567,7 +584,8 @@ class TimelineCardSkill extends Skill {
                   "$resolvedFactId — use this exact id when organizing this "
                   "record into PKM (e.g. `<!-- fact_id: $resolvedFactId -->`) "
                   "so the knowledge base links back to this card."),
-              stopFlag: stopAfterSuccessSaveCard,
+              stopFlag: stopAfterSuccessSaveCard ||
+                  (isSubAgent && _nonEmpty(finish_summary)),
               metadata: {
                 'artifact': {
                   'type': 'card',
@@ -576,6 +594,13 @@ class TimelineCardSkill extends Skill {
                   'tags': tagNames,
                   'updated': true,
                 },
+                if (isSubAgent && _nonEmpty(finish_summary))
+                  'child_terminal_result': {
+                    'status': 'completed',
+                    'summary': finish_summary!.trim(),
+                    'fact_id': resolvedFactId,
+                    'card_changed': true,
+                  },
               },
             );
           } catch (e, stack) {
