@@ -1132,6 +1132,7 @@
   "skillsManagement": "Управление skills",
   "skillsManagementEmpty": "Skills пока нет",
   "downloadSkill": "Скачать skill",
+  "downloadFile": "Скачать файл",
   "downloading": "Загрузка...",
   "downloadSuccess": "Skill успешно скачан",
   "downloadFailed": "Загрузка не удалась: {error}",

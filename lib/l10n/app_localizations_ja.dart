@@ -2440,6 +2440,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get downloadSkill => 'スキル をダウンロード';
 
   @override
+  String get downloadFile => 'ファイルをダウンロード';
+
+  @override
   String get downloading => 'ダウンロード中...';
 
   @override

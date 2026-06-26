@@ -2534,6 +2534,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get downloadSkill => 'Laden Sie Skill herunter';
 
   @override
+  String get downloadFile => 'Datei herunterladen';
+
+  @override
   String get downloading => 'Herunterladen...';
 
   @override

@@ -1132,6 +1132,7 @@
   "skillsManagement": "कौशल प्रबंधन",
   "skillsManagementEmpty": "अभी कोई कौशल नहीं",
   "downloadSkill": "कौशल डाउनलोड करें",
+  "downloadFile": "फ़ाइल डाउनलोड करें",
   "downloading": "डाउनलोड हो रहा है...",
   "downloadSuccess": "कौशल सफलतापूर्वक डाउनलोड हुई",
   "downloadFailed": "डाउनलोड विफल: {error}",

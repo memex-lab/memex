@@ -152,4 +152,36 @@ class ShareService {
     await Share.shareXFiles([XFile(file.path)],
         text: UserStorage.l10n.sharedFromMemex);
   }
+
+  /// Shares plain text content as a temporary file so the user can save it.
+  static Future<void> shareTextAsFile(
+    BuildContext context, {
+    required String fileName,
+    required String content,
+    String mimeType = 'text/plain',
+    String? text,
+  }) async {
+    final box = context.findRenderObject() as RenderBox?;
+    final sharePositionOrigin = box != null
+        ? box.localToGlobal(Offset.zero) & box.size
+        : const Rect.fromLTWH(0, 0, 100, 100);
+    final tempDir = await getTemporaryDirectory();
+    final safeFileName = _safeFileName(fileName);
+    final file = File('${tempDir.path}/$safeFileName');
+    await file.writeAsString(content);
+
+    await Share.shareXFiles(
+      [XFile(file.path, mimeType: mimeType, name: safeFileName)],
+      text: text,
+      sharePositionOrigin: sharePositionOrigin,
+    );
+  }
+
+  static String _safeFileName(String fileName) {
+    final sanitized = fileName
+        .trim()
+        .replaceAll(RegExp(r'[\\/:*?"<>|]'), '_')
+        .replaceAll(RegExp(r'\s+'), ' ');
+    return sanitized.isEmpty ? 'memex.md' : sanitized;
+  }
 }

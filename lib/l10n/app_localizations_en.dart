@@ -2488,6 +2488,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get downloadSkill => 'Download Skill';
 
   @override
+  String get downloadFile => 'Download file';
+
+  @override
   String get downloading => 'Downloading...';
 
   @override

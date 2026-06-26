@@ -1132,6 +1132,7 @@
   "skillsManagement": "Kompetenzmanagement",
   "skillsManagementEmpty": "Noch keine Fähigkeiten",
   "downloadSkill": "Laden Sie Skill herunter",
+  "downloadFile": "Datei herunterladen",
   "downloading": "Herunterladen...",
   "downloadSuccess": "Der Skill wurde erfolgreich heruntergeladen",
   "downloadFailed": "Download fehlgeschlagen: {error}",

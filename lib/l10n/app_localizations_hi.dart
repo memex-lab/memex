@@ -2494,6 +2494,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get downloadSkill => 'कौशल डाउनलोड करें';
 
   @override
+  String get downloadFile => 'फ़ाइल डाउनलोड करें';
+
+  @override
   String get downloading => 'डाउनलोड हो रहा है...';
 
   @override

@@ -1132,6 +1132,7 @@
   "skillsManagement": "スキル 管理",
   "skillsManagementEmpty": "スキル はまだありません",
   "downloadSkill": "スキル をダウンロード",
+  "downloadFile": "ファイルをダウンロード",
   "downloading": "ダウンロード中...",
   "downloadSuccess": "スキル を正常にダウンロードしました",
   "downloadFailed": "ダウンロードに失敗しました: {error}",

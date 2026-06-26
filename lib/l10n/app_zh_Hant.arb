@@ -1132,6 +1132,7 @@
   "skillsManagement": "技能 管理",
   "skillsManagementEmpty": "尚無 技能",
   "downloadSkill": "下載 技能",
+  "downloadFile": "下載檔案",
   "downloading": "下載中...",
   "downloadSuccess": "技能 已成功下載",
   "downloadFailed": "下載失敗：{error}",
