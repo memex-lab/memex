@@ -51,7 +51,7 @@ class DemoOverlay extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
@@ -94,10 +94,10 @@ class DemoOverlay extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(32),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.92),
+                    color: Colors.white.withValues(alpha: 0.92),
                     borderRadius: BorderRadius.circular(24),
                     border: Border.all(
-                      color: const Color(0xFF6366F1).withOpacity(0.2),
+                      color: const Color(0xFF6366F1).withValues(alpha: 0.2),
                     ),
                   ),
                   child: Column(
@@ -186,73 +186,108 @@ class _SpotlightOverlay extends StatefulWidget {
   State<_SpotlightOverlay> createState() => _SpotlightOverlayState();
 }
 
-class _SpotlightOverlayState extends State<_SpotlightOverlay> {
+class _SpotlightOverlayState extends State<_SpotlightOverlay>
+    with WidgetsBindingObserver {
   Rect? _targetRect;
+  int _measurementGeneration = 0;
+  int? _scheduledMeasurementGeneration;
 
   @override
   void initState() {
     super.initState();
-    _findTarget();
+    WidgetsBinding.instance.addObserver(this);
+    _scheduleTargetMeasurement();
+  }
+
+  @override
+  void dispose() {
+    _measurementGeneration++;
+    _scheduledMeasurementGeneration = null;
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _restartTargetMeasurement();
+    }
+  }
+
+  @override
+  void didChangeMetrics() {
+    _restartTargetMeasurement();
   }
 
   @override
   void didUpdateWidget(_SpotlightOverlay old) {
     super.didUpdateWidget(old);
     if (old.targetKey != widget.targetKey) {
-      // Clear the cutout immediately — the scrim stays, only the hole disappears.
-      // Once the new target is measured, the cutout + tooltip will reappear.
-      _targetRect = null;
-      _findTarget();
+      _restartTargetMeasurement();
     }
   }
 
-  void _findTarget() {
+  void _restartTargetMeasurement() {
+    _measurementGeneration++;
+    _scheduledMeasurementGeneration = null;
+    if (mounted && _targetRect != null) {
+      setState(() => _targetRect = null);
+    } else {
+      _targetRect = null;
+    }
+    _scheduleTargetMeasurement(delay: const Duration(milliseconds: 100));
+  }
+
+  void _scheduleTargetMeasurement({Duration? delay}) {
+    if (!mounted || _scheduledMeasurementGeneration != null) return;
+
     // Delay for animated widgets (chat dialog, page transitions, card rebuild).
-    final delay = widget.targetKey == DemoService.instance.sendButtonKey
-        ? const Duration(milliseconds: 400)
-        : widget.targetKey == DemoService.instance.firstCardKey
-            ? const Duration(milliseconds: 500)
-            : const Duration(milliseconds: 350); // page transition settle
-    Future.delayed(delay, () {
-      if (!mounted) return;
+    final effectiveDelay = delay ??
+        (widget.targetKey == DemoService.instance.sendButtonKey
+            ? const Duration(milliseconds: 400)
+            : widget.targetKey == DemoService.instance.firstCardKey
+                ? const Duration(milliseconds: 500)
+                : const Duration(milliseconds: 350)); // page transition settle
+    final generation = _measurementGeneration;
+    _scheduledMeasurementGeneration = generation;
+    Future.delayed(effectiveDelay, () {
+      if (!mounted || generation != _measurementGeneration) {
+        if (_scheduledMeasurementGeneration == generation) {
+          _scheduledMeasurementGeneration = null;
+        }
+        return;
+      }
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _measureAndVerify();
+        if (!mounted || generation != _measurementGeneration) {
+          if (_scheduledMeasurementGeneration == generation) {
+            _scheduledMeasurementGeneration = null;
+          }
+          return;
+        }
+        if (_scheduledMeasurementGeneration == generation) {
+          _scheduledMeasurementGeneration = null;
+        }
+        _measureAndVerify(generation);
       });
+      WidgetsBinding.instance.ensureVisualUpdate();
     });
   }
 
-  /// Measure the target, then re-measure after a short delay to confirm
-  /// the position is stable (guards against mid-animation measurements).
-  void _measureAndVerify() {
-    if (!mounted) return;
+  /// Measure the target after the route/dialog animation delay.
+  void _measureAndVerify(int generation) {
+    if (!mounted || generation != _measurementGeneration) return;
     final first = _readRect();
     if (first == null) {
       // Widget not laid out yet — retry
       Future.delayed(const Duration(milliseconds: 200), () {
-        if (mounted) _findTarget();
+        if (mounted && generation == _measurementGeneration) {
+          _scheduleTargetMeasurement(delay: Duration.zero);
+        }
       });
       return;
     }
 
-    // Wait a beat, then re-measure to confirm stability
-    Future.delayed(const Duration(milliseconds: 150), () {
-      if (!mounted) return;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        final second = _readRect();
-        if (second != null &&
-            (second.left - first.left).abs() < 2 &&
-            (second.top - first.top).abs() < 2) {
-          // Stable — commit
-          setState(() => _targetRect = second);
-        } else {
-          // Still moving — retry from scratch
-          Future.delayed(const Duration(milliseconds: 200), () {
-            if (mounted) _measureAndVerify();
-          });
-        }
-      });
-    });
+    setState(() => _targetRect = first);
   }
 
   Rect? _readRect() {
@@ -274,6 +309,7 @@ class _SpotlightOverlayState extends State<_SpotlightOverlay> {
   @override
   Widget build(BuildContext context) {
     if (_targetRect == null) {
+      _scheduleTargetMeasurement(delay: Duration.zero);
       // Measuring in progress — keep the scrim up (no cutout, no tooltip)
       // so the overlay never disappears between steps.
       return Material(
@@ -289,7 +325,7 @@ class _SpotlightOverlayState extends State<_SpotlightOverlay> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -341,7 +377,7 @@ class _SpotlightOverlayState extends State<_SpotlightOverlay> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.9),
+                color: Colors.white.withValues(alpha: 0.9),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
@@ -387,17 +423,17 @@ class _SpotlightOverlayState extends State<_SpotlightOverlay> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.95),
+              color: Colors.white.withValues(alpha: 0.95),
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF6366F1).withOpacity(0.15),
+                  color: const Color(0xFF6366F1).withValues(alpha: 0.15),
                   blurRadius: 24,
                   offset: const Offset(0, 8),
                 ),
               ],
               border: Border.all(
-                color: const Color(0xFF6366F1).withOpacity(0.2),
+                color: const Color(0xFF6366F1).withValues(alpha: 0.2),
               ),
             ),
             child: Row(
@@ -406,7 +442,7 @@ class _SpotlightOverlayState extends State<_SpotlightOverlay> {
                 Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF6366F1).withOpacity(0.1),
+                    color: const Color(0xFF6366F1).withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -457,7 +493,7 @@ class _SpotlightPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.black.withOpacity(0.6);
+    final paint = Paint()..color = Colors.black.withValues(alpha: 0.6);
     final path = Path()
       ..addRect(Rect.fromLTWH(0, 0, size.width, size.height))
       ..addRRect(cutout)
@@ -466,7 +502,7 @@ class _SpotlightPainter extends CustomPainter {
 
     // Glow border around cutout
     final glowPaint = Paint()
-      ..color = const Color(0xFF6366F1).withOpacity(0.4)
+      ..color = const Color(0xFF6366F1).withValues(alpha: 0.4)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
     canvas.drawRRect(cutout, glowPaint);
@@ -483,7 +519,7 @@ class _ArrowPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white.withOpacity(0.95)
+      ..color = Colors.white.withValues(alpha: 0.95)
       ..style = PaintingStyle.fill;
     final path = Path();
     if (pointUp) {
