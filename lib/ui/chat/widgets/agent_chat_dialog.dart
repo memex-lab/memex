@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform, visibleForTesting;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:crypto/crypto.dart' as crypto;
@@ -8,6 +10,7 @@ import 'package:logging/logging.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:memex/l10n/app_localizations_ext.dart';
 import 'package:memex/agent/run_mode/agent_action_approval_service.dart';
@@ -309,6 +312,19 @@ bool shouldQueueSuperAgentSend({
 }
 
 @visibleForTesting
+bool shouldExplainMemexAgentNotificationPermission({
+  required TargetPlatform platform,
+  required bool isDemoActive,
+  required bool alreadyPrompted,
+  required PermissionStatus notificationStatus,
+}) {
+  return platform == TargetPlatform.android &&
+      !isDemoActive &&
+      !alreadyPrompted &&
+      notificationStatus.isDenied;
+}
+
+@visibleForTesting
 Map<String, String> initialOriginalFilenamesForSelectedImages(
   List<XFile> images,
   Map<String, String> provided,
@@ -393,6 +409,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   bool _isApplyingDraft = false;
   bool _isLoadingPhotoSuggestions = false;
   bool _hasLoadedPhotoSuggestions = false;
+  bool _notificationPermissionPromptInFlight = false;
   List<List<EnhancedPhoto>> _photoSuggestionClusters = [];
   double _lastKeyboardBottomOffset = 0;
 
@@ -790,12 +807,12 @@ class _AgentChatDialogState extends State<AgentChatDialog>
     }());
   }
 
-  void _sendMessage(
+  bool _sendMessage(
     String message, {
     List<XFile> images = const [],
     Map<String, String>? imageOriginalFilenames,
   }) {
-    if (message.trim().isEmpty && images.isEmpty) return;
+    if (message.trim().isEmpty && images.isEmpty) return false;
 
     final queueBehindActiveRun = shouldQueueSuperAgentSend(
       isStreaming: _isStreaming,
@@ -852,6 +869,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
     } else {
       _listenToChatStream(stream);
     }
+    return true;
   }
 
   /// Subscribes the dialog to a chat event stream — either a freshly started
@@ -1132,11 +1150,14 @@ class _AgentChatDialogState extends State<AgentChatDialog>
 
     if (_handleDemoSubmitIfNeeded(message, images: images)) return;
 
-    _sendMessage(
+    final didSend = _sendMessage(
       message,
       images: images,
       imageOriginalFilenames: imageOriginalFilenames,
     );
+    if (didSend) {
+      unawaited(_maybeExplainAndRequestNotificationPermission());
+    }
   }
 
   bool _handleDemoSubmitIfNeeded(
@@ -1161,6 +1182,71 @@ class _AgentChatDialogState extends State<AgentChatDialog>
     unawaited(Navigator.of(context).maybePop());
     unawaited(_writeSuperAgentDemoSubmit(combinedText));
     return true;
+  }
+
+  Future<void> _maybeExplainAndRequestNotificationPermission() async {
+    if (_notificationPermissionPromptInFlight) return;
+    _notificationPermissionPromptInFlight = true;
+
+    try {
+      final platform = defaultTargetPlatform;
+      final demo = DemoService.instance;
+      final isDemoActive =
+          demo.isActive || demo.currentStep == DemoStep.tapSend;
+      final alreadyPrompted =
+          await UserStorage.hasPromptedMemexAgentNotificationPermission();
+      if (platform != TargetPlatform.android ||
+          isDemoActive ||
+          alreadyPrompted) {
+        return;
+      }
+
+      final notificationStatus = await Permission.notification.status;
+      if (!shouldExplainMemexAgentNotificationPermission(
+        platform: platform,
+        isDemoActive: isDemoActive,
+        alreadyPrompted: alreadyPrompted,
+        notificationStatus: notificationStatus,
+      )) {
+        return;
+      }
+
+      await UserStorage.setMemexAgentNotificationPermissionPrompted();
+      if (!mounted) return;
+
+      final shouldRequest = await showDialog<bool>(
+            context: context,
+            builder: (dialogContext) {
+              final l10n = UserStorage.l10n;
+              return AlertDialog(
+                title: Text(l10n.memexAgentNotificationPermissionTitle),
+                content: Text(l10n.memexAgentNotificationPermissionMessage),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(false),
+                    child: Text(l10n.cancel),
+                  ),
+                  FilledButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(true),
+                    child: Text(l10n.agentChat.allow),
+                  ),
+                ],
+              );
+            },
+          ) ??
+          false;
+      if (!shouldRequest || !mounted) return;
+
+      await Permission.notification.request();
+    } catch (e, st) {
+      _logger.warning(
+        'Failed to request Memex Agent notification permission: $e',
+        e,
+        st,
+      );
+    } finally {
+      _notificationPermissionPromptInFlight = false;
+    }
   }
 
   Future<void> _writeSuperAgentDemoSubmit(String combinedText) async {

@@ -1545,6 +1545,14 @@ class AppLocalizationsId extends AppLocalizations {
       'Untuk mengirim jadwal dan pengingat penting';
 
   @override
+  String get memexAgentNotificationPermissionTitle =>
+      'Biarkan Memex Agent berjalan di latar belakang';
+
+  @override
+  String get memexAgentNotificationPermissionMessage =>
+      'Memex Agent berjalan secara lokal di perangkat Anda. Dengan notifikasi, Memex dapat menampilkan progres dan terus memproses setelah Anda keluar dari app atau mematikan layar. Jika notifikasi dimatikan, biarkan Memex tetap terbuka di depan sampai tugas selesai.';
+
+  @override
   String get loadDetailFailedRetryShort =>
       'Gagal memuat detail, coba lagi nanti.';
 

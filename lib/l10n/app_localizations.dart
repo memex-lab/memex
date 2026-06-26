@@ -2820,6 +2820,18 @@ abstract class AppLocalizations {
   /// **'For sending schedule and important reminders'**
   String get notificationPermissionReason;
 
+  /// No description provided for @memexAgentNotificationPermissionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep Memex Agent running in the background'**
+  String get memexAgentNotificationPermissionTitle;
+
+  /// No description provided for @memexAgentNotificationPermissionMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Memex Agent runs locally on your device. Notifications let Memex show progress and keep processing after you leave the app or turn off the screen. If notifications are off, keep Memex open in the foreground until the task finishes.'**
+  String get memexAgentNotificationPermissionMessage;
+
   /// No description provided for @loadDetailFailedRetryShort.
   ///
   /// In en, this message translates to:

@@ -1566,6 +1566,14 @@ class AppLocalizationsDe extends AppLocalizations {
       'Zum Versenden von Terminplänen und wichtigen Erinnerungen';
 
   @override
+  String get memexAgentNotificationPermissionTitle =>
+      'Memex Agent im Hintergrund weiter ausführen';
+
+  @override
+  String get memexAgentNotificationPermissionMessage =>
+      'Memex Agent läuft lokal auf deinem Gerät. Mit Benachrichtigungen kann Memex den Fortschritt anzeigen und weiterarbeiten, nachdem du die App verlässt oder den Bildschirm ausschaltest. Wenn Benachrichtigungen deaktiviert sind, lasse Memex im Vordergrund geöffnet, bis die Aufgabe abgeschlossen ist.';
+
+  @override
   String get loadDetailFailedRetryShort =>
       'Beim Laden der Details ist ein Fehler aufgetreten. Bitte versuchen Sie es später noch einmal.';
 

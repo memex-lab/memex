@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:health/health.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -315,6 +316,7 @@ class HealthService {
 // MUST be top-level function for Workmanager
 @pragma('vm:entry-point')
 void callbackDispatcher() {
+  DartPluginRegistrant.ensureInitialized();
   Workmanager().executeTask((task, inputData) async {
     // 0. Initialize Logger in Background Isolate
     // Use print() first to ensure we can see it in console/ADB even if file logger fails

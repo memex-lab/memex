@@ -1534,6 +1534,14 @@ class AppLocalizationsHi extends AppLocalizations {
       'अनुसूची और महत्वपूर्ण रिमाइंडर भेजने के लिए';
 
   @override
+  String get memexAgentNotificationPermissionTitle =>
+      'Memex Agent को बैकग्राउंड में चलने दें';
+
+  @override
+  String get memexAgentNotificationPermissionMessage =>
+      'Memex Agent आपके डिवाइस पर लोकल रूप से चलता है। नोटिफिकेशन अनुमति देने पर Memex प्रगति दिखा सकता है और ऐप छोड़ने या स्क्रीन बंद करने के बाद भी प्रोसेसिंग जारी रख सकता है। नोटिफिकेशन बंद हों तो काम पूरा होने तक Memex को सामने खुला रखें।';
+
+  @override
   String get loadDetailFailedRetryShort =>
       'विवरण लोड नहीं हो सका, कृपया बाद में फिर कोशिश करें।';
 

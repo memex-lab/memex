@@ -1547,6 +1547,14 @@ class AppLocalizationsPt extends AppLocalizations {
       'Para enviar agenda e lembretes importantes';
 
   @override
+  String get memexAgentNotificationPermissionTitle =>
+      'Manter o Memex Agent em segundo plano';
+
+  @override
+  String get memexAgentNotificationPermissionMessage =>
+      'O Memex Agent roda localmente no seu dispositivo. Com notificações, o Memex pode mostrar o progresso e continuar processando depois que você sai do app ou desliga a tela. Se as notificações estiverem desativadas, mantenha o Memex aberto em primeiro plano até a tarefa terminar.';
+
+  @override
   String get loadDetailFailedRetryShort =>
       'Falha ao carregar detalhes, tente novamente mais tarde.';
 

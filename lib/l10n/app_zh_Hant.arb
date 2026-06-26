@@ -710,6 +710,8 @@
   "fitnessPermissionReason": "用於記錄健康與運動資料",
   "notification": "通知",
   "notificationPermissionReason": "用於傳送日程提醒等重要通知",
+  "memexAgentNotificationPermissionTitle": "讓 Memex Agent 在背景繼續執行",
+  "memexAgentNotificationPermissionMessage": "Memex Agent 在你的裝置本地執行。開啟通知權限後，Memex 可以顯示背景執行進度，讓任務在你退到背景或關閉螢幕時繼續處理。未開啟時，請保持 Memex 在前景，直到任務完成。",
   "loadDetailFailedRetryShort": "載入詳情失敗，請稍後重試",
   "total": "總計",
   "estimatedCost": "預估費用",

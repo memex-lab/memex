@@ -1546,6 +1546,14 @@ class AppLocalizationsRu extends AppLocalizations {
       'Для отправки расписаний и важных напоминаний';
 
   @override
+  String get memexAgentNotificationPermissionTitle =>
+      'Оставить Memex Agent работать в фоне';
+
+  @override
+  String get memexAgentNotificationPermissionMessage =>
+      'Memex Agent работает локально на вашем устройстве. Уведомления позволяют Memex показывать прогресс и продолжать обработку после выхода из приложения или выключения экрана. Если уведомления отключены, держите Memex открытым на переднем плане до завершения задачи.';
+
+  @override
   String get loadDetailFailedRetryShort =>
       'Не удалось загрузить детали, повторите позже.';
 

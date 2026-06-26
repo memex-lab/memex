@@ -1,0 +1,15 @@
+name: agent_background_android
+description: Android background bridge for Memex agent foreground-service status.
+version: 0.0.1
+publish_to: "none"
+
+environment:
+  sdk: ">=3.6.0 <4.0.0"
+  flutter: ">=3.29.0"
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: com.memexlab.memex.agentbackground
+        pluginClass: AgentBackgroundPlugin

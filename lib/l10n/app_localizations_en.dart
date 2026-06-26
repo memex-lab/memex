@@ -1531,6 +1531,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'For sending schedule and important reminders';
 
   @override
+  String get memexAgentNotificationPermissionTitle =>
+      'Keep Memex Agent running in the background';
+
+  @override
+  String get memexAgentNotificationPermissionMessage =>
+      'Memex Agent runs locally on your device. Notifications let Memex show progress and keep processing after you leave the app or turn off the screen. If notifications are off, keep Memex open in the foreground until the task finishes.';
+
+  @override
   String get loadDetailFailedRetryShort =>
       'Load detail failed, please retry later.';
 

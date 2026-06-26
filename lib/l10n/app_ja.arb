@@ -710,6 +710,8 @@
   "fitnessPermissionReason": "健康データとモーションデータの記録のため",
   "notification": "通知",
   "notificationPermissionReason": "予定や重要なリマインダーを送信するため",
+  "memexAgentNotificationPermissionTitle": "Memex Agent をバックグラウンドで実行する",
+  "memexAgentNotificationPermissionMessage": "Memex Agent はデバイス上でローカルに動作します。通知を許可すると、Memex は進行状況を表示し、アプリを離れたり画面をオフにした後も処理を続けられます。通知を許可しない場合は、タスクが完了するまで Memex を前面に表示してください。",
   "loadDetailFailedRetryShort": "詳細の読み込みに失敗しました。後でもう一度お試しください。",
   "total": "合計",
   "estimatedCost": "推定コスト",

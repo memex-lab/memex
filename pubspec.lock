@@ -17,6 +17,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.0"
+  agent_background_android:
+    dependency: "direct main"
+    description:
+      path: "plugins/agent_background_android"
+      relative: true
+    source: path
+    version: "0.0.1"
   analyzer:
     dependency: transitive
     description:

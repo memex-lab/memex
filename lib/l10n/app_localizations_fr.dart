@@ -1558,6 +1558,14 @@ class AppLocalizationsFr extends AppLocalizations {
       'Pour envoyer planning et rappels importants';
 
   @override
+  String get memexAgentNotificationPermissionTitle =>
+      'Laisser Memex Agent fonctionner en arrière-plan';
+
+  @override
+  String get memexAgentNotificationPermissionMessage =>
+      'Memex Agent s\'exécute localement sur votre appareil. Avec les notifications, Memex peut afficher la progression et continuer le traitement après que vous quittez l\'app ou éteignez l\'écran. Si les notifications sont désactivées, gardez Memex ouvert au premier plan jusqu\'à la fin de la tâche.';
+
+  @override
   String get loadDetailFailedRetryShort =>
       'Échec du chargement des détails, veuillez réessayer plus tard.';
 
