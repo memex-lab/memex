@@ -1132,6 +1132,7 @@
   "skillsManagement": "إدارة المهارات",
   "skillsManagementEmpty": "لا توجد مهارات بعد",
   "downloadSkill": "تحميل مهارة",
+  "downloadFile": "تنزيل الملف",
   "downloading": "جار التحميل...",
   "downloadSuccess": "تم تحميل المهارة بنجاح",
   "downloadFailed": "فشل التحميل: {error}",

@@ -1093,6 +1093,7 @@
   "skillsManagement": "Skills 管理",
   "skillsManagementEmpty": "暂无 Skill",
   "downloadSkill": "下载 Skill",
+  "downloadFile": "下载文件",
   "downloading": "下载中...",
   "downloadSuccess": "Skill 下载成功",
   "downloadFailed": "下载失败：{error}",

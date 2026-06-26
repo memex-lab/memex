@@ -2530,6 +2530,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get downloadSkill => 'Télécharger la skill';
 
   @override
+  String get downloadFile => 'Télécharger le fichier';
+
+  @override
   String get downloading => 'Téléchargement...';
 
   @override

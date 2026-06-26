@@ -5,9 +5,14 @@ import 'package:memex/domain/models/timeline_card_model.dart';
 import 'package:memex/ui/timeline/widgets/timeline_card_detail_screen.dart';
 import 'package:memex/ui/core/cards/templates/classic_card.dart';
 import 'package:path/path.dart' as path;
+import 'package:memex/utils/logger.dart';
+import 'package:memex/utils/share_service.dart';
+import 'package:memex/utils/toast_helper.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:memex/ui/core/widgets/back_button.dart';
+
+final _logger = getLogger('KnowledgeFilePage');
 
 class KnowledgeFilePage extends StatefulWidget {
   final String filePath;
@@ -25,6 +30,7 @@ class _KnowledgeFilePageState extends State<KnowledgeFilePage> {
   List<TimelineCardModel> _sourceCards = [];
   bool _isLoading = true;
   bool _isLoadingCards = false;
+  bool _isDownloading = false;
 
   @override
   void initState() {
@@ -64,7 +70,11 @@ class _KnowledgeFilePageState extends State<KnowledgeFilePage> {
 
   List<String> _extractFactIds(String content) {
     final regex = RegExp(r'<!--\s*fact_id:\s*(.*?)\s*-->');
-    return regex.allMatches(content).map((m) => m.group(1)!.trim()).toList();
+    return regex
+        .allMatches(content)
+        .map((m) => m.group(1)!.trim())
+        .where((id) => id.isNotEmpty)
+        .toList();
   }
 
   Future<void> _fetchSourceCards(List<String> ids) async {
@@ -73,13 +83,47 @@ class _KnowledgeFilePageState extends State<KnowledgeFilePage> {
       final cards = await _memexRouter.fetchCardByIds(ids);
       if (mounted) {
         setState(() {
-          _sourceCards = cards;
+          _sourceCards = _dedupeSourceCards(cards);
           _isLoadingCards = false;
         });
       }
     } catch (e) {
       if (mounted) setState(() => _isLoadingCards = false);
-      print('Error fetching source cards: $e');
+      _logger.warning('Error fetching source cards: $e');
+    }
+  }
+
+  List<TimelineCardModel> _dedupeSourceCards(List<TimelineCardModel> cards) {
+    final seen = <String>{};
+    return cards.where((card) => seen.add(card.id)).toList();
+  }
+
+  int get _uniqueFactIdCount => _factIds.toSet().length;
+
+  Future<void> _downloadFile() async {
+    if (_isLoading || _isDownloading) return;
+
+    setState(() => _isDownloading = true);
+    try {
+      await ShareService.shareTextAsFile(
+        context,
+        fileName: path.basename(widget.filePath),
+        content: _content,
+        mimeType: 'text/markdown',
+        text: UserStorage.l10n.sharedFromMemex,
+      );
+    } catch (e, stackTrace) {
+      _logger.severe('Failed to download knowledge file: $e', e, stackTrace);
+      if (mounted) {
+        ToastHelper.showError(
+          context,
+          UserStorage.l10n.downloadFailed(e.toString()),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isDownloading = false);
+      }
     }
   }
 
@@ -107,9 +151,23 @@ class _KnowledgeFilePageState extends State<KnowledgeFilePage> {
         elevation: 0,
         leading: const AppBackButton(),
         iconTheme: const IconThemeData(color: Color(0xFF64748B)),
+        actions: [
+          IconButton(
+            key: const ValueKey('knowledge_file_download_button'),
+            tooltip: UserStorage.l10n.downloadFile,
+            onPressed: (_isLoading || _isDownloading) ? null : _downloadFile,
+            icon: _isDownloading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.download_rounded),
+          ),
+        ],
       ),
       body: _isLoading
-          ? Center(child: AgentLogoLoading())
+          ? const Center(child: AgentLogoLoading())
           : SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -159,10 +217,10 @@ class _KnowledgeFilePageState extends State<KnowledgeFilePage> {
                   if (_factIds.isNotEmpty) ...[
                     const SizedBox(height: 24),
                     Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8F9FA),
-                        borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(24)),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFF8F9FA),
+                        borderRadius:
+                            BorderRadius.vertical(top: Radius.circular(24)),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -189,7 +247,7 @@ class _KnowledgeFilePageState extends State<KnowledgeFilePage> {
                                       const SizedBox(width: 4),
                                       Text(
                                           UserStorage.l10n.sourceTraceWithCount(
-                                              _factIds.length),
+                                              _uniqueFactIdCount),
                                           style: const TextStyle(
                                               fontSize: 10,
                                               fontWeight: FontWeight.bold,

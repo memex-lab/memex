@@ -2510,6 +2510,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get downloadSkill => 'Baixar skill';
 
   @override
+  String get downloadFile => 'Baixar arquivo';
+
+  @override
   String get downloading => 'Baixando...';
 
   @override

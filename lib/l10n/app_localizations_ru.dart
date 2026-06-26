@@ -2511,6 +2511,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get downloadSkill => 'Скачать skill';
 
   @override
+  String get downloadFile => 'Скачать файл';
+
+  @override
   String get downloading => 'Загрузка...';
 
   @override

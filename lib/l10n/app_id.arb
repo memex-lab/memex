@@ -1132,6 +1132,7 @@
   "skillsManagement": "Manajemen Skill",
   "skillsManagementEmpty": "Belum ada skill",
   "downloadSkill": "Unduh Skill",
+  "downloadFile": "Unduh file",
   "downloading": "Mengunduh...",
   "downloadSuccess": "Skill berhasil diunduh",
   "downloadFailed": "Unduhan gagal: {error}",

@@ -4542,6 +4542,12 @@ abstract class AppLocalizations {
   /// **'Download Skill'**
   String get downloadSkill;
 
+  /// No description provided for @downloadFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Download file'**
+  String get downloadFile;
+
   /// No description provided for @downloading.
   ///
   /// In en, this message translates to:

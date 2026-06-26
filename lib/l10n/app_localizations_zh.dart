@@ -2413,6 +2413,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get downloadSkill => '下载 Skill';
 
   @override
+  String get downloadFile => '下载文件';
+
+  @override
   String get downloading => '下载中...';
 
   @override
@@ -5626,6 +5629,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get downloadSkill => '下載 技能';
+
+  @override
+  String get downloadFile => '下載檔案';
 
   @override
   String get downloading => '下載中...';

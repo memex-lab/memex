@@ -1132,6 +1132,7 @@
   "skillsManagement": "Gestión de Skills",
   "skillsManagementEmpty": "Aún no hay Skills",
   "downloadSkill": "Descargar Skill",
+  "downloadFile": "Descargar archivo",
   "downloading": "Descargando...",
   "downloadSuccess": "Skill descargada correctamente",
   "downloadFailed": "Descarga fallida: {error}",

@@ -2508,6 +2508,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get downloadSkill => 'Unduh Skill';
 
   @override
+  String get downloadFile => 'Unduh file';
+
+  @override
   String get downloading => 'Mengunduh...';
 
   @override

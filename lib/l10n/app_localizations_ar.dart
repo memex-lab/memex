@@ -2477,6 +2477,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get downloadSkill => 'تحميل مهارة';
 
   @override
+  String get downloadFile => 'تنزيل الملف';
+
+  @override
   String get downloading => 'جار التحميل...';
 
   @override

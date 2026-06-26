@@ -2440,6 +2440,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get downloadSkill => '스킬 다운로드';
 
   @override
+  String get downloadFile => '파일 다운로드';
+
+  @override
   String get downloading => '다운로드 중...';
 
   @override

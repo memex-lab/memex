@@ -1132,6 +1132,7 @@
   "skillsManagement": "스킬 관리",
   "skillsManagementEmpty": "아직 스킬이 없습니다",
   "downloadSkill": "스킬 다운로드",
+  "downloadFile": "파일 다운로드",
   "downloading": "다운로드 중...",
   "downloadSuccess": "스킬을 성공적으로 다운로드했습니다",
   "downloadFailed": "다운로드 실패: {error}",
