@@ -66,6 +66,21 @@ void main() {
     });
   });
 
+  group('Super Agent chat turn resume guard', () {
+    test('keeps the running turn id while the agent can still resume', () {
+      final source =
+          File('lib/data/services/chat_service.dart').readAsStringSync();
+      final cleanupBlock = RegExp(
+        r'if \(!activeAgent\.state\.isRunning &&\s*'
+        r'activeAgent\.state\.metadata\[_runningChatTurnIdKey\] == turnId\) \{\s*'
+        r'activeAgent\.state\.metadata\.remove\(_runningChatTurnIdKey\);',
+        multiLine: true,
+      );
+
+      expect(cleanupBlock.hasMatch(source), isTrue);
+    });
+  });
+
   group('Super Agent state refresh', () {
     const userId = 'chat-state-refresh-user';
     const sessionId = 'memex_agent_state_refresh_session';

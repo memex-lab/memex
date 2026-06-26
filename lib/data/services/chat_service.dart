@@ -850,7 +850,8 @@ class ChatService {
                 cancelToken: cancelToken,
               );
         await agentFuture.whenComplete(() async {
-          if (activeAgent.state.metadata[_runningChatTurnIdKey] == turnId) {
+          if (!activeAgent.state.isRunning &&
+              activeAgent.state.metadata[_runningChatTurnIdKey] == turnId) {
             activeAgent.state.metadata.remove(_runningChatTurnIdKey);
             await saveAgentState(activeAgent.state);
           }
