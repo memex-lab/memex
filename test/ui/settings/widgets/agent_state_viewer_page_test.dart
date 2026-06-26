@@ -70,7 +70,8 @@ void main() {
                 'content': [
                   {
                     'type': 'text',
-                    'text': '[timeline_card_child] status=completed\nsaved',
+                    'text':
+                        '<subagent_result agent_type="timeline_card" status="completed">\nsaved\n</subagent_result>',
                   },
                 ],
                 'metadata': {

@@ -1,7 +1,9 @@
 import 'package:dart_agent_core/dart_agent_core.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:memex/agent/security/file_permission_manager.dart';
 import 'package:memex/agent/super_agent/super_agent.dart';
+import 'package:memex/domain/models/card_model.dart';
 
 void main() {
   const workspace = '/ws/_u';
@@ -120,4 +122,208 @@ void main() {
       expect(state.activeSkills, ['manage_timeline_card']);
     });
   });
+
+  group('SuperAgent transient pre-minted record reminder', () {
+    test('matches only the empty processing placeholder', () {
+      const factId = '2026/06/26.md#ts_1';
+      const placeholder = CardData(
+        factId: factId,
+        timestamp: 1782441600,
+        status: 'processing',
+        tags: [],
+        uiConfigs: [
+          UiConfig(templateId: 'classic_card', data: {'content': ''}),
+        ],
+      );
+
+      expect(
+        isUnusedPreallocatedRecordPlaceholder(placeholder, factId),
+        isTrue,
+      );
+      expect(
+        isUnusedPreallocatedRecordPlaceholder(
+          placeholder.copyWith(status: 'completed'),
+          factId,
+        ),
+        isFalse,
+      );
+      expect(
+        isUnusedPreallocatedRecordPlaceholder(
+          placeholder.copyWith(fact: 'recorded content'),
+          factId,
+        ),
+        isFalse,
+      );
+    });
+
+    test('annotates the matching user message only in model requests', () {
+      final userMessage = UserMessage([
+        TextPart(
+            '<system-reminder>\nCurrent Local Time: now\n</system-reminder>'),
+        TextPart('current user message'),
+      ]);
+      final messages = <LLMMessage>[
+        userMessage,
+      ];
+
+      final requestMessages = annotatePreMintedRecordFactIdReminder(
+        messages,
+        '2026/06/26.md#ts_2',
+        userMessageTimestamp: userMessage.timestamp,
+      );
+      final text = requestMessages
+          .whereType<UserMessage>()
+          .expand((message) => message.contents)
+          .whereType<TextPart>()
+          .map((part) => part.text)
+          .join('\n');
+
+      expect(text, contains('2026/06/26.md#ts_2'));
+      expect(text, contains('current user message'));
+      expect(requestMessages, hasLength(messages.length));
+      expect(messages.single, isNot(same(requestMessages.first)));
+    });
+
+    test('does not append when no pre-minted fact_id exists', () {
+      final messages = <LLMMessage>[
+        UserMessage([TextPart('current user message')]),
+      ];
+
+      final requestMessages = annotatePreMintedRecordFactIdReminder(
+        messages,
+        null,
+        userMessageTimestamp: null,
+      );
+
+      expect(requestMessages, same(messages));
+    });
+
+    test('reuses persisted same-turn fact_id after task restart', () async {
+      final state = AgentState(
+        sessionId: 'restart_session',
+        metadata: {
+          SuperAgentPreMintedRecordHook.turnIdMetadataKey: 'turn-1',
+          SuperAgentPreMintedRecordHook.factIdMetadataKey: '2026/06/26.md#ts_1',
+        },
+      );
+      final hook = SuperAgentPreMintedRecordHook(
+        userId: 'test_user',
+        turnId: 'turn-1',
+      );
+
+      await hook.preallocate(state);
+
+      expect(hook.factIdForTesting, '2026/06/26.md#ts_1');
+      expect(
+        state.metadata[SuperAgentPreMintedRecordHook.factIdMetadataKey],
+        '2026/06/26.md#ts_1',
+      );
+    });
+
+    test('keeps same-turn fact_id when a running agent will retry', () async {
+      final state = AgentState(
+        sessionId: 'retry_session',
+        isRunning: true,
+        metadata: {
+          SuperAgentPreMintedRecordHook.turnIdMetadataKey: 'turn-1',
+          SuperAgentPreMintedRecordHook.factIdMetadataKey: '2026/06/26.md#ts_1',
+          SuperAgentPreMintedRecordHook.userMessageTimestampMetadataKey: 123,
+        },
+      );
+      final agent = StatefulAgent(
+        name: 'retry_agent',
+        client: _NoopClient(),
+        modelConfig: ModelConfig(model: 'test'),
+        state: state,
+      );
+      final hook = SuperAgentPreMintedRecordHook(
+        userId: 'test_user',
+        turnId: 'turn-1',
+      );
+
+      await hook.afterRun(
+        AfterRunHookContext(
+          agent,
+          input: const [],
+          modelMessages: const [],
+          error: AgentException(AgentExceptionCode.unknown, 'retryable'),
+        ),
+      );
+
+      expect(
+        state.metadata[SuperAgentPreMintedRecordHook.factIdMetadataKey],
+        '2026/06/26.md#ts_1',
+      );
+      expect(
+        state.metadata[SuperAgentPreMintedRecordHook.turnIdMetadataKey],
+        'turn-1',
+      );
+      expect(
+        state.metadata[
+            SuperAgentPreMintedRecordHook.userMessageTimestampMetadataKey],
+        123,
+      );
+    });
+
+    test('annotates the matching history user message after the id is used',
+        () {
+      final userMessage = UserMessage([
+        TextPart(
+            '<system-reminder>\nCurrent Local Time: now\n</system-reminder>'),
+        TextPart('record this'),
+      ]);
+      final messages = <LLMMessage>[
+        userMessage,
+        ModelMessage(
+          model: 'test',
+          stopReason: 'stop',
+          textOutput: 'done',
+        ),
+      ];
+
+      final annotated = annotateUserMessageSystemReminder(
+        messages,
+        userMessageTimestamp: userMessage.timestamp,
+        reminder:
+            'Pre-minted record fact_id used this turn: 2026/06/26.md#ts_1.',
+      );
+
+      expect(annotated, hasLength(2));
+      expect(messages.singleWhere((m) => m is UserMessage), same(userMessage));
+      final user = annotated.first as UserMessage;
+      final reminder = (user.contents.first as TextPart).text;
+      expect(
+        reminder,
+        contains(
+            'Pre-minted record fact_id used this turn: 2026/06/26.md#ts_1.'),
+      );
+      expect(reminder, contains('</system-reminder>'));
+    });
+  });
+}
+
+class _NoopClient extends LLMClient {
+  @override
+  Future<ModelMessage> generate(
+    List<LLMMessage> messages, {
+    List<Tool>? tools,
+    ToolChoice? toolChoice,
+    required ModelConfig modelConfig,
+    bool? jsonOutput,
+    CancelToken? cancelToken,
+  }) async {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<Stream<StreamingMessage>> stream(
+    List<LLMMessage> messages, {
+    List<Tool>? tools,
+    ToolChoice? toolChoice,
+    required ModelConfig modelConfig,
+    bool? jsonOutput,
+    CancelToken? cancelToken,
+  }) async {
+    throw UnimplementedError();
+  }
 }

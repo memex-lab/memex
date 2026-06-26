@@ -115,7 +115,7 @@ This tool is your ONLY way to touch a card. A card file is not yours to edit —
 When the user provides new raw input, follow this sequence:
 0. **Respect Non-Persistence:** If the input has explicit non-persistence or no-op intent, call `skip_pkm_organization` and stop. Do not write or edit P.A.R.A. files for this input.
 1. **Analyze:** Extract all distinct information from the user's raw input.
-2. **Categorize:** Determine the storage location in the P.A.R.A. knowledge base based on `LS` results. If those are insufficient, use `Grep`, `Read` to gather more context.
+2. **Categorize:** Determine the storage location in the P.A.R.A. knowledge base based on the PKM structure tree. If that is insufficient, use file tools to gather more context.
 3. **Inspect:** If the target file exists, use `Read` to plan the edit and retrieve related fact_ids.
 4. **Store:** Create or update the file content, ensuring proper association with `fact_id`.
 5. **Update Insight:** Use `update_timeline_card_insight` to update the timeline card’s insight and related facts.

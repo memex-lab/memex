@@ -11,11 +11,8 @@ class GeocodingService {
   GeocodingService._internal();
 
   static const int _maxCacheEntries = 100;
-  static const int _maxTransientAttempts = 3;
-  static const List<Duration> _transientRetryDelays = [
-    Duration(milliseconds: 300),
-    Duration(milliseconds: 800),
-  ];
+  static const int _maxTransientAttempts = 1;
+  static const List<Duration> _transientRetryDelays = <Duration>[];
   final _logger = getLogger('GeocodingService');
   final Map<String, GeocodedAddress> _memoryCache = {};
 
