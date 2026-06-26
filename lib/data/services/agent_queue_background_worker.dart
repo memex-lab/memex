@@ -7,8 +7,8 @@ import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/data/services/agent_activity_service.dart';
 import 'package:memex/data/services/agent_background_platform.dart';
 import 'package:memex/data/services/agent_background_status.dart';
+import 'package:memex/data/services/agent_foreground_task_tracker.dart';
 import 'package:memex/data/services/agent_queue_drain_scheduler.dart';
-import 'package:memex/data/services/agent_run_service.dart';
 import 'package:memex/data/services/file_logger_service.dart';
 import 'package:memex/data/services/local_task_executor.dart';
 import 'package:memex/data/services/sqlite_busy_retry.dart';
@@ -55,7 +55,6 @@ class AgentQueueBackgroundWorker {
       final liveSurface = _LiveBackgroundSurfacePublisher(
         logger: logger,
         platform: surfacePlatform,
-        executor: taskExecutor,
         labels: labels,
       );
       final result = await SqliteBusyRetry.run(
@@ -90,21 +89,23 @@ class AgentQueueBackgroundWorker {
       );
 
       if (result.snapshot.hasActiveTasks) {
-        await AgentRunService.instance.markActiveRunsPausedBySystem(
-          userId: userId,
-          message: result.timedOut
-              ? UserStorage.l10n.agentBackgroundPausedDetail
-              : UserStorage.l10n.agentBackgroundQueuedDetail,
-        );
+        if (result.timedOut || result.deferredToAnotherOwner) {
+          await AgentForegroundTaskTracker.instance.markPaused(
+            message: UserStorage.l10n.agentBackgroundPausedDetail,
+          );
+        } else {
+          await AgentForegroundTaskTracker.instance.clearPause();
+        }
         await queueScheduler.schedule(
           initialDelay: result.nextRunnableDelay ?? _defaultRetryDelay,
           expedited: false,
         );
+      } else {
+        await AgentForegroundTaskTracker.instance.clearPause();
       }
       await _syncBackgroundSurfaceAfterDrain(
         logger,
         surfacePlatform,
-        result.snapshot,
         latestMessage: liveSurface.latestMessage,
         labels: labels,
       );
@@ -132,29 +133,30 @@ class AgentQueueBackgroundWorker {
 
   static Future<void> _syncBackgroundSurfaceAfterDrain(
     Logger logger,
-    AgentBackgroundPlatform platform,
-    TaskActivitySnapshot snapshot, {
+    AgentBackgroundPlatform platform, {
     AgentActivityMessageModel? latestMessage,
     AgentBackgroundStatusLabels labels = const AgentBackgroundStatusLabels(),
   }) async {
     if (!platform.isSupported) return;
 
-    if (!snapshot.hasActiveTasks) {
-      await _stopBackgroundSurface(logger, platform);
-      return;
-    }
-
     try {
-      final runSnapshot = await AgentRunService.instance.getLatestVisibleRun();
-      await platform.updateStatus(
-        AgentBackgroundStatus.fromActivity(
-          taskSnapshot: snapshot,
-          runSnapshot: runSnapshot,
-          latestMessage: latestMessage,
-          labels: labels,
-        ),
-        isInBackground: true,
+      final foregroundSnapshot =
+          await AgentForegroundTaskTracker.instance.getSnapshot();
+      final status = AgentBackgroundStatus.fromActivity(
+        taskSnapshot: foregroundSnapshot.taskSnapshot,
+        foregroundSnapshot: foregroundSnapshot,
+        latestMessage: latestMessage,
+        labels: labels,
       );
+      if (!status.shouldShowSystemSurface) {
+        await _stopBackgroundSurface(logger, platform);
+        return;
+      }
+      if (status.state == AgentBackgroundRunState.failed) {
+        await platform.finishStatus(status, isInBackground: true);
+      } else {
+        await platform.updateStatus(status, isInBackground: true);
+      }
     } catch (e, stackTrace) {
       logger.warning(
         'Failed to refresh Android agent background surface after drain',
@@ -211,13 +213,11 @@ class _LiveBackgroundSurfacePublisher {
   _LiveBackgroundSurfacePublisher({
     required this.logger,
     required this.platform,
-    required this.executor,
     required this.labels,
   });
 
   final Logger logger;
   final AgentBackgroundPlatform platform;
-  final LocalTaskExecutor executor;
   final AgentBackgroundStatusLabels labels;
   StreamSubscription<AgentActivityMessageModel>? _subscription;
   Future<void> _publishChain = Future<void>.value();
@@ -230,7 +230,8 @@ class _LiveBackgroundSurfacePublisher {
     _subscription = activityService.messageStream.listen(
       (message) {
         latestMessage = message;
-        _publishChain = _publishChain.then((_) => _publish(message)).catchError((
+        _publishChain =
+            _publishChain.then((_) => _publish(message)).catchError((
           Object e,
           StackTrace stackTrace,
         ) {
@@ -259,12 +260,12 @@ class _LiveBackgroundSurfacePublisher {
   }
 
   Future<void> _publish(AgentActivityMessageModel message) async {
-    final snapshot = await executor.getTaskActivitySnapshot();
-    final runSnapshot = await AgentRunService.instance.getLatestVisibleRun();
+    final foregroundSnapshot =
+        await AgentForegroundTaskTracker.instance.getSnapshot();
     final status = AgentBackgroundStatus.fromActivity(
-      taskSnapshot: snapshot,
+      taskSnapshot: foregroundSnapshot.taskSnapshot,
       latestMessage: message,
-      runSnapshot: runSnapshot,
+      foregroundSnapshot: foregroundSnapshot,
       labels: labels,
     );
     if (!status.shouldShowSystemSurface) return;

@@ -73,8 +73,6 @@ object AgentBackgroundChannelHandler {
             putExtra("summary", args["summary"] as? String ?: "")
             putExtra("taskSummary", args["taskSummary"] as? String ?: "")
             putExtra("statusText", args["statusText"] as? String ?: "")
-            putExtra("runId", args["runId"] as? String ?: "")
-            putExtra("factId", args["factId"] as? String ?: "")
             putExtra("progressCompleted", (args["progressCompleted"] as? Number)?.toInt() ?: 0)
             putExtra("progressTotal", (args["progressTotal"] as? Number)?.toInt() ?: 0)
             putExtra("remainingTasks", (args["remainingTasks"] as? Number)?.toInt() ?: 0)

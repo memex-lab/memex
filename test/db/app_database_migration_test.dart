@@ -1,15 +1,13 @@
 import 'dart:io';
 
-import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:memex/data/services/agent_run_service.dart';
 import 'package:memex/db/app_database.dart';
 import 'package:sqlite3/sqlite3.dart' as sqlite;
 
 void main() {
   group('AppDatabase migrations', () {
-    test('upgrades schema 14 to 15 with durable agent run tables', () async {
+    test('upgrades schema 14 to 16 without durable agent run tables', () async {
       final tempDir = await Directory.systemTemp.createTemp(
         'memex_app_database_migration_',
       );
@@ -19,7 +17,7 @@ void main() {
       final db = AppDatabase.forTesting(NativeDatabase(dbFile));
       try {
         final schemaVersion = await _userVersion(db);
-        expect(schemaVersion, 15);
+        expect(schemaVersion, 16);
 
         final taskColumns = await _columnNames(db, 'tasks');
         expect(taskColumns, contains('run_id'));
@@ -32,31 +30,8 @@ void main() {
         final taskIndices = await _indexNames(db, 'tasks');
         expect(taskIndices, contains('idx_tasks_run_id'));
 
-        final agentRunColumns = await _columnNames(db, 'agent_runs');
-        expect(agentRunColumns, containsAll(['id', 'fact_id', 'state']));
-
-        final service = AgentRunService.forTesting(db: db);
-        await service.createForSubmittedInput(
-          userId: 'user-a',
-          factId: 'fact-new',
-        );
-        await db.into(db.tasks).insert(
-              TasksCompanion.insert(
-                id: 'linked-task',
-                type: 'super_agent_chat_turn_task',
-                payload: const Value('{}'),
-                runId: const Value('fact-new'),
-                status: 'pending',
-                createdAt: const Value(1700000010),
-              ),
-            );
-
-        await service.refreshRunFromTasks('fact-new');
-
-        final run = await (db.select(db.agentRuns)
-              ..where((agentRun) => agentRun.id.equals('fact-new')))
-            .getSingle();
-        expect(run.remainingTasks, 1);
+        final tables = await _tableNames(db);
+        expect(tables, isNot(contains('agent_runs')));
       } finally {
         await db.close();
         await tempDir.delete(recursive: true);
@@ -133,6 +108,15 @@ Future<List<String>> _columnNames(AppDatabase db, String tableName) async {
 
 Future<List<String>> _indexNames(AppDatabase db, String tableName) async {
   final rows = await db.customSelect("PRAGMA index_list('$tableName')").get();
+  return [
+    for (final row in rows) row.read<String>('name'),
+  ];
+}
+
+Future<List<String>> _tableNames(AppDatabase db) async {
+  final rows = await db
+      .customSelect("SELECT name FROM sqlite_master WHERE type = 'table'")
+      .get();
   return [
     for (final row in rows) row.read<String>('name'),
   ];

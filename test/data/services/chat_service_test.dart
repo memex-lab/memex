@@ -5,6 +5,7 @@ import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:memex/agent/state_util.dart';
+import 'package:memex/data/services/agent_foreground_task_tracker.dart';
 import 'package:memex/data/services/chat_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/local_asset_server.dart';
@@ -191,9 +192,12 @@ void main() {
       try {
         final task = await _waitForQueuedChatTask(db, queuedSessionId);
         final payload = jsonDecode(task.payload!) as Map<String, dynamic>;
+        final foregroundSnapshot =
+            await AgentForegroundTaskTracker.forTesting(db: db).getSnapshot();
 
         expect(payload['session_id'], queuedSessionId);
         expect(payload['agent_state_session_id'], activeStateId);
+        expect(foregroundSnapshot.activeTaskIds, contains(task.id));
       } finally {
         await subscription.cancel();
       }

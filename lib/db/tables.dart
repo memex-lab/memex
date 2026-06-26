@@ -30,34 +30,6 @@ class Tasks extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-/// Coarse-grained user-visible agent run status.
-///
-/// One run represents one user-facing background processing session, usually a
-/// single submitted input/card. The task queue remains the execution source of
-/// truth; this table is the durable status surface shared by in-app UI,
-/// Android notifications, and iOS background/Live Activity plumbing.
-class AgentRuns extends Table {
-  TextColumn get id => text()();
-  TextColumn get userId => text()();
-  TextColumn get factId => text()();
-  TextColumn get state =>
-      text()(); // queued, running, paused_by_system, completed, failed
-  TextColumn get stage => text()();
-  TextColumn get message => text().nullable()();
-  IntColumn get completedUnits => integer().withDefault(const Constant(0))();
-  IntColumn get totalUnits => integer().withDefault(const Constant(100))();
-  IntColumn get remainingTasks => integer().withDefault(const Constant(0))();
-  TextColumn get currentTaskId => text().nullable()();
-  TextColumn get currentTaskType => text().nullable()();
-  TextColumn get lastError => text().nullable()();
-  IntColumn get createdAt => integer()();
-  IntColumn get updatedAt => integer()();
-  IntColumn get completedAt => integer().nullable()();
-
-  @override
-  Set<Column> get primaryKey => {id};
-}
-
 /// Key-Value Store Table
 /// For simple persistent storage
 class KvStore extends Table {

@@ -75,8 +75,6 @@ public final class AgentBackgroundPlugin implements FlutterPlugin, MethodChannel
     putStringExtra(intent, args, "summary", "");
     putStringExtra(intent, args, "taskSummary", "");
     putStringExtra(intent, args, "statusText", "");
-    putStringExtra(intent, args, "runId", "");
-    putStringExtra(intent, args, "factId", "");
     putIntExtra(intent, args, "progressCompleted");
     putIntExtra(intent, args, "progressTotal");
     putIntExtra(intent, args, "remainingTasks");

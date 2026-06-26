@@ -134,13 +134,18 @@ class AgentBackgroundTaskChannelHandler: NSObject {
 
     private func updateTaskActivity(_ snapshot: [String: Any]) {
         activeSnapshot = snapshot
-        let hasActiveTasks = snapshot["hasActiveTasks"] as? Bool ?? false
+        let hasVisibleTasks = snapshot["hasActiveTasks"] as? Bool ?? false
+        let hasRunnableTasks = snapshot["hasRunnableTasks"] as? Bool ?? hasVisibleTasks
 
-        if hasActiveTasks {
+        if hasRunnableTasks {
             beginForegroundBackgroundTaskIfNeeded(reason: snapshot["reason"] as? String ?? "active_tasks")
             scheduleProcessingTask()
-            submitContinuedProcessingIfSupported(snapshot: snapshot)
-            updateContinuedProgress(snapshot: snapshot)
+            if hasVisibleTasks {
+                submitContinuedProcessingIfSupported(snapshot: snapshot)
+                updateContinuedProgress(snapshot: snapshot)
+            } else {
+                completeContinuedProcessingIfSupported(success: true)
+            }
         } else {
             updateContinuedProgress(snapshot: snapshot)
             cancelScheduledProcessing()

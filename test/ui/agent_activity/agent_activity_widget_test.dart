@@ -7,7 +7,6 @@ import 'package:memex/data/services/agent_background_coordinator.dart';
 import 'package:memex/data/services/agent_background_platform.dart';
 import 'package:memex/data/services/agent_background_status.dart';
 import 'package:memex/data/services/agent_queue_drain_scheduler.dart';
-import 'package:memex/data/services/agent_run_service.dart';
 import 'package:memex/data/services/local_task_executor.dart';
 import 'package:memex/l10n/app_localizations.dart';
 import 'package:memex/ui/agent_activity/widgets/agent_activity_widget.dart';
@@ -35,8 +34,6 @@ void main() {
     TaskActivitySnapshot initialTaskSnapshot =
         const TaskActivitySnapshot.empty(),
     Stream<TaskActivitySnapshot>? taskActivitySnapshotStream,
-    AgentRunSnapshot? initialRunSnapshot,
-    Stream<AgentRunSnapshot?>? runSnapshotStream,
   }) {
     return MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -48,9 +45,6 @@ void main() {
             initialTaskSnapshot: initialTaskSnapshot,
             taskActivitySnapshotStream: taskActivitySnapshotStream ??
                 const Stream<TaskActivitySnapshot>.empty(),
-            initialRunSnapshot: initialRunSnapshot,
-            runSnapshotStream:
-                runSnapshotStream ?? const Stream<AgentRunSnapshot?>.empty(),
           ),
         ),
       ),
@@ -179,21 +173,6 @@ void main() {
   testWidgets('shows active task status after returning from notification', (
     tester,
   ) async {
-    final run = AgentRunSnapshot(
-      id: 'run-1',
-      userId: 'agent-activity-test',
-      factId: 'fact-1',
-      state: AgentRunState.running,
-      stage: 'Running Super Agent',
-      message: 'Memex is processing the conversation turn.',
-      completedUnits: 20,
-      totalUnits: 100,
-      remainingTasks: 4,
-      currentTaskId: 'task-1',
-      currentTaskType: 'super_agent_chat_turn_task',
-      updatedAt: DateTime(2026, 1, 1),
-    );
-
     await tester.pumpWidget(
       buildHost(
         initialTaskSnapshot: const TaskActivitySnapshot(
@@ -201,7 +180,6 @@ void main() {
           processing: 0,
           retrying: 0,
         ),
-        initialRunSnapshot: run,
       ),
     );
     await tester.pump(const Duration(milliseconds: 350));

@@ -25,7 +25,6 @@ void _configureSqliteConnection(db) {
 @DriftDatabase(
   tables: [
     Tasks,
-    AgentRuns,
     KvStore,
     AgentActivityMessages,
     CardCache,
@@ -101,7 +100,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 15;
+  int get schemaVersion => 16;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -120,7 +119,6 @@ class AppDatabase extends _$AppDatabase {
           await customStatement(
             'CREATE INDEX IF NOT EXISTS idx_tasks_run_id ON tasks(run_id)',
           );
-          await _createAgentRunIndices();
           await customStatement(
             'CREATE INDEX IF NOT EXISTS idx_kv_bucket ON kv_store(bucket)',
           );
@@ -232,7 +230,9 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 15) {
             await _addTaskRunIdColumn(m);
-            await _createAgentRunsTable(m);
+          }
+          if (from < 16) {
+            await customStatement('DROP TABLE IF EXISTS agent_runs');
           }
         },
       );
@@ -251,30 +251,6 @@ class AppDatabase extends _$AppDatabase {
     }
     await customStatement(
       'CREATE INDEX IF NOT EXISTS idx_tasks_run_id ON tasks(run_id)',
-    );
-  }
-
-  Future<void> _createAgentRunsTable(Migrator m) async {
-    try {
-      await m.createTable(agentRuns);
-    } catch (e) {
-      if (_isAlreadyExistsError(e, 'agent_runs')) {
-        _logger.info('agent_runs table already exists, skipping migration');
-      } else {
-        rethrow;
-      }
-    }
-    await _createAgentRunIndices();
-  }
-
-  Future<void> _createAgentRunIndices() async {
-    await customStatement(
-      'CREATE INDEX IF NOT EXISTS idx_agent_runs_user_state_updated '
-      'ON agent_runs(user_id, state, updated_at)',
-    );
-    await customStatement(
-      'CREATE INDEX IF NOT EXISTS idx_agent_runs_fact_id '
-      'ON agent_runs(fact_id)',
     );
   }
 

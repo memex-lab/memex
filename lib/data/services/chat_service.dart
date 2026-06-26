@@ -13,7 +13,7 @@ import 'package:memex/agent/state_util.dart';
 import 'package:memex/agent/super_agent/super_agent.dart';
 import 'package:memex/agent/super_agent/subagent/delegate_progress.dart';
 import 'package:memex/data/services/asset_safety_service.dart';
-import 'package:memex/data/services/agent_run_service.dart';
+import 'package:memex/data/services/agent_foreground_task_tracker.dart';
 import 'package:memex/data/services/chat_run_registry.dart';
 import 'package:memex/data/services/custom_agent_config_service.dart';
 import 'package:memex/data/services/llm_image_codec.dart';
@@ -446,12 +446,7 @@ class ChatService {
       final previousTaskId = await LocalTaskExecutor.instance.getLastTaskByType(
         _superAgentChatTurnTaskType,
       );
-      final runId = await AgentRunService.instance.createForSuperAgentChatTurn(
-        userId: userId,
-        sessionId: finalSessionId,
-        turnId: turnId,
-      );
-      await LocalTaskExecutor.instance.enqueueTask(
+      final taskId = await LocalTaskExecutor.instance.enqueueTask(
         userId: userId,
         taskType: _superAgentChatTurnTaskType,
         payload: {
@@ -473,8 +468,16 @@ class ChatService {
         priority: 10,
         bizId: 'chat_turn:$finalSessionId:$turnId',
         dependencies: previousTaskId == null ? null : [previousTaskId],
-        runId: runId,
       );
+      try {
+        await AgentForegroundTaskTracker.instance.trackTask(taskId);
+      } catch (trackingError, trackingStack) {
+        _logger.warning(
+          'Failed to track Super Agent chat turn for foreground updates',
+          trackingError,
+          trackingStack,
+        );
+      }
     } catch (e, st) {
       _logger.severe('Failed to enqueue chat turn', e, st);
       run.add(ChatErrorEvent('Failed to enqueue chat turn: $e'));

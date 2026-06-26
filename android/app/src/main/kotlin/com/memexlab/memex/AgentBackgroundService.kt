@@ -284,8 +284,7 @@ class AgentBackgroundService : Service() {
 
     private fun pauseNotificationAfterDetachedWork() {
         val lastIntent = lastStatusIntent
-        val runId = lastIntent?.getStringExtra("runId").orEmpty()
-        if (runId.isBlank()) {
+        if (lastIntent == null) {
             clearAndStop()
             return
         }

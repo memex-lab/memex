@@ -5,7 +5,7 @@ import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
-import 'package:memex/data/services/agent_run_service.dart';
+import 'package:memex/data/services/agent_foreground_task_tracker.dart';
 import 'package:memex/data/services/sqlite_busy_retry.dart';
 import 'package:memex/db/app_database.dart';
 import 'package:memex/domain/models/task_exceptions.dart';
@@ -1004,7 +1004,6 @@ class LocalTaskExecutor {
       }
 
       final payloadMap = _decodePayload(task);
-      final runId = task.runId ?? payloadMap['run_id'] as String?;
 
       final currentUserId = _currentUserId;
       if (currentUserId == null) {
@@ -1013,14 +1012,7 @@ class LocalTaskExecutor {
         );
       }
 
-      if (runId != null && runId.isNotEmpty) {
-        await AgentRunService.instance.resumePausedRunIfNeeded(runId);
-        await AgentRunService.instance.markTaskStarted(
-          runId: runId,
-          taskId: task.id,
-          taskType: task.type,
-        );
-      }
+      await AgentForegroundTaskTracker.instance.clearPause();
 
       await handler(
         currentUserId,
@@ -1037,13 +1029,7 @@ class LocalTaskExecutor {
         ),
       );
 
-      if (runId != null && runId.isNotEmpty) {
-        await AgentRunService.instance.markTaskCompleted(
-          runId: runId,
-          taskId: task.id,
-          taskType: task.type,
-        );
-      }
+      await AgentForegroundTaskTracker.instance.markTaskCompleted(task.id);
 
       _logger.info('Task ${task.id} completed');
     } catch (e, stack) {
@@ -1070,15 +1056,6 @@ class LocalTaskExecutor {
             error: Value(e.toString()),
           ),
         );
-        final retryRunId = task.runId ?? _tryDecodeRunId(task);
-        if (retryRunId != null && retryRunId.isNotEmpty) {
-          await AgentRunService.instance.markTaskRetrying(
-            runId: retryRunId,
-            taskId: task.id,
-            taskType: task.type,
-            error: e,
-          );
-        }
         _logger.info('Task ${task.id} scheduled for retry at $nextRun');
       } else {
         await _failTask(task, e, stack);
@@ -1095,14 +1072,6 @@ class LocalTaskExecutor {
       if (_isRunning) {
         _scheduleNextPoll(immediate: true);
       }
-    }
-  }
-
-  String? _tryDecodeRunId(Task task) {
-    try {
-      return _decodePayload(task)['run_id'] as String?;
-    } catch (_) {
-      return null;
     }
   }
 
@@ -1468,15 +1437,7 @@ class LocalTaskExecutor {
       ),
     );
 
-    final runId = task.runId ?? payloadMap['run_id'] as String?;
-    if (runId != null && runId.isNotEmpty) {
-      await AgentRunService.instance.markTaskFailed(
-        runId: runId,
-        taskId: task.id,
-        taskType: task.type,
-        error: error,
-      );
-    }
+    await AgentForegroundTaskTracker.instance.markTaskFailed(task.id, error);
   }
 
   Map<String, dynamic> _safeDecodePayload(Task task) {
