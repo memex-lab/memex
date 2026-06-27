@@ -579,11 +579,7 @@ class TimelineCardSkill extends Skill {
             }
 
             return AgentToolResult(
-              content: TextPart(
-                  "Successfully saved timeline card. This record's fact_id is "
-                  "$resolvedFactId — use this exact id when organizing this "
-                  "record into PKM (e.g. `<!-- fact_id: $resolvedFactId -->`) "
-                  "so the knowledge base links back to this card."),
+              content: TextPart('Successfully saved timeline card.'),
               stopFlag: stopAfterSuccessSaveCard ||
                   (isSubAgent && _nonEmpty(finish_summary)),
               metadata: {

@@ -488,6 +488,62 @@ void main() {
       expect(result.structured['pkm_changed'], isTrue);
     });
 
+    test('update insight success output does not expose card paths', () async {
+      const factId = '2026/06/26.md#ts_2';
+      await FileSystemService.instance.safeWriteCardFile(
+        userId,
+        factId,
+        CardData(
+          factId: factId,
+          timestamp: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+          status: 'completed',
+          tags: const [],
+          uiConfigs: const [
+            UiConfig(templateId: 'classic_card', data: {'content': 'before'}),
+          ],
+          fact: 'record content',
+        ),
+      );
+      final tool = PkmSkill(forceActivate: true)
+          .tools!
+          .singleWhere((tool) => tool.name == 'update_timeline_card_insight');
+      final state = AgentState(
+        sessionId: 'pkm_update_${DateTime.now().microsecondsSinceEpoch}',
+        metadata: {'userId': userId},
+      );
+      final agent = StatefulAgent(
+        name: 'pkm_update_test_agent',
+        client: _SingleToolCallClient(
+          toolName: tool.name,
+          arguments: const {
+            'fact_id': factId,
+            'insight_text': 'A useful insight.',
+            'related_fact_ids': [],
+          },
+        ),
+        modelConfig: ModelConfig(model: 'test'),
+        state: state,
+        tools: [tool],
+        withGeneralPrinciples: false,
+        maxTurns: 3,
+      );
+
+      await agent.run([UserMessage.text('update insight')], useStream: false);
+
+      final result = state.history.messages
+          .whereType<FunctionExecutionResultMessage>()
+          .single
+          .results
+          .single;
+      final text = _text(result);
+      expect(result.isError, isFalse);
+      expect(text, 'Card insight updated.');
+      expect(text, isNot(contains(tempRoot.path)));
+      expect(text, isNot(contains('Cards')));
+      expect(text, isNot(contains(factId)));
+      expect(text, isNot(contains('Related facts count')));
+    });
+
     test('run reports failed when the child errors out', () async {
       final result = await runSuperAgentChild(
         config: cfg(ChildToolProfile.read),

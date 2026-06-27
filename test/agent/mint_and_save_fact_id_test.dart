@@ -128,6 +128,10 @@ void main() {
         metadata: {'userId': userId},
       );
       expect(saveResult.isError, isFalse);
+      expect(_text(saveResult), 'Successfully saved timeline card.');
+      expect(_text(saveResult), isNot(contains('PKM')));
+      expect(_text(saveResult), isNot(contains('fact_id')));
+      expect(_text(saveResult), isNot(contains(factId)));
 
       final card =
           await FileSystemService.instance.readCardFile(userId, factId);
