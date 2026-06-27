@@ -17,8 +17,8 @@ class PermissionDeniedException implements Exception {
 
   @override
   String toString() =>
-      'Access denied for "$path": outside your allowed scope. This is a fixed '
-      'boundary, not a transient error — do not retry.';
+      'Access denied: target path is outside your allowed scope. This is a '
+      'fixed boundary, not a transient error - do not retry.';
 }
 
 class PermissionRule {

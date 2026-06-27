@@ -44,6 +44,22 @@ void main() {
       );
     });
 
+    test('permission denial message does not expose absolute paths', () {
+      try {
+        manager.checkPermission(
+          '$facts/2026/06/10.md',
+          FileAccessType.write,
+        );
+        fail('Expected permission denial');
+      } on PermissionDeniedException catch (e) {
+        final message = e.toString();
+        expect(message, contains('Access denied'));
+        expect(message, isNot(contains('/ws')));
+        expect(message, isNot(contains(workspace)));
+        expect(message, isNot(contains(facts)));
+      }
+    });
+
     test('media files under assets stay writable', () {
       manager.checkPermission('$assets/photo.jpg', FileAccessType.write);
       manager.checkPermission('$assets/voice.m4a', FileAccessType.write);
