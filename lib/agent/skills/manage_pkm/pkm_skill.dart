@@ -148,9 +148,6 @@ class PkmSkill extends Skill {
                 'update_timeline_card_insight dropped non-existent related_fact_ids: ${droppedRelated.join(', ')}');
           }
 
-          final relatedCount = validRelated.length;
-          final cardPath = fileService.getCardPath(userId, fact_id);
-
           final relatedFacts =
               validRelated.map((id) => RelatedFact(id: id)).toList();
           final insightData = CardInsight(
@@ -186,8 +183,7 @@ class PkmSkill extends Skill {
           ));
 
           return AgentToolResult(
-            content: TextPart(Prompts.pkmSkillUpdateCardInsightSuccess(
-                cardPath, fact_id, relatedCount)),
+            content: TextPart(Prompts.pkmSkillUpdateCardInsightSuccess),
             stopFlag: stopFlag,
             metadata: {
               if (isSubAgent && hasFinishSummary)
@@ -196,7 +192,6 @@ class PkmSkill extends Skill {
                   'summary': finish_summary.trim(),
                   'fact_id': fact_id,
                   'pkm_changed': true,
-                  'related_count': relatedCount,
                 },
             },
           );

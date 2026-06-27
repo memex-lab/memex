@@ -178,12 +178,7 @@ Examples:
   static String pkmSkillUpdateCardInsightErrorCardNotFound(String factId) =>
       'Card file not found for fact_id: $factId, maybe it has been deleted';
 
-  static String pkmSkillUpdateCardInsightSuccess(
-    String cardPath,
-    String factId,
-    int relatedCount,
-  ) =>
-      'Card insight updated: $cardPath\nFact ID: $factId\nRelated facts count: $relatedCount';
+  static String get pkmSkillUpdateCardInsightSuccess => 'Card insight updated.';
 
   static String get fileToolReadDescription =>
       '''Reads files from the local file system. You can use this tool to directly access any file.
