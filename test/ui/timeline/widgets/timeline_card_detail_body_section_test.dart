@@ -35,6 +35,7 @@ void main() {
     );
     expect(find.textContaining('- 家常菜', findRichText: true), findsOneWidget);
     expect(find.textContaining('#Visual', findRichText: true), findsOneWidget);
+    expect(find.byType(SelectionArea), findsOneWidget);
     expect(find.text('端午的温馨家常晚餐和太顺杨梅'), findsNothing);
     expect(find.text('一家人吃了家常晚餐，还尝到了太顺杨梅。'), findsNothing);
   });
@@ -80,6 +81,31 @@ void main() {
     );
 
     expect(find.text('普通正文'), findsOneWidget);
+  });
+
+  testWidgets('keeps tag taps working when content is selectable',
+      (tester) async {
+    String? tappedTag;
+    final detail = _detail(
+      rawContent: '',
+      uiConfigs: const [],
+      tags: const ['Visual'],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: TimelineCardDetailBodySection(
+            detail: detail,
+            onTagTap: (tag) => tappedTag = tag,
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.textContaining('#Visual', findRichText: true));
+
+    expect(tappedTag, 'Visual');
   });
 }
 

@@ -1110,15 +1110,17 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                                       padding: const EdgeInsets.only(
                                         bottom: 12,
                                       ),
-                                      child: Text(
-                                        detail.title,
-                                        style: const TextStyle(
-                                          fontFamily: 'PingFang SC',
-                                          fontSize: 24,
-                                          fontWeight: FontWeight.w600,
-                                          color: Color(0xFF334155),
-                                          height: 1.375, // 33/24
-                                          letterSpacing: -0.45,
+                                      child: SelectionArea(
+                                        child: Text(
+                                          detail.title,
+                                          style: const TextStyle(
+                                            fontFamily: 'PingFang SC',
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xFF334155),
+                                            height: 1.375, // 33/24
+                                            letterSpacing: -0.45,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -2067,40 +2069,42 @@ class TimelineCardDetailBodySection extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    return Text.rich(
-      TextSpan(
-        children: [
-          TextSpan(
-            text: detail.rawContent,
-            style: const TextStyle(
-              fontSize: 16,
-              color: Color(0xFF334155),
-              height: 1.6,
-            ),
-          ),
-          if (detail.rawContent.isNotEmpty && detail.tags.isNotEmpty)
-            const TextSpan(text: ' '),
-          ...detail.tags.map((tag) {
-            return TextSpan(
-              text: '#$tag',
+    return SelectionArea(
+      child: Text.rich(
+        TextSpan(
+          children: [
+            TextSpan(
+              text: detail.rawContent,
               style: const TextStyle(
                 fontSize: 16,
-                color: Color(0xFF6366F1),
-                fontWeight: FontWeight.w400,
-                height: 1.25,
-                letterSpacing: 0,
+                color: Color(0xFF334155),
+                height: 1.6,
               ),
-              recognizer: onTagTap == null
-                  ? null
-                  : (TapGestureRecognizer()..onTap = () => onTagTap!(tag)),
-            );
-          }).expand(
-            (span) => [
-              span,
+            ),
+            if (detail.rawContent.isNotEmpty && detail.tags.isNotEmpty)
               const TextSpan(text: ' '),
-            ],
-          ),
-        ],
+            ...detail.tags.map((tag) {
+              return TextSpan(
+                text: '#$tag',
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Color(0xFF6366F1),
+                  fontWeight: FontWeight.w400,
+                  height: 1.25,
+                  letterSpacing: 0,
+                ),
+                recognizer: onTagTap == null
+                    ? null
+                    : (TapGestureRecognizer()..onTap = () => onTagTap!(tag)),
+              );
+            }).expand(
+              (span) => [
+                span,
+                const TextSpan(text: ' '),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
