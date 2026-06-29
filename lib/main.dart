@@ -1852,7 +1852,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
               left: 0,
               right: 0,
               child: Center(
-                child: AgentActivityWidget(navigatorKey: null),
+                child: AgentActivityWidget(),
               ),
             ),
 
