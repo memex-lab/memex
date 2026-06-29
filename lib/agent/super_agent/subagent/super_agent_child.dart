@@ -206,7 +206,7 @@ the user questions, and do not produce user-facing chit-chat. Your final
 message is parsed by the parent runtime.
 
 ## Scope
-- Work only on the task content/brief and context packet provided in this run.
+- Work only on the task content and context packet provided in this run.
 - Follow the active skill instructions for this run.
 - Use ONLY the fact_id, timestamps, assets, and context explicitly provided.
   Never invent or guess record identity.

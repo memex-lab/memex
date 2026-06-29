@@ -301,7 +301,7 @@ void main() {
         messages,
         userMessageTimestamp: userMessage.timestamp,
         reminder:
-            'Pre-minted record fact_id used this turn: 2026/06/26.md#ts_1.',
+            'Newly minted record fact_id was used this turn: 2026/06/26.md#ts_1.',
       );
 
       expect(annotated, hasLength(2));
@@ -311,7 +311,7 @@ void main() {
       expect(
         reminder,
         contains(
-            'Pre-minted record fact_id used this turn: 2026/06/26.md#ts_1.'),
+            'Newly minted record fact_id was used this turn: 2026/06/26.md#ts_1.'),
       );
       expect(reminder, contains('</system-reminder>'));
     });

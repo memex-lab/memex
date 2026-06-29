@@ -163,7 +163,7 @@ Examples:
           'insight_text': {
             'type': 'string',
             'description':
-                'User-facing insight text. Synthesize relevant history into a coherent observation; do not dump an evidence inventory.',
+                'User-facing insight text. Do not restate or paraphrase the current record; the card already shows it. Synthesize relevant history into a coherent observation, and do not dump an evidence inventory.',
           },
           'related_fact_ids': {
             'type': 'array',

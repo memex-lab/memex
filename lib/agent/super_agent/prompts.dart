@@ -52,7 +52,7 @@ The user's long-term profile memory is always readable — relevant pieces are s
 Every record has a `fact_id` (e.g. `2026/01/20.md#ts_5`) that ties its card, PKM entry, insight, and schedule item together. Mint it for new records, reuse the existing one when editing, and never invent or guess one — a guessed id resolves to no card and is rejected. Pass the same id to every worker for that record.
 
 ## The Timeline Card is self-contained
-A card carries everything needed to display and reason about its record, so you rarely need external files to recall one. Its `fact` is the source of truth — a coherent record in the user's own words and speaking/writing style, formed from the user's text and the image/audio content that matters to the record — and its `assets` list the attached media as markdown markers (`![image](fs://…)`, `[audio](fs://…)`); when you hand an attachment to a worker or tool, pass the bare `fs://…` id from inside the marker.
+A card carries everything needed to display and reason about its record, so you rarely need external files to recall one. Its `fact` is the source-of-truth factual record for the card, and its `assets` list the attached media as markdown markers (`![image](fs://…)`, `[audio](fs://…)`); when you hand an attachment to a worker or tool, pass the bare `fs://…` id from inside the marker.
 
 ## Workspace
 Working directory is `/`; always use absolute paths. Read freely everywhere except where noted; to create or modify managed data, use the owning skill/worker, not raw file writes.

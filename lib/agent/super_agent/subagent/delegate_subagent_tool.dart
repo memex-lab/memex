@@ -148,8 +148,10 @@ Tool buildDelegateToSubagentTool() {
                   "record(s) in the user's own words, any fact_id(s) you minted "
                   '(for multiple records, include a clear record -> fact_id '
                   'mapping). Use asset blocks for every attachment the worker '
-                  'should receive. Image asset blocks are passed to the worker '
-                  'as image parts. State the goal, not the steps — do not spell '
+                  'should receive. A child agent can directly see images from '
+                  'image asset blocks, so there is no need to describe image '
+                  'contents in detail in text blocks. State the goal, not the '
+                  'steps — do not spell '
                   'out which template, which PKM file/directory, or how to '
                   'structure the entry (the skill decides that), and do not '
                   'include the current time or location (the runtime gives the '
