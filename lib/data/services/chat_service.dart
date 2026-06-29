@@ -12,17 +12,15 @@ import 'package:memex/agent/pure_skill_host_agent/pure_skill_host_agent.dart';
 import 'package:memex/agent/state_util.dart';
 import 'package:memex/agent/super_agent/super_agent.dart';
 import 'package:memex/agent/super_agent/subagent/delegate_progress.dart';
-import 'package:memex/data/services/asset_safety_service.dart';
+import 'package:memex/data/services/agent_image_attachment.dart';
 import 'package:memex/data/services/agent_foreground_task_tracker.dart';
 import 'package:memex/data/services/chat_run_registry.dart';
 import 'package:memex/data/services/custom_agent_config_service.dart';
-import 'package:memex/data/services/llm_image_codec.dart';
 import 'package:memex/data/services/location_context_service.dart';
 import 'package:memex/domain/models/custom_agent_config.dart';
 import 'package:memex/domain/models/location_context_config.dart';
 import 'package:memex/domain/models/llm_config.dart';
 import 'package:memex/data/services/file_system_service.dart';
-import 'package:memex/data/services/image_exif_context.dart';
 import 'package:memex/data/services/local_task_executor.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/time_context.dart';
@@ -146,8 +144,26 @@ class _ChatDelegateProgressSink implements DelegateProgressSink {
     try {
       final decoded = jsonDecode(arguments);
       if (decoded is! Map) return null;
-      final taskBrief = decoded['task_brief'];
-      return taskBrief is String ? taskBrief : null;
+      final taskContent = decoded['task_content'];
+      if (taskContent is! List || taskContent.isEmpty) return null;
+      final parts = <String>[];
+      for (final rawItem in taskContent) {
+        if (rawItem is! Map) continue;
+        final type = rawItem['type']?.toString();
+        if (type == 'text') {
+          final text = rawItem['text']?.toString().trim();
+          if (text != null && text.isNotEmpty) {
+            parts.add(text);
+          }
+        } else if (type == 'asset') {
+          final ref = rawItem['ref']?.toString().trim();
+          if (ref != null && ref.isNotEmpty) {
+            parts.add('Attachment: $ref');
+          }
+        }
+      }
+      final brief = parts.join('\n\n').trim();
+      return brief.isEmpty ? null : brief;
     } catch (_) {
       return null;
     }
@@ -350,7 +366,7 @@ class ChatService {
     final userMessageTime = DateTime.now();
     final turnId = _uuid.v4();
     final trimmedMessage = message.trim();
-    final preparedImages = <_PreparedChatImage>[];
+    final preparedImages = <AgentImageAttachment>[];
     String agentStateSessionId = '';
 
     try {
@@ -558,7 +574,7 @@ class ChatService {
     required String scene,
     required String? sceneId,
     required List<Map<String, String>>? refs,
-    required List<_PreparedChatImage> preparedImages,
+    required List<AgentImageAttachment> preparedImages,
     required bool isQuickQuery,
     required String runMode,
     required DateTime userMessageTime,
@@ -827,9 +843,15 @@ class ChatService {
       final inlinedImageFileNames = <String>[];
       for (var i = 0; i < preparedImages.length; i++) {
         final image = preparedImages[i];
-        userContentParts.add(TextPart(_buildAttachmentReminder(i, image)));
         final inline = await _inlinePreparedImage(image);
-        if (inline != null) {
+        userContentParts.add(TextPart(
+          buildAgentImageAttachmentReminder(
+            i,
+            image,
+            imageLoaded: inline != null && inline.base64Data.isNotEmpty,
+          ),
+        ));
+        if (inline != null && inline.base64Data.isNotEmpty) {
           userContentParts.add(ImagePart(inline.base64Data, inline.mimeType));
           inlinedImageFileNames.add(image.fsFilename);
         }
@@ -894,78 +916,21 @@ class ChatService {
     });
   }
 
-  Future<_PreparedChatImage> _prepareChatImage({
+  Future<AgentImageAttachment> _prepareChatImage({
     required String userId,
     required XFile image,
     required String? originalName,
-  }) async {
-    // Store chat attachments in Facts/assets using the same fs:// reference
-    // scheme as records. The card the agent creates will reference them via
-    // `![image](fs://<filename>)`.
-    final (fsFilename, relativePath) = await _fileService.saveAssetFromFile(
+  }) {
+    return prepareChatImageAttachment(
       userId: userId,
       sourcePath: image.path,
-      assetType: 'img',
-    );
-    final absolutePath = _fileService.toAbsolutePath(relativePath);
-    final mimeType = _mimeTypeForImagePath(absolutePath);
-
-    String? base64Data;
-    String? inlineMimeType;
-    try {
-      final safety =
-          await AssetSafetyService.instance.inspectFile(absolutePath);
-      if (safety.safeForInlineBase64) {
-        // iOS gallery originals are commonly HEIC, which OpenAI-compatible
-        // endpoints (Kimi, OpenAI) reject. Inline a bounded JPEG transcode;
-        // the stored original stays untouched.
-        final transcoded = await LlmImageCodec.transcodeForLlm(absolutePath);
-        if (transcoded != null) {
-          base64Data = base64Encode(transcoded);
-          inlineMimeType = LlmImageCodec.jpegMimeType;
-        } else {
-          // Only fall back to original bytes when the format is universally
-          // accepted; inlining HEIC would poison the session history.
-          final originalBytes = await File(absolutePath).readAsBytes();
-          if (LlmImageCodec.isLlmSafeImageBytes(originalBytes)) {
-            _logger.warning(
-              'Transcode failed, inlining original bytes for $relativePath',
-            );
-            base64Data = base64Encode(originalBytes);
-          } else {
-            _logger.warning(
-              'Transcode failed and original format is not LLM-safe, '
-              'skipping inline for $relativePath',
-            );
-          }
-        }
-      } else {
-        _logger.warning(
-          'Skipping inline chat image $relativePath: ${safety.reason}',
-        );
-      }
-    } catch (e) {
-      _logger.warning('Failed to inline chat image $relativePath: $e');
-    }
-
-    // Read EXIF (capture time + GPS → reverse-geocoded address) from the
-    // stored original. saveAssetFromFile copies raw bytes, so EXIF survives;
-    // the transcoded inline copy intentionally strips it.
-    final exifInfo = await buildImageExifInfo(userId, absolutePath);
-
-    return _PreparedChatImage(
-      relativePath: relativePath,
-      fsFilename: fsFilename,
-      mimeType: inlineMimeType ?? mimeType,
       originalName: originalName,
-      base64Data: base64Data,
-      exifInfo: exifInfo,
     );
   }
 
   List<Map<String, dynamic>> _buildSessionUserContent(
     String message,
-    List<_PreparedChatImage> images,
+    List<AgentImageAttachment> images,
   ) {
     return [
       if (message.isNotEmpty) {'type': 'text', 'text': message},
@@ -978,46 +943,6 @@ class ChatService {
             'name': image.originalName,
         },
     ];
-  }
-
-  String _buildAttachmentReminder(int index, _PreparedChatImage image) {
-    final buffer = StringBuffer()
-      ..writeln('<system-reminder>')
-      ..writeln('Attachment ${index + 1}: fs://${image.fsFilename}')
-      ..writeln(
-        'The following image part is this attachment; do not call '
-        'view_image for this fs:// id.',
-      );
-    if (image.originalName != null && image.originalName!.isNotEmpty) {
-      buffer.writeln('original_name: ${image.originalName}');
-    }
-    buffer.writeln('mime_type: ${image.mimeType}');
-    if (image.exifInfo != null && image.exifInfo!.isNotEmpty) {
-      for (final line in image.exifInfo!.split('\n')) {
-        buffer.writeln(line);
-      }
-    }
-    buffer.writeln('</system-reminder>');
-    return buffer.toString().trimRight();
-  }
-
-  String _mimeTypeForImagePath(String filePath) {
-    final ext = p.extension(filePath).toLowerCase();
-    switch (ext) {
-      case '.jpg':
-      case '.jpeg':
-        return 'image/jpeg';
-      case '.webp':
-        return 'image/webp';
-      case '.gif':
-        return 'image/gif';
-      case '.heic':
-      case '.heif':
-        return 'image/heic';
-      case '.png':
-      default:
-        return 'image/png';
-    }
   }
 
   List<Map<String, String>>? _decodeRefs(dynamic raw) {
@@ -1034,53 +959,24 @@ class ChatService {
     return refs.isEmpty ? null : refs;
   }
 
-  List<_PreparedChatImage> _decodePreparedImages(dynamic raw) {
+  List<AgentImageAttachment> _decodePreparedImages(dynamic raw) {
     if (raw is! List) return const [];
     return raw
         .whereType<Map>()
-        .map((item) => _PreparedChatImage.fromTaskJson(item))
-        .whereType<_PreparedChatImage>()
+        .map((item) => AgentImageAttachment.fromTaskJson(item))
+        .whereType<AgentImageAttachment>()
         .toList();
   }
 
-  Future<_InlinePreparedImage?> _inlinePreparedImage(
-    _PreparedChatImage image,
+  Future<InlineAgentImage?> _inlinePreparedImage(
+    AgentImageAttachment image,
   ) async {
-    try {
-      final absolutePath = _fileService.toAbsolutePath(image.relativePath);
-      final safety =
-          await AssetSafetyService.instance.inspectFile(absolutePath);
-      if (!safety.safeForInlineBase64) {
-        _logger.warning(
-          'Skipping inline chat image ${image.relativePath}: ${safety.reason}',
-        );
-        return null;
-      }
-
-      final transcoded = await LlmImageCodec.transcodeForLlm(absolutePath);
-      if (transcoded != null) {
-        return _InlinePreparedImage(
-          base64Data: base64Encode(transcoded),
-          mimeType: LlmImageCodec.jpegMimeType,
-        );
-      }
-
-      final originalBytes = await File(absolutePath).readAsBytes();
-      if (!LlmImageCodec.isLlmSafeImageBytes(originalBytes)) {
-        _logger.warning(
-          'Transcode failed and original format is not LLM-safe, '
-          'skipping inline for ${image.relativePath}',
-        );
-        return null;
-      }
-      return _InlinePreparedImage(
-        base64Data: base64Encode(originalBytes),
-        mimeType: image.mimeType,
-      );
-    } catch (e) {
-      _logger.warning('Failed to inline chat image ${image.relativePath}: $e');
-      return null;
-    }
+    final absolutePath = _fileService.toAbsolutePath(image.relativePath);
+    return inlineImageForLlm(
+      absolutePath: absolutePath,
+      fallbackMimeType: image.mimeType,
+      logLabel: image.relativePath,
+    );
   }
 
   void _setupControllerListeners(
@@ -1580,68 +1476,4 @@ class ChatService {
           message['unix_seconds'] ?? unixSecondsFromDateTime(parsed),
     };
   }
-}
-
-class _PreparedChatImage {
-  final String relativePath;
-
-  /// Bare stored filename, used to build the `fs://<filename>` reference the
-  /// agent sees (resolves to Facts/assets/<filename>, same as in-text fs:// refs).
-  final String fsFilename;
-  final String mimeType;
-  final String? originalName;
-  final String? base64Data;
-
-  /// Pre-formatted EXIF metadata block (capture time, GPS coordinates, and
-  /// reverse-geocoded address) for this image, or null when none is available.
-  final String? exifInfo;
-
-  const _PreparedChatImage({
-    required this.relativePath,
-    required this.fsFilename,
-    required this.mimeType,
-    required this.originalName,
-    required this.base64Data,
-    this.exifInfo,
-  });
-
-  Map<String, dynamic> toTaskJson() => {
-        'relative_path': relativePath,
-        'fs_filename': fsFilename,
-        'mime_type': mimeType,
-        if (originalName != null) 'original_name': originalName,
-        if (exifInfo != null) 'exif_info': exifInfo,
-      };
-
-  static _PreparedChatImage? fromTaskJson(Map<dynamic, dynamic> json) {
-    final relativePath = json['relative_path']?.toString();
-    final fsFilename = json['fs_filename']?.toString();
-    final mimeType = json['mime_type']?.toString();
-    if (relativePath == null ||
-        relativePath.isEmpty ||
-        fsFilename == null ||
-        fsFilename.isEmpty ||
-        mimeType == null ||
-        mimeType.isEmpty) {
-      return null;
-    }
-    return _PreparedChatImage(
-      relativePath: relativePath,
-      fsFilename: fsFilename,
-      mimeType: mimeType,
-      originalName: json['original_name']?.toString(),
-      base64Data: null,
-      exifInfo: json['exif_info']?.toString(),
-    );
-  }
-}
-
-class _InlinePreparedImage {
-  const _InlinePreparedImage({
-    required this.base64Data,
-    required this.mimeType,
-  });
-
-  final String base64Data;
-  final String mimeType;
 }

@@ -1,15 +1,11 @@
 // ignore_for_file: non_constant_identifier_names
 
-import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:dart_agent_core/dart_agent_core.dart';
-import 'package:flutter/foundation.dart' show compute;
-import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:memex/agent/prompts.dart';
 import 'package:memex/agent/run_mode/agent_action_approval_service.dart';
 import 'package:memex/agent/security/file_permission_manager.dart';
 import 'package:memex/agent/super_agent/pending_tool_image_buffer.dart';
+import 'package:memex/data/services/agent_image_attachment.dart';
 import 'package:memex/data/services/asset_safety_service.dart';
 import 'package:memex/data/services/api_exception.dart';
 import 'package:memex/data/services/file_operation_service.dart';
@@ -21,12 +17,6 @@ import 'package:path/path.dart' as p;
 final _fileOpService = FileOperationService.instance;
 FileSystemService get _fileSystem => FileSystemService.instance;
 
-typedef ViewImageCompressor = Future<Uint8List?> Function(
-  String filePath, {
-  int targetSize,
-  int quality,
-});
-
 typedef ViewImageExifInfoBuilder = Future<String?> Function(
   String userId,
   String imagePath,
@@ -35,34 +25,14 @@ typedef ViewImageExifInfoBuilder = Future<String?> Function(
 class FileToolFactory {
   final FilePermissionManager permissionManager;
   final String workingDirectory;
-  final ViewImageCompressor _viewImageCompressor;
   final ViewImageExifInfoBuilder _viewImageExifInfoBuilder;
 
   FileToolFactory({
     required this.permissionManager,
     required this.workingDirectory,
-    ViewImageCompressor? viewImageCompressor,
     ViewImageExifInfoBuilder? viewImageExifInfoBuilder,
-  })  : _viewImageCompressor =
-            viewImageCompressor ?? _defaultViewImageCompressor,
-        _viewImageExifInfoBuilder =
+  }) : _viewImageExifInfoBuilder =
             viewImageExifInfoBuilder ?? buildImageExifInfo;
-
-  static Future<Uint8List?> _defaultViewImageCompressor(
-    String filePath, {
-    int targetSize = 2048,
-    int quality = 85,
-  }) {
-    return FlutterImageCompress.compressWithFile(
-      filePath,
-      minWidth: targetSize,
-      minHeight: targetSize,
-      quality: quality,
-      format: CompressFormat.webp,
-      autoCorrectionAngle: true,
-      keepExif: false,
-    );
-  }
 
   static const _viewImageExtensions = {
     '.jpg',
@@ -148,12 +118,12 @@ class FileToolFactory {
           return 'Image was not attached: ${safety.analysisSkipText(p.basename(imagePath))}';
         }
 
-        final compressedBytes = await _viewImageCompressor(
-          imagePath,
-          targetSize: 2048,
-          quality: 85,
+        final inlineImage = await inlineImageForLlm(
+          absolutePath: imagePath,
+          fallbackMimeType: mimeTypeForImagePath(imagePath),
+          logLabel: _displayPath(imagePath),
         );
-        if (compressedBytes == null || compressedBytes.isEmpty) {
+        if (inlineImage == null || inlineImage.base64Data.isEmpty) {
           throw Exception('Image compression failed.');
         }
 
@@ -170,13 +140,14 @@ class FileToolFactory {
             'Image loaded from `${_displayPath(imagePath)}`. Inspect it now.',
           );
         if (exifInfo != null && exifInfo.isNotEmpty) {
-          message.writeln();
-          message.write(exifInfo);
+          message
+            ..writeln()
+            ..write(exifInfo);
         }
 
         PendingToolImageBuffer.instance.add(
           sessionId,
-          ImagePart(await compute(base64Encode, compressedBytes), 'image/webp'),
+          ImagePart(inlineImage.base64Data, inlineImage.mimeType),
           message: message.toString(),
         );
 

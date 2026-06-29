@@ -348,7 +348,9 @@ void main() {
       final client = _SingleToolCallClient(
         toolName: tool.name,
         arguments: {
-          'task_brief': 'File this record in PKM.',
+          'task_content': [
+            {'type': 'text', 'text': 'File this record in PKM.'},
+          ],
           'agent_type': 'pkm',
         },
         finalText: 'Filed the record in PKM.',
@@ -385,7 +387,9 @@ void main() {
       final client = _SingleToolCallClient(
         toolName: tool.name,
         arguments: {
-          'task_brief': 'Create a timeline card for this record.',
+          'task_content': [
+            {'type': 'text', 'text': 'Create a timeline card for this record.'},
+          ],
           'agent_type': 'timeline_card',
         },
         finalText: 'Created the timeline card.',
@@ -416,6 +420,183 @@ void main() {
       expect(childPrompt, contains('# Available Templates'));
       expect(childPrompt, contains('## template_id: article'));
       expect(childPrompt, contains('# Existing Tags'));
+    });
+
+    test('delegate passes referenced image attachments to child as image parts',
+        () async {
+      final assetsDir = Directory(
+        FileSystemService.instance.getAssetsPath(userId),
+      );
+      await assetsDir.create(recursive: true);
+      await File('${assetsDir.path}/photo.png').writeAsBytes(
+        base64Decode(
+          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=',
+        ),
+      );
+
+      final tool = buildDelegateToSubagentTool();
+      final state = AgentState(
+        sessionId: 'delegate_image_part_test',
+        metadata: {'userId': userId},
+      );
+      final client = _SingleToolCallClient(
+        toolName: tool.name,
+        arguments: {
+          'agent_type': 'timeline_card',
+          'task_content': [
+            {
+              'type': 'text',
+              'text': 'Create a timeline card for this attachment.',
+            },
+            {
+              'type': 'asset',
+              'ref': 'fs://photo.png',
+            },
+          ],
+        },
+        finalText: 'Created the timeline card.',
+      );
+      final agent = StatefulAgent(
+        name: 'delegate_image_part_agent',
+        client: client,
+        modelConfig: ModelConfig(model: 'test'),
+        state: state,
+        tools: [tool],
+        withGeneralPrinciples: false,
+        maxTurns: 3,
+      );
+
+      await agent.run([UserMessage.text('delegate')], useStream: false);
+
+      expect(client.generateInputs.length, greaterThanOrEqualTo(2));
+      final childUserMessage =
+          client.generateInputs[1].whereType<UserMessage>().last;
+      final imageParts = childUserMessage.contents.whereType<ImagePart>();
+      expect(imageParts, hasLength(1));
+      expect(imageParts.single.mimeType, startsWith('image/'));
+      expect(imageParts.single.base64Data, isNotEmpty);
+
+      final childPrompt = _messagesText(client.generateInputs[1]);
+      expect(childPrompt, contains('Attachment 1: fs://photo.png'));
+      expect(
+          childPrompt, contains('The following image part is this attachment'));
+      expect(childPrompt, contains('fs://photo.png'));
+    });
+
+    test('delegate inserts a reminder when an image attachment cannot load',
+        () async {
+      final assetsDir = Directory(
+        FileSystemService.instance.getAssetsPath(userId),
+      );
+      await assetsDir.create(recursive: true);
+      await File('${assetsDir.path}/broken.jpg').writeAsBytes(<int>[1, 2, 3]);
+
+      final tool = buildDelegateToSubagentTool();
+      final state = AgentState(
+        sessionId: 'delegate_broken_image_part_test',
+        metadata: {'userId': userId},
+      );
+      final client = _SingleToolCallClient(
+        toolName: tool.name,
+        arguments: {
+          'agent_type': 'timeline_card',
+          'task_content': [
+            {
+              'type': 'text',
+              'text': 'Create a timeline card for this attachment.',
+            },
+            {
+              'type': 'asset',
+              'ref': 'fs://broken.jpg',
+            },
+          ],
+        },
+        finalText: 'Handled the missing visual payload.',
+      );
+      final agent = StatefulAgent(
+        name: 'delegate_broken_image_part_agent',
+        client: client,
+        modelConfig: ModelConfig(model: 'test'),
+        state: state,
+        tools: [tool],
+        withGeneralPrinciples: false,
+        maxTurns: 3,
+      );
+
+      await agent.run([UserMessage.text('delegate')], useStream: false);
+
+      expect(client.generateInputs.length, greaterThanOrEqualTo(2));
+      final childUserMessage =
+          client.generateInputs[1].whereType<UserMessage>().last;
+      expect(childUserMessage.contents.whereType<ImagePart>(), isEmpty);
+
+      final childPrompt = _messagesText(client.generateInputs[1]);
+      expect(childPrompt, contains('Attachment 1: fs://broken.jpg'));
+      expect(
+        childPrompt,
+        contains(
+          'This image attachment could not be loaded into this message.',
+        ),
+      );
+      expect(
+        childPrompt,
+        contains(
+          'no image pixels are available here',
+        ),
+      );
+      expect(
+        childPrompt,
+        isNot(
+            contains('The following system reminder replaces this attachment')),
+      );
+      expect(childPrompt, isNot(contains('do not call view_image')));
+    });
+
+    test(
+        'structured task_content text refs are plain text without asset blocks',
+        () async {
+      final assetsDir = Directory(
+        FileSystemService.instance.getAssetsPath(userId),
+      );
+      await assetsDir.create(recursive: true);
+      await File('${assetsDir.path}/photo.jpg').writeAsBytes(<int>[1, 2, 3]);
+
+      final tool = buildDelegateToSubagentTool();
+      final state = AgentState(
+        sessionId: 'delegate_text_ref_without_asset_block_test',
+        metadata: {'userId': userId},
+      );
+      final client = _SingleToolCallClient(
+        toolName: tool.name,
+        arguments: {
+          'agent_type': 'timeline_card',
+          'task_content': [
+            {
+              'type': 'text',
+              'text': 'Create a card for fs://photo.jpg',
+            },
+          ],
+        },
+        finalText: 'Text ref accepted.',
+      );
+      final agent = StatefulAgent(
+        name: 'delegate_text_ref_without_asset_block_agent',
+        client: client,
+        modelConfig: ModelConfig(model: 'test'),
+        state: state,
+        tools: [tool],
+        withGeneralPrinciples: false,
+        maxTurns: 3,
+      );
+
+      await agent.run([UserMessage.text('delegate')], useStream: false);
+
+      expect(client.generateInputs.length, greaterThanOrEqualTo(2));
+      final childUserMessage =
+          client.generateInputs[1].whereType<UserMessage>().last;
+      expect(childUserMessage.contents.whereType<ImagePart>(), isEmpty);
+      expect(
+          _messagesText(client.generateInputs[1]), contains('fs://photo.jpg'));
     });
 
     test('run infers no_op from the final plain-text message', () async {
@@ -613,7 +794,7 @@ void main() {
       expect(metadata['child_write_roots'], ['/PKM']);
     });
 
-    test('delegate rejects task briefs with nonexistent asset refs', () async {
+    test('delegate rejects nonexistent structured asset refs', () async {
       final tool = buildDelegateToSubagentTool();
       final state = AgentState(
         sessionId: 'delegate_asset_test',
@@ -624,8 +805,11 @@ void main() {
         client: _SingleToolCallClient(
           toolName: tool.name,
           arguments: {
-            'task_brief': 'Capture this image: ![image](fs://missing.jpg)',
             'agent_type': 'timeline_card',
+            'task_content': [
+              {'type': 'text', 'text': 'Capture this image.'},
+              {'type': 'asset', 'ref': 'fs://missing.jpg'},
+            ],
           },
         ),
         modelConfig: ModelConfig(model: 'test'),
@@ -648,8 +832,7 @@ void main() {
       );
     });
 
-    test('delegate accepts existing bare asset refs wrapped in backticks',
-        () async {
+    test('delegate accepts existing structured asset refs', () async {
       final assetsDir = Directory(
         FileSystemService.instance.getAssetsPath(userId),
       );
@@ -666,8 +849,11 @@ void main() {
         client: _SingleToolCallClient(
           toolName: tool.name,
           arguments: {
-            'task_brief': 'Capture this image attachment `fs://photo.jpg`）。',
             'agent_type': 'research',
+            'task_content': [
+              {'type': 'text', 'text': 'Capture this image attachment.'},
+              {'type': 'asset', 'ref': 'fs://photo.jpg'},
+            ],
           },
           finalText: 'Asset reference accepted.',
         ),
@@ -700,8 +886,10 @@ void main() {
         client: _SingleToolCallClient(
           toolName: tool.name,
           arguments: {
-            'task_brief': 'Look around the knowledge base.',
             'agent_type': 'custom_combo',
+            'task_content': [
+              {'type': 'text', 'text': 'Look around the knowledge base.'},
+            ],
           },
         ),
         modelConfig: ModelConfig(model: 'test'),
@@ -735,8 +923,13 @@ void main() {
         client: _SingleToolCallClient(
           toolName: tool.name,
           arguments: {
-            'task_brief': 'Summarize what is in the knowledge base.',
             'agent_type': 'research',
+            'task_content': [
+              {
+                'type': 'text',
+                'text': 'Summarize what is in the knowledge base.',
+              },
+            ],
           },
           finalText: 'Nothing yet.',
         ),
@@ -768,9 +961,12 @@ void main() {
       final properties = tool.parameters['properties'] as Map;
 
       expect(properties.keys, contains('agent_type'));
+      expect(properties.keys, contains('task_content'));
+      expect(properties.keys, isNot(contains('task_brief')));
       expect(properties.keys, isNot(contains('profile')));
       expect(properties.keys, isNot(contains('skills')));
-      expect(tool.parameters['required'], ['task_brief', 'agent_type']);
+      expect(tool.parameters['required'], ['task_content', 'agent_type']);
+      expect(tool.parameters, isNot(contains('anyOf')));
 
       final agentType = properties['agent_type'] as Map;
       expect(
@@ -831,8 +1027,13 @@ void main() {
         client: _SingleToolCallClient(
           toolName: tool.name,
           arguments: {
-            'task_brief': 'Summarize what is in the knowledge base.',
             'agent_type': 'research',
+            'task_content': [
+              {
+                'type': 'text',
+                'text': 'Summarize what is in the knowledge base.',
+              },
+            ],
           },
           finalText: 'Nothing yet.',
         ),
