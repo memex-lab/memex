@@ -8,6 +8,7 @@ import 'package:memex/agent/state_util.dart';
 import 'package:memex/agent/skills/dynamic_timeline_ui/dynamic_timeline_ui_skill.dart';
 import 'package:memex/agent/super_agent/super_agent_harness.dart';
 import 'package:memex/agent/super_agent/subagent/delegate_progress.dart';
+import 'package:memex/data/services/agent_image_attachment.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/time_context.dart';
@@ -50,6 +51,11 @@ class SuperAgentChildConfig {
   /// child never has to infer record identity or timing.
   final Map<String, dynamic> contextPacket;
 
+  /// Image attachments resolved from structured `fs://...` asset blocks and
+  /// injected into the child's first user message using the same reminder +
+  /// optional image-part shape as normal user image attachments.
+  final List<ChildImageAttachment> imageAttachments;
+
   /// Skills available to this child. The caller pre-sets `forceActivate` on the
   /// ones that should be always-on (e.g. the card skill for the card child).
   /// Non-force skills here can be self-activated by the child on demand (e.g.
@@ -82,11 +88,22 @@ class SuperAgentChildConfig {
     required this.taskBrief,
     required this.skills,
     this.contextPacket = const {},
+    this.imageAttachments = const [],
     this.toolProfile = ChildToolProfile.read,
     this.readRootPaths = const [],
     this.writeRootPaths = const [],
     this.timeout = const Duration(minutes: 20),
   });
+}
+
+class ChildImageAttachment {
+  const ChildImageAttachment({
+    required this.image,
+    required this.inline,
+  });
+
+  final AgentImageAttachment image;
+  final InlineAgentImage? inline;
 }
 
 /// Terminal status of a child run. `no_op` is a first-class, non-failure
@@ -189,13 +206,14 @@ the user questions, and do not produce user-facing chit-chat. Your final
 message is parsed by the parent runtime.
 
 ## Scope
-- Work only on the task brief and context packet provided in this run.
+- Work only on the task content/brief and context packet provided in this run.
 - Follow the active skill instructions for this run.
 - Use ONLY the fact_id, timestamps, assets, and context explicitly provided.
   Never invent or guess record identity.
-- You CANNOT see the user's attachments. The brief describes what each
-  attachment contains and gives its reference — rely on that description as the
-  attachment's content, and use the references exactly as given.
+- Image attachments referenced by `fs://...` asset blocks are represented in
+  your first message as an attachment reminder followed by the image part
+  itself. Inspect image parts directly and use the `fs://...` references exactly
+  as given for saved assets.
 - Do not perform side effects outside your assigned write scope.
 - Do not write long-term memory. Do not spawn other agents.
 
@@ -220,10 +238,7 @@ parent input, explicitly say `needs_parent_input` and name the missing field.
 }
 
 /// Renders the runtime-provided context packet into a single `<system-reminder>`
-/// block, mirroring how `ChatService` assembles per-turn context. The child
-/// can't see the user's attachments, so each image's EXIF capture context
-/// (time + place) is re-derived by the runtime and passed here — without it the
-/// child's skill would stamp cards/records with the wrong time and location.
+/// block, mirroring how `ChatService` assembles per-turn context.
 String _buildContextReminder(Map<String, dynamic> packet) {
   final sections = <String>[];
 
@@ -239,17 +254,6 @@ String _buildContextReminder(Map<String, dynamic> packet) {
   final location = packet['location_reminder'];
   if (location is String && location.trim().isNotEmpty) {
     sections.add(location.trim());
-  }
-
-  // Per-attachment EXIF (capture time / GPS / geocoded place), which the child
-  // cannot read off the image itself. Each block is self-describing, matching
-  // the metadata ChatService surfaces to the parent.
-  final exif = packet['attachment_exif'];
-  if (exif is List && exif.isNotEmpty) {
-    final blocks = exif.whereType<String>().where((s) => s.trim().isNotEmpty);
-    if (blocks.isNotEmpty) {
-      sections.add(blocks.join('\n\n'));
-    }
   }
 
   final pkmOverview = packet['pkm_overview'];
@@ -476,10 +480,32 @@ Future<SuperAgentChildResult> runSuperAgentChild({
     );
 
     final reminder = _buildContextReminder(config.contextPacket);
-    final initial = UserMessage([
+    final initialParts = <UserContentPart>[
       TextPart(reminder),
       TextPart(config.taskBrief),
-    ]);
+    ];
+    final imageFsPaths = <String>[];
+    for (var i = 0; i < config.imageAttachments.length; i++) {
+      final attachment = config.imageAttachments[i];
+      final inline = attachment.inline;
+      initialParts.add(TextPart(
+        buildAgentImageAttachmentReminder(
+          i,
+          attachment.image,
+          imageLoaded: inline != null && inline.base64Data.isNotEmpty,
+        ),
+      ));
+      if (inline != null && inline.base64Data.isNotEmpty) {
+        initialParts.add(ImagePart(inline.base64Data, inline.mimeType));
+        imageFsPaths.add(attachment.image.fsFilename);
+      }
+    }
+    final initial = UserMessage(
+      initialParts,
+      metadata: {
+        if (imageFsPaths.isNotEmpty) 'image_fs_paths': imageFsPaths,
+      },
+    );
 
     final messages = await agent.run([initial],
         cancelToken: cancelToken, useStream: false).timeout(config.timeout);

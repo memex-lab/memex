@@ -26,13 +26,10 @@ void main() {
       }
     });
 
-    test('compresses image and queues it for model-visible messages', () async {
+    test('inlines image and queues it for model-visible messages', () async {
       final image = File('${tempDir.path}/sample.png');
-      await image.writeAsBytes(_pngHeader(width: 320, height: 240));
-      final compressed = Uint8List.fromList([1, 2, 3, 4]);
-      String? compressedPath;
-      int? targetSizeSeen;
-      int? qualitySeen;
+      final imageBytes = _pngHeader(width: 320, height: 240);
+      await image.writeAsBytes(imageBytes);
 
       final factory = FileToolFactory(
         permissionManager: FilePermissionManager(
@@ -46,16 +43,6 @@ void main() {
           withDefaultRules: false,
         ),
         workingDirectory: tempDir.path,
-        viewImageCompressor: (
-          String filePath, {
-          int targetSize = 2048,
-          int quality = 85,
-        }) async {
-          compressedPath = filePath;
-          targetSizeSeen = targetSize;
-          qualitySeen = quality;
-          return compressed;
-        },
         viewImageExifInfoBuilder: (userId, imagePath) async =>
             'Image Metadata:\nCapture Time: 2026:06:22 15:30:00\n'
             'GPS Coordinates: 31.230416, 121.473701',
@@ -83,9 +70,6 @@ void main() {
         contains('Image attached to the next message'),
       );
       expect(_text(result), contains('EXIF metadata is included'));
-      expect(compressedPath, image.path);
-      expect(targetSizeSeen, 2048);
-      expect(qualitySeen, 85);
 
       final pending = PendingToolImageBuffer.instance.drain(state.sessionId);
       expect(pending, hasLength(1));
@@ -93,15 +77,15 @@ void main() {
       expect(pending.single.message, contains('Image Metadata:'));
       expect(pending.single.message, contains('Capture Time:'));
       expect(pending.single.message, contains('GPS Coordinates:'));
-      expect(pending.single.image.mimeType, 'image/webp');
-      expect(pending.single.image.base64Data, base64Encode(compressed));
+      expect(pending.single.image.mimeType, 'image/png');
+      expect(pending.single.image.base64Data, base64Encode(imageBytes));
     });
 
     test('does not require file permission manager read access', () async {
       final image = File('${tempDir.path}/Facts/assets/sample.png');
       await image.create(recursive: true);
-      await image.writeAsBytes(_pngHeader(width: 64, height: 64));
-      final compressed = Uint8List.fromList([9, 8, 7, 6]);
+      final imageBytes = _pngHeader(width: 64, height: 64);
+      await image.writeAsBytes(imageBytes);
 
       final factory = FileToolFactory(
         permissionManager: FilePermissionManager(
@@ -110,14 +94,6 @@ void main() {
           withDefaultRules: false,
         ),
         workingDirectory: tempDir.path,
-        viewImageCompressor: (
-          String filePath, {
-          int targetSize = 2048,
-          int quality = 85,
-        }) async {
-          expect(filePath, image.path);
-          return compressed;
-        },
       );
       final tool = factory.buildViewImageTool();
       final state = AgentState(
@@ -139,14 +115,15 @@ void main() {
 
       final pending = PendingToolImageBuffer.instance.drain(state.sessionId);
       expect(pending, hasLength(1));
-      expect(pending.single.image.base64Data, base64Encode(compressed));
+      expect(pending.single.image.mimeType, 'image/png');
+      expect(pending.single.image.base64Data, base64Encode(imageBytes));
     });
 
     test('after-tool hook persists viewed image into agent history', () async {
       final image = File('${tempDir.path}/Facts/assets/persisted.png');
       await image.create(recursive: true);
-      await image.writeAsBytes(_pngHeader(width: 80, height: 80));
-      final compressed = Uint8List.fromList([4, 3, 2, 1]);
+      final imageBytes = _pngHeader(width: 80, height: 80);
+      await image.writeAsBytes(imageBytes);
 
       final factory = FileToolFactory(
         permissionManager: FilePermissionManager(
@@ -155,14 +132,6 @@ void main() {
           withDefaultRules: false,
         ),
         workingDirectory: tempDir.path,
-        viewImageCompressor: (
-          String filePath, {
-          int targetSize = 2048,
-          int quality = 85,
-        }) async {
-          expect(filePath, image.path);
-          return compressed;
-        },
       );
       final tool = factory.buildViewImageTool();
       final state = AgentState(
@@ -193,8 +162,8 @@ void main() {
       expect(imageMessages, hasLength(1));
       final imagePart =
           imageMessages.single.contents.whereType<ImagePart>().single;
-      expect(imagePart.mimeType, 'image/webp');
-      expect(imagePart.base64Data, base64Encode(compressed));
+      expect(imagePart.mimeType, 'image/png');
+      expect(imagePart.base64Data, base64Encode(imageBytes));
 
       expect(client.capturedMessages, hasLength(2));
       final secondRequestImageMessages =

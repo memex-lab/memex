@@ -51,22 +51,22 @@ void main() {
     );
   }
 
-  testWidgets('shows tappable processing affordance before task activity', (
+  testWidgets(
+      'shows non-interactive processing affordance before task activity', (
     tester,
   ) async {
     await tester.pumpWidget(buildHost(forceVisible: true));
     await tester.pump();
 
     expect(find.text('AI is processing...'), findsOneWidget);
+    expect(find.byIcon(Icons.chevron_right_rounded), findsNothing);
 
     await tester.tap(find.text('AI is processing...'));
     await tester.pump(const Duration(milliseconds: 350));
 
-    expect(find.text('Activity Detail'), findsOneWidget);
-    expect(find.text('Processing...'), findsOneWidget);
+    expect(find.text('Activity Detail'), findsNothing);
+    expect(find.text('Processing...'), findsNothing);
 
-    Navigator.of(tester.element(find.text('Activity Detail'))).pop();
-    await tester.pump(const Duration(milliseconds: 350));
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
   });
@@ -84,17 +84,16 @@ void main() {
     await tester.tap(find.text('AI is processing...'));
     await tester.pump(const Duration(milliseconds: 350));
 
-    expect(_assetImage('assets/icon.png'), findsNWidgets(2));
+    expect(_assetImage('assets/icon.png'), findsOneWidget);
     expect(_assetImage('assets/icons/processing_1.png'), findsNothing);
     expect(_assetImage('assets/icons/processing_2.png'), findsNothing);
+    expect(find.text('Activity Detail'), findsNothing);
 
-    Navigator.of(tester.element(find.text('Activity Detail'))).pop();
-    await tester.pump(const Duration(milliseconds: 350));
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
   });
 
-  testWidgets('updates background task count while detail sheet is open', (
+  testWidgets('updates background task count while status is visible', (
     tester,
   ) async {
     final taskSnapshots = StreamController<TaskActivitySnapshot>.broadcast();
@@ -124,20 +123,15 @@ void main() {
     );
     expect(find.text(oneTaskMessage), findsOneWidget);
 
-    await tester.tap(find.text('AI is processing...'));
-    await tester.pump(const Duration(milliseconds: 350));
-
-    expect(find.text(oneTaskMessage), findsWidgets);
-
     taskSnapshots.add(
       const TaskActivitySnapshot(pending: 1, processing: 1, retrying: 0),
     );
     await tester.pump();
+    await tester.pump();
 
-    expect(find.text(twoTaskMessage), findsWidgets);
+    expect(find.text(twoTaskMessage), findsOneWidget);
+    expect(find.text('Activity Detail'), findsNothing);
 
-    Navigator.of(tester.element(find.text('Activity Detail'))).pop();
-    await tester.pump(const Duration(milliseconds: 350));
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
     await taskSnapshots.close();
@@ -162,15 +156,14 @@ void main() {
     await tester.tap(find.text('AI is processing...'));
     await tester.pump(const Duration(milliseconds: 350));
 
-    expect(find.text('Running 0, Pending 1, Retry 0'), findsWidgets);
+    expect(find.text('Running 0, Pending 1, Retry 0'), findsOneWidget);
+    expect(find.text('Activity Detail'), findsNothing);
 
-    Navigator.of(tester.element(find.text('Activity Detail'))).pop();
-    await tester.pump(const Duration(milliseconds: 350));
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
   });
 
-  testWidgets('shows active task status after returning from notification', (
+  testWidgets('shows active task status as a static affordance', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -190,11 +183,9 @@ void main() {
     await tester.tap(find.text('AI is processing...'));
     await tester.pump(const Duration(milliseconds: 350));
 
-    expect(find.text('Activity Detail'), findsOneWidget);
-    expect(find.text('Running 0, Pending 4, Retry 0'), findsWidgets);
+    expect(find.text('Activity Detail'), findsNothing);
+    expect(find.text('Running 0, Pending 4, Retry 0'), findsOneWidget);
 
-    Navigator.of(tester.element(find.text('Activity Detail'))).pop();
-    await tester.pump(const Duration(milliseconds: 350));
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
   });
@@ -270,7 +261,7 @@ void main() {
     activity.dispose();
   });
 
-  testWidgets('opens detail sheet from a buffered notification action', (
+  testWidgets('ignores buffered notification activity action', (
     tester,
   ) async {
     final platform = _FakePlatform();
@@ -284,18 +275,16 @@ void main() {
     emitAgentBackgroundOpenActivityForTesting();
     await tester.pump(const Duration(milliseconds: 350));
 
-    expect(find.text('Activity Detail'), findsOneWidget);
-    expect(find.text('No agent activity yet'), findsOneWidget);
+    expect(find.text('Activity Detail'), findsNothing);
+    expect(find.text('No agent activity yet'), findsNothing);
 
-    Navigator.of(tester.element(find.text('Activity Detail'))).pop();
-    await tester.pump(const Duration(milliseconds: 350));
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
     platform.dispose();
   });
 
   testWidgets(
-    'notification action opens detail and renders live background activity',
+    'notification action leaves the static background status unchanged',
     (tester) async {
       final platform = _FakePlatform();
       final coordinator = AgentBackgroundCoordinator(
@@ -322,8 +311,9 @@ void main() {
         retrying: 0,
       );
 
-      expect(find.text('Activity Detail'), findsOneWidget);
-      expect(find.text(taskSummary), findsWidgets);
+      expect(find.text('Activity Detail'), findsNothing);
+      expect(find.text('AI is processing...'), findsOneWidget);
+      expect(find.text(taskSummary), findsOneWidget);
 
       await AgentActivityService.instance.pushMessage(
         type: AgentActivityType.info,
@@ -335,12 +325,10 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.text('Live notification body'), findsOneWidget);
-      expect(find.textContaining('Worker Agent'), findsOneWidget);
-      expect(find.text(taskSummary), findsWidgets);
+      expect(find.text('Live notification body'), findsNothing);
+      expect(find.textContaining('Worker Agent'), findsNothing);
+      expect(find.text(taskSummary), findsOneWidget);
 
-      Navigator.of(tester.element(find.text('Activity Detail'))).pop();
-      await tester.pump(const Duration(milliseconds: 350));
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump();
       platform.dispose();
