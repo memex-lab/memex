@@ -29,10 +29,10 @@
 
 Memex 是一款开源、本地优先的 AI 日记应用，支持 iOS 和 Android。它和传统日记应用的思路完全不同 — 不要求你坐下来写长篇日记，而是让你随手记录生活碎片（文字、照片、语音），通过多 Agent 协作的 AI 系统自动整理为结构化卡片，构建知识库，发现洞察，并通过 AI 角色提供陪伴。
 
-**这里说的"本地优先"是指：** 你的记录、卡片和知识都保存在你的设备上。没有 Memex 账号，也没有 Memex 服务器存储你的日记。你自带大模型服务商（OpenAI、Claude、Gemini、DeepSeek 等），你的请求直接从手机发送到那个服务商 — 我们永远看不到你的数据。
+**这里说的"本地优先"是指：** 你的记录、卡片和知识都保存在你的设备上。没有 Memex 服务器存储你的日记。你自带大模型服务商（OpenAI、Claude、Gemini、DeepSeek 等），你的请求直接从手机发送到那个服务商 — 我们永远看不到你的数据。可选的 Memex AI 服务仅用于代理模型请求，不用于存储日记。
 
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/4bbbb865-52ec-465f-9030-d06a8c71faef" width="300" />
+  <img src="https://github.com/user-attachments/assets/b79980c6-7a6b-4854-bc6f-0a8e2776fdda" width="300" />
 </div>
 
 > [!IMPORTANT]
@@ -43,10 +43,10 @@ Memex 是一款开源、本地优先的 AI 日记应用，支持 iOS 和 Android
 ## 功能
 
 ### 🤖 AI 自动整理
-- 多 Agent 架构：记录整理、卡片生成、洞察分析、评论、记忆摘要、媒体分析、陪伴聊天、日程聚合等各司其职
+- Memex Agent 编排：一个对话 Agent 协调专门的 Skill 和子 Agent，分别处理时间线卡片、PKM 入库、日程更新、知识洞察、诊断、评论、记忆整理、媒体处理和陪伴聊天。
 
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/45e03f95-18b3-4cf1-8833-205447ac36ae" width="800" />
+  <img src="https://github.com/user-attachments/assets/25979e2b-240b-4b93-b5ce-3faa020e78cd" width="800" />
 </div>
 
 - 自动识别记录内容，生成最匹配的卡片形式：
@@ -96,19 +96,20 @@ https://github.com/user-attachments/assets/37e59089-9f94-44dc-8265-269045ce982f
 
 | 提供商 | API 类型 | 备注 |
 |--------|----------|------|
-| Google Gemini | Gemini API | gemini-3.1-pro-preview、gemini-3-flash-preview 等 |
+| Google Gemini | Gemini API | gemini-3.5-flash、gemini-3.1-pro-preview 等 |
 | Google Gemini | OAuth（无需 API Key） | 使用 Google 账号登录，非官方支持，风险自负 |
-| OpenAI | Chat Completions / Responses API | GPT-5.4 等 |
-| OpenAI | OAuth（无需 API Key） | 使用 OpenAI 账号登录，非官方支持，风险自负 |
+| OpenAI | Chat Completions / Responses API | gpt-5.5、gpt-5.4 等 |
+| ChatGPT | OAuth（无需 API Key） | 使用 OpenAI 账号登录，非官方支持，风险自负 |
 | Anthropic Claude | Claude API | 直接 API 访问 |
 | AWS Bedrock | Bedrock Claude | 适合 AWS 用户 |
+| Memex AI | 托管模型访问 | 可选账号制模型访问；日记数据仍保存在本地 |
 | Kimi（月之暗面） | OpenAI 兼容 | kimi-k2.5、kimi-k2 等 |
-| 阿里云（通义千问） | OpenAI 兼容 | qwen3.5-plus、qwen-max 等 |
-| 火山引擎（豆包） | OpenAI 兼容 | doubao-seed-1-8、doubao-1.5-pro 等 |
-| 智谱 GLM | OpenAI 兼容 | GLM-4.7、GLM-4-Plus |
+| 阿里云（通义千问） | OpenAI 兼容 | qwen3.5-plus、qwen3-coder 等 |
+| 火山引擎（豆包） | OpenAI / Responses 兼容 | doubao-seed-2-0-pro-260215、doubao-seed-1-8-251228 等 |
+| 智谱 GLM | OpenAI 兼容 | glm-5v-turbo、glm-4.6v |
 | DeepSeek | OpenAI 兼容 | deepseek-v4-flash、deepseek-v4-pro |
 | MiniMax | Anthropic 兼容 | MiniMax-M2.5、MiniMax-M1 |
-| 小米 MIMO | Anthropic 兼容 | MiMo-7B-RL |
+| 小米 MIMO | Anthropic 兼容 | mimo-v2.5、mimo-v2-omni 等 |
 | OpenRouter | OpenAI 兼容 | 通过一个 API 访问多个提供商 |
 | Ollama | OpenAI 兼容（本地） | 在本地设备上运行模型 |
 
@@ -121,11 +122,11 @@ https://github.com/user-attachments/assets/37e59089-9f94-44dc-8265-269045ce982f
 
 ### 配置 LLM
 
-Memex 需要 LLM API Key 来驱动 AI 功能。首次启动后：
+Memex 需要配置一个模型服务来驱动 AI 功能。首次启动后：
 
 1. 点击头像 → 模型配置
-2. 选择 API 类型（Gemini / OpenAI / Claude / DeepSeek 等）
-3. 填入 API Key 和 Base URL
+2. 选择 API 类型（Gemini / OpenAI / Claude / DeepSeek / Memex AI / Ollama 等）
+3. 根据服务商要求填入 API Key 和 Base URL、使用 OAuth 登录，或连接可选的 Memex AI 服务
 4. 不同 Agent 可以独立配置不同的模型
 
 ### 配置位置上下文
@@ -150,12 +151,12 @@ AMAP_GEOCODING_TEST_KEY=your_key flutter test test/data/services/geocoding_servi
 
 Memex 不只是一个记录应用 — 它是一个让你能够在手机上构建自己 AI Agent 的平台。
 
-Memex 内置的每一个 Agent（知识提取、卡片生成、洞察发现……）都运行在同一套自定义 Agent 基础设施之上，而这套基础设施完全向你开放。这意味着你可以创建与内置 Agent 同等能力的 Agent。
+Memex 内部工作流使用的 skill host 基础设施也开放给自定义 Agent。你可以把 Agent 接入本地事件，给它配置 skill 和工具，并决定它以内联方式执行，还是作为后台任务运行。
 
 ### 你可以构建什么
 
 - 🎯 **自由创建 Agent** — 取个名字，选择宿主类型（Pure 纯净模式），一个新 Agent 即刻就绪。
-- ⚡ **事件驱动触发** — 选择 Agent 何时激活：用户输入时、知识提取后、卡片创建时、洞察生成后，或任何系统事件。
+- ⚡ **事件驱动触发** — 选择 Agent 何时激活：新时间线卡片保存后、卡片评论发布后、卡片 UI 配置更新后，或本地数据变更时。
 - 🧠 **独立 LLM 配置** — 每个 Agent 可以使用不同的模型。
 - 📝 **自定义系统提示词** — 通过自定义 System Prompt 塑造 Agent 的人格、专业领域和输出格式。
 - 📂 **Skill** — Memex 采用开放的 [Agent Skills](https://agentskills.io) 标准。每个 Agent 从 `SKILL.md` 文件读取行为定义 — 一个包含指令、脚本和资源的文件夹，Agent 按需发现和使用。
@@ -182,8 +183,7 @@ Issue 会帮助我们判断社区需求，但不代表功能一定会实现。
 
 ## 路线图
 
-- [ ] 支持视频和文件附件
-- [ ] 可编辑 Memory — 手动整理和修改记忆条目
+- [ ] 更完整的视频和文件附件工作流
 - [ ] 定期刷新洞察 — 周期性重新分析记录，发现新关联
 - [ ] Agent Soul — 自定义 Agent 的行为风格与个性
 - [ ] 个性化定制 — 自由选择知识管理方法论（不限于 P.A.R.A）、标签规则、对话角色人设与卡片样式
@@ -236,7 +236,7 @@ Android 本地开发优先使用 `globalDev` / `cnDev`，它们有独立包名�
 | 平台 | iOS、Android |
 | 数据库 | Drift (SQLite) |
 | 状态管理 | Provider + MVVM |
-| LLM | Gemini、OpenAI、Claude、Bedrock、Kimi、通义千问、豆包、智谱 GLM、DeepSeek、MiniMax、MIMO、OpenRouter、Ollama |
+| LLM | Gemini、OpenAI、Claude、Bedrock、Memex AI、Kimi、通义千问、豆包、智谱 GLM、DeepSeek、MiniMax、MIMO、OpenRouter、Ollama |
 | Agent 框架 | dart_agent_core |
 
 ### 项目结构
@@ -244,10 +244,13 @@ Android 本地开发优先使用 `globalDev` / `cnDev`，它们有独立包名�
 ```
 lib/
 ├── agent/          # 多 Agent 系统
-│   ├── comment_agent/    # AI 评论
-│   ├── memory_agent/     # 记忆摘要
-│   ├── super_agent/      # 编排调度 Agent
-│   └── skills/           # 可组合的 Agent 技能
+│   ├── super_agent/              # 对话编排 Agent 与子 Agent
+│   ├── skills/                   # 时间线卡片、PKM、洞察、日程、记忆技能
+│   ├── comment_agent/            # 角色评论
+│   ├── companion_agent/          # 1v1 陪伴聊天
+│   ├── memory/                   # 长期记忆服务
+│   ├── pure_skill_host_agent/    # 自定义 Pure skill host
+│   └── memex_skill_host_agent/   # 自定义 Memex-aware skill host
 ├── data/           # 数据仓库与服务
 ├── db/             # Drift 数据库定义
 ├── domain/         # 领域模型
@@ -260,15 +263,22 @@ lib/
 ### 数据流
 
 ```
-用户输入（文字/图片/语音）
+用户输入（文字/图片/语音/分享文件）
     ↓
-输入处理 & 资源分析（ML Kit）
+资源准备（语音转写、文档文本抽取、图片编码、元数据）
     ↓
-PKM Agent → 知识提取与关联
+Memex Agent 编排
     ↓
-Card Agent → 结构化时间线卡片
+按需使用特定 Skill 或子 Agent：
+  - timeline_card → Cards YAML + UI 配置
+  - pkm → P.A.R.A Markdown 知识库
+  - schedule → 日程状态
+  - knowledge_insight → 跨记录洞察卡片
     ↓
-Insight Agent → 跨记录模式发现
+后台任务：
+  - 角色评论
+  - 长期记忆整理
+  - 事件驱动的自定义 Agent
     ↓
 本地存储（文件系统 + SQLite）
 ```
@@ -276,8 +286,7 @@ Insight Agent → 跨记录模式发现
 </details>
 
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/78f49de7-0f0d-44a8-9710-40bf7da970d1" width="800" />
-  <p><em>架构总览</em></p>
+  <img src="https://github.com/user-attachments/assets/fa106d13-d9b4-4b0e-adb4-6c722b19ca25" width="800" />
 </div>
 
 ## 参与贡献

@@ -2,7 +2,7 @@
 
 > *"Always leave the code better than you found it."* — The Boy Scout Rule
 
-Memex is a local-first, AI-powered personal life recording app built with Flutter (iOS + Android). All user data stays on-device — a multi-agent system processes inputs into timeline cards, extracts knowledge, and generates cross-record insights. Users bring their own LLM provider. Respect the existing abstractions: use the right service for data access, follow the layer boundaries, and read the surrounding code before making changes. Shortcuts that bypass encapsulation create bugs that are hard to trace in a system with agents, event pipelines, and per-user isolation.
+Memex is a local-first, AI-powered personal life recording app built with Flutter (iOS + Android). The user's journal workspace is stored locally: timeline cards, PKM files, media assets, schedules, knowledge insights, and indexes live under the selected filesystem root plus SQLite. AI features use the configured model service (BYO provider, local Ollama, OAuth providers, or optional Memex AI for model access/billing); Memex does not host the user's journal data. SuperAgent orchestrates specialist workers that turn raw inputs into timeline cards, PKM entries, schedule state, knowledge insights, comments, and long-term memory updates. Respect the existing abstractions: use the right service for data access, follow the layer boundaries, and read the surrounding code before making changes. Shortcuts that bypass encapsulation create bugs that are hard to trace in a system with agents, event pipelines, and per-user isolation.
 
 ## Build & Run
 
@@ -56,7 +56,7 @@ plan explains why.
 - **UI layer** — Views (widgets) contain no business logic. ViewModels extend `ChangeNotifier`, each UI feature has `view_models/` and `widgets/` subdirectories.
 - **Data layer** — `MemexRouter` is a thin routing/facade; it delegates to repositories and services. **Do not put complex business logic in MemexRouter.** New features should add repository functions or service classes, then wire them through MemexRouter.
   - **Repositories** (`data/repositories/`) — source of truth for domain data. Return `Future<Result<T>>` using domain models, not DTOs.
-  - **Services** (`data/services/`) — local-first app with no backend, so services play the backend role: filesystem I/O, SQLite, task execution, search indexing, LLM client calls, health data, speech transcription, etc. Can be stateful singletons.
+  - **Services** (`data/services/`) — local-first app services play the backend role for local work: filesystem I/O, SQLite, task execution, search indexing, LLM client calls, optional Memex AI/account integration, health data, speech transcription, etc. Can be stateful singletons.
 - **Domain layer** — `domain/models/` for business models (e.g. `TimelineCardModel`, `LLMConfig`). `data/model/` for protocol/transport DTOs (e.g. `ChatEvent`). Don't mix them. Optional `domain/use_cases/` for complex logic that merges multiple repositories or is reused across ViewModels.
 
 ### Dependency rules
@@ -106,10 +106,10 @@ result.when(
 
 ## Data Model
 
-- All workspace data lives on the filesystem (YAML/JSON/Markdown). Each data type has a dedicated service — **always use these, never manipulate files directly with `dart:io`**: cards/facts/assets/tags/insights/templates → `FileSystemService`; characters → `CharacterService`; chat → `ChatService`; memory → `MemorySyncService`; custom agents → `CustomAgentConfigService`; backup → `BackupService`.
+- Workspace source data lives mostly on the filesystem (YAML/JSON/Markdown/media) with SQLite used for indexes, caches, tasks, and query speed. Each data type has a dedicated service — **always use these for app data changes, never manipulate managed files directly with `dart:io`**: cards/facts/assets/tags/insights/templates/schedule → `FileSystemService`; characters → `CharacterService`; chat → `ChatService`; memory → `MemoryManagement`/`MemorySyncService`; custom agents → `CustomAgentConfigService`; backup → `BackupService`.
 - All workspace path definitions (e.g. `getCardsPath`, `getFactsPath`) must live in `FileSystemService` — never hardcode paths elsewhere.
 - User-related preferences (user ID, LLM configs, agent configs, locale, storage location, etc.) are centralized in `UserStorage` (`utils/user_storage.dart`). System-level or temporary flags can live in their own service.
-- Per-user workspace: `workspace/_<userId>/` with subdirs: `Facts/`, `Cards/`, `PKM/`, `KnowledgeInsights/`, `ChatSessions/`, `Memory/`, `_UserSettings/`, `_System/`
+- Per-user workspace: `workspace/_<userId>/` with subdirs including `Facts/`, `Facts/assets/`, `Cards/`, `PKM/`, `KnowledgeInsights/`, `Schedule/`, `ChatSessions/`, `_UserSettings/`, and `_System/`. Memory files live under `_System/memory/`; agent state under `_System/state_dir/`.
 
 ## UI & Design System
 
@@ -145,11 +145,21 @@ Use `TableChangeNotifier.instance.watch(tableName, handler)` to react to table-l
 
 All agents are built on `dart_agent_core`'s `StatefulAgent`. When creating or modifying agents, follow these conventions:
 
-- **Agent creation pattern**: `loadOrCreateAgentState()` → `AgentController` with `addAgentLogger()` + `addAgentActivityCollector()` → configure tools/skills → `StatefulAgent(systemCallback: createSystemCallback(userId))`. Always pass `autoSaveStateFunc` for state persistence.
+- **Agent creation pattern**: `loadOrCreateAgentState()` → `AgentController` with `addAgentLogger()` + `addAgentActivityCollector()` → configure tools/skills/permissions → `StatefulAgent(...)` with `hooks: [createAgentPromptHook(...), ...]`. Always pass `autoSaveStateFunc` for state persistence.
 - **LLM resources**: obtain via `UserStorage.getAgentLLMResources(agentId)` — handles per-agent model config resolution and client instantiation.
 - **File access**: each agent declares its own `FilePermissionManager` with explicit `PermissionRule`s (read/write/none per directory). Build file tools via `FileToolFactory`. Never give an agent broader access than it needs.
 - **Skills**: built-in Dart skills in `agent/skills/` (e.g. `PkmSkill`, `TimelineCardSkill`, `KnowledgeInsightSkill`). Passed as `skills:` parameter to `StatefulAgent`.
 - **Prompts**: co-locate with the agent/skill/tool that uses them. Large prompts go in a dedicated `prompts.dart` as constants or builder methods (e.g. `agent/super_agent/prompts.dart`). Short prompts can be inline string variables in the code file. Shared prompts go in `agent/prompts.dart`.
+- **Hooks**: use `AgentHook`s for cross-cutting agent behavior around model requests, tool calls, turn completion, persistence, retries, and runtime coordination. Prefer hooks when behavior should apply consistently across an agent run instead of being scattered through tool implementations. Be deliberate about what goes into persisted history or state: one-turn context should stay transient unless future turns need the provenance.
+
+### SuperAgent and child workers
+
+- `SuperAgent` is the root conversational orchestrator. It owns user-facing replies, record identity, and coordination; specialist child workers own bounded production tasks.
+- Child workers are launched through `delegate_to_subagent` fixed presets in `agent/super_agent/subagent/delegate_subagent_tool.dart`. Do not create free-form child types from prompts alone; update the preset registry, permissions, skills, and `superAgentSystemPrompt` together.
+- Capture normally mints/reuses one `fact_id`, then delegates independent `timeline_card`, `pkm`, and when relevant `schedule` work in parallel. The Card worker is the source of truth for whether a new record was actually saved.
+- `task_content` is an array of text and asset blocks. Use asset blocks for attachments (`{"type":"asset","ref":"fs://..."}`); child agents can directly inspect image assets, so text should carry only the record words, fact_id mapping, and goal.
+- SuperAgent and child workers must use owning skills/tools for managed data (`manage_timeline_card`, `manage_pkm`, `update_schedule_aggregation`, `update_knowledge_insight`, `manage_memory`). Raw file tools are for reading/searching or explicitly allowed workspace files, not bypassing managed write paths.
+- Quick Query mode is read-only. Any new skill or tool that can mutate app data must be excluded from Quick Query, not just hidden from the base tool list.
 
 ## Localization
 
