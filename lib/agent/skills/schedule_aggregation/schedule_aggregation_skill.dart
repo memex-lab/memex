@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:memex/agent/prompts.dart';
+import 'package:memex/data/model/chat_artifact.dart';
 import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/data/services/schedule_state_service.dart';
 import 'package:memex/domain/models/schedule_state.dart';
@@ -185,11 +186,20 @@ Tool buildAddPendingItemTool() {
         title: title,
       );
       _emitScheduleAggregationUpdated();
-      return jsonEncode({
+      final result = jsonEncode({
         'status': 'ok',
         'item_id': item?.id,
         'pending': state.pending.length,
       });
+      return AgentToolResult(
+        content: TextPart(result),
+        metadata: {
+          'artifact': _scheduleArtifact(
+            title: title,
+            updated: false,
+          ),
+        },
+      );
     },
   );
 }
@@ -282,7 +292,16 @@ Tool buildUpdatePendingItemTool() {
         clearPriority: clearPriority == true,
       );
       _emitScheduleAggregationUpdated();
-      return 'Pending item updated. pending=${state.pending.length}';
+      return AgentToolResult(
+        content:
+            TextPart('Pending item updated. pending=${state.pending.length}'),
+        metadata: {
+          'artifact': _scheduleArtifact(
+            title: title ?? id,
+            updated: true,
+          ),
+        },
+      );
     },
   );
 }
@@ -309,7 +328,16 @@ Tool buildCompletePendingItemTool() {
         closedAt: _parseScheduleDateTime(closedAt),
       );
       _emitScheduleAggregationUpdated();
-      return 'Pending item completed. completed=${state.completed.length}';
+      return AgentToolResult(
+        content: TextPart(
+            'Pending item completed. completed=${state.completed.length}'),
+        metadata: {
+          'artifact': _scheduleArtifact(
+            title: id,
+            updated: true,
+          ),
+        },
+      );
     },
   );
 }
@@ -345,7 +373,15 @@ Tool buildCompleteSubtaskTool() {
         closedAt: _parseScheduleDateTime(closedAt),
       );
       _emitScheduleAggregationUpdated();
-      return 'Subtask completed. pending=${state.pending.length}';
+      return AgentToolResult(
+        content: TextPart('Subtask completed. pending=${state.pending.length}'),
+        metadata: {
+          'artifact': _scheduleArtifact(
+            title: subtaskTitle,
+            updated: true,
+          ),
+        },
+      );
     },
   );
 }
@@ -399,9 +435,25 @@ Tool buildSetPresentationTool({bool stopAfterSetPresentation = false}) {
           'Presentation updated. pending=${updated.pending.length}',
         ),
         stopFlag: stopAfterSetPresentation,
+        metadata: {
+          'artifact': _scheduleArtifact(
+            title: UserStorage.l10n.scheduleBriefingTitle,
+            updated: true,
+          ),
+        },
       );
     },
   );
+}
+
+Map<String, dynamic> _scheduleArtifact({
+  required String title,
+  required bool updated,
+}) {
+  return ChatArtifact.schedule(
+    title: title,
+    updated: updated,
+  ).toJson();
 }
 
 void _emitScheduleAggregationUpdated() {

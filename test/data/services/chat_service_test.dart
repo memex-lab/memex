@@ -5,15 +5,16 @@ import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:memex/agent/state_util.dart';
+import 'package:memex/data/model/chat_artifact.dart';
 import 'package:memex/data/services/agent_foreground_task_tracker.dart';
 import 'package:memex/data/services/chat_service.dart';
+import 'package:memex/data/services/chat_session_storage.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/local_asset_server.dart';
 import 'package:memex/db/app_database.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:yaml/yaml.dart';
 
 void main() {
   group('isActiveChatTurnTaskForSession', () {
@@ -147,6 +148,20 @@ void main() {
       expect(sessionData['active_agent_state_session_id'], newStateId);
       expect(sessionData.containsKey('total_usage'), isFalse);
       expect(sessionData['messages'], hasLength(1));
+      expect(
+        await File(ChatSessionStorage.instance.legacyYamlPath(
+          userId,
+          sessionId,
+        )).exists(),
+        isFalse,
+      );
+      expect(
+        await File(ChatSessionStorage.instance.messagesPath(
+          userId,
+          sessionId,
+        )).exists(),
+        isTrue,
+      );
       expect(await File(p.join(stateDir, '$sessionId.json')).exists(), isTrue);
       expect(await File(p.join(stateDir, '$newStateId.json')).exists(), isTrue);
 
@@ -181,6 +196,51 @@ void main() {
 
       final sessionData = await _readSession(userId, sessionId);
       expect(sessionData.containsKey('active_agent_state_session_id'), isFalse);
+    });
+
+    test('migrates legacy artifacts when loading a session', () async {
+      await _writeSession(
+        userId: userId,
+        sessionId: sessionId,
+        data: _sessionData(messages: [
+          {
+            'role': 'ai',
+            'turn_id': 'turn-legacy',
+            'timestamp': '2026-06-22T12:01:00.000Z',
+            'content': [
+              {'type': 'text', 'text': 'done'},
+            ],
+            'artifacts': [
+              {
+                'type': 'card',
+                'id': '2026/06/22.md#ts_1',
+                'title': 'Legacy card',
+                'snippet': 'legacy summary',
+                'updated': true,
+              },
+            ],
+          },
+        ]),
+      );
+
+      await ChatService.instance.refreshAgentStateForSession(sessionId);
+
+      final sessionData = await _readSession(userId, sessionId);
+      expect(
+        sessionData[ChatArtifactSessionMigration.schemaVersionKey],
+        ChatArtifact.schemaVersion,
+      );
+
+      final messages = sessionData['messages'] as List<dynamic>;
+      final artifacts =
+          (messages.single as Map<String, dynamic>)['artifacts'] as List;
+      final artifactMap = Map<String, dynamic>.from(artifacts.single as Map);
+
+      expect(artifactMap.containsKey('type'), isFalse);
+      final artifact = ChatArtifact.fromJson(artifactMap)!;
+      expect(artifact.kind, ChatArtifact.kindTimelineCard);
+      expect(artifact.timelineCardId, '2026/06/22.md#ts_1');
+      expect(artifact.sourceRunId, 'turn-legacy');
     });
 
     test('freezes the active agent state id into queued chat turn payload',
@@ -250,12 +310,7 @@ Future<void> _writeSession({
 
 Future<Map<String, dynamic>> _readSession(
     String userId, String sessionId) async {
-  final sessionFile = File(p.join(
-    FileSystemService.instance.getChatSessionsPath(userId),
-    '$sessionId.yaml',
-  ));
-  final doc = loadYaml(await sessionFile.readAsString());
-  return jsonDecode(jsonEncode(doc)) as Map<String, dynamic>;
+  return ChatSessionStorage.instance.loadSessionData(userId, sessionId);
 }
 
 Future<Task> _waitForQueuedChatTask(AppDatabase db, String sessionId) async {

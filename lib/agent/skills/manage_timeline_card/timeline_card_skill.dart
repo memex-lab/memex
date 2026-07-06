@@ -6,6 +6,7 @@ import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:logging/logging.dart';
 import 'package:memex/agent/prompts.dart';
 import 'package:memex/agent/run_mode/agent_action_approval_service.dart';
+import 'package:memex/data/model/chat_artifact.dart';
 import 'package:memex/data/services/asset_reference_service.dart';
 import 'package:memex/domain/models/card_model.dart';
 import 'package:memex/data/services/file_system_service.dart';
@@ -19,6 +20,25 @@ import 'package:memex/utils/user_storage.dart';
 final logger = Logger('TimelineCardSkill');
 
 bool _nonEmpty(String? value) => value != null && value.trim().isNotEmpty;
+
+String? _artifactSnippet(String? value) {
+  final text = value?.trim();
+  if (text == null || text.isEmpty) return null;
+  return text.length > 160 ? '${text.substring(0, 160)}…' : text;
+}
+
+List<String> _assetImagePathsForArtifact(List<String> assets) {
+  final paths = <String>[];
+  final imageMarker = RegExp(r'^!\[[^\]]*\]\(fs://([^)]+)\)$');
+  for (final asset in assets) {
+    final match = imageMarker.firstMatch(asset.trim());
+    if (match == null) continue;
+    final fileName = match.group(1)?.trim();
+    if (fileName == null || fileName.isEmpty) continue;
+    paths.add('fs://$fileName');
+  }
+  return paths;
+}
 
 /// Skill for managing Timeline Cards
 class TimelineCardSkill extends Skill {
@@ -583,13 +603,15 @@ class TimelineCardSkill extends Skill {
               stopFlag: stopAfterSuccessSaveCard ||
                   (isSubAgent && _nonEmpty(finish_summary)),
               metadata: {
-                'artifact': {
-                  'type': 'card',
-                  'id': resolvedFactId,
-                  'title': title ?? updatedCardData.title,
-                  'tags': tagNames,
-                  'updated': true,
-                },
+                'artifact': ChatArtifact.timelineCard(
+                  cardId: resolvedFactId,
+                  title: title ?? updatedCardData.title,
+                  summary: _artifactSnippet(updatedCardData.fact),
+                  imagePaths:
+                      _assetImagePathsForArtifact(updatedCardData.assets),
+                  tags: updatedCardData.tags,
+                  updated: !isNewCard,
+                ).toJson(),
                 if (isSubAgent && _nonEmpty(finish_summary))
                   'child_terminal_result': {
                     'status': 'completed',

@@ -1,14 +1,21 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:memex/data/model/chat_artifact.dart';
 import 'package:memex/data/model/chat_events.dart';
 import 'package:memex/data/services/demo_service.dart';
+import 'package:memex/data/services/file_system_service.dart';
+import 'package:memex/data/services/local_asset_server.dart';
 import 'package:memex/l10n/app_localizations.dart';
 import 'package:memex/ui/chat/widgets/agent_chat_dialog.dart';
 import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:memex/ui/core/widgets/local_image.dart';
+import 'package:memex/ui/knowledge/widgets/knowledge_file_page.dart';
 import 'package:memex/utils/user_storage.dart';
+import 'package:path/path.dart' as p;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -321,6 +328,35 @@ void main() {
       );
     });
 
+    test('places artifacts before the current final assistant reply', () {
+      final currentUser = UserMessageItem('capture this');
+      final currentReply = AIMessageItem('Done');
+      final existingArtifact = ArtifactItem(
+        ChatArtifact.schedule(title: 'Schedule', updated: true),
+      );
+
+      expect(
+        superAgentArtifactInsertionIndexBeforeReply([
+          AIMessageItem('Older reply'),
+          currentUser,
+          currentReply,
+        ]),
+        2,
+      );
+      expect(
+        superAgentArtifactInsertionIndexBeforeReply([
+          currentUser,
+          existingArtifact,
+          currentReply,
+        ]),
+        2,
+      );
+      expect(
+        superAgentArtifactInsertionIndexBeforeReply([currentUser]),
+        1,
+      );
+    });
+
     test('toggles demo overlay suspension for routed detail pages', () {
       final demo = DemoService.instance;
 
@@ -470,6 +506,32 @@ void main() {
       expect(find.byType(LocalImage), findsOneWidget);
     });
 
+    test('resolves persisted user image paths as local files', () async {
+      final tempDir = Directory.systemTemp.createTempSync(
+        'memex_user_message_image_',
+      );
+      try {
+        await FileSystemService.init(tempDir.path);
+        const relativePath = 'workspace/_alice/Facts/assets/photo.jpg';
+
+        expect(
+          superAgentUserMessageImageSourceForLocalDisplay(relativePath),
+          p.join(tempDir.path, relativePath),
+        );
+        expect(
+          superAgentUserMessageImageSourceForLocalDisplay(
+            'https://example.com/photo.jpg',
+          ),
+          'https://example.com/photo.jpg',
+        );
+      } finally {
+        await LocalAssetServer.stopServer();
+        if (tempDir.existsSync()) {
+          tempDir.deleteSync(recursive: true);
+        }
+      }
+    });
+
     testWidgets(
       'keeps header actions inside the compact header on narrow screens',
       (tester) async {
@@ -507,6 +569,75 @@ void main() {
         findsOneWidget,
       );
       expect(find.text(UserStorage.l10n.sendLabel), findsOneWidget);
+    });
+
+    testWidgets('renders a completed artifact card and opens schedule tab', (
+      tester,
+    ) async {
+      var openedSchedule = false;
+
+      await _pumpDialog(
+        tester,
+        dialog: AgentChatDialog(
+          initialItems: [
+            ArtifactItem(
+              ChatArtifact.schedule(
+                title: 'Schedule presentation',
+                summary: 'Pending schedule items: 3',
+                updated: true,
+              ),
+            ),
+          ],
+          onOpenScheduleTab: () => openedSchedule = true,
+        ),
+      );
+
+      expect(find.text(UserStorage.l10n.schedule), findsOneWidget);
+      expect(find.text('Schedule presentation'), findsOneWidget);
+      expect(find.text('Pending schedule items: 3'), findsOneWidget);
+      expect(find.text(UserStorage.l10n.scheduleBriefingOpen), findsOneWidget);
+
+      await tester.tap(find.text(UserStorage.l10n.scheduleBriefingOpen));
+      await tester.pump();
+
+      expect(openedSchedule, isTrue);
+    });
+
+    testWidgets('opens knowledge file artifacts with normalized PKM path', (
+      tester,
+    ) async {
+      await _pumpDialog(
+        tester,
+        dialog: AgentChatDialog(
+          initialItems: [
+            ArtifactItem(
+              ChatArtifact.knowledgeFile(
+                path: 'PKM/Projects/memex.md',
+                title: 'memex.md',
+                summary: '# Memex',
+                updated: true,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      expect(
+        find.text(UserStorage.l10n.agentChat.documentUpdated),
+        findsOneWidget,
+      );
+      expect(find.text('memex.md'), findsOneWidget);
+      expect(find.text('PKM/Projects/memex.md'), findsOneWidget);
+      expect(find.text(UserStorage.l10n.scheduleBriefingOpen), findsOneWidget);
+
+      await tester.tap(find.text(UserStorage.l10n.scheduleBriefingOpen));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      final page = tester.widget<KnowledgeFilePage>(
+        find.byType(KnowledgeFilePage),
+      );
+      expect(page.filePath, 'Projects/memex.md');
     });
 
     testWidgets('keeps super agent header actions tight to the right edge', (
@@ -555,8 +686,13 @@ void main() {
 Future<void> _pumpDialog(
   WidgetTester tester, {
   Size viewportSize = const Size(390, 800),
+  Widget dialog = const AgentChatDialog(),
 }) async {
-  await _pumpDialogFrame(tester, viewportSize: viewportSize);
+  await _pumpDialogFrame(
+    tester,
+    viewportSize: viewportSize,
+    dialog: dialog,
+  );
   await tester.pumpAndSettle();
 }
 

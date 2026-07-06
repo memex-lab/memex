@@ -1,3 +1,5 @@
+import 'chat_artifact.dart';
+
 abstract class ChatEvent {}
 
 class ChatResponseChunkEvent extends ChatEvent {
@@ -53,6 +55,11 @@ class ChatTraceCompletedEvent extends ChatEvent {
 class ChatErrorEvent extends ChatEvent {
   final String error;
   ChatErrorEvent(this.error);
+}
+
+class ChatArtifactsEvent extends ChatEvent {
+  final List<ChatArtifact> artifacts;
+  ChatArtifactsEvent(this.artifacts);
 }
 
 class ChatAgentStartedEvent extends ChatEvent {}

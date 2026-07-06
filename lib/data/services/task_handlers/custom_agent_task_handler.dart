@@ -12,6 +12,7 @@ import 'package:memex/data/services/asset_reference_service.dart';
 import 'package:memex/data/services/asset_safety_service.dart';
 import 'package:memex/data/services/custom_agent_config_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
+import 'package:memex/data/services/chat_session_storage.dart';
 import 'package:memex/data/services/llm_image_codec.dart';
 import 'package:memex/domain/models/agent_definitions.dart';
 import 'package:memex/domain/models/custom_agent_config.dart';
@@ -213,7 +214,7 @@ Future<void> _handleCustomAgentTask(
       _logger.info('Custom agent "$agentName" completed, last: $last');
     }
 
-    // Persist a chat session file so AgentChatDialog can load history and
+    // Persist a chat session so AgentChatDialog can load history and
     // continue the conversation in the same session context.
     await _createChatSession(
       userId: userId,
@@ -228,7 +229,7 @@ Future<void> _handleCustomAgentTask(
   }
 }
 
-/// Create a chat session YAML file compatible with ChatService / chat.dart so
+/// Create a chat session compatible with ChatService / chat.dart so
 /// that AgentChatDialog can load the conversation history and continue chatting.
 Future<void> _createChatSession({
   required String userId,
@@ -237,12 +238,10 @@ Future<void> _createChatSession({
   required String userText,
   String? aiResponse,
 }) async {
-  final fs = FileSystemService.instance;
-  final sessionsPath = fs.getChatSessionsPath(userId);
-  final sessionFile = File(p.join(sessionsPath, '$sessionId.yaml'));
+  final storage = ChatSessionStorage.instance;
 
   // Don't overwrite if it already exists (e.g. retry scenario).
-  if (sessionFile.existsSync()) return;
+  if (await storage.sessionExists(userId, sessionId)) return;
 
   final now = DateTime.now();
   final nowIso = now.toIso8601String();
@@ -270,7 +269,7 @@ Future<void> _createChatSession({
       },
   ];
 
-  final sessionData = <String, dynamic>{
+  final metadata = <String, dynamic>{
     'session_id': sessionId,
     'agent_name': agentName,
     'title': agentName,
@@ -285,7 +284,12 @@ Future<void> _createChatSession({
   };
 
   try {
-    await fs.writeYamlFile(sessionFile.path, sessionData);
+    await storage.createSession(
+      userId: userId,
+      sessionId: sessionId,
+      metadata: metadata,
+      messages: messages,
+    );
     _logger.info(
       'Created chat session for custom agent "$agentName": $sessionId',
     );

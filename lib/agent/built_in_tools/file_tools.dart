@@ -5,6 +5,7 @@ import 'package:memex/agent/prompts.dart';
 import 'package:memex/agent/run_mode/agent_action_approval_service.dart';
 import 'package:memex/agent/security/file_permission_manager.dart';
 import 'package:memex/agent/super_agent/pending_tool_image_buffer.dart';
+import 'package:memex/data/model/chat_artifact.dart';
 import 'package:memex/data/services/agent_image_attachment.dart';
 import 'package:memex/data/services/asset_safety_service.dart';
 import 'package:memex/data/services/api_exception.dart';
@@ -21,6 +22,32 @@ typedef ViewImageExifInfoBuilder = Future<String?> Function(
   String userId,
   String imagePath,
 );
+
+Map<String, dynamic> _fileArtifactJson({
+  required String path,
+  required bool updated,
+  required String content,
+}) {
+  final summary =
+      content.length > 160 ? '${content.substring(0, 160)}...' : content;
+  final title = p.basename(path);
+  final isKnowledgeFile =
+      ChatArtifact.knowledgeFilePathFromWorkspacePath(path) != null;
+  final artifact = isKnowledgeFile
+      ? ChatArtifact.knowledgeFile(
+          path: path,
+          title: title,
+          summary: summary,
+          updated: updated,
+        )
+      : ChatArtifact.workspaceFile(
+          path: path,
+          title: title,
+          summary: summary,
+          updated: updated,
+        );
+  return artifact.toJson();
+}
 
 class FileToolFactory {
   final FilePermissionManager permissionManager;
@@ -379,14 +406,11 @@ class FileToolFactory {
         return AgentToolResult(
           content: TextPart(result),
           metadata: {
-            'artifact': {
-              'type': 'file',
-              'path': artifactPath,
-              'updated': artifactIsUpdate,
-              'snippet': content.length > 160
-                  ? '${content.substring(0, 160)}…'
-                  : content,
-            },
+            'artifact': _fileArtifactJson(
+              path: artifactPath,
+              updated: artifactIsUpdate,
+              content: content,
+            ),
           },
         );
       },
@@ -464,14 +488,11 @@ class FileToolFactory {
         return AgentToolResult(
           content: TextPart(result),
           metadata: {
-            'artifact': {
-              'type': 'file',
-              'path': artifactPath,
-              'updated': true,
-              'snippet': new_string.length > 160
-                  ? '${new_string.substring(0, 160)}…'
-                  : new_string,
-            },
+            'artifact': _fileArtifactJson(
+              path: artifactPath,
+              updated: true,
+              content: new_string,
+            ),
           },
         );
       },

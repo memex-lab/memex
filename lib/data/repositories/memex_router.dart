@@ -39,6 +39,7 @@ import 'package:memex/db/app_database.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/data/services/chat_service.dart';
+import 'package:memex/data/services/chat_session_storage.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/local_task_executor.dart';
 import 'package:memex/data/services/global_event_bus.dart';
@@ -104,6 +105,7 @@ class MemexRouter {
 
       // Use userId to init DB (drift_flutter handles path isolation via name)
       _logger.info('Initializing Local DB for user: $userId');
+      await ChatSessionStorage.instance.ensureMigrated(userId);
       await AppDatabase.init(userId);
 
       _registerTaskHandlers(LocalTaskExecutor.instance);
@@ -248,6 +250,7 @@ class MemexRouter {
   }) async {
     final dataRoot = await UserStorage.resolveDataRoot(userId);
     await FileSystemService.init(dataRoot);
+    await ChatSessionStorage.instance.ensureMigrated(userId);
     await AppDatabase.init(userId);
 
     final taskExecutor = executor ?? LocalTaskExecutor.instance;
@@ -309,6 +312,7 @@ class MemexRouter {
     final dataRoot = await UserStorage.resolveDataRoot(userId);
     await FileSystemService.init(dataRoot);
     if (userId != null && userId.isNotEmpty) {
+      await ChatSessionStorage.instance.ensureMigrated(userId);
       try {
         await FileSystemService.instance.rebuildCardCache(userId);
       } catch (e) {
@@ -1026,7 +1030,7 @@ class MemexRouter {
   Future<Map<String, dynamic>> fetchChatSessionDetail(
     String sessionId, {
     int? messageLimit,
-    int messageOffset = 0,
+    String? messageBeforeCursor,
   }) async {
     await _ensureInitialized();
     _logger.info(
@@ -1037,7 +1041,7 @@ class MemexRouter {
       return await chat_endpoint.fetchChatSessionDetailEndpoint(
         sessionId,
         messageLimit: messageLimit,
-        messageOffset: messageOffset,
+        messageBeforeCursor: messageBeforeCursor,
       );
     } catch (e) {
       _logger.severe('Failed to fetch chat session detail: $e');

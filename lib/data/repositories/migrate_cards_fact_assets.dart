@@ -1,20 +1,15 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
-import 'package:synchronized/synchronized.dart';
 
 import 'package:memex/data/services/file_system_service.dart';
+import 'package:memex/data/services/migration_state_service.dart';
 import 'package:memex/utils/logger.dart';
 
 final _logger = getLogger('MigrateCardsFactAssets');
 
 /// Migration key in `_System/migration_state.json`.
 const _migrationKey = 'cards_fact_assets_created_at_v2';
-
-/// Per-user lock so a migration can't run twice concurrently.
-final Map<String, Lock> _locks = {};
-Lock _lockFor(String userId) => _locks.putIfAbsent(userId, () => Lock());
 
 /// One-time migration of legacy cards to the self-contained card structure.
 ///
@@ -32,79 +27,76 @@ Lock _lockFor(String userId) => _locks.putIfAbsent(userId, () => Lock());
 /// Image-analysis / OCR sidecar text is intentionally not migrated onto the
 /// card; `fact` holds the user's original record only.
 Future<void> migrateCardsToFactAssets(String userId) async {
-  await _lockFor(userId).synchronized(() async {
-    final fs = FileSystemService.instance;
+  await MigrationStateService.instance.runOnce(
+    userId: userId,
+    key: _migrationKey,
+    migrate: () async {
+      final fs = FileSystemService.instance;
+      _logger.info('Migrating cards to fact/assets structure for user $userId');
 
-    final state = await _readMigrationState(userId);
-    if (state[_migrationKey] == true) {
-      return;
-    }
+      var migrated = 0;
+      var scanned = 0;
+      try {
+        final cardFiles = await fs.listAllCardFiles(userId);
+        for (final cardFile in cardFiles) {
+          final factId = fs.factIdFromCardPath(cardFile);
+          if (factId == null) continue;
+          scanned++;
 
-    _logger.info('Migrating cards to fact/assets structure for user $userId');
+          try {
+            final card = await fs.readCardFile(userId, factId);
+            if (card == null || card.deleted == true) continue;
 
-    var migrated = 0;
-    var scanned = 0;
-    try {
-      final cardFiles = await fs.listAllCardFiles(userId);
-      for (final cardFile in cardFiles) {
-        final factId = fs.factIdFromCardPath(cardFile);
-        if (factId == null) continue;
-        scanned++;
-
-        try {
-          final card = await fs.readCardFile(userId, factId);
-          if (card == null || card.deleted == true) continue;
-
-          final needsFactAssets =
-              (card.fact ?? '').trim().isEmpty && card.assets.isEmpty;
-          final needsCreatedAt = card.createdAt == null;
-          if (!needsFactAssets && !needsCreatedAt) {
-            continue;
-          }
-
-          final factInfo =
-              await _extractLegacyFactContentFromFile(fs, userId, factId);
-          if (factInfo == null) continue;
-
-          String? fact;
-          List<String>? assets;
-          if (needsFactAssets) {
-            final split = _splitFactAndAssets(factInfo.content);
-            if (split.$1.isNotEmpty || split.$2.isNotEmpty) {
-              fact = split.$1;
-              assets = split.$2;
+            final needsFactAssets =
+                (card.fact ?? '').trim().isEmpty && card.assets.isEmpty;
+            final needsCreatedAt = card.createdAt == null;
+            if (!needsFactAssets && !needsCreatedAt) {
+              continue;
             }
+
+            final factInfo =
+                await _extractLegacyFactContentFromFile(fs, userId, factId);
+            if (factInfo == null) continue;
+
+            String? fact;
+            List<String>? assets;
+            if (needsFactAssets) {
+              final split = _splitFactAndAssets(factInfo.content);
+              if (split.$1.isNotEmpty || split.$2.isNotEmpty) {
+                fact = split.$1;
+                assets = split.$2;
+              }
+            }
+
+            if (fact == null && assets == null && !needsCreatedAt) continue;
+
+            await fs.updateCardFile(
+              userId,
+              factId,
+              (c) => c.copyWith(
+                fact: fact,
+                assets: assets,
+                createdAt: needsCreatedAt ? factInfo.timestamp : null,
+              ),
+            );
+            migrated++;
+          } catch (e, st) {
+            _logger.warning('Failed to migrate card $factId', e, st);
           }
-
-          if (fact == null && assets == null && !needsCreatedAt) continue;
-
-          await fs.updateCardFile(
-            userId,
-            factId,
-            (c) => c.copyWith(
-              fact: fact,
-              assets: assets,
-              createdAt: needsCreatedAt ? factInfo.timestamp : null,
-            ),
-          );
-          migrated++;
-        } catch (e, st) {
-          _logger.warning('Failed to migrate card $factId', e, st);
         }
+      } catch (e, st) {
+        // A scan failure should not permanently block the app; leave the flag
+        // unset so the migration retries on the next launch.
+        _logger.severe('Card fact/assets migration failed mid-scan', e, st);
+        return false;
       }
-    } catch (e, st) {
-      // A scan failure should not permanently block the app; leave the flag
-      // unset so the migration retries on the next launch.
-      _logger.severe('Card fact/assets migration failed mid-scan', e, st);
-      return;
-    }
 
-    state[_migrationKey] = true;
-    await _writeMigrationState(userId, state);
-    _logger.info(
-      'Card fact/assets migration complete: migrated $migrated of $scanned cards',
-    );
-  });
+      _logger.info(
+        'Card fact/assets migration complete: migrated $migrated of $scanned cards',
+      );
+      return true;
+    },
+  );
 }
 
 /// Split legacy fact-file content into (fact text, asset references).
@@ -215,36 +207,4 @@ String _legacyDailyFactPath(
 String _extractSimpleFactId(String factId) {
   final index = factId.indexOf('#');
   return index == -1 ? factId : factId.substring(index + 1);
-}
-
-String _migrationStatePath(String userId) => p.join(
-      FileSystemService.instance.getSystemPath(userId),
-      'migration_state.json',
-    );
-
-Future<Map<String, dynamic>> _readMigrationState(String userId) async {
-  final file = File(_migrationStatePath(userId));
-  if (!await file.exists()) return <String, dynamic>{};
-  try {
-    final data = jsonDecode(await file.readAsString());
-    if (data is Map) return Map<String, dynamic>.from(data);
-  } catch (e) {
-    _logger.warning('Failed to parse migration_state.json: $e');
-  }
-  return <String, dynamic>{};
-}
-
-Future<void> _writeMigrationState(
-  String userId,
-  Map<String, dynamic> state,
-) async {
-  final path = _migrationStatePath(userId);
-  final dir = Directory(p.dirname(path));
-  if (!await dir.exists()) await dir.create(recursive: true);
-
-  state['updated_at'] = DateTime.now().toIso8601String();
-  const encoder = JsonEncoder.withIndent('  ');
-  final tmpFile = File('$path.tmp');
-  await tmpFile.writeAsString(encoder.convert(state));
-  await tmpFile.rename(path);
 }

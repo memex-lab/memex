@@ -5,11 +5,13 @@ import 'package:memex/data/model/chat_events.dart';
 /// One in-flight agent chat turn, owned by the service layer so it survives
 /// the chat dialog being closed.
 ///
-/// Events are appended to a replay buffer and forwarded to a broadcast
-/// stream. [attach] returns a stream that first replays everything emitted so
-/// far and then continues live — this is what lets a reopened dialog rebuild
-/// the "thinking" UI mid-run. The snapshot+subscribe happens in one
-/// synchronous block, so no event can be dropped or duplicated in between.
+/// Events are usually appended to a replay buffer and forwarded to a broadcast
+/// stream. [attach] returns a stream that first replays buffered events and
+/// then continues live — this is what lets a reopened dialog rebuild the
+/// "thinking" UI mid-run. Persisted events can opt out of replay because the
+/// session history is their source of truth after a dialog reopens. The
+/// snapshot+subscribe happens in one synchronous block, so no event can be
+/// dropped or duplicated in between.
 class ActiveChatRun {
   ActiveChatRun(this.sessionId, {void Function()? onClosed})
       : _onClosed = onClosed;
@@ -24,9 +26,11 @@ class ActiveChatRun {
 
   bool get isClosed => _closed;
 
-  void add(ChatEvent event) {
+  void add(ChatEvent event, {bool replay = true}) {
     if (_closed) return;
-    _replayBuffer.add(event);
+    if (replay) {
+      _replayBuffer.add(event);
+    }
     _live.add(event);
   }
 

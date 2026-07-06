@@ -73,5 +73,28 @@ void main() {
       expect((await first).length, 2);
       expect((await second).length, 2);
     });
+
+    test('non-replay events are live-only for persisted history events',
+        () async {
+      final registry = ChatRunRegistry();
+      final run = registry.start('s6');
+
+      final liveReceived = <ChatEvent>[];
+      final liveSub = run.attach().listen(liveReceived.add);
+      await pumpEventQueue();
+
+      final liveOnlyEvent = ChatArtifactsEvent(const []);
+      run.add(liveOnlyEvent, replay: false);
+      await pumpEventQueue();
+      await liveSub.cancel();
+
+      run.add(ChatResponseChunkEvent('later'));
+      run.close();
+
+      final replayed = await run.attach().toList();
+      expect(liveReceived, [liveOnlyEvent]);
+      expect(replayed, hasLength(1));
+      expect(replayed.single, isA<ChatResponseChunkEvent>());
+    });
   });
 }
