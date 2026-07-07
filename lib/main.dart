@@ -887,7 +887,17 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       initialDraftText: initialDraftText,
       initialImages: initialImages,
       initialImageOriginalFilenames: initialImageOriginalFilenames,
+      onOpenScheduleTab: _openScheduleTabFromArtifact,
     );
+  }
+
+  void _openScheduleTabFromArtifact() {
+    if (!mounted) return;
+    setState(() => _currentTab = 0);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _timelineKey.currentState?.openScheduleTab();
+    });
   }
 
   Map<String, String> _originalFilenamesFromImages(List<XFile> images) {

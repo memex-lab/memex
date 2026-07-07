@@ -43,6 +43,7 @@ void openSuperAgentDialog(
   Map<String, String> initialImageOriginalFilenames = const {},
   String? sceneId,
   List<Map<String, String>>? initialRefs,
+  VoidCallback? onOpenScheduleTab,
 }) {
   final sessionIdFuture = latestSuperAgentSessionId();
   showGeneralDialog(
@@ -59,6 +60,7 @@ void openSuperAgentDialog(
         initialDraftText: initialDraftText,
         initialImages: initialImages,
         initialImageOriginalFilenames: initialImageOriginalFilenames,
+        onOpenScheduleTab: onOpenScheduleTab,
       );
     },
   );
@@ -72,6 +74,7 @@ Widget buildSuperAgentDialogSessionGate({
   Map<String, String> initialImageOriginalFilenames = const {},
   String? sceneId,
   List<Map<String, String>>? initialRefs,
+  VoidCallback? onOpenScheduleTab,
 }) {
   return FutureBuilder<String?>(
     future: sessionIdFuture,
@@ -89,6 +92,7 @@ Widget buildSuperAgentDialogSessionGate({
         initialDraftText: initialDraftText,
         initialImages: initialImages,
         initialImageOriginalFilenames: initialImageOriginalFilenames,
+        onOpenScheduleTab: onOpenScheduleTab,
       );
     },
   );

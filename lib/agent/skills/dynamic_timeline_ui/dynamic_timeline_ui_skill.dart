@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 import 'package:memex/agent/run_mode/agent_action_approval_service.dart';
 import 'package:memex/agent/super_agent/pending_tool_image_buffer.dart';
+import 'package:memex/data/model/chat_artifact.dart';
 import 'package:memex/data/services/card_renderer.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/webview_snapshot_service.dart';
@@ -651,13 +652,11 @@ Finish by returning a concise result: what template was saved, template_id, use_
     return AgentToolResult(
       content: TextPart(buffer.toString().trimRight()),
       metadata: {
-        'artifact': {
-          'type': 'file',
-          'id': cleanTemplateId,
-          'title': cleanTemplateId,
-          'path': '_UserSettings/Templates/$cleanTemplateId/view.html',
-          'updated': previousMeta != null,
-        },
+        'artifact': ChatArtifact.uiTemplate(
+          templateId: cleanTemplateId,
+          path: '_UserSettings/Templates/$cleanTemplateId/view.html',
+          updated: previousMeta != null,
+        ).toJson(),
       },
     );
   }
