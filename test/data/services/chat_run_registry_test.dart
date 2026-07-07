@@ -8,15 +8,15 @@ void main() {
       final registry = ChatRunRegistry();
       final run = registry.start('s1');
 
-      run.add(ChatResponseChunkEvent('a'));
-      run.add(ChatResponseChunkEvent('b'));
+      run.add(ChatResponseChunkEvent('t1', 'a'));
+      run.add(ChatResponseChunkEvent('t1', 'b'));
 
       final received = <String>[];
       final sub = run.attach().listen((event) {
         received.add((event as ChatResponseChunkEvent).text);
       });
 
-      run.add(ChatResponseChunkEvent('c'));
+      run.add(ChatResponseChunkEvent('t1', 'c'));
       run.close();
       await sub.asFuture<void>();
 
@@ -26,7 +26,7 @@ void main() {
     test('attach after close replays buffer and completes', () async {
       final registry = ChatRunRegistry();
       final run = registry.start('s2');
-      run.add(ChatResponseChunkEvent('x'));
+      run.add(ChatResponseChunkEvent('t2', 'x'));
       run.close();
 
       final events = await run.attach().toList();
@@ -43,7 +43,7 @@ void main() {
       expect(registry.isActive('s3'), isFalse);
       // Closing twice is safe and add() after close is ignored.
       run.close();
-      run.add(ChatResponseChunkEvent('ignored'));
+      run.add(ChatResponseChunkEvent('t3', 'ignored'));
     });
 
     test('getOrStart reuses active run and creates missing run', () {
@@ -63,11 +63,11 @@ void main() {
     test('multiple attachments receive the same events', () async {
       final registry = ChatRunRegistry();
       final run = registry.start('s4');
-      run.add(ChatResponseChunkEvent('1'));
+      run.add(ChatResponseChunkEvent('t4', '1'));
 
       final first = run.attach().toList();
       final second = run.attach().toList();
-      run.add(ChatResponseChunkEvent('2'));
+      run.add(ChatResponseChunkEvent('t4', '2'));
       run.close();
 
       expect((await first).length, 2);
@@ -83,12 +83,12 @@ void main() {
       final liveSub = run.attach().listen(liveReceived.add);
       await pumpEventQueue();
 
-      final liveOnlyEvent = ChatArtifactsEvent(const []);
+      final liveOnlyEvent = ChatArtifactsEvent('t6', const []);
       run.add(liveOnlyEvent, replay: false);
       await pumpEventQueue();
       await liveSub.cancel();
 
-      run.add(ChatResponseChunkEvent('later'));
+      run.add(ChatResponseChunkEvent('t6', 'later'));
       run.close();
 
       final replayed = await run.attach().toList();

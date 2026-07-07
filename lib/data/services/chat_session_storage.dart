@@ -140,7 +140,7 @@ class ChatSessionStorage {
       );
     }
 
-    final linePage = await _readMessageLinesBefore(
+    final linePage = await _readMessageTurnGroupsBefore(
       messagesFile,
       limit: limit,
       beforeCursor: beforeCursor,
@@ -314,7 +314,7 @@ class ChatSessionStorage {
     String? cursor;
 
     while (true) {
-      final page = await _readMessageLinesBefore(
+      final page = await _readMessageTurnGroupsBefore(
         file,
         limit: batchSize,
         beforeCursor: cursor,
@@ -341,10 +341,10 @@ class ChatSessionStorage {
   Future<String?> lastMessagePreview(String userId, String sessionId) async {
     _validateSessionId(sessionId);
     final messagesFile = _messagesFile(userId, sessionId);
-    final page = await _readMessageLinesBefore(messagesFile, limit: 1);
+    final page = await _readMessageTurnGroupsBefore(messagesFile, limit: 1);
     if (page.lines.isEmpty) return null;
     try {
-      final decoded = jsonDecode(page.lines.single.text);
+      final decoded = jsonDecode(page.lines.last.text);
       if (decoded is Map) {
         return previewForMessage(Map<String, dynamic>.from(decoded));
       }
@@ -547,7 +547,7 @@ class ChatSessionStorage {
     return messages;
   }
 
-  Future<_MessageLinePage> _readMessageLinesBefore(
+  Future<_MessageLinePage> _readMessageTurnGroupsBefore(
     File file, {
     required int limit,
     String? beforeCursor,
@@ -572,70 +572,101 @@ class ChatSessionStorage {
     final chunks = <List<int>>[];
     var position = endExclusive;
     var bufferStart = endExclusive;
-    var completeLineCount = 0;
 
     final raf = await file.open();
     try {
-      while (position > 0 && completeLineCount <= limit) {
+      while (position > 0) {
         final readSize = math.min(chunkSize, position);
         position -= readSize;
         bufferStart = position;
         await raf.setPosition(position);
         final chunk = await raf.read(readSize);
         chunks.insert(0, chunk);
-        completeLineCount = _countCompleteLines(
+
+        final lineRecords = _lineRecordsFromChunks(
           chunks,
+          bufferStart: bufferStart,
+        );
+        if (lineRecords.isEmpty) continue;
+
+        final page = _selectTurnGroupPage(
+          lineRecords,
+          limit: limit,
           bufferStartsAtFileStart: bufferStart == 0,
         );
+        if (page != null) return page;
       }
     } finally {
       await raf.close();
     }
 
+    return const _MessageLinePage(lines: [], olderCursor: null);
+  }
+
+  List<_MessageLineRecord> _lineRecordsFromChunks(
+    List<List<int>> chunks, {
+    required int bufferStart,
+  }) {
     final bytes = chunks.expand((chunk) => chunk).toList();
     var localStart = 0;
     if (bufferStart > 0) {
       final firstNewline = bytes.indexOf(0x0A);
-      if (firstNewline >= 0) {
-        localStart = firstNewline + 1;
-      } else {
-        return const _MessageLinePage(lines: [], olderCursor: null);
-      }
-    }
-
-    final lineRecords = _decodeLineRecords(
-      bytes.sublist(localStart),
-      absoluteStart: bufferStart + localStart,
-    );
-    if (lineRecords.isEmpty) {
-      return const _MessageLinePage(lines: [], olderCursor: null);
-    }
-
-    final hasMore = lineRecords.length > limit;
-    final returned =
-        hasMore ? lineRecords.sublist(lineRecords.length - limit) : lineRecords;
-    return _MessageLinePage(
-      lines: returned,
-      olderCursor: hasMore ? returned.first.startOffset.toString() : null,
-    );
-  }
-
-  int _countCompleteLines(
-    List<List<int>> chunks, {
-    required bool bufferStartsAtFileStart,
-  }) {
-    final bytes = chunks.expand((chunk) => chunk).toList();
-    if (bytes.isEmpty) return 0;
-    var localStart = 0;
-    if (!bufferStartsAtFileStart) {
-      final firstNewline = bytes.indexOf(0x0A);
-      if (firstNewline < 0) return 0;
+      if (firstNewline < 0) return const [];
       localStart = firstNewline + 1;
     }
     return _decodeLineRecords(
       bytes.sublist(localStart),
-      absoluteStart: localStart,
-    ).length;
+      absoluteStart: bufferStart + localStart,
+    );
+  }
+
+  _MessageLinePage? _selectTurnGroupPage(
+    List<_MessageLineRecord> lineRecords, {
+    required int limit,
+    required bool bufferStartsAtFileStart,
+  }) {
+    if (lineRecords.isEmpty) {
+      return const _MessageLinePage(lines: [], olderCursor: null);
+    }
+
+    var groupCount = 0;
+    var pageStartIndex = 0;
+    String? previousGroupKey;
+    for (var i = lineRecords.length - 1; i >= 0; i--) {
+      final groupKey = _messageTurnGroupKey(lineRecords[i]);
+      if (previousGroupKey != groupKey) {
+        groupCount++;
+        previousGroupKey = groupKey;
+        if (groupCount > limit) {
+          pageStartIndex = i + 1;
+          break;
+        }
+      }
+    }
+
+    if (groupCount <= limit) {
+      if (!bufferStartsAtFileStart) return null;
+      return _MessageLinePage(lines: lineRecords, olderCursor: null);
+    }
+
+    final returned = lineRecords.sublist(pageStartIndex);
+    return _MessageLinePage(
+      lines: returned,
+      olderCursor: returned.first.startOffset.toString(),
+    );
+  }
+
+  String _messageTurnGroupKey(_MessageLineRecord record) {
+    try {
+      final decoded = jsonDecode(record.text);
+      if (decoded is Map) {
+        final turnId = _stringOrNull(decoded['turn_id']);
+        if (turnId != null) return 'turn:$turnId';
+      }
+    } catch (_) {
+      // Invalid JSONL rows are isolated so they cannot merge with neighbors.
+    }
+    return 'line:${record.startOffset}';
   }
 
   List<_MessageLineRecord> _decodeLineRecords(

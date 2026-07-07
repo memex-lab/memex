@@ -1,7 +1,7 @@
 /// A user-visible UI artifact produced by an agent turn.
 ///
-/// Tool trace events stay transient. Artifacts are persisted on the completed
-/// assistant message so reopened chats can reconstruct the final app updates.
+/// Tool trace events stay transient. Artifacts are persisted as chat artifact
+/// messages so reopened chats can reconstruct the final app updates.
 class ChatArtifact {
   ChatArtifact({
     required this.artifactId,

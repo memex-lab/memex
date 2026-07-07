@@ -372,15 +372,15 @@ class ChatService {
       'sendMessage: sessionId=$sessionId, message=$message, refs=${refs?.length}',
     );
 
+    final turnId = _uuid.v4();
     final userId = await UserStorage.getUserId();
     if (userId == null) {
-      yield ChatErrorEvent('User not logged in');
+      yield ChatErrorEvent(turnId, 'User not logged in');
       return;
     }
 
     String finalSessionId = sessionId ?? '';
     final userMessageTime = DateTime.now();
-    final turnId = _uuid.v4();
     final trimmedMessage = message.trim();
     final preparedImages = <AgentImageAttachment>[];
     String agentStateSessionId = '';
@@ -397,12 +397,12 @@ class ChatService {
       }
     } catch (e) {
       _logger.severe('Failed to prepare chat image attachment', e);
-      yield ChatErrorEvent('Failed to prepare image attachment: $e');
+      yield ChatErrorEvent(turnId, 'Failed to prepare image attachment: $e');
       return;
     }
 
     if (trimmedMessage.isEmpty && preparedImages.isEmpty) {
-      yield ChatErrorEvent('Message is empty');
+      yield ChatErrorEvent(turnId, 'Message is empty');
       return;
     }
 
@@ -467,7 +467,7 @@ class ChatService {
       }
     } catch (e) {
       _logger.severe('Failed to manage session', e);
-      yield ChatErrorEvent('Failed to initialize session: $e');
+      yield ChatErrorEvent(turnId, 'Failed to initialize session: $e');
       return;
     }
 
@@ -512,7 +512,7 @@ class ChatService {
       }
     } catch (e, st) {
       _logger.severe('Failed to enqueue chat turn', e, st);
-      run.add(ChatErrorEvent('Failed to enqueue chat turn: $e'));
+      run.add(ChatErrorEvent(turnId, 'Failed to enqueue chat turn: $e'));
       run.close();
     }
 
@@ -728,7 +728,7 @@ class ChatService {
       }
     } catch (e) {
       _logger.severe('Failed to initialize agent', e);
-      run.add(ChatErrorEvent('Failed to initialize agent: $e'));
+      run.add(ChatErrorEvent(turnId, 'Failed to initialize agent: $e'));
       if (await _shouldCloseRunAfterTask(taskId)) {
         run.close();
       }
@@ -756,7 +756,7 @@ class ChatService {
           // Artifact messages are already persisted. Live listeners should see
           // them immediately after the append, but reattached dialogs rebuild
           // them from JSONL history instead of replaying this event.
-          run.add(ChatArtifactsEvent(artifacts), replay: false);
+          run.add(ChatArtifactsEvent(turnId, artifacts), replay: false);
         }
       }).catchError((Object e, StackTrace st) {
         _logger.warning(
@@ -962,7 +962,7 @@ class ChatService {
       } catch (e) {
         _logger.severe('Agent run failed', e);
         if (!run.isClosed) {
-          run.add(ChatErrorEvent(e.toString()));
+          run.add(ChatErrorEvent(turnId, e.toString()));
           if (await _shouldCloseRunAfterTask(taskId)) {
             run.close();
           }
@@ -1050,7 +1050,7 @@ class ChatService {
     // 1. Lifecycle Events
     controller.on((AgentStartedEvent event) {
       _logger.info('Agent started');
-      stream.add(ChatAgentStartedEvent());
+      stream.add(ChatAgentStartedEvent(turnId));
     });
 
     controller.on((AgentStoppedEvent event) async {
@@ -1110,8 +1110,8 @@ class ChatService {
 
       if (event.error != null) {
         if (!stream.isClosed) {
-          stream.add(ChatAgentStoppedEvent());
-          stream.add(ChatErrorEvent(event.error.toString()));
+          stream.add(ChatAgentStoppedEvent(turnId));
+          stream.add(ChatErrorEvent(turnId, event.error.toString()));
           if (await _shouldCloseRunAfterTask(taskId)) {
             stream.close();
           }
@@ -1187,8 +1187,8 @@ class ChatService {
 
       if (!stream.isClosed) {
         // Send a final empty chunk to mark isDone=true without duplicating text
-        stream.add(ChatResponseChunkEvent('', isDone: true));
-        stream.add(ChatAgentStoppedEvent());
+        stream.add(ChatResponseChunkEvent(turnId, '', isDone: true));
+        stream.add(ChatAgentStoppedEvent(turnId));
         if (await _shouldCloseRunAfterTask(taskId)) {
           stream.close();
         }
@@ -1232,7 +1232,7 @@ class ChatService {
 
       if (event.response.textOutput != null &&
           event.response.textOutput!.isNotEmpty) {
-        stream.add(ChatResponseChunkEvent(event.response.textOutput!));
+        stream.add(ChatResponseChunkEvent(turnId, event.response.textOutput!));
       }
     });
 

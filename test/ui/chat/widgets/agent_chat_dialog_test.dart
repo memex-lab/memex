@@ -389,10 +389,35 @@ void main() {
       final artifact = ArtifactItem(
         ChatArtifact.schedule(title: 'Schedule presentation', updated: true),
       );
-      final reply = AIMessageItem('Done', artifacts: [artifact]);
+      final reply =
+          AIMessageItem('Done', turnId: 'turn-1', artifacts: [artifact]);
 
       expect(reply.artifacts, [artifact]);
       expect(reply.artifacts.single.artifact.title, 'Schedule presentation');
+    });
+
+    test('attaches pending artifacts only to the same assistant turn', () {
+      expect(
+        shouldAttachArtifactsToAssistantReply(
+          turnId: 'turn-1',
+          primaryItem: AIMessageItem('Done', turnId: 'turn-1'),
+        ),
+        isTrue,
+      );
+      expect(
+        shouldAttachArtifactsToAssistantReply(
+          turnId: 'turn-2',
+          primaryItem: AIMessageItem('Done', turnId: 'turn-1'),
+        ),
+        isFalse,
+      );
+      expect(
+        shouldAttachArtifactsToAssistantReply(
+          turnId: 'turn-1',
+          primaryItem: UserMessageItem('next request'),
+        ),
+        isFalse,
+      );
     });
 
     test('toggles demo overlay suspension for routed detail pages', () {

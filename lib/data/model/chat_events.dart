@@ -3,9 +3,10 @@ import 'chat_artifact.dart';
 abstract class ChatEvent {}
 
 class ChatResponseChunkEvent extends ChatEvent {
+  final String turnId;
   final String text;
   final bool isDone;
-  ChatResponseChunkEvent(this.text, {this.isDone = false});
+  ChatResponseChunkEvent(this.turnId, this.text, {this.isDone = false});
 }
 
 class ChatThoughtChunkEvent extends ChatEvent {
@@ -53,18 +54,26 @@ class ChatTraceCompletedEvent extends ChatEvent {
 }
 
 class ChatErrorEvent extends ChatEvent {
+  final String turnId;
   final String error;
-  ChatErrorEvent(this.error);
+  ChatErrorEvent(this.turnId, this.error);
 }
 
 class ChatArtifactsEvent extends ChatEvent {
+  final String turnId;
   final List<ChatArtifact> artifacts;
-  ChatArtifactsEvent(this.artifacts);
+  ChatArtifactsEvent(this.turnId, this.artifacts);
 }
 
-class ChatAgentStartedEvent extends ChatEvent {}
+class ChatAgentStartedEvent extends ChatEvent {
+  final String turnId;
+  ChatAgentStartedEvent(this.turnId);
+}
 
-class ChatAgentStoppedEvent extends ChatEvent {}
+class ChatAgentStoppedEvent extends ChatEvent {
+  final String turnId;
+  ChatAgentStoppedEvent(this.turnId);
+}
 
 class ChatTokenUsageEvent extends ChatEvent {
   final int promptTokens;

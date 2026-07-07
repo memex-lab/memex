@@ -57,6 +57,7 @@ class UserMessageItem extends ChatDisplayItem {
 }
 
 class AIMessageItem extends ChatDisplayItem {
+  final String? turnId;
   String text;
   bool isStreaming;
   final List<ArtifactItem> artifacts;
@@ -64,6 +65,7 @@ class AIMessageItem extends ChatDisplayItem {
   DateTime? timestamp;
   AIMessageItem(
     this.text, {
+    this.turnId,
     this.isStreaming = false,
     List<ArtifactItem>? artifacts,
     this.timestamp,
@@ -200,7 +202,7 @@ SuperAgentProcessVisualState superAgentProcessVisualState(ProcessItem item) {
 }
 
 const double _agentChatSheetHeightFactor = 0.75;
-const int _agentChatHistoryPageSize = 10;
+const int _agentChatHistoryTurnPageSize = 4;
 const Duration _agentChatKeyboardShowAnimationDuration =
     Duration(milliseconds: 220);
 const Duration _agentChatKeyboardHideAnimationDuration = Duration.zero;
@@ -312,6 +314,14 @@ bool shouldShowSuperAgentThinkingRow({
   if (primaryItem is ProcessItem) return false;
   if (primaryItem is AIMessageItem && primaryItem.isStreaming) return false;
   return true;
+}
+
+@visibleForTesting
+bool shouldAttachArtifactsToAssistantReply({
+  required String turnId,
+  required ChatDisplayItem? primaryItem,
+}) {
+  return primaryItem is AIMessageItem && primaryItem.turnId == turnId;
 }
 
 @visibleForTesting
@@ -468,7 +478,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   double _lastKeyboardBottomOffset = 0;
   final Map<String, Future<String?>> _timelineCardArtifactImageSourceFutures =
       {};
-  final List<ArtifactItem> _pendingReplyArtifacts = [];
+  final Map<String, List<ArtifactItem>> _pendingReplyArtifactsByTurn = {};
 
   late AnimationController _controller;
   late Animation<Offset> _slideAnimation;
@@ -586,7 +596,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
       // Since ChatService doesn't expose fetchHistory yet, reusing existing endpoint logic is fine.
       final sessionData = await _router.fetchChatSessionDetail(
         _currentSessionId!,
-        messageLimit: _agentChatHistoryPageSize,
+        messageLimit: _agentChatHistoryTurnPageSize,
       );
       final messagesData = sessionData['messages'] as List<dynamic>? ?? [];
       final historyItems = _chatItemsFromSessionMessages(messagesData);
@@ -642,7 +652,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
     try {
       final sessionData = await _router.fetchChatSessionDetail(
         sessionId,
-        messageLimit: _agentChatHistoryPageSize,
+        messageLimit: _agentChatHistoryTurnPageSize,
         messageBeforeCursor: _olderHistoryCursor,
       );
       final messagesData = sessionData['messages'] as List<dynamic>? ?? [];
@@ -751,6 +761,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
           orphanArtifacts.clear();
           final item = AIMessageItem(
             text,
+            turnId: turnId,
             artifacts: itemArtifacts,
             timestamp: timestamp,
           );
@@ -761,9 +772,11 @@ class _AgentChatDialogState extends State<AgentChatDialog>
         }
       }
     }
-    for (final artifacts in bufferedArtifactsByTurn.values) {
+    for (final entry in bufferedArtifactsByTurn.entries) {
+      final artifacts = entry.value;
       if (artifacts.isEmpty) continue;
-      historyItems.add(AIMessageItem('', artifacts: artifacts));
+      historyItems
+          .add(AIMessageItem('', turnId: entry.key, artifacts: artifacts));
     }
     if (orphanArtifacts.isNotEmpty) {
       historyItems.add(AIMessageItem('', artifacts: orphanArtifacts));
@@ -1393,6 +1406,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
         _isStreaming = true;
         _isLoadingAgent = true;
         _nextResponseStartsNewMessage = true;
+        _discardPendingReplyArtifactsExcept(event.turnId);
         return;
       }
       if (event is ChatAgentStoppedEvent) {
@@ -1436,6 +1450,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
       if (event is ChatArtifactsEvent) {
         if (event.artifacts.isEmpty) return;
         _attachArtifactsToCurrentReply(
+          event.turnId,
           event.artifacts
               .map(
                 (artifact) => ArtifactItem(
@@ -1457,19 +1472,25 @@ class _AgentChatDialogState extends State<AgentChatDialog>
           primary.isExpanded = false; // Collapse when answer starts
         }
 
-        if (primary is AIMessageItem && !_nextResponseStartsNewMessage) {
-          primary.text += event.text;
-          primary.isStreaming = !event.isDone;
+        if (shouldAttachArtifactsToAssistantReply(
+              turnId: event.turnId,
+              primaryItem: primary,
+            ) &&
+            !_nextResponseStartsNewMessage) {
+          final reply = primary as AIMessageItem;
+          reply.text += event.text;
+          reply.isStreaming = !event.isDone;
         } else if (shouldCreateAIMessageForResponseChunk(
               text: event.text,
               isDone: event.isDone,
             ) ||
-            _pendingReplyArtifacts.isNotEmpty) {
+            _hasPendingReplyArtifacts(event.turnId)) {
           _items.add(
             AIMessageItem(
               event.text,
+              turnId: event.turnId,
               isStreaming: !event.isDone,
-              artifacts: _takePendingReplyArtifacts(),
+              artifacts: _takePendingReplyArtifacts(event.turnId),
               timestamp: DateTime.now(),
             ),
           );
@@ -1492,21 +1513,39 @@ class _AgentChatDialogState extends State<AgentChatDialog>
     _scrollToBottom();
   }
 
-  void _attachArtifactsToCurrentReply(List<ArtifactItem> artifacts) {
+  void _attachArtifactsToCurrentReply(
+    String turnId,
+    List<ArtifactItem> artifacts,
+  ) {
     if (artifacts.isEmpty) return;
     final primary = _lastPrimaryItem();
-    if (primary is AIMessageItem) {
-      primary.artifacts.addAll(artifacts);
+    if (shouldAttachArtifactsToAssistantReply(
+      turnId: turnId,
+      primaryItem: primary,
+    )) {
+      (primary as AIMessageItem).artifacts.addAll(artifacts);
       return;
     }
-    _pendingReplyArtifacts.addAll(artifacts);
+    _pendingReplyArtifactsByTurn
+        .putIfAbsent(turnId, () => <ArtifactItem>[])
+        .addAll(artifacts);
   }
 
-  List<ArtifactItem> _takePendingReplyArtifacts() {
-    if (_pendingReplyArtifacts.isEmpty) return const <ArtifactItem>[];
-    final artifacts = List<ArtifactItem>.from(_pendingReplyArtifacts);
-    _pendingReplyArtifacts.clear();
+  bool _hasPendingReplyArtifacts(String turnId) {
+    return _pendingReplyArtifactsByTurn[turnId]?.isNotEmpty == true;
+  }
+
+  List<ArtifactItem> _takePendingReplyArtifacts(String turnId) {
+    final pending = _pendingReplyArtifactsByTurn.remove(turnId);
+    if (pending == null || pending.isEmpty) return const <ArtifactItem>[];
+    final artifacts = List<ArtifactItem>.from(pending);
     return artifacts;
+  }
+
+  void _discardPendingReplyArtifactsExcept(String turnId) {
+    _pendingReplyArtifactsByTurn.removeWhere(
+      (pendingTurnId, _) => pendingTurnId != turnId,
+    );
   }
 
   /// Auxiliary items (artifacts, approval cards) interleave with the process

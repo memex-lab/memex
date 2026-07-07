@@ -188,6 +188,93 @@ void main() {
       expect(_messageText(older.messages[1]), startsWith('message 46 '));
       expect(_messageText(older.messages[2]), startsWith('message 47 '));
     });
+
+    test('loads paged messages by complete turn groups', () async {
+      const sessionId = 'memex_agent_turn_paged_storage';
+      final storage = ChatSessionStorage.instance;
+
+      Map<String, dynamic> message(
+        String role,
+        String turnId,
+        String text, {
+        List<Map<String, dynamic>> artifacts = const [],
+      }) {
+        return {
+          'role': role,
+          'turn_id': turnId,
+          'content': [
+            if (text.isNotEmpty) {'type': 'text', 'text': text},
+          ],
+          if (artifacts.isNotEmpty) 'artifacts': artifacts,
+          'timestamp': '2026-06-22T12:00:00.000',
+        };
+      }
+
+      await storage.createSession(
+        userId: userId,
+        sessionId: sessionId,
+        metadata: {
+          'session_id': sessionId,
+          'agent_name': 'memex_agent',
+          'title': 'Turn Paged Storage',
+          'created_at': '2026-06-22T12:00:00.000',
+          'updated_at': '2026-06-22T12:00:00.000',
+        },
+        messages: [
+          message('user', 'turn-1', 'user 1'),
+          message('artifact', 'turn-1', '', artifacts: [
+            {'version': 2, 'kind': 'schedule', 'operation': 'update'},
+          ]),
+          message('ai', 'turn-1', 'ai 1'),
+          message('user', 'turn-2', 'user 2'),
+          message('artifact', 'turn-2', '', artifacts: [
+            {'version': 2, 'kind': 'schedule', 'operation': 'update'},
+          ]),
+          message('ai', 'turn-2', 'ai 2'),
+          message('user', 'turn-3', 'user 3'),
+          message('artifact', 'turn-3', '', artifacts: [
+            {'version': 2, 'kind': 'schedule', 'operation': 'update'},
+          ]),
+          message('ai', 'turn-3', 'ai 3'),
+        ],
+      );
+
+      final latest = await storage.loadMessagePage(
+        userId,
+        sessionId,
+        limit: 2,
+      );
+      final older = await storage.loadMessagePage(
+        userId,
+        sessionId,
+        limit: 2,
+        beforeCursor: latest.olderCursor,
+      );
+
+      expect(latest.messages.map((m) => m['turn_id']), [
+        'turn-2',
+        'turn-2',
+        'turn-2',
+        'turn-3',
+        'turn-3',
+        'turn-3',
+      ]);
+      expect(latest.messages.map((m) => m['role']), [
+        'user',
+        'artifact',
+        'ai',
+        'user',
+        'artifact',
+        'ai',
+      ]);
+      expect(latest.hasMoreMessages, isTrue);
+      expect(older.messages.map((m) => m['turn_id']), [
+        'turn-1',
+        'turn-1',
+        'turn-1',
+      ]);
+      expect(older.hasMoreMessages, isFalse);
+    });
   });
 }
 
