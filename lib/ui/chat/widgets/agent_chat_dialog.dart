@@ -59,13 +59,15 @@ class UserMessageItem extends ChatDisplayItem {
 class AIMessageItem extends ChatDisplayItem {
   String text;
   bool isStreaming;
+  final List<ArtifactItem> artifacts;
   @override
   DateTime? timestamp;
   AIMessageItem(
     this.text, {
     this.isStreaming = false,
+    List<ArtifactItem>? artifacts,
     this.timestamp,
-  });
+  }) : artifacts = artifacts ?? <ArtifactItem>[];
 }
 
 class ThinkingItem extends ChatDisplayItem {
@@ -164,9 +166,11 @@ class ProcessItem extends ChatDisplayItem {
   final DateTime timestamp;
   bool isExpanded;
   bool isFinished;
+  bool needsAttention;
   ProcessItem({
     this.isExpanded = false,
     this.isFinished = false,
+    this.needsAttention = false,
     DateTime? timestamp,
   }) : timestamp = timestamp ?? DateTime.now();
 
@@ -182,6 +186,17 @@ class ProcessItem extends ChatDisplayItem {
   bool get hasRunningTool => toolCalls.any((tool) => tool.hasRunningTrace);
 
   bool get hasToolError => toolCalls.any((tool) => tool.hasTraceError);
+}
+
+enum SuperAgentProcessVisualState { running, needsAttention, done }
+
+@visibleForTesting
+SuperAgentProcessVisualState superAgentProcessVisualState(ProcessItem item) {
+  if (!item.isFinished) return SuperAgentProcessVisualState.running;
+  if (item.needsAttention) {
+    return SuperAgentProcessVisualState.needsAttention;
+  }
+  return SuperAgentProcessVisualState.done;
 }
 
 const double _agentChatSheetHeightFactor = 0.75;
@@ -289,6 +304,17 @@ String formatSuperAgentTokenUsage(ChatTokenUsageEvent item) {
 }
 
 @visibleForTesting
+bool shouldShowSuperAgentThinkingRow({
+  required bool isLoadingAgent,
+  required ChatDisplayItem? primaryItem,
+}) {
+  if (!isLoadingAgent) return false;
+  if (primaryItem is ProcessItem) return false;
+  if (primaryItem is AIMessageItem && primaryItem.isStreaming) return false;
+  return true;
+}
+
+@visibleForTesting
 Duration resolveSuperAgentKeyboardInsetAnimationDuration({
   required double previousInset,
   required double nextInset,
@@ -352,17 +378,6 @@ Key? superAgentDemoPublishTargetKey(DemoStep? currentStep) {
 }
 
 @visibleForTesting
-int superAgentArtifactInsertionIndexBeforeReply(List<ChatDisplayItem> items) {
-  final lastUserIndex = items.lastIndexWhere((item) => item is UserMessageItem);
-  if (lastUserIndex < 0) return items.length;
-
-  for (var i = items.length - 1; i > lastUserIndex; i--) {
-    if (items[i] is AIMessageItem) return i;
-  }
-  return items.length;
-}
-
-@visibleForTesting
 String superAgentUserMessageImageSourceForLocalDisplay(String source) {
   final trimmed = source.trim();
   if (trimmed.isEmpty) return trimmed;
@@ -385,6 +400,10 @@ class AgentChatDialog extends StatefulWidget {
   final VoidCallback? onOpenScheduleTab;
   @visibleForTesting
   final List<ChatDisplayItem> initialItems;
+  @visibleForTesting
+  final bool initialIsLoadingAgent;
+  @visibleForTesting
+  final ChatTokenUsageEvent? initialTokenUsage;
 
   const AgentChatDialog({
     super.key,
@@ -396,6 +415,8 @@ class AgentChatDialog extends StatefulWidget {
     this.initialImageOriginalFilenames = const {},
     this.onOpenScheduleTab,
     this.initialItems = const [],
+    this.initialIsLoadingAgent = false,
+    this.initialTokenUsage,
   });
 
   @override
@@ -447,6 +468,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   double _lastKeyboardBottomOffset = 0;
   final Map<String, Future<String?>> _timelineCardArtifactImageSourceFutures =
       {};
+  final List<ArtifactItem> _pendingReplyArtifacts = [];
 
   late AnimationController _controller;
   late Animation<Offset> _slideAnimation;
@@ -458,6 +480,8 @@ class _AgentChatDialogState extends State<AgentChatDialog>
     super.initState();
     _currentSessionId = widget.initialSessionId;
     _items = List<ChatDisplayItem>.from(widget.initialItems);
+    _isLoadingAgent = widget.initialIsLoadingAgent;
+    _lastTokenUsage = widget.initialTokenUsage;
     final initialDraftText = widget.initialDraftText;
     if (initialDraftText != null && initialDraftText.isNotEmpty) {
       _messageController.text = initialDraftText;
@@ -641,6 +665,30 @@ class _AgentChatDialogState extends State<AgentChatDialog>
 
   List<ChatDisplayItem> _chatItemsFromSessionMessages(List<dynamic> messages) {
     final historyItems = <ChatDisplayItem>[];
+    final bufferedArtifactsByTurn = <String, List<ArtifactItem>>{};
+    final repliesByTurn = <String, AIMessageItem>{};
+    final orphanArtifacts = <ArtifactItem>[];
+
+    void addArtifactsForMessage(
+      Map<String, dynamic> message,
+      List<ArtifactItem> artifacts,
+    ) {
+      if (artifacts.isEmpty) return;
+      final turnId = message['turn_id']?.toString();
+      if (turnId != null && turnId.isNotEmpty) {
+        final reply = repliesByTurn[turnId];
+        if (reply != null) {
+          reply.artifacts.addAll(artifacts);
+          return;
+        }
+        bufferedArtifactsByTurn
+            .putIfAbsent(turnId, () => <ArtifactItem>[])
+            .addAll(artifacts);
+        return;
+      }
+      orphanArtifacts.addAll(artifacts);
+    }
+
     for (final msg in messages) {
       if (msg is! Map) continue;
       final message = Map<String, dynamic>.from(msg);
@@ -668,6 +716,8 @@ class _AgentChatDialogState extends State<AgentChatDialog>
           (message['artifacts'] as List).isNotEmpty;
       if (text.isEmpty && imagePaths.isEmpty && !hasArtifacts) continue;
       final timestamp = tryParseDateTime(message['timestamp']);
+      final artifacts =
+          _artifactItemsFromSessionMessage(message, timestamp: timestamp);
       if (role == 'user') {
         List<Map<String, String>>? refs;
         if (message['refs'] != null) {
@@ -686,13 +736,37 @@ class _AgentChatDialogState extends State<AgentChatDialog>
           ),
         );
       } else {
-        historyItems.addAll(
-          _artifactItemsFromSessionMessage(message, timestamp: timestamp),
-        );
+        if (artifacts.isNotEmpty && text.isEmpty && imagePaths.isEmpty) {
+          addArtifactsForMessage(message, artifacts);
+          continue;
+        }
         if (text.isNotEmpty) {
-          historyItems.add(AIMessageItem(text, timestamp: timestamp));
+          final turnId = message['turn_id']?.toString();
+          final itemArtifacts = <ArtifactItem>[
+            if (turnId != null && turnId.isNotEmpty)
+              ...?bufferedArtifactsByTurn.remove(turnId),
+            ...orphanArtifacts,
+            ...artifacts,
+          ];
+          orphanArtifacts.clear();
+          final item = AIMessageItem(
+            text,
+            artifacts: itemArtifacts,
+            timestamp: timestamp,
+          );
+          historyItems.add(item);
+          if (turnId != null && turnId.isNotEmpty) {
+            repliesByTurn[turnId] = item;
+          }
         }
       }
+    }
+    for (final artifacts in bufferedArtifactsByTurn.values) {
+      if (artifacts.isEmpty) continue;
+      historyItems.add(AIMessageItem('', artifacts: artifacts));
+    }
+    if (orphanArtifacts.isNotEmpty) {
+      historyItems.add(AIMessageItem('', artifacts: orphanArtifacts));
     }
     return historyItems;
   }
@@ -1361,16 +1435,16 @@ class _AgentChatDialogState extends State<AgentChatDialog>
 
       if (event is ChatArtifactsEvent) {
         if (event.artifacts.isEmpty) return;
-        final artifactItems = event.artifacts
-            .map(
-              (artifact) => ArtifactItem(
-                artifact,
-                timestamp: DateTime.now(),
-              ),
-            )
-            .toList();
-        final insertIndex = superAgentArtifactInsertionIndexBeforeReply(_items);
-        _items.insertAll(insertIndex, artifactItems);
+        _attachArtifactsToCurrentReply(
+          event.artifacts
+              .map(
+                (artifact) => ArtifactItem(
+                  artifact,
+                  timestamp: DateTime.now(),
+                ),
+              )
+              .toList(),
+        );
         return;
       }
 
@@ -1379,6 +1453,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
         final primary = _lastPrimaryItem();
         if (primary is ProcessItem) {
           primary.isFinished = true;
+          primary.needsAttention = false;
           primary.isExpanded = false; // Collapse when answer starts
         }
 
@@ -1386,13 +1461,15 @@ class _AgentChatDialogState extends State<AgentChatDialog>
           primary.text += event.text;
           primary.isStreaming = !event.isDone;
         } else if (shouldCreateAIMessageForResponseChunk(
-          text: event.text,
-          isDone: event.isDone,
-        )) {
+              text: event.text,
+              isDone: event.isDone,
+            ) ||
+            _pendingReplyArtifacts.isNotEmpty) {
           _items.add(
             AIMessageItem(
               event.text,
               isStreaming: !event.isDone,
+              artifacts: _takePendingReplyArtifacts(),
               timestamp: DateTime.now(),
             ),
           );
@@ -1403,10 +1480,33 @@ class _AgentChatDialogState extends State<AgentChatDialog>
           _nextResponseStartsNewMessage = false;
         }
       } else if (event is ChatErrorEvent) {
+        final primary = _lastPrimaryItem();
+        if (primary is ProcessItem) {
+          primary.isFinished = true;
+          primary.needsAttention = true;
+          primary.isExpanded = false;
+        }
         _items.add(ErrorItem(event.error));
       }
     });
     _scrollToBottom();
+  }
+
+  void _attachArtifactsToCurrentReply(List<ArtifactItem> artifacts) {
+    if (artifacts.isEmpty) return;
+    final primary = _lastPrimaryItem();
+    if (primary is AIMessageItem) {
+      primary.artifacts.addAll(artifacts);
+      return;
+    }
+    _pendingReplyArtifacts.addAll(artifacts);
+  }
+
+  List<ArtifactItem> _takePendingReplyArtifacts() {
+    if (_pendingReplyArtifacts.isEmpty) return const <ArtifactItem>[];
+    final artifacts = List<ArtifactItem>.from(_pendingReplyArtifacts);
+    _pendingReplyArtifacts.clear();
+    return artifacts;
   }
 
   /// Auxiliary items (artifacts, approval cards) interleave with the process
@@ -1444,7 +1544,10 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   }
 
   bool get _showAgentThinkingRow {
-    return _isLoadingAgent;
+    return shouldShowSuperAgentThinkingRow(
+      isLoadingAgent: _isLoadingAgent,
+      primaryItem: _lastPrimaryItem(),
+    );
   }
 
   int _agentChatListItemCount() {
@@ -1667,7 +1770,6 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                             ),
                           ),
                         ),
-                        _buildTokenUsageDisplay(),
                         _buildContextIndicator(),
                         _buildInput(),
                       ],
@@ -2406,6 +2508,42 @@ class _AgentChatDialogState extends State<AgentChatDialog>
     );
   }
 
+  String _artifactSectionTitle(int count) {
+    return '${_agentChat.result} · $count';
+  }
+
+  Widget _buildAssistantArtifactSection(List<ArtifactItem> artifacts) {
+    final topPadding = artifacts.length == 1 ? 10.0 : 12.0;
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.of(context).size.width * 0.82,
+      ),
+      child: Padding(
+        padding: EdgeInsets.only(top: topPadding),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(left: 2, bottom: 2),
+              child: Text(
+                _artifactSectionTitle(artifacts.length),
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textTertiary,
+                  letterSpacing: 0,
+                ),
+              ),
+            ),
+            ...artifacts.map(
+              (artifact) => _buildArtifactItem(artifact, embedded: true),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildMessageImageGrid(List<String> imagePaths) {
     return Wrap(
       spacing: 8,
@@ -2539,65 +2677,68 @@ class _AgentChatDialogState extends State<AgentChatDialog>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    constraints: BoxConstraints(
-                      maxWidth: MediaQuery.of(context).size.width * 0.75,
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(
-                        16,
-                      ).copyWith(topLeft: const Radius.circular(4)),
-                      border: Border.all(color: const Color(0xFFF7F8FA)),
-                    ),
-                    child: MarkdownBody(
-                      data: item.text,
-                      selectable: true,
-                      softLineBreak: true,
-                      styleSheet: MarkdownStyleSheet(
-                        p: const TextStyle(
-                          fontSize: 14,
-                          color: AppColors.textSecondary,
-                          height: 1.5,
-                        ),
-                        strong: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                        ),
-                        em: const TextStyle(fontStyle: FontStyle.italic),
-                        listBullet: const TextStyle(color: AppColors.primary),
-                        code: const TextStyle(
-                          fontSize: 13,
-                          color: AppColors.textPrimary,
-                          backgroundColor: Color(0xFFF7F8FA),
-                          fontFamily: 'monospace',
-                        ),
-                        codeblockDecoration: BoxDecoration(
-                          color: const Color(0xFFF7F8FA),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        blockquote: const TextStyle(
-                          color: AppColors.textSecondary,
-                          fontStyle: FontStyle.italic,
-                        ),
-                        blockquoteDecoration: BoxDecoration(
-                          color: const Color(0xFFF7F8FA),
-                          borderRadius: BorderRadius.circular(8),
-                          border: const Border(
-                            left: BorderSide(
-                              color: AppColors.primary,
-                              width: 3,
+                  if (item.text.trim().isNotEmpty)
+                    Container(
+                      constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width * 0.75,
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(
+                          16,
+                        ).copyWith(topLeft: const Radius.circular(4)),
+                        border: Border.all(color: const Color(0xFFF7F8FA)),
+                      ),
+                      child: MarkdownBody(
+                        data: item.text,
+                        selectable: true,
+                        softLineBreak: true,
+                        styleSheet: MarkdownStyleSheet(
+                          p: const TextStyle(
+                            fontSize: 14,
+                            color: AppColors.textSecondary,
+                            height: 1.5,
+                          ),
+                          strong: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                          em: const TextStyle(fontStyle: FontStyle.italic),
+                          listBullet: const TextStyle(color: AppColors.primary),
+                          code: const TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textPrimary,
+                            backgroundColor: Color(0xFFF7F8FA),
+                            fontFamily: 'monospace',
+                          ),
+                          codeblockDecoration: BoxDecoration(
+                            color: const Color(0xFFF7F8FA),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          blockquote: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontStyle: FontStyle.italic,
+                          ),
+                          blockquoteDecoration: BoxDecoration(
+                            color: const Color(0xFFF7F8FA),
+                            borderRadius: BorderRadius.circular(8),
+                            border: const Border(
+                              left: BorderSide(
+                                color: AppColors.primary,
+                                width: 3,
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  if (!item.isStreaming)
+                  if (item.artifacts.isNotEmpty)
+                    _buildAssistantArtifactSection(item.artifacts),
+                  if (!item.isStreaming && item.text.trim().isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(left: 2, top: 6),
                       child: _CopyMessageButton(
@@ -2641,6 +2782,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     InkWell(
+                      key: const ValueKey('agent_chat_process_toggle'),
                       borderRadius: BorderRadius.circular(18),
                       onTap: () {
                         setState(() {
@@ -2698,7 +2840,8 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                                 ),
                               ],
                             ),
-                            if (item.toolCalls.isNotEmpty) ...[
+                            if (item.toolCalls.isNotEmpty &&
+                                (!item.isFinished || item.isExpanded)) ...[
                               const SizedBox(height: 10),
                               _buildToolSummaryChips(item),
                             ],
@@ -2724,6 +2867,10 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                             ],
                             if (item.toolCalls.isNotEmpty)
                               _buildToolTraceList(item.toolCalls),
+                            if (_lastTokenUsage != null) ...[
+                              const SizedBox(height: 12),
+                              _buildTokenUsageDisplay(),
+                            ],
                           ],
                         ),
                       ),
@@ -3048,6 +3195,16 @@ class _AgentChatDialogState extends State<AgentChatDialog>
           item.artifact.kind == ChatArtifact.kindTimelineCard &&
           item.html != null) {
         allowed.add(item);
+      } else if (item is AIMessageItem) {
+        for (var j = item.artifacts.length - 1;
+            j >= 0 && allowed.length < _maxLiveHtmlPreviews;
+            j--) {
+          final artifactItem = item.artifacts[j];
+          if (artifactItem.artifact.kind == ChatArtifact.kindTimelineCard &&
+              artifactItem.html != null) {
+            allowed.add(artifactItem);
+          }
+        }
       }
     }
     return allowed;
@@ -3096,7 +3253,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
     );
   }
 
-  Widget _buildArtifactItem(ArtifactItem item) {
+  Widget _buildArtifactItem(ArtifactItem item, {bool embedded = false}) {
     final artifact = item.artifact;
     final tappable = _artifactIsTappable(artifact);
     final showHtmlPreview =
@@ -3272,20 +3429,27 @@ class _AgentChatDialogState extends State<AgentChatDialog>
       ),
     );
 
+    final wrapped = tappable
+        ? GestureDetector(
+            onTap: () => _openArtifact(artifact),
+            child: content,
+          )
+        : content;
+
+    if (embedded) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 10),
+        child: wrapped,
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(width: 32),
-          Expanded(
-            child: tappable
-                ? GestureDetector(
-                    onTap: () => _openArtifact(artifact),
-                    child: content,
-                  )
-                : content,
-          ),
+          Expanded(child: wrapped),
         ],
       ),
     );
@@ -3295,22 +3459,23 @@ class _AgentChatDialogState extends State<AgentChatDialog>
     if (_lastTokenUsage == null) return const SizedBox.shrink();
     final item = _lastTokenUsage!;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Center(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF7F8FA),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            formatSuperAgentTokenUsage(item),
-            style: const TextStyle(
-              fontSize: 10,
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w500,
-            ),
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        key: const ValueKey('agent_chat_token_usage_debug'),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF7F8FA),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: const Color(0xFFEFF2F6)),
+        ),
+        child: Text(
+          formatSuperAgentTokenUsage(item),
+          style: const TextStyle(
+            fontSize: 10,
+            color: AppColors.textTertiary,
+            fontWeight: FontWeight.w500,
+            letterSpacing: 0,
           ),
         ),
       ),
@@ -3318,11 +3483,12 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   }
 
   Widget _buildProcessStatusGlyph(ProcessItem item) {
-    final color = item.hasToolError
-        ? const Color(0xFFEF4444)
-        : item.hasRunningTool || !item.isFinished
-            ? AppColors.primary
-            : const Color(0xFF10B981);
+    final state = superAgentProcessVisualState(item);
+    final color = switch (state) {
+      SuperAgentProcessVisualState.running => AppColors.primary,
+      SuperAgentProcessVisualState.needsAttention => const Color(0xFFEF4444),
+      SuperAgentProcessVisualState.done => const Color(0xFF10B981),
+    };
     return Container(
       width: 28,
       height: 28,
@@ -3331,7 +3497,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
         shape: BoxShape.circle,
       ),
       child: Center(
-        child: item.hasRunningTool || !item.isFinished
+        child: state == SuperAgentProcessVisualState.running
             ? const SizedBox(
                 width: 13,
                 height: 13,
@@ -3341,7 +3507,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                 ),
               )
             : Icon(
-                item.hasToolError
+                state == SuperAgentProcessVisualState.needsAttention
                     ? Icons.error_outline_rounded
                     : Icons.check_rounded,
                 size: 16,
@@ -3352,16 +3518,17 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   }
 
   Widget _buildProcessStatePill(ProcessItem item) {
-    final label = item.hasToolError
-        ? _agentChat.issue
-        : item.hasRunningTool || !item.isFinished
-            ? _agentChat.running
-            : _agentChat.done;
-    final color = item.hasToolError
-        ? const Color(0xFFEF4444)
-        : item.hasRunningTool || !item.isFinished
-            ? AppColors.primary
-            : const Color(0xFF10B981);
+    final state = superAgentProcessVisualState(item);
+    final label = switch (state) {
+      SuperAgentProcessVisualState.running => _agentChat.running,
+      SuperAgentProcessVisualState.needsAttention => _agentChat.issue,
+      SuperAgentProcessVisualState.done => _agentChat.done,
+    };
+    final color = switch (state) {
+      SuperAgentProcessVisualState.running => AppColors.primary,
+      SuperAgentProcessVisualState.needsAttention => const Color(0xFFEF4444),
+      SuperAgentProcessVisualState.done => const Color(0xFF10B981),
+    };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -3382,15 +3549,16 @@ class _AgentChatDialogState extends State<AgentChatDialog>
 
   String _processTitle(ProcessItem item) {
     final toolCount = item.allTraceCalls.length;
+    final state = superAgentProcessVisualState(item);
+    if (state == SuperAgentProcessVisualState.needsAttention) {
+      return _agentChat.actionNeedsAttention;
+    }
     if (toolCount == 0) {
-      return item.isFinished
+      return state == SuperAgentProcessVisualState.done
           ? _agentChat.reasoningComplete
           : _agentChat.thinkingThroughRequest;
     }
-    if (item.hasToolError) {
-      return _agentChat.actionNeedsAttention;
-    }
-    if (item.hasRunningTool || !item.isFinished) {
+    if (state == SuperAgentProcessVisualState.running) {
       return _agentChat.workingThroughActions(toolCount);
     }
     return _agentChat.completedActions(toolCount);
