@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:math';
 import 'package:path/path.dart' as path;
 import 'package:logging/logging.dart';
+import 'package:memex/data/services/image_preview_cache_service.dart';
 import 'package:memex/utils/logger.dart';
 
 /// Local asset server: HTTP server for local file access in client mode.
@@ -230,39 +231,70 @@ class LocalAssetServer {
 
           // Read file (stream to reduce memory)
           try {
-            final fileLength = await file.length();
             final extension = path.extension(filename).toLowerCase();
 
-            // Set Content-Type by extension
+            File responseFile = file;
+            String? previewContentType;
+            if (ImagePreviewCacheService.isPreviewableImagePath(filePath)) {
+              try {
+                final preview =
+                    await ImagePreviewCacheService.instance.getOrCreatePreview(
+                  source: filePath,
+                  isLocalFile: true,
+                );
+                responseFile = preview.file;
+                previewContentType = preview.contentType;
+                _logger.fine(
+                  'Serving image preview for $filePath from ${responseFile.path}',
+                );
+              } on ImagePreviewUnavailable catch (e) {
+                _logger.warning(
+                  'Image preview unavailable for $filePath: ${e.reason}',
+                );
+                request.response
+                  ..statusCode = HttpStatus.unprocessableEntity
+                  ..write('Image preview unavailable: ${e.reason}')
+                  ..close();
+                return;
+              }
+            }
+
+            final fileLength = await responseFile.length();
+
+            // Set Content-Type by extension, or by preview file signature.
             String contentType;
-            switch (extension) {
-              case '.jpg':
-              case '.jpeg':
-                contentType = 'image/jpeg';
-                break;
-              case '.png':
-                contentType = 'image/png';
-                break;
-              case '.gif':
-                contentType = 'image/gif';
-                break;
-              case '.webp':
-                contentType = 'image/webp';
-                break;
-              case '.mp3':
-                contentType = 'audio/mpeg';
-                break;
-              case '.m4a':
-                contentType = 'audio/mp4';
-                break;
-              case '.wav':
-                contentType = 'audio/wav';
-                break;
-              case '.ogg':
-                contentType = 'audio/ogg';
-                break;
-              default:
-                contentType = 'application/octet-stream';
+            if (previewContentType != null) {
+              contentType = previewContentType;
+            } else {
+              switch (extension) {
+                case '.jpg':
+                case '.jpeg':
+                  contentType = 'image/jpeg';
+                  break;
+                case '.png':
+                  contentType = 'image/png';
+                  break;
+                case '.gif':
+                  contentType = 'image/gif';
+                  break;
+                case '.webp':
+                  contentType = 'image/webp';
+                  break;
+                case '.mp3':
+                  contentType = 'audio/mpeg';
+                  break;
+                case '.m4a':
+                  contentType = 'audio/mp4';
+                  break;
+                case '.wav':
+                  contentType = 'audio/wav';
+                  break;
+                case '.ogg':
+                  contentType = 'audio/ogg';
+                  break;
+                default:
+                  contentType = 'application/octet-stream';
+              }
             }
 
             // Stream file content to response
@@ -273,9 +305,11 @@ class LocalAssetServer {
               ..headers.set('Cache-Control', 'public, max-age=31536000');
 
             // Stream file to avoid loading into memory
-            await file.openRead().pipe(request.response);
+            await responseFile.openRead().pipe(request.response);
 
-            _logger.fine('Served file: $filePath (${fileLength} bytes)');
+            _logger.fine(
+              'Served file: ${responseFile.path} ($fileLength bytes)',
+            );
             return;
           } catch (e) {
             _logger.warning('Failed to read file: $filePath, error: $e');
