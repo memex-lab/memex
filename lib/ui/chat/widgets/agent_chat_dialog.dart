@@ -664,7 +664,10 @@ class _AgentChatDialogState extends State<AgentChatDialog>
         _olderHistoryCursor = sessionData['older_cursor'] as String?;
         _hasMoreHistory =
             sessionData['has_more_messages'] == true && messagesData.isNotEmpty;
-        _isLoadingMoreHistory = false;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || sessionId != _currentSessionId) return;
+        setState(() => _isLoadingMoreHistory = false);
       });
     } catch (e, st) {
       _logger.warning('Failed to load older chat history: $e', e, st);
