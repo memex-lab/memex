@@ -302,17 +302,7 @@ Contributions are welcome. Please open an issue first to discuss what you would 
 ## Star History
 
 <div align="center">
-  <picture>
-    <source
-      media="(prefers-color-scheme: dark)"
-      srcset="https://api.star-history.com/svg?repos=memex-lab/memex&type=Date&theme=dark"
-    />
-    <source
-      media="(prefers-color-scheme: light)"
-      srcset="https://api.star-history.com/svg?repos=memex-lab/memex&type=Date"
-    />
-    <img src="https://api.star-history.com/svg?repos=memex-lab/memex&type=Date" alt="Star History Chart" />
-  </picture>
+  <img src="https://raw.githubusercontent.com/memex-lab/memex/star-history/star-history.svg" alt="Memex Star History Chart" />
 </div>
 
 ## License
