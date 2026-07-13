@@ -16,6 +16,8 @@ from pathlib import Path
 
 
 API_VERSION = "2026-03-10"
+# The xkcd-style presentation follows Star History's MIT-licensed visual
+# approach: https://github.com/star-history/star-history
 STARGAZERS_QUERY = """
 query StarHistory($owner: String!, $name: String!, $cursor: String) {
   repository(owner: $owner, name: $name) {
@@ -226,7 +228,6 @@ def render_svg(repository: str, dates: list[dt.date]) -> str:
     .history {{ fill: none; stroke: #dd4528; stroke-linecap: round; stroke-linejoin: round; stroke-width: 3; }}
     .legend-box {{ fill: #fff; fill-opacity: .85; stroke: #000; stroke-width: 2; }}
     .legend-color {{ fill: #dd4528; }}
-    .watermark {{ fill: #666; font-size: 14px; }}
     .empty {{ font-size: 16px; }}
     @media (prefers-color-scheme: dark) {{
       .background {{ fill: #0d1117; }}
@@ -235,7 +236,6 @@ def render_svg(repository: str, dates: list[dt.date]) -> str:
       .history {{ stroke: #ff6b6b; }}
       .legend-box {{ fill: #0d1117; stroke: #fff; }}
       .legend-color {{ fill: #ff6b6b; }}
-      .watermark {{ fill: #999; }}
     }}
   </style>
   <rect class="background" width="{width}" height="{height}" />
@@ -252,7 +252,6 @@ def render_svg(repository: str, dates: list[dt.date]) -> str:
     <rect class="legend-color" x="{left + 15}" y="{top + 17}" width="8" height="8" rx="2" />
     <text x="{left + 29}" y="{top + 29}" font-size="15">{repo_label}</text>
   </g>
-  <text class="watermark" x="{width - right}" y="{height - 10}" text-anchor="end">style inspired by star-history.com</text>
   {empty_message}
 </svg>
 '''
