@@ -7,7 +7,6 @@ import argparse
 import datetime as dt
 import json
 import os
-import re
 import urllib.error
 import urllib.request
 from collections import Counter
@@ -16,48 +15,74 @@ from pathlib import Path
 
 
 API_VERSION = "2026-03-10"
-LINK_PATTERN = re.compile(r'<([^>]+)>;\s*rel="([^"]+)"')
+STARGAZERS_QUERY = """
+query StarHistory($owner: String!, $name: String!, $cursor: String) {
+  repository(owner: $owner, name: $name) {
+    stargazers(first: 100, after: $cursor) {
+      edges { starredAt }
+      pageInfo { hasNextPage endCursor }
+    }
+  }
+}
+"""
 
 
 def fetch_star_dates(repository: str, token: str) -> list[dt.date]:
-    url = f"https://api.github.com/repos/{repository}/stargazers?per_page=100"
-    dates: list[dt.date] = []
+    try:
+        owner, name = repository.split("/", maxsplit=1)
+    except ValueError as error:
+        raise ValueError("repository must use the owner/name format") from error
 
-    while url:
+    dates: list[dt.date] = []
+    cursor: str | None = None
+
+    while True:
+        body = json.dumps(
+            {
+                "query": STARGAZERS_QUERY,
+                "variables": {"owner": owner, "name": name, "cursor": cursor},
+            }
+        ).encode("utf-8")
         request = urllib.request.Request(
-            url,
+            "https://api.github.com/graphql",
+            data=body,
             headers={
-                "Accept": "application/vnd.github.star+json",
+                "Accept": "application/vnd.github+json",
                 "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json",
                 "User-Agent": f"{repository}-star-history-workflow",
                 "X-GitHub-Api-Version": API_VERSION,
             },
+            method="POST",
         )
         try:
             with urllib.request.urlopen(request, timeout=30) as response:
                 payload = json.load(response)
-                links = {
-                    relation: target
-                    for target, relation in LINK_PATTERN.findall(
-                        response.headers.get("Link", "")
-                    )
-                }
         except urllib.error.HTTPError as error:
             body = error.read().decode("utf-8", errors="replace")
             raise RuntimeError(
-                f"GitHub stargazers API returned HTTP {error.code}: {body}"
+                f"GitHub GraphQL API returned HTTP {error.code}: {body}"
             ) from error
 
-        for item in payload:
-            starred_at = item.get("starred_at")
+        if payload.get("errors"):
+            raise RuntimeError(f"GitHub GraphQL API returned errors: {payload['errors']}")
+        repository_data = payload.get("data", {}).get("repository")
+        if repository_data is None:
+            raise RuntimeError(f"GitHub could not find repository {repository}")
+        connection = repository_data["stargazers"]
+
+        for edge in connection["edges"]:
+            starred_at = edge.get("starredAt")
             if not starred_at:
                 raise RuntimeError(
-                    "GitHub did not return starred_at timestamps; check the Accept header "
-                    "and token permissions."
+                    "GitHub did not return starredAt timestamps; check token permissions."
                 )
             dates.append(dt.datetime.fromisoformat(starred_at.replace("Z", "+00:00")).date())
 
-        url = links.get("next", "")
+        page_info = connection["pageInfo"]
+        if not page_info["hasNextPage"]:
+            break
+        cursor = page_info["endCursor"]
 
     return sorted(dates)
 
