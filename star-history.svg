@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="500" viewBox="0 0 900 500" role="img" aria-labelledby="title description">
+  <title id="title">Star history for memex-lab/memex</title>
+  <desc id="description">598 current stargazers, grouped by the date each star was added.</desc>
+  <style>
+    text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #64748b; font-size: 12px; }
+    .heading { fill: #334155; font-size: 22px; font-weight: 600; }
+    .total { fill: #64748b; font-size: 14px; }
+    .grid { stroke: #94a3b8; stroke-opacity: .32; stroke-width: 1; }
+    .axis { stroke: #64748b; stroke-opacity: .55; stroke-width: 1; }
+    .history { fill: none; stroke: #f59e0b; stroke-linecap: round; stroke-linejoin: round; stroke-width: 3; }
+    .empty { font-size: 16px; }
+    @media (prefers-color-scheme: dark) {
+      text, .total { fill: #94a3b8; }
+      .heading { fill: #e2e8f0; }
+      .grid { stroke: #64748b; }
+      .axis { stroke: #94a3b8; }
+    }
+  </style>
+  <text class="heading" x="82" y="36">memex-lab/memex Star History</text>
+  <text class="total" x="82" y="58">598 current stars</text>
+  <g class="grid"><line x1="82" y1="432.00" x2="868" y2="432.00" /><line x1="82" y1="359.76" x2="868" y2="359.76" /><line x1="82" y1="288.12" x2="868" y2="288.12" /><line x1="82" y1="215.88" x2="868" y2="215.88" /><line x1="82" y1="144.24" x2="868" y2="144.24" /><line x1="82" y1="72.00" x2="868" y2="72.00" /></g>
+  <line class="axis" x1="82" y1="72" x2="82" y2="432" />
+  <line class="axis" x1="82" y1="432" x2="868" y2="432" />
+  <g><text x="68" y="437.00" text-anchor="end">0</text><text x="68" y="364.76" text-anchor="end">120</text><text x="68" y="293.12" text-anchor="end">239</text><text x="68" y="220.88" text-anchor="end">359</text><text x="68" y="149.24" text-anchor="end">478</text><text x="68" y="77.00" text-anchor="end">598</text></g>
+  <g><text x="82.00" y="470" text-anchor="middle">2026-03-11</text><text x="241.76" y="470" text-anchor="middle">2026-04-05</text><text x="395.12" y="470" text-anchor="middle">2026-04-29</text><text x="554.88" y="470" text-anchor="middle">2026-05-24</text><text x="708.24" y="470" text-anchor="middle">2026-06-17</text><text x="868.00" y="470" text-anchor="middle">2026-07-12</text></g>
+  <path class="history" d="M 82.00 432.00 L 82.00 431.40 L 94.78 430.80 L 101.17 428.39 L 107.56 426.58 L 113.95 425.38 L 158.68 424.78 L 171.46 424.17 L 190.63 422.97 L 197.02 421.77 L 203.41 420.56 L 209.80 419.36 L 216.20 418.76 L 222.59 418.15 L 241.76 413.94 L 248.15 410.33 L 254.54 409.73 L 260.93 407.92 L 267.32 405.51 L 273.71 404.31 L 280.10 403.71 L 286.49 403.10 L 299.27 401.90 L 305.66 401.30 L 312.05 398.89 L 318.44 396.48 L 324.83 394.68 L 331.22 391.06 L 337.61 380.23 L 344.00 379.02 L 350.39 377.82 L 356.78 376.01 L 363.17 373.00 L 369.56 370.60 L 375.95 365.18 L 382.34 364.58 L 395.12 363.97 L 401.51 363.37 L 407.90 362.17 L 414.29 361.57 L 420.68 359.76 L 433.46 359.16 L 439.85 358.56 L 452.63 357.95 L 459.02 357.35 L 465.41 356.75 L 471.80 355.55 L 478.20 354.34 L 484.59 351.33 L 490.98 348.92 L 497.37 345.91 L 503.76 344.71 L 516.54 343.51 L 522.93 342.30 L 529.32 341.10 L 535.71 339.29 L 542.10 338.69 L 548.49 338.09 L 554.88 336.88 L 561.27 336.28 L 567.66 335.68 L 574.05 335.08 L 580.44 333.27 L 586.83 332.67 L 593.22 332.07 L 599.61 330.86 L 606.00 330.26 L 612.39 318.82 L 618.78 291.73 L 625.17 261.63 L 631.56 242.97 L 637.95 226.72 L 644.34 205.65 L 650.73 191.80 L 657.12 189.39 L 663.51 185.78 L 669.90 180.96 L 676.29 175.55 L 682.68 169.53 L 689.07 162.30 L 695.46 147.85 L 701.85 143.64 L 708.24 141.83 L 714.63 140.03 L 721.02 135.81 L 727.41 133.40 L 733.80 131.00 L 740.20 114.74 L 746.59 111.73 L 752.98 106.31 L 759.37 105.11 L 765.76 103.30 L 772.15 100.29 L 778.54 99.69 L 784.93 98.49 L 791.32 96.68 L 797.71 93.67 L 804.10 91.87 L 810.49 87.65 L 816.88 86.45 L 823.27 85.24 L 829.66 83.44 L 836.05 81.03 L 842.44 79.22 L 848.83 74.41 L 855.22 73.20 L 861.61 72.60 L 868.00 72.00" />
+  
+</svg>
