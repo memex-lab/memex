@@ -16,7 +16,6 @@
     .history { fill: none; stroke: #dd4528; stroke-linecap: round; stroke-linejoin: round; stroke-width: 3; }
     .legend-box { fill: #fff; fill-opacity: .85; stroke: #000; stroke-width: 2; }
     .legend-color { fill: #dd4528; }
-    .watermark { fill: #666; font-size: 14px; }
     .empty { font-size: 16px; }
     @media (prefers-color-scheme: dark) {
       .background { fill: #0d1117; }
@@ -25,7 +24,6 @@
       .history { stroke: #ff6b6b; }
       .legend-box { fill: #0d1117; stroke: #fff; }
       .legend-color { fill: #ff6b6b; }
-      .watermark { fill: #999; }
     }
   </style>
   <rect class="background" width="900" height="600" />
@@ -42,6 +40,5 @@
     <rect class="legend-color" x="85" y="77" width="8" height="8" rx="2" />
     <text x="99" y="89" font-size="15">memex-lab/memex</text>
   </g>
-  <text class="watermark" x="870" y="590" text-anchor="end">style inspired by star-history.com</text>
   
 </svg>
