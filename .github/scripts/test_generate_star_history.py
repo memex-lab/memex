@@ -61,8 +61,12 @@ class GenerateStarHistoryTest(unittest.TestCase):
         second = GENERATOR.render_svg("memex-lab/memex", list(reversed(dates)))
 
         self.assertEqual(first, second)
-        self.assertIn("2 current stars", first)
-        self.assertIn("memex-lab/memex Star History", first)
+        self.assertIn("2 current stargazers", first)
+        self.assertIn("Star History", first)
+        self.assertIn("memex-lab/memex", first)
+        self.assertIn('id="xkcdify"', first)
+        self.assertIn("#dd4528", first)
+        self.assertIn("Comic Sans MS", first)
         self.assertEqual(
             element_tree.fromstring(first).tag,
             "{http://www.w3.org/2000/svg}svg",

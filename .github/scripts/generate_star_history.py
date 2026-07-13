@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import math
 import os
 import urllib.error
 import urllib.request
@@ -98,8 +99,8 @@ def cumulative_points(dates: list[dt.date]) -> list[tuple[dt.date, int]]:
 
 
 def render_svg(repository: str, dates: list[dt.date]) -> str:
-    width, height = 900, 500
-    left, right, top, bottom = 82, 32, 72, 68
+    width, height = 900, 600
+    left, right, top, bottom = 70, 30, 60, 50
     plot_width = width - left - right
     plot_height = height - top - bottom
     points = cumulative_points(dates)
@@ -109,7 +110,7 @@ def render_svg(repository: str, dates: list[dt.date]) -> str:
         start_date = points[0][0]
         end_date = points[-1][0]
     else:
-        start_date = end_date = dt.date.today()
+        start_date = end_date = dt.date(1970, 1, 1)
 
     span_days = max((end_date - start_date).days, 1)
     y_max = max(total, 1)
@@ -120,34 +121,86 @@ def render_svg(repository: str, dates: list[dt.date]) -> str:
     def y_position(value: int) -> float:
         return top + plot_height - (value / y_max) * plot_height
 
-    chart_points = [(start_date, 0), *points]
-    path = " ".join(
-        f"{'M' if index == 0 else 'L'} {x_position(date):.2f} {y_position(value):.2f}"
-        for index, (date, value) in enumerate(chart_points)
-    )
+    coordinates = [(x_position(date), y_position(value)) for date, value in points]
+    if len(coordinates) < 2:
+        path = " ".join(
+            f"{'M' if index == 0 else 'L'} {x:.2f} {y:.2f}"
+            for index, (x, y) in enumerate(coordinates)
+        )
+    else:
+        slopes = [
+            (coordinates[index + 1][1] - coordinates[index][1])
+            / (coordinates[index + 1][0] - coordinates[index][0])
+            for index in range(len(coordinates) - 1)
+        ]
+        tangents = [slopes[0]]
+        tangents.extend(
+            (slopes[index - 1] + slopes[index]) / 2
+            for index in range(1, len(coordinates) - 1)
+        )
+        tangents.append(slopes[-1])
 
-    grid_lines: list[str] = []
+        for index, slope in enumerate(slopes):
+            if slope == 0:
+                tangents[index] = 0
+                tangents[index + 1] = 0
+                continue
+            alpha = tangents[index] / slope
+            beta = tangents[index + 1] / slope
+            magnitude = alpha * alpha + beta * beta
+            if magnitude > 9:
+                scale = 3 / math.sqrt(magnitude)
+                tangents[index] = scale * alpha * slope
+                tangents[index + 1] = scale * beta * slope
+
+        segments = [f"M {coordinates[0][0]:.2f} {coordinates[0][1]:.2f}"]
+        for index in range(len(coordinates) - 1):
+            x0, y0 = coordinates[index]
+            x1, y1 = coordinates[index + 1]
+            distance = x1 - x0
+            segments.append(
+                "C "
+                f"{x0 + distance / 3:.2f} {y0 + tangents[index] * distance / 3:.2f}, "
+                f"{x1 - distance / 3:.2f} {y1 - tangents[index + 1] * distance / 3:.2f}, "
+                f"{x1:.2f} {y1:.2f}"
+            )
+        path = " ".join(segments)
+
+    raw_step = y_max / 5
+    exponent = 10 ** math.floor(math.log10(raw_step))
+    fraction = raw_step / exponent
+    if fraction < 1.5:
+        tick_step = exponent
+    elif fraction < 3:
+        tick_step = 2 * exponent
+    elif fraction < 7:
+        tick_step = 5 * exponent
+    else:
+        tick_step = 10 * exponent
+    tick_step = max(1, tick_step)
+
     y_labels: list[str] = []
-    for index in range(6):
-        value = round(y_max * index / 5)
+    value = tick_step
+    while value < y_max:
         y = y_position(value)
-        grid_lines.append(
-            f'<line x1="{left}" y1="{y:.2f}" x2="{width - right}" y2="{y:.2f}" />'
-        )
         y_labels.append(
-            f'<text x="{left - 14}" y="{y + 5:.2f}" text-anchor="end">{value}</text>'
+            f'<line class="tick" x1="{left - 2}" y1="{y:.2f}" x2="{left}" y2="{y:.2f}" />'
+            f'<text x="{left - 9}" y="{y + 5:.2f}" text-anchor="end">{int(value)}</text>'
         )
+        value += tick_step
 
     x_labels: list[str] = []
-    for index in range(6):
-        offset = round(span_days * index / 5)
+    for index in range(5):
+        offset = round(span_days * (index + 0.5) / 5)
         date = start_date + dt.timedelta(days=offset)
         x = x_position(date)
+        label = f"{date:%b} {date.day}, {date.year}"
         x_labels.append(
-            f'<text x="{x:.2f}" y="{height - 30}" text-anchor="middle">{date.isoformat()}</text>'
+            f'<line class="tick" x1="{x:.2f}" y1="{top + plot_height}" x2="{x:.2f}" y2="{top + plot_height + 2}" />'
+            f'<text x="{x:.2f}" y="{top + plot_height + 25}" text-anchor="middle">{label}</text>'
         )
 
-    title = escape(repository)
+    repo_label = escape(repository)
     empty_message = ""
     if not points:
         empty_message = (
@@ -156,31 +209,50 @@ def render_svg(repository: str, dates: list[dt.date]) -> str:
         )
 
     return f'''<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="title description">
-  <title id="title">Star history for {title}</title>
+  <title id="title">Star history for {repo_label}</title>
   <desc id="description">{total} current stargazers, grouped by the date each star was added.</desc>
+  <defs>
+    <filter id="xkcdify" filterUnits="userSpaceOnUse" x="-5" y="-5" width="{width + 10}" height="{height + 10}">
+      <feTurbulence type="fractalNoise" baseFrequency="0.05" result="noise" />
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="5" xChannelSelector="R" yChannelSelector="G" />
+    </filter>
+  </defs>
   <style>
-    text {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #64748b; font-size: 12px; }}
-    .heading {{ fill: #334155; font-size: 22px; font-weight: 600; }}
-    .total {{ fill: #64748b; font-size: 14px; }}
-    .grid {{ stroke: #94a3b8; stroke-opacity: .32; stroke-width: 1; }}
-    .axis {{ stroke: #64748b; stroke-opacity: .55; stroke-width: 1; }}
-    .history {{ fill: none; stroke: #f59e0b; stroke-linecap: round; stroke-linejoin: round; stroke-width: 3; }}
+    .background {{ fill: #fff; }}
+    text {{ font-family: "Comic Sans MS", "Bradley Hand", cursive; fill: #000; font-size: 16px; }}
+    .heading {{ font-size: 20px; font-weight: bold; }}
+    .axis, .tick {{ stroke: #000; stroke-width: 1; }}
+    .axis, .history, .legend-box, .legend-color {{ filter: url(#xkcdify); }}
+    .history {{ fill: none; stroke: #dd4528; stroke-linecap: round; stroke-linejoin: round; stroke-width: 3; }}
+    .legend-box {{ fill: #fff; fill-opacity: .85; stroke: #000; stroke-width: 2; }}
+    .legend-color {{ fill: #dd4528; }}
+    .watermark {{ fill: #666; font-size: 14px; }}
     .empty {{ font-size: 16px; }}
     @media (prefers-color-scheme: dark) {{
-      text, .total {{ fill: #94a3b8; }}
-      .heading {{ fill: #e2e8f0; }}
-      .grid {{ stroke: #64748b; }}
-      .axis {{ stroke: #94a3b8; }}
+      .background {{ fill: #0d1117; }}
+      text {{ fill: #fff; }}
+      .axis, .tick {{ stroke: #fff; }}
+      .history {{ stroke: #ff6b6b; }}
+      .legend-box {{ fill: #0d1117; stroke: #fff; }}
+      .legend-color {{ fill: #ff6b6b; }}
+      .watermark {{ fill: #999; }}
     }}
   </style>
-  <text class="heading" x="{left}" y="36">{title} Star History</text>
-  <text class="total" x="{left}" y="58">{total} current stars</text>
-  <g class="grid">{''.join(grid_lines)}</g>
+  <rect class="background" width="{width}" height="{height}" />
+  <text class="heading" x="50%" y="30" text-anchor="middle">Star History</text>
+  <text x="{width / 2}" y="{height - 10}" text-anchor="middle">Date</text>
+  <text x="20" y="{height / 2}" text-anchor="middle" transform="rotate(-90 20 {height / 2})">GitHub Stars</text>
   <line class="axis" x1="{left}" y1="{top}" x2="{left}" y2="{top + plot_height}" />
   <line class="axis" x1="{left}" y1="{top + plot_height}" x2="{width - right}" y2="{top + plot_height}" />
   <g>{''.join(y_labels)}</g>
   <g>{''.join(x_labels)}</g>
   <path class="history" d="{path}" />
+  <g>
+    <rect class="legend-box" x="{left + 8}" y="{top + 5}" width="{max(165, len(repository) * 8 + 38)}" height="32" rx="5" />
+    <rect class="legend-color" x="{left + 15}" y="{top + 17}" width="8" height="8" rx="2" />
+    <text x="{left + 29}" y="{top + 29}" font-size="15">{repo_label}</text>
+  </g>
+  <text class="watermark" x="{width - right}" y="{height - 10}" text-anchor="end">style inspired by star-history.com</text>
   {empty_message}
 </svg>
 '''
