@@ -1,16 +1,12 @@
 import 'dart:io';
-import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
-import 'package:flutter_image_compress/flutter_image_compress.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:http/http.dart' as http;
 import 'package:shimmer/shimmer.dart';
-import 'package:crypto/crypto.dart';
 import 'package:memex/data/services/asset_safety_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
+import 'package:memex/data/services/image_preview_cache_service.dart';
 import 'package:memex/utils/logger.dart';
 
 final Logger _logger = getLogger('LocalImage');
@@ -90,9 +86,8 @@ final Uint8List _transparentPng = Uint8List.fromList(const [
 /// - If URL does not start with http (local path), use Image.file
 /// - else use Image.network for remote images
 class LocalImage extends StatefulWidget {
-  static const AssetSafetyConfig previewSourceSafetyConfig = AssetSafetyConfig(
-    maxPixelsForDecode: 48000000,
-  );
+  static const AssetSafetyConfig previewSourceSafetyConfig =
+      ImagePreviewCacheService.previewSourceSafetyConfig;
 
   /// Image URL
   final String url;
@@ -306,11 +301,10 @@ class _LocalImageState extends State<LocalImage> {
     final isLocalFile = localFilePath != null || !widget.url.startsWith('http');
 
     String originalPath = '';
-    File? originalFile;
 
     if (isLocalFile) {
       originalPath = localFilePath ?? widget.url;
-      originalFile = File(originalPath);
+      final originalFile = File(originalPath);
 
       if (!originalFile.existsSync()) {
         // original file not found, cannot load
@@ -349,151 +343,28 @@ class _LocalImageState extends State<LocalImage> {
     }
 
     try {
-      // 2. prepare cache directory
-      final tempDir = await getTemporaryDirectory();
-      final cacheDir = Directory(path.join(tempDir.path, 'image_cache'));
-      if (!await cacheDir.exists()) {
-        await cacheDir.create(recursive: true);
-      }
-
-      // 3. generate cache key (MD5 to avoid filename length limit)
-      // Use md5 instead of base64Url: on iOS sim/device full path is very long;
-      // base64 would exceed APFS 255-byte filename limit and cause "Cannot retrieve length of file" error.
-      final cacheKeyBase = originalPath;
-      final filenameHash = md5.convert(utf8.encode(cacheKeyBase)).toString();
-      final cacheFilename = '${filenameHash}_max768.jpg';
-      final cacheFile = File(path.join(cacheDir.path, cacheFilename));
-
-      // 4. check cache
-      if (await cacheFile.exists()) {
-        // cache hit
-        if (mounted) {
-          setState(() {
-            _imageFile = cacheFile;
-            _isLoading = false;
-          });
-        }
-        return;
-      }
-
-      // 5. compress (download first if network image)
-      String sourcePath = originalPath;
-      File? tempDownloadFile;
-
-      if (!isLocalFile) {
-        // download network image to temp file
-        _logger.info('Downloading network image: $originalPath');
-        final response = await http.get(Uri.parse(originalPath));
-        if (response.statusCode == 200) {
-          tempDownloadFile = File(
-            path.join(
-              cacheDir.path,
-              'temp_${DateTime.now().millisecondsSinceEpoch}',
-            ),
-          );
-          await tempDownloadFile.writeAsBytes(response.bodyBytes);
-          sourcePath = tempDownloadFile.path;
-        } else {
-          throw Exception('Failed to download image: ${response.statusCode}');
-        }
-      }
-
-      final previewSafety = AssetSafetyService.instance.inspectFileSync(
-        sourcePath,
-        config: LocalImage.previewSourceSafetyConfig,
+      final preview =
+          await ImagePreviewCacheService.instance.getOrCreatePreview(
+        source: originalPath,
+        isLocalFile: isLocalFile,
       );
-      if (!previewSafety.safeForPreview) {
-        _logger.warning(
-          'Image preview blocked for $originalPath: ${previewSafety.reason}',
-        );
-        if (tempDownloadFile != null && await tempDownloadFile.exists()) {
-          await tempDownloadFile.delete();
-        }
-        if (mounted) {
-          setState(() {
-            _imageFile = null;
-            _isLoading = false;
-            _previewUnavailable = true;
-            _previewUnavailableReason = previewSafety.reason;
-          });
-        }
-        return;
-      }
 
-      // check image size; if already <= 768, copy file to avoid re-compression quality loss
-      String? resultPath;
-      bool needCompress = true;
-
-      try {
-        if (previewSafety.width != null &&
-            previewSafety.height != null &&
-            previewSafety.width! <= 768 &&
-            previewSafety.height! <= 768) {
-          needCompress = false;
-        }
-      } catch (e) {
-        _logger.warning(
-          'Failed to read image metadata to check size for $sourcePath',
-          e,
-        );
-      }
-
-      if (needCompress) {
-        // compress to max side 768
-        final result = await FlutterImageCompress.compressAndGetFile(
-          sourcePath,
-          cacheFile.path,
-          minWidth: 768,
-          minHeight: 768,
-          quality: 80,
-        );
-        resultPath = result?.path;
-      } else {
-        _logger.info(
-          'Image dimensions <= 768, skip compression: $originalPath',
-        );
-        final copiedFile = await File(sourcePath).copy(cacheFile.path);
-        resultPath = copiedFile.path;
-      }
-
-      // delete temp download file if any
-      if (tempDownloadFile != null && await tempDownloadFile.exists()) {
-        await tempDownloadFile.delete();
-      }
-
-      // 6. update status
       if (mounted) {
-        if (resultPath != null) {
-          final resultSafety =
-              AssetSafetyService.instance.inspectFileSync(resultPath);
-          if (!resultSafety.safeForPreview) {
-            _logger.warning(
-              'Generated image preview blocked for $originalPath: ${resultSafety.reason}',
-            );
-            setState(() {
-              _imageFile = null;
-              _isLoading = false;
-              _previewUnavailable = true;
-              _previewUnavailableReason = resultSafety.reason;
-            });
-            return;
-          }
-          _logger.info('Compression/Copy success for image: $originalPath');
-          setState(() {
-            _imageFile = File(resultPath!);
-            _isLoading = false;
-          });
-        } else {
-          _logger.warning(
-            'Compression/Copy failed (null result) for image: $originalPath',
-          );
-          setState(() {
-            _imageFile = null;
-            _isLoading = false;
-            _previewUnavailable = true;
-            _previewUnavailableReason = 'safe preview generation failed';
-          });
-        }
+        _logger.info('Preview ready for image: $originalPath');
+        setState(() {
+          _imageFile = preview.file;
+          _isLoading = false;
+        });
+      }
+    } on ImagePreviewUnavailable catch (e) {
+      _logger.warning('Image preview unavailable for $originalPath: $e');
+      if (mounted) {
+        setState(() {
+          _imageFile = null;
+          _isLoading = false;
+          _previewUnavailable = true;
+          _previewUnavailableReason = e.reason;
+        });
       }
     } catch (e) {
       _logger.severe('LocalImage processing error for image: $originalPath', e);

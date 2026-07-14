@@ -1,16 +1,11 @@
-import 'dart:io';
-import 'dart:convert';
-import 'dart:math' as math;
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/user_storage.dart';
-import 'package:memex/data/services/file_system_service.dart';
+import 'package:memex/data/services/chat_session_storage.dart';
 import 'package:memex/data/services/api_exception.dart';
 import 'package:memex/utils/time_context.dart';
-import 'package:path/path.dart' as p;
-import 'package:yaml/yaml.dart';
 
 final _logger = getLogger('ChatEndpoint');
-FileSystemService get _fileSystemService => FileSystemService.instance;
+ChatSessionStorage get _chatStorage => ChatSessionStorage.instance;
 
 /// Get chat session list
 ///
@@ -32,85 +27,18 @@ Future<List<Map<String, dynamic>>> fetchChatSessionsEndpoint({
       throw ApiException('User not logged in, cannot get session list');
     }
 
-    final sessionsPath = _fileSystemService.getChatSessionsPath(userId);
-    final sessionsDir = Directory(sessionsPath);
-
-    if (!await sessionsDir.exists()) {
-      return [];
-    }
-
     final sessions = <Map<String, dynamic>>[];
-    final sessionFiles = <File>[];
-
-    await for (final entity in sessionsDir.list()) {
-      if (entity is File && entity.path.endsWith('.yaml')) {
-        final fileName = p.basenameWithoutExtension(entity.path);
-
-        // If agentName set, filter by filename prefix (no need to read file)
-        if (agentName != null && agentName.isNotEmpty) {
-          if (!fileName.startsWith('${agentName}_')) {
-            continue;
-          }
-        }
-
-        sessionFiles.add(entity);
-      }
-    }
-
-    // Sort by mtime (newest first)
-    sessionFiles.sort((a, b) {
+    final sessionRows = await _chatStorage.listSessionMetadata(userId);
+    for (final sessionData in sessionRows) {
       try {
-        final aStat = a.statSync();
-        final bStat = b.statSync();
-        return bStat.modified.compareTo(aStat.modified);
-      } catch (_) {
-        return 0;
-      }
-    });
-
-    for (final sessionFile in sessionFiles) {
-      try {
-        final content = await sessionFile.readAsString();
-        final doc = loadYaml(content);
-        final sessionData = jsonDecode(jsonEncode(doc)) as Map<String, dynamic>;
-
         final sessionAgentName = sessionData['agent_name'] as String?;
+        final sessionId = sessionData['session_id'] as String?;
+        if (sessionId == null || sessionId.isEmpty) continue;
 
-        // Double check agent_name in file (should match filename prefix, but verify for safety)
         if (agentName != null &&
             agentName.isNotEmpty &&
             sessionAgentName != agentName) {
           continue;
-        }
-
-        final sessionId = sessionData['session_id'] as String? ??
-            p.basenameWithoutExtension(sessionFile.path);
-        final messages = sessionData['messages'] as List<dynamic>? ?? [];
-
-        // Get last message preview
-        String? lastMessagePreview;
-        if (messages.isNotEmpty) {
-          final lastMsg = messages.last as Map<String, dynamic>;
-          final contentList = lastMsg['content'] as List<dynamic>? ?? [];
-          final textParts = <String>[];
-          var imageCount = 0;
-          for (final item in contentList) {
-            if (item is Map<String, dynamic> &&
-                item['type'] == 'text' &&
-                item['text'] != null) {
-              textParts.add(item['text'] as String);
-            } else if (item is Map<String, dynamic> &&
-                item['type'] == 'image_url') {
-              imageCount += 1;
-            }
-          }
-          if (textParts.isNotEmpty) {
-            final preview = textParts.join(' ');
-            lastMessagePreview =
-                preview.length > 100 ? preview.substring(0, 100) : preview;
-          } else if (imageCount > 0) {
-            lastMessagePreview = 'Sent $imageCount image(s)';
-          }
         }
 
         sessions.add({
@@ -131,12 +59,12 @@ Future<List<Map<String, dynamic>>> fetchChatSessionsEndpoint({
               formatLocalDateTimeWithZoneOrNull(sessionData['updated_at']),
           'updated_at_unix_seconds': sessionData['updated_at_unix_seconds'] ??
               unixSecondsFromDateTimeOrNull(sessionData['updated_at']),
-          'message_count': messages.length,
-          'last_message_preview': lastMessagePreview,
+          'last_message_preview':
+              sessionData['last_message_preview'] as String?,
           'is_quick_query': sessionData['is_quick_query'] == true,
         });
       } catch (e) {
-        _logger.warning('Failed to load session from ${sessionFile.path}: $e');
+        _logger.warning('Failed to load chat session row: $e');
         continue;
       }
     }
@@ -163,7 +91,7 @@ Future<List<Map<String, dynamic>>> fetchChatSessionsEndpoint({
 Future<Map<String, dynamic>> fetchChatSessionDetailEndpoint(
   String sessionId, {
   int? messageLimit,
-  int messageOffset = 0,
+  String? messageBeforeCursor,
 }) async {
   _logger.info('fetchChatSessionDetail called: sessionId=$sessionId');
 
@@ -177,26 +105,16 @@ Future<Map<String, dynamic>> fetchChatSessionDetailEndpoint(
       throw ApiException('Session ID cannot be empty');
     }
 
-    final sessionFile = _getSessionFilePath(userId, sessionId);
-    if (!await sessionFile.exists()) {
+    if (!await _chatStorage.sessionExists(userId, sessionId)) {
       throw ApiException('Session not found: $sessionId');
     }
 
-    final content = await sessionFile.readAsString();
-    final doc = loadYaml(content);
-    final sessionData = jsonDecode(jsonEncode(doc)) as Map<String, dynamic>;
-
-    final allMessages = sessionData['messages'] as List<dynamic>? ?? [];
-    final messages = _sliceSessionMessages(
-      allMessages,
+    final sessionData = await _chatStorage.loadMetadata(userId, sessionId);
+    final page = await _chatStorage.loadMessagePage(
+      userId,
+      sessionId,
       limit: messageLimit,
-      offset: messageOffset,
-    );
-    final totalMessages = allMessages.length;
-    final sliceStart = _sessionMessageSliceStart(
-      totalMessages,
-      limit: messageLimit,
-      offset: messageOffset,
+      beforeCursor: messageBeforeCursor,
     );
 
     return {
@@ -217,11 +135,11 @@ Future<Map<String, dynamic>> fetchChatSessionDetailEndpoint(
           formatLocalDateTimeWithZoneOrNull(sessionData['updated_at']),
       'updated_at_unix_seconds': sessionData['updated_at_unix_seconds'] ??
           unixSecondsFromDateTimeOrNull(sessionData['updated_at']),
-      'messages': messages,
-      'message_count': totalMessages,
+      'messages': page.messages.map(_withLocalTimestampFallback).toList(),
       'message_limit': messageLimit,
-      'message_offset': messageOffset,
-      'has_more_messages': sliceStart > 0,
+      'message_before_cursor': messageBeforeCursor,
+      'older_cursor': page.olderCursor,
+      'has_more_messages': page.hasMoreMessages,
       if (sessionData['total_usage'] != null)
         'total_usage': sessionData['total_usage'],
       'is_quick_query': sessionData['is_quick_query'] == true,
@@ -255,14 +173,13 @@ Future<bool> deleteChatSessionEndpoint(String sessionId) async {
       throw ApiException('Session ID cannot be empty');
     }
 
-    final sessionFile = _getSessionFilePath(userId, sessionId);
-    if (!await sessionFile.exists()) {
+    if (!await _chatStorage.sessionExists(userId, sessionId)) {
       _logger.warning('Session file not found: $sessionId');
       return false;
     }
 
-    await sessionFile.delete();
-    _logger.info('Session file physically deleted: $sessionId');
+    await _chatStorage.deleteSession(userId, sessionId);
+    _logger.info('Session physically deleted: $sessionId');
     return true;
   } catch (e) {
     _logger.severe('Failed to delete chat session $sessionId: $e');
@@ -271,48 +188,6 @@ Future<bool> deleteChatSessionEndpoint(String sessionId) async {
 }
 
 // Helper functions
-
-File _getSessionFilePath(String userId, String sessionId) {
-  final sessionsPath = _fileSystemService.getChatSessionsPath(userId);
-  return File(p.join(sessionsPath, '$sessionId.yaml'));
-}
-
-List<Map<String, dynamic>> _sliceSessionMessages(
-  List<dynamic> messages, {
-  int? limit,
-  int offset = 0,
-}) {
-  final total = messages.length;
-  final start = _sessionMessageSliceStart(total, limit: limit, offset: offset);
-  final end = _sessionMessageSliceEnd(total, limit: limit, offset: offset);
-
-  return messages.sublist(start, end).map((msg) {
-    if (msg is Map<String, dynamic>) {
-      return _withLocalTimestampFallback(msg);
-    }
-    return <String, dynamic>{};
-  }).toList();
-}
-
-int _sessionMessageSliceStart(
-  int total, {
-  int? limit,
-  int offset = 0,
-}) {
-  if (limit == null || limit <= 0) return 0;
-  final end = _sessionMessageSliceEnd(total, limit: limit, offset: offset);
-  return math.max(0, end - limit);
-}
-
-int _sessionMessageSliceEnd(
-  int total, {
-  int? limit,
-  int offset = 0,
-}) {
-  if (limit == null || limit <= 0) return total;
-  final safeOffset = math.max(0, offset);
-  return math.max(0, total - safeOffset);
-}
 
 Map<String, dynamic> _withLocalTimestampFallback(Map<String, dynamic> msg) {
   final result = Map<String, dynamic>.from(msg);

@@ -105,7 +105,7 @@ class SuperAgentPreMintedRecordHook extends AgentHook {
         final annotated = annotateUserMessageSystemReminder(
           context.state.history.messages,
           userMessageTimestamp: userMessageTimestamp,
-          reminder: 'Pre-minted record fact_id used this turn: $factId.',
+          reminder: 'Newly minted record fact_id was used this turn: $factId.',
         );
         if (!identical(annotated, context.state.history.messages)) {
           context.state.history.messages = annotated;
@@ -183,7 +183,7 @@ List<LLMMessage> annotatePreMintedRecordFactIdReminder(
     return messages;
   }
   final reminder =
-      'Pre-minted record fact_id: $id. You can use it directly; mint more only if needed.';
+      'Newly minted record fact_id: $id. If creating a new record, use this id directly; mint more only if needed.';
   return annotateUserMessageSystemReminder(
     messages,
     userMessageTimestamp: userMessageTimestamp,

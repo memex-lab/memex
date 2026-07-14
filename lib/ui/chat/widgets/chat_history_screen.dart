@@ -168,8 +168,6 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
                           final lastMessagePreview =
                               session['last_message_preview'] as String? ?? '';
                           final updatedAt = session['updated_at'] as String?;
-                          final messageCount =
-                              session['message_count'] as int? ?? 0;
 
                           return Container(
                             margin: const EdgeInsets.only(bottom: 12),
@@ -232,23 +230,6 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
                                               children: [
                                                 Text(
                                                   _formatDateTime(updatedAt),
-                                                  style: const TextStyle(
-                                                    fontSize: 12,
-                                                    color:
-                                                        AppColors.textTertiary,
-                                                  ),
-                                                ),
-                                                const Text(
-                                                  '•',
-                                                  style: TextStyle(
-                                                    fontSize: 12,
-                                                    color:
-                                                        AppColors.textTertiary,
-                                                  ),
-                                                ),
-                                                Text(
-                                                  UserStorage.l10n.messageCount(
-                                                      messageCount),
                                                   style: const TextStyle(
                                                     fontSize: 12,
                                                     color:

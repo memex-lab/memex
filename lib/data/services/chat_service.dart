@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:dio/dio.dart' show CancelToken;
@@ -12,26 +11,24 @@ import 'package:memex/agent/pure_skill_host_agent/pure_skill_host_agent.dart';
 import 'package:memex/agent/state_util.dart';
 import 'package:memex/agent/super_agent/super_agent.dart';
 import 'package:memex/agent/super_agent/subagent/delegate_progress.dart';
-import 'package:memex/data/services/asset_safety_service.dart';
+import 'package:memex/data/services/agent_image_attachment.dart';
 import 'package:memex/data/services/agent_foreground_task_tracker.dart';
 import 'package:memex/data/services/chat_run_registry.dart';
 import 'package:memex/data/services/custom_agent_config_service.dart';
-import 'package:memex/data/services/llm_image_codec.dart';
+import 'package:memex/data/model/chat_artifact.dart';
 import 'package:memex/data/services/location_context_service.dart';
 import 'package:memex/domain/models/custom_agent_config.dart';
 import 'package:memex/domain/models/location_context_config.dart';
 import 'package:memex/domain/models/llm_config.dart';
 import 'package:memex/data/services/file_system_service.dart';
-import 'package:memex/data/services/image_exif_context.dart';
+import 'package:memex/data/services/chat_session_storage.dart';
 import 'package:memex/data/services/local_task_executor.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/time_context.dart';
 import 'package:memex/domain/models/agent_definitions.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/utils/token_usage_utils.dart';
-import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
-import 'package:yaml/yaml.dart';
 
 import 'package:memex/data/model/chat_events.dart';
 
@@ -40,9 +37,15 @@ export 'package:memex/data/model/chat_events.dart';
 // --- Chat Service ---
 
 class _ChatDelegateProgressSink implements DelegateProgressSink {
-  _ChatDelegateProgressSink(this._run);
+  _ChatDelegateProgressSink(
+    this._run,
+    this._artifactCollector,
+    this._onArtifactsProduced,
+  );
 
   final ActiveChatRun _run;
+  final ChatTurnArtifactCollector _artifactCollector;
+  final void Function(List<ChatArtifact> artifacts) _onArtifactsProduced;
   final Map<String, List<String>> _pendingDelegateCallIdsByBrief = {};
   final Map<String, String> _delegateParentIds = {};
   final Map<String, int> _childTraceCounters = {};
@@ -101,11 +104,19 @@ class _ChatDelegateProgressSink implements DelegateProgressSink {
     final childTraceId = _takeChildTraceId(progress.delegateRunId, result.name);
     if (parentId == null || childTraceId == null) return;
     final resultText = _toolResultText(result);
+    final artifacts = result.isError
+        ? const <ChatArtifact>[]
+        : _artifactCollector.addFromToolResult(
+            metadata: result.metadata,
+            sourceToolCallId: result.id,
+          );
     _run.add(ChatTraceCompletedEvent(
       id: childTraceId,
       result: _preview(resultText, 300),
       isError: result.isError,
+      metadata: result.metadata,
     ));
+    _onArtifactsProduced(artifacts);
   }
 
   @override
@@ -146,8 +157,26 @@ class _ChatDelegateProgressSink implements DelegateProgressSink {
     try {
       final decoded = jsonDecode(arguments);
       if (decoded is! Map) return null;
-      final taskBrief = decoded['task_brief'];
-      return taskBrief is String ? taskBrief : null;
+      final taskContent = decoded['task_content'];
+      if (taskContent is! List || taskContent.isEmpty) return null;
+      final parts = <String>[];
+      for (final rawItem in taskContent) {
+        if (rawItem is! Map) continue;
+        final type = rawItem['type']?.toString();
+        if (type == 'text') {
+          final text = rawItem['text']?.toString().trim();
+          if (text != null && text.isNotEmpty) {
+            parts.add(text);
+          }
+        } else if (type == 'asset') {
+          final ref = rawItem['ref']?.toString().trim();
+          if (ref != null && ref.isNotEmpty) {
+            parts.add('Attachment: $ref');
+          }
+        }
+      }
+      final brief = parts.join('\n\n').trim();
+      return brief.isEmpty ? null : brief;
     } catch (_) {
       return null;
     }
@@ -224,6 +253,7 @@ class ChatService {
 
   final Logger _logger = getLogger('ChatService');
   FileSystemService get _fileService => FileSystemService.instance;
+  ChatSessionStorage get _chatStorage => ChatSessionStorage.instance;
   final Uuid _uuid = const Uuid();
   static const String _superAgentChatTurnTaskType =
       'super_agent_chat_turn_task';
@@ -294,7 +324,7 @@ class ChatService {
           'Cannot refresh agent state while a chat turn is active');
     }
 
-    final sessionData = await _loadSessionData(userId, sessionId);
+    final sessionData = await _chatStorage.loadMetadata(userId, sessionId);
     final now = DateTime.now();
     final newStateSessionId = '${sessionId}_state_${_uuid.v4()}';
     final state = await loadOrCreateAgentState(newStateSessionId, {
@@ -309,14 +339,16 @@ class ChatService {
     });
     await saveAgentState(state);
 
-    sessionData[_activeAgentStateSessionIdKey] = newStateSessionId;
-    sessionData['agent_state_refreshed_at'] = now.toIso8601String();
-    sessionData['agent_state_refreshed_at_local'] =
-        formatLocalDateTimeWithZone(now);
-    sessionData['agent_state_refreshed_at_unix_seconds'] =
-        unixSecondsFromDateTime(now);
-    sessionData.remove('total_usage');
-    await _saveSessionData(userId, sessionId, sessionData);
+    await _chatStorage.updateMetadata(userId, sessionId, (metadata) {
+      metadata[_activeAgentStateSessionIdKey] = newStateSessionId;
+      metadata['agent_state_refreshed_at'] = now.toIso8601String();
+      metadata['agent_state_refreshed_at_local'] =
+          formatLocalDateTimeWithZone(now);
+      metadata['agent_state_refreshed_at_unix_seconds'] =
+          unixSecondsFromDateTime(now);
+      metadata.remove('total_usage');
+      return metadata;
+    });
     return newStateSessionId;
   }
 
@@ -340,17 +372,17 @@ class ChatService {
       'sendMessage: sessionId=$sessionId, message=$message, refs=${refs?.length}',
     );
 
+    final turnId = _uuid.v4();
     final userId = await UserStorage.getUserId();
     if (userId == null) {
-      yield ChatErrorEvent('User not logged in');
+      yield ChatErrorEvent(turnId, 'User not logged in');
       return;
     }
 
     String finalSessionId = sessionId ?? '';
     final userMessageTime = DateTime.now();
-    final turnId = _uuid.v4();
     final trimmedMessage = message.trim();
-    final preparedImages = <_PreparedChatImage>[];
+    final preparedImages = <AgentImageAttachment>[];
     String agentStateSessionId = '';
 
     try {
@@ -365,12 +397,12 @@ class ChatService {
       }
     } catch (e) {
       _logger.severe('Failed to prepare chat image attachment', e);
-      yield ChatErrorEvent('Failed to prepare image attachment: $e');
+      yield ChatErrorEvent(turnId, 'Failed to prepare image attachment: $e');
       return;
     }
 
     if (trimmedMessage.isEmpty && preparedImages.isEmpty) {
-      yield ChatErrorEvent('Message is empty');
+      yield ChatErrorEvent(turnId, 'Message is empty');
       return;
     }
 
@@ -435,7 +467,7 @@ class ChatService {
       }
     } catch (e) {
       _logger.severe('Failed to manage session', e);
-      yield ChatErrorEvent('Failed to initialize session: $e');
+      yield ChatErrorEvent(turnId, 'Failed to initialize session: $e');
       return;
     }
 
@@ -480,7 +512,7 @@ class ChatService {
       }
     } catch (e, st) {
       _logger.severe('Failed to enqueue chat turn', e, st);
-      run.add(ChatErrorEvent('Failed to enqueue chat turn: $e'));
+      run.add(ChatErrorEvent(turnId, 'Failed to enqueue chat turn: $e'));
       run.close();
     }
 
@@ -558,7 +590,7 @@ class ChatService {
     required String scene,
     required String? sceneId,
     required List<Map<String, String>>? refs,
-    required List<_PreparedChatImage> preparedImages,
+    required List<AgentImageAttachment> preparedImages,
     required bool isQuickQuery,
     required String runMode,
     required DateTime userMessageTime,
@@ -696,7 +728,7 @@ class ChatService {
       }
     } catch (e) {
       _logger.severe('Failed to initialize agent', e);
-      run.add(ChatErrorEvent('Failed to initialize agent: $e'));
+      run.add(ChatErrorEvent(turnId, 'Failed to initialize agent: $e'));
       if (await _shouldCloseRunAfterTask(taskId)) {
         run.close();
       }
@@ -704,7 +736,44 @@ class ChatService {
     }
 
     // 3. Setup Listeners & Run
-    final progressSink = _ChatDelegateProgressSink(run);
+    final artifactCollector = ChatTurnArtifactCollector(sourceRunId: turnId);
+    var artifactWriteQueue = Future<void>.value();
+
+    void persistAndEmitArtifacts(List<ChatArtifact> artifacts) {
+      if (artifacts.isEmpty) return;
+
+      artifactWriteQueue = artifactWriteQueue.then((_) async {
+        await _addMessageToSession(
+          userId,
+          sessionId,
+          'artifact',
+          const [],
+          artifacts: artifacts.map((artifact) => artifact.toJson()).toList(),
+          timestamp: artifacts.first.createdAt,
+          turnId: turnId,
+        );
+        if (!run.isClosed) {
+          // Artifact messages are already persisted. Live listeners should see
+          // them immediately after the append, but reattached dialogs rebuild
+          // them from JSONL history instead of replaying this event.
+          run.add(ChatArtifactsEvent(turnId, artifacts), replay: false);
+        }
+      }).catchError((Object e, StackTrace st) {
+        _logger.warning(
+          'Failed to persist chat artifact message for session $sessionId',
+          e,
+          st,
+        );
+      });
+    }
+
+    Future<void> waitForArtifactWrites() => artifactWriteQueue;
+
+    final progressSink = _ChatDelegateProgressSink(
+      run,
+      artifactCollector,
+      persistAndEmitArtifacts,
+    );
 
     // Forward events from agent controller to the run channel
     _setupControllerListeners(
@@ -715,6 +784,9 @@ class ChatService {
       turnId,
       taskId,
       progressSink,
+      artifactCollector,
+      persistAndEmitArtifacts,
+      waitForArtifactWrites,
     );
 
     // Build scene context reminder
@@ -827,9 +899,15 @@ class ChatService {
       final inlinedImageFileNames = <String>[];
       for (var i = 0; i < preparedImages.length; i++) {
         final image = preparedImages[i];
-        userContentParts.add(TextPart(_buildAttachmentReminder(i, image)));
         final inline = await _inlinePreparedImage(image);
-        if (inline != null) {
+        userContentParts.add(TextPart(
+          buildAgentImageAttachmentReminder(
+            i,
+            image,
+            imageLoaded: inline != null && inline.base64Data.isNotEmpty,
+          ),
+        ));
+        if (inline != null && inline.base64Data.isNotEmpty) {
           userContentParts.add(ImagePart(inline.base64Data, inline.mimeType));
           inlinedImageFileNames.add(image.fsFilename);
         }
@@ -884,7 +962,7 @@ class ChatService {
       } catch (e) {
         _logger.severe('Agent run failed', e);
         if (!run.isClosed) {
-          run.add(ChatErrorEvent(e.toString()));
+          run.add(ChatErrorEvent(turnId, e.toString()));
           if (await _shouldCloseRunAfterTask(taskId)) {
             run.close();
           }
@@ -894,78 +972,21 @@ class ChatService {
     });
   }
 
-  Future<_PreparedChatImage> _prepareChatImage({
+  Future<AgentImageAttachment> _prepareChatImage({
     required String userId,
     required XFile image,
     required String? originalName,
-  }) async {
-    // Store chat attachments in Facts/assets using the same fs:// reference
-    // scheme as records. The card the agent creates will reference them via
-    // `![image](fs://<filename>)`.
-    final (fsFilename, relativePath) = await _fileService.saveAssetFromFile(
+  }) {
+    return prepareChatImageAttachment(
       userId: userId,
       sourcePath: image.path,
-      assetType: 'img',
-    );
-    final absolutePath = _fileService.toAbsolutePath(relativePath);
-    final mimeType = _mimeTypeForImagePath(absolutePath);
-
-    String? base64Data;
-    String? inlineMimeType;
-    try {
-      final safety =
-          await AssetSafetyService.instance.inspectFile(absolutePath);
-      if (safety.safeForInlineBase64) {
-        // iOS gallery originals are commonly HEIC, which OpenAI-compatible
-        // endpoints (Kimi, OpenAI) reject. Inline a bounded JPEG transcode;
-        // the stored original stays untouched.
-        final transcoded = await LlmImageCodec.transcodeForLlm(absolutePath);
-        if (transcoded != null) {
-          base64Data = base64Encode(transcoded);
-          inlineMimeType = LlmImageCodec.jpegMimeType;
-        } else {
-          // Only fall back to original bytes when the format is universally
-          // accepted; inlining HEIC would poison the session history.
-          final originalBytes = await File(absolutePath).readAsBytes();
-          if (LlmImageCodec.isLlmSafeImageBytes(originalBytes)) {
-            _logger.warning(
-              'Transcode failed, inlining original bytes for $relativePath',
-            );
-            base64Data = base64Encode(originalBytes);
-          } else {
-            _logger.warning(
-              'Transcode failed and original format is not LLM-safe, '
-              'skipping inline for $relativePath',
-            );
-          }
-        }
-      } else {
-        _logger.warning(
-          'Skipping inline chat image $relativePath: ${safety.reason}',
-        );
-      }
-    } catch (e) {
-      _logger.warning('Failed to inline chat image $relativePath: $e');
-    }
-
-    // Read EXIF (capture time + GPS → reverse-geocoded address) from the
-    // stored original. saveAssetFromFile copies raw bytes, so EXIF survives;
-    // the transcoded inline copy intentionally strips it.
-    final exifInfo = await buildImageExifInfo(userId, absolutePath);
-
-    return _PreparedChatImage(
-      relativePath: relativePath,
-      fsFilename: fsFilename,
-      mimeType: inlineMimeType ?? mimeType,
       originalName: originalName,
-      base64Data: base64Data,
-      exifInfo: exifInfo,
     );
   }
 
   List<Map<String, dynamic>> _buildSessionUserContent(
     String message,
-    List<_PreparedChatImage> images,
+    List<AgentImageAttachment> images,
   ) {
     return [
       if (message.isNotEmpty) {'type': 'text', 'text': message},
@@ -978,46 +999,6 @@ class ChatService {
             'name': image.originalName,
         },
     ];
-  }
-
-  String _buildAttachmentReminder(int index, _PreparedChatImage image) {
-    final buffer = StringBuffer()
-      ..writeln('<system-reminder>')
-      ..writeln('Attachment ${index + 1}: fs://${image.fsFilename}')
-      ..writeln(
-        'The following image part is this attachment; do not call '
-        'view_image for this fs:// id.',
-      );
-    if (image.originalName != null && image.originalName!.isNotEmpty) {
-      buffer.writeln('original_name: ${image.originalName}');
-    }
-    buffer.writeln('mime_type: ${image.mimeType}');
-    if (image.exifInfo != null && image.exifInfo!.isNotEmpty) {
-      for (final line in image.exifInfo!.split('\n')) {
-        buffer.writeln(line);
-      }
-    }
-    buffer.writeln('</system-reminder>');
-    return buffer.toString().trimRight();
-  }
-
-  String _mimeTypeForImagePath(String filePath) {
-    final ext = p.extension(filePath).toLowerCase();
-    switch (ext) {
-      case '.jpg':
-      case '.jpeg':
-        return 'image/jpeg';
-      case '.webp':
-        return 'image/webp';
-      case '.gif':
-        return 'image/gif';
-      case '.heic':
-      case '.heif':
-        return 'image/heic';
-      case '.png':
-      default:
-        return 'image/png';
-    }
   }
 
   List<Map<String, String>>? _decodeRefs(dynamic raw) {
@@ -1034,53 +1015,24 @@ class ChatService {
     return refs.isEmpty ? null : refs;
   }
 
-  List<_PreparedChatImage> _decodePreparedImages(dynamic raw) {
+  List<AgentImageAttachment> _decodePreparedImages(dynamic raw) {
     if (raw is! List) return const [];
     return raw
         .whereType<Map>()
-        .map((item) => _PreparedChatImage.fromTaskJson(item))
-        .whereType<_PreparedChatImage>()
+        .map((item) => AgentImageAttachment.fromTaskJson(item))
+        .whereType<AgentImageAttachment>()
         .toList();
   }
 
-  Future<_InlinePreparedImage?> _inlinePreparedImage(
-    _PreparedChatImage image,
+  Future<InlineAgentImage?> _inlinePreparedImage(
+    AgentImageAttachment image,
   ) async {
-    try {
-      final absolutePath = _fileService.toAbsolutePath(image.relativePath);
-      final safety =
-          await AssetSafetyService.instance.inspectFile(absolutePath);
-      if (!safety.safeForInlineBase64) {
-        _logger.warning(
-          'Skipping inline chat image ${image.relativePath}: ${safety.reason}',
-        );
-        return null;
-      }
-
-      final transcoded = await LlmImageCodec.transcodeForLlm(absolutePath);
-      if (transcoded != null) {
-        return _InlinePreparedImage(
-          base64Data: base64Encode(transcoded),
-          mimeType: LlmImageCodec.jpegMimeType,
-        );
-      }
-
-      final originalBytes = await File(absolutePath).readAsBytes();
-      if (!LlmImageCodec.isLlmSafeImageBytes(originalBytes)) {
-        _logger.warning(
-          'Transcode failed and original format is not LLM-safe, '
-          'skipping inline for ${image.relativePath}',
-        );
-        return null;
-      }
-      return _InlinePreparedImage(
-        base64Data: base64Encode(originalBytes),
-        mimeType: image.mimeType,
-      );
-    } catch (e) {
-      _logger.warning('Failed to inline chat image ${image.relativePath}: $e');
-      return null;
-    }
+    final absolutePath = _fileService.toAbsolutePath(image.relativePath);
+    return inlineImageForLlm(
+      absolutePath: absolutePath,
+      fallbackMimeType: image.mimeType,
+      logLabel: image.relativePath,
+    );
   }
 
   void _setupControllerListeners(
@@ -1091,11 +1043,14 @@ class ChatService {
     String turnId,
     String taskId,
     _ChatDelegateProgressSink progressSink,
+    ChatTurnArtifactCollector artifactCollector,
+    void Function(List<ChatArtifact> artifacts) onArtifactsProduced,
+    Future<void> Function() waitForArtifactWrites,
   ) {
     // 1. Lifecycle Events
     controller.on((AgentStartedEvent event) {
       _logger.info('Agent started');
-      stream.add(ChatAgentStartedEvent());
+      stream.add(ChatAgentStartedEvent(turnId));
     });
 
     controller.on((AgentStoppedEvent event) async {
@@ -1155,8 +1110,8 @@ class ChatService {
 
       if (event.error != null) {
         if (!stream.isClosed) {
-          stream.add(ChatAgentStoppedEvent());
-          stream.add(ChatErrorEvent(event.error.toString()));
+          stream.add(ChatAgentStoppedEvent(turnId));
+          stream.add(ChatErrorEvent(turnId, event.error.toString()));
           if (await _shouldCloseRunAfterTask(taskId)) {
             stream.close();
           }
@@ -1184,6 +1139,7 @@ class ChatService {
       };
 
       // Save AI response with usage stats
+      await waitForArtifactWrites();
       final responseTime = DateTime.now();
       final sessionTotalUsage =
           await _sessionHasAssistantForTurn(userId, sessionId, turnId)
@@ -1231,8 +1187,8 @@ class ChatService {
 
       if (!stream.isClosed) {
         // Send a final empty chunk to mark isDone=true without duplicating text
-        stream.add(ChatResponseChunkEvent('', isDone: true));
-        stream.add(ChatAgentStoppedEvent());
+        stream.add(ChatResponseChunkEvent(turnId, '', isDone: true));
+        stream.add(ChatAgentStoppedEvent(turnId));
         if (await _shouldCloseRunAfterTask(taskId)) {
           stream.close();
         }
@@ -1276,7 +1232,7 @@ class ChatService {
 
       if (event.response.textOutput != null &&
           event.response.textOutput!.isNotEmpty) {
-        stream.add(ChatResponseChunkEvent(event.response.textOutput!));
+        stream.add(ChatResponseChunkEvent(turnId, event.response.textOutput!));
       }
     });
 
@@ -1316,6 +1272,12 @@ class ChatService {
       }
 
       final resultPreview = _preview(resultText, 300);
+      final artifacts = event.result.isError
+          ? const <ChatArtifact>[]
+          : artifactCollector.addFromToolResult(
+              metadata: event.result.metadata,
+              sourceToolCallId: event.result.id,
+            );
       stream.add(
         ChatTraceCompletedEvent(
           id: event.result.id,
@@ -1324,6 +1286,7 @@ class ChatService {
           metadata: event.result.metadata,
         ),
       );
+      onArtifactsProduced(artifacts);
     });
   }
 
@@ -1341,7 +1304,7 @@ class ChatService {
     String sessionId,
   ) async {
     try {
-      final sessionData = await _loadSessionData(userId, sessionId);
+      final sessionData = await _chatStorage.loadMetadata(userId, sessionId);
       final activeStateId =
           sessionData[_activeAgentStateSessionIdKey]?.toString().trim();
       if (activeStateId != null && activeStateId.isNotEmpty) {
@@ -1357,33 +1320,10 @@ class ChatService {
     return sessionId;
   }
 
-  Future<Map<String, dynamic>> _loadSessionData(
-    String userId,
-    String sessionId,
-  ) async {
-    final sessionFile = _getSessionFilePath(userId, sessionId);
-    if (!await sessionFile.exists()) {
-      throw StateError('Session not found: $sessionId');
-    }
-
-    final fileContent = await sessionFile.readAsString();
-    final doc = loadYaml(fileContent);
-    return jsonDecode(jsonEncode(doc)) as Map<String, dynamic>;
-  }
-
-  Future<void> _saveSessionData(
-    String userId,
-    String sessionId,
-    Map<String, dynamic> sessionData,
-  ) async {
-    final sessionFile = _getSessionFilePath(userId, sessionId);
-    await _fileService.writeYamlFile(sessionFile.path, sessionData);
-  }
-
   /// Check whether a session file has `is_custom_agent: true`.
   Future<bool> _isCustomAgentSession(String userId, String sessionId) async {
     try {
-      final data = await _loadSessionData(userId, sessionId);
+      final data = await _chatStorage.loadMetadata(userId, sessionId);
       return data['is_custom_agent'] == true;
     } catch (e) {
       _logger.warning('Failed to read session metadata: $e');
@@ -1432,14 +1372,14 @@ class ChatService {
       'updated_at_local': formatLocalDateTimeWithZone(now),
       'updated_at_unix_seconds': unixSecondsFromDateTime(now),
       'is_quick_query': isQuickQuery,
-      'messages': <dynamic>[],
+      ChatArtifactSessionMigration.schemaVersionKey: ChatArtifact.schemaVersion,
     };
 
-    final sessionFile = _getSessionFilePath(userId, sessionId);
-    final parentDir = sessionFile.parent;
-    await parentDir.create(recursive: true);
-
-    await _fileService.writeYamlFile(sessionFile.path, sessionData);
+    await _chatStorage.createSession(
+      userId: userId,
+      sessionId: sessionId,
+      metadata: sessionData,
+    );
     return sessionId;
   }
 
@@ -1449,22 +1389,20 @@ class ChatService {
     String role,
     List<Map<String, dynamic>> content, {
     Map<String, dynamic>? usage,
+    List<Map<String, dynamic>> artifacts = const [],
     List<Map<String, String>>? refs,
     bool? isQuickQuery,
     DateTime? timestamp,
     String? turnId,
   }) async {
-    final sessionFile = _getSessionFilePath(userId, sessionId);
-    if (!await sessionFile.exists()) return null;
-
-    final sessionData = await _loadSessionData(userId, sessionId);
-    _backfillSessionTimeContext(sessionData);
+    if (!await _chatStorage.sessionExists(userId, sessionId)) return null;
 
     final messageTime = timestamp ?? DateTime.now();
     final messageDict = {
       'role': role,
       'content': content,
       if (usage != null) 'usage': usage,
+      if (artifacts.isNotEmpty) 'artifacts': artifacts,
       if (refs != null) 'refs': refs,
       if (turnId != null) 'turn_id': turnId,
       'timestamp': messageTime.toIso8601String(),
@@ -1472,50 +1410,13 @@ class ChatService {
       'unix_seconds': unixSecondsFromDateTime(messageTime),
     };
 
-    final messages = (sessionData['messages'] as List<dynamic>? ?? [])
-        .map(_backfillMessageTimeContext)
-        .toList()
-      ..add(messageDict);
-    sessionData['messages'] = messages;
-
-    // Update cumulative session usage
-    if (usage != null) {
-      final currentTotal =
-          sessionData['total_usage'] as Map<String, dynamic>? ??
-              {
-                'prompt_tokens': 0,
-                'completion_tokens': 0,
-                'cached_tokens': 0,
-                'total_tokens': 0,
-                'total_cost': 0.0,
-              };
-
-      sessionData['total_usage'] = {
-        'prompt_tokens': (currentTotal['prompt_tokens'] as int? ?? 0) +
-            (usage['prompt_tokens'] as int? ?? 0),
-        'completion_tokens': (currentTotal['completion_tokens'] as int? ?? 0) +
-            (usage['completion_tokens'] as int? ?? 0),
-        'cached_tokens': (currentTotal['cached_tokens'] as int? ?? 0) +
-            (usage['cached_tokens'] as int? ?? 0),
-        'total_tokens': (currentTotal['total_tokens'] as int? ?? 0) +
-            (usage['total_tokens'] as int? ?? 0),
-        'total_cost': (currentTotal['total_cost'] as double? ?? 0.0) +
-            (usage['total_cost'] as double? ?? 0.0),
-      };
-    }
-
-    // Update session-level mode flag so history can restore it
-    if (isQuickQuery != null) {
-      sessionData['is_quick_query'] = isQuickQuery;
-    }
-
-    final updatedAt = DateTime.now();
-    sessionData['updated_at'] = updatedAt.toIso8601String();
-    sessionData['updated_at_local'] = formatLocalDateTimeWithZone(updatedAt);
-    sessionData['updated_at_unix_seconds'] = unixSecondsFromDateTime(updatedAt);
-
-    await _saveSessionData(userId, sessionId, sessionData);
-    return sessionData['total_usage'] as Map<String, dynamic>?;
+    return _chatStorage.appendMessage(
+      userId: userId,
+      sessionId: sessionId,
+      message: messageDict,
+      usage: usage,
+      isQuickQuery: isQuickQuery,
+    );
   }
 
   Future<bool> _sessionHasAssistantForTurn(
@@ -1523,125 +1424,7 @@ class ChatService {
     String sessionId,
     String turnId,
   ) async {
-    final sessionFile = _getSessionFilePath(userId, sessionId);
-    if (!await sessionFile.exists()) return false;
-
-    final sessionData = await _loadSessionData(userId, sessionId);
-    final messages = sessionData['messages'] as List<dynamic>? ?? const [];
-    return messages.any((message) {
-      return message is Map &&
-          message['role'] == 'ai' &&
-          message['turn_id'] == turnId;
-    });
+    if (!await _chatStorage.sessionExists(userId, sessionId)) return false;
+    return _chatStorage.hasAssistantMessageForTurn(userId, sessionId, turnId);
   }
-
-  File _getSessionFilePath(String userId, String sessionId) {
-    final sessionsPath = _fileService.getChatSessionsPath(userId);
-    return File(p.join(sessionsPath, '$sessionId.yaml'));
-  }
-
-  void _backfillSessionTimeContext(Map<String, dynamic> sessionData) {
-    final createdAt = tryParseDateTime(sessionData['created_at']);
-    if (createdAt != null) {
-      sessionData['created_at_local'] ??= formatLocalDateTimeWithZone(
-        createdAt,
-      );
-      sessionData['created_at_unix_seconds'] ??= unixSecondsFromDateTime(
-        createdAt,
-      );
-    }
-
-    final updatedAt = tryParseDateTime(sessionData['updated_at']);
-    if (updatedAt != null) {
-      sessionData['updated_at_local'] ??= formatLocalDateTimeWithZone(
-        updatedAt,
-      );
-      sessionData['updated_at_unix_seconds'] ??= unixSecondsFromDateTime(
-        updatedAt,
-      );
-    }
-  }
-
-  dynamic _backfillMessageTimeContext(dynamic message) {
-    if (message is! Map<String, dynamic>) {
-      return message;
-    }
-
-    final parsed = tryParseDateTime(message['timestamp']);
-    if (parsed == null) {
-      return message;
-    }
-
-    return {
-      ...message,
-      'local_time':
-          message['local_time'] ?? formatLocalDateTimeWithZone(parsed),
-      'unix_seconds':
-          message['unix_seconds'] ?? unixSecondsFromDateTime(parsed),
-    };
-  }
-}
-
-class _PreparedChatImage {
-  final String relativePath;
-
-  /// Bare stored filename, used to build the `fs://<filename>` reference the
-  /// agent sees (resolves to Facts/assets/<filename>, same as in-text fs:// refs).
-  final String fsFilename;
-  final String mimeType;
-  final String? originalName;
-  final String? base64Data;
-
-  /// Pre-formatted EXIF metadata block (capture time, GPS coordinates, and
-  /// reverse-geocoded address) for this image, or null when none is available.
-  final String? exifInfo;
-
-  const _PreparedChatImage({
-    required this.relativePath,
-    required this.fsFilename,
-    required this.mimeType,
-    required this.originalName,
-    required this.base64Data,
-    this.exifInfo,
-  });
-
-  Map<String, dynamic> toTaskJson() => {
-        'relative_path': relativePath,
-        'fs_filename': fsFilename,
-        'mime_type': mimeType,
-        if (originalName != null) 'original_name': originalName,
-        if (exifInfo != null) 'exif_info': exifInfo,
-      };
-
-  static _PreparedChatImage? fromTaskJson(Map<dynamic, dynamic> json) {
-    final relativePath = json['relative_path']?.toString();
-    final fsFilename = json['fs_filename']?.toString();
-    final mimeType = json['mime_type']?.toString();
-    if (relativePath == null ||
-        relativePath.isEmpty ||
-        fsFilename == null ||
-        fsFilename.isEmpty ||
-        mimeType == null ||
-        mimeType.isEmpty) {
-      return null;
-    }
-    return _PreparedChatImage(
-      relativePath: relativePath,
-      fsFilename: fsFilename,
-      mimeType: mimeType,
-      originalName: json['original_name']?.toString(),
-      base64Data: null,
-      exifInfo: json['exif_info']?.toString(),
-    );
-  }
-}
-
-class _InlinePreparedImage {
-  const _InlinePreparedImage({
-    required this.base64Data,
-    required this.mimeType,
-  });
-
-  final String base64Data;
-  final String mimeType;
 }

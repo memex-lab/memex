@@ -5,6 +5,7 @@ import 'package:memex/agent/prompts.dart';
 import 'package:memex/agent/run_mode/agent_action_approval_service.dart';
 import 'package:memex/agent/skills/knowledge_insight/native_widgets.dart';
 
+import 'package:memex/data/model/chat_artifact.dart';
 import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/timeline_card_event_publisher.dart';
@@ -464,8 +465,28 @@ Tool buildSaveKnowledgeInsightCardsTool() {
           logger.warning('Failed to create insight summary timeline card: $e');
         }
 
-        return Prompts.knowledgeInsightToolSuccessUpdate(
-            createdIds.length, createdIds, updatedIds.length, updatedIds);
+        return AgentToolResult(
+          content: TextPart(Prompts.knowledgeInsightToolSuccessUpdate(
+              createdIds.length, createdIds, updatedIds.length, updatedIds)),
+          metadata: {
+            'artifacts': [
+              for (final info in addedSummaryCards)
+                if ((info['id']?.toString().trim() ?? '').isNotEmpty)
+                  ChatArtifact.knowledgeInsight(
+                    insightId: info['id'].toString(),
+                    title: info['title']?.toString(),
+                    updated: false,
+                  ).toJson(),
+              for (final info in updatedSummaryCards)
+                if ((info['id']?.toString().trim() ?? '').isNotEmpty)
+                  ChatArtifact.knowledgeInsight(
+                    insightId: info['id'].toString(),
+                    title: info['title']?.toString(),
+                    updated: true,
+                  ).toJson(),
+            ],
+          },
+        );
       } catch (e) {
         logger.severe('Failed to update knowledge insight cards: $e');
         throw Exception('Failed to update knowledge insight cards: $e');

@@ -11,8 +11,9 @@ import 'package:memex/agent/skills/schedule_aggregation/schedule_aggregation_ski
 import 'package:memex/agent/skills/timeline_diagnostics/timeline_diagnostics_skill.dart';
 import 'package:memex/agent/super_agent/subagent/delegate_progress.dart';
 import 'package:memex/agent/super_agent/subagent/super_agent_child.dart';
+import 'package:memex/data/services/agent_image_attachment.dart';
 import 'package:memex/data/services/asset_reference_service.dart';
-import 'package:memex/data/services/image_exif_context.dart';
+import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/location_context_service.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:uuid/uuid.dart';
@@ -128,7 +129,7 @@ Tool buildDelegateToSubagentTool() {
         'for the same specialist when they fit the context window. The worker '
         'is a specialist: it brings its own skill expertise, its own file tools '
         'to inspect the workspace, and the current time and location from its '
-        'runtime. It cannot see this conversation, so the `task_brief` supplies '
+        'runtime. It cannot see this conversation, so `task_content` supplies '
         'what only you have — but you state the goal, not the procedure, and let '
         'its skill decide how. Example: say "Record the user\'s shared event"; '
         'not "save it under a specific folder, use a specific template, and '
@@ -139,17 +140,46 @@ Tool buildDelegateToSubagentTool() {
     parameters: {
       'type': 'object',
       'properties': {
-        'task_brief': {
-          'type': 'string',
-          'description': 'What the worker should accomplish and the context only you can '
-              "provide: the record(s) in the user's own words, any fact_id(s) "
-              'you minted (for multiple records, include a clear record -> '
-              'fact_id mapping), and a description + exact bare `fs://...` id for any '
-              'attachment the worker cannot see. State the goal, not the steps — do not '
-              'spell out which template, which PKM file/directory, or how to '
-              'structure the entry (the skill decides that), and do not '
-              'include the current time or location (the runtime gives the '
-              'worker its own). Do not reference "the above" or prior turns.',
+        'task_content': {
+          'type': 'array',
+          'description':
+              'Ordered content blocks for the worker. Use text blocks for the '
+                  "worker's goal and the context only you can provide: the "
+                  "record(s) in the user's own words, any fact_id(s) you minted "
+                  '(for multiple records, include a clear record -> fact_id '
+                  'mapping). Use asset blocks for every attachment the worker '
+                  'should receive. A child agent can directly see images from '
+                  'image asset blocks, so there is no need to describe image '
+                  'contents in detail in text blocks. State the goal, not the '
+                  'steps — do not spell '
+                  'out which template, which PKM file/directory, or how to '
+                  'structure the entry (the skill decides that), and do not '
+                  'include the current time or location (the runtime gives the '
+                  'worker its own). Do not reference "the above" or prior '
+                  'turns.',
+          'items': {
+            'type': 'object',
+            'properties': {
+              'type': {
+                'type': 'string',
+                'description': 'Block type.',
+                'enum': ['text', 'asset'],
+              },
+              'text': {
+                'type': 'string',
+                'description':
+                    'For type=text: what the worker should accomplish and the '
+                        'context only you can provide, including record text and '
+                        'fact_id mapping. State the goal, not the procedure.',
+              },
+              'ref': {
+                'type': 'string',
+                'description':
+                    'For type=asset: the exact bare attachment reference, e.g. fs://photo.jpg.',
+              },
+            },
+            'required': ['type'],
+          },
         },
         'agent_type': {
           'type': 'string',
@@ -158,12 +188,10 @@ Tool buildDelegateToSubagentTool() {
           'enum': agentTypes,
         },
       },
-      'required': ['task_brief', 'agent_type'],
+      'required': ['task_content', 'agent_type'],
     },
-    executable: (
-      String task_brief,
-      String agent_type,
-    ) async {
+    parameterMode: ToolParameterMode.object,
+    executable: (Map<String, dynamic> args) async {
       final context = AgentCallToolContext.current;
       if (context == null) {
         throw StateError(
@@ -171,6 +199,8 @@ Tool buildDelegateToSubagentTool() {
       }
       final userId = context.state.metadata['userId'] as String;
       final parent = context.agent;
+      final taskInput = _resolveTaskInput(args);
+      final agent_type = args['agent_type']?.toString() ?? '';
 
       final preset = _subagentPresets[agent_type];
       if (preset == null) {
@@ -180,9 +210,9 @@ Tool buildDelegateToSubagentTool() {
       }
 
       // Location is an environment fact the model can't reliably know, so the
-      // runtime fetches and injects it — never passed as a tool arg. (The
+      // runtime fetches and injects it — never passed as a tool arg. The
       // child's processing time is stamped at render time as "Current Local
-      // Time"; the per-image capture time comes from EXIF below.)
+      // Time"; per-image capture time is carried by attachment reminders.
       final contextPacket = <String, dynamic>{
         'parent_session_id': context.state.sessionId,
       };
@@ -196,15 +226,9 @@ Tool buildDelegateToSubagentTool() {
         _logger.warning('Failed to attach location context to child: $e');
       }
 
-      // A child can't see the user's images, so its skill would otherwise build
-      // cards/records with the WRONG capture time and place (it'd fall back to
-      // "now" / the device's current location). Deterministically re-derive each
-      // attached image's EXIF (capture time + GPS + geocoded address) from the
-      // `fs://` references in the brief — the same block ChatService injects for
-      // the parent — instead of trusting the parent to transcribe it.
-      final exifBlocks = <String>[];
+      final imageAttachments = <ChildImageAttachment>[];
       final missingAssetRefs = <String>[];
-      for (final ref in AssetReferenceService.extractReferences(task_brief)) {
+      for (final ref in taskInput.assetRefs) {
         final asset = await AssetReferenceService.resolveExisting(
           userId: userId,
           reference: ref,
@@ -213,23 +237,32 @@ Tool buildDelegateToSubagentTool() {
           missingAssetRefs.add(ref);
           continue;
         }
-        try {
-          final block = await buildImageExifInfo(userId, asset.absolutePath);
-          if (block != null && block.trim().isNotEmpty) {
-            exifBlocks.add('${asset.fileName} —\n$block');
-          }
-        } catch (e) {
-          _logger.warning('Failed to derive EXIF for ${asset.fileName}: $e');
+        if (asset.type == AssetReferenceType.image) {
+          final image = await prepareStoredImageAttachment(
+            userId: userId,
+            absolutePath: asset.absolutePath,
+            relativePath:
+                FileSystemService.instance.toRelativePath(asset.absolutePath),
+            fsFilename: asset.fileName,
+            originalName: null,
+            mimeType: mimeTypeForImagePath(asset.absolutePath),
+          );
+          final inline = await inlineImageForLlm(
+            absolutePath: asset.absolutePath,
+            fallbackMimeType: image.mimeType,
+            logLabel: image.relativePath,
+          );
+          imageAttachments.add(ChildImageAttachment(
+            image: image,
+            inline: inline,
+          ));
         }
       }
       if (missingAssetRefs.isNotEmpty) {
         throw ArgumentError(
-          'task_brief contains attachment refs that do not resolve to existing '
+          'Task content contains attachment refs that do not resolve to existing '
           'supported files under Facts/assets: ${missingAssetRefs.join(', ')}',
         );
-      }
-      if (exifBlocks.isNotEmpty) {
-        contextPacket['attachment_exif'] = exifBlocks;
       }
 
       if (agent_type == 'pkm') {
@@ -257,12 +290,13 @@ Tool buildDelegateToSubagentTool() {
 
       final config = SuperAgentChildConfig(
         childName: preset.childName,
-        taskBrief: task_brief,
+        taskBrief: taskInput.taskBrief,
         skills: preset.buildSkills(),
         toolProfile: preset.toolProfile,
         readRootPaths: preset.readRoots,
         writeRootPaths: preset.writeRoots,
         contextPacket: contextPacket,
+        imageAttachments: imageAttachments,
       );
 
       _logger
@@ -274,7 +308,7 @@ Tool buildDelegateToSubagentTool() {
           : DelegateProgress(
               delegateRunId: _uuid.v4(),
               childName: preset.childName,
-              taskBrief: task_brief,
+              taskBrief: taskInput.taskBrief,
             );
       if (progress != null) {
         progressSink!.delegateStarted(progress);
@@ -307,6 +341,79 @@ Tool buildDelegateToSubagentTool() {
       );
     },
   );
+}
+
+class _TaskInput {
+  const _TaskInput({
+    required this.taskBrief,
+    required this.assetRefs,
+  });
+
+  final String taskBrief;
+  final List<String> assetRefs;
+}
+
+_TaskInput _resolveTaskInput(Map<String, dynamic> args) {
+  final rawContent = args['task_content'];
+  if (rawContent is List && rawContent.isNotEmpty) {
+    return _resolveStructuredTaskInput(rawContent);
+  }
+  throw ArgumentError(
+    'delegate_to_subagent requires non-empty task_content.',
+  );
+}
+
+_TaskInput _resolveStructuredTaskInput(List<dynamic> rawContent) {
+  final parts = <String>[];
+  final assetRefs = <String>[];
+  final seenAssetRefs = <String>{};
+
+  for (var i = 0; i < rawContent.length; i++) {
+    final rawItem = rawContent[i];
+    if (rawItem is! Map) {
+      throw ArgumentError('task_content[$i] must be an object.');
+    }
+    final item = Map<String, dynamic>.from(rawItem);
+    final type = item['type']?.toString();
+    switch (type) {
+      case 'text':
+        final text = item['text']?.toString().trim();
+        if (text == null || text.isEmpty) {
+          throw ArgumentError('task_content[$i].text is required.');
+        }
+        parts.add(text);
+        break;
+      case 'asset':
+        final ref = item['ref']?.toString().trim();
+        if (ref == null || ref.isEmpty) {
+          throw ArgumentError('task_content[$i].ref is required.');
+        }
+        final normalized = _normalizeAssetRef(ref, 'task_content[$i].ref');
+        if (seenAssetRefs.add(normalized)) {
+          assetRefs.add(normalized);
+        }
+        parts.add('Attachment: $normalized');
+        break;
+      default:
+        throw ArgumentError(
+          'task_content[$i].type must be "text" or "asset".',
+        );
+    }
+  }
+
+  final taskBrief = parts.join('\n\n').trim();
+  if (taskBrief.isEmpty) {
+    throw ArgumentError('task_content must include at least one usable block.');
+  }
+  return _TaskInput(taskBrief: taskBrief, assetRefs: assetRefs);
+}
+
+String _normalizeAssetRef(String ref, String fieldName) {
+  final fileName = AssetReferenceService.extractFileNameFromReference(ref);
+  if (fileName == null) {
+    throw ArgumentError('$fieldName must be a supported fs:// attachment ref.');
+  }
+  return 'fs://$fileName';
 }
 
 String _formatSubagentResultForParent({

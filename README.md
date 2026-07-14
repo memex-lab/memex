@@ -27,12 +27,12 @@
 
 ## What is Memex?
 
-Memex is an open-source, local-first AI journal for iOS and Android. It takes a different approach from traditional journaling apps — instead of asking you to sit down and write polished entries, Memex lets you capture life in fragments (text, photos, voice) and uses a multi-agent AI system to organize them into structured cards, builds your knowledge base, discovers insights, and provides companionship through AI characters.
+Memex is an open-source, local-first AI journal for iOS and Android. It takes a different approach from traditional journaling apps — instead of asking you to sit down and write polished entries, Memex lets you capture life in fragments (text, photos, voice) and uses a multi-agent AI system to organize them into structured cards, build your knowledge base, discover insights, and provide companionship through AI characters.
 
-**What "local-first" means here:** Your records, cards, and knowledge all stay on your device. There is no Memex account and no Memex server storing your journal. You bring your own LLM provider (OpenAI, Claude, Gemini, DeepSeek, etc.), and your prompts go directly from your phone to that provider — we never see your data.
+**What "local-first" means here:** Your records, cards, and knowledge all stay on your device. There is no Memex server storing your journal. You bring your own LLM provider (OpenAI, Claude, Gemini, DeepSeek, etc.), and your prompts go directly from your phone to that provider — we never see your data. The optional Memex AI service only proxies model requests; it does not store your journal.
 
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/e5fb3ab6-ff99-4397-9018-386c9f90f5ee" width="300" />
+  <img src="https://github.com/user-attachments/assets/f9fdee38-0136-400d-8183-a0718caad431" width="300" />
 </div>
 
 > [!IMPORTANT]
@@ -43,10 +43,10 @@ Memex is an open-source, local-first AI journal for iOS and Android. It takes a 
 ## Features
 
 ### 🤖 AI-Powered Organization
-- Multi-agent architecture: each agent handles a specific domain (recording organization, card generation, insights, comments, memory summarization, media analysis, companion chat, schedule aggregation)
+- Memex Agent orchestration: one conversational agent coordinates specialist skills and child agents for timeline cards, PKM filing, schedule updates, knowledge insights, diagnostics, comments, memory curation, media handling, and companion chat.
 
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/1117efb2-e52d-465f-bf66-b21aa323b942" width="800" />
+  <img src="https://github.com/user-attachments/assets/5e7afe71-c0d1-4f95-be7e-746950889363" width="800" />
 </div>
 
 - Automatically generates the most fitting card for each type of record:
@@ -96,19 +96,20 @@ https://github.com/user-attachments/assets/5048a9b1-47b2-462a-99f3-6a178e183861
 
 | Provider | API Type | Notes |
 |----------|----------|-------|
-| Google Gemini | Gemini API | gemini-3.1-pro-preview, gemini-3-flash-preview, etc. |
+| Google Gemini | Gemini API | gemini-3.5-flash, gemini-3.1-pro-preview, etc. |
 | Google Gemini | OAuth (no API key required) | Sign in with Google account. Unofficial — use at your own risk |
-| OpenAI | Chat Completions / Responses API | GPT-5.4, etc. |
-| OpenAI | OAuth (no API key required) | Sign in with OpenAI account. Unofficial — use at your own risk |
+| OpenAI | Chat Completions / Responses API | gpt-5.5, gpt-5.4, etc. |
+| ChatGPT | OAuth (no API key required) | Sign in with OpenAI account. Unofficial — use at your own risk |
 | Anthropic Claude | Claude API | Direct API access |
 | AWS Bedrock | Bedrock Claude | For AWS users |
+| Memex AI | Managed model access | Optional account-based model access; journal data remains local |
 | Kimi (Moonshot) | OpenAI-compatible | kimi-k2.5, kimi-k2, etc. |
-| Aliyun (Qwen) | OpenAI-compatible | qwen3.5-plus, qwen-max, etc. |
-| Volcengine (Doubao) | OpenAI-compatible | doubao-seed-1-8, doubao-1.5-pro, etc. |
-| Zhipu GLM | OpenAI-compatible | GLM-4.7, GLM-4-Plus |
+| Aliyun (Qwen) | OpenAI-compatible | qwen3.5-plus, qwen3-coder, etc. |
+| Volcengine (Doubao) | OpenAI / Responses-compatible | doubao-seed-2-0-pro-260215, doubao-seed-1-8-251228, etc. |
+| Zhipu GLM | OpenAI-compatible | glm-5v-turbo, glm-4.6v |
 | DeepSeek | OpenAI-compatible | deepseek-v4-flash, deepseek-v4-pro |
 | MiniMax | Anthropic-compatible | MiniMax-M2.5, MiniMax-M1 |
-| Xiaomi MIMO | Anthropic-compatible | MiMo-7B-RL |
+| Xiaomi MIMO | Anthropic-compatible | mimo-v2.5, mimo-v2-omni, etc. |
 | OpenRouter | OpenAI-compatible | Access multiple providers via one API |
 | Ollama | OpenAI-compatible (local) | Run models locally on your device |
 
@@ -121,11 +122,11 @@ https://github.com/user-attachments/assets/5048a9b1-47b2-462a-99f3-6a178e183861
 
 ### Configure LLM
 
-Memex requires an LLM API key to power its AI features. On first launch:
+Memex requires a configured model service to power its AI features. On first launch:
 
 1. Tap the avatar icon → Model Configuration
-2. Select your provider (Gemini / OpenAI / Claude / DeepSeek / etc.)
-3. Enter your API key and base URL
+2. Select your provider (Gemini / OpenAI / Claude / DeepSeek / Memex AI / Ollama / etc.)
+3. Enter an API key and base URL, sign in with OAuth, or connect the optional Memex AI service as required by the provider
 4. Each agent can be configured with a different model independently
 
 ### Configure Location Context
@@ -150,12 +151,12 @@ AMAP_GEOCODING_TEST_KEY=your_key flutter test test/data/services/geocoding_servi
 
 Memex isn't just a recording app — it's a platform that lets you build your own AI agents on your phone.
 
-Every built-in agent in Memex (knowledge extraction, card generation, insight discovery…) runs on the same custom agent infrastructure, and that infrastructure is fully open to you. That means you can create agents with the same capabilities as the built-in ones.
+The same skill-host infrastructure used by Memex's internal workflows is available for custom agents. You can wire agents into local events, give them skills and tools, and decide whether they run inline or as background tasks.
 
 ### What You Can Build
 
 - 🎯 **Create agents freely** — Give it a name, pick a host type (Pure mode), and a new agent is ready to go.
-- ⚡ **Event-driven triggers** — Choose when your agent activates: on user input, after knowledge extraction, on card creation, on insight generation, or any system event.
+- ⚡ **Event-driven triggers** — Choose when your agent activates: after a new timeline card is saved, when a card comment is posted, when a card UI config changes, or when local data changes.
 - 🧠 **Per-agent LLM configuration** — Each agent can use a different model.
 - 📝 **Custom system prompts** — Shape your agent's personality, expertise, and output format with a custom system prompt.
 - 📂 **Skill** — Memex adopts the open [Agent Skills](https://agentskills.io) standard. Each agent reads its behavior from a `SKILL.md` file — a folder of instructions, scripts, and resources that agents discover and use on demand.
@@ -182,8 +183,7 @@ Opening an issue helps us understand demand, but it does not guarantee implement
 
 ## Roadmap
 
-- [ ] Video and file attachments
-- [ ] Editable Memory — manually curate and refine memory entries
+- [ ] Richer video and file attachment workflows
 - [ ] Scheduled insight refresh — periodically re-analyze records for new patterns
 - [ ] Agent Soul — personalize agent behavior and personality
 - [ ] Customization — choose your own knowledge methodology, tagging rules, chat personas, and card styles
@@ -236,7 +236,7 @@ For Android local development, prefer `globalDev` / `cnDev`; they use isolated p
 | Platforms | iOS, Android |
 | Database | Drift (SQLite) |
 | State Management | Provider + MVVM |
-| LLM Providers | Gemini, OpenAI, Claude, Bedrock, Kimi, Qwen, Doubao, GLM, DeepSeek, MiniMax, MIMO, OpenRouter, Ollama |
+| LLM Providers | Gemini, OpenAI, Claude, Bedrock, Memex AI, Kimi, Qwen, Doubao, GLM, DeepSeek, MiniMax, MIMO, OpenRouter, Ollama |
 | Agent Framework | dart_agent_core |
 
 ### Project Structure
@@ -244,10 +244,13 @@ For Android local development, prefer `globalDev` / `cnDev`; they use isolated p
 ```
 lib/
 ├── agent/          # Multi-agent system
-│   ├── comment_agent/    # AI commentary
-│   ├── memory_agent/     # Memory summarization
-│   ├── super_agent/      # Orchestrator agent
-│   └── skills/           # Composable agent skills
+│   ├── super_agent/              # Conversational orchestrator and child agents
+│   ├── skills/                   # Timeline card, PKM, insight, schedule, memory skills
+│   ├── comment_agent/            # Character comments
+│   ├── companion_agent/          # 1v1 companion chat
+│   ├── memory/                   # Long-term memory services
+│   ├── pure_skill_host_agent/    # Custom pure skill host
+│   └── memex_skill_host_agent/   # Custom Memex-aware skill host
 ├── data/           # Repositories & services
 ├── db/             # Drift database schema
 ├── domain/         # Domain models
@@ -260,15 +263,22 @@ lib/
 ### Data Flow
 
 ```
-User Input (text/image/voice)
+User Input (text/image/voice/shared files)
     ↓
-Input Processing & Asset Analysis (ML Kit)
+Asset preparation (transcription, document text extraction, image encoding, metadata)
     ↓
-PKM Agent → Knowledge extraction & linking
+Memex Agent orchestration
     ↓
-Card Agent → Structured timeline card
+Specialist skills or child agents as needed:
+  - timeline_card → Cards YAML + UI config
+  - pkm → P.A.R.A Markdown knowledge base
+  - schedule → Schedule state
+  - knowledge_insight → Cross-record insight cards
     ↓
-Insight Agent → Cross-record pattern discovery
+Background tasks:
+  - character comments
+  - long-term memory curation
+  - event-driven custom agents
     ↓
 Local Storage (filesystem + SQLite)
 ```
@@ -276,8 +286,7 @@ Local Storage (filesystem + SQLite)
 </details>
 
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/78f49de7-0f0d-44a8-9710-40bf7da970d1" width="800" />
-  <p><em>Architecture Overview</em></p>
+  <img src="https://github.com/user-attachments/assets/fa106d13-d9b4-4b0e-adb4-6c722b19ca25" width="800" />
 </div>
 
 ## Contributing
@@ -293,17 +302,7 @@ Contributions are welcome. Please open an issue first to discuss what you would 
 ## Star History
 
 <div align="center">
-  <picture>
-    <source
-      media="(prefers-color-scheme: dark)"
-      srcset="https://api.star-history.com/svg?repos=memex-lab/memex&type=Date&theme=dark"
-    />
-    <source
-      media="(prefers-color-scheme: light)"
-      srcset="https://api.star-history.com/svg?repos=memex-lab/memex&type=Date"
-    />
-    <img src="https://api.star-history.com/svg?repos=memex-lab/memex&type=Date" alt="Star History Chart" />
-  </picture>
+  <img src="https://raw.githubusercontent.com/memex-lab/memex/star-history/star-history.svg" alt="Memex Star History Chart" />
 </div>
 
 ## License

@@ -23,6 +23,9 @@ import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/input_draft_service.dart';
 import 'package:memex/ui/core/widgets/html_webview_card.dart';
 import 'package:memex/ui/core/widgets/local_image.dart';
+import 'package:memex/ui/insight/widgets/insight_detail_page.dart';
+import 'package:memex/ui/knowledge/widgets/knowledge_file_page.dart';
+import 'package:memex/ui/schedule/widgets/schedule_aggregator_screen.dart';
 import 'package:memex/ui/timeline/widgets/timeline_card_detail_screen.dart';
 import 'package:memex/data/services/photo_suggestion_service.dart';
 import 'package:memex/utils/toast_helper.dart';
@@ -54,15 +57,19 @@ class UserMessageItem extends ChatDisplayItem {
 }
 
 class AIMessageItem extends ChatDisplayItem {
+  final String? turnId;
   String text;
   bool isStreaming;
+  final List<ArtifactItem> artifacts;
   @override
   DateTime? timestamp;
   AIMessageItem(
     this.text, {
+    this.turnId,
     this.isStreaming = false,
+    List<ArtifactItem>? artifacts,
     this.timestamp,
-  });
+  }) : artifacts = artifacts ?? <ArtifactItem>[];
 }
 
 class ThinkingItem extends ChatDisplayItem {
@@ -142,8 +149,10 @@ class ArtifactItem extends ChatDisplayItem {
   /// Raw HTML captured from the producing tool call args, for mini previews
   /// of dynamic HTML cards.
   final String? html;
+  @override
+  final DateTime? timestamp;
 
-  ArtifactItem(this.artifact, {this.html});
+  ArtifactItem(this.artifact, {this.html, this.timestamp});
 }
 
 /// Inline ask-first approval card for one pending mutating tool call.
@@ -159,9 +168,11 @@ class ProcessItem extends ChatDisplayItem {
   final DateTime timestamp;
   bool isExpanded;
   bool isFinished;
+  bool needsAttention;
   ProcessItem({
     this.isExpanded = false,
     this.isFinished = false,
+    this.needsAttention = false,
     DateTime? timestamp,
   }) : timestamp = timestamp ?? DateTime.now();
 
@@ -179,8 +190,19 @@ class ProcessItem extends ChatDisplayItem {
   bool get hasToolError => toolCalls.any((tool) => tool.hasTraceError);
 }
 
+enum SuperAgentProcessVisualState { running, needsAttention, done }
+
+@visibleForTesting
+SuperAgentProcessVisualState superAgentProcessVisualState(ProcessItem item) {
+  if (!item.isFinished) return SuperAgentProcessVisualState.running;
+  if (item.needsAttention) {
+    return SuperAgentProcessVisualState.needsAttention;
+  }
+  return SuperAgentProcessVisualState.done;
+}
+
 const double _agentChatSheetHeightFactor = 0.75;
-const int _agentChatHistoryPageSize = 10;
+const int _agentChatHistoryTurnPageSize = 4;
 const Duration _agentChatKeyboardShowAnimationDuration =
     Duration(milliseconds: 220);
 const Duration _agentChatKeyboardHideAnimationDuration = Duration.zero;
@@ -284,6 +306,25 @@ String formatSuperAgentTokenUsage(ChatTokenUsageEvent item) {
 }
 
 @visibleForTesting
+bool shouldShowSuperAgentThinkingRow({
+  required bool isLoadingAgent,
+  required ChatDisplayItem? primaryItem,
+}) {
+  if (!isLoadingAgent) return false;
+  if (primaryItem is ProcessItem) return false;
+  if (primaryItem is AIMessageItem && primaryItem.isStreaming) return false;
+  return true;
+}
+
+@visibleForTesting
+bool shouldAttachArtifactsToAssistantReply({
+  required String turnId,
+  required ChatDisplayItem? primaryItem,
+}) {
+  return primaryItem is AIMessageItem && primaryItem.turnId == turnId;
+}
+
+@visibleForTesting
 Duration resolveSuperAgentKeyboardInsetAnimationDuration({
   required double previousInset,
   required double nextInset,
@@ -346,6 +387,18 @@ Key? superAgentDemoPublishTargetKey(DemoStep? currentStep) {
       : null;
 }
 
+@visibleForTesting
+String superAgentUserMessageImageSourceForLocalDisplay(String source) {
+  final trimmed = source.trim();
+  if (trimmed.isEmpty) return trimmed;
+  if (trimmed.startsWith('http://') ||
+      trimmed.startsWith('https://') ||
+      trimmed.startsWith('fs://')) {
+    return trimmed;
+  }
+  return FileSystemService.instance.toAbsolutePath(trimmed);
+}
+
 /// Agent Chat Dialog with Real-time Event Streaming
 class AgentChatDialog extends StatefulWidget {
   final String? initialSessionId;
@@ -354,6 +407,13 @@ class AgentChatDialog extends StatefulWidget {
   final String? initialDraftText;
   final List<XFile> initialImages;
   final Map<String, String> initialImageOriginalFilenames;
+  final VoidCallback? onOpenScheduleTab;
+  @visibleForTesting
+  final List<ChatDisplayItem> initialItems;
+  @visibleForTesting
+  final bool initialIsLoadingAgent;
+  @visibleForTesting
+  final ChatTokenUsageEvent? initialTokenUsage;
 
   const AgentChatDialog({
     super.key,
@@ -363,6 +423,10 @@ class AgentChatDialog extends StatefulWidget {
     this.initialDraftText,
     this.initialImages = const [],
     this.initialImageOriginalFilenames = const {},
+    this.onOpenScheduleTab,
+    this.initialItems = const [],
+    this.initialIsLoadingAgent = false,
+    this.initialTokenUsage,
   });
 
   @override
@@ -386,7 +450,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   bool _isLoading = false;
   bool _isLoadingMoreHistory = false;
   bool _hasMoreHistory = false;
-  int _loadedHistoryMessageCount = 0;
+  String? _olderHistoryCursor;
   bool _isStreaming = false;
   bool _isLoadingAgent = false;
   bool _isRefreshingAgentState = false;
@@ -412,6 +476,9 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   bool _notificationPermissionPromptInFlight = false;
   List<List<EnhancedPhoto>> _photoSuggestionClusters = [];
   double _lastKeyboardBottomOffset = 0;
+  final Map<String, Future<String?>> _timelineCardArtifactImageSourceFutures =
+      {};
+  final Map<String, List<ArtifactItem>> _pendingReplyArtifactsByTurn = {};
 
   late AnimationController _controller;
   late Animation<Offset> _slideAnimation;
@@ -422,6 +489,9 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   void initState() {
     super.initState();
     _currentSessionId = widget.initialSessionId;
+    _items = List<ChatDisplayItem>.from(widget.initialItems);
+    _isLoadingAgent = widget.initialIsLoadingAgent;
+    _lastTokenUsage = widget.initialTokenUsage;
     final initialDraftText = widget.initialDraftText;
     if (initialDraftText != null && initialDraftText.isNotEmpty) {
       _messageController.text = initialDraftText;
@@ -526,7 +596,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
       // Since ChatService doesn't expose fetchHistory yet, reusing existing endpoint logic is fine.
       final sessionData = await _router.fetchChatSessionDetail(
         _currentSessionId!,
-        messageLimit: _agentChatHistoryPageSize,
+        messageLimit: _agentChatHistoryTurnPageSize,
       );
       final messagesData = sessionData['messages'] as List<dynamic>? ?? [];
       final historyItems = _chatItemsFromSessionMessages(messagesData);
@@ -552,7 +622,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
       setState(() {
         _items = historyItems;
         _lastTokenUsage = restoredUsage;
-        _loadedHistoryMessageCount = messagesData.length;
+        _olderHistoryCursor = sessionData['older_cursor'] as String?;
         _hasMoreHistory =
             sessionData['has_more_messages'] == true && messagesData.isNotEmpty;
         _isLoading = false;
@@ -582,8 +652,8 @@ class _AgentChatDialogState extends State<AgentChatDialog>
     try {
       final sessionData = await _router.fetchChatSessionDetail(
         sessionId,
-        messageLimit: _agentChatHistoryPageSize,
-        messageOffset: _loadedHistoryMessageCount,
+        messageLimit: _agentChatHistoryTurnPageSize,
+        messageBeforeCursor: _olderHistoryCursor,
       );
       final messagesData = sessionData['messages'] as List<dynamic>? ?? [];
       final olderItems = _chatItemsFromSessionMessages(messagesData);
@@ -591,10 +661,13 @@ class _AgentChatDialogState extends State<AgentChatDialog>
 
       setState(() {
         _items = [...olderItems, ..._items];
-        _loadedHistoryMessageCount += messagesData.length;
+        _olderHistoryCursor = sessionData['older_cursor'] as String?;
         _hasMoreHistory =
             sessionData['has_more_messages'] == true && messagesData.isNotEmpty;
-        _isLoadingMoreHistory = false;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || sessionId != _currentSessionId) return;
+        setState(() => _isLoadingMoreHistory = false);
       });
     } catch (e, st) {
       _logger.warning('Failed to load older chat history: $e', e, st);
@@ -605,6 +678,30 @@ class _AgentChatDialogState extends State<AgentChatDialog>
 
   List<ChatDisplayItem> _chatItemsFromSessionMessages(List<dynamic> messages) {
     final historyItems = <ChatDisplayItem>[];
+    final bufferedArtifactsByTurn = <String, List<ArtifactItem>>{};
+    final repliesByTurn = <String, AIMessageItem>{};
+    final orphanArtifacts = <ArtifactItem>[];
+
+    void addArtifactsForMessage(
+      Map<String, dynamic> message,
+      List<ArtifactItem> artifacts,
+    ) {
+      if (artifacts.isEmpty) return;
+      final turnId = message['turn_id']?.toString();
+      if (turnId != null && turnId.isNotEmpty) {
+        final reply = repliesByTurn[turnId];
+        if (reply != null) {
+          reply.artifacts.addAll(artifacts);
+          return;
+        }
+        bufferedArtifactsByTurn
+            .putIfAbsent(turnId, () => <ArtifactItem>[])
+            .addAll(artifacts);
+        return;
+      }
+      orphanArtifacts.addAll(artifacts);
+    }
+
     for (final msg in messages) {
       if (msg is! Map) continue;
       final message = Map<String, dynamic>.from(msg);
@@ -618,7 +715,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
               if (imageUrl is Map) {
                 final filePath = imageUrl['filePath']?.toString();
                 if (filePath != null && filePath.isNotEmpty) {
-                  imagePaths.add(_resolveDisplayImagePath(filePath));
+                  imagePaths.add(filePath);
                 }
               }
             }
@@ -628,8 +725,12 @@ class _AgentChatDialogState extends State<AgentChatDialog>
           .where((text) => text.isNotEmpty);
       final text = textParts.join(' ');
 
-      if (text.isEmpty && imagePaths.isEmpty) continue;
+      final hasArtifacts = message['artifacts'] is List &&
+          (message['artifacts'] as List).isNotEmpty;
+      if (text.isEmpty && imagePaths.isEmpty && !hasArtifacts) continue;
       final timestamp = tryParseDateTime(message['timestamp']);
+      final artifacts =
+          _artifactItemsFromSessionMessage(message, timestamp: timestamp);
       if (role == 'user') {
         List<Map<String, String>>? refs;
         if (message['refs'] != null) {
@@ -648,17 +749,59 @@ class _AgentChatDialogState extends State<AgentChatDialog>
           ),
         );
       } else {
-        historyItems.add(AIMessageItem(text, timestamp: timestamp));
+        if (artifacts.isNotEmpty && text.isEmpty && imagePaths.isEmpty) {
+          addArtifactsForMessage(message, artifacts);
+          continue;
+        }
+        if (text.isNotEmpty) {
+          final turnId = message['turn_id']?.toString();
+          final itemArtifacts = <ArtifactItem>[
+            if (turnId != null && turnId.isNotEmpty)
+              ...?bufferedArtifactsByTurn.remove(turnId),
+            ...orphanArtifacts,
+            ...artifacts,
+          ];
+          orphanArtifacts.clear();
+          final item = AIMessageItem(
+            text,
+            turnId: turnId,
+            artifacts: itemArtifacts,
+            timestamp: timestamp,
+          );
+          historyItems.add(item);
+          if (turnId != null && turnId.isNotEmpty) {
+            repliesByTurn[turnId] = item;
+          }
+        }
       }
+    }
+    for (final entry in bufferedArtifactsByTurn.entries) {
+      final artifacts = entry.value;
+      if (artifacts.isEmpty) continue;
+      historyItems
+          .add(AIMessageItem('', turnId: entry.key, artifacts: artifacts));
+    }
+    if (orphanArtifacts.isNotEmpty) {
+      historyItems.add(AIMessageItem('', artifacts: orphanArtifacts));
     }
     return historyItems;
   }
 
-  String _resolveDisplayImagePath(String filePath) {
-    if (filePath.startsWith('/')) {
-      return filePath;
+  List<ArtifactItem> _artifactItemsFromSessionMessage(
+    Map<String, dynamic> message, {
+    DateTime? timestamp,
+  }) {
+    final rawArtifacts = message['artifacts'];
+    if (rawArtifacts is! List) return const [];
+
+    final items = <ArtifactItem>[];
+    for (final raw in rawArtifacts) {
+      if (raw is! Map) continue;
+      final artifact = ChatArtifact.fromJson(Map<String, dynamic>.from(raw));
+      if (artifact == null) continue;
+      items.add(ArtifactItem(artifact, timestamp: timestamp));
     }
-    return FileSystemService.instance.toAbsolutePath(filePath);
+    return items;
   }
 
   bool get _hasInitialReferenceContext =>
@@ -840,7 +983,6 @@ class _AgentChatDialogState extends State<AgentChatDialog>
           timestamp: sentAt,
         ),
       );
-      _loadedHistoryMessageCount += 1;
       _isStreaming = true;
       _messageController.clear();
       if (images.isNotEmpty) {
@@ -1267,6 +1409,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
         _isStreaming = true;
         _isLoadingAgent = true;
         _nextResponseStartsNewMessage = true;
+        _discardPendingReplyArtifactsExcept(event.turnId);
         return;
       }
       if (event is ChatAgentStoppedEvent) {
@@ -1302,22 +1445,25 @@ class _AgentChatDialogState extends State<AgentChatDialog>
         } else if (event is ChatTraceStartedEvent) {
           _upsertTraceStart(processItem, event);
         } else if (event is ChatTraceCompletedEvent) {
-          final matchedTool = _completeTrace(processItem, event);
-          if (!event.isError) {
-            final artifact = ChatArtifact.fromToolMetadata(event.metadata);
-            if (artifact != null) {
-              _items.add(
-                ArtifactItem(
-                  artifact,
-                  html: artifact.type == ChatArtifact.typeHtmlCard
-                      ? _htmlFromToolArgs(matchedTool)
-                      : null,
-                ),
-              );
-            }
-          }
+          _completeTrace(processItem, event);
         }
         return; // Handled
+      }
+
+      if (event is ChatArtifactsEvent) {
+        if (event.artifacts.isEmpty) return;
+        _attachArtifactsToCurrentReply(
+          event.turnId,
+          event.artifacts
+              .map(
+                (artifact) => ArtifactItem(
+                  artifact,
+                  timestamp: DateTime.now(),
+                ),
+              )
+              .toList(),
+        );
+        return;
       }
 
       // Handle Response (Finish Progress)
@@ -1325,24 +1471,32 @@ class _AgentChatDialogState extends State<AgentChatDialog>
         final primary = _lastPrimaryItem();
         if (primary is ProcessItem) {
           primary.isFinished = true;
+          primary.needsAttention = false;
           primary.isExpanded = false; // Collapse when answer starts
         }
 
-        if (primary is AIMessageItem && !_nextResponseStartsNewMessage) {
-          primary.text += event.text;
-          primary.isStreaming = !event.isDone;
+        if (shouldAttachArtifactsToAssistantReply(
+              turnId: event.turnId,
+              primaryItem: primary,
+            ) &&
+            !_nextResponseStartsNewMessage) {
+          final reply = primary as AIMessageItem;
+          reply.text += event.text;
+          reply.isStreaming = !event.isDone;
         } else if (shouldCreateAIMessageForResponseChunk(
-          text: event.text,
-          isDone: event.isDone,
-        )) {
+              text: event.text,
+              isDone: event.isDone,
+            ) ||
+            _hasPendingReplyArtifacts(event.turnId)) {
           _items.add(
             AIMessageItem(
               event.text,
+              turnId: event.turnId,
               isStreaming: !event.isDone,
+              artifacts: _takePendingReplyArtifacts(event.turnId),
               timestamp: DateTime.now(),
             ),
           );
-          _loadedHistoryMessageCount += 1;
         }
         if (event.isDone) {
           _nextResponseStartsNewMessage = true;
@@ -1350,10 +1504,51 @@ class _AgentChatDialogState extends State<AgentChatDialog>
           _nextResponseStartsNewMessage = false;
         }
       } else if (event is ChatErrorEvent) {
+        final primary = _lastPrimaryItem();
+        if (primary is ProcessItem) {
+          primary.isFinished = true;
+          primary.needsAttention = true;
+          primary.isExpanded = false;
+        }
         _items.add(ErrorItem(event.error));
       }
     });
     _scrollToBottom();
+  }
+
+  void _attachArtifactsToCurrentReply(
+    String turnId,
+    List<ArtifactItem> artifacts,
+  ) {
+    if (artifacts.isEmpty) return;
+    final primary = _lastPrimaryItem();
+    if (shouldAttachArtifactsToAssistantReply(
+      turnId: turnId,
+      primaryItem: primary,
+    )) {
+      (primary as AIMessageItem).artifacts.addAll(artifacts);
+      return;
+    }
+    _pendingReplyArtifactsByTurn
+        .putIfAbsent(turnId, () => <ArtifactItem>[])
+        .addAll(artifacts);
+  }
+
+  bool _hasPendingReplyArtifacts(String turnId) {
+    return _pendingReplyArtifactsByTurn[turnId]?.isNotEmpty == true;
+  }
+
+  List<ArtifactItem> _takePendingReplyArtifacts(String turnId) {
+    final pending = _pendingReplyArtifactsByTurn.remove(turnId);
+    if (pending == null || pending.isEmpty) return const <ArtifactItem>[];
+    final artifacts = List<ArtifactItem>.from(pending);
+    return artifacts;
+  }
+
+  void _discardPendingReplyArtifactsExcept(String turnId) {
+    _pendingReplyArtifactsByTurn.removeWhere(
+      (pendingTurnId, _) => pendingTurnId != turnId,
+    );
   }
 
   /// Auxiliary items (artifacts, approval cards) interleave with the process
@@ -1378,20 +1573,6 @@ class _AgentChatDialogState extends State<AgentChatDialog>
     return processItem;
   }
 
-  String? _htmlFromToolArgs(ToolCallItem? tool) {
-    if (tool == null) return null;
-    try {
-      final decoded = jsonDecode(tool.args);
-      if (decoded is Map && decoded['html'] is String) {
-        final html = (decoded['html'] as String).trim();
-        return html.isEmpty ? null : html;
-      }
-    } catch (_) {
-      // Args are not guaranteed to be valid JSON.
-    }
-    return null;
-  }
-
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
@@ -1405,7 +1586,10 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   }
 
   bool get _showAgentThinkingRow {
-    return _isLoadingAgent;
+    return shouldShowSuperAgentThinkingRow(
+      isLoadingAgent: _isLoadingAgent,
+      primaryItem: _lastPrimaryItem(),
+    );
   }
 
   int _agentChatListItemCount() {
@@ -1628,7 +1812,6 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                             ),
                           ),
                         ),
-                        _buildTokenUsageDisplay(),
                         _buildContextIndicator(),
                         _buildInput(),
                       ],
@@ -2313,6 +2496,96 @@ class _AgentChatDialogState extends State<AgentChatDialog>
     );
   }
 
+  String _userMessageImageSource(String source) {
+    return superAgentUserMessageImageSourceForLocalDisplay(source);
+  }
+
+  Future<String?> _timelineCardArtifactImageSource(String source) {
+    return _timelineCardArtifactImageSourceFutures.putIfAbsent(
+      source,
+      () async {
+        final trimmed = source.trim();
+        if (trimmed.isEmpty) return null;
+        if (!trimmed.startsWith('fs://')) return trimmed;
+
+        final userId = await UserStorage.getUserId();
+        if (userId == null || userId.isEmpty) return null;
+
+        final converted = await FileSystemService.convertFsToLocalHttp(
+          trimmed,
+          userId,
+        );
+        if (converted.isEmpty || converted == trimmed) return null;
+        return converted;
+      },
+    );
+  }
+
+  Widget _buildTimelineCardArtifactImage({
+    required String source,
+    required double width,
+    required double height,
+    required BoxFit fit,
+    required Widget Function() fallbackBuilder,
+  }) {
+    return FutureBuilder<String?>(
+      future: _timelineCardArtifactImageSource(source),
+      builder: (context, snapshot) {
+        final resolvedSource = snapshot.data;
+        if (resolvedSource == null || resolvedSource.isEmpty) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return SizedBox(width: width, height: height);
+          }
+          return fallbackBuilder();
+        }
+
+        return LocalImage(
+          url: resolvedSource,
+          width: width,
+          height: height,
+          fit: fit,
+          errorBuilder: (_, __, ___) => fallbackBuilder(),
+        );
+      },
+    );
+  }
+
+  String _artifactSectionTitle(int count) {
+    return '${_agentChat.result} · $count';
+  }
+
+  Widget _buildAssistantArtifactSection(List<ArtifactItem> artifacts) {
+    final topPadding = artifacts.length == 1 ? 10.0 : 12.0;
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.of(context).size.width * 0.82,
+      ),
+      child: Padding(
+        padding: EdgeInsets.only(top: topPadding),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(left: 2, bottom: 2),
+              child: Text(
+                _artifactSectionTitle(artifacts.length),
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textTertiary,
+                  letterSpacing: 0,
+                ),
+              ),
+            ),
+            ...artifacts.map(
+              (artifact) => _buildArtifactItem(artifact, embedded: true),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildMessageImageGrid(List<String> imagePaths) {
     return Wrap(
       spacing: 8,
@@ -2321,7 +2594,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
         return ClipRRect(
           borderRadius: BorderRadius.circular(10),
           child: LocalImage(
-            url: imagePath,
+            url: _userMessageImageSource(imagePath),
             width: 88,
             height: 88,
             fit: BoxFit.cover,
@@ -2446,65 +2719,68 @@ class _AgentChatDialogState extends State<AgentChatDialog>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    constraints: BoxConstraints(
-                      maxWidth: MediaQuery.of(context).size.width * 0.75,
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(
-                        16,
-                      ).copyWith(topLeft: const Radius.circular(4)),
-                      border: Border.all(color: const Color(0xFFF7F8FA)),
-                    ),
-                    child: MarkdownBody(
-                      data: item.text,
-                      selectable: true,
-                      softLineBreak: true,
-                      styleSheet: MarkdownStyleSheet(
-                        p: const TextStyle(
-                          fontSize: 14,
-                          color: AppColors.textSecondary,
-                          height: 1.5,
-                        ),
-                        strong: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                        ),
-                        em: const TextStyle(fontStyle: FontStyle.italic),
-                        listBullet: const TextStyle(color: AppColors.primary),
-                        code: const TextStyle(
-                          fontSize: 13,
-                          color: AppColors.textPrimary,
-                          backgroundColor: Color(0xFFF7F8FA),
-                          fontFamily: 'monospace',
-                        ),
-                        codeblockDecoration: BoxDecoration(
-                          color: const Color(0xFFF7F8FA),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        blockquote: const TextStyle(
-                          color: AppColors.textSecondary,
-                          fontStyle: FontStyle.italic,
-                        ),
-                        blockquoteDecoration: BoxDecoration(
-                          color: const Color(0xFFF7F8FA),
-                          borderRadius: BorderRadius.circular(8),
-                          border: const Border(
-                            left: BorderSide(
-                              color: AppColors.primary,
-                              width: 3,
+                  if (item.text.trim().isNotEmpty)
+                    Container(
+                      constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width * 0.75,
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(
+                          16,
+                        ).copyWith(topLeft: const Radius.circular(4)),
+                        border: Border.all(color: const Color(0xFFF7F8FA)),
+                      ),
+                      child: MarkdownBody(
+                        data: item.text,
+                        selectable: true,
+                        softLineBreak: true,
+                        styleSheet: MarkdownStyleSheet(
+                          p: const TextStyle(
+                            fontSize: 14,
+                            color: AppColors.textSecondary,
+                            height: 1.5,
+                          ),
+                          strong: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                          em: const TextStyle(fontStyle: FontStyle.italic),
+                          listBullet: const TextStyle(color: AppColors.primary),
+                          code: const TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textPrimary,
+                            backgroundColor: Color(0xFFF7F8FA),
+                            fontFamily: 'monospace',
+                          ),
+                          codeblockDecoration: BoxDecoration(
+                            color: const Color(0xFFF7F8FA),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          blockquote: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontStyle: FontStyle.italic,
+                          ),
+                          blockquoteDecoration: BoxDecoration(
+                            color: const Color(0xFFF7F8FA),
+                            borderRadius: BorderRadius.circular(8),
+                            border: const Border(
+                              left: BorderSide(
+                                color: AppColors.primary,
+                                width: 3,
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  if (!item.isStreaming)
+                  if (item.artifacts.isNotEmpty)
+                    _buildAssistantArtifactSection(item.artifacts),
+                  if (!item.isStreaming && item.text.trim().isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(left: 2, top: 6),
                       child: _CopyMessageButton(
@@ -2548,6 +2824,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     InkWell(
+                      key: const ValueKey('agent_chat_process_toggle'),
                       borderRadius: BorderRadius.circular(18),
                       onTap: () {
                         setState(() {
@@ -2605,7 +2882,8 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                                 ),
                               ],
                             ),
-                            if (item.toolCalls.isNotEmpty) ...[
+                            if (item.toolCalls.isNotEmpty &&
+                                (!item.isFinished || item.isExpanded)) ...[
                               const SizedBox(height: 10),
                               _buildToolSummaryChips(item),
                             ],
@@ -2631,6 +2909,10 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                             ],
                             if (item.toolCalls.isNotEmpty)
                               _buildToolTraceList(item.toolCalls),
+                            if (_lastTokenUsage != null) ...[
+                              const SizedBox(height: 12),
+                              _buildTokenUsageDisplay(),
+                            ],
                           ],
                         ),
                       ),
@@ -2820,66 +3102,124 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   // --- Artifact previews ---
 
   String _artifactHeading(ChatArtifact artifact) {
-    switch (artifact.type) {
-      case ChatArtifact.typeRecord:
-        return _agentChat.recordSaved;
-      case ChatArtifact.typeHtmlCard:
+    switch (artifact.kind) {
+      case ChatArtifact.kindTimelineCard:
         return artifact.updated
             ? _agentChat.cardUpdated
             : _agentChat.cardCreated;
-      case ChatArtifact.typeCard:
-        return _agentChat.cardSaved;
-      case ChatArtifact.typeFile:
+      case ChatArtifact.kindKnowledgeFile:
+      case ChatArtifact.kindWorkspaceFile:
+      case ChatArtifact.kindUiTemplate:
         return artifact.updated
             ? _agentChat.documentUpdated
             : _agentChat.documentCreated;
-      case ChatArtifact.typeSystemAction:
-        return artifact.kind == 'calendar'
+      case ChatArtifact.kindSystemAction:
+        return artifact.systemActionKind == 'calendar'
             ? _agentChat.calendarEventCreated
             : _agentChat.reminderCreated;
-      case ChatArtifact.typeInsight:
+      case ChatArtifact.kindKnowledgeInsight:
         return _agentChat.insightSaved;
+      case ChatArtifact.kindSchedule:
+        return UserStorage.l10n.schedule;
       default:
         return _agentChat.done;
     }
   }
 
   IconData _artifactIcon(ChatArtifact artifact) {
-    switch (artifact.type) {
-      case ChatArtifact.typeRecord:
+    switch (artifact.kind) {
+      case ChatArtifact.kindTimelineCard:
         return Icons.bookmark_added_outlined;
-      case ChatArtifact.typeHtmlCard:
-      case ChatArtifact.typeCard:
-        return Icons.auto_awesome_mosaic_outlined;
-      case ChatArtifact.typeFile:
+      case ChatArtifact.kindKnowledgeFile:
+      case ChatArtifact.kindWorkspaceFile:
         return Icons.description_outlined;
-      case ChatArtifact.typeSystemAction:
+      case ChatArtifact.kindUiTemplate:
+        return Icons.auto_awesome_mosaic_outlined;
+      case ChatArtifact.kindSystemAction:
         return Icons.notifications_active_outlined;
-      case ChatArtifact.typeInsight:
+      case ChatArtifact.kindKnowledgeInsight:
         return Icons.insights_outlined;
+      case ChatArtifact.kindSchedule:
+        return Icons.calendar_month_outlined;
       default:
         return Icons.check_circle_outline;
     }
   }
 
   void _openArtifact(ChatArtifact artifact) {
-    final cardId = artifact.id;
-    if (cardId == null || cardId.isEmpty) return;
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => TimelineCardDetailScreen(cardId: cardId),
-      ),
-    );
+    switch (artifact.kind) {
+      case ChatArtifact.kindTimelineCard:
+        final cardId = artifact.timelineCardId;
+        if (cardId == null || cardId.isEmpty) return;
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => TimelineCardDetailScreen(cardId: cardId),
+          ),
+        );
+        return;
+      case ChatArtifact.kindKnowledgeInsight:
+        final insightId = artifact.knowledgeInsightId;
+        if (insightId == null || insightId.isEmpty) return;
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => InsightDetailPage(id: insightId)),
+        );
+        return;
+      case ChatArtifact.kindKnowledgeFile:
+        final path = artifact.knowledgeFilePath;
+        if (path == null || path.isEmpty) return;
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => KnowledgeFilePage(filePath: path),
+          ),
+        );
+        return;
+      case ChatArtifact.kindSchedule:
+        final openSchedule = widget.onOpenScheduleTab;
+        if (openSchedule != null) {
+          openSchedule();
+          unawaited(Navigator.of(context).maybePop());
+        } else {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const ScheduleAggregatorScreen()),
+          );
+        }
+        return;
+      default:
+        return;
+    }
   }
 
   bool _artifactIsTappable(ChatArtifact artifact) {
-    switch (artifact.type) {
-      case ChatArtifact.typeRecord:
-      case ChatArtifact.typeHtmlCard:
-      case ChatArtifact.typeCard:
-        return artifact.id != null && artifact.id!.isNotEmpty;
+    switch (artifact.kind) {
+      case ChatArtifact.kindTimelineCard:
+        return artifact.timelineCardId != null;
+      case ChatArtifact.kindKnowledgeInsight:
+        return artifact.knowledgeInsightId != null;
+      case ChatArtifact.kindKnowledgeFile:
+        return artifact.knowledgeFilePath != null;
+      case ChatArtifact.kindSchedule:
+        return true;
       default:
         return false;
+    }
+  }
+
+  Color _artifactAccentColor(ChatArtifact artifact) {
+    switch (artifact.kind) {
+      case ChatArtifact.kindKnowledgeInsight:
+        return const Color(0xFF7C3AED);
+      case ChatArtifact.kindKnowledgeFile:
+      case ChatArtifact.kindWorkspaceFile:
+      case ChatArtifact.kindUiTemplate:
+        return const Color(0xFF0F766E);
+      case ChatArtifact.kindSchedule:
+        return const Color(0xFFEA580C);
+      case ChatArtifact.kindSystemAction:
+        return const Color(0xFF2563EB);
+      case ChatArtifact.kindTimelineCard:
+        return AppColors.primary;
+      default:
+        return const Color(0xFF10B981);
     }
   }
 
@@ -2894,26 +3234,82 @@ class _AgentChatDialogState extends State<AgentChatDialog>
         i--) {
       final item = _items[i];
       if (item is ArtifactItem &&
-          item.artifact.type == ChatArtifact.typeHtmlCard &&
+          item.artifact.kind == ChatArtifact.kindTimelineCard &&
           item.html != null) {
         allowed.add(item);
+      } else if (item is AIMessageItem) {
+        for (var j = item.artifacts.length - 1;
+            j >= 0 && allowed.length < _maxLiveHtmlPreviews;
+            j--) {
+          final artifactItem = item.artifacts[j];
+          if (artifactItem.artifact.kind == ChatArtifact.kindTimelineCard &&
+              artifactItem.html != null) {
+            allowed.add(artifactItem);
+          }
+        }
       }
     }
     return allowed;
   }
 
-  Widget _buildArtifactItem(ArtifactItem item) {
+  Widget? _buildArtifactMediaSection(ChatArtifact artifact) {
+    switch (artifact.kind) {
+      case ChatArtifact.kindTimelineCard:
+        return _buildTimelineCardArtifactMedia(artifact);
+      default:
+        return null;
+    }
+  }
+
+  Widget? _buildTimelineCardArtifactMedia(ChatArtifact artifact) {
+    if (artifact.imagePaths.isEmpty) return null;
+
+    return SizedBox(
+      height: 64,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: artifact.imagePaths.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: _buildTimelineCardArtifactImage(
+              source: artifact.imagePaths[index],
+              width: 64,
+              height: 64,
+              fit: BoxFit.cover,
+              fallbackBuilder: () => Container(
+                width: 64,
+                height: 64,
+                color: const Color(0xFFF7F8FA),
+                child: const Icon(
+                  Icons.broken_image_outlined,
+                  size: 18,
+                  color: AppColors.textTertiary,
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildArtifactItem(ArtifactItem item, {bool embedded = false}) {
     final artifact = item.artifact;
     final tappable = _artifactIsTappable(artifact);
     final showHtmlPreview =
         item.html != null && _liveHtmlPreviewItems().contains(item);
+    final accentColor = _artifactAccentColor(artifact);
+    final artifactPath = artifact.workspacePath;
+    final artifactMedia = _buildArtifactMediaSection(artifact);
 
     final content = Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE6EAF2)),
+        border: Border.all(color: accentColor.withValues(alpha: 0.22)),
         boxShadow: const [
           BoxShadow(
             color: Color(0x0A0F172A),
@@ -2927,12 +3323,20 @@ class _AgentChatDialogState extends State<AgentChatDialog>
         children: [
           Row(
             children: [
-              Icon(
-                _artifactIcon(artifact),
-                size: 15,
-                color: AppColors.primary,
+              Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: accentColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  _artifactIcon(artifact),
+                  size: 15,
+                  color: accentColor,
+                ),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   _artifactHeading(artifact),
@@ -2944,10 +3348,28 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                 ),
               ),
               if (tappable)
-                const Icon(
-                  Icons.chevron_right_rounded,
-                  size: 18,
-                  color: AppColors.textTertiary,
+                Container(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        UserStorage.l10n.scheduleBriefingOpen,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: accentColor,
+                          height: 1,
+                        ),
+                      ),
+                      const SizedBox(width: 2),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        size: 18,
+                        color: accentColor,
+                      ),
+                    ],
+                  ),
                 ),
             ],
           ),
@@ -2965,10 +3387,10 @@ class _AgentChatDialogState extends State<AgentChatDialog>
               ),
             ),
           ],
-          if (artifact.path != null) ...[
+          if (artifactPath != null) ...[
             const SizedBox(height: 8),
             Text(
-              artifact.path!,
+              artifactPath,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
@@ -2979,10 +3401,10 @@ class _AgentChatDialogState extends State<AgentChatDialog>
               ),
             ),
           ],
-          if (artifact.snippet != null) ...[
+          if (artifact.summary != null) ...[
             const SizedBox(height: 6),
             Text(
-              artifact.snippet!,
+              artifact.summary!,
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
@@ -3021,39 +3443,9 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                   .toList(),
             ),
           ],
-          if (artifact.imagePaths.isNotEmpty) ...[
+          if (artifactMedia != null) ...[
             const SizedBox(height: 10),
-            SizedBox(
-              height: 64,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: artifact.imagePaths.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
-                itemBuilder: (context, index) {
-                  final path =
-                      _resolveDisplayImagePath(artifact.imagePaths[index]);
-                  return ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: LocalImage(
-                      url: path,
-                      width: 64,
-                      height: 64,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        width: 64,
-                        height: 64,
-                        color: const Color(0xFFF7F8FA),
-                        child: const Icon(
-                          Icons.broken_image_outlined,
-                          size: 18,
-                          color: AppColors.textTertiary,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
+            artifactMedia,
           ],
           if (showHtmlPreview) ...[
             const SizedBox(height: 10),
@@ -3079,20 +3471,27 @@ class _AgentChatDialogState extends State<AgentChatDialog>
       ),
     );
 
+    final wrapped = tappable
+        ? GestureDetector(
+            onTap: () => _openArtifact(artifact),
+            child: content,
+          )
+        : content;
+
+    if (embedded) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 10),
+        child: wrapped,
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(width: 32),
-          Expanded(
-            child: tappable
-                ? GestureDetector(
-                    onTap: () => _openArtifact(artifact),
-                    child: content,
-                  )
-                : content,
-          ),
+          Expanded(child: wrapped),
         ],
       ),
     );
@@ -3102,22 +3501,23 @@ class _AgentChatDialogState extends State<AgentChatDialog>
     if (_lastTokenUsage == null) return const SizedBox.shrink();
     final item = _lastTokenUsage!;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Center(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF7F8FA),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            formatSuperAgentTokenUsage(item),
-            style: const TextStyle(
-              fontSize: 10,
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w500,
-            ),
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        key: const ValueKey('agent_chat_token_usage_debug'),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF7F8FA),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: const Color(0xFFEFF2F6)),
+        ),
+        child: Text(
+          formatSuperAgentTokenUsage(item),
+          style: const TextStyle(
+            fontSize: 10,
+            color: AppColors.textTertiary,
+            fontWeight: FontWeight.w500,
+            letterSpacing: 0,
           ),
         ),
       ),
@@ -3125,11 +3525,12 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   }
 
   Widget _buildProcessStatusGlyph(ProcessItem item) {
-    final color = item.hasToolError
-        ? const Color(0xFFEF4444)
-        : item.hasRunningTool || !item.isFinished
-            ? AppColors.primary
-            : const Color(0xFF10B981);
+    final state = superAgentProcessVisualState(item);
+    final color = switch (state) {
+      SuperAgentProcessVisualState.running => AppColors.primary,
+      SuperAgentProcessVisualState.needsAttention => const Color(0xFFEF4444),
+      SuperAgentProcessVisualState.done => const Color(0xFF10B981),
+    };
     return Container(
       width: 28,
       height: 28,
@@ -3138,7 +3539,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
         shape: BoxShape.circle,
       ),
       child: Center(
-        child: item.hasRunningTool || !item.isFinished
+        child: state == SuperAgentProcessVisualState.running
             ? const SizedBox(
                 width: 13,
                 height: 13,
@@ -3148,7 +3549,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                 ),
               )
             : Icon(
-                item.hasToolError
+                state == SuperAgentProcessVisualState.needsAttention
                     ? Icons.error_outline_rounded
                     : Icons.check_rounded,
                 size: 16,
@@ -3159,16 +3560,17 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   }
 
   Widget _buildProcessStatePill(ProcessItem item) {
-    final label = item.hasToolError
-        ? _agentChat.issue
-        : item.hasRunningTool || !item.isFinished
-            ? _agentChat.running
-            : _agentChat.done;
-    final color = item.hasToolError
-        ? const Color(0xFFEF4444)
-        : item.hasRunningTool || !item.isFinished
-            ? AppColors.primary
-            : const Color(0xFF10B981);
+    final state = superAgentProcessVisualState(item);
+    final label = switch (state) {
+      SuperAgentProcessVisualState.running => _agentChat.running,
+      SuperAgentProcessVisualState.needsAttention => _agentChat.issue,
+      SuperAgentProcessVisualState.done => _agentChat.done,
+    };
+    final color = switch (state) {
+      SuperAgentProcessVisualState.running => AppColors.primary,
+      SuperAgentProcessVisualState.needsAttention => const Color(0xFFEF4444),
+      SuperAgentProcessVisualState.done => const Color(0xFF10B981),
+    };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -3189,15 +3591,16 @@ class _AgentChatDialogState extends State<AgentChatDialog>
 
   String _processTitle(ProcessItem item) {
     final toolCount = item.allTraceCalls.length;
+    final state = superAgentProcessVisualState(item);
+    if (state == SuperAgentProcessVisualState.needsAttention) {
+      return _agentChat.actionNeedsAttention;
+    }
     if (toolCount == 0) {
-      return item.isFinished
+      return state == SuperAgentProcessVisualState.done
           ? _agentChat.reasoningComplete
           : _agentChat.thinkingThroughRequest;
     }
-    if (item.hasToolError) {
-      return _agentChat.actionNeedsAttention;
-    }
-    if (item.hasRunningTool || !item.isFinished) {
+    if (state == SuperAgentProcessVisualState.running) {
       return _agentChat.workingThroughActions(toolCount);
     }
     return _agentChat.completedActions(toolCount);

@@ -1,7 +1,9 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:memex/data/model/chat_artifact.dart';
 import 'package:memex/data/repositories/chat.dart';
+import 'package:memex/data/services/chat_session_storage.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/local_asset_server.dart';
 import 'package:memex/utils/user_storage.dart';
@@ -115,6 +117,80 @@ void main() {
       expect(message['unix_seconds'], 333);
     });
 
+    test('migrates legacy artifacts in session detail and persists v2',
+        () async {
+      await _writeSession(
+        userId: userId,
+        sessionId: 'legacy-artifact-session',
+        data: {
+          'session_id': 'legacy-artifact-session',
+          'agent_name': 'memex_agent',
+          'title': 'Legacy Artifact Session',
+          'created_at': '2026-04-28T20:00:46.000',
+          'updated_at': '2026-04-28T20:05:00.000',
+          'messages': [
+            {
+              'role': 'ai',
+              'turn_id': 'turn-detail',
+              'content': [
+                {'type': 'text', 'text': 'done'},
+              ],
+              'timestamp': '2026-04-28T20:05:00.000',
+              'artifacts': [
+                {
+                  'type': 'file',
+                  'path': 'PKM/Projects/memex.md',
+                  'snippet': '# Memex',
+                  'updated': true,
+                },
+              ],
+            },
+          ],
+        },
+      );
+
+      final detail =
+          await fetchChatSessionDetailEndpoint('legacy-artifact-session');
+      final message =
+          (detail['messages'] as List<dynamic>).single as Map<String, dynamic>;
+      final artifactMap = Map<String, dynamic>.from(
+        (message['artifacts'] as List).single as Map,
+      );
+      final artifact = ChatArtifact.fromJson(artifactMap)!;
+
+      expect(artifact.kind, ChatArtifact.kindKnowledgeFile);
+      expect(artifact.workspacePath, 'PKM/Projects/memex.md');
+      expect(artifact.sourceRunId, 'turn-detail');
+
+      final storage = ChatSessionStorage.instance;
+      final persisted = await storage.loadSessionData(
+        userId,
+        'legacy-artifact-session',
+      );
+      expect(
+        persisted[ChatArtifactSessionMigration.schemaVersionKey],
+        ChatArtifact.schemaVersion,
+      );
+      final persistedArtifact =
+          (((persisted['messages'] as List).single as Map)['artifacts'] as List)
+              .single as Map;
+      expect(persistedArtifact.containsKey('type'), isFalse);
+      expect(
+        await File(storage.legacyYamlPath(
+          userId,
+          'legacy-artifact-session',
+        )).exists(),
+        isFalse,
+      );
+      expect(
+        await File(storage.messagesPath(
+          userId,
+          'legacy-artifact-session',
+        )).exists(),
+        isTrue,
+      );
+    });
+
     test('paginates session detail messages from newest backwards', () async {
       await _writeSession(
         userId: userId,
@@ -144,26 +220,27 @@ void main() {
       );
       final latestMessages = latest['messages'] as List<dynamic>;
 
-      expect(latest['message_count'], 5);
       expect(latest['has_more_messages'], isTrue);
+      expect(latest['older_cursor'], isNotNull);
       expect(_messageText(latestMessages[0]), 'message 4');
       expect(_messageText(latestMessages[1]), 'message 5');
 
       final older = await fetchChatSessionDetailEndpoint(
         'paged-session',
         messageLimit: 2,
-        messageOffset: 2,
+        messageBeforeCursor: latest['older_cursor'] as String?,
       );
       final olderMessages = older['messages'] as List<dynamic>;
 
       expect(older['has_more_messages'], isTrue);
+      expect(older['older_cursor'], isNotNull);
       expect(_messageText(olderMessages[0]), 'message 2');
       expect(_messageText(olderMessages[1]), 'message 3');
 
       final oldest = await fetchChatSessionDetailEndpoint(
         'paged-session',
         messageLimit: 2,
-        messageOffset: 4,
+        messageBeforeCursor: older['older_cursor'] as String?,
       );
       final oldestMessages = oldest['messages'] as List<dynamic>;
 

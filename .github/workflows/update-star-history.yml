@@ -1,0 +1,63 @@
+name: Update Star History
+
+on:
+  schedule:
+    # 03:17 Asia/Shanghai. Scheduled workflows run on the default branch.
+    - cron: "17 19 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-star-history
+  cancel-in-progress: true
+
+jobs:
+  update-star-history:
+    name: Generate and publish chart
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Test chart generator
+        run: python3 .github/scripts/test_generate_star_history.py
+
+      - name: Generate star history SVG
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python3 .github/scripts/generate_star_history.py \
+            --output /tmp/star-history.svg
+
+      - name: Publish to star-history branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if git ls-remote --exit-code origin refs/heads/star-history >/dev/null 2>&1; then
+            git fetch --depth=1 origin star-history
+            git switch --force-create star-history origin/star-history
+          else
+            git switch --orphan star-history
+          fi
+
+          cp /tmp/star-history.svg star-history.svg
+          touch .nojekyll
+          printf '%s\n' \
+            '# Memex Star History' \
+            '' \
+            'This branch is maintained automatically by the Update Star History workflow.' \
+            > README.md
+
+          git add .nojekyll README.md star-history.svg
+          if git diff --cached --quiet; then
+            echo "Star history is unchanged; nothing to publish."
+            exit 0
+          fi
+
+          git commit -m "chore: update star history [skip ci]"
+          git push origin HEAD:star-history

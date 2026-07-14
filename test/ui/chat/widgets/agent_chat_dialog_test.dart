@@ -1,14 +1,21 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:memex/data/model/chat_artifact.dart';
 import 'package:memex/data/model/chat_events.dart';
 import 'package:memex/data/services/demo_service.dart';
+import 'package:memex/data/services/file_system_service.dart';
+import 'package:memex/data/services/local_asset_server.dart';
 import 'package:memex/l10n/app_localizations.dart';
 import 'package:memex/ui/chat/widgets/agent_chat_dialog.dart';
 import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:memex/ui/core/widgets/local_image.dart';
+import 'package:memex/ui/knowledge/widgets/knowledge_file_page.dart';
 import 'package:memex/utils/user_storage.dart';
+import 'package:path/path.dart' as p;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -175,6 +182,63 @@ void main() {
       expect(text, isNot(contains('0.12345')));
     });
 
+    test('shows standalone thinking only before process or reply appears', () {
+      expect(
+        shouldShowSuperAgentThinkingRow(
+          isLoadingAgent: false,
+          primaryItem: UserMessageItem('hello'),
+        ),
+        isFalse,
+      );
+      expect(
+        shouldShowSuperAgentThinkingRow(
+          isLoadingAgent: true,
+          primaryItem: UserMessageItem('hello'),
+        ),
+        isTrue,
+      );
+      expect(
+        shouldShowSuperAgentThinkingRow(
+          isLoadingAgent: true,
+          primaryItem: ProcessItem(),
+        ),
+        isFalse,
+      );
+      expect(
+        shouldShowSuperAgentThinkingRow(
+          isLoadingAgent: true,
+          primaryItem: AIMessageItem('reply', isStreaming: true),
+        ),
+        isFalse,
+      );
+    });
+
+    test('uses final process state instead of historical tool errors', () {
+      final failedTool = ToolCallItem(
+        'read-1',
+        'read',
+        '{}',
+        result: 'temporary failure',
+        isError: true,
+      );
+      final completedProcess = ProcessItem(isFinished: true)
+        ..children.add(failedTool);
+      final attentionProcess = ProcessItem(
+        isFinished: true,
+        needsAttention: true,
+      )..children.add(failedTool);
+
+      expect(
+        superAgentProcessVisualState(completedProcess),
+        SuperAgentProcessVisualState.done,
+      );
+      expect(
+        superAgentProcessVisualState(attentionProcess),
+        SuperAgentProcessVisualState.needsAttention,
+      );
+      expect(completedProcess.hasToolError, isTrue);
+    });
+
     test('shows the photo suggestion status until suggestions resolve', () {
       expect(
         shouldShowSuperAgentPhotoSuggestionStatus(
@@ -318,6 +382,41 @@ void main() {
       expect(
         superAgentDemoPublishTargetKey(DemoStep.tapSend),
         same(DemoService.instance.sendButtonKey),
+      );
+    });
+
+    test('keeps artifacts attached to the assistant reply item', () {
+      final artifact = ArtifactItem(
+        ChatArtifact.schedule(title: 'Schedule presentation', updated: true),
+      );
+      final reply =
+          AIMessageItem('Done', turnId: 'turn-1', artifacts: [artifact]);
+
+      expect(reply.artifacts, [artifact]);
+      expect(reply.artifacts.single.artifact.title, 'Schedule presentation');
+    });
+
+    test('attaches pending artifacts only to the same assistant turn', () {
+      expect(
+        shouldAttachArtifactsToAssistantReply(
+          turnId: 'turn-1',
+          primaryItem: AIMessageItem('Done', turnId: 'turn-1'),
+        ),
+        isTrue,
+      );
+      expect(
+        shouldAttachArtifactsToAssistantReply(
+          turnId: 'turn-2',
+          primaryItem: AIMessageItem('Done', turnId: 'turn-1'),
+        ),
+        isFalse,
+      );
+      expect(
+        shouldAttachArtifactsToAssistantReply(
+          turnId: 'turn-1',
+          primaryItem: UserMessageItem('next request'),
+        ),
+        isFalse,
       );
     });
 
@@ -470,6 +569,101 @@ void main() {
       expect(find.byType(LocalImage), findsOneWidget);
     });
 
+    testWidgets('keeps process thinking and token usage inside details', (
+      tester,
+    ) async {
+      final usage = ChatTokenUsageEvent(
+        promptTokens: 100,
+        completionTokens: 25,
+        cachedTokens: 40,
+        totalTokens: 125,
+        estimatedCost: 0.0,
+        effectivePromptTokens: 100,
+        cachedTokensForRate: 40,
+      );
+      final process = ProcessItem()
+        ..children.add(ThinkingItem('Inspecting the plan'));
+
+      await _pumpDialogFrame(
+        tester,
+        dialog: AgentChatDialog(
+          initialItems: [process],
+          initialIsLoadingAgent: true,
+          initialTokenUsage: usage,
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 600));
+
+      final tokenText = formatSuperAgentTokenUsage(usage);
+      expect(find.text(UserStorage.l10n.agentChat.thinking), findsNothing);
+      expect(find.text('Inspecting the plan'), findsNothing);
+      expect(find.text(tokenText), findsNothing);
+
+      await tester.tap(find.byKey(const ValueKey('agent_chat_process_toggle')));
+      await tester.pump();
+
+      expect(find.text(UserStorage.l10n.agentChat.thinking), findsOneWidget);
+      expect(find.text('Inspecting the plan'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('agent_chat_token_usage_debug')),
+        findsOneWidget,
+      );
+      expect(find.text(tokenText), findsOneWidget);
+    });
+
+    testWidgets('shows completed process despite intermediate tool errors', (
+      tester,
+    ) async {
+      final failedTool = ToolCallItem(
+        'read-1',
+        'read',
+        '{}',
+        result: 'temporary failure',
+        isError: true,
+      );
+      final process = ProcessItem(isFinished: true)..children.add(failedTool);
+
+      await _pumpDialogFrame(
+        tester,
+        dialog: AgentChatDialog(initialItems: [process]),
+      );
+      await tester.pump(const Duration(milliseconds: 600));
+
+      expect(
+        find.text(UserStorage.l10n.agentChat.completedActions(1)),
+        findsOneWidget,
+      );
+      expect(find.text(UserStorage.l10n.agentChat.actionNeedsAttention),
+          findsNothing);
+      expect(find.text(UserStorage.l10n.agentChat.issue), findsNothing);
+    });
+
+    test('resolves persisted user image paths as local files', () async {
+      final tempDir = Directory.systemTemp.createTempSync(
+        'memex_user_message_image_',
+      );
+      try {
+        await FileSystemService.init(tempDir.path);
+        const relativePath = 'workspace/_alice/Facts/assets/photo.jpg';
+
+        expect(
+          superAgentUserMessageImageSourceForLocalDisplay(relativePath),
+          p.join(tempDir.path, relativePath),
+        );
+        expect(
+          superAgentUserMessageImageSourceForLocalDisplay(
+            'https://example.com/photo.jpg',
+          ),
+          'https://example.com/photo.jpg',
+        );
+      } finally {
+        await LocalAssetServer.stopServer();
+        if (tempDir.existsSync()) {
+          tempDir.deleteSync(recursive: true);
+        }
+      }
+    });
+
     testWidgets(
       'keeps header actions inside the compact header on narrow screens',
       (tester) async {
@@ -507,6 +701,91 @@ void main() {
         findsOneWidget,
       );
       expect(find.text(UserStorage.l10n.sendLabel), findsOneWidget);
+    });
+
+    testWidgets('renders a completed artifact card and opens schedule tab', (
+      tester,
+    ) async {
+      var openedSchedule = false;
+
+      await _pumpDialog(
+        tester,
+        dialog: AgentChatDialog(
+          initialItems: [
+            AIMessageItem(
+              'I updated your schedule.',
+              artifacts: [
+                ArtifactItem(
+                  ChatArtifact.schedule(
+                    title: 'Schedule presentation',
+                    summary: 'Pending schedule items: 3',
+                    updated: true,
+                  ),
+                ),
+              ],
+            ),
+          ],
+          onOpenScheduleTab: () => openedSchedule = true,
+        ),
+      );
+
+      expect(find.text('I updated your schedule.'), findsOneWidget);
+      expect(find.text('${UserStorage.l10n.agentChat.result} · 1'),
+          findsOneWidget);
+      expect(find.text(UserStorage.l10n.schedule), findsOneWidget);
+      expect(find.text('Schedule presentation'), findsOneWidget);
+      expect(find.text('Pending schedule items: 3'), findsOneWidget);
+      expect(find.text(UserStorage.l10n.scheduleBriefingOpen), findsOneWidget);
+
+      await tester.tap(find.text(UserStorage.l10n.scheduleBriefingOpen));
+      await tester.pump();
+
+      expect(openedSchedule, isTrue);
+    });
+
+    testWidgets('opens knowledge file artifacts with normalized PKM path', (
+      tester,
+    ) async {
+      await _pumpDialog(
+        tester,
+        dialog: AgentChatDialog(
+          initialItems: [
+            AIMessageItem(
+              'I updated the knowledge file.',
+              artifacts: [
+                ArtifactItem(
+                  ChatArtifact.knowledgeFile(
+                    path: 'PKM/Projects/memex.md',
+                    title: 'memex.md',
+                    summary: '# Memex',
+                    updated: true,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+
+      expect(find.text('I updated the knowledge file.'), findsOneWidget);
+      expect(find.text('${UserStorage.l10n.agentChat.result} · 1'),
+          findsOneWidget);
+      expect(
+        find.text(UserStorage.l10n.agentChat.documentUpdated),
+        findsOneWidget,
+      );
+      expect(find.text('memex.md'), findsOneWidget);
+      expect(find.text('PKM/Projects/memex.md'), findsOneWidget);
+      expect(find.text(UserStorage.l10n.scheduleBriefingOpen), findsOneWidget);
+
+      await tester.tap(find.text(UserStorage.l10n.scheduleBriefingOpen));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      final page = tester.widget<KnowledgeFilePage>(
+        find.byType(KnowledgeFilePage),
+      );
+      expect(page.filePath, 'Projects/memex.md');
     });
 
     testWidgets('keeps super agent header actions tight to the right edge', (
@@ -555,8 +834,13 @@ void main() {
 Future<void> _pumpDialog(
   WidgetTester tester, {
   Size viewportSize = const Size(390, 800),
+  Widget dialog = const AgentChatDialog(),
 }) async {
-  await _pumpDialogFrame(tester, viewportSize: viewportSize);
+  await _pumpDialogFrame(
+    tester,
+    viewportSize: viewportSize,
+    dialog: dialog,
+  );
   await tester.pumpAndSettle();
 }
 
