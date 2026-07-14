@@ -62,8 +62,7 @@ void main() {
     );
   });
 
-  test('keeps the cached id when targeted validation temporarily fails',
-      () async {
+  test('does not open an unverified cached id when validation fails', () async {
     await UserStorage.setLatestSuperAgentHomeSessionId('cached-session');
 
     var scannedSessions = false;
@@ -75,8 +74,28 @@ void main() {
       },
     );
 
-    expect(sessionId, 'cached-session');
-    expect(scannedSessions, isFalse);
+    expect(sessionId, isNull);
+    expect(scannedSessions, isTrue);
+    expect(
+      await UserStorage.getLatestSuperAgentHomeSessionId(),
+      'cached-session',
+    );
+  });
+
+  test('keeps a missing cached id available for a later iCloud retry',
+      () async {
+    await UserStorage.setLatestSuperAgentHomeSessionId('late-session');
+
+    final sessionId = await latestSuperAgentSessionId(
+      sessionExists: (_) async => const Ok(false),
+      fetchSessions: () async => const Ok([]),
+    );
+
+    expect(sessionId, isNull);
+    expect(
+      await UserStorage.getLatestSuperAgentHomeSessionId(),
+      'late-session',
+    );
   });
 
   test('restores a legacy assistant session after app preferences are lost',

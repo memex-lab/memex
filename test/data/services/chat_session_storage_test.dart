@@ -6,6 +6,7 @@ import 'package:memex/data/model/chat_artifact.dart';
 import 'package:memex/data/services/chat_session_storage.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/local_asset_server.dart';
+import 'package:memex/data/services/migration_state_service.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -96,6 +97,87 @@ void main() {
         Map<String, dynamic>.from((message['artifacts'] as List).single as Map),
       );
       expect(artifact?.kind, ChatArtifact.kindTimelineCard);
+    });
+
+    test('recovers a legacy session after the migration marker was completed',
+        () async {
+      const sessionId = 'memex_agent_late_legacy_session';
+      final storage = ChatSessionStorage.instance;
+
+      await MigrationStateService.instance.markCompleted(
+        userId,
+        ChatSessionStorage.storageMigrationKey,
+      );
+      await storage.ensureMigrated(userId);
+
+      // Models an iCloud YAML file becoming visible after the initial scan.
+      await _writeLegacyYaml(
+        userId: userId,
+        sessionId: sessionId,
+        data: {
+          'session_id': sessionId,
+          'agent_name': 'memex_agent',
+          'scene': 'assistant',
+          'title': 'Late legacy session',
+          'created_at': '2026-06-22T12:00:00.000',
+          'updated_at': '2026-06-22T12:01:00.000',
+          'messages': [
+            {
+              'role': 'user',
+              'content': [
+                {'type': 'text', 'text': 'still here'},
+              ],
+              'timestamp': '2026-06-22T12:00:00.000',
+            },
+          ],
+        },
+      );
+
+      expect(await storage.sessionExists(userId, sessionId), isTrue);
+      expect(
+        await File(storage.metadataPath(userId, sessionId)).exists(),
+        isTrue,
+      );
+      expect(
+        await File(storage.legacyYamlPath(userId, sessionId)).exists(),
+        isFalse,
+      );
+      expect(
+        _messageText((await storage.loadMessages(userId, sessionId)).single),
+        'still here',
+      );
+    });
+
+    test('session listing rescans legacy YAML after migration completion',
+        () async {
+      const sessionId = 'memex_agent_late_listed_session';
+      final storage = ChatSessionStorage.instance;
+
+      await MigrationStateService.instance.markCompleted(
+        userId,
+        ChatSessionStorage.storageMigrationKey,
+      );
+      await storage.ensureMigrated(userId);
+      await _writeLegacyYaml(
+        userId: userId,
+        sessionId: sessionId,
+        data: {
+          'session_id': sessionId,
+          'agent_name': 'memex_agent',
+          'scene': 'assistant',
+          'title': 'Late listed session',
+          'created_at': '2026-06-22T12:00:00.000',
+          'updated_at': '2026-06-22T12:01:00.000',
+          'messages': const [],
+        },
+      );
+
+      final sessions = await storage.listSessionMetadata(userId);
+
+      expect(
+        sessions.map((session) => session['session_id']),
+        contains(sessionId),
+      );
     });
 
     test('appends messages to JSONL and updates metadata only', () async {

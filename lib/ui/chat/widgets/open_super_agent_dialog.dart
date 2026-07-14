@@ -63,16 +63,14 @@ Future<String?> latestSuperAgentSessionId({
           MemexRouter().chatSessionExists(cachedSessionId));
       final cacheStatus = existsResult.when<bool?>(
         onOk: (exists) => exists,
-        // A transient path check error is not evidence that the cached session
-        // is stale. Keep the pointer and let ChatService validate before writes.
+        // Fall back to metadata discovery when the targeted path check is
+        // inconclusive. Do not open an unverified session.
         onError: (_, __) => null,
       );
-      if (cacheStatus == true || cacheStatus == null) {
+      if (cacheStatus == true) {
         return cachedSessionId;
       }
-    } catch (_) {
-      return cachedSessionId;
-    }
+    } catch (_) {}
   }
 
   try {
@@ -83,12 +81,14 @@ Future<String?> latestSuperAgentSessionId({
         cachedSessionId: cachedSessionId,
         sessions: sessions,
       ),
-      // A transient storage error should not discard a potentially valid
-      // pointer. ChatService validates it again before writing a new turn.
-      onError: (_, __) => cachedSessionId,
+      onError: (_, __) => null,
     );
     if (sessionId == null || sessionId.isEmpty) {
-      await UserStorage.clearLatestSuperAgentHomeSessionId();
+      // A missing iCloud file may become available later. Keep an existing
+      // pointer for the next recovery attempt, but do not open it unverified.
+      if (cachedSessionId == null) {
+        await UserStorage.clearLatestSuperAgentHomeSessionId();
+      }
       return null;
     }
     await UserStorage.setLatestSuperAgentHomeSessionId(sessionId);
