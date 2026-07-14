@@ -23,23 +23,26 @@ void main() {
   test('returns cached latest Super Agent home session id', () async {
     await UserStorage.setLatestSuperAgentHomeSessionId('cached-session');
 
+    var scannedSessions = false;
+
     await expectLater(
       latestSuperAgentSessionId(
-        fetchSessions: () async => const Ok([
-          {
-            'session_id': 'cached-session',
-            'scene': 'super_agent_home',
-          },
-        ]),
+        sessionExists: (_) async => const Ok(true),
+        fetchSessions: () async {
+          scannedSessions = true;
+          return const Ok([]);
+        },
       ),
       completion('cached-session'),
     );
+    expect(scannedSessions, isFalse);
   });
 
   test('replaces a stale cached id with the latest home session', () async {
     await UserStorage.setLatestSuperAgentHomeSessionId('missing-session');
 
     final sessionId = await latestSuperAgentSessionId(
+      sessionExists: (_) async => const Ok(false),
       fetchSessions: () async => const Ok([
         {
           'session_id': 'timeline-detail',
@@ -57,6 +60,23 @@ void main() {
       await UserStorage.getLatestSuperAgentHomeSessionId(),
       'restored-home',
     );
+  });
+
+  test('keeps the cached id when targeted validation temporarily fails',
+      () async {
+    await UserStorage.setLatestSuperAgentHomeSessionId('cached-session');
+
+    var scannedSessions = false;
+    final sessionId = await latestSuperAgentSessionId(
+      sessionExists: (_) async => Error(Exception('temporary failure')),
+      fetchSessions: () async {
+        scannedSessions = true;
+        return const Ok([]);
+      },
+    );
+
+    expect(sessionId, 'cached-session');
+    expect(scannedSessions, isFalse);
   });
 
   test('restores a legacy assistant session after app preferences are lost',

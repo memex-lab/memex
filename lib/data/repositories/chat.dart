@@ -81,6 +81,18 @@ Future<List<Map<String, dynamic>>> fetchChatSessionsEndpoint({
   }
 }
 
+/// Check one chat session path without scanning or reading session content.
+Future<bool> chatSessionExistsEndpoint(String sessionId) async {
+  final userId = await UserStorage.getUserId();
+  if (userId == null) {
+    throw ApiException('User not logged in, cannot check session');
+  }
+  if (sessionId.isEmpty) {
+    throw ApiException('Session ID cannot be empty');
+  }
+  return _chatStorage.sessionExists(userId, sessionId);
+}
+
 /// Get session detail
 ///
 /// Args:

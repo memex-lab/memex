@@ -280,6 +280,24 @@ void main() {
       expect(sessions.single['updated_at_local'], contains('2026-04-28'));
       expect(sessions.single['last_message_preview'], 'preview text');
     });
+
+    test('checks one session path without loading session content', () async {
+      await ChatSessionStorage.instance.createSession(
+        userId: userId,
+        sessionId: 'exists-session',
+        metadata: {
+          'session_id': 'exists-session',
+          'agent_name': 'memex_agent',
+          'scene': 'super_agent_home',
+          'title': 'Exists session',
+          'created_at': '2026-04-28T20:00:46.000',
+          'updated_at': '2026-04-28T20:05:00.000',
+        },
+      );
+
+      expect(await chatSessionExistsEndpoint('exists-session'), isTrue);
+      expect(await chatSessionExistsEndpoint('missing-session'), isFalse);
+    });
   });
 }
 

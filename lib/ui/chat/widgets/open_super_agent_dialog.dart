@@ -7,26 +7,29 @@ import 'package:memex/utils/user_storage.dart';
 
 typedef SuperAgentSessionFetcher = Future<Result<List<Map<String, dynamic>>>>
     Function();
+typedef SuperAgentSessionExistsChecker = Future<Result<bool>> Function(
+  String sessionId,
+);
+
+bool _isHomeCompatible(Map<String, dynamic> session) {
+  final scene = session['scene']?.toString().trim();
+  return scene == null ||
+      scene.isEmpty ||
+      scene == 'assistant' ||
+      scene == 'super_agent_home';
+}
 
 @visibleForTesting
 String? resolveLatestSuperAgentSessionId({
   required String? cachedSessionId,
   required List<Map<String, dynamic>> sessions,
 }) {
-  bool isHomeCompatible(Map<String, dynamic> session) {
-    final scene = session['scene']?.toString().trim();
-    return scene == null ||
-        scene.isEmpty ||
-        scene == 'assistant' ||
-        scene == 'super_agent_home';
-  }
-
   final normalizedCachedSessionId = cachedSessionId?.trim();
   if (normalizedCachedSessionId != null &&
       normalizedCachedSessionId.isNotEmpty) {
     for (final session in sessions) {
       if (session['session_id']?.toString() == normalizedCachedSessionId &&
-          isHomeCompatible(session)) {
+          _isHomeCompatible(session)) {
         return normalizedCachedSessionId;
       }
     }
@@ -41,7 +44,7 @@ String? resolveLatestSuperAgentSessionId({
   // Sessions created before the unified Super Agent entry used the default
   // assistant scene. They remain valid home conversations after reinstall.
   for (final session in sessions) {
-    if (isHomeCompatible(session)) {
+    if (_isHomeCompatible(session)) {
       return session['session_id']?.toString();
     }
   }
@@ -50,8 +53,27 @@ String? resolveLatestSuperAgentSessionId({
 
 Future<String?> latestSuperAgentSessionId({
   SuperAgentSessionFetcher? fetchSessions,
+  SuperAgentSessionExistsChecker? sessionExists,
 }) async {
   final cachedSessionId = await UserStorage.getLatestSuperAgentHomeSessionId();
+
+  if (cachedSessionId != null) {
+    try {
+      final existsResult = await (sessionExists?.call(cachedSessionId) ??
+          MemexRouter().chatSessionExists(cachedSessionId));
+      final cacheStatus = existsResult.when<bool?>(
+        onOk: (exists) => exists,
+        // A transient path check error is not evidence that the cached session
+        // is stale. Keep the pointer and let ChatService validate before writes.
+        onError: (_, __) => null,
+      );
+      if (cacheStatus == true || cacheStatus == null) {
+        return cachedSessionId;
+      }
+    } catch (_) {
+      return cachedSessionId;
+    }
+  }
 
   try {
     final result = await (fetchSessions?.call() ??
