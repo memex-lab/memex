@@ -1027,6 +1027,16 @@ class MemexRouter {
     });
   }
 
+  Future<Result<bool>> chatSessionExists(String sessionId) {
+    return runResult(() async {
+      await _ensureInitialized();
+      _logger.info(
+        'LocalMode: chatSessionExists called: sessionId=$sessionId',
+      );
+      return chat_endpoint.chatSessionExistsEndpoint(sessionId);
+    });
+  }
+
   Future<Map<String, dynamic>> fetchChatSessionDetail(
     String sessionId, {
     int? messageLimit,
