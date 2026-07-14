@@ -202,7 +202,7 @@ SuperAgentProcessVisualState superAgentProcessVisualState(ProcessItem item) {
 }
 
 const double _agentChatSheetHeightFactor = 0.75;
-const int _agentChatHistoryTurnPageSize = 4;
+const int _agentChatHistoryTurnPageSize = 20;
 const Duration _agentChatKeyboardShowAnimationDuration =
     Duration(milliseconds: 220);
 const Duration _agentChatKeyboardHideAnimationDuration = Duration.zero;
@@ -251,6 +251,18 @@ bool shouldCreateAIMessageForResponseChunk({
   required bool isDone,
 }) {
   return !(isDone && text.isEmpty);
+}
+
+@visibleForTesting
+bool shouldRequestOlderSuperAgentHistory({
+  required bool hasMoreHistory,
+  required bool isLoading,
+  required double pixels,
+  required double maxScrollExtent,
+}) {
+  if (!hasMoreHistory || isLoading) return false;
+  if (maxScrollExtent <= 0) return true;
+  return pixels >= maxScrollExtent * 0.8;
 }
 
 @visibleForTesting
@@ -578,13 +590,31 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   // --- Logic ---
 
   void _handleHistoryScroll() {
-    if (!_hasMoreHistory || _isLoadingMoreHistory || _isLoading) return;
     if (!_scrollController.hasClients) return;
     final position = _scrollController.position;
-    if (position.maxScrollExtent <= 0) return;
-    if (position.pixels >= position.maxScrollExtent * 0.8) {
+    if (shouldRequestOlderSuperAgentHistory(
+      hasMoreHistory: _hasMoreHistory,
+      isLoading: _isLoadingMoreHistory || _isLoading,
+      pixels: position.pixels,
+      maxScrollExtent: position.maxScrollExtent,
+    )) {
       unawaited(_loadMoreSessionHistory());
     }
+  }
+
+  void _loadMoreIfHistoryDoesNotFillViewport() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      final position = _scrollController.position;
+      if (shouldRequestOlderSuperAgentHistory(
+        hasMoreHistory: _hasMoreHistory,
+        isLoading: _isLoadingMoreHistory || _isLoading,
+        pixels: 0,
+        maxScrollExtent: position.maxScrollExtent,
+      )) {
+        unawaited(_loadMoreSessionHistory());
+      }
+    });
   }
 
   Future<void> _loadSessionHistory() async {
@@ -628,6 +658,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
         _isLoading = false;
       });
       _scrollToBottom();
+      _loadMoreIfHistoryDoesNotFillViewport();
     } catch (e) {
       _logger.severe('Error loading history', e);
       unawaited(_clearLatestSuperAgentHomeSessionIdIfCurrent());
@@ -668,6 +699,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted || sessionId != _currentSessionId) return;
         setState(() => _isLoadingMoreHistory = false);
+        _loadMoreIfHistoryDoesNotFillViewport();
       });
     } catch (e, st) {
       _logger.warning('Failed to load older chat history: $e', e, st);

@@ -106,6 +106,46 @@ void main() {
       );
     });
 
+    test('requests older history near the top or when content is too short',
+        () {
+      expect(
+        shouldRequestOlderSuperAgentHistory(
+          hasMoreHistory: true,
+          isLoading: false,
+          pixels: 0,
+          maxScrollExtent: 0,
+        ),
+        isTrue,
+      );
+      expect(
+        shouldRequestOlderSuperAgentHistory(
+          hasMoreHistory: true,
+          isLoading: false,
+          pixels: 80,
+          maxScrollExtent: 100,
+        ),
+        isTrue,
+      );
+      expect(
+        shouldRequestOlderSuperAgentHistory(
+          hasMoreHistory: true,
+          isLoading: false,
+          pixels: 60,
+          maxScrollExtent: 100,
+        ),
+        isFalse,
+      );
+      expect(
+        shouldRequestOlderSuperAgentHistory(
+          hasMoreHistory: true,
+          isLoading: true,
+          pixels: 100,
+          maxScrollExtent: 100,
+        ),
+        isFalse,
+      );
+    });
+
     test('snaps down when the keyboard inset shrinks', () {
       expect(
         resolveSuperAgentKeyboardInsetAnimationDuration(
