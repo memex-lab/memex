@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -273,6 +274,43 @@ void main() {
         expect(payload['session_id'], queuedSessionId);
         expect(payload['agent_state_session_id'], activeStateId);
         expect(foregroundSnapshot.activeTaskIds, contains(task.id));
+      } finally {
+        await subscription.cancel();
+      }
+    });
+
+    test('replaces a missing session id and persists the new turn', () async {
+      const missingSessionId = 'memex_agent_missing_session';
+      final createdSession = Completer<String>();
+      final subscription = ChatService.instance
+          .sendMessage(
+        'recover this turn',
+        sessionId: missingSessionId,
+        agentName: 'memex_agent',
+        scene: 'super_agent_home',
+      )
+          .listen((event) {
+        if (event is ChatSessionCreatedEvent && !createdSession.isCompleted) {
+          createdSession.complete(event.sessionId);
+        }
+      });
+
+      try {
+        final newSessionId = await createdSession.future.timeout(
+          const Duration(seconds: 3),
+        );
+        expect(newSessionId, isNot(missingSessionId));
+
+        await _waitForQueuedChatTask(db, newSessionId);
+        final sessionData = await _readSession(userId, newSessionId);
+        final messages = sessionData['messages'] as List<dynamic>;
+
+        expect(messages, hasLength(1));
+        expect(messages.single['role'], 'user');
+        expect(
+          messages.single['content'].single['text'],
+          'recover this turn',
+        );
       } finally {
         await subscription.cancel();
       }

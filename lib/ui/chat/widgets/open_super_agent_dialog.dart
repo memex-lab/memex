@@ -5,25 +5,65 @@ import 'package:memex/ui/chat/widgets/agent_chat_dialog.dart';
 import 'package:memex/utils/result.dart';
 import 'package:memex/utils/user_storage.dart';
 
-Future<String?> latestSuperAgentSessionId() async {
+typedef SuperAgentSessionFetcher = Future<Result<List<Map<String, dynamic>>>>
+    Function();
+
+@visibleForTesting
+String? resolveLatestSuperAgentSessionId({
+  required String? cachedSessionId,
+  required List<Map<String, dynamic>> sessions,
+}) {
+  bool isHomeCompatible(Map<String, dynamic> session) {
+    final scene = session['scene']?.toString().trim();
+    return scene == null ||
+        scene.isEmpty ||
+        scene == 'assistant' ||
+        scene == 'super_agent_home';
+  }
+
+  final normalizedCachedSessionId = cachedSessionId?.trim();
+  if (normalizedCachedSessionId != null &&
+      normalizedCachedSessionId.isNotEmpty) {
+    for (final session in sessions) {
+      if (session['session_id']?.toString() == normalizedCachedSessionId &&
+          isHomeCompatible(session)) {
+        return normalizedCachedSessionId;
+      }
+    }
+  }
+
+  for (final session in sessions) {
+    if (session['scene'] == 'super_agent_home') {
+      return session['session_id']?.toString();
+    }
+  }
+
+  // Sessions created before the unified Super Agent entry used the default
+  // assistant scene. They remain valid home conversations after reinstall.
+  for (final session in sessions) {
+    if (isHomeCompatible(session)) {
+      return session['session_id']?.toString();
+    }
+  }
+  return null;
+}
+
+Future<String?> latestSuperAgentSessionId({
+  SuperAgentSessionFetcher? fetchSessions,
+}) async {
   final cachedSessionId = await UserStorage.getLatestSuperAgentHomeSessionId();
-  if (cachedSessionId != null) return cachedSessionId;
 
   try {
-    final result = await MemexRouter().fetchChatSessions(
-      agentName: 'memex_agent',
-      limit: 30,
-    );
+    final result = await (fetchSessions?.call() ??
+        MemexRouter().fetchChatSessions(agentName: 'memex_agent'));
     final sessionId = result.when(
-      onOk: (sessions) {
-        for (final session in sessions) {
-          if (session['scene'] == 'super_agent_home') {
-            return session['session_id']?.toString();
-          }
-        }
-        return null;
-      },
-      onError: (_, __) => null,
+      onOk: (sessions) => resolveLatestSuperAgentSessionId(
+        cachedSessionId: cachedSessionId,
+        sessions: sessions,
+      ),
+      // A transient storage error should not discard a potentially valid
+      // pointer. ChatService validates it again before writing a new turn.
+      onError: (_, __) => cachedSessionId,
     );
     if (sessionId == null || sessionId.isEmpty) {
       await UserStorage.clearLatestSuperAgentHomeSessionId();

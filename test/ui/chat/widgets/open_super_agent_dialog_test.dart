@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:memex/l10n/app_localizations.dart';
 import 'package:memex/ui/chat/widgets/agent_chat_dialog.dart';
 import 'package:memex/ui/chat/widgets/open_super_agent_dialog.dart';
+import 'package:memex/utils/result.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -23,7 +24,57 @@ void main() {
     await UserStorage.setLatestSuperAgentHomeSessionId('cached-session');
 
     await expectLater(
-        latestSuperAgentSessionId(), completion('cached-session'));
+      latestSuperAgentSessionId(
+        fetchSessions: () async => const Ok([
+          {
+            'session_id': 'cached-session',
+            'scene': 'super_agent_home',
+          },
+        ]),
+      ),
+      completion('cached-session'),
+    );
+  });
+
+  test('replaces a stale cached id with the latest home session', () async {
+    await UserStorage.setLatestSuperAgentHomeSessionId('missing-session');
+
+    final sessionId = await latestSuperAgentSessionId(
+      fetchSessions: () async => const Ok([
+        {
+          'session_id': 'timeline-detail',
+          'scene': 'assistant_timeline_card_detail',
+        },
+        {
+          'session_id': 'restored-home',
+          'scene': 'super_agent_home',
+        },
+      ]),
+    );
+
+    expect(sessionId, 'restored-home');
+    expect(
+      await UserStorage.getLatestSuperAgentHomeSessionId(),
+      'restored-home',
+    );
+  });
+
+  test('restores a legacy assistant session after app preferences are lost',
+      () async {
+    final sessionId = await latestSuperAgentSessionId(
+      fetchSessions: () async => const Ok([
+        {
+          'session_id': 'card-detail',
+          'scene': 'assistant_timeline_card_detail',
+        },
+        {
+          'session_id': 'legacy-home',
+          'scene': 'assistant',
+        },
+      ]),
+    );
+
+    expect(sessionId, 'legacy-home');
   });
 
   testWidgets('waits for session lookup before building chat dialog', (
