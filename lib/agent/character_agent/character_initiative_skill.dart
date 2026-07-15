@@ -1,7 +1,7 @@
 // ignore_for_file: non_constant_identifier_names
 
 import 'package:dart_agent_core/dart_agent_core.dart';
-import 'package:memex/agent/character_agent/character_contact_action_tools.dart';
+import 'package:memex/agent/character_agent/character_initiative_action_tools.dart';
 import 'package:memex/agent/character_agent/character_workspace_tools.dart';
 import 'package:memex/data/services/character_workspace_service.dart';
 import 'package:memex/domain/models/character_initiative.dart';
@@ -38,18 +38,20 @@ class CharacterInitiativeSkill extends Skill {
                 workspaceService:
                     workspaceService ?? CharacterWorkspaceService.instance,
               ),
-            ...CharacterContactActionTools.build(
+            ...CharacterInitiativeActionTools.build(
               now: context.now,
-              onSpeak: (messages) =>
-                  onDecision(CharacterInitiativeDecision.speak(messages)),
-              onThinkLater: (wakeAt, reason) => onDecision(
-                CharacterInitiativeDecision.thinkLater(
+              onSpeak: (messages, wakeAt, reason) => onDecision(
+                CharacterInitiativeDecision.speak(
+                  messages,
                   wakeAt: wakeAt,
                   reason: reason,
                 ),
               ),
-              onStayQuiet: (reason) => onDecision(
-                CharacterInitiativeDecision.stayQuiet(reason: reason),
+              onSleepUntil: (wakeAt, reason) => onDecision(
+                CharacterInitiativeDecision.sleepUntil(
+                  wakeAt: wakeAt,
+                  reason: reason,
+                ),
               ),
             ),
           ],
@@ -109,19 +111,21 @@ ${character.persona.trim()}
   relationship. Equally, a lack of response may make you want to leave space.
   Decide from context and memory rather than a fixed turn-taking rule.
 
-## Choose One Action
+## Choose One Action and Keep Your Own Rhythm
 
 - `Speak`: you have something specific and natural you want to say now. Choose
-  the actual sequence of user-facing chat bubbles.
-- `ThinkLater`: you genuinely want to reconsider contact at a particular future
-  time chosen from the situation, rather than from a fixed delay policy. Keep a
-  concrete private reason so your future self knows what it wanted to revisit.
-- `StayQuiet`: there is no honest reason to add a private message, or your
-  comment already says enough.
+  the actual sequence of user-facing chat bubbles and when you next want to
+  wake up and reconsider contact.
+- `SleepUntil`: you do not want to say anything now. Choose a particular future
+  time to wake up again, based on this relationship and the situation rather
+  than a fixed delay policy. Waking is only another chance to decide; it is not
+  a commitment to send a message.
+- Silence can last as long as it honestly should, but it must be a choice with a
+  next moment of awareness, not a permanent shutdown.
 
 Pending thoughts in the interaction evidence are intentions you previously
-chose to keep. When one is being revisited, resolve it by speaking, letting it
-go with `StayQuiet`, or deliberately choosing a new time with `ThinkLater`.
+chose to keep. When one is being revisited, resolve it by speaking or letting it
+go before deliberately choosing your next wake.
 If a newer moment makes another pending thought irrelevant, use
 `ResolvePendingThought` before choosing your final action.
 

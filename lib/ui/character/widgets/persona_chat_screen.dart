@@ -34,6 +34,7 @@ class PersonaChatScreen extends StatefulWidget {
 
 class _PersonaChatScreenState extends State<PersonaChatScreen> {
   final _textController = TextEditingController();
+  final _inputFocusNode = FocusNode();
   final _scrollController = ScrollController();
   String? _lastObservedCharacterId;
   int? _lastNewestMessageId;
@@ -115,6 +116,7 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
     _viewModel.dispose();
     _scrollController.removeListener(_onScroll);
     _textController.dispose();
+    _inputFocusNode.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -706,6 +708,7 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
   Widget _buildInputBar() {
     return PersonaChatInputBar(
       controller: _textController,
+      focusNode: _inputFocusNode,
       onSend: _sendMessage,
       hintText: UserStorage.l10n.personaChatInputHint,
     );
@@ -1052,11 +1055,13 @@ class PersonaChatInputBar extends StatelessWidget {
   const PersonaChatInputBar({
     super.key,
     required this.controller,
+    required this.focusNode,
     required this.onSend,
     required this.hintText,
   });
 
   final TextEditingController controller;
+  final FocusNode focusNode;
   final VoidCallback onSend;
   final String hintText;
 
@@ -1086,50 +1091,52 @@ class PersonaChatInputBar extends StatelessWidget {
             ),
           ],
         ),
-        child: ValueListenableBuilder<TextEditingValue>(
-          valueListenable: controller,
-          builder: (context, value, _) {
-            final canSend = _canSend(value.text);
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: controller,
-                    minLines: 1,
-                    maxLines: 5,
-                    decoration: InputDecoration(
-                      hintText: hintText,
-                      hintStyle: const TextStyle(
-                        color: _personaTextMuted,
-                        fontSize: 15,
-                      ),
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 10,
-                      ),
-                      border: InputBorder.none,
-                    ),
-                    style: const TextStyle(
-                      fontSize: 15,
-                      height: 1.35,
-                      color: _personaText,
-                    ),
-                    textInputAction: TextInputAction.send,
-                    onSubmitted: (_) {
-                      if (canSend) onSend();
-                    },
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Expanded(
+              child: TextField(
+                controller: controller,
+                focusNode: focusNode,
+                minLines: 1,
+                maxLines: 5,
+                decoration: InputDecoration(
+                  hintText: hintText,
+                  hintStyle: const TextStyle(
+                    color: _personaTextMuted,
+                    fontSize: 15,
                   ),
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 10,
+                  ),
+                  border: InputBorder.none,
                 ),
-                const SizedBox(width: 8),
-                _SendButton(
+                style: const TextStyle(
+                  fontSize: 15,
+                  height: 1.35,
+                  color: _personaText,
+                ),
+                textInputAction: TextInputAction.send,
+                onEditingComplete: () {},
+                onSubmitted: (_) {
+                  if (_canSend(controller.text)) onSend();
+                },
+              ),
+            ),
+            const SizedBox(width: 8),
+            ValueListenableBuilder<TextEditingValue>(
+              valueListenable: controller,
+              builder: (context, value, _) {
+                final canSend = _canSend(value.text);
+                return _SendButton(
                   enabled: canSend,
                   onTap: onSend,
-                ),
-              ],
-            );
-          },
+                );
+              },
+            ),
+          ],
         ),
       ),
     );

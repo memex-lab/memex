@@ -88,6 +88,20 @@ void main() {
       expect(handlerRegistration, lessThan(executorStart));
     });
 
+    test('primary companion wake loop is restored after task startup', () {
+      final source =
+          File('lib/data/repositories/memex_router.dart').readAsStringSync();
+      final executorStart = source.indexOf(
+        'await LocalTaskExecutor.instance.start(userId: userId);',
+      );
+      final wakeRestore = source.indexOf(
+        'CharacterInitiativeService.instance.ensureScheduled(',
+      );
+
+      expect(wakeRestore, isNonNegative);
+      expect(executorStart, lessThan(wakeRestore));
+    });
+
     test('sendMessage waits for router initialization before delegating', () {
       final source =
           File('lib/data/repositories/memex_router.dart').readAsStringSync();

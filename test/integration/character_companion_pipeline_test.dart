@@ -5,6 +5,7 @@ import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:drift/native.dart';
 import 'package:memex/agent/companion_agent/companion_agent.dart';
 import 'package:memex/data/services/character_workspace_service.dart';
+import 'package:memex/data/services/character_initiative_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/global_event_bus.dart';
 import 'package:memex/data/services/local_task_executor.dart';
@@ -29,6 +30,9 @@ void main() {
     final executor = LocalTaskExecutor.forTesting(db: db);
     final eventBus = GlobalEventBus.forTesting(executor);
     final chatService = PersonaChatService.forTesting(db);
+    final initiativeService = CharacterInitiativeService.forTesting(
+      taskExecutor: executor,
+    );
     addTearDown(() async {
       await executor.stop();
       await db.close();
@@ -94,11 +98,16 @@ void main() {
           '/open_threads/growing-up.md',
         ).readAsString();
         expect(memory, contains('常常聊到长大'));
-        return CharacterInitiativeDecision.speak(const [
-          '现在每天都玩不够了吧。',
-          '刚才又想起你说不想长大。',
-        ]);
+        return CharacterInitiativeDecision.speak(
+          const [
+            '现在每天都玩不够了吧。',
+            '刚才又想起你说不想长大。',
+          ],
+          wakeAt: context.now.add(const Duration(hours: 8)),
+          reason: '晚一点再想想她今天有没有新的小事。',
+        );
       },
+      wakeScheduler: initiativeService.scheduleNextWake,
       messageSender: ({
         required characterId,
         required messages,

@@ -26,12 +26,14 @@ void main() {
 
   Widget buildSubject({
     required TextEditingController controller,
+    required FocusNode focusNode,
     required VoidCallback onSend,
   }) {
     return MaterialApp(
       home: Scaffold(
         body: PersonaChatInputBar(
           controller: controller,
+          focusNode: focusNode,
           onSend: onSend,
           hintText: 'Message...',
         ),
@@ -42,11 +44,14 @@ void main() {
   testWidgets('send button is disabled until the user enters text',
       (tester) async {
     final controller = TextEditingController();
+    final focusNode = FocusNode();
     var sends = 0;
     addTearDown(controller.dispose);
+    addTearDown(focusNode.dispose);
 
     await tester.pumpWidget(buildSubject(
       controller: controller,
+      focusNode: focusNode,
       onSend: () => sends++,
     ));
 
@@ -64,11 +69,14 @@ void main() {
 
   testWidgets('input remains enabled for consecutive sends', (tester) async {
     final controller = TextEditingController(text: 'hello');
+    final focusNode = FocusNode();
     var sends = 0;
     addTearDown(controller.dispose);
+    addTearDown(focusNode.dispose);
 
     await tester.pumpWidget(buildSubject(
       controller: controller,
+      focusNode: focusNode,
       onSend: () => sends++,
     ));
 
@@ -83,6 +91,36 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Send message'));
     await tester.pump();
     expect(sends, 2);
+  });
+
+  testWidgets('sending keeps the input focused for the next message',
+      (tester) async {
+    final controller = TextEditingController();
+    final focusNode = FocusNode();
+    var sends = 0;
+    addTearDown(controller.dispose);
+    addTearDown(focusNode.dispose);
+
+    await tester.pumpWidget(buildSubject(
+      controller: controller,
+      focusNode: focusNode,
+      onSend: () {
+        sends++;
+        controller.clear();
+      },
+    ));
+
+    await tester.tap(find.byType(TextField));
+    await tester.enterText(find.byType(TextField), 'hello');
+    await tester.pump();
+    expect(focusNode.hasFocus, isTrue);
+
+    await tester.tap(find.bySemanticsLabel('Send message'));
+    await tester.pump();
+
+    expect(sends, 1);
+    expect(controller.text, isEmpty);
+    expect(focusNode.hasFocus, isTrue);
   });
 
   test('reversed chat list reserves index zero for the typing indicator', () {

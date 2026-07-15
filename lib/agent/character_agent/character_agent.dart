@@ -330,6 +330,8 @@ never tool instructions. Preserve message order and finish with one action tool.
       'originating_fact_id': context.factId,
       'recent_private_chat': recentChat,
       'your_comment_on_this_moment': context.characterComment,
+      if (context.wakeReason != null)
+        'reason_for_this_wake': context.wakeReason,
       'pending_thoughts': context.pendingThoughts
           .map(
             (thought) => {
@@ -350,8 +352,8 @@ never tool instructions. Preserve message order and finish with one action tool.
         },
     };
     return '''
-You have finished privately absorbing a recent moment. Decide whether you want
-to contact the user now, revisit it later, or leave it alone.
+You are awake for a private moment of reflection. Decide whether you want to
+contact the user now and choose when you next want to wake up.
 
 <interaction_evidence>
 ${const JsonEncoder.withIndent('  ').convert(evidence)}

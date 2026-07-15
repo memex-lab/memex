@@ -1,6 +1,7 @@
 import 'package:memex/agent/character_agent/character_agent.dart';
 import 'package:memex/data/services/character_service.dart';
 import 'package:memex/data/services/character_execution_coordinator.dart';
+import 'package:memex/data/services/character_initiative_service.dart';
 import 'package:memex/data/services/character_workspace_service.dart';
 import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
@@ -36,10 +37,10 @@ typedef CharacterInitiativeMessageSender = Future<void> Function({
   String? factId,
 });
 
-typedef CharacterInitiativeDeferrer = Future<void> Function({
+typedef CharacterInitiativeWakeScheduler = Future<void> Function({
   required String userId,
-  required String characterId,
-  required CharacterPendingThought thought,
+  required DateTime wakeAt,
+  required String reason,
 });
 
 typedef CharacterLatestMessageIdLoader = Future<int> Function(
@@ -55,7 +56,7 @@ class CharacterInitiativeTaskHandler {
     CharacterInitiativeMessageSender? messageSender,
     PersonaChatService? chatService,
     EventBusService? eventBus,
-    CharacterInitiativeDeferrer? deferrer,
+    CharacterInitiativeWakeScheduler? wakeScheduler,
     CharacterLatestMessageIdLoader? latestMessageIdLoader,
     CharacterExecutionCoordinator? executionCoordinator,
     DateTime Function()? clock,
@@ -70,7 +71,8 @@ class CharacterInitiativeTaskHandler {
               chatService ?? PersonaChatService.instance,
               eventBus ?? EventBusService.instance,
             ),
-        _deferrer = deferrer ?? _defer,
+        _wakeScheduler = wakeScheduler ??
+            CharacterInitiativeService.instance.scheduleNextWake,
         _latestMessageIdLoader = latestMessageIdLoader ??
             (messageSender == null
                 ? _buildLatestMessageIdLoader(
@@ -86,7 +88,7 @@ class CharacterInitiativeTaskHandler {
   final CharacterInitiativeContextLoader _contextLoader;
   final CharacterInitiativeDecider _decider;
   final CharacterInitiativeMessageSender _messageSender;
-  final CharacterInitiativeDeferrer _deferrer;
+  final CharacterInitiativeWakeScheduler _wakeScheduler;
   final CharacterLatestMessageIdLoader? _latestMessageIdLoader;
   final CharacterExecutionCoordinator _executionCoordinator;
   final DateTime Function() _clock;
@@ -175,6 +177,7 @@ class CharacterInitiativeTaskHandler {
         character.id,
       ),
       resumedThought: resumedThought,
+      wakeReason: resumedThought?.reason ?? payload['wake_reason'] as String?,
       latestPrivateMessageId: baseContext.latestPrivateMessageId,
     );
 
@@ -185,6 +188,15 @@ class CharacterInitiativeTaskHandler {
         context: context,
         workspaceService: _workspaceService,
       );
+      final wakeAt = decision.wakeAt;
+      if (!wakeAt.isAfter(now)) {
+        throw StateError('Character selected an invalid future wake time.');
+      }
+      final wakeReason = decision.reason.trim();
+      if (wakeReason.isEmpty) {
+        throw StateError('The next wake requires a private reason.');
+      }
+
       switch (decision.action) {
         case CharacterInitiativeAction.speak:
           final messages = decision.messages
@@ -194,81 +206,52 @@ class CharacterInitiativeTaskHandler {
           if (messages.isEmpty || messages.length != decision.messages.length) {
             throw StateError('Character selected invalid private messages.');
           }
+          var shouldSend = true;
           final latestMessageIdLoader = _latestMessageIdLoader;
           if (latestMessageIdLoader != null) {
             final currentRevision = await latestMessageIdLoader(character.id);
             if (currentRevision != context.latestPrivateMessageId) {
-              if (resumedThought != null) {
-                await _workspaceService.resolvePendingThought(
-                  userId,
-                  character.id,
-                  resumedThought.id,
-                );
-              }
+              shouldSend = false;
               _logger.info(
                 'Discarded stale initiative for ${character.id}: chat changed '
                 'from ${context.latestPrivateMessageId} to $currentRevision',
               );
-              return;
             }
           }
-          await _messageSender(
-            characterId: character.id,
-            messages: messages,
-            factId: factId,
-            timestamp: _clock(),
-            contactEpisodeId: 'character_initiative:${taskContext.taskId}',
-          );
-          if (resumedThought != null) {
-            await _workspaceService.resolvePendingThought(
-              userId,
-              character.id,
-              resumedThought.id,
+          if (shouldSend) {
+            await _messageSender(
+              characterId: character.id,
+              messages: messages,
+              factId: factId,
+              timestamp: _clock(),
+              contactEpisodeId: 'character_initiative:${taskContext.taskId}',
+            );
+            _logger.info(
+              'Character ${character.id} initiated private contact with '
+              '${messages.length} message(s)',
             );
           }
+        case CharacterInitiativeAction.sleepUntil:
           _logger.info(
-            'Character ${character.id} initiated private contact with '
-            '${messages.length} message(s)',
-          );
-        case CharacterInitiativeAction.thinkLater:
-          final wakeAt = decision.wakeAt;
-          if (wakeAt == null || !wakeAt.isAfter(now)) {
-            throw StateError('Character selected an invalid future time.');
-          }
-          final reason = decision.reason?.trim() ?? '';
-          if (reason.isEmpty) {
-            throw StateError('ThinkLater requires a private reason.');
-          }
-          final thought = await _workspaceService.rememberPendingThought(
-            userId: userId,
-            characterId: character.id,
-            sourceEventId: sourceEventId,
-            factId: factId,
-            reason: reason,
-            wakeAt: wakeAt,
-            now: now,
-            thoughtId: resumedThought?.id,
-          );
-          await _deferrer(
-            userId: userId,
-            characterId: character.id,
-            thought: thought,
-          );
-          _logger.info(
-            'Character ${character.id} will reconsider contact at $wakeAt',
-          );
-        case CharacterInitiativeAction.stayQuiet:
-          if (resumedThought != null) {
-            await _workspaceService.resolvePendingThought(
-              userId,
-              character.id,
-              resumedThought.id,
-            );
-          }
-          _logger.info(
-            'Character ${character.id} stayed quiet: ${decision.reason}',
+            'Character ${character.id} chose not to speak now',
           );
       }
+
+      if (resumedThought != null) {
+        await _workspaceService.resolvePendingThought(
+          userId,
+          character.id,
+          resumedThought.id,
+        );
+      }
+      await _wakeScheduler(
+        userId: userId,
+        wakeAt: wakeAt,
+        reason: wakeReason,
+      );
+      _logger.info(
+        'Character ${character.id} will wake again at $wakeAt',
+      );
     } catch (error, stackTrace) {
       _logger.severe(
         'Character initiative failed for ${character.id}',
@@ -359,28 +342,6 @@ class CharacterInitiativeTaskHandler {
         PersonaChatMessageAddedMessage(characterId: characterId),
       );
     };
-  }
-
-  static Future<void> _defer({
-    required String userId,
-    required String characterId,
-    required CharacterPendingThought thought,
-  }) async {
-    await LocalTaskExecutor.instance.enqueueTask(
-      userId: userId,
-      taskType: 'character_initiative_task',
-      payload: {
-        'source_event_id': thought.sourceEventId,
-        if (thought.factId != null) 'fact_id': thought.factId,
-        'character_id': characterId,
-        'pending_thought_id': thought.id,
-        'pending_thought_wake_at': thought.wakeAt.toIso8601String(),
-      },
-      scheduledAt: thought.wakeAt.millisecondsSinceEpoch ~/ 1000,
-      maxRetries: 3,
-      bizId: 'character_initiative:${thought.id}:'
-          '${thought.wakeAt.microsecondsSinceEpoch}',
-    );
   }
 }
 

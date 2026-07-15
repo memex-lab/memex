@@ -317,6 +317,32 @@ void main() {
       expect(snapshot.hasActiveTasks, isTrue);
     });
 
+    test('runnable activity excludes dormant future tasks', () async {
+      final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+      await _insertTask(
+        db,
+        id: 'ready-now',
+        type: 'task',
+        status: 'pending',
+        payload: const {},
+      );
+      await _insertTask(
+        db,
+        id: 'sleeping-until-later',
+        type: 'task',
+        status: 'pending',
+        payload: const {},
+        scheduledAt: now + 3600,
+      );
+
+      final queueSnapshot = await executor.getTaskActivitySnapshot();
+      final runnableSnapshot = await executor.getRunnableTaskActivitySnapshot();
+
+      expect(queueSnapshot.pending, 2);
+      expect(runnableSnapshot.pending, 1);
+      expect(runnableSnapshot.activeTaskIds, {'ready-now'});
+    });
+
     test('does not double-claim a task under repeated immediate polls',
         () async {
       final release = Completer<void>();

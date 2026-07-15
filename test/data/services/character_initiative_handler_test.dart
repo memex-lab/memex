@@ -38,7 +38,8 @@ void main() {
     List<String>? sentMessages;
     String? sentFactId;
     String? sentEpisodeId;
-    var deferred = false;
+    DateTime? scheduledWakeAt;
+    String? scheduledWakeReason;
     var clockReads = 0;
     final handler = CharacterInitiativeTaskHandler(
       workspaceService: workspaceService,
@@ -65,10 +66,14 @@ void main() {
         CharacterWorkspaceService? workspaceService,
       }) async {
         expect(context.characterComment, '哈哈，是的，每天都玩不够。');
-        return CharacterInitiativeDecision.speak(const [
-          '你刚才那句，',
-          '我过了一会儿还是觉得有点可爱。',
-        ]);
+        return CharacterInitiativeDecision.speak(
+          const [
+            '你刚才那句，',
+            '我过了一会儿还是觉得有点可爱。',
+          ],
+          wakeAt: now.add(const Duration(hours: 6)),
+          reason: '晚上再想想她今天过得怎么样。',
+        );
       },
       messageSender: ({
         required characterId,
@@ -83,12 +88,13 @@ void main() {
         sentFactId = factId;
         sentEpisodeId = contactEpisodeId;
       },
-      deferrer: ({
+      wakeScheduler: ({
         required userId,
-        required characterId,
-        required thought,
+        required wakeAt,
+        required reason,
       }) async {
-        deferred = true;
+        scheduledWakeAt = wakeAt;
+        scheduledWakeReason = reason;
       },
     );
 
@@ -104,7 +110,8 @@ void main() {
     expect(sentMessages, ['你刚才那句，', '我过了一会儿还是觉得有点可爱。']);
     expect(sentFactId, '2026/07/13.md#ts_1');
     expect(sentEpisodeId, 'character_initiative:task-1');
-    expect(deferred, isFalse);
+    expect(scheduledWakeAt, now.add(const Duration(hours: 6)));
+    expect(scheduledWakeReason, '晚上再想想她今天过得怎么样。');
   });
 
   test('lets the agent decide while the character owns the last chat turn',
@@ -141,7 +148,10 @@ void main() {
         CharacterWorkspaceService? workspaceService,
       }) async {
         decided = true;
-        return const CharacterInitiativeDecision.stayQuiet();
+        return CharacterInitiativeDecision.sleepUntil(
+          wakeAt: now.add(const Duration(days: 1)),
+          reason: '明天再看看她有没有想说话。',
+        );
       },
       messageSender: ({
         required characterId,
@@ -152,6 +162,11 @@ void main() {
       }) async {
         sent = true;
       },
+      wakeScheduler: ({
+        required userId,
+        required wakeAt,
+        required reason,
+      }) async {},
     );
 
     await handler.call(
@@ -164,9 +179,9 @@ void main() {
     expect(sent, isFalse);
   });
 
-  test('turns ThinkLater into an agent-chosen persistent follow-up', () async {
+  test('turns SleepUntil into an agent-chosen persistent wake', () async {
     DateTime? capturedScheduledFor;
-    CharacterPendingThought? capturedThought;
+    String? capturedReason;
     final handler = CharacterInitiativeTaskHandler(
       workspaceService: workspaceService,
       primaryCompanionLoader: (_) async => character,
@@ -190,7 +205,7 @@ void main() {
         required context,
         CharacterWorkspaceService? workspaceService,
       }) async {
-        return CharacterInitiativeDecision.thinkLater(
+        return CharacterInitiativeDecision.sleepUntil(
           wakeAt: now.add(const Duration(days: 3, hours: 2)),
           reason: '等她忙完再说。',
         );
@@ -202,13 +217,13 @@ void main() {
         required contactEpisodeId,
         factId,
       }) async {},
-      deferrer: ({
+      wakeScheduler: ({
         required userId,
-        required characterId,
-        required thought,
+        required wakeAt,
+        required reason,
       }) async {
-        capturedScheduledFor = thought.wakeAt;
-        capturedThought = thought;
+        capturedScheduledFor = wakeAt;
+        capturedReason = reason;
       },
     );
 
@@ -225,11 +240,11 @@ void main() {
       capturedScheduledFor,
       now.add(const Duration(days: 3, hours: 2)),
     );
-    expect(capturedThought?.reason, '等她忙完再说。');
-    final pending =
-        await workspaceService.loadPendingThoughts('user-1', 'yaoyao');
-    expect(pending, hasLength(1));
-    expect(pending.single.id, capturedThought?.id);
+    expect(capturedReason, '等她忙完再说。');
+    expect(
+      await workspaceService.loadPendingThoughts('user-1', 'yaoyao'),
+      isEmpty,
+    );
   });
 
   test('ignores stale schedules and resolves a revisited thought', () async {
@@ -267,7 +282,8 @@ void main() {
         expect(context.resumedThought?.id, thought.id);
         expect(context.pendingThoughts.map((item) => item.id),
             contains(thought.id));
-        return const CharacterInitiativeDecision.stayQuiet(
+        return CharacterInitiativeDecision.sleepUntil(
+          wakeAt: now.add(const Duration(days: 1)),
           reason: '她已经聊过了，这个念头可以放下。',
         );
       },
@@ -277,6 +293,11 @@ void main() {
         required timestamp,
         required contactEpisodeId,
         factId,
+      }) async {},
+      wakeScheduler: ({
+        required userId,
+        required wakeAt,
+        required reason,
       }) async {},
     );
 
@@ -316,6 +337,7 @@ void main() {
   test('discards a proactive decision when direct chat changes mid-thought',
       () async {
     var sent = false;
+    var scheduled = false;
     final handler = CharacterInitiativeTaskHandler(
       workspaceService: workspaceService,
       primaryCompanionLoader: (_) async => character,
@@ -340,7 +362,11 @@ void main() {
         required context,
         CharacterWorkspaceService? workspaceService,
       }) async {
-        return CharacterInitiativeDecision.speak(['刚想找你。']);
+        return CharacterInitiativeDecision.speak(
+          ['刚想找你。'],
+          wakeAt: now.add(const Duration(hours: 3)),
+          reason: '过一会儿再看看她有没有聊完。',
+        );
       },
       messageSender: ({
         required characterId,
@@ -351,6 +377,13 @@ void main() {
       }) async {
         sent = true;
       },
+      wakeScheduler: ({
+        required userId,
+        required wakeAt,
+        required reason,
+      }) async {
+        scheduled = true;
+      },
     );
 
     await handler.call(
@@ -360,5 +393,6 @@ void main() {
     );
 
     expect(sent, isFalse);
+    expect(scheduled, isTrue);
   });
 }

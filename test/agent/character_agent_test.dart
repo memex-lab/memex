@@ -143,7 +143,12 @@ void main() {
 
     expect(decision.action, CharacterInitiativeAction.speak);
     expect(decision.messages, ['刚想起你。', '没忙什么，你呢？']);
+    expect(
+      decision.wakeAt,
+      DateTime.parse('2026-07-14T09:30:00+08:00'),
+    );
     expect(client.toolNames, contains('Speak'));
+    expect(client.toolNames, contains('SleepUntil'));
     expect(client.lastPrompt, isNot(contains('combined_text')));
     expect(client.lastPrompt, isNot(contains('<observation>')));
     expect(client.lastPrompt, contains('is_read'));
@@ -241,6 +246,8 @@ class _ScriptedInitiativeClient extends LLMClient {
           name: 'Speak',
           arguments: jsonEncode({
             'messages': ['刚想起你。', '没忙什么，你呢？'],
+            'next_wake_at': '2026-07-14T09:30:00+08:00',
+            'next_wake_reason': '明早想再看看她有没有回我。',
           }),
         ),
       ],

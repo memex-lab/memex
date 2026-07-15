@@ -1,7 +1,6 @@
 enum CharacterInitiativeAction {
   speak,
-  thinkLater,
-  stayQuiet,
+  sleepUntil,
 }
 
 /// One concrete action selected by the character after reflecting privately.
@@ -12,36 +11,35 @@ enum CharacterInitiativeAction {
 class CharacterInitiativeDecision {
   const CharacterInitiativeDecision._({
     required this.action,
+    required this.wakeAt,
+    required this.reason,
     this.messages = const [],
-    this.wakeAt,
-    this.reason,
   });
 
-  CharacterInitiativeDecision.speak(List<String> messages)
-      : this._(
-          action: CharacterInitiativeAction.speak,
-          messages: List.unmodifiable(messages),
-        );
-
-  const CharacterInitiativeDecision.thinkLater({
+  CharacterInitiativeDecision.speak(
+    List<String> messages, {
     required DateTime wakeAt,
     required String reason,
   }) : this._(
-          action: CharacterInitiativeAction.thinkLater,
+          action: CharacterInitiativeAction.speak,
+          messages: List.unmodifiable(messages),
           wakeAt: wakeAt,
           reason: reason,
         );
 
-  const CharacterInitiativeDecision.stayQuiet({String? reason})
-      : this._(
-          action: CharacterInitiativeAction.stayQuiet,
+  const CharacterInitiativeDecision.sleepUntil({
+    required DateTime wakeAt,
+    required String reason,
+  }) : this._(
+          action: CharacterInitiativeAction.sleepUntil,
+          wakeAt: wakeAt,
           reason: reason,
         );
 
   final CharacterInitiativeAction action;
   final List<String> messages;
-  final DateTime? wakeAt;
-  final String? reason;
+  final DateTime wakeAt;
+  final String reason;
 }
 
 /// A private intention the character explicitly chose to revisit later.
@@ -133,6 +131,7 @@ class CharacterInitiativeContext {
     this.characterComment,
     this.pendingThoughts = const [],
     this.resumedThought,
+    this.wakeReason,
     this.latestPrivateMessageId = 0,
   });
 
@@ -143,6 +142,7 @@ class CharacterInitiativeContext {
   final String? characterComment;
   final List<CharacterPendingThought> pendingThoughts;
   final CharacterPendingThought? resumedThought;
+  final String? wakeReason;
 
   /// Chat revision captured before the character starts thinking. The handler
   /// revalidates it before delivering a proactive message so a newly arrived

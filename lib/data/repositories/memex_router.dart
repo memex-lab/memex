@@ -50,6 +50,8 @@ import 'package:memex/data/services/task_handlers/character_initiative_handler.d
 import 'package:memex/data/services/task_handlers/character_perception_handler.dart';
 import 'package:memex/data/services/task_handlers/character_conversation_handler.dart';
 import 'package:memex/data/services/character_conversation_service.dart';
+import 'package:memex/data/services/character_initiative_service.dart';
+import 'package:memex/data/services/character_service.dart';
 import 'package:memex/data/repositories/persona_chat_repository.dart';
 import 'package:memex/data/services/task_handlers/reprocess_comments_handler.dart';
 import 'package:memex/data/services/task_handlers/custom_agent_task_handler.dart';
@@ -134,6 +136,13 @@ class MemexRouter {
       initCustomAgentHandler();
       registerBuiltInEventSerializers();
       await CustomAgentConfigService.instance.registerAll(userId);
+      final primaryCompanion =
+          await CharacterService.instance.getPrimaryCompanion(userId);
+      if (primaryCompanion?.enabled == true) {
+        await CharacterInitiativeService.instance.ensureScheduled(
+          userId: userId,
+        );
+      }
       await AgentBackgroundTaskService.instance.startMonitoring();
       AgentBackgroundCoordinator.instance.start(
         executor: LocalTaskExecutor.instance,
@@ -212,7 +221,7 @@ class MemexRouter {
       eventType: SystemEventTypes.userInputSubmitted,
       subscription: EventTaskSubscription(
         subscriptionId: 'character_initiative',
-        taskType: 'character_initiative_task',
+        taskType: CharacterInitiativeService.taskType,
         dependsOn: const ['comment_agent', 'character_perception'],
         maxRetries: 3,
         payloadBuilder: (_, event) {
@@ -327,7 +336,7 @@ class MemexRouter {
       concurrencyPolicy: TaskConcurrencyPolicy.byUser(),
     );
     executor.registerHandler(
-      'character_initiative_task',
+      CharacterInitiativeService.taskType,
       handleCharacterInitiativeImpl,
       concurrencyPolicy: TaskConcurrencyPolicy.byUser(),
     );
@@ -360,7 +369,7 @@ class MemexRouter {
       handleCharacterPerceptionFailure,
     );
     executor.registerFailureHandler(
-      'character_initiative_task',
+      CharacterInitiativeService.taskType,
       handleCharacterInitiativeFailure,
     );
     executor.registerFailureHandler(

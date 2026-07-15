@@ -83,11 +83,20 @@ void main() {
         required context,
         CharacterWorkspaceService? workspaceService,
       }) async {
-        return CharacterInitiativeDecision.speak(const [
-          '今天是不是又觉得没玩够。',
-          '我刚才又想起你那句话了。',
-        ]);
+        return CharacterInitiativeDecision.speak(
+          const [
+            '今天是不是又觉得没玩够。',
+            '我刚才又想起你那句话了。',
+          ],
+          wakeAt: now.add(const Duration(hours: 8)),
+          reason: '晚一点再想想她今天过得怎么样。',
+        );
       },
+      wakeScheduler: ({
+        required userId,
+        required wakeAt,
+        required reason,
+      }) async {},
     );
 
     await handler.call(

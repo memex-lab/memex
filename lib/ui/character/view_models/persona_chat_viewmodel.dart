@@ -12,9 +12,11 @@ class PersonaChatViewModel extends ChangeNotifier {
     required MemexRouter router,
     required String initialCharacterId,
     EventBusService? eventBus,
+    Duration typingIndicatorDelay = defaultTypingIndicatorDelay,
   })  : _router = router,
         _currentCharacterId = initialCharacterId,
-        _eventBus = eventBus ?? EventBusService.instance {
+        _eventBus = eventBus ?? EventBusService.instance,
+        _typingIndicatorDelay = typingIndicatorDelay {
     _eventBus.addHandler(
       EventBusMessageType.personaChatMessageAdded,
       _onPersonaChatMessageAdded,
@@ -22,11 +24,15 @@ class PersonaChatViewModel extends ChangeNotifier {
   }
 
   static const pageSize = 30;
+  static const defaultTypingIndicatorDelay = Duration(milliseconds: 1200);
 
   final MemexRouter _router;
   final EventBusService _eventBus;
+  final Duration _typingIndicatorDelay;
 
   String _currentCharacterId;
+  Timer? _typingIndicatorTimer;
+  bool _replyPending = false;
   CharacterModel? character;
   String? userId;
   String? userAvatar;
@@ -59,23 +65,23 @@ class PersonaChatViewModel extends ChangeNotifier {
   Future<bool> sendMessage(String content) async {
     final text = content.trim();
     if (text.isEmpty) return false;
-    isReplying = true;
+    final characterId = _currentCharacterId;
     errorMessage = null;
     _notify();
 
     var sent = false;
     final result = await _router.sendPersonaChatMessage(
-      _currentCharacterId,
+      characterId,
       text,
     );
     result.when(
       onOk: (_) => sent = true,
       onError: (error, _) {
         errorMessage = error.toString();
-        isReplying = false;
       },
     );
-    if (sent) {
+    if (sent && characterId == _currentCharacterId) {
+      _setReplyPending(true);
       await refreshLatest(extraCapacity: 1);
     } else {
       _notify();
@@ -134,6 +140,9 @@ class PersonaChatViewModel extends ChangeNotifier {
   Future<void> switchCharacter(String characterId) async {
     if (characterId == _currentCharacterId) return;
     isLoading = true;
+    _typingIndicatorTimer?.cancel();
+    _typingIndicatorTimer = null;
+    _replyPending = false;
     isReplying = false;
     errorMessage = null;
     _notify();
@@ -174,9 +183,31 @@ class PersonaChatViewModel extends ChangeNotifier {
       return;
     }
     if (message.replyPending != null) {
-      isReplying = message.replyPending!;
+      _setReplyPending(message.replyPending!);
     }
     unawaited(refreshLatest());
+  }
+
+  void _setReplyPending(bool pending) {
+    if (_disposed) return;
+    _replyPending = pending;
+    if (!pending) {
+      _typingIndicatorTimer?.cancel();
+      _typingIndicatorTimer = null;
+      if (isReplying) {
+        isReplying = false;
+        _notify();
+      }
+      return;
+    }
+
+    if (isReplying || (_typingIndicatorTimer?.isActive ?? false)) return;
+    _typingIndicatorTimer = Timer(_typingIndicatorDelay, () {
+      _typingIndicatorTimer = null;
+      if (_disposed || !_replyPending) return;
+      isReplying = true;
+      _notify();
+    });
   }
 
   void _notify() {
@@ -186,6 +217,8 @@ class PersonaChatViewModel extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    _typingIndicatorTimer?.cancel();
+    _typingIndicatorTimer = null;
     _eventBus.removeHandler(
       EventBusMessageType.personaChatMessageAdded,
       _onPersonaChatMessageAdded,

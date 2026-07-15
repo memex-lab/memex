@@ -32,7 +32,7 @@ void main() {
     }
   });
 
-  test('offers memory retrieval and exactly three initiative choices', () {
+  test('offers memory retrieval and two continuous initiative choices', () {
     final skill = CharacterInitiativeSkill(
       character: character,
       userId: 'user-1',
@@ -46,10 +46,9 @@ void main() {
     final names = skill.tools!.map((tool) => tool.name).toSet();
 
     expect(names, containsAll(['Glob', 'Grep', 'Read', 'Remember']));
-    expect(
-      names,
-      containsAll(['Speak', 'ThinkLater', 'StayQuiet']),
-    );
+    expect(names, containsAll(['Speak', 'SleepUntil']));
+    expect(names, isNot(contains('ThinkLater')));
+    expect(names, isNot(contains('StayQuiet')));
     expect(names, isNot(contains('SendActionMessage')));
     expect(names, isNot(contains('SaveComment')));
     expect(
@@ -74,9 +73,61 @@ void main() {
 
     expect(
       skill.tools!.map((tool) => tool.name),
-      contains('ThinkLater'),
+      contains('SleepUntil'),
     );
     expect(skill.systemPrompt, isNot(contains('Deferral is no longer')));
+    expect(skill.systemPrompt, contains('not a permanent shutdown'));
+  });
+
+  test('Speak includes the character-selected next wake', () {
+    final now = DateTime.parse('2026-07-13T21:00:00+08:00');
+    CharacterInitiativeDecision? decision;
+    final skill = CharacterInitiativeSkill(
+      character: character,
+      userId: 'user-1',
+      context: CharacterInitiativeContext(
+        sourceEventId: 'event-speak',
+        now: now,
+      ),
+      workspaceService: CharacterWorkspaceService(),
+      onDecision: (value) => decision = value,
+    );
+    final tool = skill.tools!.singleWhere((tool) => tool.name == 'Speak');
+
+    Function.apply(tool.executable!, [
+      ['想起你了。'],
+      now.add(const Duration(hours: 5)).toIso8601String(),
+      '晚上想再看看她有没有说话。',
+    ]);
+
+    expect(decision?.action, CharacterInitiativeAction.speak);
+    expect(decision?.messages, ['想起你了。']);
+    expect(decision?.wakeAt, now.add(const Duration(hours: 5)));
+  });
+
+  test('SleepUntil stays quiet now without ending future initiative', () {
+    final now = DateTime.parse('2026-07-13T21:00:00+08:00');
+    CharacterInitiativeDecision? decision;
+    final skill = CharacterInitiativeSkill(
+      character: character,
+      userId: 'user-1',
+      context: CharacterInitiativeContext(
+        sourceEventId: 'event-sleep',
+        now: now,
+      ),
+      workspaceService: CharacterWorkspaceService(),
+      onDecision: (value) => decision = value,
+    );
+    final tool = skill.tools!.singleWhere((tool) => tool.name == 'SleepUntil');
+
+    Function.apply(tool.executable!, [
+      now.add(const Duration(days: 1)).toIso8601String(),
+      '明天再自然地想想要不要找她。',
+    ]);
+
+    expect(decision?.action, CharacterInitiativeAction.sleepUntil);
+    expect(decision?.messages, isEmpty);
+    expect(decision?.wakeAt, now.add(const Duration(days: 1)));
   });
 
   test('can deliberately resolve an obsolete pending thought', () {

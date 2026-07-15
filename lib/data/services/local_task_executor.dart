@@ -204,6 +204,21 @@ class LocalTaskExecutor {
     return query.watch().map(_snapshotFromTasks).distinct();
   }
 
+  /// Tasks that are running or can run now. Future scheduled work remains in
+  /// the durable queue but should not keep foreground activity surfaces busy.
+  Stream<TaskActivitySnapshot> get runnableTaskActivitySnapshotStream {
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final query = _db.select(_db.tasks)
+      ..where(
+        (t) =>
+            t.status.equals('processing') |
+            (t.status.isIn(['pending', 'retrying']) &
+                (t.scheduledAt.isNull() |
+                    t.scheduledAt.isSmallerOrEqualValue(now))),
+      );
+    return query.watch().map(_snapshotFromTasks).distinct();
+  }
+
   /// Stream that emits true if there are any active (pending, processing, retrying) tasks in the DB.
   /// Useful for global UI loading indicators.
   Stream<bool> get hasActiveTasksStream {
@@ -215,6 +230,19 @@ class LocalTaskExecutor {
   Future<TaskActivitySnapshot> getTaskActivitySnapshot() async {
     final query = _db.select(_db.tasks)
       ..where((t) => t.status.isIn(['pending', 'processing', 'retrying']));
+    return _snapshotFromTasks(await query.get());
+  }
+
+  Future<TaskActivitySnapshot> getRunnableTaskActivitySnapshot() async {
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final query = _db.select(_db.tasks)
+      ..where(
+        (t) =>
+            t.status.equals('processing') |
+            (t.status.isIn(['pending', 'retrying']) &
+                (t.scheduledAt.isNull() |
+                    t.scheduledAt.isSmallerOrEqualValue(now))),
+      );
     return _snapshotFromTasks(await query.get());
   }
 
@@ -241,6 +269,21 @@ class LocalTaskExecutor {
       }
     }
     return false;
+  }
+
+  Future<bool> hasActiveTask({
+    required String taskType,
+    required String bizId,
+  }) async {
+    final query = _db.selectOnly(_db.tasks)
+      ..addColumns([_db.tasks.id.count()])
+      ..where(_db.tasks.type.equals(taskType))
+      ..where(_db.tasks.bizId.equals(bizId))
+      ..where(
+        _db.tasks.status.isIn(['pending', 'processing', 'retrying']),
+      );
+    final row = await query.getSingle();
+    return (row.read(_db.tasks.id.count()) ?? 0) > 0;
   }
 
   Future<TaskQueueDrainResult> drainAvailableTasks({

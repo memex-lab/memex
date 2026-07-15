@@ -66,7 +66,7 @@ class AgentBackgroundTaskService {
     await _taskSubscription?.cancel();
     await _trackerSubscription?.cancel();
     _taskSubscription =
-        LocalTaskExecutor.instance.taskActivitySnapshotStream.listen(
+        LocalTaskExecutor.instance.runnableTaskActivitySnapshotStream.listen(
       (snapshot) => unawaited(
         _syncSnapshot(snapshot, reason: 'task_activity_changed'),
       ),
@@ -98,7 +98,8 @@ class AgentBackgroundTaskService {
       },
     );
 
-    final snapshot = await LocalTaskExecutor.instance.getTaskActivitySnapshot();
+    final snapshot =
+        await LocalTaskExecutor.instance.getRunnableTaskActivitySnapshot();
     _latestForegroundSnapshot =
         await AgentForegroundTaskTracker.instance.getSnapshot();
     await _syncSnapshot(snapshot, reason: 'executor_ready');
@@ -143,7 +144,8 @@ class AgentBackgroundTaskService {
   Future<void> onAppPaused() async {
     if (!Platform.isIOS || !_executorReady) return;
 
-    final snapshot = await LocalTaskExecutor.instance.getTaskActivitySnapshot();
+    final snapshot =
+        await LocalTaskExecutor.instance.getRunnableTaskActivitySnapshot();
     await _syncSnapshot(snapshot, reason: 'app_lifecycle_paused');
   }
 
@@ -152,7 +154,8 @@ class AgentBackgroundTaskService {
 
     await AgentForegroundTaskTracker.instance.clearAttention();
     await AgentForegroundTaskTracker.instance.clearPause();
-    final snapshot = await LocalTaskExecutor.instance.getTaskActivitySnapshot();
+    final snapshot =
+        await LocalTaskExecutor.instance.getRunnableTaskActivitySnapshot();
     await _syncSnapshot(snapshot, reason: 'app_lifecycle_resumed');
   }
 
@@ -195,7 +198,8 @@ class AgentBackgroundTaskService {
 
     await LocalTaskExecutor.instance.clearGracefulShutdownMarker();
 
-    final snapshot = await LocalTaskExecutor.instance.getTaskActivitySnapshot();
+    final snapshot =
+        await LocalTaskExecutor.instance.getRunnableTaskActivitySnapshot();
     await _syncSnapshot(snapshot, reason: reason);
 
     if (snapshot.hasActiveTasks) {
@@ -212,7 +216,7 @@ class AgentBackgroundTaskService {
       if (!_executorReady) return;
 
       final snapshot =
-          await LocalTaskExecutor.instance.getTaskActivitySnapshot();
+          await LocalTaskExecutor.instance.getRunnableTaskActivitySnapshot();
       await _syncSnapshot(snapshot, reason: 'background_completion_poll');
 
       if (!snapshot.hasActiveTasks) {
