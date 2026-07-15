@@ -123,6 +123,43 @@ void main() {
     expect(focusNode.hasFocus, isTrue);
   });
 
+  testWidgets('tapping the message area dismisses the input focus',
+      (tester) async {
+    final controller = TextEditingController();
+    final focusNode = FocusNode();
+    addTearDown(controller.dispose);
+    addTearDown(focusNode.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Column(
+            children: [
+              TextField(
+                controller: controller,
+                focusNode: focusNode,
+              ),
+              Expanded(
+                child: PersonaChatKeyboardDismissRegion(
+                  focusNode: focusNode,
+                  child: const SizedBox.expand(),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byType(TextField));
+    await tester.pump();
+    expect(focusNode.hasFocus, isTrue);
+
+    await tester.tap(find.byType(PersonaChatKeyboardDismissRegion));
+    await tester.pump();
+    expect(focusNode.hasFocus, isFalse);
+  });
+
   test('reversed chat list reserves index zero for the typing indicator', () {
     expect(
       personaChatMessageIndexForReversedList(

@@ -149,6 +149,11 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
     }
   }
 
+  void _closeChat() {
+    _inputFocusNode.unfocus();
+    Navigator.pop(context);
+  }
+
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await Future<void>.delayed(const Duration(milliseconds: 16));
@@ -183,32 +188,43 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: _viewModel,
-      builder: (context, _) {
-        return Scaffold(
-          backgroundColor: _personaStageInk,
-          body: _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : Stack(
-                  children: [
-                    Positioned.fill(
-                      child: RepaintBoundary(
-                        child: _ChatAtmosphereBackground(character: _character),
-                      ),
-                    ),
-                    Column(
-                      children: [
-                        SizedBox(height: MediaQuery.of(context).padding.top),
-                        _buildHeader(),
-                        Expanded(child: _buildMessageList()),
-                        _buildInputBar(),
-                      ],
-                    ),
-                  ],
-                ),
-        );
+    return PopScope(
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) _inputFocusNode.unfocus();
       },
+      child: ListenableBuilder(
+        listenable: _viewModel,
+        builder: (context, _) {
+          return Scaffold(
+            backgroundColor: _personaStageInk,
+            body: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : Stack(
+                    children: [
+                      Positioned.fill(
+                        child: RepaintBoundary(
+                          child:
+                              _ChatAtmosphereBackground(character: _character),
+                        ),
+                      ),
+                      Column(
+                        children: [
+                          SizedBox(height: MediaQuery.of(context).padding.top),
+                          _buildHeader(),
+                          Expanded(
+                            child: PersonaChatKeyboardDismissRegion(
+                              focusNode: _inputFocusNode,
+                              child: _buildMessageList(),
+                            ),
+                          ),
+                          _buildInputBar(),
+                        ],
+                      ),
+                    ],
+                  ),
+          );
+        },
+      ),
     );
   }
 
@@ -220,7 +236,7 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
       child: Row(
         children: [
           GestureDetector(
-            onTap: () => Navigator.pop(context),
+            onTap: _closeChat,
             child: const _FrostedCircleButton(
               child: Icon(
                 Icons.arrow_back_ios_new_rounded,
@@ -306,6 +322,7 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
     return ListView.builder(
       controller: _scrollController,
       reverse: true,
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       padding: const EdgeInsets.fromLTRB(10, 8, 12, 10),
       itemCount: itemCount,
       itemBuilder: (context, index) {
@@ -716,6 +733,27 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
 
   bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
+}
+
+@visibleForTesting
+class PersonaChatKeyboardDismissRegion extends StatelessWidget {
+  const PersonaChatKeyboardDismissRegion({
+    super.key,
+    required this.focusNode,
+    required this.child,
+  });
+
+  final FocusNode focusNode;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: focusNode.unfocus,
+      child: child,
+    );
+  }
 }
 
 @visibleForTesting
