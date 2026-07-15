@@ -3,16 +3,35 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:memex/ui/character/widgets/persona_chat_screen.dart';
 
 void main() {
+  test('loading older chat does not request an automatic bottom scroll', () {
+    expect(
+      shouldAutoScrollPersonaChat(
+        previousCharacterId: 'yaoyao',
+        currentCharacterId: 'yaoyao',
+        previousNewestMessageId: 9,
+        currentNewestMessageId: 9,
+      ),
+      isFalse,
+    );
+    expect(
+      shouldAutoScrollPersonaChat(
+        previousCharacterId: 'yaoyao',
+        currentCharacterId: 'yaoyao',
+        previousNewestMessageId: 9,
+        currentNewestMessageId: 10,
+      ),
+      isTrue,
+    );
+  });
+
   Widget buildSubject({
     required TextEditingController controller,
-    required bool isStreaming,
     required VoidCallback onSend,
   }) {
     return MaterialApp(
       home: Scaffold(
         body: PersonaChatInputBar(
           controller: controller,
-          isStreaming: isStreaming,
           onSend: onSend,
           hintText: 'Message...',
         ),
@@ -28,7 +47,6 @@ void main() {
 
     await tester.pumpWidget(buildSubject(
       controller: controller,
-      isStreaming: false,
       onSend: () => sends++,
     ));
 
@@ -44,27 +62,30 @@ void main() {
     expect(sends, 1);
   });
 
-  testWidgets('streaming state disables text entry and sending',
-      (tester) async {
+  testWidgets('input remains enabled for consecutive sends', (tester) async {
     final controller = TextEditingController(text: 'hello');
     var sends = 0;
     addTearDown(controller.dispose);
 
     await tester.pumpWidget(buildSubject(
       controller: controller,
-      isStreaming: true,
       onSend: () => sends++,
     ));
 
     final textField = tester.widget<TextField>(find.byType(TextField));
-    expect(textField.enabled, isFalse);
+    expect(textField.enabled, isNot(false));
 
     await tester.tap(find.bySemanticsLabel('Send message'));
     await tester.pump();
-    expect(sends, 0);
+    expect(sends, 1);
+
+    await tester.enterText(find.byType(TextField), 'another message');
+    await tester.tap(find.bySemanticsLabel('Send message'));
+    await tester.pump();
+    expect(sends, 2);
   });
 
-  test('reversed chat list reserves index zero for streaming content', () {
+  test('reversed chat list reserves index zero for the typing indicator', () {
     expect(
       personaChatMessageIndexForReversedList(
         listIndex: 1,

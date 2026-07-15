@@ -162,4 +162,25 @@ class PersonaChatMessages extends Table {
 
   /// Message type: 'chat' (default) or 'action' (narrative/action description).
   TextColumn get messageType => text().withDefault(const Constant('chat'))();
+
+  /// Delivery provenance. This describes how the message was produced; it is
+  /// not relationship or character state.
+  TextColumn get origin => text().withDefault(const Constant('conversation'))();
+
+  /// Groups bubbles produced by one character speaking episode. A stable value
+  /// also makes persistent task retries idempotent.
+  TextColumn get contactEpisodeId => text().nullable()();
+}
+
+/// Monotonic consumption boundary for each character's private-chat inbox.
+/// Messages after the cursor still need a character decision.
+class PersonaChatReplyCursors extends Table {
+  TextColumn get characterId => text()();
+  IntColumn get consumedThroughMessageId => integer().withDefault(
+        const Constant(0),
+      )();
+  IntColumn get updatedAt => integer()();
+
+  @override
+  Set<Column> get primaryKey => {characterId};
 }

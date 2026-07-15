@@ -5,8 +5,10 @@ import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/data/services/persona_chat_service.dart';
 import 'package:memex/data/services/character_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
+import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/domain/models/character_model.dart';
 import 'package:memex/db/app_database.dart';
+import 'package:memex/ui/character/view_models/persona_chat_viewmodel.dart';
 import 'package:memex/ui/character/widgets/persona_chat_screen.dart';
 import 'package:memex/ui/core/themes/app_colors.dart';
 import 'package:memex/ui/core/widgets/character_avatar.dart';
@@ -45,6 +47,8 @@ class _PersonaAvatarButtonState extends State<PersonaAvatarButton> {
       final userId = await UserStorage.getUserId();
       _logger.info('PersonaAvatarButton _load: userId=$userId');
       if (userId == null) return;
+      final router = MemexRouter();
+      await router.ensureInitialized();
       if (!FileSystemService.isInitialized) {
         _scheduleRetry();
         return;
@@ -101,7 +105,12 @@ class _PersonaAvatarButtonState extends State<PersonaAvatarButton> {
     if (_character == null) return;
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => PersonaChatScreen(characterId: _character!.id),
+        builder: (_) => PersonaChatScreen(
+          viewModel: PersonaChatViewModel(
+            router: MemexRouter(),
+            initialCharacterId: _character!.id,
+          ),
+        ),
       ),
     );
   }

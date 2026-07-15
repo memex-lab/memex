@@ -561,9 +561,9 @@ class TimelineCardSkill extends Skill {
             }
 
             // For a brand-new card, re-publish userInputSubmitted so the
-            // independently-running comment agent (the only remaining
-            // subscriber) reacts to the new record. Editing/repairing an
-            // existing card does not re-trigger comments.
+            // independent consumers (comments and character perception) react
+            // to the new record. Editing/repairing an existing card does not
+            // re-trigger them.
             if (isNewCard) {
               try {
                 await GlobalEventBus.instance.publish(

@@ -155,6 +155,7 @@ class LocalTaskExecutor {
   final Map<String, TaskHandler> _handlers = {};
   final Map<String, TaskConcurrencyPolicy> _concurrencyPolicies = {};
   final Set<String> _activeConcurrencyKeys = <String>{};
+  final Set<Future<void>> _activeExecutions = <Future<void>>{};
   final Map<String, Timer> _taskHeartbeatTimers = {};
 
   // Failure handlers registry
@@ -592,6 +593,15 @@ class LocalTaskExecutor {
     _pollTimer?.cancel();
     _queueLeaseHeartbeatTimer?.cancel();
     _queueLeaseHeartbeatTimer = null;
+    while (_isProcessing) {
+      await Future<void>.delayed(const Duration(milliseconds: 1));
+    }
+    if (_activeExecutions.isNotEmpty) {
+      await Future.any<void>([
+        Future.wait(_activeExecutions.toList()),
+        Future<void>.delayed(const Duration(milliseconds: 250)),
+      ]);
+    }
     for (final timer in _taskHeartbeatTimers.values) {
       timer.cancel();
     }
@@ -680,6 +690,76 @@ class LocalTaskExecutor {
     }
 
     return taskId;
+  }
+
+  /// Keeps at most one waiting task for a business key. If a matching task is
+  /// already pending or retrying, its payload and schedule are refreshed. A
+  /// task that is currently processing is never mutated; a new pending task is
+  /// created so work arriving during execution is not lost.
+  Future<String> enqueueOrRescheduleTask({
+    required String userId,
+    required String taskType,
+    required Map<String, dynamic> payload,
+    required String bizId,
+    int priority = 0,
+    int? scheduledAt,
+    int maxRetries = 5,
+  }) async {
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final payloadJson = jsonEncode(payload);
+    final result = await _db.transaction(() async {
+      final existing = await (_db.select(_db.tasks)
+            ..where((t) =>
+                t.type.equals(taskType) &
+                t.bizId.equals(bizId) &
+                t.status.isIn(const ['pending', 'retrying']))
+            ..orderBy([
+              (t) => OrderingTerm.asc(t.createdAt),
+            ])
+            ..limit(1))
+          .getSingleOrNull();
+      if (existing != null) {
+        await (_db.update(_db.tasks)..where((t) => t.id.equals(existing.id)))
+            .write(
+          TasksCompanion(
+            payload: Value(payloadJson),
+            status: const Value('pending'),
+            priority: Value(priority),
+            scheduledAt: Value(scheduledAt),
+            updatedAt: Value(now),
+            retryCount: const Value(0),
+            maxRetries: Value(maxRetries),
+            error: const Value(null),
+          ),
+        );
+        return (id: existing.id, rescheduled: true);
+      }
+
+      final taskId = DateTime.now().microsecondsSinceEpoch.toString();
+      await _db.into(_db.tasks).insert(
+            TasksCompanion.insert(
+              id: taskId,
+              type: taskType,
+              payload: Value(payloadJson),
+              status: 'pending',
+              priority: Value(priority),
+              createdAt: Value(now),
+              scheduledAt: Value(scheduledAt),
+              maxRetries: Value(maxRetries),
+              bizId: Value(bizId),
+            ),
+          );
+      return (id: taskId, rescheduled: false);
+    });
+
+    _logger.info(
+      '${result.rescheduled ? 'Rescheduled' : 'Enqueued'} task '
+      '${result.id} ($taskType)',
+    );
+    if (_isRunning) {
+      _scheduleNextPoll(immediate: true);
+    }
+    return result.id;
   }
 
   void _scheduleNextPoll({bool immediate = false}) {
@@ -781,10 +861,12 @@ class LocalTaskExecutor {
 
       final executionFutures = <Future<void>>[];
       for (final task in claimedTasks) {
-        final executionFuture = _executeTask(
+        late final Future<void> executionFuture;
+        executionFuture = _executeTask(
           task,
           concurrencyKey: claimedConcurrencyKeys[task.id],
-        );
+        ).whenComplete(() => _activeExecutions.remove(executionFuture));
+        _activeExecutions.add(executionFuture);
         if (awaitClaimedTasks) {
           executionFutures.add(executionFuture);
         } else {
@@ -981,14 +1063,35 @@ class LocalTaskExecutor {
       final deps = (jsonDecode(task.dependencies!) as List).cast<String>();
       if (deps.isEmpty) return true;
 
-      // Check if any dependency is NOT completed or failed.
-      final pendingDepsQuery = _db.selectOnly(_db.tasks)
-        ..addColumns([_db.tasks.id.count()])
-        ..where(_db.tasks.id.isIn(deps))
-        ..where(_db.tasks.status.isNotIn(['completed', 'failed']));
+      final dependenciesQuery = _db.selectOnly(_db.tasks)
+        ..addColumns([_db.tasks.id, _db.tasks.status])
+        ..where(_db.tasks.id.isIn(deps));
+      final rows = await dependenciesQuery.get();
+      final foundIds =
+          rows.map((row) => row.read(_db.tasks.id)).whereType<String>().toSet();
+      final missingIds = deps.where((id) => !foundIds.contains(id)).toList();
+      if (missingIds.isNotEmpty) {
+        await _failTask(
+          task,
+          'Missing dependency tasks: ${missingIds.join(', ')}',
+        );
+        return false;
+      }
 
-      final pendingCount = await pendingDepsQuery.getSingle();
-      return (pendingCount.read(_db.tasks.id.count()) ?? 0) == 0;
+      final failedIds = rows
+          .where((row) => row.read(_db.tasks.status) == 'failed')
+          .map((row) => row.read(_db.tasks.id))
+          .whereType<String>()
+          .toList();
+      if (failedIds.isNotEmpty) {
+        await _failTask(
+          task,
+          'Dependency tasks failed: ${failedIds.join(', ')}',
+        );
+        return false;
+      }
+
+      return rows.every((row) => row.read(_db.tasks.status) == 'completed');
     } catch (e) {
       _logger.warning('Failed to parse dependencies for task ${task.id}: $e');
       await _failTask(task, 'Invalid task dependencies: $e');

@@ -3320,6 +3320,19 @@ class $PersonaChatMessagesTable extends PersonaChatMessages
       type: DriftSqlType.string,
       requiredDuringInsert: false,
       defaultValue: const Constant('chat'));
+  static const VerificationMeta _originMeta = const VerificationMeta('origin');
+  @override
+  late final GeneratedColumn<String> origin = GeneratedColumn<String>(
+      'origin', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('conversation'));
+  static const VerificationMeta _contactEpisodeIdMeta =
+      const VerificationMeta('contactEpisodeId');
+  @override
+  late final GeneratedColumn<String> contactEpisodeId = GeneratedColumn<String>(
+      'contact_episode_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -3329,7 +3342,9 @@ class $PersonaChatMessagesTable extends PersonaChatMessages
         factId,
         isRead,
         timestamp,
-        messageType
+        messageType,
+        origin,
+        contactEpisodeId
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3386,6 +3401,16 @@ class $PersonaChatMessagesTable extends PersonaChatMessages
           messageType.isAcceptableOrUnknown(
               data['message_type']!, _messageTypeMeta));
     }
+    if (data.containsKey('origin')) {
+      context.handle(_originMeta,
+          origin.isAcceptableOrUnknown(data['origin']!, _originMeta));
+    }
+    if (data.containsKey('contact_episode_id')) {
+      context.handle(
+          _contactEpisodeIdMeta,
+          contactEpisodeId.isAcceptableOrUnknown(
+              data['contact_episode_id']!, _contactEpisodeIdMeta));
+    }
     return context;
   }
 
@@ -3411,6 +3436,10 @@ class $PersonaChatMessagesTable extends PersonaChatMessages
           .read(DriftSqlType.dateTime, data['${effectivePrefix}timestamp'])!,
       messageType: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}message_type'])!,
+      origin: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}origin'])!,
+      contactEpisodeId: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}contact_episode_id']),
     );
   }
 
@@ -3432,6 +3461,14 @@ class PersonaChatMessage extends DataClass
 
   /// Message type: 'chat' (default) or 'action' (narrative/action description).
   final String messageType;
+
+  /// Delivery provenance. This describes how the message was produced; it is
+  /// not relationship or character state.
+  final String origin;
+
+  /// Groups bubbles produced by one character speaking episode. A stable value
+  /// also makes persistent task retries idempotent.
+  final String? contactEpisodeId;
   const PersonaChatMessage(
       {required this.id,
       required this.characterId,
@@ -3440,7 +3477,9 @@ class PersonaChatMessage extends DataClass
       this.factId,
       required this.isRead,
       required this.timestamp,
-      required this.messageType});
+      required this.messageType,
+      required this.origin,
+      this.contactEpisodeId});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -3454,6 +3493,10 @@ class PersonaChatMessage extends DataClass
     map['is_read'] = Variable<bool>(isRead);
     map['timestamp'] = Variable<DateTime>(timestamp);
     map['message_type'] = Variable<String>(messageType);
+    map['origin'] = Variable<String>(origin);
+    if (!nullToAbsent || contactEpisodeId != null) {
+      map['contact_episode_id'] = Variable<String>(contactEpisodeId);
+    }
     return map;
   }
 
@@ -3468,6 +3511,10 @@ class PersonaChatMessage extends DataClass
       isRead: Value(isRead),
       timestamp: Value(timestamp),
       messageType: Value(messageType),
+      origin: Value(origin),
+      contactEpisodeId: contactEpisodeId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(contactEpisodeId),
     );
   }
 
@@ -3483,6 +3530,8 @@ class PersonaChatMessage extends DataClass
       isRead: serializer.fromJson<bool>(json['isRead']),
       timestamp: serializer.fromJson<DateTime>(json['timestamp']),
       messageType: serializer.fromJson<String>(json['messageType']),
+      origin: serializer.fromJson<String>(json['origin']),
+      contactEpisodeId: serializer.fromJson<String?>(json['contactEpisodeId']),
     );
   }
   @override
@@ -3497,6 +3546,8 @@ class PersonaChatMessage extends DataClass
       'isRead': serializer.toJson<bool>(isRead),
       'timestamp': serializer.toJson<DateTime>(timestamp),
       'messageType': serializer.toJson<String>(messageType),
+      'origin': serializer.toJson<String>(origin),
+      'contactEpisodeId': serializer.toJson<String?>(contactEpisodeId),
     };
   }
 
@@ -3508,7 +3559,9 @@ class PersonaChatMessage extends DataClass
           Value<String?> factId = const Value.absent(),
           bool? isRead,
           DateTime? timestamp,
-          String? messageType}) =>
+          String? messageType,
+          String? origin,
+          Value<String?> contactEpisodeId = const Value.absent()}) =>
       PersonaChatMessage(
         id: id ?? this.id,
         characterId: characterId ?? this.characterId,
@@ -3518,6 +3571,10 @@ class PersonaChatMessage extends DataClass
         isRead: isRead ?? this.isRead,
         timestamp: timestamp ?? this.timestamp,
         messageType: messageType ?? this.messageType,
+        origin: origin ?? this.origin,
+        contactEpisodeId: contactEpisodeId.present
+            ? contactEpisodeId.value
+            : this.contactEpisodeId,
       );
   PersonaChatMessage copyWithCompanion(PersonaChatMessagesCompanion data) {
     return PersonaChatMessage(
@@ -3533,6 +3590,10 @@ class PersonaChatMessage extends DataClass
       timestamp: data.timestamp.present ? data.timestamp.value : this.timestamp,
       messageType:
           data.messageType.present ? data.messageType.value : this.messageType,
+      origin: data.origin.present ? data.origin.value : this.origin,
+      contactEpisodeId: data.contactEpisodeId.present
+          ? data.contactEpisodeId.value
+          : this.contactEpisodeId,
     );
   }
 
@@ -3546,14 +3607,16 @@ class PersonaChatMessage extends DataClass
           ..write('factId: $factId, ')
           ..write('isRead: $isRead, ')
           ..write('timestamp: $timestamp, ')
-          ..write('messageType: $messageType')
+          ..write('messageType: $messageType, ')
+          ..write('origin: $origin, ')
+          ..write('contactEpisodeId: $contactEpisodeId')
           ..write(')'))
         .toString();
   }
 
   @override
   int get hashCode => Object.hash(id, characterId, isFromCharacter, content,
-      factId, isRead, timestamp, messageType);
+      factId, isRead, timestamp, messageType, origin, contactEpisodeId);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -3565,7 +3628,9 @@ class PersonaChatMessage extends DataClass
           other.factId == this.factId &&
           other.isRead == this.isRead &&
           other.timestamp == this.timestamp &&
-          other.messageType == this.messageType);
+          other.messageType == this.messageType &&
+          other.origin == this.origin &&
+          other.contactEpisodeId == this.contactEpisodeId);
 }
 
 class PersonaChatMessagesCompanion extends UpdateCompanion<PersonaChatMessage> {
@@ -3577,6 +3642,8 @@ class PersonaChatMessagesCompanion extends UpdateCompanion<PersonaChatMessage> {
   final Value<bool> isRead;
   final Value<DateTime> timestamp;
   final Value<String> messageType;
+  final Value<String> origin;
+  final Value<String?> contactEpisodeId;
   const PersonaChatMessagesCompanion({
     this.id = const Value.absent(),
     this.characterId = const Value.absent(),
@@ -3586,6 +3653,8 @@ class PersonaChatMessagesCompanion extends UpdateCompanion<PersonaChatMessage> {
     this.isRead = const Value.absent(),
     this.timestamp = const Value.absent(),
     this.messageType = const Value.absent(),
+    this.origin = const Value.absent(),
+    this.contactEpisodeId = const Value.absent(),
   });
   PersonaChatMessagesCompanion.insert({
     this.id = const Value.absent(),
@@ -3596,6 +3665,8 @@ class PersonaChatMessagesCompanion extends UpdateCompanion<PersonaChatMessage> {
     this.isRead = const Value.absent(),
     required DateTime timestamp,
     this.messageType = const Value.absent(),
+    this.origin = const Value.absent(),
+    this.contactEpisodeId = const Value.absent(),
   })  : characterId = Value(characterId),
         isFromCharacter = Value(isFromCharacter),
         content = Value(content),
@@ -3609,6 +3680,8 @@ class PersonaChatMessagesCompanion extends UpdateCompanion<PersonaChatMessage> {
     Expression<bool>? isRead,
     Expression<DateTime>? timestamp,
     Expression<String>? messageType,
+    Expression<String>? origin,
+    Expression<String>? contactEpisodeId,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -3619,6 +3692,8 @@ class PersonaChatMessagesCompanion extends UpdateCompanion<PersonaChatMessage> {
       if (isRead != null) 'is_read': isRead,
       if (timestamp != null) 'timestamp': timestamp,
       if (messageType != null) 'message_type': messageType,
+      if (origin != null) 'origin': origin,
+      if (contactEpisodeId != null) 'contact_episode_id': contactEpisodeId,
     });
   }
 
@@ -3630,7 +3705,9 @@ class PersonaChatMessagesCompanion extends UpdateCompanion<PersonaChatMessage> {
       Value<String?>? factId,
       Value<bool>? isRead,
       Value<DateTime>? timestamp,
-      Value<String>? messageType}) {
+      Value<String>? messageType,
+      Value<String>? origin,
+      Value<String?>? contactEpisodeId}) {
     return PersonaChatMessagesCompanion(
       id: id ?? this.id,
       characterId: characterId ?? this.characterId,
@@ -3640,6 +3717,8 @@ class PersonaChatMessagesCompanion extends UpdateCompanion<PersonaChatMessage> {
       isRead: isRead ?? this.isRead,
       timestamp: timestamp ?? this.timestamp,
       messageType: messageType ?? this.messageType,
+      origin: origin ?? this.origin,
+      contactEpisodeId: contactEpisodeId ?? this.contactEpisodeId,
     );
   }
 
@@ -3670,6 +3749,12 @@ class PersonaChatMessagesCompanion extends UpdateCompanion<PersonaChatMessage> {
     if (messageType.present) {
       map['message_type'] = Variable<String>(messageType.value);
     }
+    if (origin.present) {
+      map['origin'] = Variable<String>(origin.value);
+    }
+    if (contactEpisodeId.present) {
+      map['contact_episode_id'] = Variable<String>(contactEpisodeId.value);
+    }
     return map;
   }
 
@@ -3683,7 +3768,266 @@ class PersonaChatMessagesCompanion extends UpdateCompanion<PersonaChatMessage> {
           ..write('factId: $factId, ')
           ..write('isRead: $isRead, ')
           ..write('timestamp: $timestamp, ')
-          ..write('messageType: $messageType')
+          ..write('messageType: $messageType, ')
+          ..write('origin: $origin, ')
+          ..write('contactEpisodeId: $contactEpisodeId')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $PersonaChatReplyCursorsTable extends PersonaChatReplyCursors
+    with TableInfo<$PersonaChatReplyCursorsTable, PersonaChatReplyCursor> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PersonaChatReplyCursorsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _characterIdMeta =
+      const VerificationMeta('characterId');
+  @override
+  late final GeneratedColumn<String> characterId = GeneratedColumn<String>(
+      'character_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _consumedThroughMessageIdMeta =
+      const VerificationMeta('consumedThroughMessageId');
+  @override
+  late final GeneratedColumn<int> consumedThroughMessageId =
+      GeneratedColumn<int>('consumed_through_message_id', aliasedName, false,
+          type: DriftSqlType.int,
+          requiredDuringInsert: false,
+          defaultValue: const Constant(0));
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<int> updatedAt = GeneratedColumn<int>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [characterId, consumedThroughMessageId, updatedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'persona_chat_reply_cursors';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<PersonaChatReplyCursor> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('character_id')) {
+      context.handle(
+          _characterIdMeta,
+          characterId.isAcceptableOrUnknown(
+              data['character_id']!, _characterIdMeta));
+    } else if (isInserting) {
+      context.missing(_characterIdMeta);
+    }
+    if (data.containsKey('consumed_through_message_id')) {
+      context.handle(
+          _consumedThroughMessageIdMeta,
+          consumedThroughMessageId.isAcceptableOrUnknown(
+              data['consumed_through_message_id']!,
+              _consumedThroughMessageIdMeta));
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {characterId};
+  @override
+  PersonaChatReplyCursor map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PersonaChatReplyCursor(
+      characterId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}character_id'])!,
+      consumedThroughMessageId: attachedDatabase.typeMapping.read(
+          DriftSqlType.int,
+          data['${effectivePrefix}consumed_through_message_id'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}updated_at'])!,
+    );
+  }
+
+  @override
+  $PersonaChatReplyCursorsTable createAlias(String alias) {
+    return $PersonaChatReplyCursorsTable(attachedDatabase, alias);
+  }
+}
+
+class PersonaChatReplyCursor extends DataClass
+    implements Insertable<PersonaChatReplyCursor> {
+  final String characterId;
+  final int consumedThroughMessageId;
+  final int updatedAt;
+  const PersonaChatReplyCursor(
+      {required this.characterId,
+      required this.consumedThroughMessageId,
+      required this.updatedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['character_id'] = Variable<String>(characterId);
+    map['consumed_through_message_id'] =
+        Variable<int>(consumedThroughMessageId);
+    map['updated_at'] = Variable<int>(updatedAt);
+    return map;
+  }
+
+  PersonaChatReplyCursorsCompanion toCompanion(bool nullToAbsent) {
+    return PersonaChatReplyCursorsCompanion(
+      characterId: Value(characterId),
+      consumedThroughMessageId: Value(consumedThroughMessageId),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory PersonaChatReplyCursor.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PersonaChatReplyCursor(
+      characterId: serializer.fromJson<String>(json['characterId']),
+      consumedThroughMessageId:
+          serializer.fromJson<int>(json['consumedThroughMessageId']),
+      updatedAt: serializer.fromJson<int>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'characterId': serializer.toJson<String>(characterId),
+      'consumedThroughMessageId':
+          serializer.toJson<int>(consumedThroughMessageId),
+      'updatedAt': serializer.toJson<int>(updatedAt),
+    };
+  }
+
+  PersonaChatReplyCursor copyWith(
+          {String? characterId,
+          int? consumedThroughMessageId,
+          int? updatedAt}) =>
+      PersonaChatReplyCursor(
+        characterId: characterId ?? this.characterId,
+        consumedThroughMessageId:
+            consumedThroughMessageId ?? this.consumedThroughMessageId,
+        updatedAt: updatedAt ?? this.updatedAt,
+      );
+  PersonaChatReplyCursor copyWithCompanion(
+      PersonaChatReplyCursorsCompanion data) {
+    return PersonaChatReplyCursor(
+      characterId:
+          data.characterId.present ? data.characterId.value : this.characterId,
+      consumedThroughMessageId: data.consumedThroughMessageId.present
+          ? data.consumedThroughMessageId.value
+          : this.consumedThroughMessageId,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PersonaChatReplyCursor(')
+          ..write('characterId: $characterId, ')
+          ..write('consumedThroughMessageId: $consumedThroughMessageId, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(characterId, consumedThroughMessageId, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PersonaChatReplyCursor &&
+          other.characterId == this.characterId &&
+          other.consumedThroughMessageId == this.consumedThroughMessageId &&
+          other.updatedAt == this.updatedAt);
+}
+
+class PersonaChatReplyCursorsCompanion
+    extends UpdateCompanion<PersonaChatReplyCursor> {
+  final Value<String> characterId;
+  final Value<int> consumedThroughMessageId;
+  final Value<int> updatedAt;
+  final Value<int> rowid;
+  const PersonaChatReplyCursorsCompanion({
+    this.characterId = const Value.absent(),
+    this.consumedThroughMessageId = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PersonaChatReplyCursorsCompanion.insert({
+    required String characterId,
+    this.consumedThroughMessageId = const Value.absent(),
+    required int updatedAt,
+    this.rowid = const Value.absent(),
+  })  : characterId = Value(characterId),
+        updatedAt = Value(updatedAt);
+  static Insertable<PersonaChatReplyCursor> custom({
+    Expression<String>? characterId,
+    Expression<int>? consumedThroughMessageId,
+    Expression<int>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (characterId != null) 'character_id': characterId,
+      if (consumedThroughMessageId != null)
+        'consumed_through_message_id': consumedThroughMessageId,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PersonaChatReplyCursorsCompanion copyWith(
+      {Value<String>? characterId,
+      Value<int>? consumedThroughMessageId,
+      Value<int>? updatedAt,
+      Value<int>? rowid}) {
+    return PersonaChatReplyCursorsCompanion(
+      characterId: characterId ?? this.characterId,
+      consumedThroughMessageId:
+          consumedThroughMessageId ?? this.consumedThroughMessageId,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (characterId.present) {
+      map['character_id'] = Variable<String>(characterId.value);
+    }
+    if (consumedThroughMessageId.present) {
+      map['consumed_through_message_id'] =
+          Variable<int>(consumedThroughMessageId.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<int>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PersonaChatReplyCursorsCompanion(')
+          ..write('characterId: $characterId, ')
+          ..write('consumedThroughMessageId: $consumedThroughMessageId, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
           ..write(')'))
         .toString();
   }
@@ -4105,6 +4449,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $ClarificationRequestsTable(this);
   late final $PersonaChatMessagesTable personaChatMessages =
       $PersonaChatMessagesTable(this);
+  late final $PersonaChatReplyCursorsTable personaChatReplyCursors =
+      $PersonaChatReplyCursorsTable(this);
   late final $UserNotificationsTable userNotifications =
       $UserNotificationsTable(this);
   late final CardDao cardDao = CardDao(this as AppDatabase);
@@ -4120,6 +4466,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         systemActions,
         clarificationRequests,
         personaChatMessages,
+        personaChatReplyCursors,
         userNotifications
       ];
 }
@@ -5679,6 +6026,8 @@ typedef $$PersonaChatMessagesTableCreateCompanionBuilder
   Value<bool> isRead,
   required DateTime timestamp,
   Value<String> messageType,
+  Value<String> origin,
+  Value<String?> contactEpisodeId,
 });
 typedef $$PersonaChatMessagesTableUpdateCompanionBuilder
     = PersonaChatMessagesCompanion Function({
@@ -5690,6 +6039,8 @@ typedef $$PersonaChatMessagesTableUpdateCompanionBuilder
   Value<bool> isRead,
   Value<DateTime> timestamp,
   Value<String> messageType,
+  Value<String> origin,
+  Value<String?> contactEpisodeId,
 });
 
 class $$PersonaChatMessagesTableFilterComposer
@@ -5725,6 +6076,13 @@ class $$PersonaChatMessagesTableFilterComposer
 
   ColumnFilters<String> get messageType => $composableBuilder(
       column: $table.messageType, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get origin => $composableBuilder(
+      column: $table.origin, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get contactEpisodeId => $composableBuilder(
+      column: $table.contactEpisodeId,
+      builder: (column) => ColumnFilters(column));
 }
 
 class $$PersonaChatMessagesTableOrderingComposer
@@ -5760,6 +6118,13 @@ class $$PersonaChatMessagesTableOrderingComposer
 
   ColumnOrderings<String> get messageType => $composableBuilder(
       column: $table.messageType, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get origin => $composableBuilder(
+      column: $table.origin, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get contactEpisodeId => $composableBuilder(
+      column: $table.contactEpisodeId,
+      builder: (column) => ColumnOrderings(column));
 }
 
 class $$PersonaChatMessagesTableAnnotationComposer
@@ -5794,6 +6159,12 @@ class $$PersonaChatMessagesTableAnnotationComposer
 
   GeneratedColumn<String> get messageType => $composableBuilder(
       column: $table.messageType, builder: (column) => column);
+
+  GeneratedColumn<String> get origin =>
+      $composableBuilder(column: $table.origin, builder: (column) => column);
+
+  GeneratedColumn<String> get contactEpisodeId => $composableBuilder(
+      column: $table.contactEpisodeId, builder: (column) => column);
 }
 
 class $$PersonaChatMessagesTableTableManager extends RootTableManager<
@@ -5834,6 +6205,8 @@ class $$PersonaChatMessagesTableTableManager extends RootTableManager<
             Value<bool> isRead = const Value.absent(),
             Value<DateTime> timestamp = const Value.absent(),
             Value<String> messageType = const Value.absent(),
+            Value<String> origin = const Value.absent(),
+            Value<String?> contactEpisodeId = const Value.absent(),
           }) =>
               PersonaChatMessagesCompanion(
             id: id,
@@ -5844,6 +6217,8 @@ class $$PersonaChatMessagesTableTableManager extends RootTableManager<
             isRead: isRead,
             timestamp: timestamp,
             messageType: messageType,
+            origin: origin,
+            contactEpisodeId: contactEpisodeId,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
@@ -5854,6 +6229,8 @@ class $$PersonaChatMessagesTableTableManager extends RootTableManager<
             Value<bool> isRead = const Value.absent(),
             required DateTime timestamp,
             Value<String> messageType = const Value.absent(),
+            Value<String> origin = const Value.absent(),
+            Value<String?> contactEpisodeId = const Value.absent(),
           }) =>
               PersonaChatMessagesCompanion.insert(
             id: id,
@@ -5864,6 +6241,8 @@ class $$PersonaChatMessagesTableTableManager extends RootTableManager<
             isRead: isRead,
             timestamp: timestamp,
             messageType: messageType,
+            origin: origin,
+            contactEpisodeId: contactEpisodeId,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -5888,6 +6267,158 @@ typedef $$PersonaChatMessagesTableProcessedTableManager = ProcessedTableManager<
     ),
     PersonaChatMessage,
     PrefetchHooks Function()>;
+typedef $$PersonaChatReplyCursorsTableCreateCompanionBuilder
+    = PersonaChatReplyCursorsCompanion Function({
+  required String characterId,
+  Value<int> consumedThroughMessageId,
+  required int updatedAt,
+  Value<int> rowid,
+});
+typedef $$PersonaChatReplyCursorsTableUpdateCompanionBuilder
+    = PersonaChatReplyCursorsCompanion Function({
+  Value<String> characterId,
+  Value<int> consumedThroughMessageId,
+  Value<int> updatedAt,
+  Value<int> rowid,
+});
+
+class $$PersonaChatReplyCursorsTableFilterComposer
+    extends Composer<_$AppDatabase, $PersonaChatReplyCursorsTable> {
+  $$PersonaChatReplyCursorsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get characterId => $composableBuilder(
+      column: $table.characterId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get consumedThroughMessageId => $composableBuilder(
+      column: $table.consumedThroughMessageId,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$PersonaChatReplyCursorsTableOrderingComposer
+    extends Composer<_$AppDatabase, $PersonaChatReplyCursorsTable> {
+  $$PersonaChatReplyCursorsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get characterId => $composableBuilder(
+      column: $table.characterId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get consumedThroughMessageId => $composableBuilder(
+      column: $table.consumedThroughMessageId,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$PersonaChatReplyCursorsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PersonaChatReplyCursorsTable> {
+  $$PersonaChatReplyCursorsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get characterId => $composableBuilder(
+      column: $table.characterId, builder: (column) => column);
+
+  GeneratedColumn<int> get consumedThroughMessageId => $composableBuilder(
+      column: $table.consumedThroughMessageId, builder: (column) => column);
+
+  GeneratedColumn<int> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$PersonaChatReplyCursorsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $PersonaChatReplyCursorsTable,
+    PersonaChatReplyCursor,
+    $$PersonaChatReplyCursorsTableFilterComposer,
+    $$PersonaChatReplyCursorsTableOrderingComposer,
+    $$PersonaChatReplyCursorsTableAnnotationComposer,
+    $$PersonaChatReplyCursorsTableCreateCompanionBuilder,
+    $$PersonaChatReplyCursorsTableUpdateCompanionBuilder,
+    (
+      PersonaChatReplyCursor,
+      BaseReferences<_$AppDatabase, $PersonaChatReplyCursorsTable,
+          PersonaChatReplyCursor>
+    ),
+    PersonaChatReplyCursor,
+    PrefetchHooks Function()> {
+  $$PersonaChatReplyCursorsTableTableManager(
+      _$AppDatabase db, $PersonaChatReplyCursorsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PersonaChatReplyCursorsTableFilterComposer(
+                  $db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PersonaChatReplyCursorsTableOrderingComposer(
+                  $db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PersonaChatReplyCursorsTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> characterId = const Value.absent(),
+            Value<int> consumedThroughMessageId = const Value.absent(),
+            Value<int> updatedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              PersonaChatReplyCursorsCompanion(
+            characterId: characterId,
+            consumedThroughMessageId: consumedThroughMessageId,
+            updatedAt: updatedAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String characterId,
+            Value<int> consumedThroughMessageId = const Value.absent(),
+            required int updatedAt,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              PersonaChatReplyCursorsCompanion.insert(
+            characterId: characterId,
+            consumedThroughMessageId: consumedThroughMessageId,
+            updatedAt: updatedAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$PersonaChatReplyCursorsTableProcessedTableManager
+    = ProcessedTableManager<
+        _$AppDatabase,
+        $PersonaChatReplyCursorsTable,
+        PersonaChatReplyCursor,
+        $$PersonaChatReplyCursorsTableFilterComposer,
+        $$PersonaChatReplyCursorsTableOrderingComposer,
+        $$PersonaChatReplyCursorsTableAnnotationComposer,
+        $$PersonaChatReplyCursorsTableCreateCompanionBuilder,
+        $$PersonaChatReplyCursorsTableUpdateCompanionBuilder,
+        (
+          PersonaChatReplyCursor,
+          BaseReferences<_$AppDatabase, $PersonaChatReplyCursorsTable,
+              PersonaChatReplyCursor>
+        ),
+        PersonaChatReplyCursor,
+        PrefetchHooks Function()>;
 typedef $$UserNotificationsTableCreateCompanionBuilder
     = UserNotificationsCompanion Function({
   required String id,
@@ -6113,6 +6644,9 @@ class $AppDatabaseManager {
       $$ClarificationRequestsTableTableManager(_db, _db.clarificationRequests);
   $$PersonaChatMessagesTableTableManager get personaChatMessages =>
       $$PersonaChatMessagesTableTableManager(_db, _db.personaChatMessages);
+  $$PersonaChatReplyCursorsTableTableManager get personaChatReplyCursors =>
+      $$PersonaChatReplyCursorsTableTableManager(
+          _db, _db.personaChatReplyCursors);
   $$UserNotificationsTableTableManager get userNotifications =>
       $$UserNotificationsTableTableManager(_db, _db.userNotifications);
 }

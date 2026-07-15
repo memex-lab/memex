@@ -133,6 +133,40 @@ void main() {
       expect(malformed.error, contains('Invalid task dependencies'));
     });
 
+    test('fails a dependent task when a prerequisite failed', () async {
+      var dependentRan = false;
+      executor.registerHandler('dependent_task', (_, __, ___) async {
+        dependentRan = true;
+      });
+      final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+      await db.into(db.tasks).insert(
+            TasksCompanion.insert(
+              id: 'failed-prerequisite',
+              type: 'prerequisite_task',
+              payload: const Value('{}'),
+              status: 'failed',
+              createdAt: Value(now),
+            ),
+          );
+      await db.into(db.tasks).insert(
+            TasksCompanion.insert(
+              id: 'dependent',
+              type: 'dependent_task',
+              payload: const Value('{}'),
+              status: 'pending',
+              createdAt: Value(now + 1),
+              dependencies: Value(jsonEncode(['failed-prerequisite'])),
+            ),
+          );
+
+      await executor.start(userId: 'user-a');
+      final dependent = await _waitForTaskStatus(db, 'dependent', 'failed');
+
+      expect(dependentRan, isFalse);
+      expect(dependent.error, contains('Dependency tasks failed'));
+      expect(dependent.error, contains('failed-prerequisite'));
+    });
+
     test('uses only available concurrency slots while backlog remains queued',
         () async {
       final release = Completer<void>();
@@ -896,6 +930,34 @@ void main() {
         expect(await executor.getTaskExecutionMarkerForTesting(), isNull);
       },
     );
+
+    test('reschedules one waiting task per business key', () async {
+      final firstId = await executor.enqueueOrRescheduleTask(
+        userId: 'user-a',
+        taskType: 'conversation_task',
+        payload: {'revision': 1},
+        bizId: 'character-1',
+        scheduledAt: 100,
+      );
+      final secondId = await executor.enqueueOrRescheduleTask(
+        userId: 'user-a',
+        taskType: 'conversation_task',
+        payload: {'revision': 2},
+        bizId: 'character-1',
+        scheduledAt: 200,
+      );
+
+      final tasks = await (db.select(db.tasks)
+            ..where((task) => task.type.equals('conversation_task')))
+          .get();
+      expect(secondId, firstId);
+      expect(tasks, hasLength(1));
+      expect(tasks.single.scheduledAt, 200);
+      expect(
+        jsonDecode(tasks.single.payload!)['revision'],
+        2,
+      );
+    });
   });
 }
 

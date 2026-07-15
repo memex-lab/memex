@@ -82,7 +82,9 @@ class EventSyncSubscription<T> {
 }
 
 class GlobalEventBus {
-  GlobalEventBus._();
+  GlobalEventBus._() : _taskExecutor = LocalTaskExecutor.instance;
+
+  GlobalEventBus.forTesting(this._taskExecutor);
 
   static GlobalEventBus? _instance;
   static GlobalEventBus get instance {
@@ -91,7 +93,7 @@ class GlobalEventBus {
   }
 
   final Logger _logger = getLogger('GlobalEventBus');
-  final LocalTaskExecutor _taskExecutor = LocalTaskExecutor.instance;
+  final LocalTaskExecutor _taskExecutor;
   final Map<String, List<EventTaskSubscription>> _subscriptions = {};
   final Map<String, List<EventSyncSubscription>> _syncSubscriptions = {};
 

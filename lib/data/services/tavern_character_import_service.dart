@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:memex/agent/memory/character_memory_service.dart';
 import 'package:memex/data/services/character_service.dart';
+import 'package:memex/data/services/character_workspace_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/domain/models/character_model.dart';
 
@@ -102,7 +102,9 @@ class TavernCharacterImportService {
     );
     final worldEntries = _extractWorldEntries(card);
     if (worldEntries.isNotEmpty) {
-      await CharacterMemoryService.instance.replaceWorldEntries(
+      final workspace = CharacterWorkspaceService.instance;
+      await workspace.ensureInitialized(userId, created);
+      await workspace.replaceUserProvidedWorldEntries(
         userId,
         created.id,
         worldEntries,

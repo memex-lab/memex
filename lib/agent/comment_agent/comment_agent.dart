@@ -1,21 +1,18 @@
 import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:memex/agent/agent_system_prompt_helper.dart';
 import 'package:memex/agent/agent_controller.util.dart';
-import 'package:memex/agent/context/character_context_assembler.dart';
 import 'package:memex/agent/comment_agent/prompts.dart';
-import 'package:memex/agent/memory/character_context_compressor.dart';
-import 'package:memex/agent/memory/character_memory_service.dart';
 import 'package:memex/agent/memory/memory_management.dart';
 import 'package:memex/agent/prompts.dart';
 import 'package:memex/agent/skills/comment_agent/comment_agent_skill.dart';
 import 'package:memex/agent/state_util.dart';
 import 'package:memex/domain/models/character_model.dart';
 import 'package:memex/data/services/character_service.dart';
+import 'package:memex/data/services/character_workspace_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/file_operation_service.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:logging/logging.dart';
-import 'package:memex/utils/tavern_macro.dart';
 import 'package:memex/utils/time_context.dart';
 
 class CommentAgent {
@@ -27,7 +24,6 @@ class CommentAgent {
     required String userId,
     required String factId,
     String? characterId,
-    required String rawInputContent,
     String? forcedReplyToId,
     bool withMemoryManagement = false,
     bool forceReply = false,
@@ -54,71 +50,40 @@ class CommentAgent {
     final controller = AgentController();
     addAgentLogger(controller);
     addAgentActivityCollector(controller);
-    // 1. Prepare Workspace
-    final workingDirectory = fileService.getWorkspacePath(userId);
-
-    // 2. Load Character
+    // Load the active character before selecting its private workspace.
     CharacterModel? character;
     if (characterId != null) {
       character = await characterService.getCharacter(userId, characterId);
+      if (character != null) {
+        await CharacterWorkspaceService.instance.ensureInitialized(
+          userId,
+          character,
+        );
+      }
     }
+    final workingDirectory = character == null
+        ? fileService.getWorkspacePath(userId)
+        : fileService.getCharacterWorkspacePath(userId, character.id);
 
     final tools = <Tool>[];
 
     // Memory Management (user-level memory tools, independent of character context)
     String memoryManagementPrompt = '';
-    final memoryManagement = await MemoryManagement.createDefault(
-      userId: userId,
-      sourceAgent: 'comment_agent',
-    );
-    if (withMemoryManagement) {
+    if (withMemoryManagement && character == null) {
+      final memoryManagement = await MemoryManagement.createDefault(
+        userId: userId,
+        sourceAgent: 'comment_agent',
+      );
       tools.addAll(memoryManagement.buildMemoryManagementTools());
       memoryManagementPrompt =
           await memoryManagement.buildMemoryManagementPrompt();
     }
 
-    // Build character context — userProfile and characterMemories go into skill
-    // system prompt; world/timeline/knowledge go into systemReminders.
-    String userProfile = '';
-    String characterMemories = '';
-    if (character != null) {
-      final ctx = await CharacterContextAssembler.build(
-        userId: userId,
-        character: character,
-        sourceAgent: 'comment_agent',
-        queryHint: rawInputContent,
-        excludeTimelineThreadId: factId,
-      );
-      userProfile = ctx.userProfile;
-      characterMemories = ctx.characterMemories;
-
-      if (ctx.characterWorld.isNotEmpty) {
-        state.systemReminders['character_world'] =
-            '## Triggered Character World Entries\n${TavernMacro.resolve(ctx.characterWorld, userName: userId, charName: character.name)}';
-      }
-      // Combine compaction checkpoints + recent timeline into one reminder.
-      {
-        final parts = <String>[];
-        if (ctx.checkpoints.isNotEmpty) {
-          parts.add('## Compressed Interaction History\n${ctx.checkpoints}');
-        }
-        if (ctx.recentTimeline.isNotEmpty) {
-          parts.add(
-            '## Recent Cross-Scene Interactions\n${ctx.recentTimeline}',
-          );
-        }
-        if (parts.isNotEmpty) {
-          state.systemReminders['character_timeline'] = parts.join('\n\n');
-        }
-      }
-      if (ctx.knowledgeCards.isNotEmpty) {
-        state.systemReminders['user_knowledge_cards'] =
-            '## User Knowledge Cards\n${ctx.knowledgeCards}';
-      }
-    } else {
-      // No character — fall back to user memory as profile.
-      userProfile = await memoryManagement.buildMemoryPrompt();
-    }
+    // Persisted sessions may contain broad reminders from the legacy context
+    // assembler. Character scenes now retrieve only their own workspace.
+    state.systemReminders.remove('character_world');
+    state.systemReminders.remove('character_timeline');
+    state.systemReminders.remove('user_knowledge_cards');
 
     final skill = CommentAgentSkill(
       character: character,
@@ -126,8 +91,6 @@ class CommentAgent {
       workingDirectory: workingDirectory,
       userId: userId,
       userName: userId,
-      userProfile: userProfile,
-      characterMemories: characterMemories,
       forcedReplyToId: forcedReplyToId,
       forceReply: forceReply,
       forceActivate: true,
@@ -143,12 +106,14 @@ class CommentAgent {
       skills: skills,
       disableSubAgents: true,
       controller: controller,
-      withGeneralPrinciples: true,
+      withGeneralPrinciples: false,
       planMode: PlanMode.none,
       autoSaveStateFunc: (state) async {
         await saveAgentState(state);
       },
-      hooks: [createAgentPromptHook(userId)],
+      hooks: [
+        createAgentPromptHookWithWorkingDirectory(userId, workingDirectory),
+      ],
     );
 
     _logger.info(
@@ -183,17 +148,18 @@ class CommentAgent {
       userId: userId,
       factId: factId,
       characterId: characterId,
-      rawInputContent: rawInputContent,
       forcedReplyToId: forcedReplyToId,
       withMemoryManagement: withMemoryManagement,
       forceReply: forceReply,
     );
     final state = agent.state;
-    pkmContext = await _loadPkmContextIfNeeded(
-      userId: userId,
-      factId: factId,
-      existingContext: pkmContext,
-    );
+    pkmContext = characterId == null
+        ? await _loadPkmContextIfNeeded(
+            userId: userId,
+            factId: factId,
+            existingContext: pkmContext,
+          )
+        : null;
     final systemReminder = _buildSystemReminder(
       effectiveCurrentTime,
       locationContextReminder,
@@ -216,25 +182,6 @@ class CommentAgent {
       ),
     ]);
     state.metadata['comment_task_post_body_injected'] = factId;
-
-    if (characterId != null && rawInputContent.trim().isNotEmpty) {
-      try {
-        await CharacterMemoryService.instance.appendTimelineEvent(
-          userId: userId,
-          characterId: characterId,
-          scene: CharacterMemoryScene.comment,
-          type: CharacterMemoryEventType.postObserved,
-          content: rawInputContent,
-          threadId: factId,
-          factId: factId,
-          sourceId: factId,
-          timestamp: entryTime ?? effectiveCurrentTime,
-          metadata: {'source': 'comment_agent_input'},
-        );
-      } catch (e) {
-        _logger.warning('Failed to append comment input timeline event: $e');
-      }
-    }
 
     List<LLMMessage> history = [];
     if (state.isRunning) {
@@ -262,16 +209,6 @@ class CommentAgent {
       }
 
       history = await agent.run([userMessage], useStream: false);
-    }
-
-    // Post-run: check if compression is needed based on real token usage.
-    if (characterId != null && state.usages.isNotEmpty) {
-      final lastPromptTokens = state.usages.last.promptTokens;
-      await CharacterContextCompressor.instance.compressIfNeeded(
-        userId: userId,
-        characterId: characterId,
-        lastPromptTokens: lastPromptTokens,
-      );
     }
 
     // Extract the text response

@@ -3,19 +3,12 @@ import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-import 'package:memex/agent/companion_agent/companion_agent.dart';
-import 'package:memex/data/repositories/memex_router.dart';
-import 'package:memex/db/app_database.dart';
 import 'package:memex/domain/models/character_model.dart';
-import 'package:memex/domain/models/llm_config.dart';
-import 'package:memex/data/services/event_bus_service.dart';
-import 'package:memex/data/services/persona_chat_service.dart';
-import 'package:memex/data/services/character_service.dart';
+import 'package:memex/domain/models/persona_chat.dart';
+import 'package:memex/ui/character/view_models/persona_chat_viewmodel.dart';
 import 'package:memex/ui/core/widgets/character_avatar.dart';
 import 'package:memex/ui/core/widgets/local_image.dart';
-import 'package:memex/utils/tavern_macro.dart';
 import 'package:memex/utils/user_storage.dart';
-import 'package:memex/domain/models/agent_definitions.dart';
 import 'package:intl/intl.dart';
 
 const _personaStageInk = Color(0xFF080B12);
@@ -32,8 +25,8 @@ const _personaUserBorder = Color(0xFFEFE4CD);
 
 /// 1-on-1 chat screen with an AI companion character.
 class PersonaChatScreen extends StatefulWidget {
-  final String characterId;
-  const PersonaChatScreen({super.key, required this.characterId});
+  final PersonaChatViewModel viewModel;
+  const PersonaChatScreen({super.key, required this.viewModel});
 
   @override
   State<PersonaChatScreen> createState() => _PersonaChatScreenState();
@@ -42,21 +35,20 @@ class PersonaChatScreen extends StatefulWidget {
 class _PersonaChatScreenState extends State<PersonaChatScreen> {
   final _textController = TextEditingController();
   final _scrollController = ScrollController();
-  final _chatService = PersonaChatService.instance;
+  String? _lastObservedCharacterId;
+  int? _lastNewestMessageId;
+  String? _lastPresentedError;
 
-  late String _currentCharacterId = widget.characterId;
-  CharacterModel? _character;
-  String? _userId;
-  String? _userAvatar;
-  List<PersonaChatMessage> _messages = [];
-  bool _isLoading = true;
-  bool _isStreaming = false;
-  String _streamingText = '';
-
-  // Pagination state — WeChat/WhatsApp style: load older messages on scroll-up
-  static const int _pageSize = 30;
-  bool _hasMoreHistory = true;
-  bool _isLoadingMore = false;
+  PersonaChatViewModel get _viewModel => widget.viewModel;
+  String get _currentCharacterId => _viewModel.currentCharacterId;
+  CharacterModel? get _character => _viewModel.character;
+  String? get _userId => _viewModel.userId;
+  String? get _userAvatar => _viewModel.userAvatar;
+  List<PersonaChatMessageModel> get _messages => _viewModel.messages;
+  bool get _isLoading => _viewModel.isLoading;
+  bool get _isReplying => _viewModel.isReplying;
+  bool get _hasMoreHistory => _viewModel.hasMoreHistory;
+  bool get _isLoadingMore => _viewModel.isLoadingMore;
 
   // Cached MarkdownStyleSheet — avoid recreating on every build
   static final _cachedMarkdownStyle = MarkdownStyleSheet(
@@ -86,81 +78,41 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
   @override
   void initState() {
     super.initState();
-    _init();
+    _viewModel.addListener(_onViewModelChanged);
+    unawaited(_viewModel.init());
     _scrollController.addListener(_onScroll);
-    EventBusService.instance.addHandler(
-      EventBusMessageType.personaChatMessageAdded,
-      _onPersonaChatMessageAdded,
-    );
   }
 
-  Future<void> _init() async {
-    final userId = await UserStorage.getUserId();
-    if (userId == null) return;
-    final userAvatar = await MemexRouter().getUserAvatar();
-
-    final character = await CharacterService.instance
-        .getCharacter(userId, _currentCharacterId);
-
-    final messages = await _chatService.getMessages(
-      _currentCharacterId,
-      limit: _pageSize,
+  void _onViewModelChanged() {
+    if (!mounted) return;
+    final newestMessageId = _messages.firstOrNull?.id;
+    final shouldScroll = shouldAutoScrollPersonaChat(
+      previousCharacterId: _lastObservedCharacterId,
+      currentCharacterId: _currentCharacterId,
+      previousNewestMessageId: _lastNewestMessageId,
+      currentNewestMessageId: newestMessageId,
     );
-    await _chatService.markAllRead(_currentCharacterId);
-
-    // If this is the first chat and the character has a greeting, deliver it.
-    if (messages.isEmpty &&
-        character != null &&
-        character.firstMessage != null &&
-        character.firstMessage!.trim().isNotEmpty) {
-      final greeting = TavernMacro.resolve(
-        character.firstMessage!,
-        userName: userId,
-        charName: character.name,
-      );
-      await _chatService.addCharacterMessage(
-        _currentCharacterId,
-        greeting,
-        isRead: true,
-      );
-      // Reload after inserting greeting.
-      final updatedMessages = await _chatService.getMessages(
-        _currentCharacterId,
-        limit: _pageSize,
-      );
-      if (mounted) {
-        setState(() {
-          _character = character;
-          _userId = userId;
-          _userAvatar = userAvatar;
-          _messages = updatedMessages;
-          _hasMoreHistory = updatedMessages.length >= _pageSize;
-          _isLoading = false;
-        });
-        _scrollToBottom();
-      }
-      return;
-    }
-
-    if (mounted) {
-      setState(() {
-        _character = character;
-        _userId = userId;
-        _userAvatar = userAvatar;
-        _messages = messages;
-        _hasMoreHistory = messages.length >= _pageSize;
-        _isLoading = false;
-      });
+    _lastObservedCharacterId = _currentCharacterId;
+    _lastNewestMessageId = newestMessageId;
+    if (shouldScroll) {
       _scrollToBottom();
+    }
+    final error = _viewModel.errorMessage;
+    if (error != null && error != _lastPresentedError) {
+      _lastPresentedError = error;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error)),
+        );
+      });
     }
   }
 
   @override
   void dispose() {
-    EventBusService.instance.removeHandler(
-      EventBusMessageType.personaChatMessageAdded,
-      _onPersonaChatMessageAdded,
-    );
+    _viewModel.removeListener(_onViewModelChanged);
+    _viewModel.dispose();
     _scrollController.removeListener(_onScroll);
     _textController.dispose();
     _scrollController.dispose();
@@ -180,122 +132,18 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
 
   /// Loads the next page of older messages and prepends them to the list.
   Future<void> _loadMoreHistory() async {
-    if (_isLoadingMore || !_hasMoreHistory) return;
-    setState(() => _isLoadingMore = true);
-
-    final olderMessages = await _chatService.getMessages(
-      _currentCharacterId,
-      limit: _pageSize,
-      offset: _messages.length,
-    );
-
-    if (!mounted) return;
-    setState(() {
-      _messages = [..._messages, ...olderMessages];
-      _hasMoreHistory = olderMessages.length >= _pageSize;
-      _isLoadingMore = false;
-    });
-  }
-
-  void _onPersonaChatMessageAdded(EventBusMessage message) {
-    if (message is! PersonaChatMessageAddedMessage) return;
-    if (message.characterId != _currentCharacterId) return;
-    if (!mounted) return;
-    // New message arrived — reload the latest page and keep any older
-    // messages that were already loaded via pagination.
-    _chatService
-        .getMessages(_currentCharacterId, limit: _messages.length + 5)
-        .then((updated) {
-      if (!mounted) return;
-      setState(() => _messages = updated);
-      _scrollToBottom();
-    });
+    await _viewModel.loadMoreHistory();
   }
 
   Future<void> _sendMessage() async {
     final text = _textController.text.trim();
-    if (text.isEmpty || _isStreaming) return;
+    if (text.isEmpty) return;
 
     _textController.clear();
-
-    final userMessageTime = DateTime.now();
-
-    // Persist user message
-    await _chatService.addUserMessage(_currentCharacterId, text,
-        timestamp: userMessageTime);
-
-    // Reload messages to show user's message (preserve loaded history depth)
-    final messages = await _chatService.getMessages(
-      _currentCharacterId,
-      limit: _messages.length + 1,
-    );
-    setState(() {
-      _messages = messages;
-      _isStreaming = true;
-      _streamingText = '';
-    });
-    _scrollToBottom();
-
-    // Get LLM resources
-    final userId = await UserStorage.getUserId();
-    if (userId == null) return;
-
-    try {
-      final resources = await UserStorage.getAgentLLMResources(
-        AgentDefinitions.companionAgent,
-        defaultClientKey: LLMConfig.defaultClientKey,
-      );
-
-      final buffer = StringBuffer();
-      await for (final chunk in CompanionAgent.chat(
-        client: resources.client,
-        modelConfig: resources.modelConfig,
-        userId: userId,
-        characterId: _currentCharacterId,
-        userMessage: text,
-        userMessageTime: userMessageTime,
-      )) {
-        buffer.write(chunk);
-        if (mounted) {
-          setState(() => _streamingText = buffer.toString());
-          _scrollToBottom();
-        }
-      }
-
-      // Persist character response
-      final fullResponse = buffer.toString().trim();
-      if (fullResponse.isNotEmpty) {
-        await _chatService.addCharacterMessage(
-          _currentCharacterId,
-          fullResponse,
-          isRead: true, // User is looking at it
-          timestamp: DateTime.now(),
-        );
-      }
-
-      // Reload messages
-      final updated = await _chatService.getMessages(
-        _currentCharacterId,
-        limit: _messages.length + 1,
-      );
-      if (mounted) {
-        setState(() {
-          _messages = updated;
-          _isStreaming = false;
-          _streamingText = '';
-        });
-        _scrollToBottom();
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isStreaming = false;
-          _streamingText = '';
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to get response: $e')),
-        );
-      }
+    final sent = await _viewModel.sendMessage(text);
+    if (!sent && mounted && _textController.text.isEmpty) {
+      _textController.text = text;
+      _textController.selection = TextSelection.collapsed(offset: text.length);
     }
   }
 
@@ -304,23 +152,20 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
       await Future<void>.delayed(const Duration(milliseconds: 16));
       if (!mounted) return;
       if (_scrollController.hasClients) {
-        _scrollController.animateTo(
+        await _scrollController.animateTo(
           _scrollController.position.minScrollExtent,
           duration: const Duration(milliseconds: 260),
           curve: Curves.easeOut,
         );
+        if (mounted) {
+          await _viewModel.markVisibleMessagesRead();
+        }
       }
     });
   }
 
   Future<void> _switchCharacter() async {
-    if (_isStreaming) return;
-
-    final userId = await UserStorage.getUserId();
-    if (userId == null) return;
-
-    final characters = await CharacterService.instance.getAllCharacters(userId);
-    final enabled = characters.where((c) => c.enabled).toList();
+    final enabled = await _viewModel.loadEnabledCharacters();
     if (enabled.length <= 1 || !mounted) return;
 
     final selected = await _CharacterSwitcherSheet.show(
@@ -330,43 +175,38 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
     );
 
     if (selected != null && selected.id != _currentCharacterId && mounted) {
-      // Set as primary companion
-      await CharacterService.instance.setPrimaryCompanion(userId, selected.id);
-
-      // Switch to new character
-      setState(() {
-        _currentCharacterId = selected.id;
-        _isLoading = true;
-        _hasMoreHistory = true;
-        _isLoadingMore = false;
-      });
-      await _init();
+      await _viewModel.switchCharacter(selected.id);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _personaStageInk,
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Stack(
-              children: [
-                Positioned.fill(
-                  child: RepaintBoundary(
-                    child: _ChatAtmosphereBackground(character: _character),
-                  ),
-                ),
-                Column(
+    return ListenableBuilder(
+      listenable: _viewModel,
+      builder: (context, _) {
+        return Scaffold(
+          backgroundColor: _personaStageInk,
+          body: _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : Stack(
                   children: [
-                    SizedBox(height: MediaQuery.of(context).padding.top),
-                    _buildHeader(),
-                    Expanded(child: _buildMessageList()),
-                    _buildInputBar(),
+                    Positioned.fill(
+                      child: RepaintBoundary(
+                        child: _ChatAtmosphereBackground(character: _character),
+                      ),
+                    ),
+                    Column(
+                      children: [
+                        SizedBox(height: MediaQuery.of(context).padding.top),
+                        _buildHeader(),
+                        Expanded(child: _buildMessageList()),
+                        _buildInputBar(),
+                      ],
+                    ),
                   ],
                 ),
-              ],
-            ),
+        );
+      },
     );
   }
 
@@ -391,7 +231,7 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
             const SizedBox(width: 10),
             Expanded(
               child: GestureDetector(
-                onTap: _isStreaming ? null : _switchCharacter,
+                onTap: _switchCharacter,
                 child: Row(
                   children: [
                     Container(
@@ -435,10 +275,10 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
                       ),
                     ),
                     const SizedBox(width: 4),
-                    Icon(
+                    const Icon(
                       Icons.keyboard_arrow_down_rounded,
                       size: 19,
-                      color: _isStreaming ? _personaTextMuted : _personaAccent,
+                      color: _personaAccent,
                     ),
                   ],
                 ),
@@ -453,10 +293,8 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
   }
 
   Widget _buildMessageList() {
-    // Show typing indicator or streaming bubble at the end
-    final showStreamingBubble = _isStreaming && _streamingText.isNotEmpty;
-    final showTypingIndicator = _isStreaming && _streamingText.isEmpty;
-    final extraItems = (showStreamingBubble || showTypingIndicator) ? 1 : 0;
+    final showTypingIndicator = _isReplying;
+    final extraItems = showTypingIndicator ? 1 : 0;
     // Extra item at the tail (top of reversed list) for load-more indicator
     final loadMoreItem = (_hasMoreHistory || _isLoadingMore) ? 1 : 0;
     final itemCount = _messages.length + extraItems + loadMoreItem;
@@ -469,16 +307,9 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
       padding: const EdgeInsets.fromLTRB(10, 8, 12, 10),
       itemCount: itemCount,
       itemBuilder: (context, index) {
-        // Typing indicator or streaming message at the bottom (index 0 in reversed list)
+        // Typing indicator at the bottom (index 0 in reversed list).
         if (extraItems == 1 && index == 0) {
-          if (showTypingIndicator) {
-            return _buildTypingIndicator();
-          }
-          return _buildBubble(
-            text: _streamingText,
-            isCharacter: true,
-            isStreaming: true,
-          );
+          return _buildTypingIndicator();
         }
 
         // Load-more indicator at the top (last index in reversed list)
@@ -524,7 +355,7 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
 
   bool _shouldShowDateDivider(
     int messageIndex,
-    List<PersonaChatMessage> messages,
+    List<PersonaChatMessageModel> messages,
   ) {
     // Always show timestamp for the oldest loaded message
     if (messageIndex == messages.length - 1) return true;
@@ -715,10 +546,9 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
   Widget _buildBubble({
     required String text,
     required bool isCharacter,
-    bool isStreaming = false,
   }) {
     if (isCharacter) {
-      return _buildCharacterBubble(text: text, isStreaming: isStreaming);
+      return _buildCharacterBubble(text: text);
     }
 
     return Padding(
@@ -784,7 +614,6 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
 
   Widget _buildCharacterBubble({
     required String text,
-    required bool isStreaming,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 22),
@@ -817,17 +646,6 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
                         styleSheet: _cachedMarkdownStyle,
                       ),
                     ),
-                    if (isStreaming) ...[
-                      const SizedBox(width: 8),
-                      const SizedBox(
-                        width: 8,
-                        height: 8,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 1.5,
-                          color: _personaAccent,
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ),
@@ -888,7 +706,6 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
   Widget _buildInputBar() {
     return PersonaChatInputBar(
       controller: _textController,
-      isStreaming: _isStreaming,
       onSend: _sendMessage,
       hintText: UserStorage.l10n.personaChatInputHint,
     );
@@ -904,6 +721,17 @@ int personaChatMessageIndexForReversedList({
   required int extraItems,
 }) {
   return listIndex - extraItems;
+}
+
+@visibleForTesting
+bool shouldAutoScrollPersonaChat({
+  required String? previousCharacterId,
+  required String currentCharacterId,
+  required int? previousNewestMessageId,
+  required int? currentNewestMessageId,
+}) {
+  return previousCharacterId != currentCharacterId ||
+      previousNewestMessageId != currentNewestMessageId;
 }
 
 class _ChatAtmosphereBackground extends StatelessWidget {
@@ -1224,17 +1052,15 @@ class PersonaChatInputBar extends StatelessWidget {
   const PersonaChatInputBar({
     super.key,
     required this.controller,
-    required this.isStreaming,
     required this.onSend,
     required this.hintText,
   });
 
   final TextEditingController controller;
-  final bool isStreaming;
   final VoidCallback onSend;
   final String hintText;
 
-  bool _canSend(String value) => !isStreaming && value.trim().isNotEmpty;
+  bool _canSend(String value) => value.trim().isNotEmpty;
 
   @override
   Widget build(BuildContext context) {
@@ -1294,7 +1120,6 @@ class PersonaChatInputBar extends StatelessWidget {
                     onSubmitted: (_) {
                       if (canSend) onSend();
                     },
-                    enabled: !isStreaming,
                   ),
                 ),
                 const SizedBox(width: 8),

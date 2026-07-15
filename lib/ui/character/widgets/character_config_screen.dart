@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:logging/logging.dart';
-import 'package:memex/agent/memory/character_memory_service.dart';
+import 'package:memex/data/services/character_workspace_service.dart';
 import 'package:memex/domain/models/character_model.dart';
 import 'package:memex/data/services/character_service.dart';
 import 'package:memex/data/services/media_service.dart';
@@ -357,7 +357,7 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
   String? _chatBackgroundValue;
   String? _chatBackgroundPreview;
 
-  // World book entries and memory entries (loaded from CharacterMemoryService)
+  // User-provided world and memory seeds stored in the character workspace.
   List<Map<String, dynamic>> _worldEntries = [];
   List<Map<String, dynamic>> _memoryEntries = [];
 
@@ -395,9 +395,10 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
     final userId = await UserStorage.getUserId();
     if (userId == null || widget.character == null) return;
     final characterId = widget.character!.id;
-    final svc = CharacterMemoryService.instance;
-    final world = await svc.loadWorldEntries(userId, characterId);
-    final memory = await svc.loadMemoryEntries(userId, characterId);
+    final svc = CharacterWorkspaceService.instance;
+    await svc.ensureInitialized(userId, widget.character!);
+    final world = await svc.loadUserProvidedWorldEntries(userId, characterId);
+    final memory = await svc.loadUserProvidedMemoryEntries(userId, characterId);
     if (mounted) {
       setState(() {
         _worldEntries = world;
@@ -616,26 +617,35 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
           userId: userId,
           characterData: updates..['enabled'] = true,
         );
-        // Save world entries and memory entries for new character
-        if (_worldEntries.isNotEmpty) {
-          await CharacterMemoryService.instance
-              .replaceWorldEntries(userId, created.id, _worldEntries);
-        }
-        if (_memoryEntries.isNotEmpty) {
-          await CharacterMemoryService.instance
-              .replaceMemoryEntries(userId, created.id, _memoryEntries);
-        }
+        final workspace = CharacterWorkspaceService.instance;
+        await workspace.ensureInitialized(userId, created);
+        await workspace.replaceUserProvidedWorldEntries(
+          userId,
+          created.id,
+          _worldEntries,
+        );
+        await workspace.replaceUserProvidedMemoryEntries(
+          userId,
+          created.id,
+          _memoryEntries,
+        );
       } else {
         await CharacterService.instance.updateCharacter(
           userId: userId,
           characterId: widget.character!.id,
           updates: updates,
         );
-        // Save world entries and memory entries
-        await CharacterMemoryService.instance
-            .replaceWorldEntries(userId, widget.character!.id, _worldEntries);
-        await CharacterMemoryService.instance
-            .replaceMemoryEntries(userId, widget.character!.id, _memoryEntries);
+        final workspace = CharacterWorkspaceService.instance;
+        await workspace.replaceUserProvidedWorldEntries(
+          userId,
+          widget.character!.id,
+          _worldEntries,
+        );
+        await workspace.replaceUserProvidedMemoryEntries(
+          userId,
+          widget.character!.id,
+          _memoryEntries,
+        );
       }
 
       if (mounted) {

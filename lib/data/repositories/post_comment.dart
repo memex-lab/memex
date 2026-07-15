@@ -1,9 +1,9 @@
 import 'package:logging/logging.dart';
-import 'package:memex/agent/memory/character_memory_service.dart';
 import 'package:memex/agent/comment_agent/comment_agent.dart';
 import 'package:memex/domain/models/llm_config.dart';
 import 'package:memex/domain/models/card_model.dart';
 import 'package:memex/data/services/file_system_service.dart';
+import 'package:memex/data/services/character_execution_coordinator.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:uuid/uuid.dart';
 import 'package:memex/domain/models/agent_definitions.dart';
@@ -46,15 +46,6 @@ Future<Map<String, dynamic>> postCommentEndpoint(
     // Save user comment to card (persist immediately)
     final commentId = const Uuid().v4();
     final commentTimestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    String? targetCharacterId;
-    if (replyToId != null && replyToId.isNotEmpty) {
-      for (final c in cardData.comments.reversed) {
-        if (c.id == replyToId && c.isAi && c.characterId != null) {
-          targetCharacterId = c.characterId;
-          break;
-        }
-      }
-    }
     await _fileSystemService.updateCardFile(userId, cardId, (card) {
       final newComment = CardComment(
         id: commentId,
@@ -65,33 +56,6 @@ Future<Map<String, dynamic>> postCommentEndpoint(
       );
       return card.copyWith(comments: [...card.comments, newComment]);
     });
-
-    if (targetCharacterId != null) {
-      try {
-        await CharacterMemoryService.instance.appendTimelineEvent(
-          userId: userId,
-          characterId: targetCharacterId,
-          scene: CharacterMemoryScene.comment,
-          type: CharacterMemoryEventType.userCommentReply,
-          content: content,
-          threadId: cardId,
-          factId: cardId,
-          commentId: commentId,
-          replyToId: replyToId,
-          sourceId: commentId,
-          timestamp: DateTime.fromMillisecondsSinceEpoch(
-            commentTimestamp * 1000,
-          ),
-          metadata: {
-            if (replyToId != null && replyToId.isNotEmpty)
-              'reply_to_id': replyToId,
-            'source': 'post_comment',
-          },
-        );
-      } catch (e) {
-        _logger.warning('Failed to append user comment timeline event: $e');
-      }
-    }
 
     _logger.info('User comment saved for card $cardId, comment_id: $commentId');
 
@@ -278,23 +242,35 @@ Future<void> processAICommentReply({
 
     // 7. Initialize and Run Agent
     try {
-      await CommentAgent.runWithContent(
-        userContent,
-        client: client,
-        modelConfig: modelConfig,
-        userId: userId,
-        factId: cardId,
-        rawInputContent: contentToUse,
-        initialInsight: initialInsight,
-        existingCommentsContext: existingCommentsContext,
-        characterId: characterId,
-        forcedReplyToId: userCommentId,
-        currentTime: inputDateTime ?? DateTime.now(),
-        entryTime: entryDateTime,
-        locationContextReminder: effectiveLocationReminder,
-        withMemoryManagement: withMemoryManagement,
-        forceReply: forceReply,
-      );
+      Future<void> runComment() async {
+        await CommentAgent.runWithContent(
+          userContent,
+          client: client,
+          modelConfig: modelConfig,
+          userId: userId,
+          factId: cardId,
+          rawInputContent: contentToUse,
+          initialInsight: initialInsight,
+          existingCommentsContext: existingCommentsContext,
+          characterId: characterId,
+          forcedReplyToId: userCommentId,
+          currentTime: inputDateTime ?? DateTime.now(),
+          entryTime: entryDateTime,
+          locationContextReminder: effectiveLocationReminder,
+          withMemoryManagement: withMemoryManagement,
+          forceReply: forceReply,
+        );
+      }
+
+      if (characterId == null) {
+        await runComment();
+      } else {
+        await CharacterExecutionCoordinator.instance.run(
+          userId: userId,
+          characterId: characterId,
+          action: runComment,
+        );
+      }
     } catch (e) {
       _logger.severe('Error running comment agent: $e');
     }
