@@ -14,6 +14,7 @@ import 'package:memex/data/services/task_handlers/character_conversation_handler
 import 'package:memex/db/app_database.dart';
 import 'package:memex/domain/models/character_conversation.dart';
 import 'package:memex/domain/models/character_model.dart';
+import 'package:memex/domain/models/character_message.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -81,7 +82,7 @@ void main() {
         );
         return CharacterConversationDecision.speak([
           '醒啦。',
-          '什么梦，说来听听。',
+          CharacterOutgoingMessage.emoji('🙂'),
         ]);
       },
     );
@@ -98,7 +99,11 @@ void main() {
         .get();
     expect(characterRows.map((message) => message.content), [
       '醒啦。',
-      '什么梦，说来听听。',
+      '🙂',
+    ]);
+    expect(characterRows.map((message) => message.messageType), [
+      PersonaChatMessageTypes.text,
+      PersonaChatMessageTypes.emoji,
     ]);
     expect(
       characterRows.map((message) => message.contactEpisodeId).toSet(),

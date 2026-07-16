@@ -142,7 +142,10 @@ void main() {
     );
 
     expect(decision.action, CharacterInitiativeAction.speak);
-    expect(decision.messages, ['刚想起你。', '没忙什么，你呢？']);
+    expect(
+      decision.messages.map((message) => message.content),
+      ['刚想起你。', '没忙什么，你呢？'],
+    );
     expect(
       decision.wakeAt,
       DateTime.parse('2026-07-14T09:30:00+08:00'),

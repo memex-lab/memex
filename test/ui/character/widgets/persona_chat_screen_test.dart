@@ -160,6 +160,26 @@ void main() {
     expect(focusNode.hasFocus, isFalse);
   });
 
+  testWidgets('standalone emoji uses large message rendering', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: PersonaChatEmojiGlyph(emoji: '🙂'),
+        ),
+      ),
+    );
+
+    final text = tester.widget<Text>(find.text('🙂'));
+    expect(text.style?.fontSize, 42);
+    final semantics = tester.widget<Semantics>(
+      find.descendant(
+        of: find.byType(PersonaChatEmojiGlyph),
+        matching: find.byType(Semantics),
+      ),
+    );
+    expect(semantics.properties.label, 'Emoji message: 🙂');
+  });
+
   test('reversed chat list reserves index zero for the typing indicator', () {
     expect(
       personaChatMessageIndexForReversedList(

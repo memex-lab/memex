@@ -1,11 +1,12 @@
 // ignore_for_file: non_constant_identifier_names
 
 import 'package:dart_agent_core/dart_agent_core.dart';
+import 'package:memex/domain/models/character_message.dart';
 
 abstract final class CharacterContactActionTools {
   static List<Tool> build({
     required DateTime now,
-    required void Function(List<String> messages) onSpeak,
+    required void Function(List<CharacterOutgoingMessage> messages) onSpeak,
     required void Function(DateTime wakeAt, String reason) onThinkLater,
     required void Function(String reason) onStayQuiet,
   }) {
@@ -16,7 +17,9 @@ abstract final class CharacterContactActionTools {
     ];
   }
 
-  static Tool _speak(void Function(List<String>) onSpeak) {
+  static Tool _speak(
+    void Function(List<CharacterOutgoingMessage>) onSpeak,
+  ) {
     return Tool(
       name: 'Speak',
       description:
@@ -26,22 +29,26 @@ abstract final class CharacterContactActionTools {
         'properties': {
           'messages': {
             'type': 'array',
-            'items': {'type': 'string'},
+            'items': {
+              'type': 'object',
+              'properties': {
+                'type': {
+                  'type': 'string',
+                  'enum': ['text', 'emoji'],
+                },
+                'content': {'type': 'string'},
+              },
+              'required': ['type', 'content'],
+            },
             'minItems': 1,
-            'description': 'Exact user-facing chat bubbles in send order.',
+            'description': 'Typed user-facing messages in send order. Use '
+                '`emoji` only for one standalone Unicode emoji sequence.',
           },
         },
         'required': ['messages'],
       },
       executable: (List<dynamic> messages) {
-        final normalized = messages
-            .whereType<String>()
-            .map((message) => message.trim())
-            .where((message) => message.isNotEmpty)
-            .toList(growable: false);
-        if (normalized.isEmpty || normalized.length != messages.length) {
-          throw ArgumentError('Speak requires non-empty string messages.');
-        }
+        final normalized = parseCharacterOutgoingMessages(messages);
         onSpeak(normalized);
         return AgentToolResult(
           content: TextPart('Private messages selected.'),

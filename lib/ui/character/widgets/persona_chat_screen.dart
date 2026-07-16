@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:memex/domain/models/character_model.dart';
+import 'package:memex/domain/models/character_message.dart';
 import 'package:memex/domain/models/persona_chat.dart';
 import 'package:memex/ui/character/view_models/persona_chat_viewmodel.dart';
 import 'package:memex/ui/core/widgets/character_avatar.dart';
@@ -349,7 +350,12 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
         return Column(
           children: [
             if (showDate) _buildDateDivider(msg.timestamp),
-            if (msg.messageType == 'action')
+            if (msg.messageType == PersonaChatMessageTypes.emoji)
+              _buildEmojiMessage(
+                emoji: msg.content,
+                isCharacter: msg.isFromCharacter,
+              )
+            else if (msg.messageType == PersonaChatMessageTypes.action)
               _buildActionMessage(text: msg.content)
             else
               _buildBubble(
@@ -562,6 +568,59 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
     );
   }
 
+  Widget _buildEmojiMessage({
+    required String emoji,
+    required bool isCharacter,
+  }) {
+    final glyph = PersonaChatEmojiGlyph(emoji: emoji);
+    if (isCharacter) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 18),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 46,
+              child: Align(
+                alignment: Alignment.topLeft,
+                child: _FramedCharacterAvatar(
+                  avatar: _character?.avatar,
+                  name: _character?.name ?? '',
+                  size: 40,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            glyph,
+            const Spacer(),
+          ],
+        ),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 18),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Spacer(),
+          glyph,
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 46,
+            child: Align(
+              alignment: Alignment.topRight,
+              child: _UserAvatar(
+                avatar: _userAvatar,
+                name: _userId ?? '',
+                size: 34,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildBubble({
     required String text,
     required bool isCharacter,
@@ -752,6 +811,28 @@ class PersonaChatKeyboardDismissRegion extends StatelessWidget {
       behavior: HitTestBehavior.translucent,
       onTap: focusNode.unfocus,
       child: child,
+    );
+  }
+}
+
+@visibleForTesting
+class PersonaChatEmojiGlyph extends StatelessWidget {
+  const PersonaChatEmojiGlyph({super.key, required this.emoji});
+
+  final String emoji;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: 'Emoji message: $emoji',
+      child: Text(
+        emoji,
+        style: const TextStyle(
+          fontSize: 42,
+          height: 1.15,
+          letterSpacing: 0,
+        ),
+      ),
     );
   }
 }

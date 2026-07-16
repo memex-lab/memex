@@ -47,10 +47,12 @@ import 'package:memex/data/services/task_handlers/fts_index_handler.dart';
 import 'package:memex/data/services/task_handlers/llm_error_utils.dart';
 import 'package:memex/data/services/task_handlers/comment_agent_handler.dart';
 import 'package:memex/data/services/task_handlers/character_initiative_handler.dart';
+import 'package:memex/data/services/task_handlers/character_history_acquaintance_handler.dart';
 import 'package:memex/data/services/task_handlers/character_perception_handler.dart';
 import 'package:memex/data/services/task_handlers/character_conversation_handler.dart';
 import 'package:memex/data/services/character_conversation_service.dart';
 import 'package:memex/data/services/character_initiative_service.dart';
+import 'package:memex/data/services/character_history_acquaintance_service.dart';
 import 'package:memex/data/services/character_service.dart';
 import 'package:memex/data/repositories/persona_chat_repository.dart';
 import 'package:memex/data/services/task_handlers/reprocess_comments_handler.dart';
@@ -136,13 +138,6 @@ class MemexRouter {
       initCustomAgentHandler();
       registerBuiltInEventSerializers();
       await CustomAgentConfigService.instance.registerAll(userId);
-      final primaryCompanion =
-          await CharacterService.instance.getPrimaryCompanion(userId);
-      if (primaryCompanion?.enabled == true) {
-        await CharacterInitiativeService.instance.ensureScheduled(
-          userId: userId,
-        );
-      }
       await AgentBackgroundTaskService.instance.startMonitoring();
       AgentBackgroundCoordinator.instance.start(
         executor: LocalTaskExecutor.instance,
@@ -158,6 +153,20 @@ class MemexRouter {
       // fields from their Facts files. Runs after SearchService subscribes so
       // migrated card facts are incrementally reflected in FTS.
       await migrateCardsToFactAssets(userId);
+
+      // Existing records must be fully readable before a companion privately
+      // explores them for the first time.
+      final primaryCompanion =
+          await CharacterService.instance.getPrimaryCompanion(userId);
+      if (primaryCompanion?.enabled == true) {
+        await CharacterHistoryAcquaintanceService.instance.ensureScheduled(
+          userId: userId,
+          character: primaryCompanion!,
+        );
+        await CharacterInitiativeService.instance.ensureScheduled(
+          userId: userId,
+        );
+      }
 
       await ScheduleStateService.instance.ensureInitialized(userId);
 
@@ -336,6 +345,11 @@ class MemexRouter {
       concurrencyPolicy: TaskConcurrencyPolicy.byUser(),
     );
     executor.registerHandler(
+      CharacterHistoryAcquaintanceService.taskType,
+      handleCharacterHistoryAcquaintanceImpl,
+      concurrencyPolicy: TaskConcurrencyPolicy.byUser(),
+    );
+    executor.registerHandler(
       CharacterInitiativeService.taskType,
       handleCharacterInitiativeImpl,
       concurrencyPolicy: TaskConcurrencyPolicy.byUser(),
@@ -367,6 +381,10 @@ class MemexRouter {
     executor.registerFailureHandler(
       'character_perception_task',
       handleCharacterPerceptionFailure,
+    );
+    executor.registerFailureHandler(
+      CharacterHistoryAcquaintanceService.taskType,
+      handleCharacterHistoryAcquaintanceFailure,
     );
     executor.registerFailureHandler(
       CharacterInitiativeService.taskType,

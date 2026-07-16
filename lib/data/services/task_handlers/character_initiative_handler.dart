@@ -9,6 +9,7 @@ import 'package:memex/data/services/local_task_executor.dart';
 import 'package:memex/data/services/persona_chat_service.dart';
 import 'package:memex/data/services/task_handlers/llm_error_utils.dart';
 import 'package:memex/domain/models/character_initiative.dart';
+import 'package:memex/domain/models/character_message.dart';
 import 'package:memex/domain/models/character_model.dart';
 import 'package:memex/utils/logger.dart';
 
@@ -31,7 +32,7 @@ typedef CharacterInitiativeDecider = Future<CharacterInitiativeDecision>
 
 typedef CharacterInitiativeMessageSender = Future<void> Function({
   required String characterId,
-  required List<String> messages,
+  required List<CharacterOutgoingMessage> messages,
   required DateTime timestamp,
   required String contactEpisodeId,
   String? factId,
@@ -199,11 +200,8 @@ class CharacterInitiativeTaskHandler {
 
       switch (decision.action) {
         case CharacterInitiativeAction.speak:
-          final messages = decision.messages
-              .map((message) => message.trim())
-              .where((message) => message.isNotEmpty)
-              .toList(growable: false);
-          if (messages.isEmpty || messages.length != decision.messages.length) {
+          final messages = decision.messages;
+          if (messages.isEmpty) {
             throw StateError('Character selected invalid private messages.');
           }
           var shouldSend = true;
@@ -283,6 +281,7 @@ class CharacterInitiativeTaskHandler {
             isRead: message.isRead,
             origin: message.origin,
             contactEpisodeId: message.contactEpisodeId,
+            messageType: message.messageType,
           ),
         )
         .toList();
@@ -324,7 +323,7 @@ class CharacterInitiativeTaskHandler {
   ) {
     return ({
       required String characterId,
-      required List<String> messages,
+      required List<CharacterOutgoingMessage> messages,
       required DateTime timestamp,
       required String contactEpisodeId,
       String? factId,

@@ -195,6 +195,7 @@ class CharacterConversationTaskHandler {
       isRead: message.isRead,
       origin: message.origin,
       contactEpisodeId: message.contactEpisodeId,
+      messageType: message.messageType,
     );
   }
 }

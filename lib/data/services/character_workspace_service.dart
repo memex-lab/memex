@@ -41,6 +41,46 @@ class CharacterWorkspaceService {
     );
   }
 
+  Future<bool> isHistoryAcquaintanceComplete(
+    String userId,
+    String characterId,
+  ) async {
+    _validateCharacterId(characterId);
+    final marker = File(
+      _fileSystem.getCharacterHistoryAcquaintancePath(userId, characterId),
+    );
+    if (!await marker.exists()) return false;
+    try {
+      final value = jsonDecode(await marker.readAsString());
+      return value is Map && value['completed'] == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> completeHistoryAcquaintance({
+    required String userId,
+    required String characterId,
+    required DateTime completedAt,
+  }) {
+    _validateCharacterId(characterId);
+    return _lockFor(userId, characterId).synchronized(
+      () => _writeText(
+        File(
+          _fileSystem.getCharacterHistoryAcquaintancePath(
+            userId,
+            characterId,
+          ),
+        ),
+        '${const JsonEncoder.withIndent('  ').convert({
+              'version': 1,
+              'completed': true,
+              'completed_at': completedAt.toIso8601String(),
+            })}\n',
+      ),
+    );
+  }
+
   Future<CharacterObservation?> enqueueObservation({
     required String userId,
     required CharacterModel character,

@@ -6,6 +6,7 @@ import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/local_task_executor.dart';
 import 'package:memex/data/services/task_handlers/character_initiative_handler.dart';
 import 'package:memex/domain/models/character_initiative.dart';
+import 'package:memex/domain/models/character_message.dart';
 import 'package:memex/domain/models/character_model.dart';
 
 void main() {
@@ -35,7 +36,7 @@ void main() {
 
   test('persists one unread contact episode selected by the character',
       () async {
-    List<String>? sentMessages;
+    List<CharacterOutgoingMessage>? sentMessages;
     String? sentFactId;
     String? sentEpisodeId;
     DateTime? scheduledWakeAt;
@@ -107,7 +108,10 @@ void main() {
       TaskContext(taskId: 'task-1', taskType: 'character_initiative_task'),
     );
 
-    expect(sentMessages, ['你刚才那句，', '我过了一会儿还是觉得有点可爱。']);
+    expect(
+      sentMessages?.map((message) => message.content),
+      ['你刚才那句，', '我过了一会儿还是觉得有点可爱。'],
+    );
     expect(sentFactId, '2026/07/13.md#ts_1');
     expect(sentEpisodeId, 'character_initiative:task-1');
     expect(scheduledWakeAt, now.add(const Duration(hours: 6)));

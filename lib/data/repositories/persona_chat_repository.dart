@@ -1,4 +1,5 @@
 import 'package:memex/data/services/character_conversation_service.dart';
+import 'package:memex/data/services/character_history_acquaintance_service.dart';
 import 'package:memex/data/services/character_service.dart';
 import 'package:memex/data/services/persona_chat_service.dart';
 import 'package:memex/db/app_database.dart';
@@ -10,14 +11,18 @@ class PersonaChatRepository {
   PersonaChatRepository({
     PersonaChatService? chatService,
     CharacterConversationService? conversationService,
+    CharacterHistoryAcquaintanceService? historyAcquaintanceService,
     CharacterService? characterService,
   })  : _chatService = chatService ?? PersonaChatService.instance,
         _conversationService =
             conversationService ?? CharacterConversationService.instance,
+        _historyAcquaintanceService = historyAcquaintanceService ??
+            CharacterHistoryAcquaintanceService.instance,
         _characterService = characterService ?? CharacterService.instance;
 
   final PersonaChatService _chatService;
   final CharacterConversationService _conversationService;
+  final CharacterHistoryAcquaintanceService _historyAcquaintanceService;
   final CharacterService _characterService;
 
   Future<PersonaChatThreadModel> loadThread({
@@ -29,6 +34,12 @@ class PersonaChatRepository {
     final character = await _characterService.getCharacter(userId, characterId);
     if (character == null) {
       throw StateError('Character $characterId was not found.');
+    }
+    if (character.enabled) {
+      await _historyAcquaintanceService.ensureScheduled(
+        userId: userId,
+        character: character,
+      );
     }
     var messages = await _chatService.getMessages(characterId, limit: limit);
     final firstMessage = character.firstMessage?.trim();

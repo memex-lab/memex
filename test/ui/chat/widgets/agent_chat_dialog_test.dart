@@ -50,6 +50,15 @@ void main() {
         ),
         480,
       );
+      expect(
+        resolveAgentChatDialogHeight(
+          viewport,
+          isFullScreen: false,
+          keyboardInset: 320,
+          topSafeInset: 44,
+        ),
+        436,
+      );
     });
 
     test('uses rounded sheet corners only outside full screen', () {
@@ -511,6 +520,29 @@ void main() {
       );
     });
 
+    testWidgets('keeps the keyboard sheet below the top safe area', (
+      tester,
+    ) async {
+      const viewportSize = Size(390, 800);
+      const topSafeInset = 44.0;
+      const keyboardInset = 320.0;
+      await _pumpDialog(
+        tester,
+        viewportSize: viewportSize,
+        mediaQueryData: const MediaQueryData(
+          size: viewportSize,
+          viewPadding: EdgeInsets.only(top: topSafeInset),
+          viewInsets: EdgeInsets.only(bottom: keyboardInset),
+        ),
+      );
+
+      final dialogRect = tester.getRect(
+        find.byKey(const ValueKey('agent_chat_dialog_container')),
+      );
+      expect(dialogRect.top, topSafeInset);
+      expect(dialogRect.bottom, viewportSize.height - keyboardInset);
+    });
+
     testWidgets('expands to full screen and restores the sheet', (
       tester,
     ) async {
@@ -875,11 +907,13 @@ Future<void> _pumpDialog(
   WidgetTester tester, {
   Size viewportSize = const Size(390, 800),
   Widget dialog = const AgentChatDialog(),
+  MediaQueryData? mediaQueryData,
 }) async {
   await _pumpDialogFrame(
     tester,
     viewportSize: viewportSize,
     dialog: dialog,
+    mediaQueryData: mediaQueryData,
   );
   await tester.pumpAndSettle();
 }
@@ -888,6 +922,7 @@ Future<void> _pumpDialogFrame(
   WidgetTester tester, {
   Size viewportSize = const Size(390, 800),
   Widget dialog = const AgentChatDialog(),
+  MediaQueryData? mediaQueryData,
 }) async {
   tester.view.physicalSize = viewportSize;
   tester.view.devicePixelRatio = 1.0;
@@ -899,7 +934,9 @@ Future<void> _pumpDialogFrame(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(
-        body: dialog,
+        body: mediaQueryData == null
+            ? dialog
+            : MediaQuery(data: mediaQueryData, child: dialog),
       ),
     ),
   );

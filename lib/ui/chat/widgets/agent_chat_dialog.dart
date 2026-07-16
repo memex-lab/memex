@@ -220,13 +220,18 @@ double resolveAgentChatDialogHeight(
   Size viewportSize, {
   required bool isFullScreen,
   double keyboardInset = 0,
+  double topSafeInset = 0,
 }) {
   final baseHeight = isFullScreen
       ? viewportSize.height
       : viewportSize.height * _agentChatSheetHeightFactor;
   if (keyboardInset <= 0) return baseHeight;
 
-  final availableHeight = math.max(0.0, viewportSize.height - keyboardInset);
+  final reservedTopInset = isFullScreen ? 0.0 : topSafeInset;
+  final availableHeight = math.max(
+    0.0,
+    viewportSize.height - keyboardInset - reservedTopInset,
+  );
   if (availableHeight <= 0) return baseHeight;
   return math.min(baseHeight, availableHeight);
 }
@@ -1753,6 +1758,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
       viewportSize,
       isFullScreen: _isFullScreen,
       keyboardInset: keyboardBottomOffset,
+      topSafeInset: MediaQuery.viewPaddingOf(context).top,
     );
     final borderRadius = resolveAgentChatDialogBorderRadius(
       isFullScreen: _isFullScreen,

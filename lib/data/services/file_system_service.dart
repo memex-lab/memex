@@ -1399,6 +1399,16 @@ class FileSystemService {
     );
   }
 
+  String getCharacterHistoryAcquaintancePath(
+    String userId,
+    String characterId,
+  ) {
+    return path.join(
+      getCharacterWorkspacePath(userId, characterId),
+      'history_acquaintance.json',
+    );
+  }
+
   String getCharacterUserMemoryEntriesPath(
     String userId,
     String characterId,

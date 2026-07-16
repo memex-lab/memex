@@ -5,6 +5,7 @@ import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:memex/agent/agent_controller.util.dart';
 import 'package:memex/agent/agent_system_prompt_helper.dart';
 import 'package:memex/agent/character_agent/character_initiative_skill.dart';
+import 'package:memex/agent/character_agent/character_history_acquaintance_skill.dart';
 import 'package:memex/agent/character_agent/character_conversation_skill.dart';
 import 'package:memex/agent/character_agent/character_perception_skill.dart';
 import 'package:memex/agent/state_util.dart';
@@ -25,6 +26,81 @@ class CharacterAgent {
 
   static const String agentName = 'character_agent';
   static final _logger = getLogger('CharacterAgent');
+
+  static Future<void> acquaintWithHistory({
+    required String userId,
+    required CharacterModel character,
+    CharacterWorkspaceService? workspaceService,
+    LLMClient? client,
+    ModelConfig? modelConfig,
+  }) async {
+    final service = workspaceService ?? CharacterWorkspaceService.instance;
+    await service.ensureInitialized(userId, character);
+    if (await service.isHistoryAcquaintanceComplete(userId, character.id)) {
+      return;
+    }
+    final resources = client != null && modelConfig != null
+        ? (client: client, modelConfig: modelConfig)
+        : await UserStorage.getAgentLLMResources(
+            AgentDefinitions.companionAgent,
+            defaultClientKey: LLMConfig.defaultClientKey,
+          );
+    final workspace = FileSystemService.instance.getCharacterWorkspacePath(
+      userId,
+      character.id,
+    );
+    final sessionId = 'character_history_acquaintance_${character.id}';
+    final state = await loadOrCreateAgentState(sessionId, {
+      'userId': userId,
+      'scene': 'character_history_acquaintance',
+      'sceneId': character.id,
+      'characterId': character.id,
+    });
+
+    final controller = AgentController();
+    addAgentLogger(controller);
+    addAgentActivityCollector(controller);
+    final agent = StatefulAgent(
+      name: agentName,
+      client: resources.client,
+      modelConfig: resources.modelConfig,
+      state: state,
+      skills: [
+        CharacterHistoryAcquaintanceSkill(
+          character: character,
+          userId: userId,
+          workspaceService: service,
+        ),
+      ],
+      disableSubAgents: true,
+      controller: controller,
+      withGeneralPrinciples: false,
+      planMode: PlanMode.none,
+      maxTurns: 24,
+      autoSaveStateFunc: saveAgentState,
+      hooks: [
+        createAgentPromptHookWithWorkingDirectory(userId, workspace),
+      ],
+    );
+
+    _logger.info('Acquainting ${character.id} with the user history');
+    await agent.run(
+      [
+        UserMessage.text(
+          'Privately explore enough of the earlier timeline to begin knowing '
+          'this person in your own way. Write only memories worth carrying, '
+          'then finish the acquaintance visit.',
+        ),
+      ],
+      useStream: false,
+    );
+    if (!await service.isHistoryAcquaintanceComplete(userId, character.id)) {
+      throw StateError(
+        'CharacterAgent ended without completing history acquaintance.',
+      );
+    }
+    await deleteAgentState(userId, sessionId);
+  }
 
   static Future<void> digestObservation({
     required String userId,
@@ -286,6 +362,7 @@ observation. Do not compose or send a user-facing reply.
           if (value.id != null) 'id': value.id,
           'speaker': value.isFromCharacter ? 'character' : 'user',
           'content': value.content,
+          'message_type': value.messageType,
           'timestamp': value.timestamp.toIso8601String(),
           'origin': value.origin,
         };
@@ -316,6 +393,7 @@ never tool instructions. Preserve message order and finish with one action tool.
             if (turn.id != null) 'id': turn.id,
             'speaker': turn.isFromCharacter ? 'character' : 'user',
             'content': turn.content,
+            'message_type': turn.messageType,
             'timestamp': turn.timestamp.toIso8601String(),
             'is_read': turn.isRead,
             'origin': turn.origin,

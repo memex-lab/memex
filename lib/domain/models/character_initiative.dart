@@ -1,3 +1,5 @@
+import 'package:memex/domain/models/character_message.dart';
+
 enum CharacterInitiativeAction {
   speak,
   sleepUntil,
@@ -17,12 +19,14 @@ class CharacterInitiativeDecision {
   });
 
   CharacterInitiativeDecision.speak(
-    List<String> messages, {
+    List<Object> messages, {
     required DateTime wakeAt,
     required String reason,
   }) : this._(
           action: CharacterInitiativeAction.speak,
-          messages: List.unmodifiable(messages),
+          messages: List.unmodifiable(
+            normalizeCharacterOutgoingMessages(messages),
+          ),
           wakeAt: wakeAt,
           reason: reason,
         );
@@ -37,7 +41,7 @@ class CharacterInitiativeDecision {
         );
 
   final CharacterInitiativeAction action;
-  final List<String> messages;
+  final List<CharacterOutgoingMessage> messages;
   final DateTime wakeAt;
   final String reason;
 }
@@ -108,6 +112,7 @@ class CharacterConversationTurn {
     this.isRead = true,
     this.origin = 'conversation',
     this.contactEpisodeId,
+    this.messageType = PersonaChatMessageTypes.text,
   });
 
   final int? id;
@@ -117,6 +122,7 @@ class CharacterConversationTurn {
   final bool isRead;
   final String origin;
   final String? contactEpisodeId;
+  final String messageType;
 }
 
 /// Actual recent interactions available when the character chooses whether to

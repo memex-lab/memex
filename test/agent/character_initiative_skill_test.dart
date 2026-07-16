@@ -5,6 +5,7 @@ import 'package:memex/agent/character_agent/character_initiative_skill.dart';
 import 'package:memex/data/services/character_workspace_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/domain/models/character_initiative.dart';
+import 'package:memex/domain/models/character_message.dart';
 import 'package:memex/domain/models/character_model.dart';
 
 void main() {
@@ -95,14 +96,49 @@ void main() {
     final tool = skill.tools!.singleWhere((tool) => tool.name == 'Speak');
 
     Function.apply(tool.executable!, [
-      ['想起你了。'],
+      [
+        {'type': 'text', 'content': '想起你了。'},
+        {'type': 'emoji', 'content': '🙂'},
+      ],
       now.add(const Duration(hours: 5)).toIso8601String(),
       '晚上想再看看她有没有说话。',
     ]);
 
     expect(decision?.action, CharacterInitiativeAction.speak);
-    expect(decision?.messages, ['想起你了。']);
+    expect(
+      decision?.messages,
+      [
+        CharacterOutgoingMessage.text('想起你了。'),
+        CharacterOutgoingMessage.emoji('🙂'),
+      ],
+    );
     expect(decision?.wakeAt, now.add(const Duration(hours: 5)));
+  });
+
+  test('Speak rejects textual emoji placeholders', () {
+    final now = DateTime.parse('2026-07-13T21:00:00+08:00');
+    final skill = CharacterInitiativeSkill(
+      character: character,
+      userId: 'user-1',
+      context: CharacterInitiativeContext(
+        sourceEventId: 'event-invalid-emoji',
+        now: now,
+      ),
+      workspaceService: CharacterWorkspaceService(),
+      onDecision: (_) {},
+    );
+    final tool = skill.tools!.singleWhere((tool) => tool.name == 'Speak');
+
+    expect(
+      () => Function.apply(tool.executable!, [
+        [
+          {'type': 'emoji', 'content': '[smile]'},
+        ],
+        now.add(const Duration(hours: 1)).toIso8601String(),
+        '稍后再想想。',
+      ]),
+      throwsArgumentError,
+    );
   });
 
   test('SleepUntil stays quiet now without ending future initiative', () {

@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:memex/db/app_database.dart';
+import 'package:memex/domain/models/character_message.dart';
 
 abstract final class PersonaChatMessageOrigin {
   static const conversation = 'conversation';
@@ -58,13 +59,19 @@ class PersonaChatService {
   Future<int> addUserMessage(String characterId, String content,
       {DateTime? timestamp}) async {
     final createdAt = timestamp ?? DateTime.now();
+    final normalized = content.trim();
     final id = await _db.into(_db.personaChatMessages).insert(
           PersonaChatMessagesCompanion.insert(
             characterId: characterId,
             isFromCharacter: false,
-            content: content,
+            content: normalized,
             isRead: const Value(true),
             timestamp: createdAt,
+            messageType: Value(
+              isStandaloneEmoji(normalized)
+                  ? PersonaChatMessageTypes.emoji
+                  : PersonaChatMessageTypes.text,
+            ),
           ),
         );
     return id;
@@ -118,9 +125,12 @@ class PersonaChatService {
       DateTime? timestamp,
       String origin = PersonaChatMessageOrigin.conversation,
       String? contactEpisodeId}) async {
+    final message = isStandaloneEmoji(content)
+        ? CharacterOutgoingMessage.emoji(content)
+        : CharacterOutgoingMessage.text(content);
     final ids = await addCharacterMessages(
       characterId,
-      [content],
+      [message],
       factId: factId,
       isRead: isRead,
       timestamp: timestamp,
@@ -135,7 +145,7 @@ class PersonaChatService {
   /// duplicate chat or timeline events.
   Future<List<int>> addCharacterMessages(
     String characterId,
-    List<String> contents, {
+    List<CharacterOutgoingMessage> messages, {
     String? factId,
     bool isRead = false,
     DateTime? timestamp,
@@ -143,11 +153,7 @@ class PersonaChatService {
     String? contactEpisodeId,
   }) async {
     final createdAt = timestamp ?? DateTime.now();
-    final messages = contents
-        .map((content) => content.trim())
-        .where((content) => content.isNotEmpty)
-        .toList(growable: false);
-    if (messages.isEmpty || messages.length != contents.length) {
+    if (messages.isEmpty) {
       throw ArgumentError('Character messages must be non-empty.');
     }
 
@@ -174,10 +180,11 @@ class PersonaChatService {
                 PersonaChatMessagesCompanion.insert(
                   characterId: characterId,
                   isFromCharacter: true,
-                  content: message,
+                  content: message.content,
                   factId: Value(factId),
                   isRead: Value(isRead),
                   timestamp: createdAt,
+                  messageType: Value(message.storageType),
                   origin: Value(origin),
                   contactEpisodeId: Value(contactEpisodeId),
                 ),
@@ -196,7 +203,7 @@ class PersonaChatService {
   Future<List<int>> completeConversationEpisode({
     required String characterId,
     required int consumedThroughMessageId,
-    required List<String> characterMessages,
+    required List<CharacterOutgoingMessage> characterMessages,
     required String episodeId,
     required DateTime timestamp,
     bool isRead = false,
@@ -207,11 +214,7 @@ class PersonaChatService {
         'consumedThroughMessageId',
       );
     }
-    final messages = characterMessages
-        .map((content) => content.trim())
-        .where((content) => content.isNotEmpty)
-        .toList(growable: false);
-    if (messages.isEmpty || messages.length != characterMessages.length) {
+    if (characterMessages.isEmpty) {
       throw ArgumentError('Character messages must be non-empty.');
     }
 
@@ -225,15 +228,16 @@ class PersonaChatService {
 
       final ids = existing.map((message) => message.id).toList();
       if (ids.isEmpty) {
-        for (final message in messages) {
+        for (final message in characterMessages) {
           ids.add(
             await _db.into(_db.personaChatMessages).insert(
                   PersonaChatMessagesCompanion.insert(
                     characterId: characterId,
                     isFromCharacter: true,
-                    content: message,
+                    content: message.content,
                     isRead: Value(isRead),
                     timestamp: timestamp,
+                    messageType: Value(message.storageType),
                     origin: const Value(
                       PersonaChatMessageOrigin.conversation,
                     ),
@@ -298,7 +302,7 @@ class PersonaChatService {
             factId: Value(factId),
             isRead: Value(isRead),
             timestamp: createdAt,
-            messageType: const Value('action'),
+            messageType: const Value(PersonaChatMessageTypes.action),
           ),
         );
     return id;

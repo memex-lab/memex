@@ -1,4 +1,5 @@
 import 'package:memex/domain/models/character_initiative.dart';
+import 'package:memex/domain/models/character_message.dart';
 
 enum CharacterConversationAction {
   speak,
@@ -17,10 +18,12 @@ class CharacterConversationDecision {
     this.reason,
   });
 
-  CharacterConversationDecision.speak(List<String> messages)
+  CharacterConversationDecision.speak(List<Object> messages)
       : this._(
           action: CharacterConversationAction.speak,
-          messages: List.unmodifiable(messages),
+          messages: List.unmodifiable(
+            normalizeCharacterOutgoingMessages(messages),
+          ),
         );
 
   const CharacterConversationDecision.thinkLater({
@@ -39,7 +42,7 @@ class CharacterConversationDecision {
         );
 
   final CharacterConversationAction action;
-  final List<String> messages;
+  final List<CharacterOutgoingMessage> messages;
   final DateTime? wakeAt;
   final String? reason;
 }
