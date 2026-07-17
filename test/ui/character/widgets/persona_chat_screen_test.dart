@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:memex/domain/models/character_emoji.dart';
 import 'package:memex/ui/character/widgets/persona_chat_screen.dart';
 
 void main() {
@@ -160,24 +162,61 @@ void main() {
     expect(focusNode.hasFocus, isFalse);
   });
 
-  testWidgets('standalone emoji uses large message rendering', (tester) async {
+  testWidgets('supported emoji uses the Fluent 3D asset', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(
-          body: PersonaChatEmojiGlyph(emoji: '🙂'),
+          body: PersonaChatEmojiGlyph(emoji: '😊'),
         ),
       ),
     );
 
-    final text = tester.widget<Text>(find.text('🙂'));
-    expect(text.style?.fontSize, 42);
-    final semantics = tester.widget<Semantics>(
+    final image = tester.widget<Image>(
       find.descendant(
         of: find.byType(PersonaChatEmojiGlyph),
-        matching: find.byType(Semantics),
+        matching: find.byType(Image),
       ),
     );
-    expect(semantics.properties.label, 'Emoji message: 🙂');
+    expect(
+      (image.image as AssetImage).assetName,
+      'assets/fluent_emoji/smiling_face_with_smiling_eyes_3d.png',
+    );
+    expect(image.width, 36);
+    expect(image.height, 36);
+    final semantics = tester.widget<Semantics>(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Semantics &&
+            widget.properties.label == 'Emoji message: 😊',
+      ),
+    );
+    expect(semantics.properties.label, 'Emoji message: 😊');
+    expect(semantics.properties.image, isTrue);
+  });
+
+  testWidgets('unsupported emoji falls back to a smaller system glyph',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: PersonaChatEmojiGlyph(emoji: '🙂🙂'),
+        ),
+      ),
+    );
+
+    final text = tester.widget<Text>(find.text('🙂🙂'));
+    expect(text.style?.fontSize, 32);
+    expect(find.byType(Image), findsNothing);
+  });
+
+  testWidgets('every protocol emoji has a bundled Fluent asset',
+      (tester) async {
+    for (final emoji in CharacterEmoji.values) {
+      final data = await rootBundle.load(
+        'assets/fluent_emoji/${emoji.assetFileName}',
+      );
+      expect(data.lengthInBytes, greaterThan(0), reason: emoji.agentId);
+    }
   });
 
   test('reversed chat list reserves index zero for the typing indicator', () {

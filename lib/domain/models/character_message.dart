@@ -1,3 +1,5 @@
+import 'package:memex/domain/models/character_emoji.dart';
+
 abstract final class PersonaChatMessageTypes {
   static const String text = 'chat';
   static const String emoji = 'emoji';
@@ -23,13 +25,19 @@ class CharacterOutgoingMessage {
     );
   }
 
+  factory CharacterOutgoingMessage.fromContent(String content) {
+    return isEmojiOnlyMessage(content)
+        ? CharacterOutgoingMessage.emoji(content)
+        : CharacterOutgoingMessage.text(content);
+  }
+
   factory CharacterOutgoingMessage.emoji(String content) {
     final normalized = content.trim();
-    if (!isStandaloneEmoji(normalized)) {
+    if (!isEmojiOnlyMessage(normalized)) {
       throw ArgumentError.value(
         content,
         'content',
-        'Emoji messages must contain only one emoji sequence.',
+        'Emoji messages must contain only Unicode emoji.',
       );
     }
     return CharacterOutgoingMessage._(
@@ -38,27 +46,12 @@ class CharacterOutgoingMessage {
     );
   }
 
-  factory CharacterOutgoingMessage.fromAgentJson(Map<String, dynamic> json) {
-    final type = json['type'] as String?;
-    final content = json['content'] as String? ?? '';
-    return switch (type) {
-      'text' => CharacterOutgoingMessage.text(content),
-      'emoji' => CharacterOutgoingMessage.emoji(content),
-      _ => throw ArgumentError.value(type, 'type'),
-    };
-  }
-
   final CharacterOutgoingMessageType type;
   final String content;
 
   String get storageType => switch (type) {
         CharacterOutgoingMessageType.text => PersonaChatMessageTypes.text,
         CharacterOutgoingMessageType.emoji => PersonaChatMessageTypes.emoji,
-      };
-
-  Map<String, dynamic> toAgentJson() => {
-        'type': type.name,
-        'content': content,
       };
 
   @override
@@ -71,19 +64,27 @@ class CharacterOutgoingMessage {
   int get hashCode => Object.hash(type, content);
 }
 
-bool isStandaloneEmoji(String value) {
+bool isEmojiOnlyMessage(String value) {
   final normalized = value.trim();
   if (normalized.isEmpty) return false;
   final runes = normalized.runes.toList(growable: false);
-  if (runes.length > 16) return false;
+  if (runes.length > 64) return false;
 
   var hasEmojiBase = false;
   var expectsJoinedBase = false;
-  var regionalIndicatorCount = 0;
-  final keycapCount = runes.where((rune) => rune == 0x20E3).length;
-  if (keycapCount > 1) return false;
-  final isKeycapSequence = keycapCount == 1;
-  for (final rune in runes) {
+  for (var index = 0; index < runes.length; index++) {
+    final rune = runes[index];
+    final isKeycapBase =
+        rune == 0x23 || rune == 0x2A || (rune >= 0x30 && rune <= 0x39);
+    if (isKeycapBase) {
+      var next = index + 1;
+      if (next < runes.length && runes[next] == 0xFE0F) next++;
+      if (next >= runes.length || runes[next] != 0x20E3) return false;
+      hasEmojiBase = true;
+      expectsJoinedBase = false;
+      index = next;
+      continue;
+    }
     final isModifier = (rune >= 0x1F3FB && rune <= 0x1F3FF) ||
         (rune >= 0xE0020 && rune <= 0xE007F);
     if (isModifier) continue;
@@ -92,7 +93,6 @@ bool isStandaloneEmoji(String value) {
       expectsJoinedBase = true;
       continue;
     }
-    final isRegionalIndicator = rune >= 0x1F1E6 && rune <= 0x1F1FF;
     final isEmojiBase = (rune >= 0x1F000 && rune <= 0x1FAFF) ||
         (rune >= 0x2600 && rune <= 0x27BF) ||
         (rune >= 0x2300 && rune <= 0x23FF) ||
@@ -104,50 +104,46 @@ bool isStandaloneEmoji(String value) {
         rune == 0x3297 ||
         rune == 0x3299;
     if (isEmojiBase) {
-      if (isRegionalIndicator) {
-        if ((hasEmojiBase && regionalIndicatorCount == 0) ||
-            ++regionalIndicatorCount > 2) {
-          return false;
-        }
-      } else {
-        if (regionalIndicatorCount > 0 ||
-            (hasEmojiBase && !expectsJoinedBase)) {
-          return false;
-        }
-      }
       hasEmojiBase = true;
       expectsJoinedBase = false;
       continue;
     }
-    final isEmojiJoiner = rune == 0xFE0E ||
-        rune == 0xFE0F ||
-        rune == 0x20E3 ||
-        (isKeycapSequence &&
-            (rune == 0x23 || rune == 0x2A || (rune >= 0x30 && rune <= 0x39)));
+    final isEmojiJoiner = rune == 0xFE0E || rune == 0xFE0F;
     if (!isEmojiJoiner) return false;
   }
-  return !expectsJoinedBase && (hasEmojiBase || isKeycapSequence);
+  return !expectsJoinedBase && hasEmojiBase;
 }
 
 List<CharacterOutgoingMessage> parseCharacterOutgoingMessages(
-  List<dynamic> values,
-) {
-  if (values.isEmpty) {
-    throw ArgumentError('Speak requires at least one message.');
-  }
-  return values.map((value) {
+  List<dynamic>? values, {
+  String? emojiId,
+}) {
+  final messages = <CharacterOutgoingMessage>[];
+  for (final value in values ?? const <dynamic>[]) {
+    String? content;
     if (value is String) {
-      return isStandaloneEmoji(value)
-          ? CharacterOutgoingMessage.emoji(value)
-          : CharacterOutgoingMessage.text(value);
+      content = value;
+    } else if (value is Map && value['content'] is String) {
+      // Compatibility with turns saved while the Agent-facing contract used
+      // `{type, content}`. The declared type is intentionally ignored.
+      content = value['content'] as String;
     }
-    if (value is! Map) {
-      throw ArgumentError('Each message must be a typed object.');
+    if (content?.trim().isNotEmpty == true) {
+      messages.add(CharacterOutgoingMessage.fromContent(content!));
     }
-    return CharacterOutgoingMessage.fromAgentJson(
-      Map<String, dynamic>.from(value),
-    );
-  }).toList(growable: false);
+  }
+  final normalizedEmojiId = emojiId?.trim();
+  if (normalizedEmojiId?.isNotEmpty == true) {
+    final emoji = CharacterEmoji.fromAgentId(normalizedEmojiId!);
+    if (emoji == null) {
+      throw ArgumentError.value(emojiId, 'emojiId', 'Unsupported emoji.');
+    }
+    messages.add(CharacterOutgoingMessage.emoji(emoji.glyph));
+  }
+  if (messages.isEmpty) {
+    throw ArgumentError('Speak requires text messages or one emoji.');
+  }
+  return List.unmodifiable(messages);
 }
 
 List<CharacterOutgoingMessage> normalizeCharacterOutgoingMessages(
@@ -156,9 +152,7 @@ List<CharacterOutgoingMessage> normalizeCharacterOutgoingMessages(
   final messages = values.map((value) {
     if (value is CharacterOutgoingMessage) return value;
     if (value is String) {
-      return isStandaloneEmoji(value)
-          ? CharacterOutgoingMessage.emoji(value)
-          : CharacterOutgoingMessage.text(value);
+      return CharacterOutgoingMessage.fromContent(value);
     }
     throw ArgumentError.value(value, 'messages');
   }).toList(growable: false);

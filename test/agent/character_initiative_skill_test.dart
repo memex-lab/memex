@@ -94,12 +94,21 @@ void main() {
       onDecision: (value) => decision = value,
     );
     final tool = skill.tools!.singleWhere((tool) => tool.name == 'Speak');
+    final properties = tool.parameters['properties'] as Map;
+    final messagesSchema = properties['messages'] as Map;
+    expect(messagesSchema['items'], {'type': 'string'});
+    expect(
+      (properties['emoji'] as Map)['enum'],
+      containsAll(['affection', 'moon', 'wave']),
+    );
+    expect(
+      tool.parameters['required'],
+      ['next_wake_at', 'next_wake_reason'],
+    );
 
     Function.apply(tool.executable!, [
-      [
-        {'type': 'text', 'content': '想起你了。'},
-        {'type': 'emoji', 'content': '🙂'},
-      ],
+      ['想起你了。'],
+      'warm_smile',
       now.add(const Duration(hours: 5)).toIso8601String(),
       '晚上想再看看她有没有说话。',
     ]);
@@ -109,35 +118,69 @@ void main() {
       decision?.messages,
       [
         CharacterOutgoingMessage.text('想起你了。'),
-        CharacterOutgoingMessage.emoji('🙂'),
+        CharacterOutgoingMessage.emoji('😊'),
       ],
     );
     expect(decision?.wakeAt, now.add(const Duration(hours: 5)));
   });
 
-  test('Speak rejects textual emoji placeholders', () {
+  test('Speak downgrades a legacy textual emoji placeholder to text', () {
     final now = DateTime.parse('2026-07-13T21:00:00+08:00');
+    CharacterInitiativeDecision? decision;
     final skill = CharacterInitiativeSkill(
       character: character,
       userId: 'user-1',
       context: CharacterInitiativeContext(
-        sourceEventId: 'event-invalid-emoji',
+        sourceEventId: 'event-legacy-emoji',
         now: now,
       ),
       workspaceService: CharacterWorkspaceService(),
-      onDecision: (_) {},
+      onDecision: (value) => decision = value,
     );
-    final tool = skill.tools!.singleWhere((tool) => tool.name == 'Speak');
+    final tool = skill.tools!.singleWhere(
+      (item) => item.name == 'Speak',
+    );
+
+    Function.apply(tool.executable!, [
+      [
+        {'type': 'emoji', 'content': '[smile]'},
+      ],
+      null,
+      now.add(const Duration(hours: 1)).toIso8601String(),
+      '稍后再想想。',
+    ]);
 
     expect(
-      () => Function.apply(tool.executable!, [
-        [
-          {'type': 'emoji', 'content': '[smile]'},
-        ],
-        now.add(const Duration(hours: 1)).toIso8601String(),
-        '稍后再想想。',
-      ]),
-      throwsArgumentError,
+      decision?.messages,
+      [CharacterOutgoingMessage.text('[smile]')],
+    );
+  });
+
+  test('Speak can send a Fluent emoji without a text bubble', () {
+    final now = DateTime.parse('2026-07-13T21:00:00+08:00');
+    CharacterInitiativeDecision? decision;
+    final skill = CharacterInitiativeSkill(
+      character: character,
+      userId: 'user-1',
+      context: CharacterInitiativeContext(
+        sourceEventId: 'event-emoji-only',
+        now: now,
+      ),
+      workspaceService: CharacterWorkspaceService(),
+      onDecision: (value) => decision = value,
+    );
+    final tool = skill.tools!.singleWhere((item) => item.name == 'Speak');
+
+    Function.apply(tool.executable!, [
+      null,
+      'wave',
+      now.add(const Duration(hours: 2)).toIso8601String(),
+      '晚一点再看看。',
+    ]);
+
+    expect(
+      decision?.messages,
+      [CharacterOutgoingMessage.emoji('👋')],
     );
   });
 

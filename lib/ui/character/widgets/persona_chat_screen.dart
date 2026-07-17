@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:memex/domain/models/character_model.dart';
 import 'package:memex/domain/models/character_message.dart';
+import 'package:memex/domain/models/character_emoji.dart';
 import 'package:memex/domain/models/persona_chat.dart';
 import 'package:memex/ui/character/view_models/persona_chat_viewmodel.dart';
 import 'package:memex/ui/core/widgets/character_avatar.dart';
@@ -591,7 +592,7 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
               ),
             ),
             const SizedBox(width: 8),
-            glyph,
+            Flexible(child: glyph),
             const Spacer(),
           ],
         ),
@@ -603,7 +604,7 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Spacer(),
-          glyph,
+          Flexible(child: glyph),
           const SizedBox(width: 8),
           SizedBox(
             width: 46,
@@ -823,15 +824,26 @@ class PersonaChatEmojiGlyph extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fluentEmoji = CharacterEmoji.fromGlyph(emoji);
     return Semantics(
       label: 'Emoji message: $emoji',
-      child: Text(
-        emoji,
-        style: const TextStyle(
-          fontSize: 42,
-          height: 1.15,
-          letterSpacing: 0,
-        ),
+      image: fluentEmoji != null,
+      child: ExcludeSemantics(
+        child: fluentEmoji == null
+            ? Text(
+                emoji,
+                style: const TextStyle(
+                  fontSize: 32,
+                  height: 1.15,
+                  letterSpacing: 0,
+                ),
+              )
+            : Image.asset(
+                'assets/fluent_emoji/${fluentEmoji.assetFileName}',
+                width: 36,
+                height: 36,
+                filterQuality: FilterQuality.high,
+              ),
       ),
     );
   }

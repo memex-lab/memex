@@ -82,7 +82,7 @@ void main() {
         );
         return CharacterConversationDecision.speak([
           '醒啦。',
-          CharacterOutgoingMessage.emoji('🙂'),
+          '🙂🙂',
         ]);
       },
     );
@@ -99,7 +99,7 @@ void main() {
         .get();
     expect(characterRows.map((message) => message.content), [
       '醒啦。',
-      '🙂',
+      '🙂🙂',
     ]);
     expect(characterRows.map((message) => message.messageType), [
       PersonaChatMessageTypes.text,

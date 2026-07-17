@@ -68,7 +68,7 @@ class PersonaChatService {
             isRead: const Value(true),
             timestamp: createdAt,
             messageType: Value(
-              isStandaloneEmoji(normalized)
+              isEmojiOnlyMessage(normalized)
                   ? PersonaChatMessageTypes.emoji
                   : PersonaChatMessageTypes.text,
             ),
@@ -125,9 +125,7 @@ class PersonaChatService {
       DateTime? timestamp,
       String origin = PersonaChatMessageOrigin.conversation,
       String? contactEpisodeId}) async {
-    final message = isStandaloneEmoji(content)
-        ? CharacterOutgoingMessage.emoji(content)
-        : CharacterOutgoingMessage.text(content);
+    final message = CharacterOutgoingMessage.fromContent(content);
     final ids = await addCharacterMessages(
       characterId,
       [message],

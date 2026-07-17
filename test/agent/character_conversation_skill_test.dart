@@ -6,6 +6,7 @@ import 'package:memex/agent/character_agent/character_conversation_skill.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/domain/models/character_conversation.dart';
 import 'package:memex/domain/models/character_initiative.dart';
+import 'package:memex/domain/models/character_message.dart';
 import 'package:memex/domain/models/character_model.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -29,6 +30,7 @@ void main() {
       enabled: true,
     );
     final now = DateTime.parse('2026-07-15T10:00:00+08:00');
+    CharacterConversationDecision? decision;
     final skill = CharacterConversationSkill(
       character: character,
       userId: 'user-1',
@@ -49,7 +51,7 @@ void main() {
           ),
         ],
       ),
-      onDecision: (_) {},
+      onDecision: (value) => decision = value,
     );
 
     expect(
@@ -63,5 +65,27 @@ void main() {
     expect(skill.systemPrompt, contains('several bubbles'));
     expect(skill.systemPrompt, contains('never from a score'));
     expect(skill.systemPrompt, contains('New messages can cross'));
+    expect(skill.systemPrompt, contains('exact text bubble strings'));
+    expect(skill.systemPrompt, contains('Speak.emoji'));
+    final speak = skill.tools!.singleWhere((tool) => tool.name == 'Speak');
+    final properties = speak.parameters['properties'] as Map;
+    expect((properties['messages'] as Map)['items'], {'type': 'string'});
+    expect(
+      (properties['emoji'] as Map)['enum'],
+      containsAll(['warm_smile', 'heart', 'wave']),
+    );
+    expect(speak.parameters['required'], isNull);
+
+    Function.apply(speak.executable!, [
+      ['晚安。'],
+      'heart',
+    ]);
+    expect(
+      decision?.messages,
+      [
+        CharacterOutgoingMessage.text('晚安。'),
+        CharacterOutgoingMessage.emoji('❤️'),
+      ],
+    );
   });
 }

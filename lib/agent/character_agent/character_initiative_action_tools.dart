@@ -1,6 +1,7 @@
 // ignore_for_file: non_constant_identifier_names
 
 import 'package:dart_agent_core/dart_agent_core.dart';
+import 'package:memex/domain/models/character_emoji.dart';
 import 'package:memex/domain/models/character_message.dart';
 
 abstract final class CharacterInitiativeActionTools {
@@ -32,20 +33,16 @@ abstract final class CharacterInitiativeActionTools {
         'properties': {
           'messages': {
             'type': 'array',
-            'items': {
-              'type': 'object',
-              'properties': {
-                'type': {
-                  'type': 'string',
-                  'enum': ['text', 'emoji'],
-                },
-                'content': {'type': 'string'},
-              },
-              'required': ['type', 'content'],
-            },
+            'items': {'type': 'string'},
             'minItems': 1,
-            'description': 'Typed user-facing messages in send order. Use '
-                '`emoji` only for one standalone Unicode emoji sequence.',
+            'description': 'Optional exact text bubbles in send order. Keep '
+                'standalone emoji out of this field.',
+          },
+          'emoji': {
+            'type': 'string',
+            'enum': CharacterEmoji.agentIds,
+            'description': 'Optional standalone Fluent emoji gesture, sent '
+                'after the text bubbles. Omit it when no gesture is natural.',
           },
           'next_wake_at': {
             'type': 'string',
@@ -58,14 +55,18 @@ abstract final class CharacterInitiativeActionTools {
                 'contact then. Never shown to the user.',
           },
         },
-        'required': ['messages', 'next_wake_at', 'next_wake_reason'],
+        'required': ['next_wake_at', 'next_wake_reason'],
       },
       executable: (
-        List<dynamic> messages,
+        List<dynamic>? messages,
+        String? emoji,
         String next_wake_at,
         String next_wake_reason,
       ) {
-        final normalized = parseCharacterOutgoingMessages(messages);
+        final normalized = parseCharacterOutgoingMessages(
+          messages,
+          emojiId: emoji,
+        );
         final wake = _parseWake(
           now: now,
           wakeAtText: next_wake_at,
