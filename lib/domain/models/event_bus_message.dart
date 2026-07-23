@@ -15,6 +15,7 @@ enum EventBusMessageType {
   profileUpdated('profile_updated'),
   characterUpdated('character_updated'),
   personaChatMessageAdded('persona_chat_message_added'),
+  personaChatUnreadChanged('persona_chat_unread_changed'),
   backupSnapshotsChanged('backup_snapshots_changed'),
   backupRestored('backup_restored'),
   unknown('unknown');
@@ -67,6 +68,8 @@ abstract class EventBusMessage {
         return CharacterUpdatedMessage.fromJson(json);
       case EventBusMessageType.personaChatMessageAdded:
         return PersonaChatMessageAddedMessage.fromJson(json);
+      case EventBusMessageType.personaChatUnreadChanged:
+        return PersonaChatUnreadChangedMessage.fromJson(json);
       case EventBusMessageType.backupSnapshotsChanged:
         return BackupSnapshotsChangedMessage.fromJson(json);
       case EventBusMessageType.backupRestored:
@@ -439,6 +442,27 @@ class PersonaChatMessageAddedMessage extends EventBusMessage {
     return PersonaChatMessageAddedMessage(
       characterId: data['character_id'] as String? ?? '',
       replyPending: data['reply_pending'] as bool?,
+    );
+  }
+}
+
+class PersonaChatUnreadChangedMessage extends EventBusMessage {
+  final String? characterId;
+
+  PersonaChatUnreadChangedMessage({this.characterId})
+      : super(
+          type: EventBusMessageType.personaChatUnreadChanged,
+          data: {
+            if (characterId != null) 'character_id': characterId,
+          },
+        );
+
+  factory PersonaChatUnreadChangedMessage.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final data = json['data'] as Map<String, dynamic>? ?? {};
+    return PersonaChatUnreadChangedMessage(
+      characterId: data['character_id'] as String?,
     );
   }
 }

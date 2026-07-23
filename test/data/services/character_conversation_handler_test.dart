@@ -48,6 +48,20 @@ void main() {
     });
 
     final now = DateTime.parse('2026-07-15T09:30:00+08:00');
+    await chatService.addCharacterMessage(
+      'yaoyao',
+      '今天是不是又玩不够。',
+      isRead: true,
+      timestamp: now.subtract(const Duration(minutes: 2)),
+      origin: PersonaChatMessageOrigin.initiative,
+    );
+    await chatService.addCharacterMessage(
+      'yaoyao',
+      '刚才突然又想起你那句话。',
+      isRead: true,
+      timestamp: now.subtract(const Duration(minutes: 1)),
+      origin: PersonaChatMessageOrigin.initiative,
+    );
     for (final text in ['你醒了吗', '我刚刚做了个梦', '有点好笑']) {
       await chatService.addUserMessage('yaoyao', text, timestamp: now);
     }
@@ -80,6 +94,16 @@ void main() {
           context.incomingMessages.map((message) => message.content),
           ['你醒了吗', '我刚刚做了个梦', '有点好笑'],
         );
+        expect(
+          context.recentPrivateChat.map((message) => message.content),
+          ['今天是不是又玩不够。', '刚才突然又想起你那句话。'],
+        );
+        expect(
+          context.recentPrivateChat.every(
+            (message) => message.origin == PersonaChatMessageOrigin.initiative,
+          ),
+          isTrue,
+        );
         return CharacterConversationDecision.speak([
           '醒啦。',
           '🙂🙂',
@@ -94,7 +118,9 @@ void main() {
     );
 
     final characterRows = await (db.select(db.personaChatMessages)
-          ..where((message) => message.isFromCharacter.equals(true))
+          ..where((message) =>
+              message.isFromCharacter.equals(true) &
+              message.origin.equals(PersonaChatMessageOrigin.conversation))
           ..orderBy([(message) => OrderingTerm.asc(message.id)]))
         .get();
     expect(characterRows.map((message) => message.content), [
@@ -109,8 +135,8 @@ void main() {
       characterRows.map((message) => message.contactEpisodeId).toSet(),
       {'character_conversation:reply-1'},
     );
-    expect(await chatService.getReplyCursor('yaoyao'), 3);
-    expect(await chatService.watchUnreadCount('yaoyao').first, 2);
+    expect(await chatService.getReplyCursor('yaoyao'), 5);
+    expect(await chatService.getUnreadCount('yaoyao'), 2);
     expect((await eventReceived.future).replyPending, isFalse);
 
     await handler.call(
@@ -119,6 +145,6 @@ void main() {
       TaskContext(taskId: 'reply-2', taskType: 'character_conversation_task'),
     );
     expect(decisions, 1);
-    expect(await chatService.getMessages('yaoyao'), hasLength(5));
+    expect(await chatService.getMessages('yaoyao'), hasLength(7));
   });
 }

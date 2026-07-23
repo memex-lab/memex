@@ -42,7 +42,7 @@ class CharacterAgent {
     final resources = client != null && modelConfig != null
         ? (client: client, modelConfig: modelConfig)
         : await UserStorage.getAgentLLMResources(
-            AgentDefinitions.companionAgent,
+            AgentDefinitions.characterAgent,
             defaultClientKey: LLMConfig.defaultClientKey,
           );
     final workspace = FileSystemService.instance.getCharacterWorkspacePath(
@@ -114,7 +114,7 @@ class CharacterAgent {
     final resources = client != null && modelConfig != null
         ? (client: client, modelConfig: modelConfig)
         : await UserStorage.getAgentLLMResources(
-            AgentDefinitions.companionAgent,
+            AgentDefinitions.characterAgent,
             defaultClientKey: LLMConfig.defaultClientKey,
           );
     final workspace = FileSystemService.instance.getCharacterWorkspacePath(
@@ -194,7 +194,7 @@ class CharacterAgent {
     final resources = client != null && modelConfig != null
         ? (client: client, modelConfig: modelConfig)
         : await UserStorage.getAgentLLMResources(
-            AgentDefinitions.companionAgent,
+            AgentDefinitions.characterAgent,
             defaultClientKey: LLMConfig.defaultClientKey,
           );
     final workspace = FileSystemService.instance.getCharacterWorkspacePath(
@@ -271,7 +271,7 @@ class CharacterAgent {
     final resources = client != null && modelConfig != null
         ? (client: client, modelConfig: modelConfig)
         : await UserStorage.getAgentLLMResources(
-            AgentDefinitions.companionAgent,
+            AgentDefinitions.characterAgent,
             defaultClientKey: LLMConfig.defaultClientKey,
           );
     final workspace = FileSystemService.instance.getCharacterWorkspacePath(

@@ -11,6 +11,9 @@ import 'package:memex/ui/memory/widgets/memory_screen.dart';
 import 'package:memex/ui/character/widgets/character_config_screen.dart';
 import 'package:memex/ui/character/widgets/tavern_import_screen.dart';
 import 'package:memex/ui/character/view_models/character_viewmodel.dart';
+import 'package:memex/ui/character/view_models/character_edit_viewmodel.dart';
+import 'package:memex/ui/character/view_models/persona_chat_viewmodel.dart';
+import 'package:memex/ui/character/widgets/persona_chat_screen.dart';
 import 'package:memex/ui/calendar/view_models/calendar_viewmodel.dart';
 import 'package:memex/ui/calendar/widgets/calendar_screen.dart';
 import 'package:memex/ui/chat/view_models/chat_viewmodel.dart';
@@ -19,6 +22,7 @@ import 'package:memex/ui/timeline/widgets/timeline_card_detail_screen.dart';
 import 'package:memex/ui/settings/widgets/personal_center_screen.dart';
 import 'package:memex/ui/user_setup/widgets/user_setup_screen.dart';
 import 'package:memex/routing/routes.dart';
+import 'package:memex/domain/models/character_model.dart';
 
 /// Creates the app [GoRouter]. Root content is built by [rootBuilder].
 GoRouter createAppRouter(
@@ -53,8 +57,31 @@ GoRouter createAppRouter(
         path: AppRoutes.characterConfig,
         builder: (context, state) {
           final vm = CharacterViewModel(router: context.read<MemexRouter>());
-          vm.loadCharacters();
           return CharacterConfigScreen(viewModel: vm);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.characterEdit,
+        builder: (context, state) {
+          final character = state.extra as CharacterModel?;
+          return CharacterEditPage(
+            viewModel: CharacterEditViewModel(
+              router: context.read<MemexRouter>(),
+              character: character,
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '${AppRoutes.personaChat}/:characterId',
+        builder: (context, state) {
+          final characterId = state.pathParameters['characterId'] ?? '';
+          return PersonaChatScreen(
+            viewModel: PersonaChatViewModel(
+              router: context.read<MemexRouter>(),
+              initialCharacterId: characterId,
+            ),
+          );
         },
       ),
       GoRoute(

@@ -8,11 +8,13 @@ import 'package:memex/domain/models/llm_config.dart';
 import 'package:memex/domain/models/agent_definitions.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/character_service.dart';
-import 'package:memex/agent/companion_agent/companion_agent.dart';
+import 'package:memex/agent/character_agent/character_agent.dart';
 import 'package:memex/agent/comment_agent/comment_agent.dart';
 import 'package:memex/agent/memory/character_memory_service.dart';
 import 'package:memex/domain/models/card_model.dart';
 import 'package:memex/data/services/agent_activity_service.dart';
+import 'package:memex/domain/models/character_conversation.dart';
+import 'package:memex/domain/models/character_initiative.dart';
 
 bool get _hasLiveAgentEnv =>
     (Platform.environment['OPENAI_BASE_URL'] ?? '').isNotEmpty &&
@@ -107,25 +109,37 @@ Natural, concise, empathetic. Avoid lecturing.
       );
 
       final chatResources = await UserStorage.getAgentLLMResources(
-        AgentDefinitions.companionAgent,
+        AgentDefinitions.characterAgent,
         defaultClientKey: LLMConfig.defaultClientKey,
       );
 
       // Scenario A: companion emotional response quality.
-      final companionChunks = <String>[];
-      await for (final chunk in CompanionAgent.chat(
+      final companionDecision = await CharacterAgent.considerConversation(
         client: chatResources.client,
         modelConfig: chatResources.modelConfig,
         userId: userId,
-        characterId: character.id,
-        userMessage: 'I am overwhelmed and tired tonight.',
-        debugErrorOutput: true,
-      )) {
-        companionChunks.add(chunk);
-      }
-      final companionText = companionChunks.join('').trim();
+        character: character,
+        context: CharacterConversationContext(
+          sourceEventId: 'live-eval-conversation',
+          now: DateTime.now(),
+          incomingMessages: [
+            CharacterConversationTurn(
+              isFromCharacter: false,
+              content: 'I am overwhelmed and tired tonight.',
+              timestamp: DateTime.now(),
+            ),
+          ],
+        ),
+      );
+      expect(
+        companionDecision.action,
+        CharacterConversationAction.speak,
+      );
+      final companionText = companionDecision.messages
+          .map((message) => message.content)
+          .join('\n')
+          .trim();
       expect(companionText, isNotEmpty);
-      expect(companionText, isNot(contains('Connection interrupted')));
       // Basic quality sanity checks (heuristic).
       expect(companionText.length < 1200, isTrue);
 

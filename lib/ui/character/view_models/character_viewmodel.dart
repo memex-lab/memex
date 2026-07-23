@@ -13,37 +13,69 @@ class CharacterViewModel extends ChangeNotifier {
 
   List<CharacterModel> characters = [];
   bool isLoading = false;
+  String? errorMessage;
 
-  Future<void> loadCharacters() async {
+  Future<bool> loadCharacters() async {
     isLoading = true;
+    errorMessage = null;
     notifyListeners();
+    var succeeded = false;
     final result = await _router.fetchCharacters();
     result.when(
-      onOk: (list) => characters = list,
-      onError: (_, __) {},
+      onOk: (list) {
+        characters = list;
+        succeeded = true;
+      },
+      onError: (error, _) => errorMessage = error.toString(),
     );
     isLoading = false;
     notifyListeners();
+    return succeeded;
   }
 
-  Future<void> setCharacterEnabled(
+  Future<bool> setCharacterEnabled(
       CharacterModel character, bool enabled) async {
+    errorMessage = null;
+    var succeeded = false;
     final result = await _router.setCharacterEnabled(character.id, enabled);
     result.when(
-      onOk: (_) {
+      onOk: (updated) {
+        succeeded = updated;
+        if (!updated) {
+          errorMessage = 'Character ${character.id} was not updated.';
+          notifyListeners();
+          return;
+        }
         final index = characters.indexWhere((c) => c.id == character.id);
         if (index != -1) {
           characters[index] = character.copyWith(enabled: enabled);
           notifyListeners();
         }
       },
-      onError: (_, __) {},
+      onError: (error, _) {
+        errorMessage = error.toString();
+        notifyListeners();
+      },
     );
+    return succeeded;
   }
 
-  Future<void> deleteCharacter(CharacterModel character) async {
-    await _router.deleteCharacter(character.id);
-    characters.removeWhere((c) => c.id == character.id);
+  Future<bool> deleteCharacter(CharacterModel character) async {
+    errorMessage = null;
+    var succeeded = false;
+    final result = await _router.deleteCharacter(character.id);
+    result.when(
+      onOk: (deleted) {
+        succeeded = deleted;
+        if (deleted) {
+          characters.removeWhere((c) => c.id == character.id);
+        } else {
+          errorMessage = 'Character ${character.id} was not deleted.';
+        }
+      },
+      onError: (error, _) => errorMessage = error.toString(),
+    );
     notifyListeners();
+    return succeeded;
   }
 }

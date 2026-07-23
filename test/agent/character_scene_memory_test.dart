@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:memex/agent/skills/comment_agent/comment_agent_skill.dart';
-import 'package:memex/agent/skills/companion_agent/companion_agent_skill.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/domain/models/character_model.dart';
 import 'package:memex/utils/user_storage.dart';
@@ -33,24 +32,6 @@ void main() {
     if (await tempRoot.exists()) {
       await tempRoot.delete(recursive: true);
     }
-  });
-
-  test('private chat uses the character workspace instead of legacy memory',
-      () {
-    final skill = CompanionAgentSkill(
-      character: character,
-      userId: 'user-1',
-      userName: 'user-1',
-      forceActivate: true,
-    );
-    final names = skill.tools!.map((tool) => tool.name).toSet();
-
-    expect(names, containsAll(['Glob', 'Grep', 'Read', 'Remember']));
-    expect(names, isNot(contains('MemoryRead')));
-    expect(names, isNot(contains('MemoryWrite')));
-    expect(names, isNot(contains('SendActionMessage')));
-    expect(skill.systemPrompt, contains('search `/PKM`'));
-    expect(skill.systemPrompt, isNot(contains('## User Profile')));
   });
 
   test('comments use the same character workspace and scene action tools', () {

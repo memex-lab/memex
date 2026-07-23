@@ -1,9 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:drift/native.dart';
-import 'package:memex/agent/companion_agent/companion_agent.dart';
 import 'package:memex/data/services/character_workspace_service.dart';
 import 'package:memex/data/services/character_initiative_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
@@ -218,18 +216,8 @@ void main() {
       'yaoyao',
       beforeMessageId: replyId,
     );
-    final state = AgentState(
-      sessionId: 'reply-context',
-      metadata: {'userId': 'user-1'},
-    );
-    CompanionAgent.replaceHistoryWithPersonaChat(
-      state,
-      history,
-      model: 'test-model',
-    );
-    final modelHistory = state.history.messages.whereType<ModelMessage>();
     expect(
-      modelHistory.map((message) => message.textOutput).join('\n'),
+      history.map((message) => message.content).join('\n'),
       contains('刚才又想起你说不想长大'),
     );
   });

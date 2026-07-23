@@ -25,6 +25,15 @@ class PersonaChatRepository {
   final CharacterHistoryAcquaintanceService _historyAcquaintanceService;
   final CharacterService _characterService;
 
+  Future<PersonaAvatarSummary> loadAvatarSummary(String userId) async {
+    final characterFuture = _characterService.getPrimaryCompanion(userId);
+    final unreadCountFuture = _chatService.getTotalUnreadCount();
+    return PersonaAvatarSummary(
+      character: await characterFuture,
+      unreadCount: await unreadCountFuture,
+    );
+  }
+
   Future<PersonaChatThreadModel> loadThread({
     required String userId,
     required String characterId,

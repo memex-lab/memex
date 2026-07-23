@@ -306,25 +306,23 @@ class PersonaChatService {
     return id;
   }
 
-  Stream<int> watchUnreadCount(String characterId) {
+  Future<int> getUnreadCount(String characterId) async {
     final query = _db.selectOnly(_db.personaChatMessages)
       ..addColumns([_db.personaChatMessages.id.count()])
       ..where(_db.personaChatMessages.characterId.equals(characterId) &
           _db.personaChatMessages.isFromCharacter.equals(true) &
           _db.personaChatMessages.isRead.equals(false));
-    return query
-        .watchSingle()
-        .map((row) => row.read(_db.personaChatMessages.id.count()) ?? 0);
+    final row = await query.getSingle();
+    return row.read(_db.personaChatMessages.id.count()) ?? 0;
   }
 
-  Stream<int> watchTotalUnreadCount() {
+  Future<int> getTotalUnreadCount() async {
     final query = _db.selectOnly(_db.personaChatMessages)
       ..addColumns([_db.personaChatMessages.id.count()])
       ..where(_db.personaChatMessages.isFromCharacter.equals(true) &
           _db.personaChatMessages.isRead.equals(false));
-    return query
-        .watchSingle()
-        .map((row) => row.read(_db.personaChatMessages.id.count()) ?? 0);
+    final row = await query.getSingle();
+    return row.read(_db.personaChatMessages.id.count()) ?? 0;
   }
 
   Future<int> markAllRead(String characterId) async {

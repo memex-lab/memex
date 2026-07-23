@@ -34,6 +34,18 @@ void main() {
     expect(message.characterId, 'mentor');
   });
 
+  test('parses persona chat unread change messages', () {
+    final parsed = EventBusMessage.fromJson({
+      'type': 'persona_chat_unread_changed',
+      'data': {'character_id': 'mentor'},
+    });
+
+    expect(parsed, isA<PersonaChatUnreadChangedMessage>());
+    final message = parsed as PersonaChatUnreadChangedMessage;
+    expect(message.type, EventBusMessageType.personaChatUnreadChanged);
+    expect(message.characterId, 'mentor');
+  });
+
   test('parses backup snapshot change messages from event payloads', () {
     final parsed = EventBusMessage.fromJson({
       'type': 'backup_snapshots_changed',

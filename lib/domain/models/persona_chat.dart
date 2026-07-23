@@ -1,5 +1,15 @@
 import 'package:memex/domain/models/character_model.dart';
 
+class PersonaAvatarSummary {
+  const PersonaAvatarSummary({
+    required this.character,
+    required this.unreadCount,
+  });
+
+  final CharacterModel? character;
+  final int unreadCount;
+}
+
 class PersonaChatMessageModel {
   const PersonaChatMessageModel({
     required this.id,

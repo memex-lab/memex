@@ -142,7 +142,7 @@ void main() {
       ),
       isTrue,
     );
-    expect(await chatService.watchUnreadCount('yaoyao').first, 2);
+    expect(await chatService.getUnreadCount('yaoyao'), 2);
     expect((await eventReceived.future).characterId, 'yaoyao');
   });
 }

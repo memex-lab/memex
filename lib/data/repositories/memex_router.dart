@@ -55,6 +55,7 @@ import 'package:memex/data/services/character_initiative_service.dart';
 import 'package:memex/data/services/character_history_acquaintance_service.dart';
 import 'package:memex/data/services/character_service.dart';
 import 'package:memex/data/repositories/persona_chat_repository.dart';
+import 'package:memex/data/repositories/character_editor_repository.dart';
 import 'package:memex/data/services/task_handlers/reprocess_comments_handler.dart';
 import 'package:memex/data/services/task_handlers/custom_agent_task_handler.dart';
 import 'package:memex/data/services/custom_agent_config_service.dart';
@@ -82,6 +83,7 @@ import 'package:memex/utils/result.dart';
 import 'package:memex/domain/models/system_event.dart';
 import 'package:memex/domain/models/user_stats_model.dart';
 import 'package:memex/domain/models/persona_chat.dart';
+import 'package:memex/domain/models/character_editor.dart';
 
 /// Local data service for Memex. Handles all data operations via local storage (FileSystemService, DB).
 class MemexRouter {
@@ -90,6 +92,8 @@ class MemexRouter {
 
   final Logger _logger = getLogger('MemexRouter');
   final PersonaChatRepository _personaChatRepository = PersonaChatRepository();
+  final CharacterEditorRepository _characterEditorRepository =
+      CharacterEditorRepository();
 
   Future<void>? _initFuture;
 
@@ -1178,6 +1182,45 @@ class MemexRouter {
     });
   }
 
+  Future<Result<CharacterEditorData>> loadCharacterEditor(
+    CharacterModel character,
+  ) {
+    return runResult(() async {
+      await _ensureInitialized();
+      final userId = await UserStorage.getUserId();
+      if (userId == null) throw StateError('No active user.');
+      return _characterEditorRepository.load(
+        userId: userId,
+        character: character,
+      );
+    });
+  }
+
+  Future<Result<CharacterModel>> saveCharacterDraft(
+    CharacterDraft draft,
+  ) {
+    return runResult(() async {
+      await _ensureInitialized();
+      final userId = await UserStorage.getUserId();
+      if (userId == null) throw StateError('No active user.');
+      return _characterEditorRepository.save(userId: userId, draft: draft);
+    });
+  }
+
+  Future<Result<CharacterEditorMedia>> importCharacterEditorImage(
+    String sourcePath,
+  ) {
+    return runResult(() async {
+      await _ensureInitialized();
+      final userId = await UserStorage.getUserId();
+      if (userId == null) throw StateError('No active user.');
+      return _characterEditorRepository.importImage(
+        userId: userId,
+        sourcePath: sourcePath,
+      );
+    });
+  }
+
   Future<Result<PersonaChatThreadModel>> loadPersonaChatThread(
     String characterId, {
     int limit = 30,
@@ -1192,6 +1235,15 @@ class MemexRouter {
         limit: limit,
         userAvatar: await getUserAvatar(),
       );
+    });
+  }
+
+  Future<Result<PersonaAvatarSummary>> loadPersonaAvatarSummary() {
+    return runResult(() async {
+      await _ensureInitialized();
+      final userId = await UserStorage.getUserId();
+      if (userId == null) throw StateError('No active user.');
+      return _personaChatRepository.loadAvatarSummary(userId);
     });
   }
 
@@ -1229,7 +1281,11 @@ class MemexRouter {
   Future<Result<int>> markPersonaChatRead(String characterId) {
     return runResult(() async {
       await _ensureInitialized();
-      return _personaChatRepository.markAllRead(characterId);
+      final count = await _personaChatRepository.markAllRead(characterId);
+      EventBusService.instance.emitEvent(
+        PersonaChatUnreadChangedMessage(characterId: characterId),
+      );
+      return count;
     });
   }
 
@@ -1314,16 +1370,13 @@ class MemexRouter {
     }
   }
 
-  Future<bool> deleteCharacter(String characterId) async {
-    await _ensureInitialized();
-    _logger.info('LocalMode: deleteCharacter called: characterId=$characterId');
-
-    try {
+  Future<Result<bool>> deleteCharacter(String characterId) {
+    return runResult(() async {
+      await _ensureInitialized();
+      _logger
+          .info('LocalMode: deleteCharacter called: characterId=$characterId');
       return await deleteCharacterEndpoint(characterId);
-    } catch (e) {
-      _logger.severe('Failed to delete character $characterId: $e');
-      rethrow;
-    }
+    });
   }
 
   Future<Result<bool>> setCharacterEnabled(
