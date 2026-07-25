@@ -88,6 +88,7 @@ void main() {
         sentMessages = messages;
         sentFactId = factId;
         sentEpisodeId = contactEpisodeId;
+        return true;
       },
       wakeScheduler: ({
         required userId,
@@ -165,6 +166,7 @@ void main() {
         factId,
       }) async {
         sent = true;
+        return true;
       },
       wakeScheduler: ({
         required userId,
@@ -181,6 +183,111 @@ void main() {
 
     expect(decided, isTrue);
     expect(sent, isFalse);
+  });
+
+  test('defers initiative while direct user messages await a reply', () async {
+    var contextLoaded = false;
+    var decided = false;
+    var sent = false;
+    var conversationScheduled = false;
+    var wakeScheduled = false;
+    DateTime? scheduledRetryAt;
+    String? scheduledRetryReason;
+    Map<String, dynamic>? scheduledRetryPayload;
+    final handler = CharacterInitiativeTaskHandler(
+      workspaceService: workspaceService,
+      primaryCompanionLoader: (_) async => character,
+      clock: () => now,
+      pendingUserMessagesLoader: (characterId) async {
+        expect(characterId, character.id);
+        return true;
+      },
+      conversationReplyScheduler: ({
+        required userId,
+        required characterId,
+      }) async {
+        expect(userId, 'user-1');
+        expect(characterId, character.id);
+        conversationScheduled = true;
+      },
+      initiativeRetryScheduler: ({
+        required userId,
+        required characterId,
+        required payload,
+        required retryAt,
+        required reason,
+      }) async {
+        expect(userId, 'user-1');
+        expect(characterId, character.id);
+        scheduledRetryAt = retryAt;
+        scheduledRetryReason = reason;
+        scheduledRetryPayload = payload;
+      },
+      contextLoader: ({
+        required userId,
+        required character,
+        required sourceEventId,
+        required now,
+        factId,
+      }) async {
+        contextLoaded = true;
+        return CharacterInitiativeContext(
+          sourceEventId: sourceEventId,
+          now: now,
+        );
+      },
+      decider: ({
+        required userId,
+        required character,
+        required context,
+        CharacterWorkspaceService? workspaceService,
+      }) async {
+        decided = true;
+        return CharacterInitiativeDecision.speak(
+          ['这条不应该发出。'],
+          wakeAt: now.add(const Duration(hours: 1)),
+          reason: '不应该运行到这里。',
+        );
+      },
+      messageSender: ({
+        required characterId,
+        required messages,
+        required timestamp,
+        required contactEpisodeId,
+        factId,
+      }) async {
+        sent = true;
+        return true;
+      },
+      wakeScheduler: ({
+        required userId,
+        required wakeAt,
+        required reason,
+      }) async {
+        wakeScheduled = true;
+      },
+    );
+
+    await handler.call(
+      'user-1',
+      {'source_event_id': 'event-pending-chat'},
+      TaskContext(
+        taskId: 'task-pending-chat',
+        taskType: 'character_initiative_task',
+      ),
+    );
+
+    expect(contextLoaded, isFalse);
+    expect(decided, isFalse);
+    expect(sent, isFalse);
+    expect(conversationScheduled, isTrue);
+    expect(wakeScheduled, isFalse);
+    expect(scheduledRetryAt, now.add(const Duration(seconds: 2)));
+    expect(scheduledRetryReason, contains('direct conversation'));
+    expect(
+      scheduledRetryPayload,
+      {'source_event_id': 'event-pending-chat'},
+    );
   });
 
   test('turns SleepUntil into an agent-chosen persistent wake', () async {
@@ -220,7 +327,8 @@ void main() {
         required timestamp,
         required contactEpisodeId,
         factId,
-      }) async {},
+      }) async =>
+          true,
       wakeScheduler: ({
         required userId,
         required wakeAt,
@@ -297,7 +405,8 @@ void main() {
         required timestamp,
         required contactEpisodeId,
         factId,
-      }) async {},
+      }) async =>
+          true,
       wakeScheduler: ({
         required userId,
         required wakeAt,
@@ -380,6 +489,7 @@ void main() {
         factId,
       }) async {
         sent = true;
+        return true;
       },
       wakeScheduler: ({
         required userId,
@@ -398,5 +508,117 @@ void main() {
 
     expect(sent, isFalse);
     expect(scheduled, isTrue);
+  });
+
+  test('keeps a resumed thought when direct chat arrives mid-decision',
+      () async {
+    final thought = await workspaceService.rememberPendingThought(
+      userId: 'user-1',
+      characterId: character.id,
+      sourceEventId: 'event-resumed-race',
+      reason: '想问问她旅途准备得怎么样。',
+      wakeAt: now,
+      now: now.subtract(const Duration(hours: 1)),
+    );
+    var pendingChecks = 0;
+    var sent = false;
+    var conversationScheduled = false;
+    var normalWakeScheduled = false;
+    Map<String, dynamic>? retryPayload;
+    final handler = CharacterInitiativeTaskHandler(
+      workspaceService: workspaceService,
+      primaryCompanionLoader: (_) async => character,
+      clock: () => now,
+      latestMessageIdLoader: (_) async => 7,
+      pendingUserMessagesLoader: (_) async {
+        pendingChecks += 1;
+        return pendingChecks > 1;
+      },
+      conversationReplyScheduler: ({
+        required userId,
+        required characterId,
+      }) async {
+        conversationScheduled = true;
+      },
+      initiativeRetryScheduler: ({
+        required userId,
+        required characterId,
+        required payload,
+        required retryAt,
+        required reason,
+      }) async {
+        retryPayload = Map<String, dynamic>.from(payload);
+      },
+      contextLoader: ({
+        required userId,
+        required character,
+        required sourceEventId,
+        required now,
+        factId,
+      }) async {
+        return CharacterInitiativeContext(
+          sourceEventId: sourceEventId,
+          now: now,
+          latestPrivateMessageId: 7,
+        );
+      },
+      decider: ({
+        required userId,
+        required character,
+        required context,
+        CharacterWorkspaceService? workspaceService,
+      }) async {
+        expect(context.resumedThought?.id, thought.id);
+        return CharacterInitiativeDecision.speak(
+          ['这条决定应该被直接对话打断。'],
+          wakeAt: now.add(const Duration(hours: 3)),
+          reason: '稍后再看看。',
+        );
+      },
+      messageSender: ({
+        required characterId,
+        required messages,
+        required timestamp,
+        required contactEpisodeId,
+        factId,
+      }) async {
+        sent = true;
+        return true;
+      },
+      wakeScheduler: ({
+        required userId,
+        required wakeAt,
+        required reason,
+      }) async {
+        normalWakeScheduled = true;
+      },
+    );
+    final payload = {
+      'pending_thought_id': thought.id,
+      'pending_thought_wake_at': thought.wakeAt.toIso8601String(),
+    };
+
+    await handler.call(
+      'user-1',
+      payload,
+      TaskContext(
+        taskId: 'resumed-race-task',
+        taskType: 'character_initiative_task',
+      ),
+    );
+
+    expect(pendingChecks, 2);
+    expect(sent, isFalse);
+    expect(conversationScheduled, isTrue);
+    expect(normalWakeScheduled, isFalse);
+    expect(retryPayload, payload);
+    expect(
+      await workspaceService.getPendingThought(
+        'user-1',
+        character.id,
+        thought.id,
+      ),
+      isNotNull,
+    );
   });
 }

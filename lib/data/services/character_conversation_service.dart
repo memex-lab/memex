@@ -62,18 +62,54 @@ class CharacterConversationService {
       text,
       timestamp: sentAt,
     );
-    final scheduledAt =
-        _clock().add(_settleDelay).millisecondsSinceEpoch ~/ 1000;
+    await schedulePendingReply(
+      userId: userId,
+      characterId: characterId,
+      delay: _settleDelay,
+    );
+    return messageId;
+  }
+
+  /// Ensures pending direct messages have one durable conversation task.
+  ///
+  /// Initiative uses this as a recovery path when it observes an unclaimed
+  /// user message before deciding whether to speak.
+  Future<void> schedulePendingReply({
+    required String userId,
+    required String characterId,
+    Duration delay = Duration.zero,
+  }) async {
+    final scheduledAt = _clock().add(delay).millisecondsSinceEpoch ~/ 1000;
     await _taskExecutor.enqueueOrRescheduleTask(
       userId: userId,
       taskType: taskType,
-      payload: {
-        'character_id': characterId,
-      },
+      payload: {'character_id': characterId},
       bizId: taskBizId(characterId),
       scheduledAt: scheduledAt,
       maxRetries: 3,
     );
-    return messageId;
+  }
+
+  /// Restores a missing conversation task without changing the debounce time
+  /// of one that is already pending or processing.
+  Future<void> ensurePendingReplyScheduled({
+    required String userId,
+    required String characterId,
+  }) async {
+    final bizId = taskBizId(characterId);
+    final alreadyScheduled = await _taskExecutor.hasActiveTask(
+      taskType: taskType,
+      bizId: bizId,
+    );
+    if (alreadyScheduled) return;
+
+    await _taskExecutor.enqueueOrRescheduleTask(
+      userId: userId,
+      taskType: taskType,
+      payload: {'character_id': characterId},
+      bizId: bizId,
+      scheduledAt: _clock().millisecondsSinceEpoch ~/ 1000,
+      maxRetries: 3,
+    );
   }
 }

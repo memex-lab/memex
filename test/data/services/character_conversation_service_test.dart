@@ -38,6 +38,10 @@ void main() {
       characterId: 'yaoyao',
       content: '突然想喝冰的',
     );
+    await service.ensurePendingReplyScheduled(
+      userId: 'user-1',
+      characterId: 'yaoyao',
+    );
 
     final messages = await chatService.getPendingUserMessages('yaoyao');
     final tasks = await (db.select(db.tasks)
@@ -57,5 +61,32 @@ void main() {
       jsonDecode(tasks.single.payload!)['character_id'],
       'yaoyao',
     );
+  });
+
+  test('initiative recovery creates a missing reply task immediately',
+      () async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    final executor = LocalTaskExecutor.forTesting(db: db);
+    final chatService = PersonaChatService.forTesting(db);
+    final now = DateTime.parse('2026-07-15T09:00:00+08:00');
+    final service = CharacterConversationService.forTesting(
+      chatService: chatService,
+      taskExecutor: executor,
+      clock: () => now,
+    );
+    addTearDown(() async {
+      await executor.stop();
+      await db.close();
+    });
+
+    await chatService.addUserMessage('yaoyao', '这条消息的任务丢了');
+    await service.ensurePendingReplyScheduled(
+      userId: 'user-1',
+      characterId: 'yaoyao',
+    );
+
+    final task = (await db.select(db.tasks).get()).single;
+    expect(task.bizId, 'character_conversation:yaoyao');
+    expect(task.scheduledAt, now.millisecondsSinceEpoch ~/ 1000);
   });
 }

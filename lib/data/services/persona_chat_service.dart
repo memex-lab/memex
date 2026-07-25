@@ -195,6 +195,64 @@ class PersonaChatService {
     return result.ids;
   }
 
+  /// Commits an Initiative episode only when no direct user message is waiting
+  /// for Conversation. The check and inserts share one database transaction so
+  /// a proactive reply cannot knowingly overtake an unanswered user turn.
+  Future<bool> tryAddInitiativeMessages(
+    String characterId,
+    List<CharacterOutgoingMessage> messages, {
+    String? factId,
+    bool isRead = false,
+    DateTime? timestamp,
+    required String contactEpisodeId,
+  }) async {
+    final createdAt = timestamp ?? DateTime.now();
+    if (messages.isEmpty) {
+      throw ArgumentError('Character messages must be non-empty.');
+    }
+
+    return _db.transaction(() async {
+      final existing = await (_db.select(_db.personaChatMessages)
+            ..where((t) =>
+                t.characterId.equals(characterId) &
+                t.contactEpisodeId.equals(contactEpisodeId))
+            ..limit(1))
+          .getSingleOrNull();
+      if (existing != null) return true;
+
+      final cursor = await (_db.select(_db.personaChatReplyCursors)
+            ..where((row) => row.characterId.equals(characterId)))
+          .getSingleOrNull();
+      final pendingUserMessage = await (_db.select(_db.personaChatMessages)
+            ..where((t) =>
+                t.characterId.equals(characterId) &
+                t.isFromCharacter.equals(false) &
+                t.id.isBiggerThanValue(
+                  cursor?.consumedThroughMessageId ?? 0,
+                ))
+            ..limit(1))
+          .getSingleOrNull();
+      if (pendingUserMessage != null) return false;
+
+      for (final message in messages) {
+        await _db.into(_db.personaChatMessages).insert(
+              PersonaChatMessagesCompanion.insert(
+                characterId: characterId,
+                isFromCharacter: true,
+                content: message.content,
+                factId: Value(factId),
+                isRead: Value(isRead),
+                timestamp: createdAt,
+                messageType: Value(message.storageType),
+                origin: const Value(PersonaChatMessageOrigin.initiative),
+                contactEpisodeId: Value(contactEpisodeId),
+              ),
+            );
+      }
+      return true;
+    });
+  }
+
   /// Atomically records one character speaking episode and advances the
   /// private-chat inbox cursor through the messages it considered. Retrying
   /// the same episode is idempotent.

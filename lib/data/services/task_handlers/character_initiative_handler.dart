@@ -1,4 +1,5 @@
 import 'package:memex/agent/character_agent/character_agent.dart';
+import 'package:memex/data/services/character_conversation_service.dart';
 import 'package:memex/data/services/character_service.dart';
 import 'package:memex/data/services/character_execution_coordinator.dart';
 import 'package:memex/data/services/character_initiative_service.dart';
@@ -30,7 +31,7 @@ typedef CharacterInitiativeDecider = Future<CharacterInitiativeDecision>
   CharacterWorkspaceService? workspaceService,
 });
 
-typedef CharacterInitiativeMessageSender = Future<void> Function({
+typedef CharacterInitiativeMessageSender = Future<bool> Function({
   required String characterId,
   required List<CharacterOutgoingMessage> messages,
   required DateTime timestamp,
@@ -48,6 +49,23 @@ typedef CharacterLatestMessageIdLoader = Future<int> Function(
   String characterId,
 );
 
+typedef CharacterPendingUserMessagesLoader = Future<bool> Function(
+  String characterId,
+);
+
+typedef CharacterConversationReplyScheduler = Future<void> Function({
+  required String userId,
+  required String characterId,
+});
+
+typedef CharacterInitiativeRetryScheduler = Future<void> Function({
+  required String userId,
+  required String characterId,
+  required Map<String, dynamic> payload,
+  required DateTime retryAt,
+  required String reason,
+});
+
 class CharacterInitiativeTaskHandler {
   CharacterInitiativeTaskHandler({
     CharacterWorkspaceService? workspaceService,
@@ -59,6 +77,9 @@ class CharacterInitiativeTaskHandler {
     EventBusService? eventBus,
     CharacterInitiativeWakeScheduler? wakeScheduler,
     CharacterLatestMessageIdLoader? latestMessageIdLoader,
+    CharacterPendingUserMessagesLoader? pendingUserMessagesLoader,
+    CharacterConversationReplyScheduler? conversationReplyScheduler,
+    CharacterInitiativeRetryScheduler? initiativeRetryScheduler,
     CharacterExecutionCoordinator? executionCoordinator,
     DateTime Function()? clock,
   })  : _workspaceService =
@@ -80,6 +101,22 @@ class CharacterInitiativeTaskHandler {
                     chatService ?? PersonaChatService.instance,
                   )
                 : null),
+        _pendingUserMessagesLoader = pendingUserMessagesLoader ??
+            (messageSender == null || chatService != null
+                ? _buildPendingUserMessagesLoader(
+                    chatService ?? PersonaChatService.instance,
+                  )
+                : null),
+        _conversationReplyScheduler = conversationReplyScheduler ??
+            (({required String userId, required String characterId}) =>
+                CharacterConversationService.instance
+                    .ensurePendingReplyScheduled(
+                  userId: userId,
+                  characterId: characterId,
+                )),
+        _initiativeRetryScheduler = initiativeRetryScheduler ??
+            CharacterInitiativeService
+                .instance.scheduleConversationDeferredRetry,
         _executionCoordinator =
             executionCoordinator ?? CharacterExecutionCoordinator.instance,
         _clock = clock ?? DateTime.now;
@@ -91,9 +128,17 @@ class CharacterInitiativeTaskHandler {
   final CharacterInitiativeMessageSender _messageSender;
   final CharacterInitiativeWakeScheduler _wakeScheduler;
   final CharacterLatestMessageIdLoader? _latestMessageIdLoader;
+  final CharacterPendingUserMessagesLoader? _pendingUserMessagesLoader;
+  final CharacterConversationReplyScheduler _conversationReplyScheduler;
+  final CharacterInitiativeRetryScheduler _initiativeRetryScheduler;
   final CharacterExecutionCoordinator _executionCoordinator;
   final DateTime Function() _clock;
   final _logger = getLogger('CharacterInitiativeTaskHandler');
+
+  static const _conversationDeferralDelay = Duration(seconds: 2);
+  static const _conversationDeferralReason =
+      'A direct conversation is waiting for my reply. Reconsider initiative '
+      'after I have answered it.';
 
   Future<void> call(
     String userId,
@@ -154,12 +199,22 @@ class CharacterInitiativeTaskHandler {
       }
     }
 
+    final now = _clock();
+    if (await _hasPendingUserMessages(character.id)) {
+      await _deferUntilConversationCompletes(
+        userId: userId,
+        characterId: character.id,
+        payload: payload,
+        now: now,
+      );
+      return;
+    }
+
     final sourceEventId = resumedThought?.sourceEventId ??
         ((payload['source_event_id'] as String?)?.trim().isNotEmpty == true
             ? payload['source_event_id'] as String
             : taskContext.bizId ?? taskContext.taskId);
     final factId = resumedThought?.factId ?? payload['fact_id'] as String?;
-    final now = _clock();
     final baseContext = await _contextLoader(
       userId: userId,
       character: character,
@@ -197,6 +252,7 @@ class CharacterInitiativeTaskHandler {
       if (wakeReason.isEmpty) {
         throw StateError('The next wake requires a private reason.');
       }
+      var deferredForConversation = false;
 
       switch (decision.action) {
         case CharacterInitiativeAction.speak:
@@ -216,18 +272,42 @@ class CharacterInitiativeTaskHandler {
               );
             }
           }
+          if (await _hasPendingUserMessages(character.id)) {
+            shouldSend = false;
+            deferredForConversation = true;
+            await _conversationReplyScheduler(
+              userId: userId,
+              characterId: character.id,
+            );
+            _logger.info(
+              'Discarded initiative for ${character.id}: '
+              'a direct reply is pending',
+            );
+          }
           if (shouldSend) {
-            await _messageSender(
+            final committed = await _messageSender(
               characterId: character.id,
               messages: messages,
               factId: factId,
               timestamp: _clock(),
               contactEpisodeId: 'character_initiative:${taskContext.taskId}',
             );
-            _logger.info(
-              'Character ${character.id} initiated private contact with '
-              '${messages.length} message(s)',
-            );
+            if (committed) {
+              _logger.info(
+                'Character ${character.id} initiated private contact with '
+                '${messages.length} message(s)',
+              );
+            } else {
+              deferredForConversation = true;
+              await _conversationReplyScheduler(
+                userId: userId,
+                characterId: character.id,
+              );
+              _logger.info(
+                'Discarded initiative for ${character.id}: '
+                'a direct message arrived while contact was being committed',
+              );
+            }
           }
         case CharacterInitiativeAction.sleepUntil:
           _logger.info(
@@ -235,6 +315,16 @@ class CharacterInitiativeTaskHandler {
           );
       }
 
+      if (deferredForConversation) {
+        await _initiativeRetryScheduler(
+          userId: userId,
+          characterId: character.id,
+          payload: payload,
+          retryAt: _clock().add(_conversationDeferralDelay),
+          reason: _conversationDeferralReason,
+        );
+        return;
+      }
       if (resumedThought != null) {
         await _workspaceService.resolvePendingThought(
           userId,
@@ -317,6 +407,44 @@ class CharacterInitiativeTaskHandler {
     return chatService.getLatestMessageId;
   }
 
+  Future<bool> _hasPendingUserMessages(String characterId) async {
+    final loader = _pendingUserMessagesLoader;
+    return loader != null && await loader(characterId);
+  }
+
+  Future<void> _deferUntilConversationCompletes({
+    required String userId,
+    required String characterId,
+    required Map<String, dynamic> payload,
+    required DateTime now,
+  }) async {
+    await _conversationReplyScheduler(userId: userId, characterId: characterId);
+    final retryAt = now.add(_conversationDeferralDelay);
+    await _initiativeRetryScheduler(
+      userId: userId,
+      characterId: characterId,
+      payload: payload,
+      retryAt: retryAt,
+      reason: _conversationDeferralReason,
+    );
+    _logger.info(
+      'Deferred initiative for $characterId until direct conversation '
+      'settles; retry at $retryAt',
+    );
+  }
+
+  static CharacterPendingUserMessagesLoader _buildPendingUserMessagesLoader(
+    PersonaChatService chatService,
+  ) {
+    return (characterId) async {
+      final pending = await chatService.getPendingUserMessages(
+        characterId,
+        limit: 1,
+      );
+      return pending.isNotEmpty;
+    };
+  }
+
   static CharacterInitiativeMessageSender _buildMessageSender(
     PersonaChatService chatService,
     EventBusService eventBus,
@@ -328,18 +456,19 @@ class CharacterInitiativeTaskHandler {
       required String contactEpisodeId,
       String? factId,
     }) async {
-      await chatService.addCharacterMessages(
+      final committed = await chatService.tryAddInitiativeMessages(
         characterId,
         messages,
         factId: factId,
         isRead: false,
         timestamp: timestamp,
-        origin: PersonaChatMessageOrigin.initiative,
         contactEpisodeId: contactEpisodeId,
       );
+      if (!committed) return false;
       eventBus.emitEvent(
         PersonaChatMessageAddedMessage(characterId: characterId),
       );
+      return true;
     };
   }
 }

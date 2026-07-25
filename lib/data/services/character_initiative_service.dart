@@ -71,6 +71,28 @@ class CharacterInitiativeService {
     );
   }
 
+  /// Defers the current initiative task without losing its source or pending
+  /// thought identity while Conversation owns an unanswered user turn.
+  Future<void> scheduleConversationDeferredRetry({
+    required String userId,
+    required String characterId,
+    required Map<String, dynamic> payload,
+    required DateTime retryAt,
+    required String reason,
+  }) {
+    final retryPayload = Map<String, dynamic>.from(payload)
+      ..['character_id'] = characterId
+      ..['wake_reason'] = reason;
+    return _taskExecutor.enqueueOrRescheduleTask(
+      userId: userId,
+      taskType: taskType,
+      payload: retryPayload,
+      bizId: taskBizId,
+      scheduledAt: retryAt.millisecondsSinceEpoch ~/ 1000,
+      maxRetries: 3,
+    );
+  }
+
   Future<void> _enqueueWake({
     required String userId,
     required DateTime wakeAt,

@@ -63,4 +63,46 @@ void main() {
       clockNow.millisecondsSinceEpoch ~/ 1000,
     );
   });
+
+  test('conversation deferral preserves the initiative task identity',
+      () async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    final executor = LocalTaskExecutor.forTesting(db: db);
+    final now = DateTime.parse('2026-07-25T16:25:00+08:00');
+    final retryAt = now.add(const Duration(seconds: 2));
+    final service = CharacterInitiativeService.forTesting(
+      taskExecutor: executor,
+      clock: () => now,
+    );
+    addTearDown(db.close);
+
+    await service.scheduleConversationDeferredRetry(
+      userId: 'user-1',
+      characterId: 'auntie',
+      payload: const {
+        'source_event_id': 'initiative-due',
+        'pending_thought_id': 'thought-1',
+        'pending_thought_wake_at': '2026-07-25T16:00:00+08:00',
+      },
+      retryAt: retryAt,
+      reason: 'Wait until the direct reply is complete.',
+    );
+
+    final task = (await db.select(db.tasks).get()).single;
+    final payload = jsonDecode(task.payload!) as Map<String, dynamic>;
+    expect(task.type, CharacterInitiativeService.taskType);
+    expect(task.bizId, CharacterInitiativeService.taskBizId);
+    expect(task.scheduledAt, retryAt.millisecondsSinceEpoch ~/ 1000);
+    expect(payload['character_id'], 'auntie');
+    expect(payload['source_event_id'], 'initiative-due');
+    expect(payload['pending_thought_id'], 'thought-1');
+    expect(
+      payload['pending_thought_wake_at'],
+      '2026-07-25T16:00:00+08:00',
+    );
+    expect(
+      payload['wake_reason'],
+      'Wait until the direct reply is complete.',
+    );
+  });
 }

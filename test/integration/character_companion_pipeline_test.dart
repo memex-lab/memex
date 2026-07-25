@@ -121,6 +121,7 @@ void main() {
           origin: PersonaChatMessageOrigin.initiative,
           contactEpisodeId: contactEpisodeId,
         );
+        return true;
       },
     );
 
