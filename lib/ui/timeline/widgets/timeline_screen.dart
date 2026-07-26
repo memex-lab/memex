@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:memex/config/app_config.dart';
 import 'package:memex/domain/models/timeline_card_model.dart';
@@ -33,12 +34,15 @@ import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:memex/ui/core/widgets/memex_brand_title.dart';
 import 'package:memex/ui/core/widgets/character_avatar.dart';
 import 'package:memex/ui/character/widgets/persona_avatar_button.dart';
+import 'package:memex/ui/character/view_models/persona_avatar_viewmodel.dart';
+import 'package:memex/routing/routes.dart';
 import 'package:memex/ui/schedule/widgets/schedule_aggregator_screen.dart';
 
 /// Timeline screen - main memory view. Receives [viewModel] and [insightViewModel] from parent (Compass-style).
 class TimelineScreen extends StatefulWidget {
   final TimelineViewModel viewModel;
   final InsightViewModel insightViewModel;
+  final PersonaAvatarViewModel personaAvatarViewModel;
   final VoidCallback onInputTap;
   final VoidCallback? onRefreshAction;
 
@@ -46,6 +50,7 @@ class TimelineScreen extends StatefulWidget {
     super.key,
     required this.viewModel,
     required this.insightViewModel,
+    required this.personaAvatarViewModel,
     required this.onInputTap,
     this.onRefreshAction,
   });
@@ -335,7 +340,12 @@ class TimelineScreenState extends State<TimelineScreen> {
                           ),
                         const SizedBox(width: 6),
                         // Companion character button (next to user avatar)
-                        const PersonaAvatarButton(),
+                        PersonaAvatarButton(
+                          viewModel: widget.personaAvatarViewModel,
+                          onTap: (character) => context.push(
+                            '${AppRoutes.personaChat}/${character.id}',
+                          ),
+                        ),
                         const SizedBox(width: 6),
                         // Avatar button
                         GestureDetector(

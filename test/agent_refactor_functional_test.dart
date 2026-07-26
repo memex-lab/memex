@@ -9,6 +9,7 @@ import 'package:memex/agent/context/user_knowledge_context_service.dart';
 import 'package:memex/agent/memory/character_context_compressor.dart';
 import 'package:memex/agent/memory/character_memory_service.dart';
 import 'package:memex/data/services/character_service.dart';
+import 'package:memex/data/services/character_workspace_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/tavern_character_import_service.dart';
 import 'package:memex/db/app_database.dart';
@@ -459,10 +460,10 @@ void main() {
       );
       expect(createdPng.persona.trim().isNotEmpty, isTrue);
 
-      final jsonWorldEntries = await CharacterMemoryService.instance
-          .loadWorldEntries(userId, createdJson.id);
-      final pngWorldEntries = await CharacterMemoryService.instance
-          .loadWorldEntries(userId, createdPng.id);
+      final jsonWorldEntries = await CharacterWorkspaceService.instance
+          .loadUserProvidedWorldEntries(userId, createdJson.id);
+      final pngWorldEntries = await CharacterWorkspaceService.instance
+          .loadUserProvidedWorldEntries(userId, createdPng.id);
       expect(jsonWorldEntries.length + pngWorldEntries.length, greaterThan(0));
 
       final txt = File('${tempRoot.path}/bad_card.txt');

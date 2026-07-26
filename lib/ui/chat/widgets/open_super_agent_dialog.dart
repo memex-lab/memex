@@ -5,28 +5,90 @@ import 'package:memex/ui/chat/widgets/agent_chat_dialog.dart';
 import 'package:memex/utils/result.dart';
 import 'package:memex/utils/user_storage.dart';
 
-Future<String?> latestSuperAgentSessionId() async {
+typedef SuperAgentSessionFetcher = Future<Result<List<Map<String, dynamic>>>>
+    Function();
+typedef SuperAgentSessionExistsChecker = Future<Result<bool>> Function(
+  String sessionId,
+);
+
+bool _isHomeCompatible(Map<String, dynamic> session) {
+  final scene = session['scene']?.toString().trim();
+  return scene == null ||
+      scene.isEmpty ||
+      scene == 'assistant' ||
+      scene == 'super_agent_home';
+}
+
+@visibleForTesting
+String? resolveLatestSuperAgentSessionId({
+  required String? cachedSessionId,
+  required List<Map<String, dynamic>> sessions,
+}) {
+  final normalizedCachedSessionId = cachedSessionId?.trim();
+  if (normalizedCachedSessionId != null &&
+      normalizedCachedSessionId.isNotEmpty) {
+    for (final session in sessions) {
+      if (session['session_id']?.toString() == normalizedCachedSessionId &&
+          _isHomeCompatible(session)) {
+        return normalizedCachedSessionId;
+      }
+    }
+  }
+
+  for (final session in sessions) {
+    if (session['scene'] == 'super_agent_home') {
+      return session['session_id']?.toString();
+    }
+  }
+
+  // Sessions created before the unified Super Agent entry used the default
+  // assistant scene. They remain valid home conversations after reinstall.
+  for (final session in sessions) {
+    if (_isHomeCompatible(session)) {
+      return session['session_id']?.toString();
+    }
+  }
+  return null;
+}
+
+Future<String?> latestSuperAgentSessionId({
+  SuperAgentSessionFetcher? fetchSessions,
+  SuperAgentSessionExistsChecker? sessionExists,
+}) async {
   final cachedSessionId = await UserStorage.getLatestSuperAgentHomeSessionId();
-  if (cachedSessionId != null) return cachedSessionId;
+
+  if (cachedSessionId != null) {
+    try {
+      final existsResult = await (sessionExists?.call(cachedSessionId) ??
+          MemexRouter().chatSessionExists(cachedSessionId));
+      final cacheStatus = existsResult.when<bool?>(
+        onOk: (exists) => exists,
+        // Fall back to metadata discovery when the targeted path check is
+        // inconclusive. Do not open an unverified session.
+        onError: (_, __) => null,
+      );
+      if (cacheStatus == true) {
+        return cachedSessionId;
+      }
+    } catch (_) {}
+  }
 
   try {
-    final result = await MemexRouter().fetchChatSessions(
-      agentName: 'memex_agent',
-      limit: 30,
-    );
+    final result = await (fetchSessions?.call() ??
+        MemexRouter().fetchChatSessions(agentName: 'memex_agent'));
     final sessionId = result.when(
-      onOk: (sessions) {
-        for (final session in sessions) {
-          if (session['scene'] == 'super_agent_home') {
-            return session['session_id']?.toString();
-          }
-        }
-        return null;
-      },
+      onOk: (sessions) => resolveLatestSuperAgentSessionId(
+        cachedSessionId: cachedSessionId,
+        sessions: sessions,
+      ),
       onError: (_, __) => null,
     );
     if (sessionId == null || sessionId.isEmpty) {
-      await UserStorage.clearLatestSuperAgentHomeSessionId();
+      // A missing iCloud file may become available later. Keep an existing
+      // pointer for the next recovery attempt, but do not open it unverified.
+      if (cachedSessionId == null) {
+        await UserStorage.clearLatestSuperAgentHomeSessionId();
+      }
       return null;
     }
     await UserStorage.setLatestSuperAgentHomeSessionId(sessionId);

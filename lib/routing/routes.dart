@@ -30,6 +30,12 @@ abstract final class AppRoutes {
   /// Character config.
   static const String characterConfig = '/character-config';
 
+  /// Character editor (extra: optional CharacterModel).
+  static const String characterEdit = '/character-edit';
+
+  /// Persona chat; push as '/persona-chat/$characterId'.
+  static const String personaChat = '/persona-chat';
+
   /// Tavern character card import.
   static const String tavernImport = '/tavern-import';
 }

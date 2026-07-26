@@ -26,6 +26,7 @@ class ChatSessionStorage {
   final _logger = getLogger('ChatSessionStorage');
   final Map<String, Future<void>> _migrationFutures = {};
   final Map<String, Lock> _sessionLocks = {};
+  final Map<String, Lock> _legacyMigrationLocks = {};
   final Lock _lockMapLock = Lock();
 
   FileSystemService get _fileService => FileSystemService.instance;
@@ -42,7 +43,7 @@ class ChatSessionStorage {
               await MigrationStateService.instance.runOnce(
             userId: userId,
             key: storageMigrationKey,
-            migrate: () => _migrateLegacyYamlSessions(userId),
+            migrate: () => _scanLegacyYamlSessions(userId),
           );
         } finally {
           if (!migrationStateSatisfied) {
@@ -56,11 +57,15 @@ class ChatSessionStorage {
   Future<bool> sessionExists(String userId, String sessionId) async {
     await ensureMigrated(userId);
     _validateSessionId(sessionId);
-    return _metadataFile(userId, sessionId).exists();
+    return _recoverLegacySessionIfNeeded(userId, sessionId);
   }
 
   Future<List<Map<String, dynamic>>> listSessionMetadata(String userId) async {
     await ensureMigrated(userId);
+    // A one-time migration marker cannot prove that iCloud had materialized
+    // every legacy file during the first scan. Re-scan on the comparatively
+    // rare session-list path so late YAML files remain recoverable.
+    await _scanLegacyYamlSessions(userId);
     final root = Directory(_sessionsPath(userId));
     if (!await root.exists()) return const [];
 
@@ -105,7 +110,7 @@ class ChatSessionStorage {
     await ensureMigrated(userId);
     _validateSessionId(sessionId);
     final file = _metadataFile(userId, sessionId);
-    if (!await file.exists()) {
+    if (!await _recoverLegacySessionIfNeeded(userId, sessionId)) {
       throw StateError('Session not found: $sessionId');
     }
     return _readMetadataFile(file);
@@ -432,6 +437,30 @@ class ChatSessionStorage {
     return !hadFailures && removedLegacyCounts;
   }
 
+  Future<bool> _scanLegacyYamlSessions(String userId) async {
+    final lock = await _legacyMigrationLockFor(userId);
+    return lock.synchronized(() => _migrateLegacyYamlSessions(userId));
+  }
+
+  Future<bool> _recoverLegacySessionIfNeeded(
+    String userId,
+    String sessionId,
+  ) async {
+    final metadataFile = _metadataFile(userId, sessionId);
+    if (await metadataFile.exists()) return true;
+
+    final lock = await _legacyMigrationLockFor(userId);
+    return lock.synchronized(() async {
+      if (await metadataFile.exists()) return true;
+
+      final legacyFile = File(legacyYamlPath(userId, sessionId));
+      if (!await legacyFile.exists()) return false;
+
+      await _migrateLegacyYamlSessionFile(userId, legacyFile);
+      return metadataFile.exists();
+    });
+  }
+
   Future<bool> _removeLegacyMessageCounts(String userId, Directory root) async {
     var succeeded = true;
     await for (final entity in root.list(followLinks: false)) {
@@ -508,6 +537,7 @@ class ChatSessionStorage {
     }
 
     await _archiveLegacyYaml(userId, legacyFile);
+    _logger.info('Recovered legacy chat session $userId/$sessionId');
   }
 
   Future<void> _archiveLegacyYaml(String userId, File legacyFile) async {
@@ -820,6 +850,13 @@ class ChatSessionStorage {
     final rootPath = _sessionsPath(userId);
     return _lockMapLock.synchronized(() {
       return _sessionLocks.putIfAbsent('$rootPath:$sessionId', () => Lock());
+    });
+  }
+
+  Future<Lock> _legacyMigrationLockFor(String userId) async {
+    final rootPath = _sessionsPath(userId);
+    return _lockMapLock.synchronized(() {
+      return _legacyMigrationLocks.putIfAbsent(rootPath, () => Lock());
     });
   }
 

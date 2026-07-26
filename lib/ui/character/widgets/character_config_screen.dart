@@ -1,14 +1,14 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:logging/logging.dart';
-import 'package:memex/agent/memory/character_memory_service.dart';
+import 'package:memex/domain/models/character_editor.dart';
 import 'package:memex/domain/models/character_model.dart';
-import 'package:memex/data/services/character_service.dart';
-import 'package:memex/data/services/media_service.dart';
 import 'package:memex/routing/routes.dart';
 import 'package:memex/ui/character/view_models/character_viewmodel.dart';
+import 'package:memex/ui/character/view_models/character_edit_viewmodel.dart';
 import 'package:memex/ui/core/widgets/character_avatar.dart';
 import 'package:memex/ui/core/widgets/avatar_picker.dart';
 import 'package:memex/utils/toast_helper.dart';
@@ -33,30 +33,34 @@ class _CharacterConfigScreenState extends State<CharacterConfigScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
-      widget.viewModel.loadCharacters().catchError((e) {
-        if (mounted) {
-          ToastHelper.showError(
-              context, UserStorage.l10n.loadCharacterFailed(e.toString()));
-        }
-      });
+      final succeeded = await widget.viewModel.loadCharacters();
+      if (!succeeded && mounted) {
+        ToastHelper.showError(
+          context,
+          UserStorage.l10n.loadCharacterFailed(
+            widget.viewModel.errorMessage ?? 'Unknown error',
+          ),
+        );
+      }
     });
   }
 
   Future<void> _toggleCharacterEnabled(
       CharacterViewModel vm, CharacterModel character, bool enabled) async {
-    try {
-      await vm.setCharacterEnabled(character, enabled);
-      if (mounted) {
-        ToastHelper.showSuccess(context,
-            enabled ? UserStorage.l10n.enabled : UserStorage.l10n.disabled);
-      }
-    } catch (e) {
-      if (mounted) {
-        ToastHelper.showError(
-            context, UserStorage.l10n.operationFailed(e.toString()));
-      }
+    final succeeded = await vm.setCharacterEnabled(character, enabled);
+    if (!mounted) return;
+    if (succeeded) {
+      ToastHelper.showSuccess(context,
+          enabled ? UserStorage.l10n.enabled : UserStorage.l10n.disabled);
+    } else {
+      ToastHelper.showError(
+        context,
+        UserStorage.l10n.operationFailed(
+          vm.errorMessage ?? 'Unknown error',
+        ),
+      );
     }
   }
 
@@ -83,35 +87,31 @@ class _CharacterConfigScreenState extends State<CharacterConfigScreen> {
     );
 
     if (confirmed == true) {
-      try {
-        await vm.deleteCharacter(character);
-        if (mounted) {
-          ToastHelper.showSuccess(context, UserStorage.l10n.deleteSuccess);
-        }
-      } catch (e) {
-        if (mounted) {
-          ToastHelper.showError(
-              context, UserStorage.l10n.deleteFailed(e.toString()));
-        }
+      final succeeded = await vm.deleteCharacter(character);
+      if (!mounted) return;
+      if (succeeded) {
+        ToastHelper.showSuccess(context, UserStorage.l10n.deleteSuccess);
+      } else {
+        ToastHelper.showError(
+          context,
+          UserStorage.l10n.deleteFailed(
+            vm.errorMessage ?? 'Unknown error',
+          ),
+        );
       }
     }
   }
 
   Future<void> _showAddCharacterDialog(CharacterViewModel vm) async {
-    final result = await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const CharacterEditPage(),
-      ),
-    );
+    final result = await context.push(AppRoutes.characterEdit);
     if (result == true && mounted) vm.loadCharacters();
   }
 
   Future<void> _showEditCharacterDialog(
       CharacterViewModel vm, CharacterModel character) async {
-    final result = await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => CharacterEditPage(character: character),
-      ),
+    final result = await context.push(
+      AppRoutes.characterEdit,
+      extra: character,
     );
     if (result == true && mounted) vm.loadCharacters();
   }
@@ -330,9 +330,9 @@ class _CharacterConfigScreenState extends State<CharacterConfigScreen> {
 
 /// Character edit page (create / edit)
 class CharacterEditPage extends StatefulWidget {
-  final CharacterModel? character;
+  const CharacterEditPage({super.key, required this.viewModel});
 
-  const CharacterEditPage({super.key, this.character});
+  final CharacterEditViewModel viewModel;
 
   @override
   State<CharacterEditPage> createState() => _CharacterEditPageState();
@@ -348,7 +348,6 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
   final _systemPromptController = TextEditingController();
   final _postHistoryController = TextEditingController();
   final _mesExampleController = TextEditingController();
-  bool _isSaving = false;
   bool _allowImmediatePop = false;
 
   String _avatarValueForSave = '';
@@ -357,30 +356,29 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
   String? _chatBackgroundValue;
   String? _chatBackgroundPreview;
 
-  // World book entries and memory entries (loaded from CharacterMemoryService)
-  List<Map<String, dynamic>> _worldEntries = [];
-  List<Map<String, dynamic>> _memoryEntries = [];
+  CharacterModel? get _character => widget.viewModel.character;
+  List<Map<String, dynamic>> get _worldEntries => widget.viewModel.worldEntries;
+  List<Map<String, dynamic>> get _memoryEntries =>
+      widget.viewModel.memoryEntries;
 
   @override
   void initState() {
     super.initState();
-    if (widget.character != null) {
-      _nameController.text = widget.character!.name;
-      _tagsController.text = widget.character!.tags.join(', ');
-      _personaController.text = widget.character!.persona;
-      _firstMessageController.text = widget.character!.firstMessage ?? '';
-      _systemPromptController.text =
-          widget.character!.systemPromptOverride ?? '';
-      _postHistoryController.text =
-          widget.character!.postHistoryInstructions ?? '';
-      _mesExampleController.text = widget.character!.mesExample ?? '';
-      _avatarValueForSave = widget.character!.avatar ?? '';
-      _avatarPreview = widget.character!.avatar ?? '';
-      _hasPickedAvatar = widget.character!.avatar != null &&
-          widget.character!.avatar!.isNotEmpty;
-      _chatBackgroundValue = widget.character!.chatBackground;
-      _chatBackgroundPreview = widget.character!.chatBackground;
-      _loadCharacterData();
+    if (_character != null) {
+      _nameController.text = _character!.name;
+      _tagsController.text = _character!.tags.join(', ');
+      _personaController.text = _character!.persona;
+      _firstMessageController.text = _character!.firstMessage ?? '';
+      _systemPromptController.text = _character!.systemPromptOverride ?? '';
+      _postHistoryController.text = _character!.postHistoryInstructions ?? '';
+      _mesExampleController.text = _character!.mesExample ?? '';
+      _avatarValueForSave = _character!.avatar ?? '';
+      _avatarPreview = _character!.avatar ?? '';
+      _hasPickedAvatar =
+          _character!.avatar != null && _character!.avatar!.isNotEmpty;
+      _chatBackgroundValue = _character!.chatBackground;
+      _chatBackgroundPreview = _character!.chatBackground;
+      unawaited(_loadCharacterData());
     }
     if (_avatarValueForSave.isEmpty) {
       _avatarValueForSave = 'companion_${_nameController.text}';
@@ -391,21 +389,6 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
     _nameController.addListener(_onNameChanged);
   }
 
-  Future<void> _loadCharacterData() async {
-    final userId = await UserStorage.getUserId();
-    if (userId == null || widget.character == null) return;
-    final characterId = widget.character!.id;
-    final svc = CharacterMemoryService.instance;
-    final world = await svc.loadWorldEntries(userId, characterId);
-    final memory = await svc.loadMemoryEntries(userId, characterId);
-    if (mounted) {
-      setState(() {
-        _worldEntries = world;
-        _memoryEntries = memory;
-      });
-    }
-  }
-
   void _onNameChanged() {
     // Only auto-derive avatar from name if user hasn't explicitly picked one
     if (!_hasPickedAvatar) {
@@ -414,6 +397,18 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
         _avatarValueForSave = seed;
         _avatarPreview = seed;
       });
+    }
+  }
+
+  Future<void> _loadCharacterData() async {
+    final succeeded = await widget.viewModel.load();
+    if (!succeeded && mounted) {
+      ToastHelper.showError(
+        context,
+        UserStorage.l10n.loadCharacterFailed(
+          widget.viewModel.errorMessage ?? 'Unknown error',
+        ),
+      );
     }
   }
 
@@ -439,7 +434,7 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
     if (picked != null && mounted) {
       setState(() {
         _avatarValueForSave = picked;
-        if (!CharacterService.isRelativeAvatarPath(picked)) {
+        if (!isImageAvatar(picked)) {
           _avatarPreview = picked;
         }
         _hasPickedAvatar = true;
@@ -452,13 +447,11 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
       final pickedPath = await pickAvatarImageFromGallery();
       if (pickedPath == null) return null;
 
-      final userId = await UserStorage.getUserId();
-      if (userId == null) return null;
-
-      final imported = await MediaService.instance.importImage(
-        userId: userId,
-        sourcePath: pickedPath,
-      );
+      final imported = await widget.viewModel.importImage(pickedPath);
+      if (imported == null) {
+        throw StateError(
+            widget.viewModel.errorMessage ?? 'Image import failed');
+      }
       if (!mounted) return null;
       setState(() {
         _avatarPreview = imported.absolutePath;
@@ -485,13 +478,11 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
       );
       if (picked == null) return;
 
-      final userId = await UserStorage.getUserId();
-      if (userId == null) return;
-
-      final imported = await MediaService.instance.importImage(
-        userId: userId,
-        sourcePath: picked.path,
-      );
+      final imported = await widget.viewModel.importImage(picked.path);
+      if (imported == null) {
+        throw StateError(
+            widget.viewModel.errorMessage ?? 'Image import failed');
+      }
       if (!mounted) return;
       setState(() {
         _chatBackgroundValue = imported.relativePath;
@@ -575,86 +566,47 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-
-    setState(() => _isSaving = true);
-
-    try {
-      final tags = _tagsController.text
-          .split(',')
-          .map((e) => e.trim())
-          .where((e) => e.isNotEmpty)
-          .toList();
-
-      final avatarSeed =
-          _avatarValueForSave.isEmpty ? null : _avatarValueForSave;
-
-      final userId = await UserStorage.getUserId();
-      if (userId == null) return;
-
-      final updates = <String, dynamic>{
-        'name': _nameController.text.trim(),
-        'tags': tags,
-        'persona': _personaController.text.trim(),
-        'avatar': avatarSeed,
-        'first_message': _firstMessageController.text.trim().isEmpty
-            ? null
-            : _firstMessageController.text.trim(),
-        'system_prompt_override': _systemPromptController.text.trim().isEmpty
-            ? null
-            : _systemPromptController.text.trim(),
-        'post_history_instructions': _postHistoryController.text.trim().isEmpty
-            ? null
-            : _postHistoryController.text.trim(),
-        'mes_example': _mesExampleController.text.trim().isEmpty
-            ? null
-            : _mesExampleController.text.trim(),
-        'chat_background': _chatBackgroundValue,
-      };
-
-      if (widget.character == null) {
-        final created = await CharacterService.instance.createCharacter(
-          userId: userId,
-          characterData: updates..['enabled'] = true,
-        );
-        // Save world entries and memory entries for new character
-        if (_worldEntries.isNotEmpty) {
-          await CharacterMemoryService.instance
-              .replaceWorldEntries(userId, created.id, _worldEntries);
-        }
-        if (_memoryEntries.isNotEmpty) {
-          await CharacterMemoryService.instance
-              .replaceMemoryEntries(userId, created.id, _memoryEntries);
-        }
-      } else {
-        await CharacterService.instance.updateCharacter(
-          userId: userId,
-          characterId: widget.character!.id,
-          updates: updates,
-        );
-        // Save world entries and memory entries
-        await CharacterMemoryService.instance
-            .replaceWorldEntries(userId, widget.character!.id, _worldEntries);
-        await CharacterMemoryService.instance
-            .replaceMemoryEntries(userId, widget.character!.id, _memoryEntries);
-      }
-
-      if (mounted) {
-        _allowImmediatePop = true;
-        ToastHelper.showSuccess(
-            context,
-            widget.character == null
-                ? UserStorage.l10n.createSuccess
-                : UserStorage.l10n.updateSuccess);
-        Navigator.of(context).pop(true);
-      }
-    } catch (e) {
-      _logger.severe('Error saving character: $e', e);
-      if (mounted) {
-        setState(() => _isSaving = false);
-        ToastHelper.showError(
-            context, UserStorage.l10n.saveFailed(e.toString()));
-      }
+    final tags = _tagsController.text
+        .split(',')
+        .map((value) => value.trim())
+        .where((value) => value.isNotEmpty)
+        .toList();
+    final succeeded = await widget.viewModel.save(
+      CharacterDraft(
+        characterId: _character?.id,
+        name: _nameController.text,
+        tags: tags,
+        persona: _personaController.text,
+        enabled: _character?.enabled ?? true,
+        avatar: _avatarValueForSave.isEmpty ? null : _avatarValueForSave,
+        firstMessage: _firstMessageController.text,
+        systemPromptOverride: _systemPromptController.text,
+        postHistoryInstructions: _postHistoryController.text,
+        mesExample: _mesExampleController.text,
+        chatBackground: _chatBackgroundValue,
+        worldEntries: _worldEntries,
+        memoryEntries: _memoryEntries,
+      ),
+    );
+    if (!mounted) return;
+    if (!succeeded) {
+      ToastHelper.showError(
+        context,
+        UserStorage.l10n.saveFailed(
+          widget.viewModel.errorMessage ?? 'Unknown error',
+        ),
+      );
+      return;
     }
+
+    _allowImmediatePop = true;
+    ToastHelper.showSuccess(
+      context,
+      _character == null
+          ? UserStorage.l10n.createSuccess
+          : UserStorage.l10n.updateSuccess,
+    );
+    Navigator.of(context).pop(true);
   }
 
   Future<bool> _showDiscardDialog() async {
@@ -706,7 +658,7 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
         backgroundColor: Colors.white,
         appBar: AppBar(
           title: Text(
-            widget.character == null
+            _character == null
                 ? UserStorage.l10n.newCharacter
                 : UserStorage.l10n.editCharacter,
             style: const TextStyle(
@@ -723,30 +675,35 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
           actions: [
             Padding(
               padding: const EdgeInsets.only(right: 16),
-              child: TextButton(
-                onPressed: _isSaving ? null : _save,
-                style: TextButton.styleFrom(
-                  backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+              child: ListenableBuilder(
+                listenable: widget.viewModel,
+                builder: (_, __) => TextButton(
+                  onPressed: widget.viewModel.isSaving ? null : _save,
+                  style: TextButton.styleFrom(
+                    backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
-                ),
-                child: _isSaving
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Text(
-                        UserStorage.l10n.save,
-                        style: const TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
+                  child: widget.viewModel.isSaving
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Text(
+                          UserStorage.l10n.save,
+                          style: const TextStyle(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
                         ),
-                      ),
+                ),
               ),
             ),
           ],
@@ -909,10 +866,16 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
                 onAdd: _addWorldEntry,
               ),
               const SizedBox(height: 8),
-              ..._worldEntries
-                  .asMap()
-                  .entries
-                  .map((e) => _buildWorldEntryTile(e.key, e.value)),
+              ListenableBuilder(
+                listenable: widget.viewModel,
+                builder: (_, __) => Column(
+                  children: _worldEntries
+                      .asMap()
+                      .entries
+                      .map((e) => _buildWorldEntryTile(e.key, e.value))
+                      .toList(),
+                ),
+              ),
               const SizedBox(height: 24),
               // --- Character Memory Section ---
               _buildSectionHeader(
@@ -921,10 +884,16 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
                 onAdd: _addMemoryEntry,
               ),
               const SizedBox(height: 8),
-              ..._memoryEntries
-                  .asMap()
-                  .entries
-                  .map((e) => _buildMemoryEntryTile(e.key, e.value)),
+              ListenableBuilder(
+                listenable: widget.viewModel,
+                builder: (_, __) => Column(
+                  children: _memoryEntries
+                      .asMap()
+                      .entries
+                      .map((e) => _buildMemoryEntryTile(e.key, e.value))
+                      .toList(),
+                ),
+              ),
               const SizedBox(height: 32),
             ],
           ),
@@ -1049,7 +1018,7 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
               ),
               IconButton(
                 icon: const Icon(Icons.delete_outline, size: 18),
-                onPressed: () => setState(() => _worldEntries.removeAt(index)),
+                onPressed: () => widget.viewModel.removeWorldEntry(index),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                 color: Colors.red[300],
@@ -1126,7 +1095,7 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
               ),
               IconButton(
                 icon: const Icon(Icons.delete_outline, size: 18),
-                onPressed: () => setState(() => _memoryEntries.removeAt(index)),
+                onPressed: () => widget.viewModel.removeMemoryEntry(index),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                 color: Colors.red[300],
@@ -1257,13 +1226,7 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
     );
 
     if (result != null && mounted) {
-      setState(() {
-        if (index != null) {
-          _worldEntries[index] = result;
-        } else {
-          _worldEntries.add(result);
-        }
-      });
+      widget.viewModel.upsertWorldEntry(index, result);
     }
   }
 
@@ -1353,13 +1316,7 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
     );
 
     if (result != null && mounted) {
-      setState(() {
-        if (index != null) {
-          _memoryEntries[index] = result;
-        } else {
-          _memoryEntries.add(result);
-        }
-      });
+      widget.viewModel.upsertMemoryEntry(index, result);
     }
   }
 

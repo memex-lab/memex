@@ -32,6 +32,7 @@ import 'package:memex/ui/core/cards/style/timeline_theme.dart';
 import 'package:memex/ui/core/themes/design_system.dart';
 import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:memex/ui/character/widgets/persona_chat_screen.dart';
+import 'package:memex/ui/character/view_models/persona_chat_viewmodel.dart';
 import 'package:memex/utils/share_service.dart';
 import 'package:memex/ui/core/cards/native_card_factory.dart';
 
@@ -1518,7 +1519,12 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => PersonaChatScreen(characterId: characterId),
+                  builder: (_) => PersonaChatScreen(
+                    viewModel: PersonaChatViewModel(
+                      router: _memexRouter,
+                      initialCharacterId: characterId,
+                    ),
+                  ),
                 ),
               );
             },

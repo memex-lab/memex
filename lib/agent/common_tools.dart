@@ -74,6 +74,13 @@ final mintRecordFactIdTool = Tool(
     getLogger('CommonTools').info('Minted fact_id(s): ${factIds.join(', ')}');
     return AgentToolResult(
       content: TextPart(factIds.join('\n')),
+      metadata: {
+        'artifact': {
+          'type': requestedCount == 1 ? 'fact_id' : 'fact_ids',
+          if (requestedCount == 1) 'id': factIds.single,
+          'ids': factIds,
+        },
+      },
     );
   },
 );

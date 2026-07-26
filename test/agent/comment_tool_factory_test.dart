@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:drift/native.dart';
 import 'package:flutter/widgets.dart';
-import 'package:memex/agent/memory/character_memory_service.dart';
 import 'package:memex/agent/skills/comment_agent/tools/comment_tools.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/db/app_database.dart';
@@ -82,16 +81,6 @@ void main() {
       expect(latest.isAi, isTrue);
       expect(latest.characterId, characterId);
       expect(latest.replyToId, 'user-comment');
-
-      final timeline = await CharacterMemoryService.instance.loadTimelineLines(
-        userId,
-        characterId,
-      );
-      expect(timeline.join('\n'), contains('"reply_to_id":"user-comment"'));
-      expect(
-        timeline.join('\n'),
-        isNot(contains('"reply_to_id":"char-comment"')),
-      );
     });
 
     test(

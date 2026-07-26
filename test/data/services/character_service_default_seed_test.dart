@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:memex/data/services/character_selection_service.dart';
 import 'package:memex/data/services/character_service.dart';
+import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:path/path.dart' as p;
@@ -20,6 +21,7 @@ void main() {
     await UserStorage.initL10n();
     tempRoot = await Directory.systemTemp.createTemp('memex_char_seed_');
     await FileSystemService.init(tempRoot.path);
+    await EventBusService.instance.connect();
   });
 
   tearDown(() async {
@@ -93,6 +95,36 @@ enabled: true
 
     expect(character, isNotNull);
     expect(character!.avatar, p.join(tempRoot.path, relativeAvatar));
+  });
+
+  test('deleting a character emits a character update event', () async {
+    final userId = 'delete_user_${DateTime.now().microsecondsSinceEpoch}';
+    await CharacterService.instance.getAllCharacters(userId);
+    final messages = <CharacterUpdatedMessage>[];
+    void handler(EventBusMessage message) {
+      if (message is CharacterUpdatedMessage) messages.add(message);
+    }
+
+    EventBusService.instance.addHandler(
+      EventBusMessageType.characterUpdated,
+      handler,
+    );
+    addTearDown(() {
+      EventBusService.instance.removeHandler(
+        EventBusMessageType.characterUpdated,
+        handler,
+      );
+    });
+
+    expect(
+      await CharacterService.instance.deleteCharacter(userId, '3'),
+      isTrue,
+    );
+    await Future<void>.delayed(Duration.zero);
+
+    expect(messages, hasLength(1));
+    expect(messages.single.userId, userId);
+    expect(messages.single.characterId, '3');
   });
 
   test('multi-character routing nudges multiple voices without forcing fill',

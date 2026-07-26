@@ -46,6 +46,16 @@ import 'package:memex/data/services/global_event_bus.dart';
 import 'package:memex/data/services/task_handlers/fts_index_handler.dart';
 import 'package:memex/data/services/task_handlers/llm_error_utils.dart';
 import 'package:memex/data/services/task_handlers/comment_agent_handler.dart';
+import 'package:memex/data/services/task_handlers/character_initiative_handler.dart';
+import 'package:memex/data/services/task_handlers/character_history_acquaintance_handler.dart';
+import 'package:memex/data/services/task_handlers/character_perception_handler.dart';
+import 'package:memex/data/services/task_handlers/character_conversation_handler.dart';
+import 'package:memex/data/services/character_conversation_service.dart';
+import 'package:memex/data/services/character_initiative_service.dart';
+import 'package:memex/data/services/character_history_acquaintance_service.dart';
+import 'package:memex/data/services/character_service.dart';
+import 'package:memex/data/repositories/persona_chat_repository.dart';
+import 'package:memex/data/repositories/character_editor_repository.dart';
 import 'package:memex/data/services/task_handlers/reprocess_comments_handler.dart';
 import 'package:memex/data/services/task_handlers/custom_agent_task_handler.dart';
 import 'package:memex/data/services/custom_agent_config_service.dart';
@@ -72,6 +82,8 @@ import 'package:memex/agent/skills/knowledge_insight/native_widgets.dart';
 import 'package:memex/utils/result.dart';
 import 'package:memex/domain/models/system_event.dart';
 import 'package:memex/domain/models/user_stats_model.dart';
+import 'package:memex/domain/models/persona_chat.dart';
+import 'package:memex/domain/models/character_editor.dart';
 
 /// Local data service for Memex. Handles all data operations via local storage (FileSystemService, DB).
 class MemexRouter {
@@ -79,6 +91,9 @@ class MemexRouter {
   factory MemexRouter() => _instance;
 
   final Logger _logger = getLogger('MemexRouter');
+  final PersonaChatRepository _personaChatRepository = PersonaChatRepository();
+  final CharacterEditorRepository _characterEditorRepository =
+      CharacterEditorRepository();
 
   Future<void>? _initFuture;
 
@@ -143,6 +158,20 @@ class MemexRouter {
       // migrated card facts are incrementally reflected in FTS.
       await migrateCardsToFactAssets(userId);
 
+      // Existing records must be fully readable before a companion privately
+      // explores them for the first time.
+      final primaryCompanion =
+          await CharacterService.instance.getPrimaryCompanion(userId);
+      if (primaryCompanion?.enabled == true) {
+        await CharacterHistoryAcquaintanceService.instance.ensureScheduled(
+          userId: userId,
+          character: primaryCompanion!,
+        );
+        await CharacterInitiativeService.instance.ensureScheduled(
+          userId: userId,
+        );
+      }
+
       await ScheduleStateService.instance.ensureInitialized(userId);
 
       scheduleAutoBackupCheck(trigger: 'app_start');
@@ -168,6 +197,7 @@ class MemexRouter {
       subscription: EventTaskSubscription(
         subscriptionId: 'comment_agent',
         taskType: 'comment_agent_task',
+        dependsOn: const ['character_perception'],
         payloadBuilder: (_, event) {
           final p = event.payload as UserInputSubmittedPayload;
           return Future.value({
@@ -175,6 +205,43 @@ class MemexRouter {
             'combined_text': p.combinedText,
             'created_at_ts': p.createdAtTs,
             'location_context_reminder': p.locationContextReminder,
+          });
+        },
+      ),
+    );
+
+    // The primary companion privately transforms each new record into its own
+    // workspace before deciding whether the moment warrants contact.
+    eventBus.subscribe(
+      eventType: SystemEventTypes.userInputSubmitted,
+      subscription: EventTaskSubscription(
+        subscriptionId: 'character_perception',
+        taskType: 'character_perception_task',
+        maxRetries: 3,
+        payloadBuilder: (_, event) {
+          final p = event.payload as UserInputSubmittedPayload;
+          return Future.value({
+            'source_event_id': event.eventId,
+            'fact_id': p.factId,
+            'combined_text': p.combinedText,
+            'created_at_ts': p.createdAtTs,
+          });
+        },
+      ),
+    );
+
+    eventBus.subscribe(
+      eventType: SystemEventTypes.userInputSubmitted,
+      subscription: EventTaskSubscription(
+        subscriptionId: 'character_initiative',
+        taskType: CharacterInitiativeService.taskType,
+        dependsOn: const ['comment_agent', 'character_perception'],
+        maxRetries: 3,
+        payloadBuilder: (_, event) {
+          final p = event.payload as UserInputSubmittedPayload;
+          return Future.value({
+            'source_event_id': event.eventId,
+            'fact_id': p.factId,
           });
         },
       ),
@@ -277,6 +344,26 @@ class MemexRouter {
       handleCommentAgentImpl,
     );
     executor.registerHandler(
+      'character_perception_task',
+      handleCharacterPerceptionImpl,
+      concurrencyPolicy: TaskConcurrencyPolicy.byUser(),
+    );
+    executor.registerHandler(
+      CharacterHistoryAcquaintanceService.taskType,
+      handleCharacterHistoryAcquaintanceImpl,
+      concurrencyPolicy: TaskConcurrencyPolicy.byUser(),
+    );
+    executor.registerHandler(
+      CharacterInitiativeService.taskType,
+      handleCharacterInitiativeImpl,
+      concurrencyPolicy: TaskConcurrencyPolicy.byUser(),
+    );
+    executor.registerHandler(
+      CharacterConversationService.taskType,
+      handleCharacterConversationImpl,
+      concurrencyPolicy: TaskConcurrencyPolicy.byUser(),
+    );
+    executor.registerHandler(
       'reprocess_comments_task',
       handleReprocessCommentsImpl,
       concurrencyPolicy: TaskConcurrencyPolicy.byUser(),
@@ -295,6 +382,22 @@ class MemexRouter {
         handleGenericAgentFailure,
       );
     }
+    executor.registerFailureHandler(
+      'character_perception_task',
+      handleCharacterPerceptionFailure,
+    );
+    executor.registerFailureHandler(
+      CharacterHistoryAcquaintanceService.taskType,
+      handleCharacterHistoryAcquaintanceFailure,
+    );
+    executor.registerFailureHandler(
+      CharacterInitiativeService.taskType,
+      handleCharacterInitiativeFailure,
+    );
+    executor.registerFailureHandler(
+      CharacterConversationService.taskType,
+      handleCharacterConversationFailure,
+    );
   }
 
   /// External hook to force switch user (e.g. on login)
@@ -1027,6 +1130,16 @@ class MemexRouter {
     });
   }
 
+  Future<Result<bool>> chatSessionExists(String sessionId) {
+    return runResult(() async {
+      await _ensureInitialized();
+      _logger.info(
+        'LocalMode: chatSessionExists called: sessionId=$sessionId',
+      );
+      return chat_endpoint.chatSessionExistsEndpoint(sessionId);
+    });
+  }
+
   Future<Map<String, dynamic>> fetchChatSessionDetail(
     String sessionId, {
     int? messageLimit,
@@ -1066,6 +1179,140 @@ class MemexRouter {
       await _ensureInitialized();
       _logger.info('LocalMode: fetchCharacters called');
       return await getCharacters();
+    });
+  }
+
+  Future<Result<CharacterEditorData>> loadCharacterEditor(
+    CharacterModel character,
+  ) {
+    return runResult(() async {
+      await _ensureInitialized();
+      final userId = await UserStorage.getUserId();
+      if (userId == null) throw StateError('No active user.');
+      return _characterEditorRepository.load(
+        userId: userId,
+        character: character,
+      );
+    });
+  }
+
+  Future<Result<CharacterModel>> saveCharacterDraft(
+    CharacterDraft draft,
+  ) {
+    return runResult(() async {
+      await _ensureInitialized();
+      final userId = await UserStorage.getUserId();
+      if (userId == null) throw StateError('No active user.');
+      return _characterEditorRepository.save(userId: userId, draft: draft);
+    });
+  }
+
+  Future<Result<CharacterEditorMedia>> importCharacterEditorImage(
+    String sourcePath,
+  ) {
+    return runResult(() async {
+      await _ensureInitialized();
+      final userId = await UserStorage.getUserId();
+      if (userId == null) throw StateError('No active user.');
+      return _characterEditorRepository.importImage(
+        userId: userId,
+        sourcePath: sourcePath,
+      );
+    });
+  }
+
+  Future<Result<PersonaChatThreadModel>> loadPersonaChatThread(
+    String characterId, {
+    int limit = 30,
+  }) {
+    return runResult(() async {
+      await _ensureInitialized();
+      final userId = await UserStorage.getUserId();
+      if (userId == null) throw StateError('No active user.');
+      return _personaChatRepository.loadThread(
+        userId: userId,
+        characterId: characterId,
+        limit: limit,
+        userAvatar: await getUserAvatar(),
+      );
+    });
+  }
+
+  Future<Result<PersonaAvatarSummary>> loadPersonaAvatarSummary() {
+    return runResult(() async {
+      await _ensureInitialized();
+      final userId = await UserStorage.getUserId();
+      if (userId == null) throw StateError('No active user.');
+      return _personaChatRepository.loadAvatarSummary(userId);
+    });
+  }
+
+  Future<Result<List<PersonaChatMessageModel>>> fetchPersonaChatMessages(
+    String characterId, {
+    required int limit,
+    int offset = 0,
+  }) {
+    return runResult(() async {
+      await _ensureInitialized();
+      return _personaChatRepository.getMessages(
+        characterId,
+        limit: limit,
+        offset: offset,
+      );
+    });
+  }
+
+  Future<Result<int>> sendPersonaChatMessage(
+    String characterId,
+    String content,
+  ) {
+    return runResult(() async {
+      await _ensureInitialized();
+      final userId = await UserStorage.getUserId();
+      if (userId == null) throw StateError('No active user.');
+      return _personaChatRepository.sendMessage(
+        userId: userId,
+        characterId: characterId,
+        content: content,
+      );
+    });
+  }
+
+  Future<Result<int>> markPersonaChatRead(String characterId) {
+    return runResult(() async {
+      await _ensureInitialized();
+      final count = await _personaChatRepository.markAllRead(characterId);
+      EventBusService.instance.emitEvent(
+        PersonaChatUnreadChangedMessage(characterId: characterId),
+      );
+      return count;
+    });
+  }
+
+  Future<Result<List<CharacterModel>>> fetchEnabledPersonaCharacters() {
+    return runResult(() async {
+      await _ensureInitialized();
+      final userId = await UserStorage.getUserId();
+      if (userId == null) throw StateError('No active user.');
+      return _personaChatRepository.getEnabledCharacters(userId);
+    });
+  }
+
+  Future<Result<PersonaChatThreadModel>> switchPersonaChatCharacter(
+    String characterId, {
+    int limit = 30,
+  }) {
+    return runResult(() async {
+      await _ensureInitialized();
+      final userId = await UserStorage.getUserId();
+      if (userId == null) throw StateError('No active user.');
+      await _personaChatRepository.setPrimaryCharacter(userId, characterId);
+      return _personaChatRepository.loadThread(
+        userId: userId,
+        characterId: characterId,
+        limit: limit,
+        userAvatar: await getUserAvatar(),
+      );
     });
   }
 
@@ -1123,16 +1370,13 @@ class MemexRouter {
     }
   }
 
-  Future<bool> deleteCharacter(String characterId) async {
-    await _ensureInitialized();
-    _logger.info('LocalMode: deleteCharacter called: characterId=$characterId');
-
-    try {
+  Future<Result<bool>> deleteCharacter(String characterId) {
+    return runResult(() async {
+      await _ensureInitialized();
+      _logger
+          .info('LocalMode: deleteCharacter called: characterId=$characterId');
       return await deleteCharacterEndpoint(characterId);
-    } catch (e) {
-      _logger.severe('Failed to delete character $characterId: $e');
-      rethrow;
-    }
+    });
   }
 
   Future<Result<bool>> setCharacterEnabled(
