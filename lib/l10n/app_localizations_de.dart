@@ -99,7 +99,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get reprocessCardsRerunDownstreamDesc =>
-      'Nachdem jede Karte erfolgreich war, wiederholen Sie die Weiterleitung nach der Karte, damit bei Auswahl die Zeitplanaggregation ausgeführt werden kann.';
+      'Bitten Sie Super Agent, bei Bedarf auch zugehörige PKM- und Insight-Aktualisierungen zu berücksichtigen.';
 
   @override
   String get reanalyzeMediaAssets => 'Analysieren Sie Medienressourcen erneut';
@@ -250,79 +250,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get schedule => 'Zeitplan';
 
   @override
-  String get statistics => 'Statistiken';
-
-  @override
   String get appLockConfig => 'App-Sperrkonfiguration';
-
-  @override
-  String get activityStats => 'Aktivitätsstatistiken';
-
-  @override
-  String activityStatsSummary(Object inputs, Object cards, Object todos) {
-    return 'In diesem Zeitraum haben Sie $inputs Mal(e) aufgezeichnet, $cards Karte(n) erstellt und $todos Aufgaben erledigt.';
-  }
-
-  @override
-  String get last7Days => '7 Tage';
-
-  @override
-  String get last30Days => '30 Tage';
-
-  @override
-  String get last90Days => '90 Tage';
-
-  @override
-  String get records => 'Aufzeichnungen';
-
-  @override
-  String get words => 'Worte';
-
-  @override
-  String get cards => 'Karten';
-
-  @override
-  String get knowledgeUnits => 'Wissenseinheiten';
-
-  @override
-  String get completedTodos => 'Abgeschlossene Aufgaben';
-
-  @override
-  String get activeDays => 'Aktive Tage';
-
-  @override
-  String get streakDays => 'Strähne';
-
-  @override
-  String get dailyRhythm => 'Tagesrhythmus';
-
-  @override
-  String get recordToOutput => 'Zur Ausgabe aufzeichnen';
-
-  @override
-  String get sourceBreakdown => 'Quellenaufschlüsselung';
-
-  @override
-  String get topThemes => 'Top-Themen';
-
-  @override
-  String get textInput => 'Text';
-
-  @override
-  String get imageInput => 'Bilder';
-
-  @override
-  String get audioInput => 'Audio';
-
-  @override
-  String get noStatsYet => 'Noch keine Aktivitätsstatistiken';
-
-  @override
-  String get tapDayForDetails =>
-      'Tippen Sie auf einen Tag, um Details anzuzeigen';
-
-  @override
-  String get dayDetails => 'Tagesdetails';
 
   @override
   String loadStatsFailed(Object error) {
@@ -1019,7 +947,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get textModelRoleDescription =>
-      'Wird für Karten, Wissen, Einblicke, Chat, Kommentare, Termine und Erinnerungen verwendet.';
+      'Wird vom Super Agent für Text, Bilder, Karten, Wissen, Einblicke, Chat, Kommentare und Erinnerungen verwendet.';
 
   @override
   String get modelConnectionsTitle => 'Modellanbieter und API-Schlüssel';
@@ -1154,6 +1082,10 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get addToReminders => 'Zu Erinnerungen hinzufügen';
+
+  @override
+  String get systemActionPendingExplanation =>
+      'Noch nicht hinzugefügt. Tippe unten, um die Berechtigung anzufordern und den Eintrag zu deinem Gerät hinzuzufügen.';
 
   @override
   String addedToSuccess(Object target) {
@@ -1307,60 +1239,7 @@ class AppLocalizationsDe extends AppLocalizations {
       'Diese Erkenntnis wird noch generiert oder wurde aktualisiert. Aktualisieren Sie Ihre Erkenntnisse und versuchen Sie es später noch einmal.';
 
   @override
-  String get noScheduleAggregation => 'Keine Zeitplanaggregation';
-
-  @override
-  String get scheduleAggregationEmptyHint =>
-      'Tippen Sie auf „Aktualisieren“, um Zeitpläne und Aufgaben aus realen Zeitkarten zu organisieren.';
-
-  @override
-  String get scheduleAggregationLoadFailed =>
-      'Zeitplandaten konnten nicht geladen werden';
-
-  @override
-  String get scheduleAggregationRefreshFailed =>
-      'Die Aktualisierung der Zeitplandaten ist fehlgeschlagen';
-
-  @override
-  String get scheduleTaskUpdateFailed =>
-      'Die Aufgabe konnte nicht aktualisiert werden';
-
-  @override
-  String get scheduleFeatured => 'Hervorgehoben';
-
-  @override
-  String get scheduleThisWeek => 'Diese Woche';
-
-  @override
-  String get scheduleDone => 'Erledigt';
-
-  @override
-  String get scheduleTbd => 'Noch offen';
-
-  @override
-  String get scheduleWeekOverview => 'Diese Woche';
-
-  @override
-  String get scheduleImportant => 'Wichtig';
-
-  @override
-  String get scheduleBriefingTitle => 'Planen Sie ein Briefing';
-
-  @override
-  String get scheduleBriefingOpen => 'Offen';
-
-  @override
-  String get scheduleBriefingNoData => 'Noch keine Terminbesprechung';
-
-  @override
-  String scheduleBriefingUpdated(Object time) {
-    return 'Aktualisiert $time';
-  }
-
-  @override
-  String scheduleBriefingDoneCount(Object count) {
-    return '$count fertig';
-  }
+  String get artifactOpen => 'Offen';
 
   @override
   String get updating => 'Aktualisierung...';

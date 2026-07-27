@@ -11,9 +11,8 @@ import java.util.TimeZone
  * Handles `com.memexlab.memex/system_actions` MethodChannel.
  * Supports: addCalendarEvent, addReminder.
  *
- * Android has no standalone Reminders app like iOS. Reminders are implemented
- * as all-day calendar events with a reminder alarm, which shows up in the
- * system calendar's reminder/notification list.
+ * Android has no common standalone reminders store. Reminders are represented
+ * as short calendar events with an alarm at the requested time.
  */
 class SystemActionsChannelHandler(private val activity: Activity) {
 
@@ -85,13 +84,13 @@ class SystemActionsChannelHandler(private val activity: Activity) {
     private fun addReminder(arguments: Any?, result: MethodChannel.Result) {
         val args = arguments as? Map<*, *>
         val title = args?.get("title") as? String
+        val dueMs = (args?.get("dueDate") as? Number)?.toLong()
 
-        if (title == null) {
+        if (title == null || dueMs == null) {
             result.error("INVALID_ARGUMENTS", "Invalid arguments for addReminder", null)
             return
         }
 
-        val dueMs = (args["dueDate"] as? Number)?.toLong()
         val notes = args["notes"] as? String
 
         try {
@@ -101,15 +100,16 @@ class SystemActionsChannelHandler(private val activity: Activity) {
                 return
             }
 
-            // Create a zero-duration event at the exact due time so the
-            // calendar reminder fires at the right moment (not a vague all-day event).
-            val startMs = dueMs ?: System.currentTimeMillis()
+            // Android has no common reminders store. Represent the reminder
+            // as a short calendar event with an alarm at its start time.
+            val startMs = dueMs
+            val endMs = startMs + 60_000
 
             val values = ContentValues().apply {
                 put(CalendarContract.Events.CALENDAR_ID, calendarId)
                 put(CalendarContract.Events.TITLE, title)
                 put(CalendarContract.Events.DTSTART, startMs)
-                put(CalendarContract.Events.DTEND, startMs) // zero-duration
+                put(CalendarContract.Events.DTEND, endMs)
                 put(CalendarContract.Events.EVENT_TIMEZONE, TimeZone.getDefault().id)
                 if (notes != null) put(CalendarContract.Events.DESCRIPTION, notes)
             }

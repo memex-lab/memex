@@ -41,7 +41,7 @@
   "reprocessCardsCardOnly": "Cartes uniquement",
   "reprocessCardsCardOnlyDesc": "Demander au Super Agent de réviser et régénérer les cartes de timeline sélectionnées.",
   "reprocessCardsRerunDownstream": "Cartes et suivis liés",
-  "reprocessCardsRerunDownstreamDesc": "Demander au Super Agent de prendre aussi en compte les mises à jour liées de PKM, planning et insights si nécessaire.",
+  "reprocessCardsRerunDownstreamDesc": "Demander au Super Agent de prendre aussi en compte les mises à jour liées de PKM et d'insights si nécessaire.",
   "reanalyzeMediaAssets": "Relire les pièces jointes média",
   "reanalyzeMediaAssetsDesc": "Demander au Super Agent d'inspecter à nouveau les médias joints lors de la régénération des cartes.",
   "regenerateComments": "Régénérer les commentaires",
@@ -109,37 +109,7 @@
   "lineCount": "Nombre de lignes : ",
   "all": "Tout",
   "schedule": "Planning",
-  "statistics": "Statistiques",
   "appLockConfig": "Configuration du verrouillage de l'app",
-  "activityStats": "Statistiques d'activité",
-  "activityStatsSummary": "Pendant cette période, vous avez enregistré {inputs} fois, généré {cards} carte(s) et terminé {todos} tâche(s).",
-  "@activityStatsSummary": {
-    "placeholders": {
-      "inputs": {},
-      "cards": {},
-      "todos": {}
-    }
-  },
-  "last7Days": "7 jours",
-  "last30Days": "30 jours",
-  "last90Days": "90 jours",
-  "records": "Enregistrements",
-  "words": "Mots",
-  "cards": "Cartes",
-  "knowledgeUnits": "Unités de connaissance",
-  "completedTodos": "Tâches terminées",
-  "activeDays": "Jours actifs",
-  "streakDays": "Série",
-  "dailyRhythm": "Rythme quotidien",
-  "recordToOutput": "De l'enregistrement au résultat",
-  "sourceBreakdown": "Répartition des sources",
-  "topThemes": "Thèmes principaux",
-  "textInput": "Texte",
-  "imageInput": "Images jointes",
-  "audioInput": "Audio joint",
-  "noStatsYet": "Pas encore de statistiques d'activité",
-  "tapDayForDetails": "Touchez un jour pour voir les détails",
-  "dayDetails": "Détails du jour",
   "loadStatsFailed": "Échec du chargement des statistiques : {error}",
   "@loadStatsFailed": {
     "placeholders": {
@@ -459,7 +429,7 @@
   "modelRolesTitle": "Choisir le modèle principal",
   "modelRolesDescription": "Super Agent utilise un modèle pour les entrées texte et image. Les overrides avancés par agent restent disponibles ci-dessous.",
   "textModelRoleTitle": "Modèle principal",
-  "textModelRoleDescription": "Utilisé par Super Agent pour le texte, les images, les cartes, la connaissance, les insights, le chat, les commentaires, le planning et la mémoire.",
+  "textModelRoleDescription": "Utilisé par Super Agent pour le texte, les images, les cartes, la connaissance, les insights, le chat, les commentaires et la mémoire.",
   "modelConnectionsTitle": "Fournisseurs de modèles et clés API",
   "modelConnectionsDescription": "Connectez le service officiel de Memex ou ajoutez vos propres identifiants de fournisseur.",
   "relatedAiCapabilitiesTitle": "Capacités avancées et liées",
@@ -514,6 +484,7 @@
   "discoveredReminder": "Rappel trouvé",
   "addToCalendar": "Ajouter au calendrier",
   "addToReminders": "Ajouter aux rappels",
+  "systemActionPendingExplanation": "Pas encore ajouté. Touchez ci-dessous pour demander l’autorisation et l’ajouter à votre appareil.",
   "addedToSuccess": "Ajouté à {target} avec succès",
   "@addedToSuccess": {
     "placeholders": {
@@ -605,32 +576,7 @@
     }
   },
   "insightUnavailableMessage": "Cet insight est encore en génération ou a été mis à jour. Actualisez les insights et réessayez plus tard.",
-  "noScheduleAggregation": "Aucune agrégation de planning",
-  "scheduleAggregationEmptyHint": "Touchez Update pour organiser plannings et todos à partir des vraies cartes temporelles.",
-  "scheduleAggregationLoadFailed": "Échec du chargement des données de planning",
-  "scheduleAggregationRefreshFailed": "Échec de l'actualisation des données de planning",
-  "scheduleTaskUpdateFailed": "Échec de la mise à jour de la tâche",
-  "scheduleFeatured": "Mis en avant",
-  "scheduleThisWeek": "Cette semaine",
-  "scheduleDone": "Terminé",
-  "scheduleTbd": "À définir",
-  "scheduleWeekOverview": "Cette semaine",
-  "scheduleImportant": "Important à traiter",
-  "scheduleBriefingTitle": "Briefing du planning",
-  "scheduleBriefingOpen": "Ouvrir",
-  "scheduleBriefingNoData": "Aucun briefing de planning pour l'instant",
-  "scheduleBriefingUpdated": "Mis à jour {time}",
-  "@scheduleBriefingUpdated": {
-    "placeholders": {
-      "time": {}
-    }
-  },
-  "scheduleBriefingDoneCount": "{count} terminés",
-  "@scheduleBriefingDoneCount": {
-    "placeholders": {
-      "count": {}
-    }
-  },
+  "artifactOpen": "Ouvrir",
   "updating": "Mise à jour...",
   "update": "Mettre à jour",
   "enabled": "Activé",

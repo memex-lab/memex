@@ -167,10 +167,6 @@ class AppLocalizationsExtEs extends AppLocalizationsEs
       '**Important**: All output text must be in **Spanish (es)**.';
 
   @override
-  String get scheduleAggregatorLanguageInstruction =>
-      '**Important**: All output text (editorial_intro and quote_blocks) must be in **Spanish (es)**.';
-
-  @override
   String get assetAnalysisLanguageInstruction =>
       'IMPORTANT: You must respond in Spanish (es).';
 

@@ -41,7 +41,7 @@
   "reprocessCardsCardOnly": "只处理卡片",
   "reprocessCardsCardOnlyDesc": "让 Super Agent 检查并重新生成选中的时间线卡片。",
   "reprocessCardsRerunDownstream": "卡片和相关后续",
-  "reprocessCardsRerunDownstreamDesc": "让 Super Agent 在需要时一并考虑 PKM、日程和洞察更新。",
+  "reprocessCardsRerunDownstreamDesc": "让 Super Agent 在需要时一并考虑 PKM 和洞察更新。",
   "reanalyzeMediaAssets": "重新读取媒体附件",
   "reanalyzeMediaAssetsDesc": "重新生成卡片时，让 Super Agent 在需要时再次查看附件内容。",
   "regenerateComments": "重新生成评论",
@@ -93,37 +93,7 @@
   "lineCount": "行数: ",
   "all": "全部",
   "schedule": "日程",
-  "statistics": "统计",
   "appLockConfig": "应用锁配置",
-  "activityStats": "活动统计",
-  "activityStatsSummary": "这段时间你记录了 {inputs} 次，生成了 {cards} 张卡片，完成了 {todos} 个待办。",
-  "@activityStatsSummary": {
-    "placeholders": {
-      "inputs": {},
-      "cards": {},
-      "todos": {}
-    }
-  },
-  "last7Days": "7 天",
-  "last30Days": "30 天",
-  "last90Days": "90 天",
-  "records": "记录",
-  "words": "字词",
-  "cards": "卡片",
-  "knowledgeUnits": "知识单元",
-  "completedTodos": "完成待办",
-  "activeDays": "活跃天数",
-  "streakDays": "连续记录",
-  "dailyRhythm": "每日节奏",
-  "recordToOutput": "记录到沉淀",
-  "sourceBreakdown": "来源分布",
-  "topThemes": "高频主题",
-  "textInput": "文本",
-  "imageInput": "图片",
-  "audioInput": "音频",
-  "noStatsYet": "暂无活动统计",
-  "tapDayForDetails": "点击某一天查看详情",
-  "dayDetails": "当天详情",
   "@loadStatsFailed": {
     "placeholders": {
       "error": {}
@@ -439,7 +409,7 @@
   "modelRolesTitle": "选择主模型",
   "modelRolesDescription": "Super Agent 使用同一个模型处理文本和图片输入。需要时仍可在下方为单个 Agent 高级覆盖。",
   "textModelRoleTitle": "主模型",
-  "textModelRoleDescription": "供 Super Agent 处理文本、图片、卡片、知识库、洞察、聊天、评论、日程和记忆总结。",
+  "textModelRoleDescription": "供 Super Agent 处理文本、图片、卡片、知识库、洞察、聊天、评论和记忆总结。",
   "modelConnectionsTitle": "模型服务商与 API Key",
   "modelConnectionsDescription": "可以连接 Memex 官方服务，也可以添加你自己的服务商凭证。",
   "relatedAiCapabilitiesTitle": "高级与相关能力",
@@ -490,10 +460,11 @@
   "permissionRationale": "请在设置中允许 App 访问你的{name}，以便我们在后台帮你创建。",
   "goToSettings": "去设置",
   "unknownAction": "未知操作",
-  "discoveredCalendarEvent": "发现日历日程",
-  "discoveredReminder": "发现提醒事项",
+  "discoveredCalendarEvent": "待确认的日历事件",
+  "discoveredReminder": "待确认的提醒事项",
   "addToCalendar": "加到日历",
   "addToReminders": "加到提醒事项",
+  "systemActionPendingExplanation": "尚未添加。点击下方按钮后，系统会请求权限并写入你的设备。",
   "@addedToSuccess": {
     "placeholders": {
       "target": {}
@@ -585,32 +556,7 @@
   },
   "insightProcessingBacklogMessage": "还有 {count} 个后台任务正在处理。",
   "insightUnavailableMessage": "这个洞察仍在生成中，或已被更新。请刷新洞察后稍后再试。",
-  "noScheduleAggregation": "暂无日程聚合",
-  "scheduleAggregationEmptyHint": "点击更新，从真实时间卡片里整理日程和待办。",
-  "scheduleAggregationLoadFailed": "加载日程数据失败",
-  "scheduleAggregationRefreshFailed": "刷新日程数据失败",
-  "scheduleTaskUpdateFailed": "更新待办失败",
-  "scheduleFeatured": "重点",
-  "scheduleThisWeek": "本周",
-  "scheduleDone": "已完成",
-  "scheduleTbd": "待定",
-  "scheduleWeekOverview": "本周概览",
-  "scheduleImportant": "重要",
-  "scheduleBriefingTitle": "日程简报",
-  "scheduleBriefingOpen": "查看",
-  "scheduleBriefingNoData": "暂无日程简报",
-  "@scheduleBriefingUpdated": {
-    "placeholders": {
-      "time": {}
-    }
-  },
-  "scheduleBriefingUpdated": "{time} 更新",
-  "@scheduleBriefingDoneCount": {
-    "placeholders": {
-      "count": {}
-    }
-  },
-  "scheduleBriefingDoneCount": "完成 {count}",
+  "artifactOpen": "查看",
   "updating": "更新中...",
   "update": "更新",
   "enabled": "已启用",

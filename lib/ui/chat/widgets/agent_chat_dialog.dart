@@ -21,11 +21,11 @@ import 'package:memex/data/model/chat_events.dart';
 import 'package:memex/data/services/demo_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/input_draft_service.dart';
+import 'package:memex/ui/card_attachments/widgets/system_action_card.dart';
 import 'package:memex/ui/core/widgets/html_webview_card.dart';
 import 'package:memex/ui/core/widgets/local_image.dart';
 import 'package:memex/ui/insight/widgets/insight_detail_page.dart';
 import 'package:memex/ui/knowledge/widgets/knowledge_file_page.dart';
-import 'package:memex/ui/schedule/widgets/schedule_aggregator_screen.dart';
 import 'package:memex/ui/timeline/widgets/timeline_card_detail_screen.dart';
 import 'package:memex/data/services/photo_suggestion_service.dart';
 import 'package:memex/utils/toast_helper.dart';
@@ -424,7 +424,6 @@ class AgentChatDialog extends StatefulWidget {
   final String? initialDraftText;
   final List<XFile> initialImages;
   final Map<String, String> initialImageOriginalFilenames;
-  final VoidCallback? onOpenScheduleTab;
   @visibleForTesting
   final List<ChatDisplayItem> initialItems;
   @visibleForTesting
@@ -440,7 +439,6 @@ class AgentChatDialog extends StatefulWidget {
     this.initialDraftText,
     this.initialImages = const [],
     this.initialImageOriginalFilenames = const {},
-    this.onOpenScheduleTab,
     this.initialItems = const [],
     this.initialIsLoadingAgent = false,
     this.initialTokenUsage,
@@ -3153,8 +3151,8 @@ class _AgentChatDialogState extends State<AgentChatDialog>
             : _agentChat.documentCreated;
       case ChatArtifact.kindSystemAction:
         return artifact.systemActionKind == 'calendar'
-            ? _agentChat.calendarEventCreated
-            : _agentChat.reminderCreated;
+            ? UserStorage.l10n.discoveredCalendarEvent
+            : UserStorage.l10n.discoveredReminder;
       case ChatArtifact.kindKnowledgeInsight:
         return _agentChat.insightSaved;
       case ChatArtifact.kindSchedule:
@@ -3211,17 +3209,6 @@ class _AgentChatDialogState extends State<AgentChatDialog>
           ),
         );
         return;
-      case ChatArtifact.kindSchedule:
-        final openSchedule = widget.onOpenScheduleTab;
-        if (openSchedule != null) {
-          openSchedule();
-          unawaited(Navigator.of(context).maybePop());
-        } else {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const ScheduleAggregatorScreen()),
-          );
-        }
-        return;
       default:
         return;
     }
@@ -3235,8 +3222,6 @@ class _AgentChatDialogState extends State<AgentChatDialog>
         return artifact.knowledgeInsightId != null;
       case ChatArtifact.kindKnowledgeFile:
         return artifact.knowledgeFilePath != null;
-      case ChatArtifact.kindSchedule:
-        return true;
       default:
         return false;
     }
@@ -3335,6 +3320,34 @@ class _AgentChatDialogState extends State<AgentChatDialog>
 
   Widget _buildArtifactItem(ArtifactItem item, {bool embedded = false}) {
     final artifact = item.artifact;
+    final systemActionId = artifact.systemActionId;
+    if (artifact.kind == ChatArtifact.kindSystemAction &&
+        systemActionId != null) {
+      final actionCard = SystemActionArtifactCard(
+        key: ValueKey('system_action_artifact_$systemActionId'),
+        actionId: systemActionId,
+        actionKind: artifact.systemActionKind ?? 'action',
+        fallbackTitle: artifact.title,
+        fallbackSummary: artifact.summary,
+      );
+      if (embedded) {
+        return Padding(
+          padding: const EdgeInsets.only(top: 10),
+          child: actionCard,
+        );
+      }
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(width: 32),
+            Expanded(child: actionCard),
+          ],
+        ),
+      );
+    }
+
     final tappable = _artifactIsTappable(artifact);
     final showHtmlPreview =
         item.html != null && _liveHtmlPreviewItems().contains(item);
@@ -3392,7 +3405,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        UserStorage.l10n.scheduleBriefingOpen,
+                        UserStorage.l10n.artifactOpen,
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,

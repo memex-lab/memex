@@ -94,7 +94,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get reprocessCardsRerunDownstreamDesc =>
-      '让 Super Agent 在需要时一并考虑 PKM、日程和洞察更新。';
+      '让 Super Agent 在需要时一并考虑 PKM 和洞察更新。';
 
   @override
   String get reanalyzeMediaAssets => '重新读取媒体附件';
@@ -236,78 +236,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get schedule => '日程';
 
   @override
-  String get statistics => '统计';
-
-  @override
   String get appLockConfig => '应用锁配置';
-
-  @override
-  String get activityStats => '活动统计';
-
-  @override
-  String activityStatsSummary(Object inputs, Object cards, Object todos) {
-    return '这段时间你记录了 $inputs 次，生成了 $cards 张卡片，完成了 $todos 个待办。';
-  }
-
-  @override
-  String get last7Days => '7 天';
-
-  @override
-  String get last30Days => '30 天';
-
-  @override
-  String get last90Days => '90 天';
-
-  @override
-  String get records => '记录';
-
-  @override
-  String get words => '字词';
-
-  @override
-  String get cards => '卡片';
-
-  @override
-  String get knowledgeUnits => '知识单元';
-
-  @override
-  String get completedTodos => '完成待办';
-
-  @override
-  String get activeDays => '活跃天数';
-
-  @override
-  String get streakDays => '连续记录';
-
-  @override
-  String get dailyRhythm => '每日节奏';
-
-  @override
-  String get recordToOutput => '记录到沉淀';
-
-  @override
-  String get sourceBreakdown => '来源分布';
-
-  @override
-  String get topThemes => '高频主题';
-
-  @override
-  String get textInput => '文本';
-
-  @override
-  String get imageInput => '图片';
-
-  @override
-  String get audioInput => '音频';
-
-  @override
-  String get noStatsYet => '暂无活动统计';
-
-  @override
-  String get tapDayForDetails => '点击某一天查看详情';
-
-  @override
-  String get dayDetails => '当天详情';
 
   @override
   String loadStatsFailed(Object error) {
@@ -972,7 +901,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get textModelRoleDescription =>
-      '供 Super Agent 处理文本、图片、卡片、知识库、洞察、聊天、评论、日程和记忆总结。';
+      '供 Super Agent 处理文本、图片、卡片、知识库、洞察、聊天、评论和记忆总结。';
 
   @override
   String get modelConnectionsTitle => '模型服务商与 API Key';
@@ -1092,16 +1021,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get unknownAction => '未知操作';
 
   @override
-  String get discoveredCalendarEvent => '发现日历日程';
+  String get discoveredCalendarEvent => '待确认的日历事件';
 
   @override
-  String get discoveredReminder => '发现提醒事项';
+  String get discoveredReminder => '待确认的提醒事项';
 
   @override
   String get addToCalendar => '加到日历';
 
   @override
   String get addToReminders => '加到提醒事项';
+
+  @override
+  String get systemActionPendingExplanation => '尚未添加。点击下方按钮后，系统会请求权限并写入你的设备。';
 
   @override
   String addedToSuccess(Object target) {
@@ -1249,56 +1181,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get insightUnavailableMessage => '这个洞察仍在生成中，或已被更新。请刷新洞察后稍后再试。';
 
   @override
-  String get noScheduleAggregation => '暂无日程聚合';
-
-  @override
-  String get scheduleAggregationEmptyHint => '点击更新，从真实时间卡片里整理日程和待办。';
-
-  @override
-  String get scheduleAggregationLoadFailed => '加载日程数据失败';
-
-  @override
-  String get scheduleAggregationRefreshFailed => '刷新日程数据失败';
-
-  @override
-  String get scheduleTaskUpdateFailed => '更新待办失败';
-
-  @override
-  String get scheduleFeatured => '重点';
-
-  @override
-  String get scheduleThisWeek => '本周';
-
-  @override
-  String get scheduleDone => '已完成';
-
-  @override
-  String get scheduleTbd => '待定';
-
-  @override
-  String get scheduleWeekOverview => '本周概览';
-
-  @override
-  String get scheduleImportant => '重要';
-
-  @override
-  String get scheduleBriefingTitle => '日程简报';
-
-  @override
-  String get scheduleBriefingOpen => '查看';
-
-  @override
-  String get scheduleBriefingNoData => '暂无日程简报';
-
-  @override
-  String scheduleBriefingUpdated(Object time) {
-    return '$time 更新';
-  }
-
-  @override
-  String scheduleBriefingDoneCount(Object count) {
-    return '完成 $count';
-  }
+  String get artifactOpen => '查看';
 
   @override
   String get updating => '更新中...';
@@ -3308,7 +3191,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get reprocessCardsRerunDownstreamDesc =>
-      '請 超級智慧體 在需要時一併考慮相關的 PKM、日程與洞察更新。';
+      '請 超級智慧體 在需要時一併考慮相關的 PKM 與洞察更新。';
 
   @override
   String get reanalyzeMediaAssets => '重新讀取媒體附件';
@@ -3450,78 +3333,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get schedule => '日程';
 
   @override
-  String get statistics => '統計';
-
-  @override
   String get appLockConfig => '應用程式鎖定設定';
-
-  @override
-  String get activityStats => '活動統計';
-
-  @override
-  String activityStatsSummary(Object inputs, Object cards, Object todos) {
-    return '這段時間你記錄了 $inputs 次，產生了 $cards 張卡片，完成了 $todos 個待辦。';
-  }
-
-  @override
-  String get last7Days => '7 天';
-
-  @override
-  String get last30Days => '30 天';
-
-  @override
-  String get last90Days => '90 天';
-
-  @override
-  String get records => '記錄';
-
-  @override
-  String get words => '字詞';
-
-  @override
-  String get cards => '卡片';
-
-  @override
-  String get knowledgeUnits => '知識單元';
-
-  @override
-  String get completedTodos => '完成待辦';
-
-  @override
-  String get activeDays => '活躍天數';
-
-  @override
-  String get streakDays => '連續記錄';
-
-  @override
-  String get dailyRhythm => '每日節奏';
-
-  @override
-  String get recordToOutput => '記錄到沉澱';
-
-  @override
-  String get sourceBreakdown => '來源分布';
-
-  @override
-  String get topThemes => '高頻主題';
-
-  @override
-  String get textInput => '文字';
-
-  @override
-  String get imageInput => '圖片';
-
-  @override
-  String get audioInput => '音訊';
-
-  @override
-  String get noStatsYet => '尚無活動統計';
-
-  @override
-  String get tapDayForDetails => '點選某一天查看詳情';
-
-  @override
-  String get dayDetails => '當天詳情';
 
   @override
   String loadStatsFailed(Object error) {
@@ -4186,7 +3998,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get textModelRoleDescription =>
-      '供 超級智慧體 處理文字、圖片、卡片、知識庫、洞察、聊天、評論、日程和記憶總結。';
+      '供 超級智慧體 處理文字、圖片、卡片、知識庫、洞察、聊天、評論和記憶總結。';
 
   @override
   String get modelConnectionsTitle => '模型服務商與 API 金鑰';
@@ -4315,6 +4127,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get addToReminders => '加入提醒事項';
+
+  @override
+  String get systemActionPendingExplanation => '尚未加入。點擊下方按鈕後，系統會要求權限並寫入你的裝置。';
 
   @override
   String addedToSuccess(Object target) {
@@ -4462,56 +4277,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get insightUnavailableMessage => '這個洞察仍在產生中，或已被更新。請重新整理洞察後稍後再試。';
 
   @override
-  String get noScheduleAggregation => '暫無日程聚合';
-
-  @override
-  String get scheduleAggregationEmptyHint => '點選更新，從真實時間卡片中整理日程和待辦。';
-
-  @override
-  String get scheduleAggregationLoadFailed => '載入日程資料失敗';
-
-  @override
-  String get scheduleAggregationRefreshFailed => '重新整理日程資料失敗';
-
-  @override
-  String get scheduleTaskUpdateFailed => '更新待辦失敗';
-
-  @override
-  String get scheduleFeatured => '重點';
-
-  @override
-  String get scheduleThisWeek => '本週';
-
-  @override
-  String get scheduleDone => '已完成';
-
-  @override
-  String get scheduleTbd => '待定';
-
-  @override
-  String get scheduleWeekOverview => '本週概覽';
-
-  @override
-  String get scheduleImportant => '重要';
-
-  @override
-  String get scheduleBriefingTitle => '日程簡報';
-
-  @override
-  String get scheduleBriefingOpen => '查看';
-
-  @override
-  String get scheduleBriefingNoData => '暫無日程簡報';
-
-  @override
-  String scheduleBriefingUpdated(Object time) {
-    return '$time 更新';
-  }
-
-  @override
-  String scheduleBriefingDoneCount(Object count) {
-    return '完成 $count';
-  }
+  String get artifactOpen => '查看';
 
   @override
   String get updating => '更新中...';

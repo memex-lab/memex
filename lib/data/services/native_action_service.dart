@@ -1,6 +1,9 @@
 import 'package:flutter/services.dart';
+import 'package:memex/utils/logger.dart';
 
 class NativeActionService {
+  static final _logger = getLogger('NativeActionService');
+
   static const MethodChannel _channel =
       MethodChannel('com.memexlab.memex/system_actions');
 
@@ -21,26 +24,34 @@ class NativeActionService {
         'notes': notes,
       });
       return result == true;
-    } catch (e) {
-      print('Failed to add calendar event: $e');
+    } catch (error, stackTrace) {
+      _logger.severe(
+        'Failed to add calendar event',
+        error,
+        stackTrace,
+      );
       return false;
     }
   }
 
   static Future<bool> addReminder({
     required String title,
-    DateTime? dueDate,
+    required DateTime dueDate,
     String? notes,
   }) async {
     try {
       final result = await _channel.invokeMethod('addReminder', {
         'title': title,
-        'dueDate': dueDate?.millisecondsSinceEpoch,
+        'dueDate': dueDate.millisecondsSinceEpoch,
         'notes': notes,
       });
       return result == true;
-    } catch (e) {
-      print('Failed to add reminder: $e');
+    } catch (error, stackTrace) {
+      _logger.severe(
+        'Failed to add reminder',
+        error,
+        stackTrace,
+      );
       return false;
     }
   }

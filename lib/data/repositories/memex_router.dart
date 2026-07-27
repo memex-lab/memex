@@ -1,15 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'package:memex/data/repositories/get_schedule_briefing_timeline_card.dart'
-    as schedule_briefing_endpoint;
 import 'package:memex/data/repositories/migrate_cards_fact_assets.dart';
 import 'package:memex/data/repositories/update_card_ui_config.dart'
     as update_config_endpoint;
 import 'package:memex/data/services/search_service.dart';
 import 'package:memex/data/services/backup_service.dart';
 import 'package:memex/data/services/file_import_service.dart';
-import 'package:memex/data/services/user_stats_service.dart';
 import 'package:memex/domain/models/calendar_model.dart';
 import 'package:memex/data/repositories/hydrate_card.dart';
 import 'package:memex/data/services/table_change_notifier.dart';
@@ -25,8 +22,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:memex/data/repositories/get_timeline_card.dart'; // Import for fetchTimelineCard
 import 'package:logging/logging.dart';
 import 'package:memex/data/services/card_renderer.dart';
-import 'package:memex/data/services/event_handlers/schedule_state_on_card_change_handler.dart';
-import 'package:memex/data/services/schedule_state_service.dart';
 import 'package:memex/domain/models/timeline_card_model.dart';
 import 'package:memex/domain/models/card_model.dart';
 import 'package:memex/domain/models/card_detail_model.dart';
@@ -81,7 +76,6 @@ import 'package:memex/agent/state_util.dart';
 import 'package:memex/agent/skills/knowledge_insight/native_widgets.dart';
 import 'package:memex/utils/result.dart';
 import 'package:memex/domain/models/system_event.dart';
-import 'package:memex/domain/models/user_stats_model.dart';
 import 'package:memex/domain/models/persona_chat.dart';
 import 'package:memex/domain/models/character_editor.dart';
 
@@ -172,8 +166,6 @@ class MemexRouter {
         );
       }
 
-      await ScheduleStateService.instance.ensureInitialized(userId);
-
       scheduleAutoBackupCheck(trigger: 'app_start');
     } catch (e) {
       _logger.severe('Failed to initialize MemexRouter: $e');
@@ -263,22 +255,6 @@ class MemexRouter {
             'location_context_reminder': p.locationContextReminder,
           });
         },
-      ),
-    );
-
-    eventBus.subscribeSync<DataChangeRecord>(
-      eventType: SystemEventTypes.dataChanged,
-      subscription: EventSyncSubscription<DataChangeRecord>(
-        subscriptionId: 'schedule_state_on_card_change',
-        handler: handleScheduleStateOnCardChanged,
-      ),
-    );
-
-    eventBus.subscribeSync<CardUiConfigUpdatedPayload>(
-      eventType: SystemEventTypes.cardUiConfigUpdated,
-      subscription: EventSyncSubscription<CardUiConfigUpdatedPayload>(
-        subscriptionId: 'schedule_state_on_card_ui_config_update',
-        handler: handleScheduleStateOnCardUiConfigUpdated,
       ),
     );
   }
@@ -552,13 +528,6 @@ class MemexRouter {
     });
   }
 
-  Future<Result<TimelineCardModel?>> fetchScheduleBriefingCard() {
-    return runResult(() async {
-      await _ensureInitialized();
-      return schedule_briefing_endpoint.getScheduleBriefingTimelineCard();
-    });
-  }
-
   Future<Result<Map<String, dynamic>>> fetchAggregatedTimeline({
     required String groupBy,
     int page = 1,
@@ -827,24 +796,6 @@ class MemexRouter {
     });
   }
 
-  Future<Result<UserStatsSnapshot>> fetchUserStats({
-    required UserStatsDateRange range,
-  }) async {
-    return runResult(() async {
-      await _ensureInitialized();
-      _logger.info(
-        'LocalMode: fetchUserStats called: start=${range.start}, end=${range.end}',
-      );
-      final userId = await UserStorage.getUserId();
-      if (userId == null) {
-        return UserStatsSnapshot.empty(range);
-      }
-      return UserStatsService(
-        fileSystemService: fileSystemService,
-      ).fetchSnapshot(userId: userId, range: range);
-    });
-  }
-
   Future<String> _renderInsightCardHtml(
     String userId,
     Map<String, dynamic> card,
@@ -1010,63 +961,6 @@ class MemexRouter {
       return false;
     }
   }
-
-  Future<Result<void>> completeScheduleItem(String itemId) =>
-      runResultVoid(() async {
-        await _ensureInitialized();
-        final userId = await UserStorage.getUserId();
-        if (userId == null) {
-          throw Exception('User not logged in');
-        }
-
-        await ScheduleStateService.instance.completePendingItem(
-          userId: userId,
-          pendingId: itemId,
-        );
-        EventBusService.instance.emitEvent(
-          ScheduleAggregationUpdatedMessage(aggregationId: 'schedule_state'),
-        );
-      });
-
-  Future<Result<void>> restoreScheduleItem(String itemId) =>
-      runResultVoid(() async {
-        await _ensureInitialized();
-        final userId = await UserStorage.getUserId();
-        if (userId == null) {
-          throw Exception('User not logged in');
-        }
-
-        await ScheduleStateService.instance.restoreCompletedItem(
-          userId: userId,
-          completedId: itemId,
-        );
-        EventBusService.instance.emitEvent(
-          ScheduleAggregationUpdatedMessage(aggregationId: 'schedule_state'),
-        );
-      });
-
-  Future<Result<void>> setScheduleSubtaskCompletion({
-    required String itemId,
-    required String subtaskTitle,
-    required bool completed,
-  }) =>
-      runResultVoid(() async {
-        await _ensureInitialized();
-        final userId = await UserStorage.getUserId();
-        if (userId == null) {
-          throw Exception('User not logged in');
-        }
-
-        await ScheduleStateService.instance.setSubtaskCompletion(
-          userId: userId,
-          pendingId: itemId,
-          subtaskTitle: subtaskTitle,
-          completed: completed,
-        );
-        EventBusService.instance.emitEvent(
-          ScheduleAggregationUpdatedMessage(aggregationId: 'schedule_state'),
-        );
-      });
 
   Future<bool> updateCardTime(String cardId, int timestamp) async {
     await _ensureInitialized();

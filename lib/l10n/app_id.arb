@@ -41,7 +41,7 @@
   "reprocessCardsCardOnly": "Hanya kartu",
   "reprocessCardsCardOnlyDesc": "Minta Super Agent meninjau dan membuat ulang kartu linimasa yang dipilih.",
   "reprocessCardsRerunDownstream": "Kartu dan tindak lanjut terkait",
-  "reprocessCardsRerunDownstreamDesc": "Minta Super Agent juga mempertimbangkan pembaruan PKM, jadwal, dan insight terkait bila diperlukan.",
+  "reprocessCardsRerunDownstreamDesc": "Minta Super Agent juga mempertimbangkan pembaruan PKM dan insight terkait bila diperlukan.",
   "reanalyzeMediaAssets": "Baca ulang lampiran media",
   "reanalyzeMediaAssetsDesc": "Minta Super Agent memeriksa media terlampir lagi saat membuat ulang kartu.",
   "regenerateComments": "Buat ulang komentar",
@@ -109,37 +109,7 @@
   "lineCount": "Jumlah baris: ",
   "all": "Semua",
   "schedule": "Jadwal",
-  "statistics": "Statistik",
   "appLockConfig": "Konfigurasi kunci aplikasi",
-  "activityStats": "Statistik aktivitas",
-  "activityStatsSummary": "Pada periode ini Anda mencatat {inputs} kali, membuat {cards} kartu, dan menyelesaikan {todos} tugas.",
-  "@activityStatsSummary": {
-    "placeholders": {
-      "inputs": {},
-      "cards": {},
-      "todos": {}
-    }
-  },
-  "last7Days": "7 hari",
-  "last30Days": "30 hari",
-  "last90Days": "90 hari",
-  "records": "Catatan",
-  "words": "Kata",
-  "cards": "Kartu",
-  "knowledgeUnits": "Unit pengetahuan",
-  "completedTodos": "Todo selesai",
-  "activeDays": "Hari aktif",
-  "streakDays": "Runtun",
-  "dailyRhythm": "Ritme harian",
-  "recordToOutput": "Catatan ke hasil",
-  "sourceBreakdown": "Rincian sumber",
-  "topThemes": "Tema teratas",
-  "textInput": "Teks",
-  "imageInput": "Gambar",
-  "audioInput": "Suara",
-  "noStatsYet": "Belum ada statistik aktivitas",
-  "tapDayForDetails": "Ketuk hari untuk melihat detail",
-  "dayDetails": "Detail hari",
   "@loadStatsFailed": {
     "placeholders": {
       "error": {}
@@ -459,7 +429,7 @@
   "modelRolesTitle": "Pilih model utama",
   "modelRolesDescription": "Super Agent menggunakan satu model untuk input teks dan gambar. Override agen lanjutan tetap tersedia di bawah.",
   "textModelRoleTitle": "Model utama",
-  "textModelRoleDescription": "Digunakan oleh Super Agent untuk teks, gambar, kartu, pengetahuan, insight, chat, komentar, jadwal, dan memori.",
+  "textModelRoleDescription": "Digunakan oleh Super Agent untuk teks, gambar, kartu, pengetahuan, insight, chat, komentar, dan memori.",
   "modelConnectionsTitle": "Penyedia model dan API key",
   "modelConnectionsDescription": "Hubungkan layanan resmi Memex atau tambahkan kredensial penyedia Anda sendiri.",
   "relatedAiCapabilitiesTitle": "Kemampuan lanjutan dan terkait",
@@ -514,6 +484,7 @@
   "discoveredReminder": "Pengingat ditemukan",
   "addToCalendar": "Tambahkan ke kalender",
   "addToReminders": "Tambahkan ke pengingat",
+  "systemActionPendingExplanation": "Belum ditambahkan. Ketuk di bawah untuk meminta izin dan menambahkannya ke perangkat Anda.",
   "@addedToSuccess": {
     "placeholders": {
       "target": {}
@@ -605,32 +576,7 @@
   },
   "insightProcessingBacklogMessage": "{count} tugas latar belakang masih diproses.",
   "insightUnavailableMessage": "Insight ini masih dibuat atau telah diperbarui. Segarkan insight dan coba lagi nanti.",
-  "noScheduleAggregation": "Tidak ada agregasi jadwal",
-  "scheduleAggregationEmptyHint": "Ketuk Perbarui untuk mengatur jadwal dan todo dari kartu temporal nyata.",
-  "scheduleAggregationLoadFailed": "Gagal memuat data jadwal",
-  "scheduleAggregationRefreshFailed": "Gagal menyegarkan data jadwal",
-  "scheduleTaskUpdateFailed": "Gagal memperbarui tugas",
-  "scheduleFeatured": "Unggulan",
-  "scheduleThisWeek": "Minggu ini",
-  "scheduleDone": "Selesai",
-  "scheduleTbd": "TBD",
-  "scheduleWeekOverview": "Minggu ini",
-  "scheduleImportant": "Penting",
-  "scheduleBriefingTitle": "Ringkasan jadwal",
-  "scheduleBriefingOpen": "Buka",
-  "scheduleBriefingNoData": "Belum ada ringkasan jadwal",
-  "@scheduleBriefingUpdated": {
-    "placeholders": {
-      "time": {}
-    }
-  },
-  "scheduleBriefingUpdated": "Diperbarui {time}",
-  "@scheduleBriefingDoneCount": {
-    "placeholders": {
-      "count": {}
-    }
-  },
-  "scheduleBriefingDoneCount": "{count} selesai",
+  "artifactOpen": "Buka",
   "updating": "Memperbarui...",
   "update": "Perbarui",
   "enabled": "Aktif",

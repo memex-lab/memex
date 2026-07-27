@@ -161,10 +161,6 @@ class AppLocalizationsExtKo extends AppLocalizationsKo
       '**Important**: All output text must be in **Korean (ko)**.';
 
   @override
-  String get scheduleAggregatorLanguageInstruction =>
-      '**Important**: All output text (editorial_intro and quote_blocks) must be in **Korean (ko)**.';
-
-  @override
   String get assetAnalysisLanguageInstruction =>
       'IMPORTANT: You must respond in Korean (ko).';
 

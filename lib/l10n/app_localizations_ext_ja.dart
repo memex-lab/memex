@@ -163,10 +163,6 @@ class AppLocalizationsExtJa extends AppLocalizationsJa
       '**Important**: All output text must be in **Japanese (ja)**.';
 
   @override
-  String get scheduleAggregatorLanguageInstruction =>
-      '**Important**: All output text (editorial_intro and quote_blocks) must be in **Japanese (ja)**.';
-
-  @override
   String get assetAnalysisLanguageInstruction =>
       'IMPORTANT: You must respond in Japanese (ja).';
 

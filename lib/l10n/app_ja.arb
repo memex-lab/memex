@@ -41,7 +41,7 @@
   "reprocessCardsCardOnly": "カードのみ",
   "reprocessCardsCardOnlyDesc": "選択したタイムラインカードの確認と再生成を スーパーエージェントに依頼します。",
   "reprocessCardsRerunDownstream": "カードと関連する後続処理",
-  "reprocessCardsRerunDownstreamDesc": "必要に応じて、関連する PKM、予定、インサイト更新も スーパーエージェントに考慮させます。",
+  "reprocessCardsRerunDownstreamDesc": "必要に応じて、関連する PKM とインサイト更新も スーパーエージェントに考慮させます。",
   "reanalyzeMediaAssets": "メディア添付を再読み取り",
   "reanalyzeMediaAssetsDesc": "カード再生成時に、添付メディアをもう一度確認するよう スーパーエージェントに依頼します。",
   "regenerateComments": "コメントを再生成",
@@ -109,37 +109,7 @@
   "lineCount": "行数: ",
   "all": "すべて",
   "schedule": "予定",
-  "statistics": "統計",
   "appLockConfig": "アプリロック設定",
-  "activityStats": "アクティビティ統計",
-  "activityStatsSummary": "この期間に {inputs} 回記録し、{cards} 枚のカードを生成し、{todos} 件の ToDo を完了しました。",
-  "@activityStatsSummary": {
-    "placeholders": {
-      "inputs": {},
-      "cards": {},
-      "todos": {}
-    }
-  },
-  "last7Days": "7 日間",
-  "last30Days": "30 日間",
-  "last90Days": "90 日間",
-  "records": "記録",
-  "words": "単語",
-  "cards": "カード",
-  "knowledgeUnits": "ナレッジ単位",
-  "completedTodos": "完了した ToDo",
-  "activeDays": "アクティブ日数",
-  "streakDays": "連続日数",
-  "dailyRhythm": "日次リズム",
-  "recordToOutput": "記録から出力へ",
-  "sourceBreakdown": "ソース内訳",
-  "topThemes": "主なテーマ",
-  "textInput": "テキスト",
-  "imageInput": "画像",
-  "audioInput": "音声",
-  "noStatsYet": "まだアクティビティ統計はありません",
-  "tapDayForDetails": "日付をタップして詳細を表示",
-  "dayDetails": "日別詳細",
   "loadStatsFailed": "統計の読み込みに失敗しました: {error}",
   "@loadStatsFailed": {
     "placeholders": {
@@ -459,7 +429,7 @@
   "modelRolesTitle": "主要モデルを選択",
   "modelRolesDescription": "スーパーエージェント はテキストと画像入力に 1 つのモデルを使用します。高度な エージェント 上書きは下で引き続き利用できます。",
   "textModelRoleTitle": "主要モデル",
-  "textModelRoleDescription": "スーパーエージェントがテキスト、画像、カード、ナレッジ、インサイト、チャット、コメント、予定、メモリに使用します。",
+  "textModelRoleDescription": "スーパーエージェントがテキスト、画像、カード、ナレッジ、インサイト、チャット、コメント、メモリに使用します。",
   "modelConnectionsTitle": "モデルプロバイダーと API キー",
   "modelConnectionsDescription": "Memex 公式サービスを接続するか、自分のプロバイダー認証情報を追加します。",
   "relatedAiCapabilitiesTitle": "高度な関連機能",
@@ -514,6 +484,7 @@
   "discoveredReminder": "リマインダーが見つかりました",
   "addToCalendar": "カレンダーに追加",
   "addToReminders": "リマインダーに追加",
+  "systemActionPendingExplanation": "まだ追加されていません。下のボタンをタップすると、権限をリクエストしてデバイスに追加します。",
   "addedToSuccess": "{target} に正常に追加しました",
   "@addedToSuccess": {
     "placeholders": {
@@ -605,32 +576,7 @@
     }
   },
   "insightUnavailableMessage": "このインサイトはまだ生成中、または更新されたばかりです。インサイトを更新してから後でもう一度お試しください。",
-  "noScheduleAggregation": "予定の集約はありません",
-  "scheduleAggregationEmptyHint": "更新をタップして、実際の時系列カードから予定と ToDo を整理します。",
-  "scheduleAggregationLoadFailed": "予定データの読み込みに失敗しました",
-  "scheduleAggregationRefreshFailed": "予定データの更新に失敗しました",
-  "scheduleTaskUpdateFailed": "タスクの更新に失敗しました",
-  "scheduleFeatured": "注目",
-  "scheduleThisWeek": "今週",
-  "scheduleDone": "完了",
-  "scheduleTbd": "未定",
-  "scheduleWeekOverview": "今週",
-  "scheduleImportant": "重要",
-  "scheduleBriefingTitle": "予定ブリーフィング",
-  "scheduleBriefingOpen": "開く",
-  "scheduleBriefingNoData": "予定ブリーフィングはまだありません",
-  "scheduleBriefingUpdated": "{time} に更新",
-  "@scheduleBriefingUpdated": {
-    "placeholders": {
-      "time": {}
-    }
-  },
-  "scheduleBriefingDoneCount": "{count} 件完了",
-  "@scheduleBriefingDoneCount": {
-    "placeholders": {
-      "count": {}
-    }
-  },
+  "artifactOpen": "開く",
   "updating": "更新中...",
   "update": "更新",
   "enabled": "有効",

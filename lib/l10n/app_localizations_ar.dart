@@ -97,7 +97,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get reprocessCardsRerunDownstreamDesc =>
-      'اطلب من الوكيل الفائق أن يأخذ تحديثات PKM والجدول والرؤى المرتبطة في الحسبان عند الحاجة.';
+      'اطلب من الوكيل الفائق أن يأخذ تحديثات PKM والرؤى المرتبطة في الحسبان عند الحاجة.';
 
   @override
   String get reanalyzeMediaAssets => 'إعادة قراءة مرفقات الوسائط';
@@ -245,78 +245,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get schedule => 'الجدول';
 
   @override
-  String get statistics => 'الإحصاءات';
-
-  @override
   String get appLockConfig => 'إعداد قفل التطبيق';
-
-  @override
-  String get activityStats => 'إحصاءات النشاط';
-
-  @override
-  String activityStatsSummary(Object inputs, Object cards, Object todos) {
-    return 'في هذه الفترة سجلت $inputs مرة، وأنشأت $cards بطاقة، وأكملت $todos مهمة.';
-  }
-
-  @override
-  String get last7Days => '7 أيام';
-
-  @override
-  String get last30Days => '30 يوما';
-
-  @override
-  String get last90Days => '90 يوما';
-
-  @override
-  String get records => 'السجلات';
-
-  @override
-  String get words => 'الكلمات';
-
-  @override
-  String get cards => 'البطاقات';
-
-  @override
-  String get knowledgeUnits => 'وحدات المعرفة';
-
-  @override
-  String get completedTodos => 'المهام المكتملة';
-
-  @override
-  String get activeDays => 'أيام نشطة';
-
-  @override
-  String get streakDays => 'السلسلة';
-
-  @override
-  String get dailyRhythm => 'الإيقاع اليومي';
-
-  @override
-  String get recordToOutput => 'من السجل إلى الناتج';
-
-  @override
-  String get sourceBreakdown => 'توزيع المصادر';
-
-  @override
-  String get topThemes => 'أبرز المواضيع';
-
-  @override
-  String get textInput => 'نص';
-
-  @override
-  String get imageInput => 'صور';
-
-  @override
-  String get audioInput => 'صوت';
-
-  @override
-  String get noStatsYet => 'لا توجد إحصاءات نشاط بعد';
-
-  @override
-  String get tapDayForDetails => 'اضغط على يوم لعرض التفاصيل';
-
-  @override
-  String get dayDetails => 'تفاصيل اليوم';
 
   @override
   String loadStatsFailed(Object error) {
@@ -996,7 +925,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get textModelRoleDescription =>
-      'يستخدمه الوكيل الفائق للنصوص والصور والبطاقات والمعرفة والرؤى والدردشة والتعليقات والجدول والذاكرة.';
+      'يستخدمه الوكيل الفائق للنصوص والصور والبطاقات والمعرفة والرؤى والدردشة والتعليقات والذاكرة.';
 
   @override
   String get modelConnectionsTitle => 'مزودو النماذج ومفاتيح واجهة البرمجة';
@@ -1128,6 +1057,10 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get addToReminders => 'إضافة إلى التذكيرات';
+
+  @override
+  String get systemActionPendingExplanation =>
+      'لم تتم الإضافة بعد. اضغط أدناه لطلب الإذن وإضافته إلى جهازك.';
 
   @override
   String addedToSuccess(Object target) {
@@ -1278,57 +1211,7 @@ class AppLocalizationsAr extends AppLocalizations {
       'ما زالت هذه الرؤية قيد الإنشاء أو تم تحديثها. حدّث الرؤى وحاول لاحقا.';
 
   @override
-  String get noScheduleAggregation => 'لا يوجد تجميع جدول';
-
-  @override
-  String get scheduleAggregationEmptyHint =>
-      'اضغط تحديث لتنظيم الجداول والمهام من البطاقات الزمنية الحقيقية.';
-
-  @override
-  String get scheduleAggregationLoadFailed => 'فشل تحميل بيانات الجدول';
-
-  @override
-  String get scheduleAggregationRefreshFailed => 'فشل تحديث بيانات الجدول';
-
-  @override
-  String get scheduleTaskUpdateFailed => 'فشل تحديث المهمة';
-
-  @override
-  String get scheduleFeatured => 'مميز';
-
-  @override
-  String get scheduleThisWeek => 'هذا الأسبوع';
-
-  @override
-  String get scheduleDone => 'تم';
-
-  @override
-  String get scheduleTbd => 'لم يحدد بعد';
-
-  @override
-  String get scheduleWeekOverview => 'هذا الأسبوع';
-
-  @override
-  String get scheduleImportant => 'مهم';
-
-  @override
-  String get scheduleBriefingTitle => 'موجز الجدول';
-
-  @override
-  String get scheduleBriefingOpen => 'فتح';
-
-  @override
-  String get scheduleBriefingNoData => 'لا يوجد موجز جدول بعد';
-
-  @override
-  String scheduleBriefingUpdated(Object time) {
-    return 'تم التحديث $time';
-  }
-
-  @override
-  String scheduleBriefingDoneCount(Object count) {
-    return '$count منجز';
-  }
+  String get artifactOpen => 'فتح';
 
   @override
   String get updating => 'جار التحديث...';

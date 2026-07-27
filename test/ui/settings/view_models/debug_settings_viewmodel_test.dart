@@ -48,6 +48,17 @@ void main() {
     expect(dataController.superAgentReprocesses, isEmpty);
   });
 
+  test('related follow-up prompt only names available agent capabilities', () {
+    const options = ReprocessCardsDebugOptions(
+      scope: ReprocessCardsScope.cardsAndRelatedFollowUps,
+    );
+
+    final message = options.toSuperAgentMessage();
+
+    expect(message, contains('related PKM or knowledge insight'));
+    expect(message.toLowerCase(), isNot(contains('schedule')));
+  });
+
   test('date range task options format payload consistently', () {
     final payload = DebugDateRangeTaskOptions(
       dateFrom: DateTime(2026, 6, 1),

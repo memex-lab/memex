@@ -166,10 +166,6 @@ class AppLocalizationsExtId extends AppLocalizationsId
       '**Important**: All output text must be in **Indonesian (id)**.';
 
   @override
-  String get scheduleAggregatorLanguageInstruction =>
-      '**Important**: All output text (editorial_intro and quote_blocks) must be in **Indonesian (id)**.';
-
-  @override
   String get assetAnalysisLanguageInstruction =>
       'IMPORTANT: You must respond in Indonesian (id).';
 

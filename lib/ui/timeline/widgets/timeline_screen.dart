@@ -10,7 +10,6 @@ import 'package:memex/ui/card_attachments/card_attachment_factory.dart';
 import 'package:memex/ui/core/widgets/html_webview_card.dart';
 import 'package:memex/ui/main_screen/widgets/action_center_sheet.dart';
 
-import 'package:memex/domain/models/system_card_constants.dart';
 import 'package:memex/ui/core/cards/native_card_factory.dart';
 import 'package:memex/data/services/demo_service.dart';
 import 'package:memex/data/services/event_bus_service.dart';
@@ -36,7 +35,6 @@ import 'package:memex/ui/core/widgets/character_avatar.dart';
 import 'package:memex/ui/character/widgets/persona_avatar_button.dart';
 import 'package:memex/ui/character/view_models/persona_avatar_viewmodel.dart';
 import 'package:memex/routing/routes.dart';
-import 'package:memex/ui/schedule/widgets/schedule_aggregator_screen.dart';
 
 /// Timeline screen - main memory view. Receives [viewModel] and [insightViewModel] from parent (Compass-style).
 class TimelineScreen extends StatefulWidget {
@@ -80,12 +78,6 @@ class TimelineScreenState extends State<TimelineScreen> {
     if (mounted) {
       widget.viewModel.refresh();
     }
-  }
-
-  void openScheduleTab() {
-    widget.viewModel.setViewMode(TimelineViewMode.timeline);
-    widget.viewModel.setActiveFilter('schedule');
-    _jumpToPage(2);
   }
 
   @override
@@ -191,24 +183,22 @@ class TimelineScreenState extends State<TimelineScreen> {
     }
   }
 
-  /// Get the total number of tab pages: All(0) + Insight(1) + Schedule(2) + user tags(3..)
-  int _totalPageCount(TimelineViewModel vm) => 3 + vm.tags.length;
+  /// Get the total number of tab pages: All(0) + Insight(1) + user tags(2..)
+  int _totalPageCount(TimelineViewModel vm) => 2 + vm.tags.length;
 
   /// Convert a page index to the corresponding filter string.
   String _pageIndexToFilter(int index, TimelineViewModel vm) {
     if (index == 0) return 'all';
     if (index == 1) return 'insight';
-    if (index == 2) return 'schedule';
-    return vm.tags[index - 3].name;
+    return vm.tags[index - 2].name;
   }
 
   /// Convert the current active filter to a page index.
   int _filterToPageIndex(TimelineViewModel vm) {
     if (vm.viewMode == TimelineViewMode.insight) return 1;
-    if (vm.activeFilter == 'schedule') return 2;
     if (vm.activeFilter == 'all') return 0;
     final idx = vm.tags.indexWhere((t) => t.name == vm.activeFilter);
-    return idx >= 0 ? idx + 3 : 0;
+    return idx >= 0 ? idx + 2 : 0;
   }
 
   /// Called when user swipes to a new page.
@@ -219,13 +209,10 @@ class TimelineScreenState extends State<TimelineScreen> {
     if (index == 1) {
       vm.setViewMode(TimelineViewMode.insight);
       vm.setActiveFilter('insight');
-      widget.insightViewModel.refreshStatsForVisibleInsightPage();
     } else {
       vm.setViewMode(TimelineViewMode.timeline);
       vm.setActiveFilter(filter);
-      if (index != 2) {
-        vm.loadCards(refresh: true);
-      }
+      vm.loadCards(refresh: true);
     }
     _scrollTagIntoView(index, vm);
   }
@@ -594,13 +581,6 @@ class TimelineScreenState extends State<TimelineScreen> {
                         ),
                       );
                     }
-                    if (index == 2) {
-                      // Schedule Aggregator page
-                      return _DeferredActivePage(
-                        isActive: _currentPageIndex == 2,
-                        builder: (_) => const ScheduleAggregatorScreen(),
-                      );
-                    }
                     // Timeline page (All or filtered by tag)
                     return _buildTimelineBody(vm);
                   },
@@ -614,122 +594,13 @@ class TimelineScreenState extends State<TimelineScreen> {
   }
 
   Widget _buildInlineTagChips(TimelineViewModel vm) {
-    final userTags = vm.tags;
-    // Items: All(0) + Insight(1) + Schedule(2) + user tags(3..)
-    final totalCount = 3 + userTags.length;
-
-    return ListView.separated(
-      controller: _tagScrollController,
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.only(left: 20, right: 20),
-      itemCount: totalCount,
-      separatorBuilder: (_, __) => const SizedBox(width: 10),
-      itemBuilder: (context, index) {
-        // Index 0: "All"
-        if (index == 0) {
-          final isSelected = vm.activeFilter == 'all' &&
-              vm.viewMode == TimelineViewMode.timeline;
-          return _buildTagChip(
-            label: UserStorage.l10n.timelineFilterAll,
-            isSelected: isSelected,
-            onTap: () {
-              vm.setViewMode(TimelineViewMode.timeline);
-              vm.setActiveFilter('all');
-              vm.loadCards(refresh: true);
-              _jumpToPage(0);
-            },
-          );
-        }
-
-        // Index 1: "Insight"
-        if (index == 1) {
-          final isSelected = vm.viewMode == TimelineViewMode.insight;
-          final chip = _buildTagChip(
-            label: UserStorage.l10n.insights,
-            icon: '✨',
-            isSelected: isSelected,
-            onTap: () {
-              _jumpToPage(1);
-              vm.setViewMode(TimelineViewMode.insight);
-              vm.setActiveFilter('insight');
-              widget.insightViewModel.refreshStatsForVisibleInsightPage();
-              DemoService.instance.tryAdvance(DemoStep.tapInsightTab);
-            },
-          );
-          // Only attach the demo GlobalKey when the demo is active,
-          // to avoid duplicate-key crashes during normal tab switching.
-          if (DemoService.instance.isActive) {
-            return KeyedSubtree(
-                key: DemoService.instance.insightTabKey, child: chip);
-          }
-          return chip;
-        }
-
-        // Index 2: "Schedule"
-        if (index == 2) {
-          final isSelected = vm.activeFilter == 'schedule';
-          return _buildTagChip(
-            label: UserStorage.l10n.schedule,
-            icon: '📅',
-            isSelected: isSelected,
-            onTap: () {
-              _jumpToPage(2);
-              vm.setViewMode(TimelineViewMode.timeline);
-              vm.setActiveFilter('schedule');
-            },
-          );
-        }
-
-        // Index 3+: user tags
-        final tag = userTags[index - 3];
-        final isSelected = vm.activeFilter == tag.name &&
-            vm.viewMode == TimelineViewMode.timeline;
-        return _buildTagChip(
-          label: tag.name,
-          icon: tag.icon,
-          isSelected: isSelected,
-          onTap: () {
-            vm.setViewMode(TimelineViewMode.timeline);
-            vm.setActiveFilter(tag.name);
-            vm.loadCards(refresh: true);
-            _jumpToPage(index);
-          },
-        );
+    return TimelineFilterBar(
+      viewModel: vm,
+      scrollController: _tagScrollController,
+      onPageSelected: _jumpToPage,
+      onInsightSelected: () {
+        DemoService.instance.tryAdvance(DemoStep.tapInsightTab);
       },
-    );
-  }
-
-  Widget _buildTagChip({
-    required String label,
-    String? icon,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Container(
-        height: 36,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF1A1A1A) : Colors.white,
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                color: isSelected ? Colors.white : const Color(0xFF4A5565),
-                fontWeight: FontWeight.w500,
-                fontSize: 14,
-                letterSpacing: -0.15,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -868,12 +739,6 @@ class TimelineScreenState extends State<TimelineScreen> {
             isDemoTarget: isDemoTarget,
             attachments: vm.attachments[card.id] ?? const [],
             onTap: () async {
-              if (_isScheduleBriefingCard(card)) {
-                _jumpToPage(2);
-                vm.setViewMode(TimelineViewMode.timeline);
-                vm.setActiveFilter('schedule');
-                return;
-              }
               final isDemoTapCardStep = isDemoTarget &&
                   DemoService.instance.currentStep == DemoStep.tapCard;
               if (isDemoTapCardStep) {
@@ -945,11 +810,115 @@ class _TimelineFeedEntry {
   final TimelineCardModel card;
 }
 
-bool _isScheduleBriefingCard(TimelineCardModel card) {
-  return card.id == scheduleBriefingCardId ||
-      card.uiConfigs.any(
-        (config) => config.templateId == scheduleBriefingTemplateId,
-      );
+/// Horizontal page/filter navigation for Timeline.
+class TimelineFilterBar extends StatelessWidget {
+  const TimelineFilterBar({
+    super.key,
+    required this.viewModel,
+    required this.onPageSelected,
+    required this.onInsightSelected,
+    this.scrollController,
+  });
+
+  final TimelineViewModel viewModel;
+  final ValueChanged<int> onPageSelected;
+  final VoidCallback onInsightSelected;
+  final ScrollController? scrollController;
+
+  @override
+  Widget build(BuildContext context) {
+    final userTags = viewModel.tags;
+    final totalCount = 2 + userTags.length;
+
+    return ListView.separated(
+      controller: scrollController,
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.only(left: 20, right: 20),
+      itemCount: totalCount,
+      separatorBuilder: (_, __) => const SizedBox(width: 10),
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          return _buildTagChip(
+            label: UserStorage.l10n.timelineFilterAll,
+            isSelected: viewModel.activeFilter == 'all' &&
+                viewModel.viewMode == TimelineViewMode.timeline,
+            onTap: () {
+              viewModel.setViewMode(TimelineViewMode.timeline);
+              viewModel.setActiveFilter('all');
+              viewModel.loadCards(refresh: true);
+              onPageSelected(0);
+            },
+          );
+        }
+
+        if (index == 1) {
+          final chip = _buildTagChip(
+            label: UserStorage.l10n.insights,
+            isSelected: viewModel.viewMode == TimelineViewMode.insight,
+            onTap: () {
+              onPageSelected(1);
+              viewModel.setViewMode(TimelineViewMode.insight);
+              viewModel.setActiveFilter('insight');
+              onInsightSelected();
+            },
+          );
+          if (DemoService.instance.isActive) {
+            return KeyedSubtree(
+              key: DemoService.instance.insightTabKey,
+              child: chip,
+            );
+          }
+          return chip;
+        }
+
+        final tag = userTags[index - 2];
+        return _buildTagChip(
+          label: tag.name,
+          isSelected: viewModel.activeFilter == tag.name &&
+              viewModel.viewMode == TimelineViewMode.timeline,
+          onTap: () {
+            viewModel.setViewMode(TimelineViewMode.timeline);
+            viewModel.setActiveFilter(tag.name);
+            viewModel.loadCards(refresh: true);
+            onPageSelected(index);
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildTagChip({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        height: 36,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF1A1A1A) : Colors.white,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : const Color(0xFF4A5565),
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
+                letterSpacing: -0.15,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _DeferredActivePage extends StatefulWidget {
@@ -1059,14 +1028,7 @@ class _TimelineEntryItemState extends State<TimelineEntryItem> {
     final isAlreadyClassic = card.uiConfigs.length == 1 &&
         card.uiConfigs.first.templateId == 'classic_card';
 
-    // System-generated cards (no user raw input) should not support long-press
-    // toggle to classic mode — they have no rawText to fall back to.
-    const systemOnlyTemplates = {
-      'schedule_briefing',
-    };
-    final isSystemCard = card.uiConfigs.isNotEmpty &&
-        systemOnlyTemplates.contains(card.uiConfigs.first.templateId);
-    final canToggleClassic = !isAlreadyClassic && !isSystemCard;
+    final canToggleClassic = !isAlreadyClassic;
 
     // Check for single compact card
     bool isSingleCompactCard = false;

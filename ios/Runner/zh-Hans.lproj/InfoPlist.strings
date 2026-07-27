@@ -5,11 +5,11 @@
 "NSFaceIDUsageDescription" = "Memex 使用面容 ID 在启用应用锁时通过生物识别保护您的数据。例如，无需输入密码即可安全解锁应用。";
 "NSLocationWhenInUseUsageDescription" = "仅在您启用位置上下文时，Memex 才会使用当前位置，帮助 AI 代理理解当前对话的城市和街区上下文。Memex 也会读取照片中的 GPS 元数据，用于创建基于地点的时间线卡片。";
 "NSLocationAlwaysAndWhenInUseUsageDescription" = "仅在您启用位置上下文时，Memex 才会使用当前位置，帮助 AI 代理理解当前对话的城市和街区上下文。Memex 也会读取照片中的 GPS 元数据，用于创建基于地点的时间线卡片。";
-"NSCalendarsUsageDescription" = "当 AI 代理从您的输入中识别出日程安排意图时，Memex 会向设备日历写入事件。例如，输入「明天下午3点和团队开会」，Memex 会自动创建日历事件。";
-"NSCalendarsFullAccessUsageDescription" = "当 AI 代理从您的输入中识别出日程安排意图时，Memex 会向设备日历写入事件。例如，输入「明天下午3点和团队开会」，Memex 会自动创建日历事件。";
-"NSCalendarsWriteOnlyUsageDescription" = "当 AI 代理从您的输入中识别出日程安排意图时，Memex 会向设备日历写入事件。例如，输入「明天下午3点和团队开会」，Memex 会自动创建日历事件。";
-"NSRemindersUsageDescription" = "当 AI 代理从您的输入中识别出提醒意图时，Memex 会在设备上创建提醒事项。例如，输入「周五提醒我打电话给牙医」，Memex 会自动创建提醒。";
-"NSRemindersFullAccessUsageDescription" = "当 AI 代理从您的输入中识别出提醒意图时，Memex 会在设备上创建提醒事项。例如，输入「周五提醒我打电话给牙医」，Memex 会自动创建提醒。";
+"NSCalendarsUsageDescription" = "仅在您确认 AI 代理准备的日历事件后，Memex 才会将它添加到设备日历。";
+"NSCalendarsFullAccessUsageDescription" = "仅在您确认 AI 代理准备的日历事件后，Memex 才会将它添加到设备日历。";
+"NSCalendarsWriteOnlyUsageDescription" = "仅在您确认 AI 代理准备的日历事件后，Memex 才会将它添加到设备日历。";
+"NSRemindersUsageDescription" = "仅在您确认 AI 代理准备的提醒后，Memex 才会将它添加到设备。";
+"NSRemindersFullAccessUsageDescription" = "仅在您确认 AI 代理准备的提醒后，Memex 才会将它添加到设备。";
 "NSHealthShareUsageDescription" = "Memex 读取您的健康与健身数据（步数、心率、血压、睡眠、体重、运动记录等）以生成 AI 驱动的洞察卡片，帮助您了解健康趋势。例如，查看每周摘要卡片展示您的活动模式和睡眠质量。";
 "NSHealthUpdateUsageDescription" = "当从您的输入中识别出相关信息时，Memex 会将健康指标记录到健康数据中。例如，记录一条运动笔记，Memex 会将锻炼数据同步到「健康」应用。";
 "NSFamilyControlsUsageDescription" = "Memex 读取您的屏幕使用时间数据以分析注意力分布模式并生成洞察卡片。例如，查看您的应用使用情况与生产力记录之间的关联。";

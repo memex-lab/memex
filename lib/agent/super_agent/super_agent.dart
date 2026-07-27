@@ -7,10 +7,10 @@ import 'package:memex/agent/memory/memory_management.dart';
 import 'package:memex/agent/memory/super_agent_context_compressor.dart';
 import 'package:memex/agent/skills/manage_pkm/pkm_skill.dart';
 import 'package:memex/agent/skills/manage_memory/memory_management_skill.dart';
+import 'package:memex/agent/skills/manage_system_action/system_action_skill.dart';
 import 'package:memex/agent/security/file_permission_manager.dart';
 import 'package:memex/agent/skills/dynamic_timeline_ui/dynamic_timeline_ui_skill.dart';
 import 'package:memex/agent/skills/manage_timeline_card/timeline_card_skill.dart';
-import 'package:memex/agent/skills/schedule_aggregation/schedule_aggregation_skill.dart';
 import 'package:memex/agent/skills/knowledge_insight/knowledge_insight_skill.dart';
 import 'package:memex/agent/skills/timeline_diagnostics/timeline_diagnostics_skill.dart';
 import 'package:memex/agent/common_tools.dart';
@@ -48,8 +48,8 @@ const _quickQueryExcludedSkills = {
   'dynamic_timeline_ui',
   'timeline_diagnostics',
   'manage_pkm',
-  'update_schedule_aggregation',
   'update_knowledge_insight',
+  'manage_calendar_and_reminders',
 };
 
 const _cloneSubAgentPromptLine =
@@ -64,6 +64,11 @@ class SuperAgent {
   @visibleForTesting
   static bool isQuickQueryToolAllowed(String toolName) {
     return _readOnlyToolNames.contains(toolName);
+  }
+
+  @visibleForTesting
+  static bool isQuickQuerySkillAllowed(String skillName) {
+    return !_quickQueryExcludedSkills.contains(skillName);
   }
 
   /// File-tool permission rules for the SuperAgent workspace.
@@ -183,7 +188,7 @@ class SuperAgent {
       DynamicTimelineUiSkill(),
       TimelineDiagnosticsSkill(),
       PkmSkill(workingDirectory: '/PKM'),
-      ScheduleAggregationSkill(),
+      SystemActionSkill(),
     ];
     if (quickQuery) {
       skills = skills

@@ -910,6 +910,44 @@ void main() {
       expect(_text(result), contains('Unknown agent_type'));
     });
 
+    test('delegate rejects the retired schedule agent type', () async {
+      final tool = buildDelegateToSubagentTool();
+      final state = AgentState(
+        sessionId: 'delegate_retired_schedule_agent_type_test',
+        metadata: {'userId': userId},
+      );
+      final agent = StatefulAgent(
+        name: 'delegate_retired_schedule_agent_type_agent',
+        client: _SingleToolCallClient(
+          toolName: tool.name,
+          arguments: {
+            'agent_type': 'schedule',
+            'task_content': [
+              {
+                'type': 'text',
+                'text': 'Create a schedule aggregation.',
+              },
+            ],
+          },
+        ),
+        modelConfig: ModelConfig(model: 'test'),
+        state: state,
+        tools: [tool],
+        withGeneralPrinciples: false,
+        maxTurns: 3,
+      );
+
+      await agent.run([UserMessage.text('delegate')], useStream: false);
+
+      final result = state.history.messages
+          .whereType<FunctionExecutionResultMessage>()
+          .single
+          .results
+          .single;
+      expect(result.isError, isTrue);
+      expect(_text(result), contains('Unknown agent_type "schedule"'));
+    });
+
     test('delegate allows the fixed research agent type', () async {
       await Directory(FileSystemService.instance.getWorkspacePath(userId))
           .create(recursive: true);
@@ -975,11 +1013,11 @@ void main() {
           'timeline_card',
           'pkm',
           'knowledge_insight',
-          'schedule',
           'timeline_diagnostics',
           'research',
         ]),
       );
+      expect(agentType['enum'], isNot(contains('schedule')));
     });
 
     test('finish_summary is only exposed by child-specialized skills', () {
