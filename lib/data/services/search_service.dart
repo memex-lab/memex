@@ -34,6 +34,7 @@ class SearchService {
   final Logger _logger = getLogger('SearchService');
 
   bool _initialized = false;
+  int _initGeneration = 0;
 
   // ---------------------------------------------------------------------------
   // Initialization
@@ -48,6 +49,7 @@ class SearchService {
   void init(String userId) {
     if (_initialized) return;
     _initialized = true;
+    _initGeneration++;
 
     // Jieba segmenter loads lazily on first use and auto-releases after idle.
     // No explicit initialization needed here.
@@ -58,10 +60,18 @@ class SearchService {
     // Check if a post-migration FTS rebuild is needed.
     if (AppDatabase.isInitialized && AppDatabase.instance.needsFtsRebuild) {
       AppDatabase.instance.clearFtsRebuildFlag();
+      final scheduledGeneration = _initGeneration;
       _logger.info(
           'FTS tables newly created via migration — scheduling full rebuild');
       // Defer so first Timeline paint is not competing with jieba + full scans.
       Future<void>.delayed(const Duration(seconds: 3), () async {
+        if (!shouldRunDeferredFtsRebuild(
+          scheduledGeneration: scheduledGeneration,
+          currentGeneration: _initGeneration,
+          initialized: _initialized,
+        )) {
+          return;
+        }
         try {
           await rebuildAll(userId);
           _logger.info('Post-migration FTS rebuild completed');
@@ -75,6 +85,7 @@ class SearchService {
   /// Reset state on logout so the next login re-initializes.
   void reset() {
     _initialized = false;
+    _initGeneration++;
     FileOperationService.instance.onFileChanged = null;
     JiebaSegmenter.instance.dispose();
   }
@@ -443,6 +454,15 @@ class SearchService {
   @visibleForTesting
   bool shouldYieldFtsRebuild(int indexedCount) {
     return indexedCount > 0 && indexedCount % ftsRebuildYieldEvery == 0;
+  }
+
+  @visibleForTesting
+  bool shouldRunDeferredFtsRebuild({
+    required int scheduledGeneration,
+    required int currentGeneration,
+    required bool initialized,
+  }) {
+    return initialized && scheduledGeneration == currentGeneration;
   }
 
   @visibleForTesting

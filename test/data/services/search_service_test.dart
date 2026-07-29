@@ -85,5 +85,24 @@ void main() {
       expect(SearchService.instance.shouldYieldFtsRebuild(8), isTrue);
       expect(SearchService.instance.shouldYieldFtsRebuild(16), isTrue);
     });
+
+    test('drops a deferred rebuild after logout', () {
+      expect(
+        SearchService.instance.shouldRunDeferredFtsRebuild(
+          scheduledGeneration: 1,
+          currentGeneration: 1,
+          initialized: true,
+        ),
+        isTrue,
+      );
+      expect(
+        SearchService.instance.shouldRunDeferredFtsRebuild(
+          scheduledGeneration: 1,
+          currentGeneration: 2,
+          initialized: false,
+        ),
+        isFalse,
+      );
+    });
   });
 }
