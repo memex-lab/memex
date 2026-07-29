@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker/image_picker.dart';
@@ -9,6 +10,8 @@ import 'package:memex/data/model/chat_events.dart';
 import 'package:memex/data/services/demo_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/local_asset_server.dart';
+import 'package:memex/data/services/system_action_service.dart';
+import 'package:memex/db/app_database.dart';
 import 'package:memex/l10n/app_localizations.dart';
 import 'package:memex/ui/chat/widgets/agent_chat_dialog.dart';
 import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
@@ -775,11 +778,9 @@ void main() {
       expect(find.text(UserStorage.l10n.sendLabel), findsOneWidget);
     });
 
-    testWidgets('renders a completed artifact card and opens schedule tab', (
+    testWidgets('renders a legacy schedule artifact without a dead link', (
       tester,
     ) async {
-      var openedSchedule = false;
-
       await _pumpDialog(
         tester,
         dialog: AgentChatDialog(
@@ -797,7 +798,6 @@ void main() {
               ],
             ),
           ],
-          onOpenScheduleTab: () => openedSchedule = true,
         ),
       );
 
@@ -807,12 +807,61 @@ void main() {
       expect(find.text(UserStorage.l10n.schedule), findsOneWidget);
       expect(find.text('Schedule presentation'), findsOneWidget);
       expect(find.text('Pending schedule items: 3'), findsOneWidget);
-      expect(find.text(UserStorage.l10n.scheduleBriefingOpen), findsOneWidget);
+      expect(find.text(UserStorage.l10n.artifactOpen), findsNothing);
+    });
 
-      await tester.tap(find.text(UserStorage.l10n.scheduleBriefingOpen));
-      await tester.pump();
+    testWidgets('renders a system action with inline confirmation controls', (
+      tester,
+    ) async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      AppDatabase.setTestInstance(db);
+      addTearDown(db.close);
+      await SystemActionService.instance.createAction(
+        id: 'calendar-action-1',
+        type: 'calendar',
+        data: const {
+          'title': 'Team review',
+          'start_time': '2026-08-01 15:30:00',
+        },
+      );
 
-      expect(openedSchedule, isTrue);
+      await _pumpDialog(
+        tester,
+        dialog: AgentChatDialog(
+          initialItems: [
+            AIMessageItem(
+              'Ready for confirmation.',
+              artifacts: [
+                ArtifactItem(
+                  ChatArtifact.systemAction(
+                    actionId: 'calendar-action-1',
+                    systemActionKind: 'calendar',
+                    title: 'Team review',
+                    summary: '2026-08-01 15:30',
+                    updated: false,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+
+      expect(
+        find.text(UserStorage.l10n.discoveredCalendarEvent),
+        findsOneWidget,
+      );
+      expect(
+        find.text(UserStorage.l10n.agentChat.calendarEventCreated),
+        findsNothing,
+      );
+      expect(find.text('Team review'), findsOneWidget);
+      expect(
+        find.text(UserStorage.l10n.systemActionPendingExplanation),
+        findsOneWidget,
+      );
+      expect(find.text(UserStorage.l10n.addToCalendar), findsOneWidget);
+      expect(find.text(UserStorage.l10n.ignore), findsOneWidget);
     });
 
     testWidgets('opens knowledge file artifacts with normalized PKM path', (
@@ -848,9 +897,9 @@ void main() {
       );
       expect(find.text('memex.md'), findsOneWidget);
       expect(find.text('PKM/Projects/memex.md'), findsOneWidget);
-      expect(find.text(UserStorage.l10n.scheduleBriefingOpen), findsOneWidget);
+      expect(find.text(UserStorage.l10n.artifactOpen), findsOneWidget);
 
-      await tester.tap(find.text(UserStorage.l10n.scheduleBriefingOpen));
+      await tester.tap(find.text(UserStorage.l10n.artifactOpen));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
 

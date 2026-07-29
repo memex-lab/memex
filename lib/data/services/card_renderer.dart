@@ -60,7 +60,6 @@ const Set<String> _nativeCardTemplates = {
   'trend_chart_card_v1',
   'bar_chart_card_v1',
   'timeline_card_v1',
-  'schedule_briefing',
 };
 
 /// Result of card rendering

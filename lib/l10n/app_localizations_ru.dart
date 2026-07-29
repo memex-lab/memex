@@ -99,7 +99,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get reprocessCardsRerunDownstreamDesc =>
-      'Попросить Super Agent при необходимости также учесть связанные обновления PKM, расписания и инсайтов.';
+      'Попросить Super Agent при необходимости также учесть связанные обновления PKM и инсайтов.';
 
   @override
   String get reanalyzeMediaAssets => 'Повторно прочитать медиа-вложения';
@@ -248,78 +248,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get schedule => 'Расписание';
 
   @override
-  String get statistics => 'Статистика';
-
-  @override
   String get appLockConfig => 'Настройка блокировки приложения';
-
-  @override
-  String get activityStats => 'Статистика активности';
-
-  @override
-  String activityStatsSummary(Object inputs, Object cards, Object todos) {
-    return 'За этот период вы сделали записей: $inputs, создали карточек: $cards, завершили задач: $todos.';
-  }
-
-  @override
-  String get last7Days => '7 дней';
-
-  @override
-  String get last30Days => '30 дней';
-
-  @override
-  String get last90Days => '90 дней';
-
-  @override
-  String get records => 'Записи';
-
-  @override
-  String get words => 'Слова';
-
-  @override
-  String get cards => 'Карточки';
-
-  @override
-  String get knowledgeUnits => 'Единицы знаний';
-
-  @override
-  String get completedTodos => 'Завершенные todo';
-
-  @override
-  String get activeDays => 'Активные дни';
-
-  @override
-  String get streakDays => 'Серия';
-
-  @override
-  String get dailyRhythm => 'Дневной ритм';
-
-  @override
-  String get recordToOutput => 'От записи к результату';
-
-  @override
-  String get sourceBreakdown => 'Разбивка источников';
-
-  @override
-  String get topThemes => 'Главные темы';
-
-  @override
-  String get textInput => 'Текст';
-
-  @override
-  String get imageInput => 'Изображения';
-
-  @override
-  String get audioInput => 'Аудио';
-
-  @override
-  String get noStatsYet => 'Статистики активности пока нет';
-
-  @override
-  String get tapDayForDetails => 'Нажмите день, чтобы посмотреть детали';
-
-  @override
-  String get dayDetails => 'Детали дня';
 
   @override
   String loadStatsFailed(Object error) {
@@ -1006,7 +935,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get textModelRoleDescription =>
-      'Используется Super Agent для текста, изображений, карточек, знаний, инсайтов, чата, комментариев, расписания и памяти.';
+      'Используется Super Agent для текста, изображений, карточек, знаний, инсайтов, чата, комментариев и памяти.';
 
   @override
   String get modelConnectionsTitle => 'Провайдеры моделей и API-ключи';
@@ -1141,6 +1070,10 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get addToReminders => 'Добавить в напоминания';
+
+  @override
+  String get systemActionPendingExplanation =>
+      'Ещё не добавлено. Нажмите ниже, чтобы запросить разрешение и добавить на устройство.';
 
   @override
   String addedToSuccess(Object target) {
@@ -1292,59 +1225,7 @@ class AppLocalizationsRu extends AppLocalizations {
       'Этот инсайт еще генерируется или был обновлен. Обновите инсайты и повторите позже.';
 
   @override
-  String get noScheduleAggregation => 'Нет агрегации расписания';
-
-  @override
-  String get scheduleAggregationEmptyHint =>
-      'Нажмите Обновить, чтобы организовать расписания и todo из реальных временных карточек.';
-
-  @override
-  String get scheduleAggregationLoadFailed =>
-      'Не удалось загрузить данные расписания';
-
-  @override
-  String get scheduleAggregationRefreshFailed =>
-      'Не удалось обновить данные расписания';
-
-  @override
-  String get scheduleTaskUpdateFailed => 'Не удалось обновить задачу';
-
-  @override
-  String get scheduleFeatured => 'Главное';
-
-  @override
-  String get scheduleThisWeek => 'На этой неделе';
-
-  @override
-  String get scheduleDone => 'Готово';
-
-  @override
-  String get scheduleTbd => 'TBD';
-
-  @override
-  String get scheduleWeekOverview => 'На этой неделе';
-
-  @override
-  String get scheduleImportant => 'Важно';
-
-  @override
-  String get scheduleBriefingTitle => 'Брифинг расписания';
-
-  @override
-  String get scheduleBriefingOpen => 'Открыть';
-
-  @override
-  String get scheduleBriefingNoData => 'Брифинга расписания пока нет';
-
-  @override
-  String scheduleBriefingUpdated(Object time) {
-    return 'Обновлено $time';
-  }
-
-  @override
-  String scheduleBriefingDoneCount(Object count) {
-    return 'Готово: $count';
-  }
+  String get artifactOpen => 'Открыть';
 
   @override
   String get updating => 'Обновление...';

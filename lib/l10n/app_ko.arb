@@ -41,7 +41,7 @@
   "reprocessCardsCardOnly": "카드만",
   "reprocessCardsCardOnlyDesc": "선택한 타임라인 카드를 검토하고 다시 생성하도록 슈퍼 에이전트에 요청합니다.",
   "reprocessCardsRerunDownstream": "카드 및 관련 후속 작업",
-  "reprocessCardsRerunDownstreamDesc": "필요할 때 관련 PKM, 일정, 인사이트 업데이트도 고려하도록 슈퍼 에이전트에 요청합니다.",
+  "reprocessCardsRerunDownstreamDesc": "필요할 때 관련 PKM과 인사이트 업데이트도 고려하도록 슈퍼 에이전트에 요청합니다.",
   "reanalyzeMediaAssets": "미디어 첨부 다시 읽기",
   "reanalyzeMediaAssetsDesc": "카드를 다시 생성할 때 첨부 미디어를 다시 검사하도록 슈퍼 에이전트에 요청합니다.",
   "regenerateComments": "댓글 다시 생성",
@@ -109,37 +109,7 @@
   "lineCount": "줄 수: ",
   "all": "전체",
   "schedule": "일정",
-  "statistics": "통계",
   "appLockConfig": "앱 잠금 설정",
-  "activityStats": "활동 통계",
-  "activityStatsSummary": "이 기간 동안 {inputs}번 기록했고, 카드 {cards}장을 생성했으며, 할 일 {todos}개를 완료했습니다.",
-  "@activityStatsSummary": {
-    "placeholders": {
-      "inputs": {},
-      "cards": {},
-      "todos": {}
-    }
-  },
-  "last7Days": "7일",
-  "last30Days": "30일",
-  "last90Days": "90일",
-  "records": "기록",
-  "words": "단어",
-  "cards": "카드",
-  "knowledgeUnits": "지식 단위",
-  "completedTodos": "완료한 할 일",
-  "activeDays": "활동한 날",
-  "streakDays": "연속 기록",
-  "dailyRhythm": "일일 리듬",
-  "recordToOutput": "기록에서 출력까지",
-  "sourceBreakdown": "소스 분석",
-  "topThemes": "주요 테마",
-  "textInput": "텍스트",
-  "imageInput": "이미지",
-  "audioInput": "오디오",
-  "noStatsYet": "아직 활동 통계가 없습니다",
-  "tapDayForDetails": "세부 정보를 보려면 날짜를 탭하세요",
-  "dayDetails": "일별 세부 정보",
   "loadStatsFailed": "통계를 불러오지 못했습니다: {error}",
   "@loadStatsFailed": {
     "placeholders": {
@@ -459,7 +429,7 @@
   "modelRolesTitle": "기본 모델 선택",
   "modelRolesDescription": "슈퍼 에이전트는 텍스트와 이미지 입력에 하나의 모델을 사용합니다. 고급 에이전트 재정의는 아래에서 계속 사용할 수 있습니다.",
   "textModelRoleTitle": "기본 모델",
-  "textModelRoleDescription": "슈퍼 에이전트가 텍스트, 이미지, 카드, 지식, 인사이트, 채팅, 댓글, 일정, 메모리에 사용합니다.",
+  "textModelRoleDescription": "슈퍼 에이전트가 텍스트, 이미지, 카드, 지식, 인사이트, 채팅, 댓글, 메모리에 사용합니다.",
   "modelConnectionsTitle": "모델 제공업체 및 API 키",
   "modelConnectionsDescription": "Memex 공식 서비스를 연결하거나 직접 보유한 제공업체 인증 정보를 추가하세요.",
   "relatedAiCapabilitiesTitle": "고급 및 관련 기능",
@@ -514,6 +484,7 @@
   "discoveredReminder": "미리 알림을 찾았습니다",
   "addToCalendar": "캘린더에 추가",
   "addToReminders": "미리 알림에 추가",
+  "systemActionPendingExplanation": "아직 추가되지 않았습니다. 아래 버튼을 눌러 권한을 요청하고 기기에 추가하세요.",
   "addedToSuccess": "{target}에 성공적으로 추가했습니다",
   "@addedToSuccess": {
     "placeholders": {
@@ -605,32 +576,7 @@
     }
   },
   "insightUnavailableMessage": "이 인사이트는 아직 생성 중이거나 업데이트되었습니다. 인사이트를 새로고침한 뒤 나중에 다시 시도해 주세요.",
-  "noScheduleAggregation": "일정 집계가 없습니다",
-  "scheduleAggregationEmptyHint": "업데이트를 눌러 실제 시간 기반 카드에서 일정과 할 일을 정리하세요.",
-  "scheduleAggregationLoadFailed": "일정 데이터를 불러오지 못했습니다",
-  "scheduleAggregationRefreshFailed": "일정 데이터를 새로고침하지 못했습니다",
-  "scheduleTaskUpdateFailed": "작업을 업데이트하지 못했습니다",
-  "scheduleFeatured": "추천",
-  "scheduleThisWeek": "이번 주",
-  "scheduleDone": "완료",
-  "scheduleTbd": "미정",
-  "scheduleWeekOverview": "이번 주",
-  "scheduleImportant": "중요",
-  "scheduleBriefingTitle": "일정 브리핑",
-  "scheduleBriefingOpen": "열기",
-  "scheduleBriefingNoData": "아직 일정 브리핑이 없습니다",
-  "scheduleBriefingUpdated": "{time} 업데이트",
-  "@scheduleBriefingUpdated": {
-    "placeholders": {
-      "time": {}
-    }
-  },
-  "scheduleBriefingDoneCount": "{count}개 완료",
-  "@scheduleBriefingDoneCount": {
-    "placeholders": {
-      "count": {}
-    }
-  },
+  "artifactOpen": "열기",
   "updating": "업데이트 중...",
   "update": "업데이트",
   "enabled": "활성화됨",

@@ -195,7 +195,7 @@ Future<Map<String, dynamic>> _readAgentStateMetadata(File file) async {
   } catch (_) {
     // Corrupt state files are left alone here. They can still be removed by a
     // broader data clear, but this targeted action should only delete known
-    // Insight/Schedule conversation contexts.
+    // Insight and retired schedule-aggregation conversation contexts.
   }
   return const {};
 }

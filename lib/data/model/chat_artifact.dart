@@ -79,6 +79,8 @@ class ChatArtifact {
 
   String? get systemActionKind => _nonEmpty(metadata['system_action_kind']);
 
+  String? get systemActionId => _nonEmpty(metadata['system_action_id']);
+
   String? get timelineCardId => _memexTargetId('timeline-card');
 
   String? get knowledgeInsightId => _memexTargetId('insight');
@@ -243,6 +245,7 @@ class ChatArtifact {
   }
 
   factory ChatArtifact.systemAction({
+    String? actionId,
     required String systemActionKind,
     String? title,
     String? summary,
@@ -252,8 +255,12 @@ class ChatArtifact {
     DateTime? createdAt,
   }) {
     final normalizedKind = _nonEmpty(systemActionKind) ?? 'action';
-    final targetUri =
-        'memex://system-action/${Uri.encodeComponent(normalizedKind)}';
+    final normalizedActionId = _nonEmpty(actionId);
+    final targetUri = [
+      'memex://system-action',
+      Uri.encodeComponent(normalizedKind),
+      if (normalizedActionId != null) Uri.encodeComponent(normalizedActionId),
+    ].join('/');
     return ChatArtifact(
       artifactId: artifactIdFor(kindSystemAction, targetUri),
       kind: kindSystemAction,
@@ -264,7 +271,10 @@ class ChatArtifact {
       sourceRunId: sourceRunId,
       sourceToolCallId: sourceToolCallId,
       createdAt: createdAt,
-      metadata: {'system_action_kind': normalizedKind},
+      metadata: {
+        'system_action_kind': normalizedKind,
+        if (normalizedActionId != null) 'system_action_id': normalizedActionId,
+      },
     );
   }
 

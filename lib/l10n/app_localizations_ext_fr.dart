@@ -165,10 +165,6 @@ class AppLocalizationsExtFr extends AppLocalizationsFr
       '**Important**: All output text must be in **French (fr)**.';
 
   @override
-  String get scheduleAggregatorLanguageInstruction =>
-      '**Important**: All output text (editorial_intro and quote_blocks) must be in **French (fr)**.';
-
-  @override
   String get assetAnalysisLanguageInstruction =>
       'IMPORTANT: You must respond in French (fr).';
 

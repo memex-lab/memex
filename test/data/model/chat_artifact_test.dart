@@ -73,6 +73,36 @@ void main() {
       );
     });
 
+    test('keeps each pending system action as a distinct artifact', () {
+      final first = ChatArtifact.systemAction(
+        actionId: 'action-1',
+        systemActionKind: 'calendar',
+        title: 'First meeting',
+        updated: false,
+      );
+      final second = ChatArtifact.systemAction(
+        actionId: 'action-2',
+        systemActionKind: 'calendar',
+        title: 'Second meeting',
+        updated: false,
+      );
+      final collector = ChatTurnArtifactCollector(sourceRunId: 'turn-1');
+
+      collector.addFromToolResult(
+        metadata: {'artifact': first.toJson()},
+      );
+      collector.addFromToolResult(
+        metadata: {'artifact': second.toJson()},
+      );
+
+      expect(collector.artifacts, hasLength(2));
+      expect(
+        collector.artifacts.map((artifact) => artifact.systemActionId),
+        ['action-1', 'action-2'],
+      );
+      expect(first.targetUri, isNot(second.targetUri));
+    });
+
     test('rejects missing, malformed, legacy, or unknown artifacts', () {
       expect(ChatArtifact.fromToolMetadata(null), isNull);
       expect(ChatArtifact.fromToolMetadata({}), isNull);

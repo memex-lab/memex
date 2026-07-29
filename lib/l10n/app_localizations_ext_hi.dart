@@ -166,10 +166,6 @@ class AppLocalizationsExtHi extends AppLocalizationsHi
       '**Important**: All output text must be in **Hindi (hi)**.';
 
   @override
-  String get scheduleAggregatorLanguageInstruction =>
-      '**Important**: All output text (editorial_intro and quote_blocks) must be in **Hindi (hi)**.';
-
-  @override
   String get assetAnalysisLanguageInstruction =>
       'IMPORTANT: You must respond in Hindi (hi).';
 

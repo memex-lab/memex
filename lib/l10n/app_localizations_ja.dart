@@ -96,7 +96,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get reprocessCardsRerunDownstreamDesc =>
-      '必要に応じて、関連する PKM、予定、インサイト更新も スーパーエージェントに考慮させます。';
+      '必要に応じて、関連する PKM とインサイト更新も スーパーエージェントに考慮させます。';
 
   @override
   String get reanalyzeMediaAssets => 'メディア添付を再読み取り';
@@ -240,78 +240,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get schedule => '予定';
 
   @override
-  String get statistics => '統計';
-
-  @override
   String get appLockConfig => 'アプリロック設定';
-
-  @override
-  String get activityStats => 'アクティビティ統計';
-
-  @override
-  String activityStatsSummary(Object inputs, Object cards, Object todos) {
-    return 'この期間に $inputs 回記録し、$cards 枚のカードを生成し、$todos 件の ToDo を完了しました。';
-  }
-
-  @override
-  String get last7Days => '7 日間';
-
-  @override
-  String get last30Days => '30 日間';
-
-  @override
-  String get last90Days => '90 日間';
-
-  @override
-  String get records => '記録';
-
-  @override
-  String get words => '単語';
-
-  @override
-  String get cards => 'カード';
-
-  @override
-  String get knowledgeUnits => 'ナレッジ単位';
-
-  @override
-  String get completedTodos => '完了した ToDo';
-
-  @override
-  String get activeDays => 'アクティブ日数';
-
-  @override
-  String get streakDays => '連続日数';
-
-  @override
-  String get dailyRhythm => '日次リズム';
-
-  @override
-  String get recordToOutput => '記録から出力へ';
-
-  @override
-  String get sourceBreakdown => 'ソース内訳';
-
-  @override
-  String get topThemes => '主なテーマ';
-
-  @override
-  String get textInput => 'テキスト';
-
-  @override
-  String get imageInput => '画像';
-
-  @override
-  String get audioInput => '音声';
-
-  @override
-  String get noStatsYet => 'まだアクティビティ統計はありません';
-
-  @override
-  String get tapDayForDetails => '日付をタップして詳細を表示';
-
-  @override
-  String get dayDetails => '日別詳細';
 
   @override
   String loadStatsFailed(Object error) {
@@ -979,7 +908,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get textModelRoleDescription =>
-      'スーパーエージェントがテキスト、画像、カード、ナレッジ、インサイト、チャット、コメント、予定、メモリに使用します。';
+      'スーパーエージェントがテキスト、画像、カード、ナレッジ、インサイト、チャット、コメント、メモリに使用します。';
 
   @override
   String get modelConnectionsTitle => 'モデルプロバイダーと API キー';
@@ -1111,6 +1040,10 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get addToReminders => 'リマインダーに追加';
+
+  @override
+  String get systemActionPendingExplanation =>
+      'まだ追加されていません。下のボタンをタップすると、権限をリクエストしてデバイスに追加します。';
 
   @override
   String addedToSuccess(Object target) {
@@ -1259,57 +1192,7 @@ class AppLocalizationsJa extends AppLocalizations {
       'このインサイトはまだ生成中、または更新されたばかりです。インサイトを更新してから後でもう一度お試しください。';
 
   @override
-  String get noScheduleAggregation => '予定の集約はありません';
-
-  @override
-  String get scheduleAggregationEmptyHint =>
-      '更新をタップして、実際の時系列カードから予定と ToDo を整理します。';
-
-  @override
-  String get scheduleAggregationLoadFailed => '予定データの読み込みに失敗しました';
-
-  @override
-  String get scheduleAggregationRefreshFailed => '予定データの更新に失敗しました';
-
-  @override
-  String get scheduleTaskUpdateFailed => 'タスクの更新に失敗しました';
-
-  @override
-  String get scheduleFeatured => '注目';
-
-  @override
-  String get scheduleThisWeek => '今週';
-
-  @override
-  String get scheduleDone => '完了';
-
-  @override
-  String get scheduleTbd => '未定';
-
-  @override
-  String get scheduleWeekOverview => '今週';
-
-  @override
-  String get scheduleImportant => '重要';
-
-  @override
-  String get scheduleBriefingTitle => '予定ブリーフィング';
-
-  @override
-  String get scheduleBriefingOpen => '開く';
-
-  @override
-  String get scheduleBriefingNoData => '予定ブリーフィングはまだありません';
-
-  @override
-  String scheduleBriefingUpdated(Object time) {
-    return '$time に更新';
-  }
-
-  @override
-  String scheduleBriefingDoneCount(Object count) {
-    return '$count 件完了';
-  }
+  String get artifactOpen => '開く';
 
   @override
   String get updating => '更新中...';

@@ -66,8 +66,8 @@ class ReprocessCardsDebugOptions {
 
     if (scope.includeRelatedFollowUps) {
       lines.add(
-        'Scope: regenerate cards and update related PKM, schedule, or '
-        'knowledge insight outputs when the card content requires it.',
+        'Scope: regenerate cards and update related PKM or knowledge insight '
+        'outputs when the card content requires it.',
       );
     } else {
       lines.add('Scope: regenerate timeline cards only.');

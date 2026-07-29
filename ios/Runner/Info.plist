@@ -83,15 +83,15 @@
 		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 		<string>Memex uses your current location to add city and neighborhood context to agent chats, reads location data from photos to create place-based timeline cards, and lets you pick a location on the map when editing a record.</string>
 		<key>NSCalendarsUsageDescription</key>
-		<string>Need calendar access to read and add your schedule</string>
+		<string>Memex adds an event to your device calendar only after you confirm an AI-prepared event.</string>
 		<key>NSCalendarsFullAccessUsageDescription</key>
-		<string>Need calendar access to record and edit your schedule</string>
+		<string>Memex adds an event to your device calendar only after you confirm an AI-prepared event.</string>
 		<key>NSCalendarsWriteOnlyUsageDescription</key>
-		<string>Need calendar access to add events to your schedule</string>
+		<string>Memex adds an event to your device calendar only after you confirm an AI-prepared event.</string>
 		<key>NSRemindersUsageDescription</key>
-		<string>Need reminders access to read and add your todos</string>
+		<string>Memex adds a reminder to your device only after you confirm an AI-prepared reminder.</string>
 		<key>NSRemindersFullAccessUsageDescription</key>
-		<string>Need reminders access to read, add and edit your todos</string>
+		<string>Memex adds a reminder to your device only after you confirm an AI-prepared reminder.</string>
 		<key>NSHealthShareUsageDescription</key>
 		<string>Memex reads your activity and health metrics — including steps, heart rate, resting heart rate, blood oxygen, blood pressure, blood glucose, sleep, active energy, body weight, and workouts — to generate personalized activity insights and trend analysis. Your health data stays on your device.</string>
 		<key>NSHealthUpdateUsageDescription</key>

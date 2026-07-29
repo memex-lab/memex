@@ -125,6 +125,73 @@ void main() {
         );
       },
     );
+
+    test('preparation drops legacy schedule briefing cards', () {
+      final result = prepareTimelineCards([
+        _card('2026/05/18.md#ts_1', title: 'normal card'),
+        TimelineCardModel(
+          id: '_system/schedule_briefing',
+          timestamp: DateTime(2026, 5, 18, 13),
+          tags: const [],
+          status: 'completed',
+          title: 'Legacy schedule',
+          uiConfigs: const [],
+        ),
+        TimelineCardModel(
+          id: 'legacy-schedule-copy',
+          timestamp: DateTime(2026, 5, 18, 12),
+          tags: const [],
+          status: 'completed',
+          title: 'Legacy schedule template',
+          uiConfigs: const [
+            UiConfig(templateId: 'schedule_briefing', data: {}),
+          ],
+        ),
+      ]);
+
+      expect(result.map((card) => card.id), ['2026/05/18.md#ts_1']);
+    });
+
+    test('add ignores a retired schedule briefing event card', () {
+      final viewModel = TimelineViewModel.forTest();
+      addTearDown(viewModel.dispose);
+
+      viewModel.addCard(
+        TimelineCardModel(
+          id: '_system/schedule_briefing',
+          timestamp: DateTime(2026, 5, 18, 13),
+          tags: const [],
+          status: 'completed',
+          title: 'Legacy schedule',
+          uiConfigs: const [],
+        ),
+      );
+
+      expect(viewModel.cards, isEmpty);
+    });
+
+    test('update removes a card that becomes a retired schedule briefing', () {
+      final viewModel = TimelineViewModel.forTest();
+      addTearDown(viewModel.dispose);
+      viewModel.addCard(
+        _card('legacy-schedule-copy', title: 'Previously visible'),
+      );
+
+      viewModel.updateCard(
+        TimelineCardModel(
+          id: 'legacy-schedule-copy',
+          timestamp: DateTime(2026, 5, 18, 13),
+          tags: const [],
+          status: 'completed',
+          title: 'Legacy schedule',
+          uiConfigs: const [
+            UiConfig(templateId: 'schedule_briefing', data: {}),
+          ],
+        ),
+      );
+
+      expect(viewModel.cards, isEmpty);
+    });
   });
 }
 

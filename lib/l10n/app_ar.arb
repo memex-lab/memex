@@ -41,7 +41,7 @@
   "reprocessCardsCardOnly": "البطاقات فقط",
   "reprocessCardsCardOnlyDesc": "اطلب من الوكيل الفائق مراجعة بطاقات الخط الزمني المحددة وإعادة إنشائها.",
   "reprocessCardsRerunDownstream": "البطاقات والمتابعات المرتبطة",
-  "reprocessCardsRerunDownstreamDesc": "اطلب من الوكيل الفائق أن يأخذ تحديثات PKM والجدول والرؤى المرتبطة في الحسبان عند الحاجة.",
+  "reprocessCardsRerunDownstreamDesc": "اطلب من الوكيل الفائق أن يأخذ تحديثات PKM والرؤى المرتبطة في الحسبان عند الحاجة.",
   "reanalyzeMediaAssets": "إعادة قراءة مرفقات الوسائط",
   "reanalyzeMediaAssetsDesc": "اطلب من الوكيل الفائق فحص الوسائط المرفقة مرة أخرى عند إعادة إنشاء البطاقات.",
   "regenerateComments": "إعادة إنشاء التعليقات",
@@ -109,37 +109,7 @@
   "lineCount": "عدد الأسطر: ",
   "all": "الكل",
   "schedule": "الجدول",
-  "statistics": "الإحصاءات",
   "appLockConfig": "إعداد قفل التطبيق",
-  "activityStats": "إحصاءات النشاط",
-  "activityStatsSummary": "في هذه الفترة سجلت {inputs} مرة، وأنشأت {cards} بطاقة، وأكملت {todos} مهمة.",
-  "@activityStatsSummary": {
-    "placeholders": {
-      "inputs": {},
-      "cards": {},
-      "todos": {}
-    }
-  },
-  "last7Days": "7 أيام",
-  "last30Days": "30 يوما",
-  "last90Days": "90 يوما",
-  "records": "السجلات",
-  "words": "الكلمات",
-  "cards": "البطاقات",
-  "knowledgeUnits": "وحدات المعرفة",
-  "completedTodos": "المهام المكتملة",
-  "activeDays": "أيام نشطة",
-  "streakDays": "السلسلة",
-  "dailyRhythm": "الإيقاع اليومي",
-  "recordToOutput": "من السجل إلى الناتج",
-  "sourceBreakdown": "توزيع المصادر",
-  "topThemes": "أبرز المواضيع",
-  "textInput": "نص",
-  "imageInput": "صور",
-  "audioInput": "صوت",
-  "noStatsYet": "لا توجد إحصاءات نشاط بعد",
-  "tapDayForDetails": "اضغط على يوم لعرض التفاصيل",
-  "dayDetails": "تفاصيل اليوم",
   "loadStatsFailed": "فشل تحميل الإحصاءات: {error}",
   "@loadStatsFailed": {
     "placeholders": {
@@ -459,7 +429,7 @@
   "modelRolesTitle": "اختر النموذج الأساسي",
   "modelRolesDescription": "يستخدم الوكيل الفائق نموذجا واحدا لإدخالات النص والصور. تبقى التجاوزات المتقدمة للوكلاء متاحة أدناه.",
   "textModelRoleTitle": "النموذج الأساسي",
-  "textModelRoleDescription": "يستخدمه الوكيل الفائق للنصوص والصور والبطاقات والمعرفة والرؤى والدردشة والتعليقات والجدول والذاكرة.",
+  "textModelRoleDescription": "يستخدمه الوكيل الفائق للنصوص والصور والبطاقات والمعرفة والرؤى والدردشة والتعليقات والذاكرة.",
   "modelConnectionsTitle": "مزودو النماذج ومفاتيح واجهة البرمجة",
   "modelConnectionsDescription": "صل خدمة Memex الرسمية أو أضف بيانات مزودك الخاصة.",
   "relatedAiCapabilitiesTitle": "قدرات متقدمة ومرتبطة",
@@ -514,6 +484,7 @@
   "discoveredReminder": "تم العثور على تذكير",
   "addToCalendar": "إضافة إلى التقويم",
   "addToReminders": "إضافة إلى التذكيرات",
+  "systemActionPendingExplanation": "لم تتم الإضافة بعد. اضغط أدناه لطلب الإذن وإضافته إلى جهازك.",
   "addedToSuccess": "تمت الإضافة إلى {target} بنجاح",
   "@addedToSuccess": {
     "placeholders": {
@@ -605,32 +576,7 @@
     }
   },
   "insightUnavailableMessage": "ما زالت هذه الرؤية قيد الإنشاء أو تم تحديثها. حدّث الرؤى وحاول لاحقا.",
-  "noScheduleAggregation": "لا يوجد تجميع جدول",
-  "scheduleAggregationEmptyHint": "اضغط تحديث لتنظيم الجداول والمهام من البطاقات الزمنية الحقيقية.",
-  "scheduleAggregationLoadFailed": "فشل تحميل بيانات الجدول",
-  "scheduleAggregationRefreshFailed": "فشل تحديث بيانات الجدول",
-  "scheduleTaskUpdateFailed": "فشل تحديث المهمة",
-  "scheduleFeatured": "مميز",
-  "scheduleThisWeek": "هذا الأسبوع",
-  "scheduleDone": "تم",
-  "scheduleTbd": "لم يحدد بعد",
-  "scheduleWeekOverview": "هذا الأسبوع",
-  "scheduleImportant": "مهم",
-  "scheduleBriefingTitle": "موجز الجدول",
-  "scheduleBriefingOpen": "فتح",
-  "scheduleBriefingNoData": "لا يوجد موجز جدول بعد",
-  "scheduleBriefingUpdated": "تم التحديث {time}",
-  "@scheduleBriefingUpdated": {
-    "placeholders": {
-      "time": {}
-    }
-  },
-  "scheduleBriefingDoneCount": "{count} منجز",
-  "@scheduleBriefingDoneCount": {
-    "placeholders": {
-      "count": {}
-    }
-  },
+  "artifactOpen": "فتح",
   "updating": "جار التحديث...",
   "update": "تحديث",
   "enabled": "مفعّل",
