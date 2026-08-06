@@ -36,5 +36,13 @@ void main() {
       ),
       isFalse,
     );
+    expect(
+      shouldReuseRecentPkmCache(
+        cache: cache,
+        userId: 'u1',
+        now: cachedAt.add(recentPkmCacheTtl),
+      ),
+      isFalse,
+    );
   });
 }

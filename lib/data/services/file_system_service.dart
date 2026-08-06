@@ -2490,6 +2490,11 @@ class FileSystemService {
     final dir = Directory(pkmPath);
 
     if (!await dir.exists()) {
+      _recentPkmCache = RecentPkmCacheEntry(
+        userId: userId,
+        cachedAt: now,
+        files: const [],
+      );
       return [];
     }
 
