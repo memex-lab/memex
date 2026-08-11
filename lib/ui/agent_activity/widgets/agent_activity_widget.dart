@@ -57,7 +57,7 @@ class _AgentActivityWidgetState extends State<AgentActivityWidget> {
 
     try {
       final taskStream = widget.taskActivitySnapshotStream ??
-          LocalTaskExecutor.instance.taskActivitySnapshotStream;
+          LocalTaskExecutor.instance.runnableTaskActivitySnapshotStream;
       _taskSubscription ??= taskStream.listen((snapshot) {
         if (mounted) {
           setState(() => _taskSnapshot = snapshot);
@@ -75,7 +75,7 @@ class _AgentActivityWidgetState extends State<AgentActivityWidget> {
     try {
       if (widget.taskActivitySnapshotStream == null) {
         final snapshot =
-            await LocalTaskExecutor.instance.getTaskActivitySnapshot();
+            await LocalTaskExecutor.instance.getRunnableTaskActivitySnapshot();
         if (mounted) {
           setState(() => _taskSnapshot = snapshot);
         }

@@ -78,13 +78,13 @@ class SystemActionsChannelHandler: NSObject {
 
     private func addReminder(call: FlutterMethodCall, result: @escaping FlutterResult) {
         guard let args = call.arguments as? [String: Any],
-              let title = args["title"] as? String else {
+              let title = args["title"] as? String,
+              let dueMs = args["dueDate"] as? Int64 else {
             result(FlutterError(code: "INVALID_ARGUMENTS",
                                 message: "Invalid arguments for addReminder", details: nil))
             return
         }
 
-        let dueMs = args["dueDate"] as? Int64
         let notes = args["notes"] as? String
 
         requestReminderAccess { [weak self] granted, error in
@@ -110,13 +110,11 @@ class SystemActionsChannelHandler: NSObject {
             }
             reminder.calendar = calendar
 
-            if let dueMs = dueMs {
-                let dueDate = Date(timeIntervalSince1970: TimeInterval(dueMs) / 1000.0)
-                let components = Calendar.current.dateComponents(
-                    [.year, .month, .day, .hour, .minute, .second], from: dueDate)
-                reminder.dueDateComponents = components
-                reminder.addAlarm(EKAlarm(absoluteDate: dueDate))
-            }
+            let dueDate = Date(timeIntervalSince1970: TimeInterval(dueMs) / 1000.0)
+            let components = Calendar.current.dateComponents(
+                [.year, .month, .day, .hour, .minute, .second], from: dueDate)
+            reminder.dueDateComponents = components
+            reminder.addAlarm(EKAlarm(absoluteDate: dueDate))
 
             do {
                 try self.eventStore.save(reminder, commit: true)

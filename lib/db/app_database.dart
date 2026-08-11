@@ -31,6 +31,7 @@ void _configureSqliteConnection(db) {
     SystemActions,
     ClarificationRequests,
     PersonaChatMessages,
+    PersonaChatReplyCursors,
     UserNotifications,
   ],
   daos: [CardDao],
@@ -100,7 +101,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 16;
+  int get schemaVersion => 19;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -128,6 +129,7 @@ class AppDatabase extends _$AppDatabase {
           await customStatement(
             'CREATE INDEX IF NOT EXISTS idx_system_actions_status ON system_actions(status)',
           );
+          await _createPersonaChatEpisodeIndex();
           await _createClarificationRequestIndices();
           await _createUserNotificationIndices();
           // Create FTS5 virtual tables for full-text search
@@ -234,8 +236,74 @@ class AppDatabase extends _$AppDatabase {
           if (from < 16) {
             await customStatement('DROP TABLE IF EXISTS agent_runs');
           }
+          if (from < 17) {
+            await _addPersonaChatInitiativeColumns(m);
+          }
+          if (from < 19) {
+            await _addPersonaChatReplyCursors(m, from: from);
+          }
         },
       );
+
+  Future<void> _addPersonaChatInitiativeColumns(Migrator m) async {
+    for (final column in [
+      personaChatMessages.origin,
+      personaChatMessages.contactEpisodeId,
+    ]) {
+      try {
+        await m.addColumn(personaChatMessages, column);
+      } catch (e) {
+        final errorStr = e.toString().toLowerCase();
+        if (errorStr.contains('duplicate column') ||
+            errorStr.contains(column.$name.toLowerCase())) {
+          _logger.info('${column.$name} may already exist, skipping: $e');
+        } else {
+          rethrow;
+        }
+      }
+    }
+    await _createPersonaChatEpisodeIndex();
+  }
+
+  Future<void> _createPersonaChatEpisodeIndex() async {
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_persona_chat_episode '
+      'ON persona_chat_messages(character_id, contact_episode_id)',
+    );
+  }
+
+  Future<void> _addPersonaChatReplyCursors(
+    Migrator m, {
+    required int from,
+  }) async {
+    await m.createTable(personaChatReplyCursors);
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final consumedPredicate =
+        from == 18 ? 'AND handled_by_episode_id IS NOT NULL' : '';
+    await customStatement(
+      'INSERT INTO persona_chat_reply_cursors ('
+      'character_id, consumed_through_message_id, updated_at'
+      ') '
+      'SELECT character_id, MAX(id), ? '
+      'FROM persona_chat_messages '
+      'WHERE is_from_character = 0 $consumedPredicate '
+      'GROUP BY character_id',
+      [now],
+    );
+
+    if (from == 18) {
+      // Schema 18 briefly used a per-message marker. Preserve its real
+      // progress above, then remove its values and index. The nullable column
+      // remains only on databases that already received v18 for broad SQLite
+      // compatibility; no current schema or runtime code reads it.
+      await customStatement(
+        'UPDATE persona_chat_messages SET handled_by_episode_id = NULL',
+      );
+      await customStatement(
+        'DROP INDEX IF EXISTS idx_persona_chat_unhandled',
+      );
+    }
+  }
 
   Future<void> _addTaskRunIdColumn(Migrator m) async {
     try {

@@ -1362,6 +1362,152 @@ class FileSystemService {
     return path.join(getWorkspacePath(userId), '_System');
   }
 
+  /// Root for private, character-owned workspaces.
+  String getCharacterWorkspacesPath(String userId) {
+    return path.join(getSystemPath(userId), 'character_workspaces');
+  }
+
+  String getCharacterWorkspacePath(String userId, String characterId) {
+    return path.join(getCharacterWorkspacesPath(userId), characterId);
+  }
+
+  String getCharacterIdentityPath(String userId, String characterId) {
+    return path.join(
+      getCharacterWorkspacePath(userId, characterId),
+      'Identity.md',
+    );
+  }
+
+  String getCharacterWorldPath(String userId, String characterId) {
+    return path.join(
+      getCharacterWorkspacePath(userId, characterId),
+      'World',
+    );
+  }
+
+  String getCharacterPkmPath(String userId, String characterId) {
+    return path.join(
+      getCharacterWorkspacePath(userId, characterId),
+      'PKM',
+    );
+  }
+
+  String getCharacterJournalPath(String userId, String characterId) {
+    return path.join(
+      getCharacterWorkspacePath(userId, characterId),
+      'Journal',
+    );
+  }
+
+  String getCharacterHistoryAcquaintancePath(
+    String userId,
+    String characterId,
+  ) {
+    return path.join(
+      getCharacterWorkspacePath(userId, characterId),
+      'history_acquaintance.json',
+    );
+  }
+
+  String getCharacterUserMemoryEntriesPath(
+    String userId,
+    String characterId,
+  ) {
+    return path.join(
+      getCharacterPkmPath(userId, characterId),
+      'user_provided_memories.jsonl',
+    );
+  }
+
+  String getCharacterImportedRelationshipPath(
+    String userId,
+    String characterId,
+  ) {
+    return path.join(
+      getCharacterPkmPath(userId, characterId),
+      'imported_relationship.md',
+    );
+  }
+
+  String getCharacterUserWorldEntriesPath(
+    String userId,
+    String characterId,
+  ) {
+    return path.join(
+      getCharacterWorldPath(userId, characterId),
+      'user_provided_world.jsonl',
+    );
+  }
+
+  String getCharacterPendingThoughtsPath(String userId, String characterId) {
+    return path.join(
+      getCharacterWorkspacePath(userId, characterId),
+      'pending_thoughts.jsonl',
+    );
+  }
+
+  String getLegacyCharacterMemoryPath(String userId, String characterId) {
+    return path.join(getSystemPath(userId), 'character_memory', characterId);
+  }
+
+  String getLegacyCharactersPath(String userId) {
+    return path.join(getWorkspacePath(userId), 'Characters');
+  }
+
+  String getLegacyCharacterRelationshipPath(
+    String userId,
+    String characterId,
+  ) {
+    return path.join(
+      getLegacyCharactersPath(userId),
+      '${characterId}_relationship.md',
+    );
+  }
+
+  String getLegacyCharacterMemoryEntriesPath(
+    String userId,
+    String characterId,
+  ) {
+    return path.join(
+      getLegacyCharacterMemoryPath(userId, characterId),
+      'memory_entries.jsonl',
+    );
+  }
+
+  String getLegacyCharacterWorldEntriesPath(
+    String userId,
+    String characterId,
+  ) {
+    return path.join(
+      getLegacyCharacterMemoryPath(userId, characterId),
+      'world_entries.jsonl',
+    );
+  }
+
+  String getCharacterInboxPath(String userId, String characterId) {
+    return path.join(
+      getCharacterWorkspacePath(userId, characterId),
+      'inbox.jsonl',
+    );
+  }
+
+  String getCharacterInteractionIndexPath(
+    String userId,
+    String characterId,
+  ) {
+    return path.join(
+      getCharacterWorkspacePath(userId, characterId),
+      'interaction_index.jsonl',
+    );
+  }
+
+  String getCharacterRuntimePath(String userId, String characterId) {
+    return path.join(
+      getCharacterWorkspacePath(userId, characterId),
+      'runtime.json',
+    );
+  }
+
   /// Unified media pool directory — all user-uploaded images/audio/etc.
   /// land here with a canonical filename (see [MediaService]).
   String getMediaPath(String userId) {
@@ -1686,54 +1832,6 @@ class FileSystemService {
 
   String getInsightTagsPath(String userId) {
     return path.join(getSystemPath(userId), 'insight_tags.md');
-  }
-
-  /// Schedule directory path. Holds the canonical maintained state
-  /// (`schedule_state.yaml`) used by the schedule aggregator agent and the
-  /// deterministic projector.
-  String getSchedulePath(String userId) {
-    return path.join(getWorkspacePath(userId), 'Schedule');
-  }
-
-  /// File path of the user-level schedule state YAML.
-  String getScheduleStatePath(String userId) {
-    return path.join(getSchedulePath(userId), 'schedule_state.yaml');
-  }
-
-  /// Read schedule_state.yaml. Returns null if the file does not exist or is
-  /// unreadable. Callers typically substitute an empty [ScheduleState] in
-  /// that case.
-  Future<Map<String, dynamic>?> readScheduleStateRaw(String userId) async {
-    final filePath = getScheduleStatePath(userId);
-    if (!await _baseService.exists(filePath)) {
-      return null;
-    }
-    try {
-      final content = await _baseService.readFile(filePath);
-      final data = _parseYaml(content);
-      return data.isEmpty ? null : data;
-    } catch (e) {
-      _logger.severe('Failed to read schedule_state $filePath: $e');
-      return null;
-    }
-  }
-
-  /// Atomically write schedule_state.yaml. Creates the parent directory if
-  /// missing.
-  Future<void> writeScheduleStateRaw(
-    String userId,
-    Map<String, dynamic> data,
-  ) async {
-    final filePath = getScheduleStatePath(userId);
-    await ensureDirectory(path.dirname(filePath));
-    try {
-      final yamlContent = _mapToYaml(data);
-      await _baseService.writeFile(filePath, yamlContent);
-      _logger.info('schedule_state written: $filePath');
-    } catch (e) {
-      _logger.severe('Failed to write schedule_state $filePath: $e');
-      rethrow;
-    }
   }
 
   /// Knowledge insight card file path

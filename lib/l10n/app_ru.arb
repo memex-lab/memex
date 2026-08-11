@@ -41,7 +41,7 @@
   "reprocessCardsCardOnly": "Только карточки",
   "reprocessCardsCardOnlyDesc": "Попросить Super Agent проверить и заново создать выбранные карточки ленты.",
   "reprocessCardsRerunDownstream": "Карточки и связанные продолжения",
-  "reprocessCardsRerunDownstreamDesc": "Попросить Super Agent при необходимости также учесть связанные обновления PKM, расписания и инсайтов.",
+  "reprocessCardsRerunDownstreamDesc": "Попросить Super Agent при необходимости также учесть связанные обновления PKM и инсайтов.",
   "reanalyzeMediaAssets": "Повторно прочитать медиа-вложения",
   "reanalyzeMediaAssetsDesc": "Попросить Super Agent снова проверить прикрепленные медиа при пересоздании карточек.",
   "regenerateComments": "Сгенерировать комментарии заново",
@@ -109,37 +109,7 @@
   "lineCount": "Строк: ",
   "all": "Все",
   "schedule": "Расписание",
-  "statistics": "Статистика",
   "appLockConfig": "Настройка блокировки приложения",
-  "activityStats": "Статистика активности",
-  "activityStatsSummary": "За этот период вы сделали записей: {inputs}, создали карточек: {cards}, завершили задач: {todos}.",
-  "@activityStatsSummary": {
-    "placeholders": {
-      "inputs": {},
-      "cards": {},
-      "todos": {}
-    }
-  },
-  "last7Days": "7 дней",
-  "last30Days": "30 дней",
-  "last90Days": "90 дней",
-  "records": "Записи",
-  "words": "Слова",
-  "cards": "Карточки",
-  "knowledgeUnits": "Единицы знаний",
-  "completedTodos": "Завершенные todo",
-  "activeDays": "Активные дни",
-  "streakDays": "Серия",
-  "dailyRhythm": "Дневной ритм",
-  "recordToOutput": "От записи к результату",
-  "sourceBreakdown": "Разбивка источников",
-  "topThemes": "Главные темы",
-  "textInput": "Текст",
-  "imageInput": "Изображения",
-  "audioInput": "Аудио",
-  "noStatsYet": "Статистики активности пока нет",
-  "tapDayForDetails": "Нажмите день, чтобы посмотреть детали",
-  "dayDetails": "Детали дня",
   "@loadStatsFailed": {
     "placeholders": {
       "error": {}
@@ -459,7 +429,7 @@
   "modelRolesTitle": "Выберите основную модель",
   "modelRolesDescription": "Super Agent использует одну модель для текстового и графического ввода. Расширенные переопределения агентов доступны ниже.",
   "textModelRoleTitle": "Основная модель",
-  "textModelRoleDescription": "Используется Super Agent для текста, изображений, карточек, знаний, инсайтов, чата, комментариев, расписания и памяти.",
+  "textModelRoleDescription": "Используется Super Agent для текста, изображений, карточек, знаний, инсайтов, чата, комментариев и памяти.",
   "modelConnectionsTitle": "Провайдеры моделей и API-ключи",
   "modelConnectionsDescription": "Подключите официальный сервис Memex или добавьте учетные данные своего провайдера.",
   "relatedAiCapabilitiesTitle": "Расширенные и связанные возможности",
@@ -514,6 +484,7 @@
   "discoveredReminder": "Найдено напоминание",
   "addToCalendar": "Добавить в календарь",
   "addToReminders": "Добавить в напоминания",
+  "systemActionPendingExplanation": "Ещё не добавлено. Нажмите ниже, чтобы запросить разрешение и добавить на устройство.",
   "@addedToSuccess": {
     "placeholders": {
       "target": {}
@@ -605,32 +576,7 @@
   },
   "insightProcessingBacklogMessage": "Фоновые задачи все еще обрабатываются: {count}.",
   "insightUnavailableMessage": "Этот инсайт еще генерируется или был обновлен. Обновите инсайты и повторите позже.",
-  "noScheduleAggregation": "Нет агрегации расписания",
-  "scheduleAggregationEmptyHint": "Нажмите Обновить, чтобы организовать расписания и todo из реальных временных карточек.",
-  "scheduleAggregationLoadFailed": "Не удалось загрузить данные расписания",
-  "scheduleAggregationRefreshFailed": "Не удалось обновить данные расписания",
-  "scheduleTaskUpdateFailed": "Не удалось обновить задачу",
-  "scheduleFeatured": "Главное",
-  "scheduleThisWeek": "На этой неделе",
-  "scheduleDone": "Готово",
-  "scheduleTbd": "TBD",
-  "scheduleWeekOverview": "На этой неделе",
-  "scheduleImportant": "Важно",
-  "scheduleBriefingTitle": "Брифинг расписания",
-  "scheduleBriefingOpen": "Открыть",
-  "scheduleBriefingNoData": "Брифинга расписания пока нет",
-  "@scheduleBriefingUpdated": {
-    "placeholders": {
-      "time": {}
-    }
-  },
-  "scheduleBriefingUpdated": "Обновлено {time}",
-  "@scheduleBriefingDoneCount": {
-    "placeholders": {
-      "count": {}
-    }
-  },
-  "scheduleBriefingDoneCount": "Готово: {count}",
+  "artifactOpen": "Открыть",
   "updating": "Обновление...",
   "update": "Обновить",
   "enabled": "Включено",

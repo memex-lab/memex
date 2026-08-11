@@ -413,7 +413,15 @@ class ChatService {
 
     // 1. Session Management
     try {
-      if (finalSessionId.isEmpty) {
+      final sessionExists = finalSessionId.isNotEmpty &&
+          await _chatStorage.sessionExists(userId, finalSessionId);
+      if (!sessionExists) {
+        if (finalSessionId.isNotEmpty) {
+          _logger.warning(
+            'Chat session $finalSessionId no longer exists; creating a new '
+            'session so this turn remains persistent',
+          );
+        }
         finalSessionId = await _createSession(
           userId,
           agentName,

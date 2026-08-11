@@ -63,7 +63,7 @@ class SuperAgentHarness {
   /// Child-worker hook: PKM structural-health reminders only. Child
   /// workers don't persist across turns and don't manage their own skill
   /// lifecycle, so the idle-skill tracking does not apply to them. Harmless on
-  /// card/schedule workers — it only fires when a `/PKM` file is actually read.
+  /// card workers — it only fires when a `/PKM` file is actually read.
   static AgentHook buildChildHook(String userId) {
     return _SuperAgentHarnessHook(userId: userId, trackIdleSkills: false);
   }

@@ -41,7 +41,7 @@
   "reprocessCardsCardOnly": "Solo tarjetas",
   "reprocessCardsCardOnlyDesc": "Pedir a Super Agent que revise y regenere las tarjetas de línea de tiempo seleccionadas.",
   "reprocessCardsRerunDownstream": "Tarjetas y seguimientos relacionados",
-  "reprocessCardsRerunDownstreamDesc": "Pedir a Super Agent que también considere actualizaciones relacionadas de PKM, agenda e insights cuando haga falta.",
+  "reprocessCardsRerunDownstreamDesc": "Pedir a Super Agent que también considere actualizaciones relacionadas de PKM e insights cuando haga falta.",
   "reanalyzeMediaAssets": "Volver a leer adjuntos multimedia",
   "reanalyzeMediaAssetsDesc": "Pedir a Super Agent que inspeccione de nuevo los medios adjuntos al regenerar tarjetas.",
   "regenerateComments": "Regenerar comentarios",
@@ -109,37 +109,7 @@
   "lineCount": "Número de líneas: ",
   "all": "Todo",
   "schedule": "Agenda",
-  "statistics": "Estadísticas",
   "appLockConfig": "Configuración de bloqueo de app",
-  "activityStats": "Estadísticas de actividad",
-  "activityStatsSummary": "En este periodo registraste {inputs} vez/veces, generaste {cards} tarjeta(s) y completaste {todos} tarea(s).",
-  "@activityStatsSummary": {
-    "placeholders": {
-      "inputs": {},
-      "cards": {},
-      "todos": {}
-    }
-  },
-  "last7Days": "7 días",
-  "last30Days": "30 días",
-  "last90Days": "90 días",
-  "records": "Registros",
-  "words": "Palabras",
-  "cards": "Tarjetas",
-  "knowledgeUnits": "Unidades de conocimiento",
-  "completedTodos": "Tareas completadas",
-  "activeDays": "Días activos",
-  "streakDays": "Racha",
-  "dailyRhythm": "Ritmo diario",
-  "recordToOutput": "De registro a salida",
-  "sourceBreakdown": "Desglose por fuente",
-  "topThemes": "Temas principales",
-  "textInput": "Texto",
-  "imageInput": "Imágenes",
-  "audioInput": "Audio adjunto",
-  "noStatsYet": "Aún no hay estadísticas de actividad",
-  "tapDayForDetails": "Toca un día para ver detalles",
-  "dayDetails": "Detalles del día",
   "loadStatsFailed": "No se pudieron cargar las estadísticas: {error}",
   "@loadStatsFailed": {
     "placeholders": {
@@ -459,7 +429,7 @@
   "modelRolesTitle": "Elegir modelo principal",
   "modelRolesDescription": "Super Agent usa un modelo para entradas de texto e imagen. Las sobrescrituras avanzadas por Agent siguen disponibles abajo.",
   "textModelRoleTitle": "Modelo principal",
-  "textModelRoleDescription": "Usado por Super Agent para texto, imágenes, tarjetas, conocimiento, insights, chat, comentarios, agenda y memoria.",
+  "textModelRoleDescription": "Usado por Super Agent para texto, imágenes, tarjetas, conocimiento, insights, chat, comentarios y memoria.",
   "modelConnectionsTitle": "Proveedores de modelos y claves de API",
   "modelConnectionsDescription": "Conecta el servicio oficial de Memex o añade tus propias credenciales de proveedor.",
   "relatedAiCapabilitiesTitle": "Capacidades avanzadas y relacionadas",
@@ -514,6 +484,7 @@
   "discoveredReminder": "Recordatorio encontrado",
   "addToCalendar": "Añadir al calendario",
   "addToReminders": "Añadir a recordatorios",
+  "systemActionPendingExplanation": "Aún no se ha añadido. Toca abajo para solicitar permiso y añadirlo a tu dispositivo.",
   "addedToSuccess": "Añadido correctamente a {target}",
   "@addedToSuccess": {
     "placeholders": {
@@ -605,32 +576,7 @@
     }
   },
   "insightUnavailableMessage": "Este insight aún se está generando o se actualizó. Actualiza los insights e inténtalo más tarde.",
-  "noScheduleAggregation": "No hay agregación de agenda",
-  "scheduleAggregationEmptyHint": "Toca Actualizar para organizar agendas y tareas desde tarjetas temporales reales.",
-  "scheduleAggregationLoadFailed": "No se pudieron cargar los datos de agenda",
-  "scheduleAggregationRefreshFailed": "No se pudieron actualizar los datos de agenda",
-  "scheduleTaskUpdateFailed": "No se pudo actualizar la tarea",
-  "scheduleFeatured": "Destacado",
-  "scheduleThisWeek": "Esta semana",
-  "scheduleDone": "Hecho",
-  "scheduleTbd": "Por definir",
-  "scheduleWeekOverview": "Esta semana",
-  "scheduleImportant": "Importante",
-  "scheduleBriefingTitle": "Resumen de agenda",
-  "scheduleBriefingOpen": "Abrir",
-  "scheduleBriefingNoData": "Aún no hay resumen de agenda",
-  "scheduleBriefingUpdated": "Actualizado {time}",
-  "@scheduleBriefingUpdated": {
-    "placeholders": {
-      "time": {}
-    }
-  },
-  "scheduleBriefingDoneCount": "{count} completadas",
-  "@scheduleBriefingDoneCount": {
-    "placeholders": {
-      "count": {}
-    }
-  },
+  "artifactOpen": "Abrir",
   "updating": "Actualizando...",
   "update": "Actualizar",
   "enabled": "Activado",

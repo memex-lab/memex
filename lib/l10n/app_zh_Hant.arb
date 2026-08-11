@@ -41,7 +41,7 @@
   "reprocessCardsCardOnly": "只處理卡片",
   "reprocessCardsCardOnlyDesc": "請 超級智慧體 檢查並重新產生選取的時間線卡片。",
   "reprocessCardsRerunDownstream": "卡片與相關後續",
-  "reprocessCardsRerunDownstreamDesc": "請 超級智慧體 在需要時一併考慮相關的 PKM、日程與洞察更新。",
+  "reprocessCardsRerunDownstreamDesc": "請 超級智慧體 在需要時一併考慮相關的 PKM 與洞察更新。",
   "reanalyzeMediaAssets": "重新讀取媒體附件",
   "reanalyzeMediaAssetsDesc": "重新產生卡片時，請 超級智慧體 在需要時再次查看附件內容。",
   "regenerateComments": "重新產生評論",
@@ -109,37 +109,7 @@
   "lineCount": "行數：",
   "all": "全部",
   "schedule": "日程",
-  "statistics": "統計",
   "appLockConfig": "應用程式鎖定設定",
-  "activityStats": "活動統計",
-  "activityStatsSummary": "這段時間你記錄了 {inputs} 次，產生了 {cards} 張卡片，完成了 {todos} 個待辦。",
-  "@activityStatsSummary": {
-    "placeholders": {
-      "inputs": {},
-      "cards": {},
-      "todos": {}
-    }
-  },
-  "last7Days": "7 天",
-  "last30Days": "30 天",
-  "last90Days": "90 天",
-  "records": "記錄",
-  "words": "字詞",
-  "cards": "卡片",
-  "knowledgeUnits": "知識單元",
-  "completedTodos": "完成待辦",
-  "activeDays": "活躍天數",
-  "streakDays": "連續記錄",
-  "dailyRhythm": "每日節奏",
-  "recordToOutput": "記錄到沉澱",
-  "sourceBreakdown": "來源分布",
-  "topThemes": "高頻主題",
-  "textInput": "文字",
-  "imageInput": "圖片",
-  "audioInput": "音訊",
-  "noStatsYet": "尚無活動統計",
-  "tapDayForDetails": "點選某一天查看詳情",
-  "dayDetails": "當天詳情",
   "loadStatsFailed": "載入統計資料失敗：{error}",
   "@loadStatsFailed": {
     "placeholders": {
@@ -459,7 +429,7 @@
   "modelRolesTitle": "選擇主模型",
   "modelRolesDescription": "超級智慧體 使用同一個模型處理文字和圖片輸入。需要時仍可在下方為單一 智慧體 進階覆蓋。",
   "textModelRoleTitle": "主模型",
-  "textModelRoleDescription": "供 超級智慧體 處理文字、圖片、卡片、知識庫、洞察、聊天、評論、日程和記憶總結。",
+  "textModelRoleDescription": "供 超級智慧體 處理文字、圖片、卡片、知識庫、洞察、聊天、評論和記憶總結。",
   "modelConnectionsTitle": "模型服務商與 API 金鑰",
   "modelConnectionsDescription": "可以連接 Memex 官方服務，也可以新增你自己的服務商憑證。",
   "relatedAiCapabilitiesTitle": "進階與相關能力",
@@ -514,6 +484,7 @@
   "discoveredReminder": "發現提醒事項",
   "addToCalendar": "加入行事曆",
   "addToReminders": "加入提醒事項",
+  "systemActionPendingExplanation": "尚未加入。點擊下方按鈕後，系統會要求權限並寫入你的裝置。",
   "addedToSuccess": "已成功加入至{target}",
   "@addedToSuccess": {
     "placeholders": {
@@ -605,32 +576,7 @@
     }
   },
   "insightUnavailableMessage": "這個洞察仍在產生中，或已被更新。請重新整理洞察後稍後再試。",
-  "noScheduleAggregation": "暫無日程聚合",
-  "scheduleAggregationEmptyHint": "點選更新，從真實時間卡片中整理日程和待辦。",
-  "scheduleAggregationLoadFailed": "載入日程資料失敗",
-  "scheduleAggregationRefreshFailed": "重新整理日程資料失敗",
-  "scheduleTaskUpdateFailed": "更新待辦失敗",
-  "scheduleFeatured": "重點",
-  "scheduleThisWeek": "本週",
-  "scheduleDone": "已完成",
-  "scheduleTbd": "待定",
-  "scheduleWeekOverview": "本週概覽",
-  "scheduleImportant": "重要",
-  "scheduleBriefingTitle": "日程簡報",
-  "scheduleBriefingOpen": "查看",
-  "scheduleBriefingNoData": "暫無日程簡報",
-  "scheduleBriefingUpdated": "{time} 更新",
-  "@scheduleBriefingUpdated": {
-    "placeholders": {
-      "time": {}
-    }
-  },
-  "scheduleBriefingDoneCount": "完成 {count}",
-  "@scheduleBriefingDoneCount": {
-    "placeholders": {
-      "count": {}
-    }
-  },
+  "artifactOpen": "查看",
   "updating": "更新中...",
   "update": "更新",
   "enabled": "已啟用",

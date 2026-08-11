@@ -1,6 +1,8 @@
 import 'package:dart_agent_core/dart_agent_core.dart';
+import 'package:memex/agent/character_agent/character_workspace_tools.dart';
 import 'package:memex/agent/prompts.dart';
 import 'package:memex/agent/skills/character_tools_factory.dart';
+import 'package:memex/agent/skills/comment_agent/tools/comment_tools.dart';
 import 'package:memex/domain/models/character_model.dart';
 import 'package:memex/utils/tavern_macro.dart';
 import 'package:memex/utils/user_storage.dart';
@@ -13,8 +15,6 @@ class CommentAgentSkill extends Skill {
     required String workingDirectory,
     required String userId,
     String userName = '',
-    String userProfile = '',
-    String characterMemories = '',
     String? forcedReplyToId,
     bool forceReply = false,
     super.forceActivate,
@@ -24,8 +24,6 @@ class CommentAgentSkill extends Skill {
           systemPrompt: _buildSystemPrompt(
             character: character,
             userName: userName,
-            userProfile: userProfile,
-            characterMemories: characterMemories,
             forceReply: forceReply,
           ),
           tools: _buildTools(
@@ -41,8 +39,6 @@ class CommentAgentSkill extends Skill {
   static String _buildSystemPrompt({
     CharacterModel? character,
     required String userName,
-    required String userProfile,
-    required String characterMemories,
     required bool forceReply,
   }) {
     StringBuffer personaBuffer = StringBuffer();
@@ -81,16 +77,15 @@ class CommentAgentSkill extends Skill {
 
     b.write(systemPrompt);
 
-    if (userProfile.isNotEmpty) {
+    if (character != null) {
       b.writeln('');
-      b.writeln('## User Profile');
-      b.writeln(userProfile);
-    }
-
-    if (characterMemories.isNotEmpty) {
-      b.writeln('');
-      b.writeln('## Character Memory Entries');
-      b.writeln(characterMemories);
+      b.writeln('## Character Continuity');
+      b.writeln(
+        'Start from `/Identity.md`; search `/PKM`, `/Journal`, and `/World` '
+        'progressively only when this entry makes something relevant. Your '
+        'workspace is your durable perspective. Do not assume access to a '
+        'global user profile or re-read unrelated raw records.',
+      );
     }
 
     if (character != null &&
@@ -119,6 +114,22 @@ class CommentAgentSkill extends Skill {
     String? forcedReplyToId,
     required bool forceReply,
   }) {
+    if (characterId != null) {
+      final commentFactory = CommentToolFactory(
+        userId: userId,
+        cardId: factId,
+        characterId: characterId,
+        forcedReplyToId: forcedReplyToId,
+      );
+      return [
+        ...CharacterWorkspaceMemoryTools(
+          userId: userId,
+          characterId: characterId,
+        ).build(),
+        commentFactory.buildSaveCommentTool(),
+        if (!forceReply) commentFactory.buildSkipCommentTool(),
+      ];
+    }
     return CharacterToolsFactory.buildCommentTools(
       userId: userId,
       workingDirectory: workingDirectory,

@@ -166,10 +166,6 @@ class AppLocalizationsExtPt extends AppLocalizationsPt
       '**Important**: All output text must be in **Portuguese (pt)**.';
 
   @override
-  String get scheduleAggregatorLanguageInstruction =>
-      '**Important**: All output text (editorial_intro and quote_blocks) must be in **Portuguese (pt)**.';
-
-  @override
   String get assetAnalysisLanguageInstruction =>
       'IMPORTANT: You must respond in Portuguese (pt).';
 

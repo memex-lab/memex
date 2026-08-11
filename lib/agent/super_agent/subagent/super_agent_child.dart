@@ -46,7 +46,7 @@ class SuperAgentChildConfig {
   final String taskBrief;
 
   /// Read-only context the runtime hands the child: fact_id, captured-at time,
-  /// location reminder, existing card / schedule snapshots, attachment context,
+  /// location reminder, existing record snapshots, attachment context,
   /// etc. Rendered deterministically into the child's first message so the
   /// child never has to infer record identity or timing.
   final Map<String, dynamic> contextPacket;

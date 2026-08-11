@@ -552,6 +552,9 @@ class CharacterService {
       _logger.info(
         "Physically deleted character $characterId for user $userId",
       );
+      EventBusService.instance.emitEvent(
+        CharacterUpdatedMessage(userId: userId, characterId: characterId),
+      );
       return true;
     } catch (e) {
       _logger.severe("Failed to delete character $characterId: $e");

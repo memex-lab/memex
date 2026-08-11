@@ -9,6 +9,7 @@ import 'package:memex/domain/models/tag_model.dart';
 import 'package:memex/domain/models/timeline_card_model.dart';
 import 'package:memex/ui/card_attachments/card_attachment_data.dart';
 import 'package:memex/ui/timeline/view_models/timeline_viewmodel.dart';
+import 'package:memex/ui/timeline/widgets/timeline_screen.dart';
 import 'package:memex/utils/result.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -176,6 +177,32 @@ void main() {
       vm.dispose();
     },
   );
+
+  testWidgets('timeline navigation no longer exposes a schedule tab', (
+    tester,
+  ) async {
+    final vm = _timelineViewModel();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SizedBox(
+          height: 48,
+          child: TimelineFilterBar(
+            viewModel: vm,
+            onPageSelected: (_) {},
+            onInsightSelected: () {},
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text(UserStorage.l10n.timelineFilterAll), findsOneWidget);
+    expect(find.text(UserStorage.l10n.insights), findsOneWidget);
+    expect(find.text(UserStorage.l10n.schedule), findsNothing);
+
+    vm.dispose();
+  });
 }
 
 TimelineViewModel _timelineViewModel({
@@ -197,7 +224,6 @@ TimelineViewModel _timelineViewModel({
         }) async =>
             const Ok([]),
     fetchTags: fetchTags ?? () async => const Ok(<TagModel>[]),
-    fetchScheduleBriefingCard: () async => const Ok(null),
     fetchAttachmentForCard:
         fetchAttachmentForCard ?? (_) async => const <CardAttachmentData>[],
     fetchPendingAttachments:

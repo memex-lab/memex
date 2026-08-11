@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker/image_picker.dart';
@@ -9,6 +10,8 @@ import 'package:memex/data/model/chat_events.dart';
 import 'package:memex/data/services/demo_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/local_asset_server.dart';
+import 'package:memex/data/services/system_action_service.dart';
+import 'package:memex/db/app_database.dart';
 import 'package:memex/l10n/app_localizations.dart';
 import 'package:memex/ui/chat/widgets/agent_chat_dialog.dart';
 import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
@@ -49,6 +52,15 @@ void main() {
           keyboardInset: 320,
         ),
         480,
+      );
+      expect(
+        resolveAgentChatDialogHeight(
+          viewport,
+          isFullScreen: false,
+          keyboardInset: 320,
+          topSafeInset: 44,
+        ),
+        436,
       );
     });
 
@@ -103,6 +115,46 @@ void main() {
       expect(
         shouldCreateAIMessageForResponseChunk(text: 'Done', isDone: true),
         isTrue,
+      );
+    });
+
+    test('requests older history near the top or when content is too short',
+        () {
+      expect(
+        shouldRequestOlderSuperAgentHistory(
+          hasMoreHistory: true,
+          isLoading: false,
+          pixels: 0,
+          maxScrollExtent: 0,
+        ),
+        isTrue,
+      );
+      expect(
+        shouldRequestOlderSuperAgentHistory(
+          hasMoreHistory: true,
+          isLoading: false,
+          pixels: 80,
+          maxScrollExtent: 100,
+        ),
+        isTrue,
+      );
+      expect(
+        shouldRequestOlderSuperAgentHistory(
+          hasMoreHistory: true,
+          isLoading: false,
+          pixels: 60,
+          maxScrollExtent: 100,
+        ),
+        isFalse,
+      );
+      expect(
+        shouldRequestOlderSuperAgentHistory(
+          hasMoreHistory: true,
+          isLoading: true,
+          pixels: 100,
+          maxScrollExtent: 100,
+        ),
+        isFalse,
       );
     });
 
@@ -471,6 +523,29 @@ void main() {
       );
     });
 
+    testWidgets('keeps the keyboard sheet below the top safe area', (
+      tester,
+    ) async {
+      const viewportSize = Size(390, 800);
+      const topSafeInset = 44.0;
+      const keyboardInset = 320.0;
+      await _pumpDialog(
+        tester,
+        viewportSize: viewportSize,
+        mediaQueryData: const MediaQueryData(
+          size: viewportSize,
+          viewPadding: EdgeInsets.only(top: topSafeInset),
+          viewInsets: EdgeInsets.only(bottom: keyboardInset),
+        ),
+      );
+
+      final dialogRect = tester.getRect(
+        find.byKey(const ValueKey('agent_chat_dialog_container')),
+      );
+      expect(dialogRect.top, topSafeInset);
+      expect(dialogRect.bottom, viewportSize.height - keyboardInset);
+    });
+
     testWidgets('expands to full screen and restores the sheet', (
       tester,
     ) async {
@@ -703,11 +778,9 @@ void main() {
       expect(find.text(UserStorage.l10n.sendLabel), findsOneWidget);
     });
 
-    testWidgets('renders a completed artifact card and opens schedule tab', (
+    testWidgets('renders a legacy schedule artifact without a dead link', (
       tester,
     ) async {
-      var openedSchedule = false;
-
       await _pumpDialog(
         tester,
         dialog: AgentChatDialog(
@@ -725,7 +798,6 @@ void main() {
               ],
             ),
           ],
-          onOpenScheduleTab: () => openedSchedule = true,
         ),
       );
 
@@ -735,12 +807,61 @@ void main() {
       expect(find.text(UserStorage.l10n.schedule), findsOneWidget);
       expect(find.text('Schedule presentation'), findsOneWidget);
       expect(find.text('Pending schedule items: 3'), findsOneWidget);
-      expect(find.text(UserStorage.l10n.scheduleBriefingOpen), findsOneWidget);
+      expect(find.text(UserStorage.l10n.artifactOpen), findsNothing);
+    });
 
-      await tester.tap(find.text(UserStorage.l10n.scheduleBriefingOpen));
-      await tester.pump();
+    testWidgets('renders a system action with inline confirmation controls', (
+      tester,
+    ) async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      AppDatabase.setTestInstance(db);
+      addTearDown(db.close);
+      await SystemActionService.instance.createAction(
+        id: 'calendar-action-1',
+        type: 'calendar',
+        data: const {
+          'title': 'Team review',
+          'start_time': '2026-08-01 15:30:00',
+        },
+      );
 
-      expect(openedSchedule, isTrue);
+      await _pumpDialog(
+        tester,
+        dialog: AgentChatDialog(
+          initialItems: [
+            AIMessageItem(
+              'Ready for confirmation.',
+              artifacts: [
+                ArtifactItem(
+                  ChatArtifact.systemAction(
+                    actionId: 'calendar-action-1',
+                    systemActionKind: 'calendar',
+                    title: 'Team review',
+                    summary: '2026-08-01 15:30',
+                    updated: false,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+
+      expect(
+        find.text(UserStorage.l10n.discoveredCalendarEvent),
+        findsOneWidget,
+      );
+      expect(
+        find.text(UserStorage.l10n.agentChat.calendarEventCreated),
+        findsNothing,
+      );
+      expect(find.text('Team review'), findsOneWidget);
+      expect(
+        find.text(UserStorage.l10n.systemActionPendingExplanation),
+        findsOneWidget,
+      );
+      expect(find.text(UserStorage.l10n.addToCalendar), findsOneWidget);
+      expect(find.text(UserStorage.l10n.ignore), findsOneWidget);
     });
 
     testWidgets('opens knowledge file artifacts with normalized PKM path', (
@@ -776,9 +897,9 @@ void main() {
       );
       expect(find.text('memex.md'), findsOneWidget);
       expect(find.text('PKM/Projects/memex.md'), findsOneWidget);
-      expect(find.text(UserStorage.l10n.scheduleBriefingOpen), findsOneWidget);
+      expect(find.text(UserStorage.l10n.artifactOpen), findsOneWidget);
 
-      await tester.tap(find.text(UserStorage.l10n.scheduleBriefingOpen));
+      await tester.tap(find.text(UserStorage.l10n.artifactOpen));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
 
@@ -835,11 +956,13 @@ Future<void> _pumpDialog(
   WidgetTester tester, {
   Size viewportSize = const Size(390, 800),
   Widget dialog = const AgentChatDialog(),
+  MediaQueryData? mediaQueryData,
 }) async {
   await _pumpDialogFrame(
     tester,
     viewportSize: viewportSize,
     dialog: dialog,
+    mediaQueryData: mediaQueryData,
   );
   await tester.pumpAndSettle();
 }
@@ -848,6 +971,7 @@ Future<void> _pumpDialogFrame(
   WidgetTester tester, {
   Size viewportSize = const Size(390, 800),
   Widget dialog = const AgentChatDialog(),
+  MediaQueryData? mediaQueryData,
 }) async {
   tester.view.physicalSize = viewportSize;
   tester.view.devicePixelRatio = 1.0;
@@ -859,7 +983,9 @@ Future<void> _pumpDialogFrame(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(
-        body: dialog,
+        body: mediaQueryData == null
+            ? dialog
+            : MediaQuery(data: mediaQueryData, child: dialog),
       ),
     ),
   );

@@ -7,7 +7,6 @@ import 'package:memex/agent/skills/dynamic_timeline_ui/dynamic_timeline_ui_skill
 import 'package:memex/agent/skills/knowledge_insight/knowledge_insight_skill.dart';
 import 'package:memex/agent/skills/manage_pkm/pkm_skill.dart';
 import 'package:memex/agent/skills/manage_timeline_card/timeline_card_skill.dart';
-import 'package:memex/agent/skills/schedule_aggregation/schedule_aggregation_skill.dart';
 import 'package:memex/agent/skills/timeline_diagnostics/timeline_diagnostics_skill.dart';
 import 'package:memex/agent/super_agent/subagent/delegate_progress.dart';
 import 'package:memex/agent/super_agent/subagent/super_agent_child.dart';
@@ -83,13 +82,6 @@ final Map<String, _SubagentPreset> _subagentPresets = {
         'Builds or revises cross-record Knowledge Insight cards. Skills: update_knowledge_insight active.',
     toolProfile: ChildToolProfile.read,
     buildSkills: () => [KnowledgeInsightSkill(forceActivate: true)],
-  ),
-  'schedule': _SubagentPreset(
-    childName: 'schedule_child',
-    description:
-        'Updates schedule aggregation state and presentation. Skills: update_schedule_aggregation active.',
-    toolProfile: ChildToolProfile.none,
-    buildSkills: () => [ScheduleAggregationSkill(forceActivate: true)],
   ),
   'timeline_diagnostics': _SubagentPreset(
     childName: 'timeline_diagnostics_child',

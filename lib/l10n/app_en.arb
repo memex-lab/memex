@@ -41,7 +41,7 @@
   "reprocessCardsCardOnly": "Cards only",
   "reprocessCardsCardOnlyDesc": "Ask Super Agent to review and regenerate the selected timeline cards.",
   "reprocessCardsRerunDownstream": "Cards and related follow-ups",
-  "reprocessCardsRerunDownstreamDesc": "Ask Super Agent to also consider related PKM, schedule, and insight updates when needed.",
+  "reprocessCardsRerunDownstreamDesc": "Ask Super Agent to also consider related PKM and insight updates when needed.",
   "reanalyzeMediaAssets": "Re-read media attachments",
   "reanalyzeMediaAssetsDesc": "Ask Super Agent to inspect attached media again when regenerating cards.",
   "regenerateComments": "Regenerate comments",
@@ -93,37 +93,7 @@
   "lineCount": "Line count: ",
   "all": "All",
   "schedule": "Schedule",
-  "statistics": "Stats",
   "appLockConfig": "App lock config",
-  "activityStats": "Activity stats",
-  "activityStatsSummary": "In this period you recorded {inputs} time(s), generated {cards} card(s), and completed {todos} todo(s).",
-  "@activityStatsSummary": {
-    "placeholders": {
-      "inputs": {},
-      "cards": {},
-      "todos": {}
-    }
-  },
-  "last7Days": "7 days",
-  "last30Days": "30 days",
-  "last90Days": "90 days",
-  "records": "Records",
-  "words": "Words",
-  "cards": "Cards",
-  "knowledgeUnits": "Knowledge units",
-  "completedTodos": "Completed todos",
-  "activeDays": "Active days",
-  "streakDays": "Streak",
-  "dailyRhythm": "Daily rhythm",
-  "recordToOutput": "Record to output",
-  "sourceBreakdown": "Source breakdown",
-  "topThemes": "Top themes",
-  "textInput": "Text",
-  "imageInput": "Images",
-  "audioInput": "Audio",
-  "noStatsYet": "No activity stats yet",
-  "tapDayForDetails": "Tap a day to view details",
-  "dayDetails": "Day details",
   "@loadStatsFailed": {
     "placeholders": {
       "error": {}
@@ -439,7 +409,7 @@
   "modelRolesTitle": "Choose primary model",
   "modelRolesDescription": "Super Agent uses one model for text and image inputs. Advanced agent overrides stay available below.",
   "textModelRoleTitle": "Primary model",
-  "textModelRoleDescription": "Used by Super Agent for text, images, cards, knowledge, insights, chat, comments, schedule, and memory.",
+  "textModelRoleDescription": "Used by Super Agent for text, images, cards, knowledge, insights, chat, comments, and memory.",
   "modelConnectionsTitle": "Model providers and API keys",
   "modelConnectionsDescription": "Connect Memex's official service or add your own provider credentials.",
   "relatedAiCapabilitiesTitle": "Advanced and related capabilities",
@@ -490,10 +460,11 @@
   "permissionRationale": "Please allow the app to access your {name} in Settings so we can create it for you.",
   "goToSettings": "Go to Settings",
   "unknownAction": "Unknown action",
-  "discoveredCalendarEvent": "Calendar event found",
-  "discoveredReminder": "Reminder found",
+  "discoveredCalendarEvent": "Calendar event awaiting confirmation",
+  "discoveredReminder": "Reminder awaiting confirmation",
   "addToCalendar": "Add to calendar",
   "addToReminders": "Add to reminders",
+  "systemActionPendingExplanation": "Not added yet. Tap below to request permission and add it to your device.",
   "@addedToSuccess": {
     "placeholders": {
       "target": {}
@@ -585,32 +556,7 @@
   },
   "insightProcessingBacklogMessage": "{count} background tasks are still processing.",
   "insightUnavailableMessage": "This insight is still being generated or was updated. Refresh insights and try again later.",
-  "noScheduleAggregation": "No schedule aggregation",
-  "scheduleAggregationEmptyHint": "Tap Update to organize schedules and todos from real temporal cards.",
-  "scheduleAggregationLoadFailed": "Failed to load schedule data",
-  "scheduleAggregationRefreshFailed": "Failed to refresh schedule data",
-  "scheduleTaskUpdateFailed": "Failed to update task",
-  "scheduleFeatured": "Featured",
-  "scheduleThisWeek": "This week",
-  "scheduleDone": "Done",
-  "scheduleTbd": "TBD",
-  "scheduleWeekOverview": "This week",
-  "scheduleImportant": "Important",
-  "scheduleBriefingTitle": "Schedule briefing",
-  "scheduleBriefingOpen": "Open",
-  "scheduleBriefingNoData": "No schedule briefing yet",
-  "@scheduleBriefingUpdated": {
-    "placeholders": {
-      "time": {}
-    }
-  },
-  "scheduleBriefingUpdated": "Updated {time}",
-  "@scheduleBriefingDoneCount": {
-    "placeholders": {
-      "count": {}
-    }
-  },
-  "scheduleBriefingDoneCount": "{count} done",
+  "artifactOpen": "Open",
   "updating": "Updating...",
   "update": "Update",
   "enabled": "Enabled",

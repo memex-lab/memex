@@ -159,10 +159,6 @@ class AppLocalizationsExtZhHant extends AppLocalizationsZhHant
       '**Important**: All output text must be in **zh-Hant (Traditional Chinese)**.';
 
   @override
-  String get scheduleAggregatorLanguageInstruction =>
-      '**Important**: All output text (editorial_intro and quote_blocks) must be in **zh-Hant (Traditional Chinese)**.';
-
-  @override
   String get assetAnalysisLanguageInstruction =>
       'IMPORTANT: You must respond in Traditional Chinese (zh-Hant).';
 

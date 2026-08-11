@@ -2,15 +2,14 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 
-import 'package:memex/domain/models/system_card_constants.dart';
 import 'package:memex/domain/models/timeline_card_model.dart';
+import 'package:memex/domain/models/timeline_card_visibility.dart';
 import 'package:memex/domain/models/tag_model.dart';
 import 'package:memex/domain/models/card_detail_model.dart';
 import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/data/services/card_attachment_service.dart';
 import 'package:memex/ui/card_attachments/card_attachment_data.dart';
-import 'package:memex/ui/timeline/models/schedule_briefing_merge.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/result.dart';
 import 'package:memex/utils/user_storage.dart';
@@ -28,8 +27,6 @@ typedef TimelineCardsFetcher = Future<Result<List<TimelineCardModel>>>
 });
 
 typedef TimelineTagsFetcher = Future<Result<List<TagModel>>> Function();
-typedef ScheduleBriefingCardFetcher = Future<Result<TimelineCardModel?>>
-    Function();
 typedef TimelineAttachmentFetcher = Future<List<CardAttachmentData>> Function(
     String factId);
 typedef PendingAttachmentsFetcher = Future<List<CardAttachmentData>> Function();
@@ -88,6 +85,14 @@ List<TimelineCardModel> dedupeTimelineCardsById(List<TimelineCardModel> cards) {
   return next;
 }
 
+/// Removes retired synthetic cards while preserving normal Timeline order.
+@visibleForTesting
+List<TimelineCardModel> prepareTimelineCards(List<TimelineCardModel> cards) {
+  return dedupeTimelineCardsById(cards)
+      .where((card) => !isRetiredTimelineCard(card))
+      .toList();
+}
+
 /// ViewModel for the Timeline page. Holds cards, tags, loading state, and
 /// delegates data access to [MemexRouter]. Call [init] once after creation.
 class TimelineViewModel extends ChangeNotifier {
@@ -95,7 +100,6 @@ class TimelineViewModel extends ChangeNotifier {
     required MemexRouter router,
     TimelineCardsFetcher? fetchTimelineCards,
     TimelineTagsFetcher? fetchTags,
-    ScheduleBriefingCardFetcher? fetchScheduleBriefingCard,
     TimelineAttachmentFetcher? fetchAttachmentForCard,
     PendingAttachmentsFetcher? fetchPendingAttachments,
     Duration auxiliaryQueryTimeout = defaultAuxiliaryQueryTimeout,
@@ -117,8 +121,6 @@ class TimelineViewModel extends ChangeNotifier {
                     dateTo: dateTo,
                   )),
           fetchTags: fetchTags ?? router.fetchTags,
-          fetchScheduleBriefingCard:
-              fetchScheduleBriefingCard ?? router.fetchScheduleBriefingCard,
           fetchAttachmentForCard: fetchAttachmentForCard ??
               CardAttachmentService.instance.getAttachments,
           fetchPendingAttachments: fetchPendingAttachments ??
@@ -131,7 +133,6 @@ class TimelineViewModel extends ChangeNotifier {
   factory TimelineViewModel.forTest({
     TimelineCardsFetcher? fetchTimelineCards,
     TimelineTagsFetcher? fetchTags,
-    ScheduleBriefingCardFetcher? fetchScheduleBriefingCard,
     TimelineAttachmentFetcher? fetchAttachmentForCard,
     PendingAttachmentsFetcher? fetchPendingAttachments,
     Duration auxiliaryQueryTimeout = defaultAuxiliaryQueryTimeout,
@@ -148,8 +149,6 @@ class TimelineViewModel extends ChangeNotifier {
           }) async =>
               const Ok(<TimelineCardModel>[]),
       fetchTags: fetchTags ?? () async => const Ok(<TagModel>[]),
-      fetchScheduleBriefingCard:
-          fetchScheduleBriefingCard ?? () async => const Ok(null),
       fetchAttachmentForCard:
           fetchAttachmentForCard ?? (_) async => const <CardAttachmentData>[],
       fetchPendingAttachments:
@@ -162,14 +161,12 @@ class TimelineViewModel extends ChangeNotifier {
   TimelineViewModel._({
     required TimelineCardsFetcher fetchTimelineCards,
     required TimelineTagsFetcher fetchTags,
-    required ScheduleBriefingCardFetcher fetchScheduleBriefingCard,
     required TimelineAttachmentFetcher fetchAttachmentForCard,
     required PendingAttachmentsFetcher fetchPendingAttachments,
     required Duration auxiliaryQueryTimeout,
     required bool autoLoad,
   })  : _fetchTimelineCards = fetchTimelineCards,
         _fetchTags = fetchTags,
-        _fetchScheduleBriefingCard = fetchScheduleBriefingCard,
         _fetchAttachmentForCard = fetchAttachmentForCard,
         _fetchPendingAttachments = fetchPendingAttachments,
         _auxiliaryQueryTimeout = auxiliaryQueryTimeout {
@@ -182,7 +179,6 @@ class TimelineViewModel extends ChangeNotifier {
   final Logger _logger = getLogger('TimelineViewModel');
   final TimelineCardsFetcher _fetchTimelineCards;
   final TimelineTagsFetcher _fetchTags;
-  final ScheduleBriefingCardFetcher _fetchScheduleBriefingCard;
   final TimelineAttachmentFetcher _fetchAttachmentForCard;
   final PendingAttachmentsFetcher _fetchPendingAttachments;
   final Duration _auxiliaryQueryTimeout;
@@ -220,7 +216,6 @@ class TimelineViewModel extends ChangeNotifier {
   Future<Result<void>> _loadInitial({bool notifyLoading = false}) async {
     final generation = ++_loadGeneration;
     final filter = activeFilter;
-    final viewModeAtRequest = viewMode;
     if (notifyLoading) {
       _beginVisibleLoad(generation);
     }
@@ -237,12 +232,7 @@ class TimelineViewModel extends ChangeNotifier {
         }
         _currentPage = 1;
         final loadedHasMore = list.length >= pageLimit;
-        final nextCards = await _withScheduleBriefingCard(
-          list,
-          hasMoreAfterList: loadedHasMore,
-          showScheduleBriefing:
-              viewModeAtRequest == TimelineViewMode.timeline && filter == 'all',
-        );
+        final nextCards = prepareTimelineCards(list);
         if (_isStaleTimelineLoad(generation, filter)) {
           _finishVisibleLoadIfCurrent(generation);
           return const Ok.v();
@@ -288,10 +278,6 @@ class TimelineViewModel extends ChangeNotifier {
     eventBus.addHandler(
       EventBusMessageType.attachmentsChanged,
       _handleAttachmentsChanged,
-    );
-    eventBus.addHandler(
-      EventBusMessageType.scheduleAggregationUpdated,
-      _handleScheduleBriefingChanged,
     );
     eventBus.connect();
   }
@@ -454,10 +440,6 @@ class TimelineViewModel extends ChangeNotifier {
     return null;
   }
 
-  void _handleScheduleBriefingChanged(EventBusMessage message) {
-    unawaited(_refreshScheduleBriefingCard());
-  }
-
   void _startPollingIfNeeded() {
     final hasProcessing = cards.any((c) => c.status == 'processing');
     if (hasProcessing && _pollingTimer == null) {
@@ -505,6 +487,7 @@ class TimelineViewModel extends ChangeNotifier {
   }
 
   void addCard(TimelineCardModel card) {
+    if (isRetiredTimelineCard(card)) return;
     cards = upsertTimelineCardById(cards, card);
     if (card.status == 'processing') {
       _startPollingIfNeeded();
@@ -513,6 +496,15 @@ class TimelineViewModel extends ChangeNotifier {
   }
 
   void updateCard(TimelineCardModel updatedCard) {
+    if (isRetiredTimelineCard(updatedCard)) {
+      final previousLength = cards.length;
+      cards = cards.where((card) => card.id != updatedCard.id).toList();
+      _checkAndStopPollingIfNeeded();
+      if (cards.length != previousLength) {
+        notifyListeners();
+      }
+      return;
+    }
     cards = replaceTimelineCardById(cards, updatedCard);
     _checkAndStopPollingIfNeeded();
     notifyListeners();
@@ -551,7 +543,6 @@ class TimelineViewModel extends ChangeNotifier {
     if (isLoading || !hasMore) return;
     final generation = _loadGeneration;
     final filter = activeFilter;
-    final viewModeAtRequest = viewMode;
     _beginVisibleLoad(generation);
     final result = await _fetchTimelineCards(
       page: _currentPage,
@@ -567,12 +558,7 @@ class TimelineViewModel extends ChangeNotifier {
         final newCards = value;
         _currentPage++;
         final loadedHasMore = newCards.length >= pageLimit;
-        final nextCards = await _withScheduleBriefingCard(
-          [...cards, ...newCards],
-          hasMoreAfterList: loadedHasMore,
-          showScheduleBriefing:
-              viewModeAtRequest == TimelineViewMode.timeline && filter == 'all',
-        );
+        final nextCards = prepareTimelineCards([...cards, ...newCards]);
         if (_isStaleTimelineLoad(generation, filter)) {
           _finishVisibleLoadIfCurrent(generation);
           return;
@@ -595,48 +581,10 @@ class TimelineViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<List<TimelineCardModel>> _withScheduleBriefingCard(
-    List<TimelineCardModel> list, {
-    required bool hasMoreAfterList,
-    bool? showScheduleBriefing,
-  }) async {
-    final withoutBriefing = dedupeTimelineCardsById(
-      list,
-    ).where((card) => card.id != scheduleBriefingCardId).toList();
-    if (!(showScheduleBriefing ?? _shouldShowScheduleBriefing)) {
-      return withoutBriefing;
-    }
-
-    final briefingResult = await _fetchScheduleBriefingCard();
-    return briefingResult.when(
-      onOk: (briefing) {
-        return mergeScheduleBriefingInTimelineOrder(
-          cards: withoutBriefing,
-          briefing: briefing,
-          hasMore: hasMoreAfterList,
-        );
-      },
-      onError: (e, st) {
-        _logger.warning('Failed to load schedule briefing card: $e');
-        return withoutBriefing;
-      },
-    );
-  }
-
-  Future<void> _refreshScheduleBriefingCard() async {
-    if (!_shouldShowScheduleBriefing) return;
-    cards = await _withScheduleBriefingCard(cards, hasMoreAfterList: hasMore);
-    notifyListeners();
-  }
-
-  bool get _shouldShowScheduleBriefing =>
-      viewMode == TimelineViewMode.timeline && activeFilter == 'all';
-
   Future<void> loadMore() async {
     if (isLoading || !hasMore) return;
     final generation = _loadGeneration;
     final filter = activeFilter;
-    final viewModeAtRequest = viewMode;
     _beginVisibleLoad(generation);
     final result = await _fetchTimelineCards(
       page: _currentPage + 1,
@@ -652,12 +600,7 @@ class TimelineViewModel extends ChangeNotifier {
         final newCards = value;
         _currentPage++;
         final loadedHasMore = newCards.length >= pageLimit;
-        final nextCards = await _withScheduleBriefingCard(
-          [...cards, ...newCards],
-          hasMoreAfterList: loadedHasMore,
-          showScheduleBriefing:
-              viewModeAtRequest == TimelineViewMode.timeline && filter == 'all',
-        );
+        final nextCards = prepareTimelineCards([...cards, ...newCards]);
         if (_isStaleTimelineLoad(generation, filter)) {
           _finishVisibleLoadIfCurrent(generation);
           return;
@@ -720,10 +663,6 @@ class TimelineViewModel extends ChangeNotifier {
       eventBus.removeHandler(
         EventBusMessageType.attachmentsChanged,
         _handleAttachmentsChanged,
-      );
-      eventBus.removeHandler(
-        EventBusMessageType.scheduleAggregationUpdated,
-        _handleScheduleBriefingChanged,
       );
     }
     super.dispose();

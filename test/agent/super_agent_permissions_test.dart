@@ -109,6 +109,15 @@ void main() {
     test('allows generic LS for read-only filesystem access', () {
       expect(SuperAgent.isQuickQueryToolAllowed('LS'), isTrue);
     });
+
+    test('excludes the mutating calendar and reminder skill', () {
+      expect(
+        SuperAgent.isQuickQuerySkillAllowed(
+          'manage_calendar_and_reminders',
+        ),
+        isFalse,
+      );
+    });
   });
 
   group('SuperAgent run limits', () {

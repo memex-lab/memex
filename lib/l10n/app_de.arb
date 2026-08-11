@@ -41,7 +41,7 @@
   "reprocessCardsCardOnly": "Nur Karten neu generieren",
   "reprocessCardsCardOnlyDesc": "Standard. Erstellen Sie Karten-YAML/-Vorlagen neu, ohne nachgeschaltete Agenten zu berühren.",
   "reprocessCardsRerunDownstream": "Führen Sie auch Downstream-Agents erneut aus",
-  "reprocessCardsRerunDownstreamDesc": "Nachdem jede Karte erfolgreich war, wiederholen Sie die Weiterleitung nach der Karte, damit bei Auswahl die Zeitplanaggregation ausgeführt werden kann.",
+  "reprocessCardsRerunDownstreamDesc": "Bitten Sie Super Agent, bei Bedarf auch zugehörige PKM- und Insight-Aktualisierungen zu berücksichtigen.",
   "reanalyzeMediaAssets": "Analysieren Sie Medienressourcen erneut",
   "reanalyzeMediaAssetsDesc": "Aktualisiert Medienanalysedateien vor der Neugenerierung von Karten.",
   "regenerateComments": "Kommentare neu generieren",
@@ -109,37 +109,7 @@
   "lineCount": "Zeilenanzahl:",
   "all": "Alle",
   "schedule": "Zeitplan",
-  "statistics": "Statistiken",
   "appLockConfig": "App-Sperrkonfiguration",
-  "activityStats": "Aktivitätsstatistiken",
-  "activityStatsSummary": "In diesem Zeitraum haben Sie {inputs} Mal(e) aufgezeichnet, {cards} Karte(n) erstellt und {todos} Aufgaben erledigt.",
-  "@activityStatsSummary": {
-    "placeholders": {
-      "inputs": {},
-      "cards": {},
-      "todos": {}
-    }
-  },
-  "last7Days": "7 Tage",
-  "last30Days": "30 Tage",
-  "last90Days": "90 Tage",
-  "records": "Aufzeichnungen",
-  "words": "Worte",
-  "cards": "Karten",
-  "knowledgeUnits": "Wissenseinheiten",
-  "completedTodos": "Abgeschlossene Aufgaben",
-  "activeDays": "Aktive Tage",
-  "streakDays": "Strähne",
-  "dailyRhythm": "Tagesrhythmus",
-  "recordToOutput": "Zur Ausgabe aufzeichnen",
-  "sourceBreakdown": "Quellenaufschlüsselung",
-  "topThemes": "Top-Themen",
-  "textInput": "Text",
-  "imageInput": "Bilder",
-  "audioInput": "Audio",
-  "noStatsYet": "Noch keine Aktivitätsstatistiken",
-  "tapDayForDetails": "Tippen Sie auf einen Tag, um Details anzuzeigen",
-  "dayDetails": "Tagesdetails",
   "@loadStatsFailed": {
     "placeholders": {
       "error": {}
@@ -459,7 +429,7 @@
   "modelRolesTitle": "Wählen Sie Modellrollen",
   "modelRolesDescription": "Die meisten Benutzer benötigen lediglich ein Textmodell und ein visionsfähiges Modell. Erweiterte Agentenüberschreibungen bleiben unten verfügbar.",
   "textModelRoleTitle": "Textmodell",
-  "textModelRoleDescription": "Wird für Karten, Wissen, Einblicke, Chat, Kommentare, Termine und Erinnerungen verwendet.",
+  "textModelRoleDescription": "Wird vom Super Agent für Text, Bilder, Karten, Wissen, Einblicke, Chat, Kommentare und Erinnerungen verwendet.",
   "modelConnectionsTitle": "Modellanbieter und API-Schlüssel",
   "modelConnectionsDescription": "Verbinden Sie den offiziellen Dienst von Memex oder fügen Sie Ihre eigenen Anbieter-Anmeldeinformationen hinzu.",
   "relatedAiCapabilitiesTitle": "Erweiterte und verwandte Funktionen",
@@ -514,6 +484,7 @@
   "discoveredReminder": "Erinnerung gefunden",
   "addToCalendar": "Zum Kalender hinzufügen",
   "addToReminders": "Zu Erinnerungen hinzufügen",
+  "systemActionPendingExplanation": "Noch nicht hinzugefügt. Tippe unten, um die Berechtigung anzufordern und den Eintrag zu deinem Gerät hinzuzufügen.",
   "@addedToSuccess": {
     "placeholders": {
       "target": {}
@@ -605,32 +576,7 @@
   },
   "insightProcessingBacklogMessage": "{count}-Hintergrundaufgaben werden noch verarbeitet.",
   "insightUnavailableMessage": "Diese Erkenntnis wird noch generiert oder wurde aktualisiert. Aktualisieren Sie Ihre Erkenntnisse und versuchen Sie es später noch einmal.",
-  "noScheduleAggregation": "Keine Zeitplanaggregation",
-  "scheduleAggregationEmptyHint": "Tippen Sie auf „Aktualisieren“, um Zeitpläne und Aufgaben aus realen Zeitkarten zu organisieren.",
-  "scheduleAggregationLoadFailed": "Zeitplandaten konnten nicht geladen werden",
-  "scheduleAggregationRefreshFailed": "Die Aktualisierung der Zeitplandaten ist fehlgeschlagen",
-  "scheduleTaskUpdateFailed": "Die Aufgabe konnte nicht aktualisiert werden",
-  "scheduleFeatured": "Hervorgehoben",
-  "scheduleThisWeek": "Diese Woche",
-  "scheduleDone": "Erledigt",
-  "scheduleTbd": "Noch offen",
-  "scheduleWeekOverview": "Diese Woche",
-  "scheduleImportant": "Wichtig",
-  "scheduleBriefingTitle": "Planen Sie ein Briefing",
-  "scheduleBriefingOpen": "Offen",
-  "scheduleBriefingNoData": "Noch keine Terminbesprechung",
-  "@scheduleBriefingUpdated": {
-    "placeholders": {
-      "time": {}
-    }
-  },
-  "scheduleBriefingUpdated": "Aktualisiert {time}",
-  "@scheduleBriefingDoneCount": {
-    "placeholders": {
-      "count": {}
-    }
-  },
-  "scheduleBriefingDoneCount": "{count} fertig",
+  "artifactOpen": "Offen",
   "updating": "Aktualisierung...",
   "update": "Aktualisieren",
   "enabled": "Ermöglicht",

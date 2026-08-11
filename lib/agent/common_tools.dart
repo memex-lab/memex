@@ -39,7 +39,7 @@ final mintRecordFactIdTool = Tool(
       "The system reserves the id (it never collides and is never guessed by "
       "you). Use count when you need ids for multiple new records; the tool "
       "returns one fact_id per line. Pass each returned fact_id into the "
-      "task_content of every worker for that record (card / PKM / schedule) so "
+      "task_content of every worker for that record (card / PKM / insight) so "
       "they all link to one identity. Use this only for NEW records — to edit "
       "an existing card, reuse that card's id instead.",
   parameters: {
@@ -74,6 +74,13 @@ final mintRecordFactIdTool = Tool(
     getLogger('CommonTools').info('Minted fact_id(s): ${factIds.join(', ')}');
     return AgentToolResult(
       content: TextPart(factIds.join('\n')),
+      metadata: {
+        'artifact': {
+          'type': requestedCount == 1 ? 'fact_id' : 'fact_ids',
+          if (requestedCount == 1) 'id': factIds.single,
+          'ids': factIds,
+        },
+      },
     );
   },
 );

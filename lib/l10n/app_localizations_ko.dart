@@ -96,7 +96,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get reprocessCardsRerunDownstreamDesc =>
-      '필요할 때 관련 PKM, 일정, 인사이트 업데이트도 고려하도록 슈퍼 에이전트에 요청합니다.';
+      '필요할 때 관련 PKM과 인사이트 업데이트도 고려하도록 슈퍼 에이전트에 요청합니다.';
 
   @override
   String get reanalyzeMediaAssets => '미디어 첨부 다시 읽기';
@@ -240,78 +240,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get schedule => '일정';
 
   @override
-  String get statistics => '통계';
-
-  @override
   String get appLockConfig => '앱 잠금 설정';
-
-  @override
-  String get activityStats => '활동 통계';
-
-  @override
-  String activityStatsSummary(Object inputs, Object cards, Object todos) {
-    return '이 기간 동안 $inputs번 기록했고, 카드 $cards장을 생성했으며, 할 일 $todos개를 완료했습니다.';
-  }
-
-  @override
-  String get last7Days => '7일';
-
-  @override
-  String get last30Days => '30일';
-
-  @override
-  String get last90Days => '90일';
-
-  @override
-  String get records => '기록';
-
-  @override
-  String get words => '단어';
-
-  @override
-  String get cards => '카드';
-
-  @override
-  String get knowledgeUnits => '지식 단위';
-
-  @override
-  String get completedTodos => '완료한 할 일';
-
-  @override
-  String get activeDays => '활동한 날';
-
-  @override
-  String get streakDays => '연속 기록';
-
-  @override
-  String get dailyRhythm => '일일 리듬';
-
-  @override
-  String get recordToOutput => '기록에서 출력까지';
-
-  @override
-  String get sourceBreakdown => '소스 분석';
-
-  @override
-  String get topThemes => '주요 테마';
-
-  @override
-  String get textInput => '텍스트';
-
-  @override
-  String get imageInput => '이미지';
-
-  @override
-  String get audioInput => '오디오';
-
-  @override
-  String get noStatsYet => '아직 활동 통계가 없습니다';
-
-  @override
-  String get tapDayForDetails => '세부 정보를 보려면 날짜를 탭하세요';
-
-  @override
-  String get dayDetails => '일별 세부 정보';
 
   @override
   String loadStatsFailed(Object error) {
@@ -979,7 +908,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get textModelRoleDescription =>
-      '슈퍼 에이전트가 텍스트, 이미지, 카드, 지식, 인사이트, 채팅, 댓글, 일정, 메모리에 사용합니다.';
+      '슈퍼 에이전트가 텍스트, 이미지, 카드, 지식, 인사이트, 채팅, 댓글, 메모리에 사용합니다.';
 
   @override
   String get modelConnectionsTitle => '모델 제공업체 및 API 키';
@@ -1110,6 +1039,10 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get addToReminders => '미리 알림에 추가';
+
+  @override
+  String get systemActionPendingExplanation =>
+      '아직 추가되지 않았습니다. 아래 버튼을 눌러 권한을 요청하고 기기에 추가하세요.';
 
   @override
   String addedToSuccess(Object target) {
@@ -1258,57 +1191,7 @@ class AppLocalizationsKo extends AppLocalizations {
       '이 인사이트는 아직 생성 중이거나 업데이트되었습니다. 인사이트를 새로고침한 뒤 나중에 다시 시도해 주세요.';
 
   @override
-  String get noScheduleAggregation => '일정 집계가 없습니다';
-
-  @override
-  String get scheduleAggregationEmptyHint =>
-      '업데이트를 눌러 실제 시간 기반 카드에서 일정과 할 일을 정리하세요.';
-
-  @override
-  String get scheduleAggregationLoadFailed => '일정 데이터를 불러오지 못했습니다';
-
-  @override
-  String get scheduleAggregationRefreshFailed => '일정 데이터를 새로고침하지 못했습니다';
-
-  @override
-  String get scheduleTaskUpdateFailed => '작업을 업데이트하지 못했습니다';
-
-  @override
-  String get scheduleFeatured => '추천';
-
-  @override
-  String get scheduleThisWeek => '이번 주';
-
-  @override
-  String get scheduleDone => '완료';
-
-  @override
-  String get scheduleTbd => '미정';
-
-  @override
-  String get scheduleWeekOverview => '이번 주';
-
-  @override
-  String get scheduleImportant => '중요';
-
-  @override
-  String get scheduleBriefingTitle => '일정 브리핑';
-
-  @override
-  String get scheduleBriefingOpen => '열기';
-
-  @override
-  String get scheduleBriefingNoData => '아직 일정 브리핑이 없습니다';
-
-  @override
-  String scheduleBriefingUpdated(Object time) {
-    return '$time 업데이트';
-  }
-
-  @override
-  String scheduleBriefingDoneCount(Object count) {
-    return '$count개 완료';
-  }
+  String get artifactOpen => '열기';
 
   @override
   String get updating => '업데이트 중...';

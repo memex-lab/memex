@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -152,7 +153,14 @@ class ImagePreviewCacheService {
     try {
       if (!isLocalFile) {
         _logger.info('Downloading network image preview source: $source');
-        final response = await http.get(Uri.parse(source));
+        final http.Response response;
+        try {
+          response = await http
+              .get(Uri.parse(source))
+              .timeout(const Duration(seconds: 20));
+        } on TimeoutException {
+          throw const ImagePreviewUnavailable('image download timed out');
+        }
         if (response.statusCode != 200) {
           throw ImagePreviewUnavailable(
             'failed to download image: ${response.statusCode}',

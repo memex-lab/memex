@@ -111,5 +111,6 @@ flutter:
     - assets/startup.png
     - assets/icon.png
     - assets/icons/
+    - assets/fluent_emoji/
     - assets/silero_vad.onnx
     - assets/jieba_dict.txt

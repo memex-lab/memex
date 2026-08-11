@@ -16,6 +16,7 @@ import 'package:memex/config/app_flavor.dart';
 import 'package:memex/ui/insight/view_models/insight_viewmodel.dart';
 import 'package:memex/ui/knowledge/view_models/knowledge_base_viewmodel.dart';
 import 'package:memex/ui/timeline/view_models/timeline_viewmodel.dart';
+import 'package:memex/ui/character/view_models/persona_avatar_viewmodel.dart';
 import 'package:memex/ui/timeline/widgets/timeline_screen.dart';
 import 'package:memex/ui/knowledge/widgets/knowledge_base_screen.dart';
 import 'package:memex/ui/user_setup/widgets/user_setup_screen.dart';
@@ -274,6 +275,10 @@ class RootShellState extends State<RootShell> {
         ChangeNotifierProvider<KnowledgeBaseViewModel>(
           create: (c) => KnowledgeBaseViewModel(router: c.read<MemexRouter>())
             ..fetchData(),
+        ),
+        ChangeNotifierProvider<PersonaAvatarViewModel>(
+          create: (c) =>
+              PersonaAvatarViewModel(router: c.read<MemexRouter>())..init(),
         ),
       ],
       child: const MainScreen(),
@@ -887,17 +892,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       initialDraftText: initialDraftText,
       initialImages: initialImages,
       initialImageOriginalFilenames: initialImageOriginalFilenames,
-      onOpenScheduleTab: _openScheduleTabFromArtifact,
     );
-  }
-
-  void _openScheduleTabFromArtifact() {
-    if (!mounted) return;
-    setState(() => _currentTab = 0);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      _timelineKey.currentState?.openScheduleTab();
-    });
   }
 
   Map<String, String> _originalFilenamesFromImages(List<XFile> images) {
@@ -1836,6 +1831,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                           key: _timelineKey,
                           viewModel: context.watch<TimelineViewModel>(),
                           insightViewModel: context.watch<InsightViewModel>(),
+                          personaAvatarViewModel:
+                              context.read<PersonaAvatarViewModel>(),
                           onInputTap: () {
                             setState(() => _homeClipboardCandidate = null);
                             _openSuperAgentDialog();

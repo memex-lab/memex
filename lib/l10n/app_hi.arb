@@ -41,7 +41,7 @@
   "reprocessCardsCardOnly": "सिर्फ़ कार्ड",
   "reprocessCardsCardOnlyDesc": "सुपर एजेंट से चुने हुए टाइमलाइन कार्ड की समीक्षा और पुनर्जनन करवाएं।",
   "reprocessCardsRerunDownstream": "कार्ड और संबंधित फ़ॉलो-अप",
-  "reprocessCardsRerunDownstreamDesc": "ज़रूरत होने पर सुपर एजेंट से संबंधित PKM, अनुसूची और अंतर्दृष्टि अपडेट भी विचार करने को कहें।",
+  "reprocessCardsRerunDownstreamDesc": "ज़रूरत होने पर सुपर एजेंट से संबंधित PKM और अंतर्दृष्टि अपडेट भी विचार करने को कहें।",
   "reanalyzeMediaAssets": "मीडिया संलग्नक फिर से पढ़ें",
   "reanalyzeMediaAssetsDesc": "कार्ड फिर से बनाते समय सुपर एजेंट से संलग्न मीडिया फिर से जँचवाएं।",
   "regenerateComments": "कमेंट फिर से बनाएं",
@@ -109,37 +109,7 @@
   "lineCount": "लाइन संख्या: ",
   "all": "सभी",
   "schedule": "शेड्यूल",
-  "statistics": "आँकड़े",
   "appLockConfig": "ऐप लॉक कॉन्फ़िगरेशन",
-  "activityStats": "गतिविधि आँकड़े",
-  "activityStatsSummary": "इस अवधि में आपने {inputs} बार रिकॉर्ड किया, {cards} कार्ड बनाए, और {todos} टू-डू पूरे किए।",
-  "@activityStatsSummary": {
-    "placeholders": {
-      "inputs": {},
-      "cards": {},
-      "todos": {}
-    }
-  },
-  "last7Days": "7 दिन",
-  "last30Days": "30 दिन",
-  "last90Days": "90 दिन",
-  "records": "रिकॉर्ड्स",
-  "words": "शब्द",
-  "cards": "कार्ड्स",
-  "knowledgeUnits": "ज्ञान इकाइयाँ",
-  "completedTodos": "पूरे टू-डू",
-  "activeDays": "सक्रिय दिन",
-  "streakDays": "लगातार दिन",
-  "dailyRhythm": "दैनिक लय",
-  "recordToOutput": "रिकॉर्ड से परिणाम",
-  "sourceBreakdown": "स्रोत विभाजन",
-  "topThemes": "मुख्य विषय",
-  "textInput": "पाठ",
-  "imageInput": "छवियाँ",
-  "audioInput": "ऑडियो",
-  "noStatsYet": "अभी गतिविधि आँकड़े नहीं हैं",
-  "tapDayForDetails": "विवरण देखने के लिए किसी दिन पर टैप करें",
-  "dayDetails": "दिन का विवरण",
   "loadStatsFailed": "आँकड़े लोड नहीं हो सके: {error}",
   "@loadStatsFailed": {
     "placeholders": {
@@ -459,7 +429,7 @@
   "modelRolesTitle": "मुख्य मॉडल चुनें",
   "modelRolesDescription": "सुपर एजेंट पाठ और छवि इनपुट के लिए एक मॉडल उपयोग करता है। उन्नत एजेंट ओवरराइड नीचे उपलब्ध रहते हैं।",
   "textModelRoleTitle": "मुख्य मॉडल",
-  "textModelRoleDescription": "सुपर एजेंट इसे पाठ, छवियाँ, कार्ड, ज्ञान, अंतर्दृष्टियाँ, चैट, टिप्पणियाँ, अनुसूची और स्मृति के लिए उपयोग करता है।",
+  "textModelRoleDescription": "सुपर एजेंट इसे पाठ, छवियाँ, कार्ड, ज्ञान, अंतर्दृष्टियाँ, चैट, टिप्पणियाँ और स्मृति के लिए उपयोग करता है।",
   "modelConnectionsTitle": "मॉडल प्रदाता और एपीआई कुंजीs",
   "modelConnectionsDescription": "Memex की आधिकारिक सेवा कनेक्ट करें या अपने प्रदाता क्रेडेंशियल जोड़ें।",
   "relatedAiCapabilitiesTitle": "उन्नत और संबंधित क्षमताएँ",
@@ -514,6 +484,7 @@
   "discoveredReminder": "रिमाइंडर मिला",
   "addToCalendar": "कैलेंडर में जोड़ें",
   "addToReminders": "रिमाइंडर में जोड़ें",
+  "systemActionPendingExplanation": "अभी जोड़ा नहीं गया है। अनुमति माँगने और इसे अपने डिवाइस में जोड़ने के लिए नीचे टैप करें।",
   "addedToSuccess": "{target} में सफलतापूर्वक जोड़ा गया",
   "@addedToSuccess": {
     "placeholders": {
@@ -605,32 +576,7 @@
     }
   },
   "insightUnavailableMessage": "यह अंतर्दृष्टि अभी बनाएँ हो रहा है या अपडेट हुआ है। अंतर्दृष्टियाँ रीफ़्रेश करें और बाद में फिर कोशिश करें।",
-  "noScheduleAggregation": "कोई अनुसूची समेकन नहीं",
-  "scheduleAggregationEmptyHint": "वास्तविक समय-आधारित कार्ड से अनुसूचियाँ और टू-डू व्यवस्थित करने के लिए अपडेट टैप करें।",
-  "scheduleAggregationLoadFailed": "अनुसूची डेटा लोड नहीं हो सका",
-  "scheduleAggregationRefreshFailed": "अनुसूची डेटा रीफ़्रेश नहीं हो सका",
-  "scheduleTaskUpdateFailed": "कार्य अपडेट नहीं हो सका",
-  "scheduleFeatured": "चयनित",
-  "scheduleThisWeek": "इस सप्ताह",
-  "scheduleDone": "पूरा",
-  "scheduleTbd": "TBD (बाद में तय)",
-  "scheduleWeekOverview": "इस सप्ताह",
-  "scheduleImportant": "महत्वपूर्ण",
-  "scheduleBriefingTitle": "अनुसूची सारांश",
-  "scheduleBriefingOpen": "खोलें",
-  "scheduleBriefingNoData": "अभी कोई अनुसूची सारांश नहीं",
-  "scheduleBriefingUpdated": "{time} अपडेट",
-  "@scheduleBriefingUpdated": {
-    "placeholders": {
-      "time": {}
-    }
-  },
-  "scheduleBriefingDoneCount": "{count} पूरे",
-  "@scheduleBriefingDoneCount": {
-    "placeholders": {
-      "count": {}
-    }
-  },
+  "artifactOpen": "खोलें",
   "updating": "अपडेट हो रहा है...",
   "update": "अपडेट करें",
   "enabled": "चालू",

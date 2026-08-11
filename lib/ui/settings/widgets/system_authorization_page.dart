@@ -6,10 +6,10 @@ import 'package:memex/ui/core/themes/app_colors.dart';
 import 'dart:io' show Platform;
 
 class SystemAuthorizationPage extends StatefulWidget {
-  const SystemAuthorizationPage({Key? key}) : super(key: key);
+  const SystemAuthorizationPage({super.key});
 
   @override
-  _SystemAuthorizationPageState createState() =>
+  State<SystemAuthorizationPage> createState() =>
       _SystemAuthorizationPageState();
 }
 
@@ -48,13 +48,15 @@ class _SystemAuthorizationPageState extends State<SystemAuthorizationPage> {
     final camera = await Permission.camera.status;
     final mic = await Permission.microphone.status;
     final calendar = Platform.isIOS
-        ? await Permission.calendarFullAccess.status
-        : await Permission.calendarWriteOnly.status;
+        ? await Permission.calendarWriteOnly.status
+        : await Permission.calendarFullAccess.status;
     final fitness = Platform.isIOS
         ? await Permission.sensors.status
         : await Permission.activityRecognition.status;
     final notification = await Permission.notification.status;
-    final reminders = await Permission.reminders.status;
+    final reminders = Platform.isAndroid
+        ? await Permission.calendarFullAccess.status
+        : await Permission.reminders.status;
 
     if (mounted) {
       setState(() {
@@ -282,8 +284,8 @@ class _SystemAuthorizationPageState extends State<SystemAuthorizationPage> {
                   status: _calendarStatus,
                   onTap: () => _requestPermission(
                       Platform.isIOS
-                          ? Permission.calendarFullAccess
-                          : Permission.calendarWriteOnly,
+                          ? Permission.calendarWriteOnly
+                          : Permission.calendarFullAccess,
                       _checkAllPermissions),
                 ),
                 const Divider(height: 1, indent: 56),
@@ -293,7 +295,10 @@ class _SystemAuthorizationPageState extends State<SystemAuthorizationPage> {
                   subtitle: UserStorage.l10n.remindersPermissionReason,
                   status: _remindersStatus,
                   onTap: () => _requestPermission(
-                      Permission.reminders, _checkAllPermissions),
+                      Platform.isAndroid
+                          ? Permission.calendarFullAccess
+                          : Permission.reminders,
+                      _checkAllPermissions),
                 ),
                 const Divider(height: 1, indent: 56),
                 _buildPermissionItem(

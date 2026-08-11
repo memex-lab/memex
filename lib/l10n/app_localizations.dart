@@ -278,7 +278,7 @@ abstract class AppLocalizations {
   /// No description provided for @reprocessCardsRerunDownstreamDesc.
   ///
   /// In en, this message translates to:
-  /// **'Ask Super Agent to also consider related PKM, schedule, and insight updates when needed.'**
+  /// **'Ask Super Agent to also consider related PKM and insight updates when needed.'**
   String get reprocessCardsRerunDownstreamDesc;
 
   /// No description provided for @reanalyzeMediaAssets.
@@ -533,149 +533,11 @@ abstract class AppLocalizations {
   /// **'Schedule'**
   String get schedule;
 
-  /// No description provided for @statistics.
-  ///
-  /// In en, this message translates to:
-  /// **'Stats'**
-  String get statistics;
-
   /// No description provided for @appLockConfig.
   ///
   /// In en, this message translates to:
   /// **'App lock config'**
   String get appLockConfig;
-
-  /// No description provided for @activityStats.
-  ///
-  /// In en, this message translates to:
-  /// **'Activity stats'**
-  String get activityStats;
-
-  /// No description provided for @activityStatsSummary.
-  ///
-  /// In en, this message translates to:
-  /// **'In this period you recorded {inputs} time(s), generated {cards} card(s), and completed {todos} todo(s).'**
-  String activityStatsSummary(Object inputs, Object cards, Object todos);
-
-  /// No description provided for @last7Days.
-  ///
-  /// In en, this message translates to:
-  /// **'7 days'**
-  String get last7Days;
-
-  /// No description provided for @last30Days.
-  ///
-  /// In en, this message translates to:
-  /// **'30 days'**
-  String get last30Days;
-
-  /// No description provided for @last90Days.
-  ///
-  /// In en, this message translates to:
-  /// **'90 days'**
-  String get last90Days;
-
-  /// No description provided for @records.
-  ///
-  /// In en, this message translates to:
-  /// **'Records'**
-  String get records;
-
-  /// No description provided for @words.
-  ///
-  /// In en, this message translates to:
-  /// **'Words'**
-  String get words;
-
-  /// No description provided for @cards.
-  ///
-  /// In en, this message translates to:
-  /// **'Cards'**
-  String get cards;
-
-  /// No description provided for @knowledgeUnits.
-  ///
-  /// In en, this message translates to:
-  /// **'Knowledge units'**
-  String get knowledgeUnits;
-
-  /// No description provided for @completedTodos.
-  ///
-  /// In en, this message translates to:
-  /// **'Completed todos'**
-  String get completedTodos;
-
-  /// No description provided for @activeDays.
-  ///
-  /// In en, this message translates to:
-  /// **'Active days'**
-  String get activeDays;
-
-  /// No description provided for @streakDays.
-  ///
-  /// In en, this message translates to:
-  /// **'Streak'**
-  String get streakDays;
-
-  /// No description provided for @dailyRhythm.
-  ///
-  /// In en, this message translates to:
-  /// **'Daily rhythm'**
-  String get dailyRhythm;
-
-  /// No description provided for @recordToOutput.
-  ///
-  /// In en, this message translates to:
-  /// **'Record to output'**
-  String get recordToOutput;
-
-  /// No description provided for @sourceBreakdown.
-  ///
-  /// In en, this message translates to:
-  /// **'Source breakdown'**
-  String get sourceBreakdown;
-
-  /// No description provided for @topThemes.
-  ///
-  /// In en, this message translates to:
-  /// **'Top themes'**
-  String get topThemes;
-
-  /// No description provided for @textInput.
-  ///
-  /// In en, this message translates to:
-  /// **'Text'**
-  String get textInput;
-
-  /// No description provided for @imageInput.
-  ///
-  /// In en, this message translates to:
-  /// **'Images'**
-  String get imageInput;
-
-  /// No description provided for @audioInput.
-  ///
-  /// In en, this message translates to:
-  /// **'Audio'**
-  String get audioInput;
-
-  /// No description provided for @noStatsYet.
-  ///
-  /// In en, this message translates to:
-  /// **'No activity stats yet'**
-  String get noStatsYet;
-
-  /// No description provided for @tapDayForDetails.
-  ///
-  /// In en, this message translates to:
-  /// **'Tap a day to view details'**
-  String get tapDayForDetails;
-
-  /// No description provided for @dayDetails.
-  ///
-  /// In en, this message translates to:
-  /// **'Day details'**
-  String get dayDetails;
 
   /// No description provided for @loadStatsFailed.
   ///
@@ -1887,7 +1749,7 @@ abstract class AppLocalizations {
   /// No description provided for @textModelRoleDescription.
   ///
   /// In en, this message translates to:
-  /// **'Used by Super Agent for text, images, cards, knowledge, insights, chat, comments, schedule, and memory.'**
+  /// **'Used by Super Agent for text, images, cards, knowledge, insights, chat, comments, and memory.'**
   String get textModelRoleDescription;
 
   /// No description provided for @modelConnectionsTitle.
@@ -2103,13 +1965,13 @@ abstract class AppLocalizations {
   /// No description provided for @discoveredCalendarEvent.
   ///
   /// In en, this message translates to:
-  /// **'Calendar event found'**
+  /// **'Calendar event awaiting confirmation'**
   String get discoveredCalendarEvent;
 
   /// No description provided for @discoveredReminder.
   ///
   /// In en, this message translates to:
-  /// **'Reminder found'**
+  /// **'Reminder awaiting confirmation'**
   String get discoveredReminder;
 
   /// No description provided for @addToCalendar.
@@ -2123,6 +1985,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add to reminders'**
   String get addToReminders;
+
+  /// No description provided for @systemActionPendingExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'Not added yet. Tap below to request permission and add it to your device.'**
+  String get systemActionPendingExplanation;
 
   /// No description provided for @addedToSuccess.
   ///
@@ -2370,101 +2238,11 @@ abstract class AppLocalizations {
   /// **'This insight is still being generated or was updated. Refresh insights and try again later.'**
   String get insightUnavailableMessage;
 
-  /// No description provided for @noScheduleAggregation.
-  ///
-  /// In en, this message translates to:
-  /// **'No schedule aggregation'**
-  String get noScheduleAggregation;
-
-  /// No description provided for @scheduleAggregationEmptyHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Tap Update to organize schedules and todos from real temporal cards.'**
-  String get scheduleAggregationEmptyHint;
-
-  /// No description provided for @scheduleAggregationLoadFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to load schedule data'**
-  String get scheduleAggregationLoadFailed;
-
-  /// No description provided for @scheduleAggregationRefreshFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to refresh schedule data'**
-  String get scheduleAggregationRefreshFailed;
-
-  /// No description provided for @scheduleTaskUpdateFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to update task'**
-  String get scheduleTaskUpdateFailed;
-
-  /// No description provided for @scheduleFeatured.
-  ///
-  /// In en, this message translates to:
-  /// **'Featured'**
-  String get scheduleFeatured;
-
-  /// No description provided for @scheduleThisWeek.
-  ///
-  /// In en, this message translates to:
-  /// **'This week'**
-  String get scheduleThisWeek;
-
-  /// No description provided for @scheduleDone.
-  ///
-  /// In en, this message translates to:
-  /// **'Done'**
-  String get scheduleDone;
-
-  /// No description provided for @scheduleTbd.
-  ///
-  /// In en, this message translates to:
-  /// **'TBD'**
-  String get scheduleTbd;
-
-  /// No description provided for @scheduleWeekOverview.
-  ///
-  /// In en, this message translates to:
-  /// **'This week'**
-  String get scheduleWeekOverview;
-
-  /// No description provided for @scheduleImportant.
-  ///
-  /// In en, this message translates to:
-  /// **'Important'**
-  String get scheduleImportant;
-
-  /// No description provided for @scheduleBriefingTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Schedule briefing'**
-  String get scheduleBriefingTitle;
-
-  /// No description provided for @scheduleBriefingOpen.
+  /// No description provided for @artifactOpen.
   ///
   /// In en, this message translates to:
   /// **'Open'**
-  String get scheduleBriefingOpen;
-
-  /// No description provided for @scheduleBriefingNoData.
-  ///
-  /// In en, this message translates to:
-  /// **'No schedule briefing yet'**
-  String get scheduleBriefingNoData;
-
-  /// No description provided for @scheduleBriefingUpdated.
-  ///
-  /// In en, this message translates to:
-  /// **'Updated {time}'**
-  String scheduleBriefingUpdated(Object time);
-
-  /// No description provided for @scheduleBriefingDoneCount.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} done'**
-  String scheduleBriefingDoneCount(Object count);
+  String get artifactOpen;
 
   /// No description provided for @updating.
   ///

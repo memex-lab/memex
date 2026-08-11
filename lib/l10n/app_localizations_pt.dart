@@ -99,7 +99,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get reprocessCardsRerunDownstreamDesc =>
-      'Peça ao Super Agent para também considerar atualizações relacionadas de PKM, agenda e insights quando necessário.';
+      'Peça ao Super Agent para também considerar atualizações relacionadas de PKM e insights quando necessário.';
 
   @override
   String get reanalyzeMediaAssets => 'Reler anexos de mídia';
@@ -248,78 +248,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get schedule => 'Agenda';
 
   @override
-  String get statistics => 'Estatísticas';
-
-  @override
   String get appLockConfig => 'Configuração de bloqueio do app';
-
-  @override
-  String get activityStats => 'Estatísticas de atividade';
-
-  @override
-  String activityStatsSummary(Object inputs, Object cards, Object todos) {
-    return 'Neste período você registrou $inputs vez(es), gerou $cards cartão(ões) e concluiu $todos tarefa(s).';
-  }
-
-  @override
-  String get last7Days => '7 dias';
-
-  @override
-  String get last30Days => '30 dias';
-
-  @override
-  String get last90Days => '90 dias';
-
-  @override
-  String get records => 'Registros';
-
-  @override
-  String get words => 'Palavras';
-
-  @override
-  String get cards => 'Cartões';
-
-  @override
-  String get knowledgeUnits => 'Unidades de conhecimento';
-
-  @override
-  String get completedTodos => 'Tarefas concluídas';
-
-  @override
-  String get activeDays => 'Dias ativos';
-
-  @override
-  String get streakDays => 'Sequência';
-
-  @override
-  String get dailyRhythm => 'Ritmo diário';
-
-  @override
-  String get recordToOutput => 'Registro para saída';
-
-  @override
-  String get sourceBreakdown => 'Distribuição de fontes';
-
-  @override
-  String get topThemes => 'Principais temas';
-
-  @override
-  String get textInput => 'Texto';
-
-  @override
-  String get imageInput => 'Imagens';
-
-  @override
-  String get audioInput => 'Áudio';
-
-  @override
-  String get noStatsYet => 'Ainda não há estatísticas de atividade';
-
-  @override
-  String get tapDayForDetails => 'Toque em um dia para ver detalhes';
-
-  @override
-  String get dayDetails => 'Detalhes do dia';
 
   @override
   String loadStatsFailed(Object error) {
@@ -1008,7 +937,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get textModelRoleDescription =>
-      'Usado pelo Super Agent para texto, imagens, cartões, conhecimento, insights, chat, comentários, agenda e memória.';
+      'Usado pelo Super Agent para texto, imagens, cartões, conhecimento, insights, chat, comentários e memória.';
 
   @override
   String get modelConnectionsTitle => 'Provedores de modelo e chaves API';
@@ -1144,6 +1073,10 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get addToReminders => 'Adicionar aos lembretes';
+
+  @override
+  String get systemActionPendingExplanation =>
+      'Ainda não foi adicionado. Toque abaixo para solicitar permissão e adicioná-lo ao dispositivo.';
 
   @override
   String addedToSuccess(Object target) {
@@ -1295,59 +1228,7 @@ class AppLocalizationsPt extends AppLocalizations {
       'Este insight ainda está sendo gerado ou foi atualizado. Atualize os insights e tente novamente depois.';
 
   @override
-  String get noScheduleAggregation => 'Sem agregação de agenda';
-
-  @override
-  String get scheduleAggregationEmptyHint =>
-      'Toque em Update para organizar agendas e tarefas a partir de cartões temporais reais.';
-
-  @override
-  String get scheduleAggregationLoadFailed =>
-      'Falha ao carregar dados de agenda';
-
-  @override
-  String get scheduleAggregationRefreshFailed =>
-      'Falha ao atualizar dados de agenda';
-
-  @override
-  String get scheduleTaskUpdateFailed => 'Falha ao atualizar tarefa';
-
-  @override
-  String get scheduleFeatured => 'Destaque';
-
-  @override
-  String get scheduleThisWeek => 'Esta semana';
-
-  @override
-  String get scheduleDone => 'Concluído';
-
-  @override
-  String get scheduleTbd => 'A definir';
-
-  @override
-  String get scheduleWeekOverview => 'Esta semana';
-
-  @override
-  String get scheduleImportant => 'Importante';
-
-  @override
-  String get scheduleBriefingTitle => 'Resumo da agenda';
-
-  @override
-  String get scheduleBriefingOpen => 'Abrir';
-
-  @override
-  String get scheduleBriefingNoData => 'Ainda não há resumo da agenda';
-
-  @override
-  String scheduleBriefingUpdated(Object time) {
-    return 'Atualizado $time';
-  }
-
-  @override
-  String scheduleBriefingDoneCount(Object count) {
-    return '$count concluídos';
-  }
+  String get artifactOpen => 'Abrir';
 
   @override
   String get updating => 'Atualizando...';

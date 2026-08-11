@@ -97,7 +97,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get reprocessCardsRerunDownstreamDesc =>
-      'Minta Super Agent juga mempertimbangkan pembaruan PKM, jadwal, dan insight terkait bila diperlukan.';
+      'Minta Super Agent juga mempertimbangkan pembaruan PKM dan insight terkait bila diperlukan.';
 
   @override
   String get reanalyzeMediaAssets => 'Baca ulang lampiran media';
@@ -247,78 +247,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get schedule => 'Jadwal';
 
   @override
-  String get statistics => 'Statistik';
-
-  @override
   String get appLockConfig => 'Konfigurasi kunci aplikasi';
-
-  @override
-  String get activityStats => 'Statistik aktivitas';
-
-  @override
-  String activityStatsSummary(Object inputs, Object cards, Object todos) {
-    return 'Pada periode ini Anda mencatat $inputs kali, membuat $cards kartu, dan menyelesaikan $todos tugas.';
-  }
-
-  @override
-  String get last7Days => '7 hari';
-
-  @override
-  String get last30Days => '30 hari';
-
-  @override
-  String get last90Days => '90 hari';
-
-  @override
-  String get records => 'Catatan';
-
-  @override
-  String get words => 'Kata';
-
-  @override
-  String get cards => 'Kartu';
-
-  @override
-  String get knowledgeUnits => 'Unit pengetahuan';
-
-  @override
-  String get completedTodos => 'Todo selesai';
-
-  @override
-  String get activeDays => 'Hari aktif';
-
-  @override
-  String get streakDays => 'Runtun';
-
-  @override
-  String get dailyRhythm => 'Ritme harian';
-
-  @override
-  String get recordToOutput => 'Catatan ke hasil';
-
-  @override
-  String get sourceBreakdown => 'Rincian sumber';
-
-  @override
-  String get topThemes => 'Tema teratas';
-
-  @override
-  String get textInput => 'Teks';
-
-  @override
-  String get imageInput => 'Gambar';
-
-  @override
-  String get audioInput => 'Suara';
-
-  @override
-  String get noStatsYet => 'Belum ada statistik aktivitas';
-
-  @override
-  String get tapDayForDetails => 'Ketuk hari untuk melihat detail';
-
-  @override
-  String get dayDetails => 'Detail hari';
 
   @override
   String loadStatsFailed(Object error) {
@@ -1006,7 +935,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get textModelRoleDescription =>
-      'Digunakan oleh Super Agent untuk teks, gambar, kartu, pengetahuan, insight, chat, komentar, jadwal, dan memori.';
+      'Digunakan oleh Super Agent untuk teks, gambar, kartu, pengetahuan, insight, chat, komentar, dan memori.';
 
   @override
   String get modelConnectionsTitle => 'Penyedia model dan API key';
@@ -1138,6 +1067,10 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get addToReminders => 'Tambahkan ke pengingat';
+
+  @override
+  String get systemActionPendingExplanation =>
+      'Belum ditambahkan. Ketuk di bawah untuk meminta izin dan menambahkannya ke perangkat Anda.';
 
   @override
   String addedToSuccess(Object target) {
@@ -1290,58 +1223,7 @@ class AppLocalizationsId extends AppLocalizations {
       'Insight ini masih dibuat atau telah diperbarui. Segarkan insight dan coba lagi nanti.';
 
   @override
-  String get noScheduleAggregation => 'Tidak ada agregasi jadwal';
-
-  @override
-  String get scheduleAggregationEmptyHint =>
-      'Ketuk Perbarui untuk mengatur jadwal dan todo dari kartu temporal nyata.';
-
-  @override
-  String get scheduleAggregationLoadFailed => 'Gagal memuat data jadwal';
-
-  @override
-  String get scheduleAggregationRefreshFailed =>
-      'Gagal menyegarkan data jadwal';
-
-  @override
-  String get scheduleTaskUpdateFailed => 'Gagal memperbarui tugas';
-
-  @override
-  String get scheduleFeatured => 'Unggulan';
-
-  @override
-  String get scheduleThisWeek => 'Minggu ini';
-
-  @override
-  String get scheduleDone => 'Selesai';
-
-  @override
-  String get scheduleTbd => 'TBD';
-
-  @override
-  String get scheduleWeekOverview => 'Minggu ini';
-
-  @override
-  String get scheduleImportant => 'Penting';
-
-  @override
-  String get scheduleBriefingTitle => 'Ringkasan jadwal';
-
-  @override
-  String get scheduleBriefingOpen => 'Buka';
-
-  @override
-  String get scheduleBriefingNoData => 'Belum ada ringkasan jadwal';
-
-  @override
-  String scheduleBriefingUpdated(Object time) {
-    return 'Diperbarui $time';
-  }
-
-  @override
-  String scheduleBriefingDoneCount(Object count) {
-    return '$count selesai';
-  }
+  String get artifactOpen => 'Buka';
 
   @override
   String get updating => 'Memperbarui...';

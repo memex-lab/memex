@@ -97,7 +97,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get reprocessCardsRerunDownstreamDesc =>
-      'ज़रूरत होने पर सुपर एजेंट से संबंधित PKM, अनुसूची और अंतर्दृष्टि अपडेट भी विचार करने को कहें।';
+      'ज़रूरत होने पर सुपर एजेंट से संबंधित PKM और अंतर्दृष्टि अपडेट भी विचार करने को कहें।';
 
   @override
   String get reanalyzeMediaAssets => 'मीडिया संलग्नक फिर से पढ़ें';
@@ -244,78 +244,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get schedule => 'शेड्यूल';
 
   @override
-  String get statistics => 'आँकड़े';
-
-  @override
   String get appLockConfig => 'ऐप लॉक कॉन्फ़िगरेशन';
-
-  @override
-  String get activityStats => 'गतिविधि आँकड़े';
-
-  @override
-  String activityStatsSummary(Object inputs, Object cards, Object todos) {
-    return 'इस अवधि में आपने $inputs बार रिकॉर्ड किया, $cards कार्ड बनाए, और $todos टू-डू पूरे किए।';
-  }
-
-  @override
-  String get last7Days => '7 दिन';
-
-  @override
-  String get last30Days => '30 दिन';
-
-  @override
-  String get last90Days => '90 दिन';
-
-  @override
-  String get records => 'रिकॉर्ड्स';
-
-  @override
-  String get words => 'शब्द';
-
-  @override
-  String get cards => 'कार्ड्स';
-
-  @override
-  String get knowledgeUnits => 'ज्ञान इकाइयाँ';
-
-  @override
-  String get completedTodos => 'पूरे टू-डू';
-
-  @override
-  String get activeDays => 'सक्रिय दिन';
-
-  @override
-  String get streakDays => 'लगातार दिन';
-
-  @override
-  String get dailyRhythm => 'दैनिक लय';
-
-  @override
-  String get recordToOutput => 'रिकॉर्ड से परिणाम';
-
-  @override
-  String get sourceBreakdown => 'स्रोत विभाजन';
-
-  @override
-  String get topThemes => 'मुख्य विषय';
-
-  @override
-  String get textInput => 'पाठ';
-
-  @override
-  String get imageInput => 'छवियाँ';
-
-  @override
-  String get audioInput => 'ऑडियो';
-
-  @override
-  String get noStatsYet => 'अभी गतिविधि आँकड़े नहीं हैं';
-
-  @override
-  String get tapDayForDetails => 'विवरण देखने के लिए किसी दिन पर टैप करें';
-
-  @override
-  String get dayDetails => 'दिन का विवरण';
 
   @override
   String loadStatsFailed(Object error) {
@@ -999,7 +928,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get textModelRoleDescription =>
-      'सुपर एजेंट इसे पाठ, छवियाँ, कार्ड, ज्ञान, अंतर्दृष्टियाँ, चैट, टिप्पणियाँ, अनुसूची और स्मृति के लिए उपयोग करता है।';
+      'सुपर एजेंट इसे पाठ, छवियाँ, कार्ड, ज्ञान, अंतर्दृष्टियाँ, चैट, टिप्पणियाँ और स्मृति के लिए उपयोग करता है।';
 
   @override
   String get modelConnectionsTitle => 'मॉडल प्रदाता और एपीआई कुंजीs';
@@ -1132,6 +1061,10 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get addToReminders => 'रिमाइंडर में जोड़ें';
+
+  @override
+  String get systemActionPendingExplanation =>
+      'अभी जोड़ा नहीं गया है। अनुमति माँगने और इसे अपने डिवाइस में जोड़ने के लिए नीचे टैप करें।';
 
   @override
   String addedToSuccess(Object target) {
@@ -1282,58 +1215,7 @@ class AppLocalizationsHi extends AppLocalizations {
       'यह अंतर्दृष्टि अभी बनाएँ हो रहा है या अपडेट हुआ है। अंतर्दृष्टियाँ रीफ़्रेश करें और बाद में फिर कोशिश करें।';
 
   @override
-  String get noScheduleAggregation => 'कोई अनुसूची समेकन नहीं';
-
-  @override
-  String get scheduleAggregationEmptyHint =>
-      'वास्तविक समय-आधारित कार्ड से अनुसूचियाँ और टू-डू व्यवस्थित करने के लिए अपडेट टैप करें।';
-
-  @override
-  String get scheduleAggregationLoadFailed => 'अनुसूची डेटा लोड नहीं हो सका';
-
-  @override
-  String get scheduleAggregationRefreshFailed =>
-      'अनुसूची डेटा रीफ़्रेश नहीं हो सका';
-
-  @override
-  String get scheduleTaskUpdateFailed => 'कार्य अपडेट नहीं हो सका';
-
-  @override
-  String get scheduleFeatured => 'चयनित';
-
-  @override
-  String get scheduleThisWeek => 'इस सप्ताह';
-
-  @override
-  String get scheduleDone => 'पूरा';
-
-  @override
-  String get scheduleTbd => 'TBD (बाद में तय)';
-
-  @override
-  String get scheduleWeekOverview => 'इस सप्ताह';
-
-  @override
-  String get scheduleImportant => 'महत्वपूर्ण';
-
-  @override
-  String get scheduleBriefingTitle => 'अनुसूची सारांश';
-
-  @override
-  String get scheduleBriefingOpen => 'खोलें';
-
-  @override
-  String get scheduleBriefingNoData => 'अभी कोई अनुसूची सारांश नहीं';
-
-  @override
-  String scheduleBriefingUpdated(Object time) {
-    return '$time अपडेट';
-  }
-
-  @override
-  String scheduleBriefingDoneCount(Object count) {
-    return '$count पूरे';
-  }
+  String get artifactOpen => 'खोलें';
 
   @override
   String get updating => 'अपडेट हो रहा है...';

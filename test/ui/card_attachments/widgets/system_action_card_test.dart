@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:memex/data/services/system_action_service.dart';
@@ -57,13 +58,68 @@ void main() {
       expect(find.text('天津小白院领证Party调研'), findsNothing);
       expect(find.text(UserStorage.l10n.addToCalendar), findsNothing);
     });
+
+    testWidgets('does not offer a native write for an unsupported action type',
+        (tester) async {
+      await tester.pumpWidget(
+        buildHost(
+          SystemActionCard(
+            action: _action(status: 'pending', actionType: 'unsupported'),
+            service: SystemActionService.instance,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text(UserStorage.l10n.unknownAction), findsWidgets);
+      final button = tester.widget<FilledButton>(find.byType(FilledButton));
+      expect(button.onPressed, isNull);
+    });
+
+    testWidgets('loads a pending artifact with visible confirmation controls',
+        (tester) async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      AppDatabase.setTestInstance(db);
+      addTearDown(db.close);
+      await SystemActionService.instance.createAction(
+        id: 'pending-reminder',
+        type: 'reminder',
+        data: const {
+          'title': 'Watch the market open',
+          'due_date': '2026-07-27 21:30:00',
+        },
+      );
+
+      await tester.pumpWidget(
+        buildHost(
+          const SystemActionArtifactCard(
+            actionId: 'pending-reminder',
+            actionKind: 'reminder',
+            fallbackTitle: 'Watch the market open',
+            fallbackSummary: '2026-07-27 21:30',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Watch the market open'), findsOneWidget);
+      expect(
+        find.text(UserStorage.l10n.systemActionPendingExplanation),
+        findsOneWidget,
+      );
+      expect(find.text(UserStorage.l10n.addToReminders), findsOneWidget);
+      expect(find.text(UserStorage.l10n.ignore), findsOneWidget);
+    });
   });
 }
 
-SystemAction _action({required String status}) {
+SystemAction _action({
+  required String status,
+  String actionType = 'calendar',
+}) {
   return SystemAction(
     id: 'action-$status',
-    actionType: 'calendar',
+    actionType: actionType,
     actionData: jsonEncode({
       'title': '天津小白院领证Party调研',
       'start_time': '2026-06-06 09:00:00',

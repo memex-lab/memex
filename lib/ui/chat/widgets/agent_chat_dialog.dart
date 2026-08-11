@@ -21,11 +21,11 @@ import 'package:memex/data/model/chat_events.dart';
 import 'package:memex/data/services/demo_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/input_draft_service.dart';
+import 'package:memex/ui/card_attachments/widgets/system_action_card.dart';
 import 'package:memex/ui/core/widgets/html_webview_card.dart';
 import 'package:memex/ui/core/widgets/local_image.dart';
 import 'package:memex/ui/insight/widgets/insight_detail_page.dart';
 import 'package:memex/ui/knowledge/widgets/knowledge_file_page.dart';
-import 'package:memex/ui/schedule/widgets/schedule_aggregator_screen.dart';
 import 'package:memex/ui/timeline/widgets/timeline_card_detail_screen.dart';
 import 'package:memex/data/services/photo_suggestion_service.dart';
 import 'package:memex/utils/toast_helper.dart';
@@ -202,7 +202,7 @@ SuperAgentProcessVisualState superAgentProcessVisualState(ProcessItem item) {
 }
 
 const double _agentChatSheetHeightFactor = 0.75;
-const int _agentChatHistoryTurnPageSize = 4;
+const int _agentChatHistoryTurnPageSize = 20;
 const Duration _agentChatKeyboardShowAnimationDuration =
     Duration(milliseconds: 220);
 const Duration _agentChatKeyboardHideAnimationDuration = Duration.zero;
@@ -220,13 +220,18 @@ double resolveAgentChatDialogHeight(
   Size viewportSize, {
   required bool isFullScreen,
   double keyboardInset = 0,
+  double topSafeInset = 0,
 }) {
   final baseHeight = isFullScreen
       ? viewportSize.height
       : viewportSize.height * _agentChatSheetHeightFactor;
   if (keyboardInset <= 0) return baseHeight;
 
-  final availableHeight = math.max(0.0, viewportSize.height - keyboardInset);
+  final reservedTopInset = isFullScreen ? 0.0 : topSafeInset;
+  final availableHeight = math.max(
+    0.0,
+    viewportSize.height - keyboardInset - reservedTopInset,
+  );
   if (availableHeight <= 0) return baseHeight;
   return math.min(baseHeight, availableHeight);
 }
@@ -251,6 +256,18 @@ bool shouldCreateAIMessageForResponseChunk({
   required bool isDone,
 }) {
   return !(isDone && text.isEmpty);
+}
+
+@visibleForTesting
+bool shouldRequestOlderSuperAgentHistory({
+  required bool hasMoreHistory,
+  required bool isLoading,
+  required double pixels,
+  required double maxScrollExtent,
+}) {
+  if (!hasMoreHistory || isLoading) return false;
+  if (maxScrollExtent <= 0) return true;
+  return pixels >= maxScrollExtent * 0.8;
 }
 
 @visibleForTesting
@@ -407,7 +424,6 @@ class AgentChatDialog extends StatefulWidget {
   final String? initialDraftText;
   final List<XFile> initialImages;
   final Map<String, String> initialImageOriginalFilenames;
-  final VoidCallback? onOpenScheduleTab;
   @visibleForTesting
   final List<ChatDisplayItem> initialItems;
   @visibleForTesting
@@ -423,7 +439,6 @@ class AgentChatDialog extends StatefulWidget {
     this.initialDraftText,
     this.initialImages = const [],
     this.initialImageOriginalFilenames = const {},
-    this.onOpenScheduleTab,
     this.initialItems = const [],
     this.initialIsLoadingAgent = false,
     this.initialTokenUsage,
@@ -578,13 +593,31 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   // --- Logic ---
 
   void _handleHistoryScroll() {
-    if (!_hasMoreHistory || _isLoadingMoreHistory || _isLoading) return;
     if (!_scrollController.hasClients) return;
     final position = _scrollController.position;
-    if (position.maxScrollExtent <= 0) return;
-    if (position.pixels >= position.maxScrollExtent * 0.8) {
+    if (shouldRequestOlderSuperAgentHistory(
+      hasMoreHistory: _hasMoreHistory,
+      isLoading: _isLoadingMoreHistory || _isLoading,
+      pixels: position.pixels,
+      maxScrollExtent: position.maxScrollExtent,
+    )) {
       unawaited(_loadMoreSessionHistory());
     }
+  }
+
+  void _loadMoreIfHistoryDoesNotFillViewport() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      final position = _scrollController.position;
+      if (shouldRequestOlderSuperAgentHistory(
+        hasMoreHistory: _hasMoreHistory,
+        isLoading: _isLoadingMoreHistory || _isLoading,
+        pixels: 0,
+        maxScrollExtent: position.maxScrollExtent,
+      )) {
+        unawaited(_loadMoreSessionHistory());
+      }
+    });
   }
 
   Future<void> _loadSessionHistory() async {
@@ -628,6 +661,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
         _isLoading = false;
       });
       _scrollToBottom();
+      _loadMoreIfHistoryDoesNotFillViewport();
     } catch (e) {
       _logger.severe('Error loading history', e);
       unawaited(_clearLatestSuperAgentHomeSessionIdIfCurrent());
@@ -668,6 +702,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted || sessionId != _currentSessionId) return;
         setState(() => _isLoadingMoreHistory = false);
+        _loadMoreIfHistoryDoesNotFillViewport();
       });
     } catch (e, st) {
       _logger.warning('Failed to load older chat history: $e', e, st);
@@ -1721,6 +1756,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
       viewportSize,
       isFullScreen: _isFullScreen,
       keyboardInset: keyboardBottomOffset,
+      topSafeInset: MediaQuery.viewPaddingOf(context).top,
     );
     final borderRadius = resolveAgentChatDialogBorderRadius(
       isFullScreen: _isFullScreen,
@@ -3115,8 +3151,8 @@ class _AgentChatDialogState extends State<AgentChatDialog>
             : _agentChat.documentCreated;
       case ChatArtifact.kindSystemAction:
         return artifact.systemActionKind == 'calendar'
-            ? _agentChat.calendarEventCreated
-            : _agentChat.reminderCreated;
+            ? UserStorage.l10n.discoveredCalendarEvent
+            : UserStorage.l10n.discoveredReminder;
       case ChatArtifact.kindKnowledgeInsight:
         return _agentChat.insightSaved;
       case ChatArtifact.kindSchedule:
@@ -3173,17 +3209,6 @@ class _AgentChatDialogState extends State<AgentChatDialog>
           ),
         );
         return;
-      case ChatArtifact.kindSchedule:
-        final openSchedule = widget.onOpenScheduleTab;
-        if (openSchedule != null) {
-          openSchedule();
-          unawaited(Navigator.of(context).maybePop());
-        } else {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const ScheduleAggregatorScreen()),
-          );
-        }
-        return;
       default:
         return;
     }
@@ -3197,8 +3222,6 @@ class _AgentChatDialogState extends State<AgentChatDialog>
         return artifact.knowledgeInsightId != null;
       case ChatArtifact.kindKnowledgeFile:
         return artifact.knowledgeFilePath != null;
-      case ChatArtifact.kindSchedule:
-        return true;
       default:
         return false;
     }
@@ -3297,6 +3320,34 @@ class _AgentChatDialogState extends State<AgentChatDialog>
 
   Widget _buildArtifactItem(ArtifactItem item, {bool embedded = false}) {
     final artifact = item.artifact;
+    final systemActionId = artifact.systemActionId;
+    if (artifact.kind == ChatArtifact.kindSystemAction &&
+        systemActionId != null) {
+      final actionCard = SystemActionArtifactCard(
+        key: ValueKey('system_action_artifact_$systemActionId'),
+        actionId: systemActionId,
+        actionKind: artifact.systemActionKind ?? 'action',
+        fallbackTitle: artifact.title,
+        fallbackSummary: artifact.summary,
+      );
+      if (embedded) {
+        return Padding(
+          padding: const EdgeInsets.only(top: 10),
+          child: actionCard,
+        );
+      }
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(width: 32),
+            Expanded(child: actionCard),
+          ],
+        ),
+      );
+    }
+
     final tappable = _artifactIsTappable(artifact);
     final showHtmlPreview =
         item.html != null && _liveHtmlPreviewItems().contains(item);
@@ -3354,7 +3405,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        UserStorage.l10n.scheduleBriefingOpen,
+                        UserStorage.l10n.artifactOpen,
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
