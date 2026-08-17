@@ -1508,6 +1508,33 @@ class FileSystemService {
     );
   }
 
+  String getCharacterConversationPath(String userId, String characterId) {
+    return path.join(
+      getCharacterWorkspacePath(userId, characterId),
+      'Conversation',
+    );
+  }
+
+  String getCharacterConversationMessagesPath(
+    String userId,
+    String characterId,
+  ) {
+    return path.join(
+      getCharacterConversationPath(userId, characterId),
+      'messages.jsonl',
+    );
+  }
+
+  String getCharacterConversationStatePath(
+    String userId,
+    String characterId,
+  ) {
+    return path.join(
+      getCharacterConversationPath(userId, characterId),
+      'state.json',
+    );
+  }
+
   /// Unified media pool directory — all user-uploaded images/audio/etc.
   /// land here with a canonical filename (see [MediaService]).
   String getMediaPath(String userId) {

@@ -360,6 +360,7 @@ class CharacterInitiativeTaskHandler {
     final messages = await PersonaChatService.instance.getMessages(
       character.id,
       limit: 24,
+      userId: userId,
     );
     final recentPrivateChat = messages.reversed
         .map(

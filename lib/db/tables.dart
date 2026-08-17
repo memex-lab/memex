@@ -170,6 +170,10 @@ class PersonaChatMessages extends Table {
   /// Groups bubbles produced by one character speaking episode. A stable value
   /// also makes persistent task retries idempotent.
   TextColumn get contactEpisodeId => text().nullable()();
+
+  /// Durable identity from the character workspace conversation store.
+  /// SQLite autoincrement [id] is only a rebuildable projection key.
+  TextColumn get stableId => text().nullable()();
 }
 
 /// Monotonic consumption boundary for each character's private-chat inbox.

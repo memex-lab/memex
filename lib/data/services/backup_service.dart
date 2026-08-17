@@ -9,6 +9,7 @@ import 'package:logging/logging.dart';
 import 'package:memex/config/app_flavor.dart';
 import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
+import 'package:memex/data/services/persona_chat_service.dart';
 import 'package:memex/db/app_database.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/user_storage.dart';
@@ -409,6 +410,8 @@ class BackupService {
 
       // Re-init DB
       await AppDatabase.init(restoredUserId);
+      PersonaChatService.instance.bindUser(restoredUserId);
+      await PersonaChatService.instance.reconcileFromWorkspace(restoredUserId);
       databaseClosedForRestore = false;
 
       // 4. Rebuild card cache

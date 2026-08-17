@@ -61,6 +61,7 @@ class CharacterConversationService {
       characterId,
       text,
       timestamp: sentAt,
+      userId: userId,
     );
     await schedulePendingReply(
       userId: userId,

@@ -50,6 +50,7 @@ import 'package:memex/data/services/character_initiative_service.dart';
 import 'package:memex/data/services/character_history_acquaintance_service.dart';
 import 'package:memex/data/services/character_service.dart';
 import 'package:memex/data/repositories/persona_chat_repository.dart';
+import 'package:memex/data/services/persona_chat_service.dart';
 import 'package:memex/data/repositories/character_editor_repository.dart';
 import 'package:memex/data/services/task_handlers/reprocess_comments_handler.dart';
 import 'package:memex/data/services/task_handlers/custom_agent_task_handler.dart';
@@ -116,6 +117,8 @@ class MemexRouter {
       _logger.info('Initializing Local DB for user: $userId');
       await ChatSessionStorage.instance.ensureMigrated(userId);
       await AppDatabase.init(userId);
+      PersonaChatService.instance.bindUser(userId);
+      await PersonaChatService.instance.reconcileFromWorkspace(userId);
 
       _registerTaskHandlers(LocalTaskExecutor.instance);
       await LocalTaskExecutor.instance.start(userId: userId);
@@ -295,6 +298,8 @@ class MemexRouter {
     await FileSystemService.init(dataRoot);
     await ChatSessionStorage.instance.ensureMigrated(userId);
     await AppDatabase.init(userId);
+    PersonaChatService.instance.bindUser(userId);
+    await PersonaChatService.instance.reconcileFromWorkspace(userId);
 
     final taskExecutor = executor ?? LocalTaskExecutor.instance;
     AgentActivityService.setInstance(LocalAgentActivityService.instance);
@@ -1148,8 +1153,11 @@ class MemexRouter {
   }) {
     return runResult(() async {
       await _ensureInitialized();
+      final userId = await UserStorage.getUserId();
+      if (userId == null) throw StateError('No active user.');
       return _personaChatRepository.getMessages(
         characterId,
+        userId: userId,
         limit: limit,
         offset: offset,
       );
@@ -1175,7 +1183,12 @@ class MemexRouter {
   Future<Result<int>> markPersonaChatRead(String characterId) {
     return runResult(() async {
       await _ensureInitialized();
-      final count = await _personaChatRepository.markAllRead(characterId);
+      final userId = await UserStorage.getUserId();
+      if (userId == null) throw StateError('No active user.');
+      final count = await _personaChatRepository.markAllRead(
+        characterId,
+        userId: userId,
+      );
       EventBusService.instance.emitEvent(
         PersonaChatUnreadChangedMessage(characterId: characterId),
       );

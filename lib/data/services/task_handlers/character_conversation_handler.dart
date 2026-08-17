@@ -85,13 +85,17 @@ class CharacterConversationTaskHandler {
     required Map<String, dynamic> payload,
     required TaskContext taskContext,
   }) async {
-    final incoming = await _chatService.getPendingUserMessages(character.id);
+    final incoming = await _chatService.getPendingUserMessages(
+      character.id,
+      userId: userId,
+    );
     if (incoming.isEmpty) return;
 
     final history = await _chatService.getMessagesBefore(
       character.id,
       beforeMessageId: incoming.first.id,
       limit: 24,
+      userId: userId,
     );
     final context = CharacterConversationContext(
       sourceEventId: 'private_chat:${incoming.first.id}',
@@ -119,6 +123,7 @@ class CharacterConversationTaskHandler {
             characterMessages: decision.messages,
             episodeId: episodeId,
             timestamp: _clock(),
+            userId: userId,
           );
           _logger.info(
             'Character ${character.id} replied with '
@@ -126,6 +131,7 @@ class CharacterConversationTaskHandler {
           );
           replyPending = (await _chatService.getPendingUserMessages(
             character.id,
+            userId: userId,
           ))
               .isNotEmpty;
         case CharacterConversationAction.thinkLater:
@@ -134,8 +140,10 @@ class CharacterConversationTaskHandler {
           if (wakeAt == null || !wakeAt.isAfter(_clock()) || reason.isEmpty) {
             throw StateError('Invalid ThinkLater conversation decision.');
           }
-          final latestPending =
-              await _chatService.getPendingUserMessages(character.id);
+          final latestPending = await _chatService.getPendingUserMessages(
+            character.id,
+            userId: userId,
+          );
           final hasNewerInput = latestPending.any(
             (message) => !incomingIds.contains(message.id),
           );
@@ -161,12 +169,14 @@ class CharacterConversationTaskHandler {
           await _chatService.advanceReplyCursor(
             characterId: character.id,
             consumedThroughMessageId: incoming.last.id,
+            userId: userId,
           );
           _logger.info(
             'Character ${character.id} stayed quiet: ${decision.reason}',
           );
           replyPending = (await _chatService.getPendingUserMessages(
             character.id,
+            userId: userId,
           ))
               .isNotEmpty;
       }

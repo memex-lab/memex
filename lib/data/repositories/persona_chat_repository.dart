@@ -27,7 +27,7 @@ class PersonaChatRepository {
 
   Future<PersonaAvatarSummary> loadAvatarSummary(String userId) async {
     final characterFuture = _characterService.getPrimaryCompanion(userId);
-    final unreadCountFuture = _chatService.getTotalUnreadCount();
+    final unreadCountFuture = _chatService.getTotalUnreadCount(userId: userId);
     return PersonaAvatarSummary(
       character: await characterFuture,
       unreadCount: await unreadCountFuture,
@@ -50,7 +50,11 @@ class PersonaChatRepository {
         character: character,
       );
     }
-    var messages = await _chatService.getMessages(characterId, limit: limit);
+    var messages = await _chatService.getMessages(
+      characterId,
+      limit: limit,
+      userId: userId,
+    );
     final firstMessage = character.firstMessage?.trim();
     if (messages.isEmpty && firstMessage != null && firstMessage.isNotEmpty) {
       await _chatService.addCharacterMessage(
@@ -61,8 +65,14 @@ class PersonaChatRepository {
           charName: character.name,
         ),
         isRead: true,
+        contactEpisodeId: 'greeting:first_message',
+        userId: userId,
       );
-      messages = await _chatService.getMessages(characterId, limit: limit);
+      messages = await _chatService.getMessages(
+        characterId,
+        limit: limit,
+        userId: userId,
+      );
     }
     return PersonaChatThreadModel(
       character: character,
@@ -76,11 +86,13 @@ class PersonaChatRepository {
     String characterId, {
     required int limit,
     int offset = 0,
+    String? userId,
   }) async {
     final rows = await _chatService.getMessages(
       characterId,
       limit: limit,
       offset: offset,
+      userId: userId,
     );
     return rows.map(_toDomain).toList(growable: false);
   }
@@ -99,8 +111,8 @@ class PersonaChatRepository {
     );
   }
 
-  Future<int> markAllRead(String characterId) {
-    return _chatService.markAllRead(characterId);
+  Future<int> markAllRead(String characterId, {String? userId}) {
+    return _chatService.markAllRead(characterId, userId: userId);
   }
 
   Future<List<CharacterModel>> getEnabledCharacters(String userId) async {

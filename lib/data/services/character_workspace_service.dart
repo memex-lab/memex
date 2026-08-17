@@ -460,6 +460,9 @@ class CharacterWorkspaceService {
         .create(recursive: true);
     await Directory(_fileSystem.getCharacterJournalPath(userId, character.id))
         .create(recursive: true);
+    await Directory(
+      _fileSystem.getCharacterConversationPath(userId, character.id),
+    ).create(recursive: true);
 
     await _migrateLegacyConfiguredMemoryUnlocked(userId, character.id);
 
