@@ -2,10 +2,8 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:memex/l10n/app_localizations.dart';
@@ -48,7 +46,7 @@ import 'package:health/health.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/toast_helper.dart';
 import 'package:memex/ui/agent_activity/widgets/agent_activity_widget.dart';
-import 'package:memex/ui/main_screen/widgets/ai_core_button.dart';
+import 'package:memex/ui/main_screen/widgets/main_bottom_bar.dart';
 import 'package:memex/db/app_database.dart';
 import 'package:memex/data/services/local_server_service.dart';
 import 'package:memex/data/services/app_update_service.dart';
@@ -1907,160 +1905,25 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       bottom: 0,
       left: 0,
       right: 0,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // The 393x120.5 Figma Canvas scaled flawlessly to screen width
-          FittedBox(
-            fit: BoxFit.fitWidth,
-            alignment: Alignment.bottomCenter,
-            child: SizedBox(
-              width: 393,
-              // PNG bounding box height: 120.5 (includes 20px top shadow + 80.5px white shape)
-              height: 120.5,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  // Painted Native Vector Overlay
-                  // Completely removing dependencies on Figma PNG/SVG transparent paddings!
-                  Positioned.fill(
-                    child: CustomPaint(painter: _NavBarPainter()),
-                  ),
-
-                  // Shadow occluder mask
-                  // The Figma export's shadow has a giant blur that leaks downward.
-                  // Placed OVER the image at exactly y=100.0 (where the white shape ends)
-                  // It completely masks out the grey blur and extends solidly into the Safe Area.
-                  Positioned(
-                    top: 100.0,
-                    bottom: -100.0,
-                    left: 0,
-                    right: 0,
-                    child: Container(color: Colors.white),
-                  ),
-
-                  // Center Action Button (88x88 widget, 68x68 nested circle)
-                  // Dialed down to -16.0 for a more subdued hover gap.
-                  Positioned(
-                    top: -16.0,
-                    left: 156.0,
-                    child: AICoreButton(
-                      key: DemoService.instance.isActive
-                          ? DemoService.instance.addButtonKey
-                          : _aiButtonKey,
-                      onTap: () {
-                        // Advance first so _handleAICoreButtonTap sees tapSend step for prefill
-                        DemoService.instance.tryAdvance(DemoStep.tapAddButton);
-                        _handleAICoreButtonTap();
-                      },
-                      onLongPress: _handleAICoreButtonLongPressStart,
-                      onLongPressMoveUpdate:
-                          _handleAICoreButtonLongPressMoveUpdate,
-                      onLongPressEnd: _handleAICoreButtonLongPressEnd,
-                    ),
-                  ),
-
-                  // Timeline Icon
-                  Positioned(
-                    top: 46.63, // 26.63 local + 20px shadow
-                    left: 64.17,
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: _handleTimelineTabTap,
-                      child: SvgPicture.asset(
-                        'assets/icons/tab_timeline_active.svg',
-                        width: 22,
-                        height: 23,
-                        colorFilter: ColorFilter.mode(
-                          _currentTab == 0
-                              ? const Color(0xFF1F1F1F)
-                              : const Color(0xFF99A1AF),
-                          BlendMode.srcIn,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // Timeline Text
-                  Positioned(
-                    top: 76.0,
-                    left: 25.17,
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: _handleTimelineTabTap,
-                      child: SizedBox(
-                        width:
-                            100, // Widened from strict 58 to permit iOS text expansion
-                        // Removed strict height boundary to prevent vertical ascender clipping
-                        child: Text(
-                          UserStorage.l10n.bottomNavTimeline,
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                            color: _currentTab == 0
-                                ? const Color(0xFF1F1F1F)
-                                : const Color(0xFF99A1AF),
-                            letterSpacing: 0.14,
-                            height: 1.0,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // Library — single widget for both icon + text so the
-                  // demo spotlight key covers the whole tab area.
-                  Positioned(
-                    top: 47.02,
-                    left: 299.58,
-                    child: GestureDetector(
-                      key: DemoService.instance.knowledgeTabKey,
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () {
-                        _handleLibraryTabTap();
-                        DemoService.instance.tryAdvance(
-                          DemoStep.tapKnowledgeTab,
-                        );
-                      },
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          SvgPicture.asset(
-                            'assets/icons/tab_library_inactive.svg',
-                            width: 25.06,
-                            height: 21.15,
-                            colorFilter: ColorFilter.mode(
-                              _currentTab == 1
-                                  ? const Color(0xFF1F1F1F)
-                                  : const Color(0xFF99A1AF),
-                              BlendMode.srcIn,
-                            ),
-                          ),
-                          const SizedBox(height: 76.0 - 47.02 - 21.15),
-                          Text(
-                            UserStorage.l10n.bottomNavLibrary,
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.inter(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w400,
-                              color: _currentTab == 1
-                                  ? const Color(0xFF1F1F1F)
-                                  : const Color(0xFF99A1AF),
-                              letterSpacing: 0.14,
-                              height: 1.0,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+      child: MainBottomBar(
+        currentTab: _currentTab,
+        onTimelineTap: _handleTimelineTabTap,
+        onLibraryTap: () {
+          _handleLibraryTabTap();
+          DemoService.instance.tryAdvance(DemoStep.tapKnowledgeTab);
+        },
+        onCenterTap: () {
+          // Advance first so _handleAICoreButtonTap sees tapSend step for prefill
+          DemoService.instance.tryAdvance(DemoStep.tapAddButton);
+          _handleAICoreButtonTap();
+        },
+        onCenterLongPress: _handleAICoreButtonLongPressStart,
+        onCenterLongPressMoveUpdate: _handleAICoreButtonLongPressMoveUpdate,
+        onCenterLongPressEnd: _handleAICoreButtonLongPressEnd,
+        centerButtonKey: DemoService.instance.isActive
+            ? DemoService.instance.addButtonKey
+            : _aiButtonKey,
+        libraryTabKey: DemoService.instance.knowledgeTabKey,
       ),
     );
   }
@@ -2101,42 +1964,4 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       }
     }
   }
-}
-
-class _NavBarPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final Path path = Path();
-    path.moveTo(0, 20);
-    path.lineTo(142.528, 20);
-    path.cubicTo(148.501, 20, 153.977, 23.3275, 156.729, 28.6293);
-    path.lineTo(164.497, 43.5965);
-    path.cubicTo(179.426, 72.3609, 220.574, 72.3609, 235.503, 43.5966);
-    path.lineTo(243.271, 28.6293);
-    path.cubicTo(246.023, 23.3275, 251.499, 20, 257.472, 20);
-    path.lineTo(size.width, 20);
-    path.lineTo(size.width, size.height);
-    path.lineTo(0, size.height);
-    path.lineTo(0, 20);
-    path.close();
-
-    // Custom drop shadow that doesn't bleed weirdly
-    // We clip the bottom so the shadow never goes below the nav bar visually
-    canvas.save();
-    canvas.clipRect(
-      Rect.fromLTWH(-50, -50, size.width + 100, size.height + 50),
-    );
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = Colors.black.withValues(alpha: 0.08)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10.0),
-    );
-    canvas.restore();
-
-    canvas.drawPath(path, Paint()..color = Colors.white);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
