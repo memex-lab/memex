@@ -240,44 +240,37 @@ Future<void> processAICommentReply({
       existingCommentsContext = buf.toString();
     }
 
-    // 7. Initialize and Run Agent
-    try {
-      Future<void> runComment() async {
-        await CommentAgent.runWithContent(
-          userContent,
-          client: client,
-          modelConfig: modelConfig,
-          userId: userId,
-          factId: cardId,
-          rawInputContent: contentToUse,
-          initialInsight: initialInsight,
-          existingCommentsContext: existingCommentsContext,
-          characterId: characterId,
-          forcedReplyToId: userCommentId,
-          currentTime: inputDateTime ?? DateTime.now(),
-          entryTime: entryDateTime,
-          locationContextReminder: effectiveLocationReminder,
-          withMemoryManagement: withMemoryManagement,
-          forceReply: forceReply,
-        );
-      }
-
-      if (characterId == null) {
-        await runComment();
-      } else {
-        await CharacterExecutionCoordinator.instance.run(
-          userId: userId,
-          characterId: characterId,
-          action: runComment,
-        );
-      }
-    } catch (e) {
-      _logger.severe('Error running comment agent: $e');
+    // 7. Run the comment agent. Failures must propagate so LocalTaskExecutor
+    // retries process_ai_reply / comment_agent_task instead of marking success.
+    Future<void> runComment() async {
+      await CommentAgent.runWithContent(
+        userContent,
+        client: client,
+        modelConfig: modelConfig,
+        userId: userId,
+        factId: cardId,
+        rawInputContent: contentToUse,
+        initialInsight: initialInsight,
+        existingCommentsContext: existingCommentsContext,
+        characterId: characterId,
+        forcedReplyToId: userCommentId,
+        currentTime: inputDateTime ?? DateTime.now(),
+        entryTime: entryDateTime,
+        locationContextReminder: effectiveLocationReminder,
+        withMemoryManagement: withMemoryManagement,
+        forceReply: forceReply,
+      );
     }
 
-    // 7. Save Reply to Card - REMOVED
-    // The Agent now uses the SaveComment tool to save the reply directly.
-    // If the agent fails, no comment is posted (unless we add fallback logic here, but keeping it simple for now).
+    if (characterId == null) {
+      await runComment();
+    } else {
+      await CharacterExecutionCoordinator.instance.run(
+        userId: userId,
+        characterId: characterId,
+        action: runComment,
+      );
+    }
 
     // 8. EventBus Update
     if (sendEventBus) {

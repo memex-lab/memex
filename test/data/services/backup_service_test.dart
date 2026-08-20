@@ -493,6 +493,40 @@ void main() {
     expect(await cardFile.readAsString(), 'hello backup');
   });
 
+  test('restore removes workspace files that are not in the backup', () async {
+    final exportedDir = Directory(p.join(tempDir.path, 'ExportedBackups'));
+    final backupPath = await BackupService.createBackup(
+      outputDirectory: exportedDir.path,
+    );
+
+    final workspace = Directory(
+      FileSystemService.instance.getWorkspacePath('backup-service-user'),
+    );
+    final extraFile = File(p.join(workspace.path, 'Cards', 'extra.md'));
+    await extraFile.create(recursive: true);
+    await extraFile.writeAsString('should not survive restore');
+    final localBackup = File(
+      p.join(workspace.path, 'Backups', 'keep-me.memex'),
+    );
+    await localBackup.create(recursive: true);
+    await localBackup.writeAsBytes([9, 9, 9]);
+
+    try {
+      await BackupService.restoreBackup(backupPath);
+    } finally {
+      if (AppDatabase.isInitialized) {
+        await AppDatabase.instance.close();
+      }
+    }
+
+    expect(await extraFile.exists(), isFalse);
+    expect(await localBackup.exists(), isTrue);
+    expect(
+      await File(p.join(workspace.path, 'Cards', 'card.md')).readAsString(),
+      'hello backup',
+    );
+  });
+
   test(
     'restore keeps the main isolate responsive while extracting a larger backup',
     () async {

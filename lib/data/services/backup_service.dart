@@ -7,8 +7,10 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
 import 'package:memex/config/app_flavor.dart';
+import 'package:memex/data/services/agent_background_coordinator.dart';
 import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
+import 'package:memex/data/services/local_task_executor.dart';
 import 'package:memex/db/app_database.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/user_storage.dart';
@@ -387,6 +389,11 @@ class BackupService {
       final workspacePath = fs.getWorkspacePath(restoredUserId);
       final appDir = await getApplicationDocumentsDirectory();
       final supportDir = await getApplicationSupportDirectory();
+
+      // Stop background writers before replacing the workspace and SQLite file.
+      onProgress?.call('Stopping background work...');
+      await AgentBackgroundCoordinator.instance.stop();
+      await LocalTaskExecutor.instance.stop();
 
       // 2. Close current DB before replacing DB files.
       onProgress?.call('Restoring database...');
@@ -1379,6 +1386,7 @@ Future<void> _applyStagedBackupRestore({
   required String appSupportPath,
 }) async {
   final stagingWorkspace = Directory(stagingWorkspacePath);
+  final sourceRelPaths = <String>{};
   if (await stagingWorkspace.exists()) {
     await for (final entity in stagingWorkspace.list(
       recursive: true,
@@ -1394,9 +1402,20 @@ Future<void> _applyStagedBackupRestore({
       if (!BackupService._isPathWithin(workspacePath, targetPath)) {
         throw Exception('Unsafe staged workspace path: $relativePath');
       }
+      sourceRelPaths.add(relativePath);
+      var dir = path.dirname(relativePath);
+      while (dir != '.' && dir.isNotEmpty) {
+        sourceRelPaths.add(dir);
+        dir = path.dirname(dir);
+      }
       await _moveFileReplacing(entity, targetPath);
     }
   }
+
+  await _removeStaleWorkspaceFiles(
+    workspacePath: workspacePath,
+    sourceRelPaths: sourceRelPaths,
+  );
 
   final stagingDb = Directory(stagingDbPath);
   if (await stagingDb.exists()) {
@@ -1416,6 +1435,43 @@ Future<void> _applyStagedBackupRestore({
         }
       }
       await _moveFileReplacing(entity, targetPath);
+    }
+  }
+}
+
+/// Delete workspace files that are not in the backup. `Backups/` is excluded
+/// from archives, so it is preserved locally across restore.
+Future<void> _removeStaleWorkspaceFiles({
+  required String workspacePath,
+  required Set<String> sourceRelPaths,
+}) async {
+  final destDir = Directory(workspacePath);
+  if (!await destDir.exists()) return;
+
+  final destEntities = <FileSystemEntity>[];
+  await for (final entity
+      in destDir.list(recursive: true, followLinks: false)) {
+    destEntities.add(entity);
+  }
+  destEntities.sort((a, b) => b.path.length.compareTo(a.path.length));
+
+  for (final entity in destEntities) {
+    final relativePath = path.relative(entity.path, from: workspacePath);
+    if (relativePath == '.' || relativePath.isEmpty) continue;
+    final firstSegment = path.split(relativePath).first;
+    if (firstSegment == 'Backups') continue;
+    if (sourceRelPaths.contains(relativePath)) continue;
+
+    try {
+      if (entity is File) {
+        await entity.delete();
+      } else if (entity is Directory) {
+        await entity.delete(recursive: true);
+      }
+    } catch (e) {
+      BackupService._logger.warning(
+        'Failed to remove stale restore path ${entity.path}: $e',
+      );
     }
   }
 }
