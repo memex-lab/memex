@@ -221,17 +221,18 @@ class PersonaChatService {
 
     final result = await _db.transaction(() async {
       if (contactEpisodeId != null) {
-        final existing = await (_db.select(_db.personaChatMessages)
-              ..where((t) =>
-                  t.characterId.equals(characterId) &
-                  t.contactEpisodeId.equals(contactEpisodeId))
-              ..orderBy([(t) => OrderingTerm.asc(t.id)]))
-            .get();
+        final existing = await _getEpisodeMessages(
+          characterId,
+          contactEpisodeId,
+        );
         if (existing.isNotEmpty) {
-          return (
-            ids: existing.map((message) => message.id).toList(),
-            inserted: false
-          );
+          if (existing.length == messages.length) {
+            return (
+              ids: existing.map((message) => message.id).toList(),
+              inserted: false
+            );
+          }
+          await _deleteEpisodeMessages(characterId, contactEpisodeId);
         }
       }
 
@@ -295,13 +296,14 @@ class PersonaChatService {
 
     await _ensureProjected(characterId, userId: userId);
     return _db.transaction(() async {
-      final existing = await (_db.select(_db.personaChatMessages)
-            ..where((t) =>
-                t.characterId.equals(characterId) &
-                t.contactEpisodeId.equals(contactEpisodeId))
-            ..limit(1))
-          .getSingleOrNull();
-      if (existing != null) return true;
+      final existing = await _getEpisodeMessages(
+        characterId,
+        contactEpisodeId,
+      );
+      if (existing.isNotEmpty) {
+        if (existing.length == messages.length) return true;
+        await _deleteEpisodeMessages(characterId, contactEpisodeId);
+      }
 
       final cursor = await (_db.select(_db.personaChatReplyCursors)
             ..where((row) => row.characterId.equals(characterId)))
@@ -377,14 +379,13 @@ class PersonaChatService {
 
     await _ensureProjected(characterId, userId: userId);
     return _db.transaction(() async {
-      final existing = await (_db.select(_db.personaChatMessages)
-            ..where((t) =>
-                t.characterId.equals(characterId) &
-                t.contactEpisodeId.equals(episodeId))
-            ..orderBy([(t) => OrderingTerm.asc(t.id)]))
-          .get();
+      final existing = await _getEpisodeMessages(characterId, episodeId);
 
       final ids = existing.map((message) => message.id).toList();
+      if (ids.isNotEmpty && ids.length != characterMessages.length) {
+        await _deleteEpisodeMessages(characterId, episodeId);
+        ids.clear();
+      }
       if (ids.isEmpty) {
         final workspaceRecords = await _persistEpisodeToWorkspace(
           userId: _resolveUserId(userId),
@@ -624,6 +625,29 @@ class PersonaChatService {
     return row.read(count) ?? 0;
   }
 
+  Future<List<PersonaChatMessage>> _getEpisodeMessages(
+    String characterId,
+    String episodeId,
+  ) {
+    return (_db.select(_db.personaChatMessages)
+          ..where((row) =>
+              row.characterId.equals(characterId) &
+              row.contactEpisodeId.equals(episodeId))
+          ..orderBy([(row) => OrderingTerm.asc(row.id)]))
+        .get();
+  }
+
+  Future<int> _deleteEpisodeMessages(
+    String characterId,
+    String episodeId,
+  ) {
+    return (_db.delete(_db.personaChatMessages)
+          ..where((row) =>
+              row.characterId.equals(characterId) &
+              row.contactEpisodeId.equals(episodeId)))
+        .go();
+  }
+
   Future<PersonaChatConversationRecord?> _persistToWorkspace({
     required String? userId,
     required String characterId,
@@ -687,6 +711,7 @@ class PersonaChatService {
       userId: userId,
       characterId: characterId,
       contactEpisodeId: contactEpisodeId,
+      expectedRecordCount: messages.length,
       records: (nextSeq) {
         return [
           for (var index = 0; index < messages.length; index++)

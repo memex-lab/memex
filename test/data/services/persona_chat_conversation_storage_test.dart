@@ -46,6 +46,7 @@ void main() {
         userId: 'wujia',
         characterId: 'yaoyao',
         contactEpisodeId: 'character_conversation:task-1',
+        expectedRecordCount: 2,
         records: (nextSeq) => [
           PersonaChatConversationRecord(
             id: 'bubble-1',
@@ -77,6 +78,7 @@ void main() {
         userId: 'wujia',
         characterId: 'yaoyao',
         contactEpisodeId: 'character_conversation:task-1',
+        expectedRecordCount: 2,
         records: (_) => throw StateError('retry must not write again'),
       );
 
@@ -121,6 +123,54 @@ void main() {
       );
       expect(records.map((record) => record.id), ['keep-me']);
       expect(await file.readAsString(), isNot(contains('partial')));
+
+      final reloaded = await storage.loadMessages(
+        userId: 'wujia',
+        characterId: 'yaoyao',
+      );
+      expect(reloaded.map((record) => record.id), ['keep-me']);
+      expect(reloaded.single.content, '第一句');
+    });
+
+    test('rejects character ids that escape the character workspace', () {
+      expect(
+        () => fileSystem.getCharacterConversationPath('wujia', '../outside'),
+        throwsArgumentError,
+      );
+    });
+
+    test('truncates a tail ending inside a UTF-8 code point', () async {
+      await storage.appendMessage(
+        userId: 'wujia',
+        characterId: 'yaoyao',
+        isFromCharacter: false,
+        content: '保留中文',
+        timestamp: DateTime.parse('2026-07-15T09:00:00+08:00'),
+        messageType: PersonaChatMessageTypes.text,
+        origin: PersonaChatMessageOrigin.conversation,
+        isRead: true,
+        stableId: 'utf8-keep',
+      );
+      final file = File(
+        fileSystem.getCharacterConversationMessagesPath('wujia', 'yaoyao'),
+      );
+      await file.writeAsBytes(
+        [...await file.readAsBytes(), 0xF0, 0x9F],
+        flush: true,
+      );
+
+      final records = await storage.loadMessages(
+        userId: 'wujia',
+        characterId: 'yaoyao',
+      );
+      expect(records.map((record) => record.id), ['utf8-keep']);
+      expect(
+        await storage.loadMessages(
+          userId: 'wujia',
+          characterId: 'yaoyao',
+        ),
+        hasLength(1),
+      );
     });
 
     test('clearing a conversation survives a later projection rebuild',

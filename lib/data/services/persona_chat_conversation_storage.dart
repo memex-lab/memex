@@ -194,6 +194,11 @@ class PersonaChatConversationState {
 
 /// Durable character-conversation store. Workspace files are the source of
 /// truth; SQLite is a rebuildable projection.
+///
+/// Single-message appends may leave only an invalid final JSONL row after a
+/// crash, which [_readRecordsUnlocked] removes at a UTF-8 byte boundary.
+/// Multi-record episodes replace the JSONL file once so they become visible
+/// together; a count mismatch on retry replaces an incomplete episode.
 class PersonaChatConversationStorage {
   PersonaChatConversationStorage({
     FileSystemService? fileSystem,
@@ -287,25 +292,78 @@ class PersonaChatConversationStorage {
     required String characterId,
     required List<PersonaChatConversationRecord> Function(int nextSeq) records,
     required String contactEpisodeId,
+    required int expectedRecordCount,
   }) {
+    if (contactEpisodeId.trim().isEmpty) {
+      throw ArgumentError.value(contactEpisodeId, 'contactEpisodeId');
+    }
+    if (expectedRecordCount <= 0) {
+      throw ArgumentError.value(expectedRecordCount, 'expectedRecordCount');
+    }
     return _lockFor(userId, characterId).synchronized(() async {
       await _ensureLayoutUnlocked(userId, characterId);
       final existing = await _readRecordsUnlocked(userId, characterId);
+      final state = await _readStateUnlocked(userId, characterId);
       final already = existing
           .where((record) => record.contactEpisodeId == contactEpisodeId)
           .toList(growable: false);
-      if (already.isNotEmpty) return already;
-
-      var state = await _readStateUnlocked(userId, characterId);
-      final toWrite = records(state.nextSeq);
-      for (final record in toWrite) {
-        await _appendLineUnlocked(userId, characterId, record);
+      if (already.length == expectedRecordCount && already.isNotEmpty) {
+        await _repairNextSeqIfNeeded(
+          userId: userId,
+          characterId: characterId,
+          state: state,
+          records: existing,
+        );
+        return already;
       }
+      final nextSeq = _nextSeq(state, existing);
+      final toWrite = records(nextSeq);
+      if (toWrite.length != expectedRecordCount) {
+        throw StateError(
+          'Episode $contactEpisodeId produced ${toWrite.length} records; '
+          'expected $expectedRecordCount.',
+        );
+      }
+      for (var index = 0; index < toWrite.length; index++) {
+        final record = toWrite[index];
+        if (record.characterId != characterId ||
+            record.contactEpisodeId != contactEpisodeId ||
+            record.seq != nextSeq + index) {
+          throw StateError(
+            'Episode $contactEpisodeId produced an invalid record at $index.',
+          );
+        }
+      }
+
+      var retained = existing;
+      if (already.isNotEmpty) {
+        _logger.warning(
+          'Replacing incomplete conversation episode $contactEpisodeId for '
+          '$characterId (${already.length}/${toWrite.length} records)',
+        );
+        retained = existing
+            .where((record) => record.contactEpisodeId != contactEpisodeId)
+            .toList(growable: false);
+      }
+      final updated = [...retained, ...toWrite];
+      final stableIds = <String>{};
+      if (updated.any((record) => !stableIds.add(record.id))) {
+        throw StateError(
+          'Conversation $characterId contains duplicate stable message IDs.',
+        );
+      }
+      await _writeMessagesFile(
+        File(_fileSystem.getCharacterConversationMessagesPath(
+          userId,
+          characterId,
+        )),
+        updated,
+      );
       await _writeStateUnlocked(
         userId,
         characterId,
         state.copyWith(
-          nextSeq: state.nextSeq + toWrite.length,
+          nextSeq: _nextSeq(state, updated),
           updatedAt: DateTime.now(),
           clearClearedAt: true,
         ),
@@ -601,20 +659,18 @@ class PersonaChatConversationStorage {
     if (!await file.exists()) return const [];
     final bytes = await file.readAsBytes();
     if (bytes.isEmpty) return const [];
-    final text = utf8.decode(bytes);
     final records = <PersonaChatConversationRecord>[];
     var lastValidOffset = 0;
-    var offset = 0;
-    final lines = text.split('\n');
-    for (var index = 0; index < lines.length; index++) {
-      final line = lines[index];
-      final hasTrailingNewline = index < lines.length - 1;
-      offset += line.length + (hasTrailingNewline ? 1 : 0);
-      if (line.trim().isEmpty) {
-        lastValidOffset = offset;
-        continue;
-      }
+    var lineStart = 0;
+
+    Future<void> readLine(int lineEnd, {required bool terminated}) async {
+      final endOffset = terminated ? lineEnd + 1 : lineEnd;
       try {
+        final line = utf8.decode(bytes.sublist(lineStart, lineEnd));
+        if (line.trim().isEmpty) {
+          lastValidOffset = endOffset;
+          return;
+        }
         final decoded = jsonDecode(line);
         if (decoded is! Map) {
           throw const FormatException(
@@ -627,10 +683,10 @@ class PersonaChatConversationStorage {
           throw const FormatException('Conversation JSONL row is incomplete');
         }
         records.add(record);
-        lastValidOffset = offset;
+        lastValidOffset = endOffset;
+        return;
       } catch (error) {
-        final truncatedTail = !hasTrailingNewline && !text.endsWith('\n');
-        if (truncatedTail) {
+        if (!terminated) {
           _logger.warning(
             'Truncating incomplete conversation JSONL tail in ${file.path}',
           );
@@ -638,15 +694,50 @@ class PersonaChatConversationStorage {
             bytes.sublist(0, lastValidOffset),
             flush: true,
           );
-          break;
+          return;
         }
         _logger.warning(
           'Skipping malformed conversation JSONL row in ${file.path}: $error',
         );
-        lastValidOffset = offset;
+        lastValidOffset = endOffset;
       }
     }
+
+    for (var index = 0; index < bytes.length; index++) {
+      if (bytes[index] != 0x0A) continue;
+      await readLine(index, terminated: true);
+      lineStart = index + 1;
+    }
+    if (lineStart < bytes.length) {
+      await readLine(bytes.length, terminated: false);
+    }
     return records;
+  }
+
+  int _nextSeq(
+    PersonaChatConversationState state,
+    List<PersonaChatConversationRecord> records,
+  ) {
+    var nextSeq = state.nextSeq;
+    for (final record in records) {
+      if (record.seq >= nextSeq) nextSeq = record.seq + 1;
+    }
+    return nextSeq;
+  }
+
+  Future<void> _repairNextSeqIfNeeded({
+    required String userId,
+    required String characterId,
+    required PersonaChatConversationState state,
+    required List<PersonaChatConversationRecord> records,
+  }) async {
+    final nextSeq = _nextSeq(state, records);
+    if (nextSeq == state.nextSeq) return;
+    await _writeStateUnlocked(
+      userId,
+      characterId,
+      state.copyWith(nextSeq: nextSeq, updatedAt: DateTime.now()),
+    );
   }
 
   Future<PersonaChatConversationState> _readStateUnlocked(
@@ -711,24 +802,18 @@ class PersonaChatConversationStorage {
     final content = records.isEmpty
         ? ''
         : '${records.map((record) => jsonEncode(record.toJson())).join('\n')}\n';
-    final temporary = File('${file.path}.tmp');
-    await temporary.writeAsString(content, flush: true);
-    try {
-      await temporary.rename(file.path);
-    } on FileSystemException {
-      if (await file.exists()) await file.delete();
-      await temporary.rename(file.path);
-    }
+    await _replaceFile(file, content);
   }
 
   Future<void> _writeJsonFile(File file, Map<String, dynamic> data) async {
+    const encoder = JsonEncoder.withIndent('  ');
+    await _replaceFile(file, '${encoder.convert(data)}\n');
+  }
+
+  Future<void> _replaceFile(File file, String content) async {
     await file.parent.create(recursive: true);
     final temporary = File('${file.path}.tmp');
-    const encoder = JsonEncoder.withIndent('  ');
-    await temporary.writeAsString(
-      '${encoder.convert(data)}\n',
-      flush: true,
-    );
+    await temporary.writeAsString(content, encoding: utf8, flush: true);
     try {
       await temporary.rename(file.path);
     } on FileSystemException {

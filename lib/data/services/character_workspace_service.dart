@@ -741,11 +741,6 @@ class CharacterWorkspaceService {
   }
 
   void _validateCharacterId(String characterId) {
-    if (characterId.trim().isEmpty ||
-        characterId == '.' ||
-        characterId == '..' ||
-        p.basename(characterId) != characterId) {
-      throw ArgumentError.value(characterId, 'characterId');
-    }
+    FileSystemService.validateCharacterId(characterId);
   }
 }

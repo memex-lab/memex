@@ -175,5 +175,43 @@ void main() {
         hasLength(1),
       );
     });
+
+    test('repairs an episode interrupted after its first bubble', () async {
+      final userMessageId = await chat.addUserMessage(characterId, '你好');
+      await storage.appendMessage(
+        userId: userId,
+        characterId: characterId,
+        isFromCharacter: true,
+        content: '第一句',
+        timestamp: DateTime.parse('2026-07-15T09:00:05+08:00'),
+        messageType: PersonaChatMessageTypes.text,
+        origin: PersonaChatMessageOrigin.conversation,
+        contactEpisodeId: 'character_conversation:partial',
+      );
+
+      final ids = await chat.completeConversationEpisode(
+        characterId: characterId,
+        consumedThroughMessageId: userMessageId,
+        characterMessages: [
+          CharacterOutgoingMessage.text('第一句'),
+          CharacterOutgoingMessage.text('第二句'),
+        ],
+        episodeId: 'character_conversation:partial',
+        timestamp: DateTime.parse('2026-07-15T09:00:05+08:00'),
+      );
+
+      expect(ids, hasLength(2));
+      final records = await storage.loadMessages(
+        userId: userId,
+        characterId: characterId,
+      );
+      final episode = records
+          .where(
+            (record) =>
+                record.contactEpisodeId == 'character_conversation:partial',
+          )
+          .toList();
+      expect(episode.map((record) => record.content), ['第一句', '第二句']);
+    });
   });
 }

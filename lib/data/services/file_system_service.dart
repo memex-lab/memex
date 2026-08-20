@@ -1367,7 +1367,18 @@ class FileSystemService {
     return path.join(getSystemPath(userId), 'character_workspaces');
   }
 
+  /// Ensures a character identifier is safe to use as one path component.
+  static void validateCharacterId(String characterId) {
+    if (characterId.trim().isEmpty ||
+        characterId == '.' ||
+        characterId == '..' ||
+        path.basename(characterId) != characterId) {
+      throw ArgumentError.value(characterId, 'characterId');
+    }
+  }
+
   String getCharacterWorkspacePath(String userId, String characterId) {
+    validateCharacterId(characterId);
     return path.join(getCharacterWorkspacesPath(userId), characterId);
   }
 
