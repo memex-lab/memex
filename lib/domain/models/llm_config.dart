@@ -133,6 +133,10 @@ class LLMConfig {
 
   /// Models that require a ChatGPT Pro/Plus subscription (OpenAI OAuth only).
   static const Set<String> chatgptProOnlyModels = {
+    'gpt-5.6',
+    'gpt-5.6-sol',
+    'gpt-5.6-terra',
+    'gpt-5.6-luna',
     'gpt-5.5',
     'gpt-5.4',
     'gpt-5.3-codex',
@@ -147,84 +151,110 @@ class LLMConfig {
     switch (type) {
       case typeChatCompletion:
       case typeResponses:
-        return const {'gpt-5.5', 'gpt-5.4', 'gpt-5.4-mini', 'o3'};
+        return const {
+          'gpt-5.6-sol',
+          'gpt-5.6-terra',
+          'gpt-5.6-luna',
+        };
       case typeOpenAiOauth:
-        return const {'gpt-5.5', 'gpt-5.4', 'gpt-5.4-mini'};
+        return const {
+          'gpt-5.6-sol',
+          'gpt-5.6-terra',
+          'gpt-5.6-luna',
+        };
       case typeClaude:
         return const {
-          'claude-opus-4-8',
-          'claude-opus-4-7',
-          'claude-opus-4-6',
-          'claude-sonnet-4-6',
+          'claude-fable-5',
+          'claude-opus-5',
+          'claude-sonnet-5',
         };
       case typeBedrockClaude:
         return const {
-          'anthropic.claude-opus-4-8',
-          'anthropic.claude-opus-4-7',
-          'us.anthropic.claude-opus-4-6-v1',
-          'us.anthropic.claude-sonnet-4-6',
+          'anthropic.claude-fable-5',
+          'anthropic.claude-opus-5',
+          'anthropic.claude-sonnet-5',
         };
       case typeGemini:
       case typeGeminiOauth:
-        return const {'gemini-3.5-flash', 'gemini-3.1-pro-preview'};
+        return const {'gemini-3.6-flash', 'gemini-3.1-pro-preview'};
       case typeKimi:
-        return const {'kimi-k2.5'};
+        return const {'kimi-k3', 'kimi-k2.7-code'};
       case typeQwen:
-        return const {'qwen3.5-plus'};
+        return const {'qwen3.8-max', 'qwen3.7-plus', 'qwen3.7-flash'};
       case typeSeed:
-        return const {'doubao-seed-2-0-pro-260215', 'doubao-seed-1-8-251228'};
+        return const {
+          'doubao-seed-2-0-pro-260215',
+          'doubao-seed-2-0-code-preview-260215',
+        };
       case typeZhipu:
-        return const {'glm-5v-turbo', 'glm-4.6v'};
+        return const {'glm-5.2', 'glm-5v-turbo'};
       case typeDeepSeek:
         return const {'deepseek-v4-flash', 'deepseek-v4-pro'};
+      case typeMinimax:
+        return const {'MiniMax-M3', 'MiniMax-M2.7'};
       case typeMimo:
-        return const {'mimo-v2-pro'};
+        return const {'mimo-v2.5-pro', 'mimo-v2.5'};
       case typeOpenRouter:
         return const {
-          'openai/gpt-5.5',
-          'anthropic/claude-opus-4.8',
-          'anthropic/claude-opus-4.7',
-          'google/gemini-3.5-flash',
-          'anthropic/claude-opus-4.6',
-          'anthropic/claude-sonnet-4.6',
+          'anthropic/claude-fable-5',
+          'anthropic/claude-opus-5',
+          'anthropic/claude-sonnet-5',
+          'openai/gpt-5.6-sol',
+          'openai/gpt-5.6-terra',
+          'openai/gpt-5.6-luna',
+          'google/gemini-3.6-flash',
           'google/gemini-3.1-pro-preview',
-          'openai/gpt-5.4',
-          'openai/o3',
-          'qwen/qwen-plus',
-          'qwen/qwen-max',
-          'x-ai/grok-4',
-          'z-ai/glm-4.6v',
-          'z-ai/glm-5v-turbo',
+          'qwen/qwen3.8-max',
+          'deepseek/deepseek-v4-pro',
+          'minimax/minimax-m3',
+          'z-ai/glm-5.2',
+          'xiaomi/mimo-v2.5-pro',
+          'moonshotai/kimi-k2.7-code',
         };
+      case typeOllama:
+        return const {'qwen3.5:9b', 'gemma4:12b', 'llama4:scout'};
       default:
         return const {};
     }
   }
 
   /// Recommended model IDs per provider type.
+  ///
+  /// This is a curated starter list rather than an exhaustive compatibility
+  /// list. Prefer the current model family plus its immediate predecessor,
+  /// retain distinct price/performance tiers within those families, and keep
+  /// endpoint-specific models out of providers that cannot invoke them. Users
+  /// can still enter older supported model IDs manually.
   static List<String> recommendedModels(String type) {
     switch (type) {
       case typeGemini:
       case typeGeminiOauth:
         return const [
-          'gemini-3.5-flash',
+          'gemini-3.6-flash',
           'gemini-3.1-pro-preview',
-          'gemini-3-flash-preview',
-          'gemini-3.1-flash-lite-preview',
+          'gemini-3.5-flash',
+          'gemini-3.5-flash-lite',
         ];
       case typeChatCompletion:
+        return const [
+          'gpt-5.6-sol',
+          'gpt-5.6-terra',
+          'gpt-5.6-luna',
+          'gpt-5.5',
+        ];
       case typeResponses:
         return const [
+          'gpt-5.6-sol',
+          'gpt-5.6-terra',
+          'gpt-5.6-luna',
           'gpt-5.5',
-          'gpt-5.4',
-          'gpt-5.4-mini',
-          'gpt-5.4-nano',
-          'o3',
-          'gpt-5.4-pro',
-          'gpt-5.3-codex',
+          'gpt-5.5-pro',
         ];
       case typeOpenAiOauth:
         return const [
+          'gpt-5.6-sol',
+          'gpt-5.6-terra',
+          'gpt-5.6-luna',
           'gpt-5.5',
           'gpt-5.4',
           'gpt-5.4-mini',
@@ -232,70 +262,82 @@ class LLMConfig {
         ];
       case typeClaude:
         return const [
+          'claude-fable-5',
+          'claude-opus-5',
+          'claude-sonnet-5',
           'claude-opus-4-8',
-          'claude-opus-4-7',
-          'claude-opus-4-6',
-          'claude-sonnet-4-6',
           'claude-haiku-4-5-20251001',
         ];
       case typeBedrockClaude:
         return const [
+          'anthropic.claude-fable-5',
+          'anthropic.claude-opus-5',
+          'anthropic.claude-sonnet-5',
           'anthropic.claude-opus-4-8',
           'global.anthropic.claude-opus-4-8',
           'us.anthropic.claude-opus-4-8',
-          'anthropic.claude-opus-4-7',
-          'global.anthropic.claude-opus-4-7',
-          'us.anthropic.claude-opus-4-7',
-          'us.anthropic.claude-opus-4-6-v1',
-          'global.anthropic.claude-opus-4-6-v1',
-          'us.anthropic.claude-sonnet-4-6',
-          'global.anthropic.claude-sonnet-4-6',
           'us.anthropic.claude-haiku-4-5-20251001-v1:0',
           'global.anthropic.claude-haiku-4-5-20251001-v1:0',
         ];
       case typeKimi:
         return const [
+          'kimi-k3',
+          'kimi-k2.7-code',
+          'kimi-k2.6',
           'kimi-k2.5',
-          'kimi-k2',
-          'kimi-k2-thinking',
-          'kimi-k2-thinking-turbo',
-          'kimi-k2-turbo-preview',
         ];
       case typeQwen:
         return const [
+          'qwen3.8-max',
+          'qwen3.7-plus',
+          'qwen3.7-flash',
           'qwen3.5-plus',
-          'qwen3-coder',
-          'qwen3-235b-a22b',
-          'qwen-max',
         ];
       case typeSeed:
-        return const ['doubao-seed-1-8-251228', 'doubao-1.5-pro-256k'];
+        return const [
+          'doubao-seed-2-0-pro-260215',
+          'doubao-seed-2-0-code-preview-260215',
+          'doubao-seed-2-0-mini-260428',
+          'doubao-seed-2-0-lite-260428',
+        ];
       case typeZhipu:
-        return const ['glm-5v-turbo', 'glm-4.6v'];
+        return const ['glm-5.2', 'glm-5v-turbo', 'glm-4.6v'];
       case typeDeepSeek:
         return const ['deepseek-v4-flash', 'deepseek-v4-pro'];
       case typeMinimax:
-        return const ['MiniMax-M2.5', 'MiniMax-M1'];
+        return const [
+          'MiniMax-M3',
+          'MiniMax-M2.7',
+          'MiniMax-M2.7-highspeed',
+          'MiniMax-M2.5',
+        ];
       case typeOpenRouter:
         return const [
-          'openai/gpt-5.5',
-          'anthropic/claude-opus-4.8',
-          'anthropic/claude-opus-4.7',
-          'google/gemini-3.5-flash',
-          'anthropic/claude-opus-4.6',
-          'anthropic/claude-sonnet-4.6',
-          'openai/gpt-5.4',
+          'anthropic/claude-fable-5',
+          'anthropic/claude-opus-5',
+          'anthropic/claude-sonnet-5',
+          'openai/gpt-5.6-sol',
+          'openai/gpt-5.6-terra',
+          'openai/gpt-5.6-luna',
+          'google/gemini-3.6-flash',
+          'google/gemini-3.1-pro-preview',
+          'qwen/qwen3.8-max',
+          'deepseek/deepseek-v4-pro',
+          'minimax/minimax-m3',
+          'z-ai/glm-5.2',
+          'xiaomi/mimo-v2.5-pro',
+          'moonshotai/kimi-k2.7-code',
         ];
       case typeOllama:
-        return const ['qwen2.5:7b', 'llama3.1:8b', 'gemma3:12b'];
-      case typeMimo:
         return const [
-          'mimo-v2.5',
-          'mimo-v2-omni',
-          'mimo-v2.5-pro',
-          'mimo-v2-pro',
-          'mimo-v2-flash',
+          'qwen3.5:9b',
+          'qwen3.5:4b',
+          'gemma4:12b',
+          'gemma4:e4b',
+          'llama4:scout',
         ];
+      case typeMimo:
+        return const ['mimo-v2.5-pro', 'mimo-v2.5'];
       default:
         return const [];
     }
@@ -369,6 +411,7 @@ class LLMConfig {
       case typeClaude:
       case typeBedrockClaude:
         return id.contains('claude-3') ||
+            id.contains('claude-fable') ||
             id.contains('claude-sonnet') ||
             id.contains('claude-opus') ||
             id.contains('claude-haiku');
@@ -381,14 +424,35 @@ class LLMConfig {
             id.contains('o3');
       case typeZhipu:
         return id.contains('glm-') && id.contains('v');
+      case typeKimi:
+        return id.startsWith('kimi-k3') ||
+            id.startsWith('kimi-k2.7') ||
+            id.startsWith('kimi-k2.6') ||
+            id.startsWith('kimi-k2.5');
       case typeMimo:
         return id == 'mimo-v2.5' || id == 'mimo-v2-omni' || id.contains('omni');
       case typeQwen:
-      case typeSeed:
-      case typeMinimax:
-        return id.contains('vl') ||
+        return id.startsWith('qwen3.8-') ||
+            id.startsWith('qwen3.7-plus') ||
+            id.startsWith('qwen3.7-flash') ||
+            id.startsWith('qwen3.6-') ||
+            id.startsWith('qwen3.5-') ||
+            id.contains('vl') ||
             id.contains('vision') ||
             id.contains('omni');
+      case typeSeed:
+        return id.startsWith('doubao-seed-2-0') ||
+            id.contains('vision') ||
+            id.contains('omni');
+      case typeMinimax:
+        return id == 'minimax-m3' ||
+            id.contains('vl') ||
+            id.contains('vision') ||
+            id.contains('omni');
+      case typeOllama:
+        return id.startsWith('qwen3.5') ||
+            id.startsWith('gemma4') ||
+            id.startsWith('llama4');
       case typeOpenRouter:
       case typeMemex:
         return id.contains('gemini') ||
@@ -627,7 +691,7 @@ class LLMConfig {
       key: defaultClientKey,
       baseUrl: "https://api.openai.com/v1",
       type: typeChatCompletion,
-      modelId: 'gpt-5.4',
+      modelId: 'gpt-5.6-sol',
       maxTokens: 65536,
       apiKey: '',
       extra: {},
