@@ -96,20 +96,20 @@ https://github.com/user-attachments/assets/37e59089-9f94-44dc-8265-269045ce982f
 
 | 提供商 | API 类型 | 备注 |
 |--------|----------|------|
-| Google Gemini | Gemini API | gemini-3.5-flash、gemini-3.1-pro-preview 等 |
+| Google Gemini | Gemini API | gemini-3.6-flash、gemini-3.1-pro-preview 等 |
 | Google Gemini | OAuth（无需 API Key） | 使用 Google 账号登录，非官方支持，风险自负 |
-| OpenAI | Chat Completions / Responses API | gpt-5.5、gpt-5.4 等 |
+| OpenAI | Chat Completions / Responses API | gpt-5.6-sol、gpt-5.6-terra、gpt-5.6-luna 等 |
 | ChatGPT | OAuth（无需 API Key） | 使用 OpenAI 账号登录，非官方支持，风险自负 |
-| Anthropic Claude | Claude API | 直接 API 访问 |
-| AWS Bedrock | Bedrock Claude | 适合 AWS 用户 |
+| Anthropic Claude | Claude API | claude-fable-5、claude-opus-5、claude-sonnet-5 |
+| AWS Bedrock | Bedrock Claude | anthropic.claude-fable-5、anthropic.claude-opus-5 等 |
 | Memex AI | 托管模型访问 | 可选账号制模型访问；日记数据仍保存在本地 |
-| Kimi（月之暗面） | OpenAI 兼容 | kimi-k2.5、kimi-k2 等 |
-| 阿里云（通义千问） | OpenAI 兼容 | qwen3.5-plus、qwen3-coder 等 |
-| 火山引擎（豆包） | OpenAI / Responses 兼容 | doubao-seed-2-0-pro-260215、doubao-seed-1-8-251228 等 |
-| 智谱 GLM | OpenAI 兼容 | glm-5v-turbo、glm-4.6v |
+| Kimi（月之暗面） | OpenAI 兼容 | kimi-k3、kimi-k2.7-code 等 |
+| 阿里云（通义千问） | OpenAI 兼容 | qwen3.8-max、qwen3.7-plus、qwen3.7-flash |
+| 火山引擎（豆包） | OpenAI / Responses 兼容 | doubao-seed-2-0-pro-260215、doubao-seed-2-0-mini-260428 等 |
+| 智谱 GLM | OpenAI 兼容 | glm-5.2、glm-5v-turbo、glm-4.6v |
 | DeepSeek | OpenAI 兼容 | deepseek-v4-flash、deepseek-v4-pro |
-| MiniMax | Anthropic 兼容 | MiniMax-M2.5、MiniMax-M1 |
-| 小米 MIMO | Anthropic 兼容 | mimo-v2.5、mimo-v2-omni 等 |
+| MiniMax | Anthropic 兼容 | MiniMax-M3、MiniMax-M2.7 等 |
+| 小米 MIMO | Anthropic 兼容 | mimo-v2.5-pro、mimo-v2.5 |
 | OpenRouter | OpenAI 兼容 | 通过一个 API 访问多个提供商 |
 | Ollama | OpenAI 兼容（本地） | 在本地设备上运行模型 |
 

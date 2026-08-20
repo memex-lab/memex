@@ -96,20 +96,20 @@ https://github.com/user-attachments/assets/5048a9b1-47b2-462a-99f3-6a178e183861
 
 | Provider | API Type | Notes |
 |----------|----------|-------|
-| Google Gemini | Gemini API | gemini-3.5-flash, gemini-3.1-pro-preview, etc. |
+| Google Gemini | Gemini API | gemini-3.6-flash, gemini-3.1-pro-preview, etc. |
 | Google Gemini | OAuth (no API key required) | Sign in with Google account. Unofficial — use at your own risk |
-| OpenAI | Chat Completions / Responses API | gpt-5.5, gpt-5.4, etc. |
+| OpenAI | Chat Completions / Responses API | gpt-5.6-sol, gpt-5.6-terra, gpt-5.6-luna, etc. |
 | ChatGPT | OAuth (no API key required) | Sign in with OpenAI account. Unofficial — use at your own risk |
-| Anthropic Claude | Claude API | Direct API access |
-| AWS Bedrock | Bedrock Claude | For AWS users |
+| Anthropic Claude | Claude API | claude-fable-5, claude-opus-5, claude-sonnet-5 |
+| AWS Bedrock | Bedrock Claude | anthropic.claude-fable-5, anthropic.claude-opus-5, etc. |
 | Memex AI | Managed model access | Optional account-based model access; journal data remains local |
-| Kimi (Moonshot) | OpenAI-compatible | kimi-k2.5, kimi-k2, etc. |
-| Aliyun (Qwen) | OpenAI-compatible | qwen3.5-plus, qwen3-coder, etc. |
-| Volcengine (Doubao) | OpenAI / Responses-compatible | doubao-seed-2-0-pro-260215, doubao-seed-1-8-251228, etc. |
-| Zhipu GLM | OpenAI-compatible | glm-5v-turbo, glm-4.6v |
+| Kimi (Moonshot) | OpenAI-compatible | kimi-k3, kimi-k2.7-code, etc. |
+| Aliyun (Qwen) | OpenAI-compatible | qwen3.8-max, qwen3.7-plus, qwen3.7-flash |
+| Volcengine (Doubao) | OpenAI / Responses-compatible | doubao-seed-2-0-pro-260215, doubao-seed-2-0-mini-260428, etc. |
+| Zhipu GLM | OpenAI-compatible | glm-5.2, glm-5v-turbo, glm-4.6v |
 | DeepSeek | OpenAI-compatible | deepseek-v4-flash, deepseek-v4-pro |
-| MiniMax | Anthropic-compatible | MiniMax-M2.5, MiniMax-M1 |
-| Xiaomi MIMO | Anthropic-compatible | mimo-v2.5, mimo-v2-omni, etc. |
+| MiniMax | Anthropic-compatible | MiniMax-M3, MiniMax-M2.7, etc. |
+| Xiaomi MIMO | Anthropic-compatible | mimo-v2.5-pro, mimo-v2.5 |
 | OpenRouter | OpenAI-compatible | Access multiple providers via one API |
 | Ollama | OpenAI-compatible (local) | Run models locally on your device |
 
