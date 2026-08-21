@@ -67,7 +67,7 @@ class MemexSkillHostAgent {
       modelConfig: modelConfig,
       state: state,
       tools: tools,
-      skillDirectoryPath: skillDirectoryPath,
+      skillDirectoryPaths: [skillDirectoryPath],
       javaScriptRuntime: FlutterJavaScriptRuntime(),
       skills: null,
       systemPrompts: systemPrompts,
