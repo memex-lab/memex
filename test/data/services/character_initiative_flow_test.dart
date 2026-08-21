@@ -117,7 +117,7 @@ void main() {
       ),
     );
 
-    // Persistent task retries use the same episode id and must be idempotent.
+    // Persistent task retries use the same source turn and must be idempotent.
     await handler.call(
       'user-1',
       {
@@ -144,7 +144,7 @@ void main() {
       messages.every(
         (message) =>
             message.origin == PersonaChatMessageOrigin.initiative &&
-            message.contactEpisodeId == 'character_initiative:task-flow-1',
+            message.contactEpisodeId == 'character_initiative:event-flow-1',
       ),
       isTrue,
     );

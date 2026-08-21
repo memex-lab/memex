@@ -28,127 +28,271 @@ void main() {
       if (await tempRoot.exists()) await tempRoot.delete(recursive: true);
     });
 
-    test('appends one atomic JSONL envelope per episode and paginates bubbles',
-        () async {
+    test('stores only messages and commits a multi-bubble turn once', () async {
       await _appendUser(storage, content: '你醒了吗');
-      final episode = await storage.appendEpisode(
+      final cursorAfterUser = (await storage.loadMetadata(
         userId: _userId,
         characterId: _characterId,
-        contactEpisodeId: 'character_conversation:task-1',
-        expectedRecordCount: 2,
-        consumedThroughSeq: 1,
-        records: (nextSeq) => [
-          _record(nextSeq, '醒了。', id: 'bubble-1'),
-          _record(nextSeq + 1, '怎么了？', id: 'bubble-2'),
-        ],
-      );
-      final retry = await storage.appendEpisode(
-        userId: _userId,
-        characterId: _characterId,
-        contactEpisodeId: 'character_conversation:task-1',
-        expectedRecordCount: 2,
-        consumedThroughSeq: 1,
-        records: (_) => throw StateError('retry must not append'),
-      );
+      ))
+          .messagesByteLength;
 
-      expect(episode.map((record) => record.seq), [2, 3]);
-      expect(retry.map((record) => record.id), ['bubble-1', 'bubble-2']);
-      final lines = await _messagesFile(fileSystem).readAsLines();
-      expect(lines, hasLength(2));
-      expect(jsonDecode(lines.last)['record_type'], 'episode');
-      final receiptDirectory = Directory(
-        fileSystem.getCharacterConversationEpisodeReceiptsPath(
-          _userId,
-          _characterId,
-        ),
-      );
-      final receiptFile = await receiptDirectory
-          .list()
-          .where((entity) => entity is File)
-          .cast<File>()
-          .single;
-      final receipt = jsonDecode(await receiptFile.readAsString());
-      expect(receipt['status'], 'complete');
-      expect(receipt['line_offset'], isNonNegative);
-      expect(receipt, isNot(contains('records')));
-
-      final newest = await storage.loadMessages(
-        userId: _userId,
-        characterId: _characterId,
-        limit: 2,
-      );
-      expect(newest.map((record) => record.content), ['怎么了？', '醒了。']);
-      final older = await storage.loadMessages(
-        userId: _userId,
-        characterId: _characterId,
-        limit: 2,
-        offset: 2,
-      );
-      expect(older.single.content, '你醒了吗');
-
-      await File(
-        fileSystem.getCharacterConversationMetadataPath(
-          _userId,
-          _characterId,
-        ),
-      ).writeAsString('{}\n', flush: true);
-      expect(
-        (await storage.loadMetadata(
+      Future<List<PersonaChatConversationRecord>> commit() {
+        return storage.appendTurn(
           userId: _userId,
           characterId: _characterId,
-        ))
-            .consumedThroughSeq,
-        1,
-      );
-    });
+          turnId: 'character_conversation:1-1',
+          expectedRecordCount: 2,
+          agentProcessedThroughUserMessageId: 1,
+          records: (firstMessageId) => [
+            _record(firstMessageId, '醒了。'),
+            _record(firstMessageId + 1, '怎么了？'),
+          ],
+        );
+      }
 
-    test('recovers a pending episode receipt from the authoritative log',
-        () async {
-      await storage.appendEpisode(
+      expect((await commit()).map((record) => record.id), [2, 3]);
+      expect((await commit()).map((record) => record.id), [2, 3]);
+
+      final lines = await _messagesFile(fileSystem).readAsLines();
+      expect(lines, hasLength(3));
+      for (final line in lines) {
+        final message = jsonDecode(line) as Map<String, dynamic>;
+        expect(message['id'], isA<int>());
+        expect(message['role'], isIn(['user', 'assistant']));
+        expect(message['content'], isA<List>());
+        expect(message, isNot(contains('seq')));
+        expect(message, isNot(contains('record_type')));
+        expect(message, isNot(contains('operation_id')));
+      }
+
+      final metadata = await storage.loadMetadata(
         userId: _userId,
         characterId: _characterId,
-        contactEpisodeId: 'character_conversation:task-1',
-        expectedRecordCount: 2,
-        records: (nextSeq) => [
-          _record(nextSeq, '第一句', id: 'bubble-1'),
-          _record(nextSeq + 1, '第二句', id: 'bubble-2'),
-        ],
       );
-      final receiptDirectory = Directory(
-        fileSystem.getCharacterConversationEpisodeReceiptsPath(
+      expect(metadata.nextMessageId, 4);
+      expect(metadata.agentProcessedThroughUserMessageId, 1);
+      expect(metadata.lastTurnId, 'character_conversation:1-1');
+      expect(
+        File(fileSystem.getCharacterConversationPendingCommitPath(
           _userId,
           _characterId,
-        ),
-      );
-      final receiptFile = await receiptDirectory
-          .list()
-          .where((entity) => entity is File)
-          .cast<File>()
-          .single;
-      await receiptFile.writeAsString(
-        '${jsonEncode({
-              'episode_id': 'character_conversation:task-1',
-              'status': 'pending',
-            })}\n',
-        flush: true,
+        )).existsSync(),
+        isFalse,
       );
 
-      final recovered = await storage.appendEpisode(
+      final newest = await storage.loadMessagePage(
         userId: _userId,
         characterId: _characterId,
-        contactEpisodeId: 'character_conversation:task-1',
-        expectedRecordCount: 2,
-        records: (_) => throw StateError('recovery must not append'),
+        limit: 2,
       );
+      expect(newest.records.map((record) => record.content), ['怎么了？', '醒了。']);
+      expect(newest.olderCursor, isNotNull);
+      final older = await storage.loadMessagePage(
+        userId: _userId,
+        characterId: _characterId,
+        limit: 2,
+        beforeCursor: newest.olderCursor,
+      );
+      expect(older.records.single.content, '你醒了吗');
 
-      expect(recovered.map((record) => record.id), ['bubble-1', 'bubble-2']);
-      expect(await _messagesFile(fileSystem).readAsLines(), hasLength(1));
-      final repairedReceipt = jsonDecode(await receiptFile.readAsString());
-      expect(repairedReceipt['status'], 'complete');
-      expect(repairedReceipt, isNot(contains('records')));
+      final appended = await storage.loadMessagesAfter(
+        userId: _userId,
+        characterId: _characterId,
+        afterCursor: cursorAfterUser,
+      );
+      expect(appended.records.map((record) => record.content), ['怎么了？', '醒了。']);
     });
 
-    test('serializes writers from separate storage instances', () async {
+    test('finds an older committed turn without a receipt or duplicate',
+        () async {
+      await _appendUser(storage, content: '第一句');
+      await storage.appendTurn(
+        userId: _userId,
+        characterId: _characterId,
+        turnId: 'character_conversation:1-1',
+        expectedRecordCount: 1,
+        agentProcessedThroughUserMessageId: 1,
+        records: (firstMessageId) => [_record(firstMessageId, '旧回复')],
+      );
+      await storage.tryAppendInitiativeTurn(
+        userId: _userId,
+        characterId: _characterId,
+        turnId: 'character_initiative:newer-source',
+        expectedRecordCount: 1,
+        records: (firstMessageId) => [
+          _record(
+            firstMessageId,
+            '后来的主动消息',
+            turnId: 'character_initiative:newer-source',
+          ),
+        ],
+      );
+
+      final retry = await storage.appendTurn(
+        userId: _userId,
+        characterId: _characterId,
+        turnId: 'character_conversation:1-1',
+        expectedRecordCount: 1,
+        agentProcessedThroughUserMessageId: 1,
+        records: (_) => throw StateError('retry must not regenerate'),
+      );
+
+      expect(retry.single.content, '旧回复');
+      expect(await _messagesFile(fileSystem).readAsLines(), hasLength(3));
+      await _appendUser(storage, content: '更新最后一个 turn 缓存');
+      await storage.appendTurn(
+        userId: _userId,
+        characterId: _characterId,
+        turnId: 'character_conversation:4-4',
+        expectedRecordCount: 1,
+        agentProcessedThroughUserMessageId: 4,
+        records: (firstMessageId) => [
+          _record(
+            firstMessageId,
+            '新回复',
+            turnId: 'character_conversation:4-4',
+          ),
+        ],
+      );
+      expect(
+        await storage.tryAppendInitiativeTurn(
+          userId: _userId,
+          characterId: _characterId,
+          turnId: 'character_initiative:newer-source',
+          expectedRecordCount: 1,
+          records: (_) => throw StateError('retry must not regenerate'),
+        ),
+        isTrue,
+      );
+      expect(await _messagesFile(fileSystem).readAsLines(), hasLength(5));
+      expect(
+        Directory(fileSystem.getCharacterConversationPath(
+          _userId,
+          _characterId,
+        )).listSync().whereType<File>().map((file) => file.path),
+        everyElement(isNot(contains('_episodes'))),
+      );
+    });
+
+    for (final phase in PersonaChatCommitPhase.values) {
+      test('recovers an interrupted turn after ${phase.name}', () async {
+        await _appendUser(storage, content: '第一句');
+        var failed = false;
+        final interrupted = PersonaChatConversationStorage(
+          fileSystem: fileSystem,
+          commitObserver: (current) async {
+            if (!failed && current == phase) {
+              failed = true;
+              throw StateError('simulated crash after ${phase.name}');
+            }
+          },
+        );
+
+        expect(
+          () => interrupted.appendTurn(
+            userId: _userId,
+            characterId: _characterId,
+            turnId: 'character_conversation:1-1',
+            expectedRecordCount: 2,
+            agentProcessedThroughUserMessageId: 1,
+            records: (firstMessageId) => [
+              _record(firstMessageId, '第二句'),
+              _record(firstMessageId + 1, '第三句'),
+            ],
+          ),
+          throwsStateError,
+        );
+
+        final recovered = PersonaChatConversationStorage(
+          fileSystem: fileSystem,
+        );
+        final messages = await recovered.loadMessages(
+          userId: _userId,
+          characterId: _characterId,
+        );
+        expect(
+          messages.reversed.map((record) => record.content),
+          ['第一句', '第二句', '第三句'],
+        );
+        expect(
+          await recovered.getReplyCursor(
+            userId: _userId,
+            characterId: _characterId,
+          ),
+          1,
+        );
+        expect(
+          File(fileSystem.getCharacterConversationPendingCommitPath(
+            _userId,
+            _characterId,
+          )).existsSync(),
+          isFalse,
+        );
+
+        final retry = await recovered.appendTurn(
+          userId: _userId,
+          characterId: _characterId,
+          turnId: 'character_conversation:1-1',
+          expectedRecordCount: 2,
+          agentProcessedThroughUserMessageId: 1,
+          records: (_) => throw StateError('retry must not regenerate'),
+        );
+        expect(retry.map((record) => record.id), [2, 3]);
+      });
+    }
+
+    test('replays a partially appended batch from its write-ahead file',
+        () async {
+      await _appendUser(storage, content: '第一句');
+      var interrupted = false;
+      final crashing = PersonaChatConversationStorage(
+        fileSystem: fileSystem,
+        commitObserver: (phase) async {
+          if (interrupted || phase != PersonaChatCommitPhase.pendingWritten) {
+            return;
+          }
+          interrupted = true;
+          final pending = File(
+            fileSystem.getCharacterConversationPendingCommitPath(
+              _userId,
+              _characterId,
+            ),
+          );
+          final payload = jsonDecode(await pending.readAsString()) as Map;
+          final firstRow = (payload['messages'] as List).first;
+          await _messagesFile(fileSystem).writeAsString(
+            '${jsonEncode(firstRow)}\n',
+            mode: FileMode.append,
+            flush: true,
+          );
+          throw StateError('simulated partial append');
+        },
+      );
+
+      await expectLater(
+        crashing.appendTurn(
+          userId: _userId,
+          characterId: _characterId,
+          turnId: 'character_conversation:1-1',
+          expectedRecordCount: 2,
+          agentProcessedThroughUserMessageId: 1,
+          records: (firstMessageId) => [
+            _record(firstMessageId, '第二句'),
+            _record(firstMessageId + 1, '第三句'),
+          ],
+        ),
+        throwsStateError,
+      );
+
+      final messages = await storage.loadMessages(
+        userId: _userId,
+        characterId: _characterId,
+      );
+      expect(messages.map((record) => record.id).toSet(), {1, 2, 3});
+      expect(await _messagesFile(fileSystem).readAsLines(), hasLength(3));
+    });
+
+    test('serializes writers and allocates one ordered message id', () async {
       final other = PersonaChatConversationStorage(fileSystem: fileSystem);
       await Future.wait([
         for (var index = 0; index < 12; index++)
@@ -171,23 +315,29 @@ void main() {
         limit: 20,
       );
       expect(messages, hasLength(12));
-      expect(messages.map((record) => record.seq).toSet(), hasLength(12));
+      expect(messages.map((record) => record.id).toSet(), {
+        for (var id = 1; id <= 12; id++) id,
+      });
       expect(
-          (await storage.loadMetadata(
-            userId: _userId,
-            characterId: _characterId,
-          ))
-              .nextSeq,
-          13);
+        (await storage.loadMetadata(
+          userId: _userId,
+          characterId: _characterId,
+        ))
+            .nextMessageId,
+        13,
+      );
     });
 
-    test('repairs metadata after a crash between JSONL append and metadata',
-        () async {
+    test('repairs derived metadata after an unindexed single append', () async {
       await _appendUser(storage, content: '第一句');
+      await storage.advanceCursor(
+        userId: _userId,
+        characterId: _characterId,
+        processedThroughUserMessageId: 1,
+      );
       final file = _messagesFile(fileSystem);
       final second = PersonaChatConversationRecord(
-        id: 'crash-gap',
-        seq: 2,
+        id: 2,
         characterId: _characterId,
         isFromCharacter: true,
         content: '写入后崩溃',
@@ -202,18 +352,14 @@ void main() {
         flush: true,
       );
 
-      final messages = await storage.loadMessages(
-        userId: _userId,
-        characterId: _characterId,
-      );
       final metadata = await storage.loadMetadata(
         userId: _userId,
         characterId: _characterId,
       );
-      expect(messages.map((record) => record.content), ['写入后崩溃', '第一句']);
-      expect(metadata.nextSeq, 3);
+      expect(metadata.nextMessageId, 3);
       expect(metadata.messageCount, 2);
       expect(metadata.unreadCount, 1);
+      expect(metadata.agentProcessedThroughUserMessageId, 1);
       expect(metadata.messagesByteLength, await file.length());
     });
 
@@ -238,7 +384,7 @@ void main() {
       expect(second.single.content, '保留中文');
     });
 
-    test('read and reply boundaries rebuild from the authoritative log',
+    test('keeps read and agent-processing boundaries outside messages',
         () async {
       await _appendUser(storage, content: '用户消息');
       await storage.appendMessage(
@@ -256,7 +402,7 @@ void main() {
       await storage.advanceCursor(
         userId: _userId,
         characterId: _characterId,
-        consumedThroughSeq: 1,
+        processedThroughUserMessageId: 1,
       );
       expect(
         await storage.markAllRead(
@@ -265,23 +411,15 @@ void main() {
         ),
         1,
       );
-      final after = await file.readAsBytes();
-      expect(after.sublist(0, before.length), before);
+      expect(await file.readAsBytes(), before);
 
-      final metadataFile = File(
-        fileSystem.getCharacterConversationMetadataPath(
-          _userId,
-          _characterId,
-        ),
-      );
-      await metadataFile.writeAsString('{}\n', flush: true);
-      final repaired = await storage.loadMetadata(
+      final metadata = await storage.loadMetadata(
         userId: _userId,
         characterId: _characterId,
       );
-      expect(repaired.consumedThroughSeq, 1);
-      expect(repaired.readThroughSeq, 2);
-      expect(repaired.unreadCount, 0);
+      expect(metadata.agentProcessedThroughUserMessageId, 1);
+      expect(metadata.readThroughMessageId, 2);
+      expect(metadata.unreadCount, 0);
       expect(
         (await storage.loadMessages(
           userId: _userId,
@@ -290,6 +428,169 @@ void main() {
             .first
             .isRead,
         isTrue,
+      );
+    });
+
+    test('clear changes generation and never reuses a message id', () async {
+      await _appendUser(storage, content: '旧消息');
+      final before = await storage.loadMetadata(
+        userId: _userId,
+        characterId: _characterId,
+      );
+      expect(
+        await storage.clearConversation(
+          userId: _userId,
+          characterId: _characterId,
+          clearedAt: DateTime.parse('2026-07-15T10:00:00+08:00'),
+        ),
+        1,
+      );
+      await expectLater(
+        storage.appendTurn(
+          userId: _userId,
+          characterId: _characterId,
+          turnId: 'character_conversation:1-1',
+          expectedRecordCount: 1,
+          agentProcessedThroughUserMessageId: 1,
+          expectedGeneration: before.generation,
+          records: (firstMessageId) => [
+            _record(firstMessageId, '不应出现的旧回复'),
+          ],
+        ),
+        throwsStateError,
+      );
+      expect(
+        await storage.tryAppendInitiativeTurn(
+          userId: _userId,
+          characterId: _characterId,
+          turnId: 'character_initiative:old-source',
+          expectedRecordCount: 1,
+          expectedGeneration: before.generation,
+          records: (firstMessageId) => [
+            _record(
+              firstMessageId,
+              '不应出现的旧主动消息',
+              turnId: 'character_initiative:old-source',
+            ),
+          ],
+        ),
+        isFalse,
+      );
+      final next = await storage.appendMessage(
+        userId: _userId,
+        characterId: _characterId,
+        isFromCharacter: false,
+        content: '新消息',
+        timestamp: DateTime.parse('2026-07-15T10:00:01+08:00'),
+        messageType: PersonaChatMessageTypes.text,
+        origin: PersonaChatMessageOrigin.conversation,
+      );
+      final after = await storage.loadMetadata(
+        userId: _userId,
+        characterId: _characterId,
+      );
+      expect(next.id, 2);
+      expect(after.generation, before.generation + 1);
+    });
+
+    for (final phase in PersonaChatCommitPhase.values) {
+      test('recovers an interrupted clear after ${phase.name}', () async {
+        await _appendUser(storage, content: '即将清空');
+        final before = await storage.loadMetadata(
+          userId: _userId,
+          characterId: _characterId,
+        );
+        var failed = false;
+        final interrupted = PersonaChatConversationStorage(
+          fileSystem: fileSystem,
+          commitObserver: (current) async {
+            if (!failed && current == phase) {
+              failed = true;
+              throw StateError('simulated clear crash after ${phase.name}');
+            }
+          },
+        );
+
+        await expectLater(
+          interrupted.clearConversation(
+            userId: _userId,
+            characterId: _characterId,
+            clearedAt: DateTime.parse('2026-07-15T10:00:00+08:00'),
+          ),
+          throwsStateError,
+        );
+
+        final recovered = PersonaChatConversationStorage(
+          fileSystem: fileSystem,
+        );
+        expect(
+          await recovered.loadMessages(
+            userId: _userId,
+            characterId: _characterId,
+          ),
+          isEmpty,
+        );
+        final metadata = await recovered.loadMetadata(
+          userId: _userId,
+          characterId: _characterId,
+        );
+        expect(metadata.generation, before.generation + 1);
+        expect(metadata.nextMessageId, before.nextMessageId);
+      });
+    }
+
+    test('recovers an interrupted legacy snapshot import', () async {
+      var failed = false;
+      final interrupted = PersonaChatConversationStorage(
+        fileSystem: fileSystem,
+        commitObserver: (phase) async {
+          if (!failed && phase == PersonaChatCommitPhase.messagesAppended) {
+            failed = true;
+            throw StateError('simulated import crash');
+          }
+        },
+      );
+      final records = [
+        PersonaChatConversationRecord(
+          id: 1,
+          characterId: _characterId,
+          isFromCharacter: false,
+          content: '旧用户消息',
+          isRead: true,
+          timestamp: DateTime.parse('2026-07-15T09:00:00+08:00'),
+          messageType: PersonaChatMessageTypes.text,
+          origin: PersonaChatMessageOrigin.conversation,
+        ),
+        _record(2, '旧角色回复'),
+      ];
+
+      await expectLater(
+        interrupted.importLegacySnapshot(
+          userId: _userId,
+          characterId: _characterId,
+          records: records,
+          agentProcessedThroughUserMessageId: 1,
+        ),
+        throwsStateError,
+      );
+
+      final recovered = PersonaChatConversationStorage(
+        fileSystem: fileSystem,
+      );
+      expect(
+        (await recovered.loadMessages(
+          userId: _userId,
+          characterId: _characterId,
+        ))
+            .map((record) => record.content),
+        ['旧角色回复', '旧用户消息'],
+      );
+      expect(
+        await recovered.getReplyCursor(
+          userId: _userId,
+          characterId: _characterId,
+        ),
+        1,
       );
     });
 
@@ -303,13 +604,12 @@ void main() {
 }
 
 PersonaChatConversationRecord _record(
-  int seq,
+  int id,
   String content, {
-  required String id,
+  String turnId = 'character_conversation:1-1',
 }) {
   return PersonaChatConversationRecord(
     id: id,
-    seq: seq,
     characterId: _characterId,
     isFromCharacter: true,
     content: content,
@@ -317,7 +617,7 @@ PersonaChatConversationRecord _record(
     timestamp: DateTime.parse('2026-07-15T09:00:05+08:00'),
     messageType: PersonaChatMessageTypes.text,
     origin: PersonaChatMessageOrigin.conversation,
-    contactEpisodeId: 'character_conversation:task-1',
+    turnId: turnId,
   );
 }
 

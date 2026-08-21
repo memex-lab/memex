@@ -50,13 +50,15 @@ class PersonaChatRepository {
         character: character,
       );
     }
-    var messages = await _chatService.getMessages(
+    var page = await _chatService.getMessagePage(
       characterId,
       limit: limit,
       userId: userId,
     );
     final firstMessage = character.firstMessage?.trim();
-    if (messages.isEmpty && firstMessage != null && firstMessage.isNotEmpty) {
+    if (page.messages.isEmpty &&
+        firstMessage != null &&
+        firstMessage.isNotEmpty) {
       await _chatService.addCharacterMessage(
         characterId,
         TavernMacro.resolve(
@@ -68,7 +70,7 @@ class PersonaChatRepository {
         contactEpisodeId: 'greeting:first_message',
         userId: userId,
       );
-      messages = await _chatService.getMessages(
+      page = await _chatService.getMessagePage(
         characterId,
         limit: limit,
         userId: userId,
@@ -78,23 +80,38 @@ class PersonaChatRepository {
       character: character,
       userId: userId,
       userAvatar: userAvatar,
-      messages: messages.map(_toDomain).toList(growable: false),
+      messages: page.messages.map(_toDomain).toList(growable: false),
+      olderCursor: page.olderCursor,
+      newestCursor: page.newestCursor,
     );
   }
 
-  Future<List<PersonaChatMessageModel>> getMessages(
+  Future<PersonaChatMessagePageModel> getMessagePage(
     String characterId, {
     required int limit,
-    int offset = 0,
+    int? beforeCursor,
     String? userId,
   }) async {
-    final rows = await _chatService.getMessages(
+    final page = await _chatService.getMessagePage(
       characterId,
       limit: limit,
-      offset: offset,
+      beforeCursor: beforeCursor,
       userId: userId,
     );
-    return rows.map(_toDomain).toList(growable: false);
+    return _toPage(page);
+  }
+
+  Future<PersonaChatMessagePageModel> getMessagesAfter(
+    String characterId, {
+    required int afterCursor,
+    String? userId,
+  }) async {
+    final page = await _chatService.getMessagesAfter(
+      characterId,
+      afterCursor: afterCursor,
+      userId: userId,
+    );
+    return _toPage(page);
   }
 
   Future<int> sendMessage({
@@ -135,7 +152,15 @@ class PersonaChatRepository {
       timestamp: row.timestamp,
       messageType: row.messageType,
       origin: row.origin,
-      episodeId: row.contactEpisodeId,
+      turnId: row.contactEpisodeId,
+    );
+  }
+
+  static PersonaChatMessagePageModel _toPage(PersonaChatMessagePage page) {
+    return PersonaChatMessagePageModel(
+      messages: page.messages.map(_toDomain).toList(growable: false),
+      olderCursor: page.olderCursor,
+      newestCursor: page.newestCursor,
     );
   }
 }

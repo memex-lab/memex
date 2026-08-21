@@ -65,7 +65,7 @@ void main() {
     );
   });
 
-  test('initiative recovery creates a missing reply task immediately',
+  test('startup reconciliation rebuilds only missing workspace replies',
       () async {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     final executor = LocalTaskExecutor.forTesting(db: db);
@@ -84,10 +84,13 @@ void main() {
     });
 
     await chatService.addUserMessage('yaoyao', '这条消息的任务丢了');
-    await service.ensurePendingReplyScheduled(
-      userId: 'user-1',
-      characterId: 'yaoyao',
+    final handled = await chatService.addUserMessage('auntie', '已经处理的消息');
+    await chatService.advanceReplyCursor(
+      characterId: 'auntie',
+      consumedThroughMessageId: handled,
     );
+    await service.reconcilePendingReplies(userId: 'user-1');
+    await service.reconcilePendingReplies(userId: 'user-1');
 
     final task = (await db.select(db.tasks).get()).single;
     expect(task.bizId, 'character_conversation:yaoyao');

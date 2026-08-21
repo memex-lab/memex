@@ -40,15 +40,14 @@ class PersonaChatLegacyMigrationService {
       if (rows.isEmpty) continue;
 
       final records = <PersonaChatConversationRecord>[];
-      final seqByLegacyId = <int, int>{};
+      final messageIdByLegacyId = <int, int>{};
       for (var index = 0; index < rows.length; index++) {
         final row = rows[index];
-        final seq = index + 1;
-        seqByLegacyId[row.id] = seq;
+        final messageId = index + 1;
+        messageIdByLegacyId[row.id] = messageId;
         records.add(
           PersonaChatConversationRecord(
-            id: 'legacy-${row.id}',
-            seq: seq,
+            id: messageId,
             characterId: row.characterId,
             isFromCharacter: row.isFromCharacter,
             content: row.content,
@@ -57,7 +56,7 @@ class PersonaChatLegacyMigrationService {
             timestamp: row.timestamp,
             messageType: row.messageType,
             origin: row.origin,
-            contactEpisodeId: row.contactEpisodeId,
+            turnId: row.contactEpisodeId,
           ),
         );
       }
@@ -69,9 +68,9 @@ class PersonaChatLegacyMigrationService {
         userId: userId,
         characterId: characterId,
         records: records,
-        consumedThroughSeq: cursor == null
+        agentProcessedThroughUserMessageId: cursor == null
             ? null
-            : seqByLegacyId[cursor.consumedThroughMessageId],
+            : messageIdByLegacyId[cursor.consumedThroughMessageId],
       );
     }
     return true;

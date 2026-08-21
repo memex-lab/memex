@@ -122,6 +122,9 @@ class MemexRouter {
 
       _registerTaskHandlers(LocalTaskExecutor.instance);
       await LocalTaskExecutor.instance.start(userId: userId);
+      await CharacterConversationService.instance.reconcilePendingReplies(
+        userId: userId,
+      );
 
       // Start table change notifier (binlog-style listener for Drift tables)
       TableChangeNotifier.instance.init();
@@ -1145,20 +1148,36 @@ class MemexRouter {
     });
   }
 
-  Future<Result<List<PersonaChatMessageModel>>> fetchPersonaChatMessages(
+  Future<Result<PersonaChatMessagePageModel>> fetchPersonaChatMessagePage(
     String characterId, {
     required int limit,
-    int offset = 0,
+    int? beforeCursor,
   }) {
     return runResult(() async {
       await _ensureInitialized();
       final userId = await UserStorage.getUserId();
       if (userId == null) throw StateError('No active user.');
-      return _personaChatRepository.getMessages(
+      return _personaChatRepository.getMessagePage(
         characterId,
         userId: userId,
         limit: limit,
-        offset: offset,
+        beforeCursor: beforeCursor,
+      );
+    });
+  }
+
+  Future<Result<PersonaChatMessagePageModel>> fetchNewPersonaChatMessages(
+    String characterId, {
+    required int afterCursor,
+  }) {
+    return runResult(() async {
+      await _ensureInitialized();
+      final userId = await UserStorage.getUserId();
+      if (userId == null) throw StateError('No active user.');
+      return _personaChatRepository.getMessagesAfter(
+        characterId,
+        userId: userId,
+        afterCursor: afterCursor,
       );
     });
   }

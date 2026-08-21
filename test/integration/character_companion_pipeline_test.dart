@@ -115,6 +115,7 @@ void main() {
         required messages,
         required timestamp,
         required contactEpisodeId,
+        required expectedGeneration,
         factId,
       }) async {
         await chatService.addCharacterMessages(

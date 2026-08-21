@@ -113,4 +113,20 @@ class CharacterConversationService {
       maxRetries: 3,
     );
   }
+
+  /// Rebuilds missing durable tasks from workspace-authoritative inbox state.
+  ///
+  /// This closes the crash window between appending a user message and
+  /// enqueueing its SQLite task, and also restores work after the task cache is
+  /// recreated.
+  Future<void> reconcilePendingReplies({required String userId}) async {
+    final characterIds =
+        await _chatService.getCharactersWithPendingUserMessages(userId: userId);
+    for (final characterId in characterIds) {
+      await ensurePendingReplyScheduled(
+        userId: userId,
+        characterId: characterId,
+      );
+    }
+  }
 }

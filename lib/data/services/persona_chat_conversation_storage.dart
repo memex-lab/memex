@@ -1,18 +1,16 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:crypto/crypto.dart';
 import 'package:memex/data/services/file_system_service.dart';
+import 'package:memex/data/services/jsonl_conversation_journal.dart';
 import 'package:memex/data/services/jsonl_file_store.dart';
 import 'package:memex/domain/models/character_message.dart';
 import 'package:path/path.dart' as p;
 import 'package:synchronized/synchronized.dart';
-import 'package:uuid/uuid.dart';
 
 class PersonaChatConversationRecord {
   const PersonaChatConversationRecord({
     required this.id,
-    required this.seq,
     required this.characterId,
     required this.isFromCharacter,
     required this.content,
@@ -21,11 +19,10 @@ class PersonaChatConversationRecord {
     required this.messageType,
     required this.origin,
     this.factId,
-    this.contactEpisodeId,
+    this.turnId,
   });
 
-  final String id;
-  final int seq;
+  final int id;
   final String characterId;
   final bool isFromCharacter;
   final String content;
@@ -34,12 +31,11 @@ class PersonaChatConversationRecord {
   final DateTime timestamp;
   final String messageType;
   final String origin;
-  final String? contactEpisodeId;
+  final String? turnId;
 
   PersonaChatConversationRecord copyWith({bool? isRead}) {
     return PersonaChatConversationRecord(
       id: id,
-      seq: seq,
       characterId: characterId,
       isFromCharacter: isFromCharacter,
       content: content,
@@ -48,40 +44,54 @@ class PersonaChatConversationRecord {
       timestamp: timestamp,
       messageType: messageType,
       origin: origin,
-      contactEpisodeId: contactEpisodeId,
+      turnId: turnId,
     );
   }
 
   Map<String, dynamic> toJson() => {
         'id': id,
-        'seq': seq,
-        'character_id': characterId,
-        'speaker': isFromCharacter ? 'character' : 'user',
-        'content': content,
+        'role': isFromCharacter ? 'assistant' : 'user',
+        'content': [
+          {
+            'type': messageType == PersonaChatMessageTypes.text
+                ? 'text'
+                : messageType,
+            'text': content,
+          },
+        ],
         if (factId != null) 'fact_id': factId,
-        'is_read': isRead,
-        'timestamp': timestamp.toIso8601String(),
+        'created_at': timestamp.toIso8601String(),
         'unix_seconds': timestamp.millisecondsSinceEpoch ~/ 1000,
-        'message_type': messageType,
         'origin': origin,
-        if (contactEpisodeId != null) 'contact_episode_id': contactEpisodeId,
+        if (turnId != null) 'turn_id': turnId,
       };
 
-  static PersonaChatConversationRecord? fromJson(Map<String, dynamic> json) {
-    final id = json['id']?.toString();
-    final characterId = json['character_id']?.toString();
-    final content = json['content']?.toString();
-    final seq = json['seq'];
-    if (id == null ||
-        id.isEmpty ||
-        characterId == null ||
-        characterId.isEmpty ||
-        content == null ||
-        seq is! num ||
-        seq.toInt() <= 0) {
+  static PersonaChatConversationRecord? fromJson(
+    Map<String, dynamic> json, {
+    required String characterId,
+  }) {
+    final id = json['id'];
+    final role = json['role']?.toString();
+    final contentBlocks = json['content'];
+    if (id is! num ||
+        id.toInt() <= 0 ||
+        (role != 'user' && role != 'assistant') ||
+        contentBlocks is! List) {
       return null;
     }
-    final timestampText = json['timestamp']?.toString();
+
+    Map<String, dynamic>? block;
+    for (final candidate in contentBlocks) {
+      if (candidate is Map && candidate['text'] != null) {
+        block = Map<String, dynamic>.from(candidate);
+        break;
+      }
+    }
+    if (block == null) return null;
+    final content = block['text']?.toString();
+    if (content == null) return null;
+
+    final timestampText = json['created_at']?.toString();
     final unixSeconds = json['unix_seconds'];
     final timestamp = timestampText == null
         ? unixSeconds is num
@@ -89,20 +99,19 @@ class PersonaChatConversationRecord {
             : DateTime.fromMillisecondsSinceEpoch(0)
         : DateTime.tryParse(timestampText) ??
             DateTime.fromMillisecondsSinceEpoch(0);
+    final blockType = block['type']?.toString() ?? 'text';
     return PersonaChatConversationRecord(
-      id: id,
-      seq: seq.toInt(),
+      id: id.toInt(),
       characterId: characterId,
-      isFromCharacter:
-          json['speaker'] == 'character' || json['is_from_character'] == true,
+      isFromCharacter: role == 'assistant',
       content: content,
       factId: json['fact_id']?.toString(),
-      isRead: json['is_read'] == true,
+      isRead: false,
       timestamp: timestamp,
-      messageType: (json['message_type'] ?? json['type'])?.toString() ??
-          PersonaChatMessageTypes.text,
+      messageType:
+          blockType == 'text' ? PersonaChatMessageTypes.text : blockType,
       origin: json['origin']?.toString() ?? 'conversation',
-      contactEpisodeId: json['contact_episode_id']?.toString(),
+      turnId: json['turn_id']?.toString(),
     );
   }
 }
@@ -110,13 +119,18 @@ class PersonaChatConversationRecord {
 class PersonaChatConversationMetadata {
   const PersonaChatConversationMetadata({
     required this.schemaVersion,
-    required this.nextSeq,
+    required this.generation,
+    required this.nextMessageId,
     required this.messageCount,
     required this.unreadCount,
     required this.messagesByteLength,
-    required this.readThroughSeq,
-    this.consumedThroughSeq,
-    this.lastMessage,
+    required this.readThroughMessageId,
+    required this.agentProcessedThroughUserMessageId,
+    required this.lastMessageId,
+    required this.latestUserMessageId,
+    this.lastTurnId,
+    this.lastTurnFirstMessageId,
+    this.lastTurnLastMessageId,
     this.updatedAt,
     this.clearedAt,
   });
@@ -124,50 +138,71 @@ class PersonaChatConversationMetadata {
   factory PersonaChatConversationMetadata.initial() {
     return const PersonaChatConversationMetadata(
       schemaVersion: PersonaChatConversationStorage.schemaVersion,
-      nextSeq: 1,
+      generation: 1,
+      nextMessageId: 1,
       messageCount: 0,
       unreadCount: 0,
       messagesByteLength: 0,
-      readThroughSeq: 0,
+      readThroughMessageId: 0,
+      agentProcessedThroughUserMessageId: 0,
+      lastMessageId: 0,
+      latestUserMessageId: 0,
     );
   }
 
   final int schemaVersion;
-  final int nextSeq;
+  final int generation;
+  final int nextMessageId;
   final int messageCount;
   final int unreadCount;
   final int messagesByteLength;
-  final int readThroughSeq;
-  final int? consumedThroughSeq;
-  final PersonaChatConversationRecord? lastMessage;
+  final int readThroughMessageId;
+  final int agentProcessedThroughUserMessageId;
+  final int lastMessageId;
+  final int latestUserMessageId;
+  final String? lastTurnId;
+  final int? lastTurnFirstMessageId;
+  final int? lastTurnLastMessageId;
   final DateTime? updatedAt;
   final DateTime? clearedAt;
 
   PersonaChatConversationMetadata copyWith({
-    int? nextSeq,
+    int? generation,
+    int? nextMessageId,
     int? messageCount,
     int? unreadCount,
     int? messagesByteLength,
-    int? readThroughSeq,
-    int? consumedThroughSeq,
-    bool clearConsumedThroughSeq = false,
-    PersonaChatConversationRecord? lastMessage,
-    bool clearLastMessage = false,
+    int? readThroughMessageId,
+    int? agentProcessedThroughUserMessageId,
+    int? lastMessageId,
+    int? latestUserMessageId,
+    String? lastTurnId,
+    bool clearLastTurn = false,
+    int? lastTurnFirstMessageId,
+    int? lastTurnLastMessageId,
     DateTime? updatedAt,
     DateTime? clearedAt,
     bool clearClearedAt = false,
   }) {
     return PersonaChatConversationMetadata(
       schemaVersion: schemaVersion,
-      nextSeq: nextSeq ?? this.nextSeq,
+      generation: generation ?? this.generation,
+      nextMessageId: nextMessageId ?? this.nextMessageId,
       messageCount: messageCount ?? this.messageCount,
       unreadCount: unreadCount ?? this.unreadCount,
       messagesByteLength: messagesByteLength ?? this.messagesByteLength,
-      readThroughSeq: readThroughSeq ?? this.readThroughSeq,
-      consumedThroughSeq: clearConsumedThroughSeq
+      readThroughMessageId: readThroughMessageId ?? this.readThroughMessageId,
+      agentProcessedThroughUserMessageId: agentProcessedThroughUserMessageId ??
+          this.agentProcessedThroughUserMessageId,
+      lastMessageId: lastMessageId ?? this.lastMessageId,
+      latestUserMessageId: latestUserMessageId ?? this.latestUserMessageId,
+      lastTurnId: clearLastTurn ? null : lastTurnId ?? this.lastTurnId,
+      lastTurnFirstMessageId: clearLastTurn
           ? null
-          : consumedThroughSeq ?? this.consumedThroughSeq,
-      lastMessage: clearLastMessage ? null : lastMessage ?? this.lastMessage,
+          : lastTurnFirstMessageId ?? this.lastTurnFirstMessageId,
+      lastTurnLastMessageId: clearLastTurn
+          ? null
+          : lastTurnLastMessageId ?? this.lastTurnLastMessageId,
       updatedAt: updatedAt ?? this.updatedAt,
       clearedAt: clearClearedAt ? null : clearedAt ?? this.clearedAt,
     );
@@ -175,39 +210,54 @@ class PersonaChatConversationMetadata {
 
   Map<String, dynamic> toJson() => {
         'schema_version': schemaVersion,
-        'next_message_seq': nextSeq,
-        'message_count': messageCount,
-        'unread_count': unreadCount,
-        'messages_byte_length': messagesByteLength,
-        'read_through_seq': readThroughSeq,
-        if (consumedThroughSeq != null)
-          'consumed_through_seq': consumedThroughSeq,
-        if (lastMessage != null) 'last_message': lastMessage!.toJson(),
+        'generation': generation,
+        'next_message_id': nextMessageId,
+        'read_through_message_id': readThroughMessageId,
+        'agent_processed_through_user_message_id':
+            agentProcessedThroughUserMessageId,
+        'summary': {
+          'message_count': messageCount,
+          'unread_count': unreadCount,
+          'messages_byte_length': messagesByteLength,
+          'last_message_id': lastMessageId,
+          'latest_user_message_id': latestUserMessageId,
+        },
+        if (lastTurnId != null)
+          'last_committed_turn': {
+            'id': lastTurnId,
+            'first_message_id': lastTurnFirstMessageId,
+            'last_message_id': lastTurnLastMessageId,
+          },
         if (updatedAt != null) 'updated_at': updatedAt!.toIso8601String(),
         if (clearedAt != null) 'cleared_at': clearedAt!.toIso8601String(),
       };
 
-  static PersonaChatConversationMetadata? fromJson(Map<String, dynamic> json) {
+  static PersonaChatConversationMetadata? fromJson(
+    Map<String, dynamic> json,
+  ) {
     if (json['schema_version'] !=
         PersonaChatConversationStorage.schemaVersion) {
       return null;
     }
-    final lastRaw = json['last_message'];
+    final summary = json['summary'];
+    if (summary is! Map) return null;
+    final turn = json['last_committed_turn'];
+    final turnMap = turn is Map ? Map<String, dynamic>.from(turn) : null;
     return PersonaChatConversationMetadata(
       schemaVersion: PersonaChatConversationStorage.schemaVersion,
-      nextSeq: _positiveInt(json['next_message_seq'], fallback: 1),
-      messageCount: _nonNegativeInt(json['message_count']),
-      unreadCount: _nonNegativeInt(json['unread_count']),
-      messagesByteLength: _nonNegativeInt(json['messages_byte_length']),
-      readThroughSeq: _nonNegativeInt(json['read_through_seq']),
-      consumedThroughSeq: json['consumed_through_seq'] is num
-          ? (json['consumed_through_seq'] as num).toInt()
-          : null,
-      lastMessage: lastRaw is Map
-          ? PersonaChatConversationRecord.fromJson(
-              Map<String, dynamic>.from(lastRaw),
-            )
-          : null,
+      generation: _positiveInt(json['generation'], fallback: 1),
+      nextMessageId: _positiveInt(json['next_message_id'], fallback: 1),
+      messageCount: _nonNegativeInt(summary['message_count']),
+      unreadCount: _nonNegativeInt(summary['unread_count']),
+      messagesByteLength: _nonNegativeInt(summary['messages_byte_length']),
+      readThroughMessageId: _nonNegativeInt(json['read_through_message_id']),
+      agentProcessedThroughUserMessageId:
+          _nonNegativeInt(json['agent_processed_through_user_message_id']),
+      lastMessageId: _nonNegativeInt(summary['last_message_id']),
+      latestUserMessageId: _nonNegativeInt(summary['latest_user_message_id']),
+      lastTurnId: turnMap?['id']?.toString(),
+      lastTurnFirstMessageId: _positiveIntOrNull(turnMap?['first_message_id']),
+      lastTurnLastMessageId: _positiveIntOrNull(turnMap?['last_message_id']),
       updatedAt: DateTime.tryParse(json['updated_at']?.toString() ?? ''),
       clearedAt: DateTime.tryParse(json['cleared_at']?.toString() ?? ''),
     );
@@ -218,35 +268,59 @@ class PersonaChatConversationMetadata {
 
   static int _positiveInt(dynamic value, {required int fallback}) =>
       value is num && value > 0 ? value.toInt() : fallback;
+
+  static int? _positiveIntOrNull(dynamic value) =>
+      value is num && value > 0 ? value.toInt() : null;
 }
 
-/// File-only persona conversation store.
+class PersonaChatConversationPage {
+  const PersonaChatConversationPage({
+    required this.records,
+    required this.olderCursor,
+    required this.newestCursor,
+  });
+
+  final List<PersonaChatConversationRecord> records;
+  final int? olderCursor;
+  final int newestCursor;
+}
+
+typedef PersonaChatCommitPhase = JsonlConversationCommitPhase;
+typedef PersonaChatCommitObserver = JsonlConversationCommitObserver;
+
+/// Workspace-authoritative persona conversation storage.
 ///
-/// `messages.jsonl` is the sole durable message history. `metadata.json` is a
-/// rebuildable summary used for O(1) unread/cursor/last-message queries. An
-/// episode is one JSONL envelope, so all bubbles become visible together.
+/// Every line in `messages.jsonl` is one immutable message. Mutable read and
+/// agent-processing boundaries live in `metadata.json`. Agent-produced turns
+/// are committed with a single transient write-ahead file so multiple bubbles
+/// and their state transition recover together after a process interruption.
 class PersonaChatConversationStorage {
   PersonaChatConversationStorage({
     FileSystemService? fileSystem,
     JsonlFileStore? jsonl,
-    Uuid? uuid,
+    PersonaChatCommitObserver? commitObserver,
   })  : _injectedFileSystem = fileSystem,
-        _jsonl = jsonl ?? JsonlFileStore(loggerName: 'PersonaChatJsonl'),
-        _uuid = uuid ?? const Uuid();
+        _jsonl = jsonl ?? JsonlFileStore(loggerName: 'PersonaChatJsonl') {
+    _journal = JsonlConversationJournal(
+      jsonl: _jsonl,
+      observer: commitObserver,
+    );
+  }
 
   static final PersonaChatConversationStorage instance =
       PersonaChatConversationStorage();
 
-  static const int schemaVersion = 2;
-  static const String storageMigrationKey = 'persona_chat_workspace_v2';
-  static const String _episodeRecordType = 'episode';
-  static const String _readBoundaryRecordType = 'read_boundary';
-  static const String _replyCursorRecordType = 'reply_cursor';
+  // This is the first released workspace format. The episode-based format
+  // existed only inside the unmerged pull request and is intentionally not a
+  // migration source.
+  static const int schemaVersion = 1;
+  static const String storageMigrationKey = 'persona_chat_workspace_v1';
+  static const int _scanPageSize = 64;
   static final Map<String, Lock> _processLocks = {};
 
   final FileSystemService? _injectedFileSystem;
   final JsonlFileStore _jsonl;
-  final Uuid _uuid;
+  late final JsonlConversationJournal _journal;
 
   FileSystemService get _fileSystem =>
       _injectedFileSystem ?? FileSystemService.instance;
@@ -261,160 +335,274 @@ class PersonaChatConversationStorage {
     required String origin,
     String? factId,
     bool isRead = false,
-    String? contactEpisodeId,
+    String? turnId,
   }) {
     return _synchronized(userId, characterId, () async {
-      final metadata = await _readMetadataRepairingIfNeeded(
-        userId,
-        characterId,
-      );
+      final metadata = await _prepareUnlocked(userId, characterId);
       final record = PersonaChatConversationRecord(
-        id: _uuid.v4(),
-        seq: metadata.nextSeq,
+        id: metadata.nextMessageId,
         characterId: characterId,
         isFromCharacter: isFromCharacter,
         content: content,
         factId: factId,
-        isRead: isRead,
+        isRead: isRead || !isFromCharacter,
         timestamp: timestamp,
         messageType: messageType,
         origin: origin,
-        contactEpisodeId: contactEpisodeId,
+        turnId: turnId,
       );
-      await _appendRecords(
-        userId: userId,
-        characterId: characterId,
-        metadata: metadata,
-        records: [record],
-        jsonRow: record.toJson(),
+      final append = await _jsonl.append(
+        _messagesFile(userId, characterId),
+        [record.toJson()],
       );
-      return record;
+      final next = _metadataAfterAppend(
+        metadata,
+        [record],
+        messagesByteLength: append.endOffset,
+        readThroughMessageId: isFromCharacter && isRead ? record.id : null,
+        lastTurnId: turnId,
+      );
+      await _writeMetadata(userId, characterId, next);
+      return _withEffectiveRead(record, next);
     });
   }
 
-  Future<List<PersonaChatConversationRecord>> appendEpisode({
+  Future<List<PersonaChatConversationRecord>> appendTurn({
     required String userId,
     required String characterId,
-    required List<PersonaChatConversationRecord> Function(int nextSeq) records,
-    required String contactEpisodeId,
+    required List<PersonaChatConversationRecord> Function(int firstMessageId)
+        records,
+    required String turnId,
     required int expectedRecordCount,
-    int? consumedThroughSeq,
+    int? agentProcessedThroughUserMessageId,
+    int? expectedGeneration,
   }) {
-    _validateEpisode(contactEpisodeId, expectedRecordCount);
+    _validateTurn(turnId, expectedRecordCount);
     return _synchronized(userId, characterId, () async {
-      var metadata = await _readMetadataRepairingIfNeeded(userId, characterId);
-      final receiptFile = _episodeReceiptFile(
+      final metadata = await _prepareUnlocked(userId, characterId);
+      if (expectedGeneration != null &&
+          metadata.generation != expectedGeneration) {
+        throw StateError(
+          'Persona conversation changed while the reply was generated.',
+        );
+      }
+      final alreadyProcessed = agentProcessedThroughUserMessageId != null &&
+          metadata.agentProcessedThroughUserMessageId >=
+              agentProcessedThroughUserMessageId;
+      final existing = await _loadCommittedTurn(
         userId,
         characterId,
-        contactEpisodeId,
+        metadata,
+        turnId,
+        searchHistory: alreadyProcessed,
       );
-      final receipt = await _readEpisodeReceipt(
-        receiptFile,
-        contactEpisodeId,
-      );
-      final persisted = await _loadEpisodeFromReceiptOrLog(
-        userId: userId,
-        characterId: characterId,
-        episodeId: contactEpisodeId,
-        receiptFile: receiptFile,
-        receipt: receipt,
-      );
-      if (persisted != null) {
-        _verifyEpisodeCount(persisted, expectedRecordCount);
-        if (consumedThroughSeq != null) {
-          await _advanceCursorUnlocked(
-            userId,
-            characterId,
-            metadata,
-            consumedThroughSeq,
+      if (existing != null) {
+        _verifyTurnCount(existing, expectedRecordCount);
+        if (agentProcessedThroughUserMessageId != null &&
+            metadata.agentProcessedThroughUserMessageId <
+                agentProcessedThroughUserMessageId) {
+          await _commitUnlocked(
+            userId: userId,
+            characterId: characterId,
+            metadata: metadata,
+            records: const [],
+            nextMetadata: metadata.copyWith(
+              agentProcessedThroughUserMessageId:
+                  agentProcessedThroughUserMessageId,
+              updatedAt: DateTime.now(),
+            ),
           );
         }
-        return persisted;
+        return existing
+            .map((record) => _withEffectiveRead(record, metadata))
+            .toList(growable: false);
       }
-
-      if (receipt == null) {
-        await _writeEpisodeReceipt(
-          receiptFile,
-          contactEpisodeId,
+      if (alreadyProcessed) {
+        throw StateError(
+          'Conversation input was already finalized without turn $turnId.',
         );
       }
 
-      final toWrite = records(metadata.nextSeq);
-      _verifyNewEpisode(
+      if (agentProcessedThroughUserMessageId != null) {
+        _validateProcessedBoundary(
+          metadata,
+          agentProcessedThroughUserMessageId,
+        );
+      }
+      final toWrite = records(metadata.nextMessageId);
+      _verifyNewTurn(
         characterId,
-        contactEpisodeId,
-        metadata.nextSeq,
+        turnId,
+        metadata.nextMessageId,
         expectedRecordCount,
         toWrite,
       );
-      final lineOffset = metadata.messagesByteLength;
-      metadata = await _appendRecords(
+      final next = _metadataAfterAppend(
+        metadata,
+        toWrite,
+        messagesByteLength: metadata.messagesByteLength +
+            _encodedRowsLength(toWrite.map((record) => record.toJson())),
+        readThroughMessageId: _readBoundaryFromRecords(toWrite),
+        agentProcessedThroughUserMessageId: agentProcessedThroughUserMessageId,
+        lastTurnId: turnId,
+      );
+      await _commitUnlocked(
         userId: userId,
         characterId: characterId,
         metadata: metadata,
         records: toWrite,
-        jsonRow: {
-          'record_type': _episodeRecordType,
-          'episode_id': contactEpisodeId,
-          'messages': toWrite.map((record) => record.toJson()).toList(),
-        },
-        consumedThroughSeq: consumedThroughSeq,
+        nextMetadata: next,
       );
-      await _writeEpisodeReceipt(
-        receiptFile,
-        contactEpisodeId,
-        lineOffset: lineOffset,
-      );
-      return toWrite;
+      return toWrite.map((record) => _withEffectiveRead(record, next)).toList();
     });
   }
 
-  Future<bool> tryAppendInitiativeEpisode({
+  Future<bool> tryAppendInitiativeTurn({
     required String userId,
     required String characterId,
-    required List<PersonaChatConversationRecord> Function(int nextSeq) records,
-    required String contactEpisodeId,
+    required List<PersonaChatConversationRecord> Function(int firstMessageId)
+        records,
+    required String turnId,
     required int expectedRecordCount,
+    int? expectedGeneration,
   }) {
-    _validateEpisode(contactEpisodeId, expectedRecordCount);
+    _validateTurn(turnId, expectedRecordCount);
     return _synchronized(userId, characterId, () async {
-      final metadata =
-          await _readMetadataRepairingIfNeeded(userId, characterId);
-      final receipt = await _readEpisodeReceipt(
-        _episodeReceiptFile(userId, characterId, contactEpisodeId),
-        contactEpisodeId,
-      );
-      if (receipt != null &&
-          await _loadEpisodeFromReceiptOrLog(
-                userId: userId,
-                characterId: characterId,
-                episodeId: contactEpisodeId,
-                receiptFile: _episodeReceiptFile(
-                  userId,
-                  characterId,
-                  contactEpisodeId,
-                ),
-                receipt: receipt,
-              ) !=
-              null) {
-        return true;
+      final metadata = await _prepareUnlocked(userId, characterId);
+      if (expectedGeneration != null &&
+          metadata.generation != expectedGeneration) {
+        return false;
       }
-      final pending = await _loadPendingUserMessagesUnlocked(
+      final existing = await _loadCommittedTurn(
         userId,
         characterId,
-        metadata.consumedThroughSeq ?? 0,
-        limit: 1,
+        metadata,
+        turnId,
+        // Initiative is infrequent and has no processing cursor. Scanning on
+        // a cache miss keeps messages.jsonl as the only idempotency fact.
+        searchHistory: true,
       );
-      if (pending.isNotEmpty) return false;
-      await _appendEpisodeUnlocked(
+      if (existing != null) {
+        _verifyTurnCount(existing, expectedRecordCount);
+        return true;
+      }
+      if (metadata.latestUserMessageId >
+          metadata.agentProcessedThroughUserMessageId) {
+        return false;
+      }
+
+      final toWrite = records(metadata.nextMessageId);
+      _verifyNewTurn(
+        characterId,
+        turnId,
+        metadata.nextMessageId,
+        expectedRecordCount,
+        toWrite,
+      );
+      final next = _metadataAfterAppend(
+        metadata,
+        toWrite,
+        messagesByteLength: metadata.messagesByteLength +
+            _encodedRowsLength(toWrite.map((record) => record.toJson())),
+        readThroughMessageId: _readBoundaryFromRecords(toWrite),
+        lastTurnId: turnId,
+      );
+      await _commitUnlocked(
         userId: userId,
         characterId: characterId,
         metadata: metadata,
-        records: records,
-        contactEpisodeId: contactEpisodeId,
-        expectedRecordCount: expectedRecordCount,
+        records: toWrite,
+        nextMetadata: next,
       );
       return true;
+    });
+  }
+
+  Future<PersonaChatConversationPage> loadMessagePage({
+    required String userId,
+    required String characterId,
+    required int limit,
+    int? beforeCursor,
+  }) {
+    return _synchronized(userId, characterId, () async {
+      final metadata = await _prepareUnlocked(userId, characterId);
+      if (limit <= 0) {
+        return PersonaChatConversationPage(
+          records: const [],
+          olderCursor: null,
+          newestCursor: metadata.messagesByteLength,
+        );
+      }
+      final page = await _jsonl.readPageBefore(
+        _messagesFile(userId, characterId),
+        limit: limit,
+        beforeOffset: beforeCursor,
+      );
+      final records = page.rows
+          .map(
+            (row) => PersonaChatConversationRecord.fromJson(
+              row,
+              characterId: characterId,
+            ),
+          )
+          .whereType<PersonaChatConversationRecord>()
+          .toList(growable: false)
+          .reversed
+          .map((record) => _withEffectiveRead(record, metadata))
+          .toList(growable: false);
+      return PersonaChatConversationPage(
+        records: records,
+        olderCursor: page.olderOffset,
+        newestCursor: metadata.messagesByteLength,
+      );
+    });
+  }
+
+  Future<PersonaChatConversationPage> loadMessagesAfter({
+    required String userId,
+    required String characterId,
+    required int afterCursor,
+  }) {
+    return _synchronized(userId, characterId, () async {
+      final metadata = await _prepareUnlocked(userId, characterId);
+      final file = _messagesFile(userId, characterId);
+      final safeCursor =
+          afterCursor.clamp(0, metadata.messagesByteLength).toInt();
+      if (safeCursor == metadata.messagesByteLength) {
+        return PersonaChatConversationPage(
+          records: const [],
+          olderCursor: null,
+          newestCursor: metadata.messagesByteLength,
+        );
+      }
+      final handle = await file.open();
+      late List<int> bytes;
+      try {
+        await handle.setPosition(safeCursor);
+        bytes = await handle.read(metadata.messagesByteLength - safeCursor);
+      } finally {
+        await handle.close();
+      }
+      final records = <PersonaChatConversationRecord>[];
+      for (final line in utf8.decode(bytes).split('\n')) {
+        if (line.trim().isEmpty) continue;
+        try {
+          final decoded = jsonDecode(line);
+          if (decoded is! Map) continue;
+          final record = PersonaChatConversationRecord.fromJson(
+            Map<String, dynamic>.from(decoded),
+            characterId: characterId,
+          );
+          if (record != null) records.add(_withEffectiveRead(record, metadata));
+        } catch (_) {
+          continue;
+        }
+      }
+      return PersonaChatConversationPage(
+        records: records.reversed.toList(growable: false),
+        olderCursor: null,
+        newestCursor: metadata.messagesByteLength,
+      );
     });
   }
 
@@ -423,43 +611,42 @@ class PersonaChatConversationStorage {
     required String characterId,
     int? limit,
     int offset = 0,
-  }) {
-    return _synchronized(userId, characterId, () async {
-      final metadata =
-          await _readMetadataRepairingIfNeeded(userId, characterId);
-      if (limit == null || limit <= 0) {
-        final records = await _readAllRecords(userId, characterId);
-        return _applyReadState(records.reversed, metadata).toList();
-      }
-      final records = await _readNewestRecords(
-        userId,
-        characterId,
-        limit + offset,
-      );
-      return _applyReadState(records, metadata)
-          .skip(offset)
-          .take(limit)
-          .toList(growable: false);
-    });
+  }) async {
+    if (limit == null || limit <= 0) {
+      return _synchronized(userId, characterId, () async {
+        final metadata = await _prepareUnlocked(userId, characterId);
+        return (await _readAllRecords(userId, characterId))
+            .reversed
+            .map((record) => _withEffectiveRead(record, metadata))
+            .toList(growable: false);
+      });
+    }
+    final page = await loadMessagePage(
+      userId: userId,
+      characterId: characterId,
+      limit: limit + offset,
+    );
+    return page.records.skip(offset).take(limit).toList(growable: false);
   }
 
   Future<List<PersonaChatConversationRecord>> loadMessagesBefore({
     required String userId,
     required String characterId,
-    required int beforeSeq,
+    required int beforeMessageId,
     int limit = 50,
   }) {
     return _synchronized(userId, characterId, () async {
-      final metadata =
-          await _readMetadataRepairingIfNeeded(userId, characterId);
+      final metadata = await _prepareUnlocked(userId, characterId);
       final records = await _scanBackwards(
         userId,
         characterId,
+        include: (record) => record.id < beforeMessageId,
         stop: (collected, record) =>
-            record.seq < beforeSeq && collected.length >= limit,
-        include: (record) => record.seq < beforeSeq,
+            record.id < beforeMessageId && collected.length >= limit,
       );
-      return _applyReadState(records.take(limit), metadata)
+      return records
+          .take(limit)
+          .map((record) => _withEffectiveRead(record, metadata))
           .toList(growable: false);
     });
   }
@@ -470,14 +657,17 @@ class PersonaChatConversationStorage {
     int limit = 50,
   }) {
     return _synchronized(userId, characterId, () async {
-      final metadata =
-          await _readMetadataRepairingIfNeeded(userId, characterId);
-      return _loadPendingUserMessagesUnlocked(
+      final metadata = await _prepareUnlocked(userId, characterId);
+      final newestFirst = await _scanBackwards(
         userId,
         characterId,
-        metadata.consumedThroughSeq ?? 0,
-        limit: limit,
+        include: (record) =>
+            record.id > metadata.agentProcessedThroughUserMessageId &&
+            !record.isFromCharacter,
+        stop: (_, record) =>
+            record.id <= metadata.agentProcessedThroughUserMessageId,
       );
+      return newestFirst.reversed.take(limit).toList(growable: false);
     });
   }
 
@@ -486,9 +676,8 @@ class PersonaChatConversationStorage {
     required String characterId,
   }) {
     return _synchronized(userId, characterId, () async {
-      return (await _readMetadataRepairingIfNeeded(userId, characterId))
-              .consumedThroughSeq ??
-          0;
+      return (await _prepareUnlocked(userId, characterId))
+          .agentProcessedThroughUserMessageId;
     });
   }
 
@@ -499,23 +688,38 @@ class PersonaChatConversationStorage {
     return _synchronized(
       userId,
       characterId,
-      () => _readMetadataRepairingIfNeeded(userId, characterId),
+      () => _prepareUnlocked(userId, characterId),
     );
+  }
+
+  Future<int> conversationGeneration({
+    required String userId,
+    required String characterId,
+  }) {
+    return _synchronized(userId, characterId, () async {
+      return (await _prepareUnlocked(userId, characterId)).generation;
+    });
   }
 
   Future<void> advanceCursor({
     required String userId,
     required String characterId,
-    required int consumedThroughSeq,
+    required int processedThroughUserMessageId,
   }) {
     return _synchronized(userId, characterId, () async {
-      final metadata =
-          await _readMetadataRepairingIfNeeded(userId, characterId);
-      await _advanceCursorUnlocked(
+      final metadata = await _prepareUnlocked(userId, characterId);
+      _validateProcessedBoundary(metadata, processedThroughUserMessageId);
+      if (metadata.agentProcessedThroughUserMessageId >=
+          processedThroughUserMessageId) {
+        return;
+      }
+      await _writeMetadata(
         userId,
         characterId,
-        metadata,
-        consumedThroughSeq,
+        metadata.copyWith(
+          agentProcessedThroughUserMessageId: processedThroughUserMessageId,
+          updatedAt: DateTime.now(),
+        ),
       );
     });
   }
@@ -525,8 +729,7 @@ class PersonaChatConversationStorage {
     required String characterId,
   }) {
     return _synchronized(userId, characterId, () async {
-      return (await _readMetadataRepairingIfNeeded(userId, characterId))
-          .unreadCount;
+      return (await _prepareUnlocked(userId, characterId)).unreadCount;
     });
   }
 
@@ -543,27 +746,15 @@ class PersonaChatConversationStorage {
     required String characterId,
   }) {
     return _synchronized(userId, characterId, () async {
-      final metadata =
-          await _readMetadataRepairingIfNeeded(userId, characterId);
+      final metadata = await _prepareUnlocked(userId, characterId);
       final changed = metadata.unreadCount;
       if (changed == 0) return 0;
-      final readThroughSeq = metadata.nextSeq - 1;
-      final append = await _jsonl.append(
-        _messagesFile(userId, characterId),
-        [
-          {
-            'record_type': _readBoundaryRecordType,
-            'read_through_seq': readThroughSeq,
-          },
-        ],
-      );
       await _writeMetadata(
         userId,
         characterId,
         metadata.copyWith(
           unreadCount: 0,
-          readThroughSeq: readThroughSeq,
-          messagesByteLength: append.endOffset,
+          readThroughMessageId: metadata.lastMessageId,
           updatedAt: DateTime.now(),
         ),
       );
@@ -574,23 +765,21 @@ class PersonaChatConversationStorage {
   Future<PersonaChatConversationRecord?> lastMessage({
     required String userId,
     required String characterId,
-  }) {
-    return _synchronized(userId, characterId, () async {
-      final metadata =
-          await _readMetadataRepairingIfNeeded(userId, characterId);
-      final last = metadata.lastMessage;
-      return last == null ? null : _withEffectiveRead(last, metadata);
-    });
+  }) async {
+    final page = await loadMessagePage(
+      userId: userId,
+      characterId: characterId,
+      limit: 1,
+    );
+    return page.records.isEmpty ? null : page.records.first;
   }
 
-  Future<int> latestMessageSeq({
+  Future<int> latestMessageId({
     required String userId,
     required String characterId,
   }) {
     return _synchronized(userId, characterId, () async {
-      final metadata =
-          await _readMetadataRepairingIfNeeded(userId, characterId);
-      return metadata.nextSeq - 1;
+      return (await _prepareUnlocked(userId, characterId)).lastMessageId;
     });
   }
 
@@ -600,61 +789,58 @@ class PersonaChatConversationStorage {
     required DateTime clearedAt,
   }) {
     return _synchronized(userId, characterId, () async {
-      final metadata =
-          await _readMetadataRepairingIfNeeded(userId, characterId);
-      await _replaceFile(_messagesFile(userId, characterId), '');
-      final receipts = Directory(
-        _fileSystem.getCharacterConversationEpisodeReceiptsPath(
-          userId,
-          characterId,
-        ),
+      final metadata = await _prepareUnlocked(userId, characterId);
+      final next = PersonaChatConversationMetadata.initial().copyWith(
+        generation: metadata.generation + 1,
+        nextMessageId: metadata.nextMessageId,
+        clearedAt: clearedAt,
+        updatedAt: clearedAt,
       );
-      if (await receipts.exists()) await receipts.delete(recursive: true);
-      await _writeMetadata(
-        userId,
-        characterId,
-        PersonaChatConversationMetadata.initial().copyWith(
-          clearedAt: clearedAt,
-          updatedAt: clearedAt,
-        ),
+      await _commitUnlocked(
+        userId: userId,
+        characterId: characterId,
+        metadata: metadata,
+        records: const [],
+        nextMetadata: next,
+        baseOffset: 0,
+        truncateBeforeAppend: true,
       );
       return metadata.messageCount;
     });
   }
 
-  /// Imports a legacy snapshot only when the new conversation log is empty.
+  /// Imports SQLite history only when the workspace conversation is empty.
   Future<bool> importLegacySnapshot({
     required String userId,
     required String characterId,
     required List<PersonaChatConversationRecord> records,
-    int? consumedThroughSeq,
+    int? agentProcessedThroughUserMessageId,
   }) {
     return _synchronized(userId, characterId, () async {
-      final metadata =
-          await _readMetadataRepairingIfNeeded(userId, characterId);
+      final metadata = await _prepareUnlocked(userId, characterId);
       if (metadata.messageCount > 0 || records.isEmpty) return false;
       _verifyContiguousRecords(characterId, records);
-      final file = _messagesFile(userId, characterId);
-      final rows = <Map<String, dynamic>>[
-        ...records.map((record) => record.toJson()),
-        if (consumedThroughSeq != null)
-          {
-            'record_type': _replyCursorRecordType,
-            'consumed_through_seq': consumedThroughSeq,
-          },
-      ];
-      await _replaceFile(
-        file,
-        '${rows.map(jsonEncode).join('\n')}\n',
+      final readThrough = records
+          .where((record) => record.isFromCharacter && record.isRead)
+          .fold<int>(0,
+              (current, record) => record.id > current ? record.id : current);
+      final next = _metadataFromRecords(
+        records,
+        previous: metadata,
+        messagesByteLength:
+            _encodedRowsLength(records.map((record) => record.toJson())),
+        readThroughMessageId: readThrough,
+        agentProcessedThroughUserMessageId:
+            agentProcessedThroughUserMessageId ?? 0,
       );
-      await _writeMetadata(
-        userId,
-        characterId,
-        _metadataFromRecords(
-          records,
-          messagesByteLength: await file.length(),
-          consumedThroughSeq: consumedThroughSeq,
-        ),
+      await _commitUnlocked(
+        userId: userId,
+        characterId: characterId,
+        metadata: metadata,
+        records: records,
+        nextMetadata: next,
+        baseOffset: 0,
+        truncateBeforeAppend: true,
       );
       return true;
     });
@@ -676,256 +862,67 @@ class PersonaChatConversationStorage {
     return ids;
   }
 
-  Future<List<PersonaChatConversationRecord>> _appendEpisodeUnlocked({
-    required String userId,
-    required String characterId,
-    required PersonaChatConversationMetadata metadata,
-    required List<PersonaChatConversationRecord> Function(int nextSeq) records,
-    required String contactEpisodeId,
-    required int expectedRecordCount,
-  }) async {
-    final receiptFile = _episodeReceiptFile(
-      userId,
-      characterId,
-      contactEpisodeId,
-    );
-    final existing = await _readEpisodeReceipt(receiptFile, contactEpisodeId);
-    final persisted = await _loadEpisodeFromReceiptOrLog(
-      userId: userId,
-      characterId: characterId,
-      episodeId: contactEpisodeId,
-      receiptFile: receiptFile,
-      receipt: existing,
-    );
-    if (persisted != null) {
-      _verifyEpisodeCount(persisted, expectedRecordCount);
-      return persisted;
-    }
-    if (existing == null) {
-      await _writeEpisodeReceipt(receiptFile, contactEpisodeId);
-    }
-    final toWrite = records(metadata.nextSeq);
-    _verifyNewEpisode(
-      characterId,
-      contactEpisodeId,
-      metadata.nextSeq,
-      expectedRecordCount,
-      toWrite,
-    );
-    final lineOffset = metadata.messagesByteLength;
-    await _appendRecords(
-      userId: userId,
-      characterId: characterId,
-      metadata: metadata,
-      records: toWrite,
-      jsonRow: {
-        'record_type': _episodeRecordType,
-        'episode_id': contactEpisodeId,
-        'messages': toWrite.map((record) => record.toJson()).toList(),
-      },
-    );
-    await _writeEpisodeReceipt(
-      receiptFile,
-      contactEpisodeId,
-      lineOffset: lineOffset,
-    );
-    return toWrite;
-  }
-
-  Future<List<PersonaChatConversationRecord>?> _loadEpisodeFromReceiptOrLog({
-    required String userId,
-    required String characterId,
-    required String episodeId,
-    required File receiptFile,
-    required _EpisodeReceipt? receipt,
-  }) async {
-    Map<String, dynamic>? row;
-    var lineOffset = receipt?.lineOffset;
-    if (receipt?.isComplete == true && lineOffset != null) {
-      row = await _jsonl.readObjectAt(
-        _messagesFile(userId, characterId),
-        lineOffset,
+  Future<Set<String>> charactersWithPendingUserMessages(String userId) async {
+    final result = <String>{};
+    for (final characterId in await characterIds(userId)) {
+      final metadata = await loadMetadata(
+        userId: userId,
+        characterId: characterId,
       );
-      if (!_isEpisodeRow(row, episodeId)) row = null;
-    }
-    if (row == null && receipt != null) {
-      final located = await _jsonl.findLastObject(
-        _messagesFile(userId, characterId),
-        (candidate) => _isEpisodeRow(candidate, episodeId),
-      );
-      if (located != null) {
-        row = located.value;
-        lineOffset = located.startOffset;
-        await _writeEpisodeReceipt(
-          receiptFile,
-          episodeId,
-          lineOffset: lineOffset,
-        );
+      if (metadata.latestUserMessageId >
+          metadata.agentProcessedThroughUserMessageId) {
+        result.add(characterId);
       }
     }
-    if (row == null) return null;
-    final records = _recordsFromRow(row).toList(growable: false);
-    return records.isEmpty ? null : records;
+    return result;
   }
 
-  bool _isEpisodeRow(Map<String, dynamic>? row, String episodeId) =>
-      row?['record_type'] == _episodeRecordType &&
-      row?['episode_id'] == episodeId;
-
-  Future<PersonaChatConversationMetadata> _appendRecords({
+  Future<void> _commitUnlocked({
     required String userId,
     required String characterId,
     required PersonaChatConversationMetadata metadata,
     required List<PersonaChatConversationRecord> records,
-    required Map<String, dynamic> jsonRow,
-    int? consumedThroughSeq,
+    required PersonaChatConversationMetadata nextMetadata,
+    int? baseOffset,
+    bool truncateBeforeAppend = false,
   }) async {
-    final append = await _jsonl.append(
-      _messagesFile(userId, characterId),
-      [
-        {
-          ...jsonRow,
-          if (consumedThroughSeq != null)
-            'consumed_through_seq': consumedThroughSeq,
-        },
-      ],
+    await _journal.commit(
+      messagesFile: _messagesFile(userId, characterId),
+      metadataFile: _metadataFile(userId, characterId),
+      pendingFile: _pendingCommitFile(userId, characterId),
+      baseOffset: baseOffset ?? metadata.messagesByteLength,
+      messages: records.map((record) => record.toJson()).toList(),
+      targetMetadata: nextMetadata.toJson(),
+      truncateBeforeAppend: truncateBeforeAppend,
     );
-    final unreadAdded = records
-        .where((record) => record.isFromCharacter && !record.isRead)
-        .length;
-    final next = metadata.copyWith(
-      nextSeq: records.last.seq + 1,
-      messageCount: metadata.messageCount + records.length,
-      unreadCount: metadata.unreadCount + unreadAdded,
-      messagesByteLength: append.endOffset,
-      consumedThroughSeq: consumedThroughSeq,
-      lastMessage: records.last,
-      updatedAt: DateTime.now(),
-      clearClearedAt: true,
-    );
-    await _writeMetadata(userId, characterId, next);
-    return next;
   }
 
-  Future<List<PersonaChatConversationRecord>> _readAllRecords(
+  Future<PersonaChatConversationMetadata> _prepareUnlocked(
     String userId,
     String characterId,
   ) async {
-    return (await _readSnapshot(userId, characterId)).records;
+    await _ensureLayout(userId, characterId);
+    await _recoverPendingCommit(userId, characterId);
+    return _readMetadataRepairingIfNeeded(userId, characterId);
   }
 
-  Future<List<PersonaChatConversationRecord>> _readNewestRecords(
-    String userId,
-    String characterId,
-    int count,
-  ) async {
-    if (count <= 0) return const [];
-    return _scanBackwards(
-      userId,
-      characterId,
-      include: (_) => true,
-      stop: (collected, _) => collected.length >= count,
-    );
-  }
-
-  Future<_ConversationSnapshot> _readSnapshot(
+  Future<void> _recoverPendingCommit(
     String userId,
     String characterId,
   ) async {
-    final rows = await _jsonl.readAllRecoveringTail(
-      _messagesFile(userId, characterId),
+    await _journal.recover(
+      messagesFile: _messagesFile(userId, characterId),
+      metadataFile: _metadataFile(userId, characterId),
+      pendingFile: _pendingCommitFile(userId, characterId),
+      validateMetadata: (target) =>
+          PersonaChatConversationMetadata.fromJson(target) != null,
     );
-    final records = <PersonaChatConversationRecord>[];
-    var readThroughSeq = 0;
-    int? consumedThroughSeq;
-    for (final row in rows) {
-      records.addAll(_recordsFromRow(row));
-      final rowReadThrough = row['read_through_seq'];
-      if (rowReadThrough is num && rowReadThrough > readThroughSeq) {
-        readThroughSeq = rowReadThrough.toInt();
-      }
-      final rowConsumedThrough = row['consumed_through_seq'];
-      if (rowConsumedThrough is num &&
-          rowConsumedThrough > (consumedThroughSeq ?? 0)) {
-        consumedThroughSeq = rowConsumedThrough.toInt();
-      }
-    }
-    return _ConversationSnapshot(
-      records: records,
-      readThroughSeq: readThroughSeq,
-      consumedThroughSeq: consumedThroughSeq,
-    );
-  }
-
-  Future<List<PersonaChatConversationRecord>> _scanBackwards(
-    String userId,
-    String characterId, {
-    required bool Function(
-      List<PersonaChatConversationRecord> collected,
-      PersonaChatConversationRecord record,
-    ) stop,
-    required bool Function(PersonaChatConversationRecord record) include,
-  }) async {
-    const pageSize = 64;
-    int? cursor;
-    final collected = <PersonaChatConversationRecord>[];
-    while (true) {
-      final page = await _jsonl.readPageBefore(
-        _messagesFile(userId, characterId),
-        limit: pageSize,
-        beforeOffset: cursor,
-      );
-      if (page.rows.isEmpty) return collected;
-      final records =
-          page.rows.expand(_recordsFromRow).toList(growable: false).reversed;
-      for (final record in records) {
-        if (include(record)) collected.add(record);
-        if (stop(collected, record)) return collected;
-      }
-      cursor = page.olderOffset;
-      if (cursor == null) return collected;
-    }
-  }
-
-  Future<List<PersonaChatConversationRecord>> _loadPendingUserMessagesUnlocked(
-    String userId,
-    String characterId,
-    int cursorSeq, {
-    required int limit,
-  }) async {
-    final newestFirst = await _scanBackwards(
-      userId,
-      characterId,
-      include: (record) => record.seq > cursorSeq && !record.isFromCharacter,
-      stop: (_, record) => record.seq <= cursorSeq,
-    );
-    return newestFirst.reversed.take(limit).toList(growable: false);
-  }
-
-  Iterable<PersonaChatConversationRecord> _recordsFromRow(
-    Map<String, dynamic> row,
-  ) sync* {
-    if (row['record_type'] == _episodeRecordType) {
-      final messages = row['messages'];
-      if (messages is! List) return;
-      for (final raw in messages) {
-        if (raw is! Map) continue;
-        final record = PersonaChatConversationRecord.fromJson(
-          Map<String, dynamic>.from(raw),
-        );
-        if (record != null) yield record;
-      }
-      return;
-    }
-    final record = PersonaChatConversationRecord.fromJson(row);
-    if (record != null) yield record;
   }
 
   Future<PersonaChatConversationMetadata> _readMetadataRepairingIfNeeded(
     String userId,
     String characterId,
   ) async {
-    await _ensureLayout(userId, characterId);
     final file = _metadataFile(userId, characterId);
     PersonaChatConversationMetadata? metadata;
     try {
@@ -942,91 +939,223 @@ class PersonaChatConversationStorage {
     if (metadata != null && metadata.messagesByteLength == messagesLength) {
       return metadata;
     }
-    final snapshot = await _readSnapshot(userId, characterId);
+
+    final records = await _readAllRecords(userId, characterId);
     final repaired = _metadataFromRecords(
-      snapshot.records,
+      records,
+      previous: metadata ?? PersonaChatConversationMetadata.initial(),
       messagesByteLength: await _messagesFile(userId, characterId).length(),
-      readThroughSeq: snapshot.readThroughSeq,
-      consumedThroughSeq: snapshot.consumedThroughSeq,
-      clearedAt: metadata?.clearedAt,
+      readThroughMessageId: metadata?.readThroughMessageId ?? 0,
+      agentProcessedThroughUserMessageId:
+          metadata?.agentProcessedThroughUserMessageId ?? 0,
     );
     await _writeMetadata(userId, characterId, repaired);
     return repaired;
   }
 
-  PersonaChatConversationMetadata _metadataFromRecords(
+  PersonaChatConversationMetadata _metadataAfterAppend(
+    PersonaChatConversationMetadata metadata,
     List<PersonaChatConversationRecord> records, {
     required int messagesByteLength,
-    int readThroughSeq = 0,
-    int? consumedThroughSeq,
-    DateTime? clearedAt,
+    int? readThroughMessageId,
+    int? agentProcessedThroughUserMessageId,
+    String? lastTurnId,
   }) {
+    final effectiveReadThrough = readThroughMessageId == null
+        ? metadata.readThroughMessageId
+        : readThroughMessageId > metadata.readThroughMessageId
+            ? readThroughMessageId
+            : metadata.readThroughMessageId;
+    final unreadAdded = records
+        .where(
+          (record) =>
+              record.isFromCharacter && record.id > effectiveReadThrough,
+        )
+        .length;
+    final latestUser = records
+        .where((record) => !record.isFromCharacter)
+        .fold<int>(metadata.latestUserMessageId, (current, record) {
+      return record.id > current ? record.id : current;
+    });
+    final last = records.last;
+    return metadata.copyWith(
+      nextMessageId: last.id + 1,
+      messageCount: metadata.messageCount + records.length,
+      unreadCount: metadata.unreadCount + unreadAdded,
+      messagesByteLength: messagesByteLength,
+      readThroughMessageId: effectiveReadThrough,
+      agentProcessedThroughUserMessageId: agentProcessedThroughUserMessageId,
+      lastMessageId: last.id,
+      latestUserMessageId: latestUser,
+      lastTurnId: lastTurnId,
+      lastTurnFirstMessageId: lastTurnId == null ? null : records.first.id,
+      lastTurnLastMessageId: lastTurnId == null ? null : records.last.id,
+      updatedAt: DateTime.now(),
+      clearClearedAt: true,
+    );
+  }
+
+  PersonaChatConversationMetadata _metadataFromRecords(
+    List<PersonaChatConversationRecord> records, {
+    required PersonaChatConversationMetadata previous,
+    required int messagesByteLength,
+    required int readThroughMessageId,
+    required int agentProcessedThroughUserMessageId,
+  }) {
+    final lastId = records.isEmpty ? 0 : records.last.id;
+    final latestUser = records
+        .where((record) => !record.isFromCharacter)
+        .fold<int>(
+            0, (current, record) => record.id > current ? record.id : current);
     final unread = records
         .where(
           (record) =>
-              record.isFromCharacter &&
-              !record.isRead &&
-              record.seq > readThroughSeq,
+              record.isFromCharacter && record.id > readThroughMessageId,
         )
         .length;
+    final lastTurnId = records.isEmpty ? null : records.last.turnId;
+    int? firstTurnId;
+    if (lastTurnId != null) {
+      for (final record in records.reversed) {
+        if (record.turnId != lastTurnId) break;
+        firstTurnId = record.id;
+      }
+    }
     return PersonaChatConversationMetadata(
       schemaVersion: schemaVersion,
-      nextSeq: records.isEmpty ? 1 : records.last.seq + 1,
+      generation: previous.generation,
+      nextMessageId: previous.nextMessageId > lastId + 1
+          ? previous.nextMessageId
+          : lastId + 1,
       messageCount: records.length,
       unreadCount: unread,
       messagesByteLength: messagesByteLength,
-      readThroughSeq: readThroughSeq,
-      consumedThroughSeq: consumedThroughSeq,
-      lastMessage: records.isEmpty ? null : records.last,
+      readThroughMessageId: readThroughMessageId,
+      agentProcessedThroughUserMessageId: agentProcessedThroughUserMessageId,
+      lastMessageId: lastId,
+      latestUserMessageId: latestUser,
+      lastTurnId: lastTurnId,
+      lastTurnFirstMessageId: firstTurnId,
+      lastTurnLastMessageId: lastTurnId == null ? null : lastId,
       updatedAt: DateTime.now(),
-      clearedAt: records.isEmpty ? clearedAt : null,
+      clearedAt: records.isEmpty ? previous.clearedAt : null,
     );
   }
 
-  Future<PersonaChatConversationMetadata> _advanceCursorUnlocked(
+  Future<List<PersonaChatConversationRecord>?> _loadCommittedTurn(
+      String userId,
+      String characterId,
+      PersonaChatConversationMetadata metadata,
+      String turnId,
+      {required bool searchHistory}) async {
+    if (metadata.lastTurnId == turnId &&
+        metadata.lastTurnFirstMessageId != null &&
+        metadata.lastTurnLastMessageId != null) {
+      final newestFirst = await _scanBackwards(
+        userId,
+        characterId,
+        include: (record) =>
+            record.id >= metadata.lastTurnFirstMessageId! &&
+            record.id <= metadata.lastTurnLastMessageId! &&
+            record.turnId == turnId,
+        stop: (_, record) => record.id < metadata.lastTurnFirstMessageId!,
+      );
+      return newestFirst.reversed.toList(growable: false);
+    }
+    if (!searchHistory) return null;
+
+    final newestFirst = await _scanBackwards(
+      userId,
+      characterId,
+      include: (record) => record.turnId == turnId,
+      stop: (collected, record) =>
+          collected.isNotEmpty && record.turnId != turnId,
+    );
+    return newestFirst.isEmpty
+        ? null
+        : newestFirst.reversed.toList(growable: false);
+  }
+
+  Future<List<PersonaChatConversationRecord>> _readAllRecords(
     String userId,
     String characterId,
-    PersonaChatConversationMetadata metadata,
-    int nextSeq,
   ) async {
-    if (nextSeq <= 0 || nextSeq >= metadata.nextSeq) {
-      throw ArgumentError.value(nextSeq, 'consumedThroughSeq');
-    }
-    if ((metadata.consumedThroughSeq ?? 0) >= nextSeq) return metadata;
-    final append = await _jsonl.append(
+    final rows = await _jsonl.readAllRecoveringTail(
       _messagesFile(userId, characterId),
-      [
-        {
-          'record_type': _replyCursorRecordType,
-          'consumed_through_seq': nextSeq,
-        },
-      ],
     );
-    final next = metadata.copyWith(
-      consumedThroughSeq: nextSeq,
-      messagesByteLength: append.endOffset,
-      updatedAt: DateTime.now(),
-    );
-    await _writeMetadata(userId, characterId, next);
-    return next;
+    return rows
+        .map(
+          (row) => PersonaChatConversationRecord.fromJson(
+            row,
+            characterId: characterId,
+          ),
+        )
+        .whereType<PersonaChatConversationRecord>()
+        .toList(growable: false);
   }
 
-  Iterable<PersonaChatConversationRecord> _applyReadState(
-    Iterable<PersonaChatConversationRecord> records,
-    PersonaChatConversationMetadata metadata,
-  ) =>
-      records.map((record) => _withEffectiveRead(record, metadata));
+  Future<List<PersonaChatConversationRecord>> _scanBackwards(
+    String userId,
+    String characterId, {
+    required bool Function(PersonaChatConversationRecord record) include,
+    required bool Function(
+      List<PersonaChatConversationRecord> collected,
+      PersonaChatConversationRecord record,
+    ) stop,
+  }) async {
+    int? cursor;
+    final collected = <PersonaChatConversationRecord>[];
+    while (true) {
+      final page = await _jsonl.readPageBefore(
+        _messagesFile(userId, characterId),
+        limit: _scanPageSize,
+        beforeOffset: cursor,
+      );
+      if (page.rows.isEmpty) return collected;
+      for (final row in page.rows.reversed) {
+        final record = PersonaChatConversationRecord.fromJson(
+          row,
+          characterId: characterId,
+        );
+        if (record == null) continue;
+        if (include(record)) collected.add(record);
+        if (stop(collected, record)) return collected;
+      }
+      cursor = page.olderOffset;
+      if (cursor == null) return collected;
+    }
+  }
+
+  int? _readBoundaryFromRecords(
+    List<PersonaChatConversationRecord> records,
+  ) {
+    int? result;
+    for (final record in records) {
+      if (record.isFromCharacter && record.isRead) result = record.id;
+    }
+    return result;
+  }
 
   PersonaChatConversationRecord _withEffectiveRead(
     PersonaChatConversationRecord record,
     PersonaChatConversationMetadata metadata,
   ) {
-    if (!record.isFromCharacter ||
-        record.isRead ||
-        record.seq > metadata.readThroughSeq) {
-      return record;
+    if (!record.isFromCharacter || record.id <= metadata.readThroughMessageId) {
+      return record.copyWith(isRead: true);
     }
-    return record.copyWith(isRead: true);
+    return record.copyWith(isRead: false);
+  }
+
+  void _validateProcessedBoundary(
+    PersonaChatConversationMetadata metadata,
+    int value,
+  ) {
+    if (value <= 0 || value >= metadata.nextMessageId) {
+      throw ArgumentError.value(
+        value,
+        'agentProcessedThroughUserMessageId',
+      );
+    }
   }
 
   Future<void> _ensureLayout(String userId, String characterId) async {
@@ -1059,8 +1188,7 @@ class PersonaChatConversationStorage {
       await Directory(
         _fileSystem.getCharacterConversationPath(userId, characterId),
       ).create(recursive: true);
-      final lockFile = File(lockPath);
-      final handle = await lockFile.open(mode: FileMode.append);
+      final handle = await File(lockPath).open(mode: FileMode.append);
       await handle.lock(FileLock.exclusive);
       try {
         return await action();
@@ -1079,50 +1207,12 @@ class PersonaChatConversationStorage {
         _fileSystem.getCharacterConversationMetadataPath(userId, characterId),
       );
 
-  File _episodeReceiptFile(
-    String userId,
-    String characterId,
-    String episodeId,
-  ) {
-    final name = sha256.convert(utf8.encode(episodeId)).toString();
-    return File(
-      _fileSystem.getCharacterConversationEpisodeReceiptPath(
-        userId,
-        characterId,
-        name,
-      ),
-    );
-  }
-
-  Future<_EpisodeReceipt?> _readEpisodeReceipt(
-    File file,
-    String expectedEpisodeId,
-  ) async {
-    if (!await file.exists()) return null;
-    try {
-      final decoded = jsonDecode(await file.readAsString());
-      if (decoded is! Map || decoded['episode_id'] != expectedEpisodeId) {
-        throw const FormatException('Episode receipt identity mismatch');
-      }
-      return _EpisodeReceipt(
-        isComplete: decoded['status'] == 'complete',
-        lineOffset: decoded['line_offset'] is num
-            ? (decoded['line_offset'] as num).toInt()
-            : null,
+  File _pendingCommitFile(String userId, String characterId) => File(
+        _fileSystem.getCharacterConversationPendingCommitPath(
+          userId,
+          characterId,
+        ),
       );
-    } catch (_) {
-      return const _EpisodeReceipt(isComplete: false);
-    }
-  }
-
-  Future<void> _writeEpisodeReceipt(File file, String episodeId,
-      {int? lineOffset}) {
-    return _writeJsonFile(file, {
-      'episode_id': episodeId,
-      'status': lineOffset == null ? 'pending' : 'complete',
-      if (lineOffset != null) 'line_offset': lineOffset,
-    });
-  }
 
   Future<void> _writeMetadata(
     String userId,
@@ -1130,62 +1220,56 @@ class PersonaChatConversationStorage {
     PersonaChatConversationMetadata metadata,
   ) {
     return _writeJsonFile(
-        _metadataFile(userId, characterId), metadata.toJson());
+      _metadataFile(userId, characterId),
+      metadata.toJson(),
+    );
   }
 
   Future<void> _writeJsonFile(File file, Map<String, dynamic> value) {
-    const encoder = JsonEncoder.withIndent('  ');
-    return _replaceFile(file, '${encoder.convert(value)}\n');
+    return _journal.writeJsonFile(file, value);
   }
 
-  Future<void> _replaceFile(File file, String content) async {
-    await file.parent.create(recursive: true);
-    final temporary = File('${file.path}.tmp');
-    await temporary.writeAsString(content, encoding: utf8, flush: true);
-    try {
-      await temporary.rename(file.path);
-    } on FileSystemException {
-      if (await file.exists()) await file.delete();
-      await temporary.rename(file.path);
-    }
+  int _encodedRowsLength(Iterable<Map<String, dynamic>> rows) {
+    final materialized = rows.toList(growable: false);
+    if (materialized.isEmpty) return 0;
+    return utf8.encode('${materialized.map(jsonEncode).join('\n')}\n').length;
   }
 
-  void _validateEpisode(String episodeId, int expectedCount) {
-    if (episodeId.trim().isEmpty) {
-      throw ArgumentError.value(episodeId, 'contactEpisodeId');
+  void _validateTurn(String turnId, int expectedCount) {
+    if (turnId.trim().isEmpty) {
+      throw ArgumentError.value(turnId, 'turnId');
     }
     if (expectedCount <= 0) {
       throw ArgumentError.value(expectedCount, 'expectedRecordCount');
     }
   }
 
-  void _verifyEpisodeCount(
+  void _verifyTurnCount(
     List<PersonaChatConversationRecord> records,
     int expectedCount,
   ) {
     if (records.length != expectedCount) {
       throw StateError(
-        'Persisted episode contains ${records.length} messages; '
+        'Persisted turn contains ${records.length} messages; '
         'expected $expectedCount.',
       );
     }
   }
 
-  void _verifyNewEpisode(
+  void _verifyNewTurn(
     String characterId,
-    String episodeId,
-    int nextSeq,
+    String turnId,
+    int firstMessageId,
     int expectedCount,
     List<PersonaChatConversationRecord> records,
   ) {
-    _verifyEpisodeCount(records, expectedCount);
+    _verifyTurnCount(records, expectedCount);
     for (var index = 0; index < records.length; index++) {
       final record = records[index];
       if (record.characterId != characterId ||
-          record.contactEpisodeId != episodeId ||
-          record.seq != nextSeq + index) {
-        throw StateError(
-            'Episode $episodeId has an invalid message at $index.');
+          record.turnId != turnId ||
+          record.id != firstMessageId + index) {
+        throw StateError('Turn $turnId has an invalid message at $index.');
       }
     }
   }
@@ -1196,28 +1280,9 @@ class PersonaChatConversationStorage {
   ) {
     for (var index = 0; index < records.length; index++) {
       if (records[index].characterId != characterId ||
-          records[index].seq != index + 1) {
+          records[index].id != index + 1) {
         throw StateError('Legacy conversation snapshot is not contiguous.');
       }
     }
   }
-}
-
-class _EpisodeReceipt {
-  const _EpisodeReceipt({required this.isComplete, this.lineOffset});
-
-  final bool isComplete;
-  final int? lineOffset;
-}
-
-class _ConversationSnapshot {
-  const _ConversationSnapshot({
-    required this.records,
-    required this.readThroughSeq,
-    this.consumedThroughSeq,
-  });
-
-  final List<PersonaChatConversationRecord> records;
-  final int readThroughSeq;
-  final int? consumedThroughSeq;
 }

@@ -74,7 +74,6 @@ class CharacterConversationTaskHandler {
         userId: userId,
         character: character,
         payload: payload,
-        taskContext: taskContext,
       ),
     );
   }
@@ -83,13 +82,21 @@ class CharacterConversationTaskHandler {
     required String userId,
     required CharacterModel character,
     required Map<String, dynamic> payload,
-    required TaskContext taskContext,
   }) async {
+    final conversationGeneration = await _chatService
+        .getConversationGeneration(character.id, userId: userId);
     final incoming = await _chatService.getPendingUserMessages(
       character.id,
       userId: userId,
     );
     if (incoming.isEmpty) return;
+    if (await _chatService.getConversationGeneration(
+          character.id,
+          userId: userId,
+        ) !=
+        conversationGeneration) {
+      return;
+    }
 
     final history = await _chatService.getMessagesBefore(
       character.id,
@@ -112,7 +119,8 @@ class CharacterConversationTaskHandler {
         context: context,
         workspaceService: _workspaceService,
       );
-      final episodeId = 'character_conversation:${taskContext.taskId}';
+      final turnId =
+          'character_conversation:${incoming.first.id}-${incoming.last.id}';
       final incomingIds = incoming.map((message) => message.id).toList();
       var replyPending = false;
       switch (decision.action) {
@@ -121,8 +129,9 @@ class CharacterConversationTaskHandler {
             characterId: character.id,
             consumedThroughMessageId: incoming.last.id,
             characterMessages: decision.messages,
-            episodeId: episodeId,
+            episodeId: turnId,
             timestamp: _clock(),
+            expectedGeneration: conversationGeneration,
             userId: userId,
           );
           _logger.info(

@@ -133,7 +133,7 @@ void main() {
     expect(tasks.single.status, 'completed');
   });
 
-  test('initiative yields one pending user turn to the conversation episode',
+  test('initiative yields one pending user turn to the direct reply task',
       () async {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     AppDatabase.setTestInstance(db);
@@ -244,6 +244,7 @@ void main() {
         required messages,
         required timestamp,
         required contactEpisodeId,
+        required expectedGeneration,
         factId,
       }) async {
         initiativeMessages += messages.length;
@@ -355,7 +356,7 @@ void main() {
     );
     expect(
       characterMessages.single.contactEpisodeId,
-      'character_conversation:conversation-task',
+      'character_conversation:1-1',
     );
   });
 

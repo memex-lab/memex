@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:drift/drift.dart';
@@ -78,6 +79,27 @@ void main() {
       );
       expect(await chat.getReplyCursor(characterId), 1);
       expect(await chat.getPendingUserMessages(characterId), isEmpty);
+      final lines = await File(
+        FileSystemService.instance.getCharacterConversationMessagesPath(
+          userId,
+          characterId,
+        ),
+      ).readAsLines();
+      expect(lines, hasLength(2));
+      expect(jsonDecode(lines.first), containsPair('id', 1));
+      expect(jsonDecode(lines.first), isNot(contains('seq')));
+      expect(jsonDecode(lines.last)['turn_id'], 'character_conversation:old');
+      final migrationState = jsonDecode(
+        await File(
+          '${FileSystemService.instance.getSystemPath(userId)}/'
+          'migration_state.json',
+        ).readAsString(),
+      ) as Map<String, dynamic>;
+      expect(
+        migrationState[PersonaChatConversationStorage.storageMigrationKey],
+        isTrue,
+      );
+      expect(migrationState, isNot(contains('persona_chat_workspace_v2')));
     });
 
     test('runtime conversation remains available after SQLite is wiped',
@@ -104,7 +126,7 @@ void main() {
       expect(await chat.getPendingUserMessages(characterId), isEmpty);
     });
 
-    test('retried multi-bubble episodes are idempotent', () async {
+    test('retried multi-bubble turns are idempotent', () async {
       final userMessageId = await chat.addUserMessage(characterId, '你好');
       Future<List<int>> speak() => chat.completeConversationEpisode(
             characterId: characterId,

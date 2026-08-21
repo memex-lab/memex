@@ -21,7 +21,7 @@ class PersonaChatMessageModel {
     required this.messageType,
     required this.origin,
     this.factId,
-    this.episodeId,
+    this.turnId,
   });
 
   final int id;
@@ -33,7 +33,7 @@ class PersonaChatMessageModel {
   final DateTime timestamp;
   final String messageType;
   final String origin;
-  final String? episodeId;
+  final String? turnId;
 }
 
 class PersonaChatThreadModel {
@@ -41,6 +41,8 @@ class PersonaChatThreadModel {
     required this.character,
     required this.userId,
     required this.messages,
+    required this.olderCursor,
+    required this.newestCursor,
     this.userAvatar,
   });
 
@@ -48,4 +50,18 @@ class PersonaChatThreadModel {
   final String userId;
   final String? userAvatar;
   final List<PersonaChatMessageModel> messages;
+  final int? olderCursor;
+  final int newestCursor;
+}
+
+class PersonaChatMessagePageModel {
+  const PersonaChatMessagePageModel({
+    required this.messages,
+    required this.olderCursor,
+    required this.newestCursor,
+  });
+
+  final List<PersonaChatMessageModel> messages;
+  final int? olderCursor;
+  final int newestCursor;
 }

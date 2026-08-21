@@ -36,6 +36,7 @@ typedef CharacterInitiativeMessageSender = Future<bool> Function({
   required List<CharacterOutgoingMessage> messages,
   required DateTime timestamp,
   required String contactEpisodeId,
+  required int expectedGeneration,
   String? factId,
 });
 
@@ -235,6 +236,7 @@ class CharacterInitiativeTaskHandler {
       resumedThought: resumedThought,
       wakeReason: resumedThought?.reason ?? payload['wake_reason'] as String?,
       latestPrivateMessageId: baseContext.latestPrivateMessageId,
+      conversationGeneration: baseContext.conversationGeneration,
     );
 
     try {
@@ -290,7 +292,8 @@ class CharacterInitiativeTaskHandler {
               messages: messages,
               factId: factId,
               timestamp: _clock(),
-              contactEpisodeId: 'character_initiative:${taskContext.taskId}',
+              contactEpisodeId: 'character_initiative:$sourceEventId',
+              expectedGeneration: context.conversationGeneration,
             );
             if (committed) {
               _logger.info(
@@ -357,11 +360,35 @@ class CharacterInitiativeTaskHandler {
     required DateTime now,
     String? factId,
   }) async {
-    final messages = await PersonaChatService.instance.getMessages(
+    final chatService = PersonaChatService.instance;
+    var conversationGeneration = await chatService.getConversationGeneration(
+      character.id,
+      userId: userId,
+    );
+    var messages = await chatService.getMessages(
       character.id,
       limit: 24,
       userId: userId,
     );
+    var generationAfterRead = await chatService.getConversationGeneration(
+      character.id,
+      userId: userId,
+    );
+    if (generationAfterRead != conversationGeneration) {
+      conversationGeneration = generationAfterRead;
+      messages = await chatService.getMessages(
+        character.id,
+        limit: 24,
+        userId: userId,
+      );
+      generationAfterRead = await chatService.getConversationGeneration(
+        character.id,
+        userId: userId,
+      );
+      if (generationAfterRead != conversationGeneration) {
+        throw StateError('Persona conversation changed while loading context.');
+      }
+    }
     final recentPrivateChat = messages.reversed
         .map(
           (message) => CharacterConversationTurn(
@@ -399,6 +426,7 @@ class CharacterInitiativeTaskHandler {
         0,
         (latest, message) => message.id > latest ? message.id : latest,
       ),
+      conversationGeneration: conversationGeneration,
     );
   }
 
@@ -455,6 +483,7 @@ class CharacterInitiativeTaskHandler {
       required List<CharacterOutgoingMessage> messages,
       required DateTime timestamp,
       required String contactEpisodeId,
+      required int expectedGeneration,
       String? factId,
     }) async {
       final committed = await chatService.tryAddInitiativeMessages(
@@ -464,6 +493,7 @@ class CharacterInitiativeTaskHandler {
         isRead: false,
         timestamp: timestamp,
         contactEpisodeId: contactEpisodeId,
+        expectedGeneration: expectedGeneration,
       );
       if (!committed) return false;
       eventBus.emitEvent(

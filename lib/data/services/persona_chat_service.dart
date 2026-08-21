@@ -3,11 +3,22 @@ import 'package:memex/data/services/persona_chat_conversation_storage.dart';
 import 'package:memex/data/services/persona_chat_legacy_migration_service.dart';
 import 'package:memex/db/app_database.dart';
 import 'package:memex/domain/models/character_message.dart';
-import 'package:uuid/uuid.dart';
 
 abstract final class PersonaChatMessageOrigin {
   static const conversation = 'conversation';
   static const initiative = 'initiative';
+}
+
+class PersonaChatMessagePage {
+  const PersonaChatMessagePage({
+    required this.messages,
+    required this.olderCursor,
+    required this.newestCursor,
+  });
+
+  final List<PersonaChatMessage> messages;
+  final int? olderCursor;
+  final int newestCursor;
 }
 
 /// Persona chat application service.
@@ -17,24 +28,20 @@ abstract final class PersonaChatMessageOrigin {
 class PersonaChatService {
   PersonaChatService._()
       : _storage = PersonaChatConversationStorage.instance,
-        _migration = PersonaChatLegacyMigrationService(),
-        _uuid = const Uuid();
+        _migration = PersonaChatLegacyMigrationService();
 
   @visibleForTesting
   PersonaChatService.forTesting({
     required PersonaChatConversationStorage storage,
     required String userId,
-    Uuid uuid = const Uuid(),
   })  : _storage = storage,
         _migration = null,
-        _uuid = uuid,
         _sessionUserId = userId;
 
   static final PersonaChatService instance = PersonaChatService._();
 
   final PersonaChatConversationStorage _storage;
   final PersonaChatLegacyMigrationService? _migration;
-  final Uuid _uuid;
   String? _sessionUserId;
 
   Future<void> initialize(String userId, AppDatabase database) async {
@@ -57,6 +64,42 @@ class PersonaChatService {
     return records.map(_toMessage).toList(growable: false);
   }
 
+  Future<PersonaChatMessagePage> getMessagePage(
+    String characterId, {
+    int limit = 50,
+    int? beforeCursor,
+    String? userId,
+  }) async {
+    final page = await _storage.loadMessagePage(
+      userId: _resolveUserId(userId),
+      characterId: characterId,
+      limit: limit,
+      beforeCursor: beforeCursor,
+    );
+    return PersonaChatMessagePage(
+      messages: page.records.map(_toMessage).toList(growable: false),
+      olderCursor: page.olderCursor,
+      newestCursor: page.newestCursor,
+    );
+  }
+
+  Future<PersonaChatMessagePage> getMessagesAfter(
+    String characterId, {
+    required int afterCursor,
+    String? userId,
+  }) async {
+    final page = await _storage.loadMessagesAfter(
+      userId: _resolveUserId(userId),
+      characterId: characterId,
+      afterCursor: afterCursor,
+    );
+    return PersonaChatMessagePage(
+      messages: page.records.map(_toMessage).toList(growable: false),
+      olderCursor: page.olderCursor,
+      newestCursor: page.newestCursor,
+    );
+  }
+
   Future<List<PersonaChatMessage>> getMessagesBefore(
     String characterId, {
     required int beforeMessageId,
@@ -66,7 +109,7 @@ class PersonaChatService {
     final records = await _storage.loadMessagesBefore(
       userId: _resolveUserId(userId),
       characterId: characterId,
-      beforeSeq: beforeMessageId,
+      beforeMessageId: beforeMessageId,
       limit: limit,
     );
     return records.map(_toMessage).toList(growable: false);
@@ -91,11 +134,21 @@ class PersonaChatService {
       origin: PersonaChatMessageOrigin.conversation,
       isRead: true,
     );
-    return record.seq;
+    return record.id;
   }
 
   Future<int> getReplyCursor(String characterId, {String? userId}) {
     return _storage.getReplyCursor(
+      userId: _resolveUserId(userId),
+      characterId: characterId,
+    );
+  }
+
+  Future<int> getConversationGeneration(
+    String characterId, {
+    String? userId,
+  }) {
+    return _storage.conversationGeneration(
       userId: _resolveUserId(userId),
       characterId: characterId,
     );
@@ -122,7 +175,7 @@ class PersonaChatService {
     return _storage.advanceCursor(
       userId: _resolveUserId(userId),
       characterId: characterId,
-      consumedThroughSeq: consumedThroughMessageId,
+      processedThroughUserMessageId: consumedThroughMessageId,
     );
   }
 
@@ -163,23 +216,23 @@ class PersonaChatService {
     final resolvedUserId = _resolveUserId(userId);
     final createdAt = timestamp ?? DateTime.now();
     if (contactEpisodeId != null) {
-      final records = await _storage.appendEpisode(
+      final records = await _storage.appendTurn(
         userId: resolvedUserId,
         characterId: characterId,
-        contactEpisodeId: contactEpisodeId,
+        turnId: contactEpisodeId,
         expectedRecordCount: messages.length,
-        records: (nextSeq) => _buildRecords(
+        records: (firstMessageId) => _buildRecords(
           characterId: characterId,
           messages: messages,
-          nextSeq: nextSeq,
+          firstMessageId: firstMessageId,
           timestamp: createdAt,
           origin: origin,
           factId: factId,
           isRead: isRead,
-          episodeId: contactEpisodeId,
+          turnId: contactEpisodeId,
         ),
       );
-      return records.map((record) => record.seq).toList(growable: false);
+      return records.map((record) => record.id).toList(growable: false);
     }
 
     final ids = <int>[];
@@ -195,7 +248,7 @@ class PersonaChatService {
         messageType: message.storageType,
         origin: origin,
       );
-      ids.add(record.seq);
+      ids.add(record.id);
     }
     return ids;
   }
@@ -207,24 +260,26 @@ class PersonaChatService {
     bool isRead = false,
     DateTime? timestamp,
     required String contactEpisodeId,
+    int? expectedGeneration,
     String? userId,
   }) {
     _requireMessages(messages);
     final createdAt = timestamp ?? DateTime.now();
-    return _storage.tryAppendInitiativeEpisode(
+    return _storage.tryAppendInitiativeTurn(
       userId: _resolveUserId(userId),
       characterId: characterId,
-      contactEpisodeId: contactEpisodeId,
+      turnId: contactEpisodeId,
       expectedRecordCount: messages.length,
-      records: (nextSeq) => _buildRecords(
+      expectedGeneration: expectedGeneration,
+      records: (firstMessageId) => _buildRecords(
         characterId: characterId,
         messages: messages,
-        nextSeq: nextSeq,
+        firstMessageId: firstMessageId,
         timestamp: createdAt,
         origin: PersonaChatMessageOrigin.initiative,
         factId: factId,
         isRead: isRead,
-        episodeId: contactEpisodeId,
+        turnId: contactEpisodeId,
       ),
     );
   }
@@ -236,6 +291,7 @@ class PersonaChatService {
     required String episodeId,
     required DateTime timestamp,
     bool isRead = false,
+    int? expectedGeneration,
     String? userId,
   }) async {
     if (consumedThroughMessageId <= 0) {
@@ -245,23 +301,24 @@ class PersonaChatService {
       );
     }
     _requireMessages(characterMessages);
-    final records = await _storage.appendEpisode(
+    final records = await _storage.appendTurn(
       userId: _resolveUserId(userId),
       characterId: characterId,
-      contactEpisodeId: episodeId,
+      turnId: episodeId,
       expectedRecordCount: characterMessages.length,
-      consumedThroughSeq: consumedThroughMessageId,
-      records: (nextSeq) => _buildRecords(
+      agentProcessedThroughUserMessageId: consumedThroughMessageId,
+      expectedGeneration: expectedGeneration,
+      records: (firstMessageId) => _buildRecords(
         characterId: characterId,
         messages: characterMessages,
-        nextSeq: nextSeq,
+        firstMessageId: firstMessageId,
         timestamp: timestamp,
         origin: PersonaChatMessageOrigin.conversation,
         isRead: isRead,
-        episodeId: episodeId,
+        turnId: episodeId,
       ),
     );
-    return records.map((record) => record.seq).toList(growable: false);
+    return records.map((record) => record.id).toList(growable: false);
   }
 
   Future<int> addActionMessage(
@@ -283,7 +340,7 @@ class PersonaChatService {
       messageType: PersonaChatMessageTypes.action,
       origin: PersonaChatMessageOrigin.conversation,
     );
-    return record.seq;
+    return record.id;
   }
 
   Future<int> getUnreadCount(String characterId, {String? userId}) {
@@ -295,6 +352,11 @@ class PersonaChatService {
 
   Future<int> getTotalUnreadCount({String? userId}) {
     return _storage.totalUnreadCount(_resolveUserId(userId));
+  }
+
+  Future<Set<String>> getCharactersWithPendingUserMessages({String? userId}) {
+    final resolvedUserId = _resolveUserId(userId);
+    return _storage.charactersWithPendingUserMessages(resolvedUserId);
   }
 
   Future<int> markAllRead(String characterId, {String? userId}) {
@@ -316,7 +378,7 @@ class PersonaChatService {
   }
 
   Future<int> getLatestMessageId(String characterId, {String? userId}) {
-    return _storage.latestMessageSeq(
+    return _storage.latestMessageId(
       userId: _resolveUserId(userId),
       characterId: characterId,
     );
@@ -342,18 +404,17 @@ class PersonaChatService {
   List<PersonaChatConversationRecord> _buildRecords({
     required String characterId,
     required List<CharacterOutgoingMessage> messages,
-    required int nextSeq,
+    required int firstMessageId,
     required DateTime timestamp,
     required String origin,
     required bool isRead,
-    required String episodeId,
+    required String turnId,
     String? factId,
   }) {
     return [
       for (var index = 0; index < messages.length; index++)
         PersonaChatConversationRecord(
-          id: _uuid.v4(),
-          seq: nextSeq + index,
+          id: firstMessageId + index,
           characterId: characterId,
           isFromCharacter: true,
           content: messages[index].content,
@@ -362,14 +423,14 @@ class PersonaChatService {
           timestamp: timestamp,
           messageType: messages[index].storageType,
           origin: origin,
-          contactEpisodeId: episodeId,
+          turnId: turnId,
         ),
     ];
   }
 
   PersonaChatMessage _toMessage(PersonaChatConversationRecord record) {
     return PersonaChatMessage(
-      id: record.seq,
+      id: record.id,
       characterId: record.characterId,
       isFromCharacter: record.isFromCharacter,
       content: record.content,
@@ -378,7 +439,7 @@ class PersonaChatService {
       timestamp: record.timestamp,
       messageType: record.messageType,
       origin: record.origin,
-      contactEpisodeId: record.contactEpisodeId,
+      contactEpisodeId: record.turnId,
     );
   }
 

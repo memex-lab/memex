@@ -139,6 +139,7 @@ class CharacterInitiativeContext {
     this.resumedThought,
     this.wakeReason,
     this.latestPrivateMessageId = 0,
+    this.conversationGeneration = 1,
   });
 
   final String sourceEventId;
@@ -154,4 +155,8 @@ class CharacterInitiativeContext {
   /// revalidates it before delivering a proactive message so a newly arrived
   /// direct message cannot be overtaken by a stale initiative decision.
   final int latestPrivateMessageId;
+
+  /// Changes when the private conversation is cleared. Agent output generated
+  /// against an older generation must not reappear after that reset.
+  final int conversationGeneration;
 }

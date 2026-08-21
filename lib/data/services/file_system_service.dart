@@ -1546,24 +1546,13 @@ class FileSystemService {
     );
   }
 
-  String getCharacterConversationEpisodeReceiptsPath(
+  String getCharacterConversationPendingCommitPath(
     String userId,
     String characterId,
   ) {
     return path.join(
       getCharacterConversationPath(userId, characterId),
-      '_episodes',
-    );
-  }
-
-  String getCharacterConversationEpisodeReceiptPath(
-    String userId,
-    String characterId,
-    String receiptName,
-  ) {
-    return path.join(
-      getCharacterConversationEpisodeReceiptsPath(userId, characterId),
-      '$receiptName.json',
+      '.pending_commit.json',
     );
   }
 

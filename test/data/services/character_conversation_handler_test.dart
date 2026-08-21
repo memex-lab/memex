@@ -138,7 +138,7 @@ void main() {
     ]);
     expect(
       characterRows.map((message) => message.contactEpisodeId).toSet(),
-      {'character_conversation:reply-1'},
+      {'character_conversation:3-5'},
     );
     expect(await chatService.getReplyCursor('yaoyao'), 5);
     expect(await chatService.getUnreadCount('yaoyao'), 2);
