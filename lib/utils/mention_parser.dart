@@ -1,4 +1,4 @@
-/// Find `@token` only as a standalone mention, not as a prefix of a longer word.
+/// Finds [mention] only when it is standalone, not a prefix of a longer word.
 ///
 /// `@Bob` matches in `hi @Bob` and `@Bob.`, but not in `@Bobby` or `mail@Bob`.
 int indexOfStandaloneMention(String content, String mention) {

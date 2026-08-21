@@ -1,5 +1,5 @@
+import 'package:memex/utils/mention_parser.dart';
 import 'package:test/test.dart';
-import 'package:memex/data/services/task_handlers/character_mention.dart';
 
 void main() {
   group('indexOfStandaloneMention', () {
