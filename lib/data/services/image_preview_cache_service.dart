@@ -97,6 +97,19 @@ class ImagePreviewCacheService {
     return File(path.join(cacheDir.path, '$filenameHash$cacheFileSuffix'));
   }
 
+  /// Removes previews derived from workspace files or downloaded image URLs.
+  ///
+  /// Backup restore replaces the workspace wholesale, so path-based cache
+  /// entries cannot be trusted afterward. Normal reads remain path-only and
+  /// pay no file-version lookup cost.
+  Future<void> clear() => _previewLock.synchronized(() async {
+        final tempDir = await _tempDirectoryProvider();
+        final cacheDir = Directory(path.join(tempDir.path, cacheDirectoryName));
+        if (await cacheDir.exists()) {
+          await cacheDir.delete(recursive: true);
+        }
+      });
+
   Future<ImagePreviewFile> getOrCreatePreview({
     required String source,
     required bool isLocalFile,
@@ -130,6 +143,9 @@ class ImagePreviewCacheService {
     }
 
     return _previewLock.synchronized(() async {
+      if (!await cacheFile.parent.exists()) {
+        await cacheFile.parent.create(recursive: true);
+      }
       if (await cacheFile.exists()) {
         return ImagePreviewFile(
           file: cacheFile,
