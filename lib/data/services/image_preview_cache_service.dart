@@ -13,6 +13,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:synchronized/synchronized.dart';
 
 typedef TempDirectoryProvider = Future<Directory> Function();
+typedef NetworkImageFetcher = Future<http.Response> Function(Uri uri);
 
 typedef ImageFileCompressor = Future<String?> Function({
   required String sourcePath,
@@ -47,8 +48,10 @@ class ImagePreviewCacheService {
   ImagePreviewCacheService({
     TempDirectoryProvider? tempDirectoryProvider,
     ImageFileCompressor? compressor,
+    NetworkImageFetcher? networkImageFetcher,
   })  : _tempDirectoryProvider = tempDirectoryProvider ?? getTemporaryDirectory,
-        _compressor = compressor ?? _defaultCompressor;
+        _compressor = compressor ?? _defaultCompressor,
+        _networkImageFetcher = networkImageFetcher ?? http.get;
 
   static final ImagePreviewCacheService instance = ImagePreviewCacheService();
 
@@ -62,6 +65,7 @@ class ImagePreviewCacheService {
 
   final TempDirectoryProvider _tempDirectoryProvider;
   final ImageFileCompressor _compressor;
+  final NetworkImageFetcher _networkImageFetcher;
   final Lock _previewLock = Lock();
   final Logger _logger = getLogger('ImagePreviewCacheService');
 
@@ -155,8 +159,7 @@ class ImagePreviewCacheService {
         _logger.info('Downloading network image preview source: $source');
         final http.Response response;
         try {
-          response = await http
-              .get(Uri.parse(source))
+          response = await _networkImageFetcher(Uri.parse(source))
               .timeout(const Duration(seconds: 20));
         } on TimeoutException {
           throw const ImagePreviewUnavailable('image download timed out');
@@ -168,10 +171,11 @@ class ImagePreviewCacheService {
         }
 
         final cacheDir = await _cacheDirectory();
+        final extension = _networkImageExtension(response, source);
         tempDownloadFile = File(
           path.join(
             cacheDir.path,
-            'temp_${DateTime.now().microsecondsSinceEpoch}',
+            'temp_${DateTime.now().microsecondsSinceEpoch}$extension',
           ),
         );
         await tempDownloadFile.writeAsBytes(response.bodyBytes);
@@ -227,6 +231,30 @@ class ImagePreviewCacheService {
         await tempDownloadFile.delete();
       }
     }
+  }
+
+  static String _networkImageExtension(http.Response response, String source) {
+    final mimeType =
+        response.headers['content-type']?.split(';').first.trim().toLowerCase();
+    final fromMime = switch (mimeType) {
+      'image/jpeg' || 'image/jpg' => '.jpg',
+      'image/png' => '.png',
+      'image/gif' => '.gif',
+      'image/webp' => '.webp',
+      'image/bmp' => '.bmp',
+      'image/heic' => '.heic',
+      'image/heif' => '.heif',
+      'image/tiff' => '.tiff',
+      _ => null,
+    };
+    if (fromMime != null) return fromMime;
+
+    final sourceExtension =
+        path.extension(Uri.parse(source).path).toLowerCase();
+    if (AssetSafetyService.imageExtensions.contains(sourceExtension)) {
+      return sourceExtension;
+    }
+    throw const ImagePreviewUnavailable('unsupported network image type');
   }
 
   Future<Directory> _cacheDirectory() async {
