@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:memex/data/services/backup_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
+import 'package:memex/data/services/local_task_executor.dart';
 import 'package:memex/db/app_database.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:path/path.dart' as p;
@@ -83,6 +84,34 @@ void main() {
 
     expect(manifestJson['formatVersion'], 1);
     expect(manifestJson['entries'], isNotEmpty);
+  });
+
+  test('createBackup excludes device-local notification prompt state',
+      () async {
+    await UserStorage.setMemexAgentNotificationPermissionPrompted();
+    final outputDir = Directory(p.join(tempDir.path, 'Backups'));
+    final backupPath = await BackupService.createBackup(
+      outputDirectory: outputDir.path,
+    );
+
+    final archive = ZipDecoder().decodeBytes(
+      await File(backupPath).readAsBytes(),
+    );
+    final settingsFile = archive.files.firstWhere(
+      (file) => file.name == 'settings.json',
+    );
+    final settings = (jsonDecode(utf8.decode(settingsFile.content)) as Map)
+        .cast<String, dynamic>();
+
+    expect(settings['language'], 'en');
+    expect(
+      settings,
+      isNot(
+        contains(
+          'memex_agent_notification_permission_prompted_backup-service-user',
+        ),
+      ),
+    );
   });
 
   test('createBackup still compresses small text files', () async {
@@ -491,6 +520,118 @@ void main() {
     }
 
     expect(await cardFile.readAsString(), 'hello backup');
+  });
+
+  test('restore ignores device-local state contained in an old backup',
+      () async {
+    final settings = {
+      'user_id': 'backup-service-user',
+      'language': 'zh',
+      'memex_agent_notification_permission_prompted_backup-service-user': true,
+    };
+    final settingsBytes = utf8.encode(jsonEncode(settings));
+    final archive = Archive()
+      ..addFile(
+        ArchiveFile('settings.json', settingsBytes.length, settingsBytes),
+      );
+    final backupPath = p.join(tempDir.path, 'legacy-settings.memex');
+    await File(backupPath).writeAsBytes(ZipEncoder().encode(archive));
+
+    try {
+      await BackupService.restoreBackup(backupPath);
+    } finally {
+      if (AppDatabase.isInitialized) {
+        await AppDatabase.instance.close();
+      }
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString('language'), 'zh');
+    expect(
+      await UserStorage.hasPromptedMemexAgentNotificationPermission(),
+      isFalse,
+    );
+  });
+
+  test('restore resumes a task executor that was running beforehand', () async {
+    final exportedDir = Directory(p.join(tempDir.path, 'ExportedBackups'));
+    final backupPath = await BackupService.createBackup(
+      outputDirectory: exportedDir.path,
+    );
+    await AppDatabase.init('backup-service-user');
+    final executor = LocalTaskExecutor.instance;
+    await executor.start(userId: 'backup-service-user');
+
+    try {
+      await BackupService.restoreBackup(backupPath);
+      expect(executor.isRunning, isTrue);
+      expect(executor.currentUserId, 'backup-service-user');
+    } finally {
+      await executor.stop();
+      if (AppDatabase.isInitialized) {
+        await AppDatabase.instance.close();
+      }
+    }
+  });
+
+  test('restore removes workspace files that are not in the backup', () async {
+    final exportedDir = Directory(p.join(tempDir.path, 'ExportedBackups'));
+    final backupPath = await BackupService.createBackup(
+      outputDirectory: exportedDir.path,
+    );
+
+    final workspace = Directory(
+      FileSystemService.instance.getWorkspacePath('backup-service-user'),
+    );
+    final extraFile = File(p.join(workspace.path, 'Cards', 'extra.md'));
+    await extraFile.create(recursive: true);
+    await extraFile.writeAsString('should not survive restore');
+    final localBackup = File(
+      p.join(workspace.path, 'Backups', 'keep-me.memex'),
+    );
+    await localBackup.create(recursive: true);
+    await localBackup.writeAsBytes([9, 9, 9]);
+
+    try {
+      await BackupService.restoreBackup(backupPath);
+    } finally {
+      if (AppDatabase.isInitialized) {
+        await AppDatabase.instance.close();
+      }
+    }
+
+    expect(await extraFile.exists(), isFalse);
+    expect(await localBackup.exists(), isTrue);
+    expect(
+      await File(p.join(workspace.path, 'Cards', 'card.md')).readAsString(),
+      'hello backup',
+    );
+  });
+
+  test('restore removes stale workspace links without touching their target',
+      () async {
+    final exportedDir = Directory(p.join(tempDir.path, 'ExportedBackups'));
+    final backupPath = await BackupService.createBackup(
+      outputDirectory: exportedDir.path,
+    );
+    final workspace = Directory(
+      FileSystemService.instance.getWorkspacePath('backup-service-user'),
+    );
+    final externalFile = File(p.join(tempDir.path, 'outside.txt'));
+    await externalFile.writeAsString('outside');
+    final staleLink = Link(p.join(workspace.path, 'Cards', 'outside-link'));
+    await staleLink.create(externalFile.path);
+
+    try {
+      await BackupService.restoreBackup(backupPath);
+    } finally {
+      if (AppDatabase.isInitialized) {
+        await AppDatabase.instance.close();
+      }
+    }
+
+    expect(await staleLink.exists(), isFalse);
+    expect(await externalFile.readAsString(), 'outside');
   });
 
   test(

@@ -7,8 +7,11 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
 import 'package:memex/config/app_flavor.dart';
+import 'package:memex/data/services/agent_activity_service.dart';
+import 'package:memex/data/services/agent_background_coordinator.dart';
 import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
+import 'package:memex/data/services/local_task_executor.dart';
 import 'package:memex/data/services/persona_chat_service.dart';
 import 'package:memex/db/app_database.dart';
 import 'package:memex/utils/logger.dart';
@@ -288,6 +291,7 @@ class BackupService {
     for (final key in prefs.getKeys()) {
       // Skip Flutter internal keys
       if (_excludePrefKeys.any((prefix) => key.startsWith(prefix))) continue;
+      if (UserStorage.isDeviceLocalPreferenceKey(key)) continue;
       final value = prefs.get(key);
       if (value != null) {
         settings[key] = value;
@@ -350,7 +354,14 @@ class BackupService {
   }) async {
     final currentUserId = await UserStorage.getUserId();
     if (currentUserId == null) throw Exception('No user logged in');
+    final taskExecutor = LocalTaskExecutor.instance;
+    final backgroundCoordinator = AgentBackgroundCoordinator.instance;
+    final shouldResumeTaskExecutor = taskExecutor.isRunning;
+    final shouldResumeBackgroundCoordinator = backgroundCoordinator.isStarted;
     var databaseClosedForRestore = false;
+    String? backgroundDatabaseUserId =
+        AppDatabase.isInitialized ? currentUserId : null;
+    var resumeUserId = currentUserId;
     Directory? stagingRoot;
 
     try {
@@ -375,6 +386,17 @@ class BackupService {
         '${stagedRestore.dbFileCount} DB files)',
       );
 
+      // Establish a real writer barrier before changing settings or the
+      // FileSystemService root. Active handlers may resolve those singletons
+      // dynamically while they finish.
+      onProgress?.call('Stopping background work...');
+      if (shouldResumeBackgroundCoordinator) {
+        await backgroundCoordinator.stop();
+      }
+      if (shouldResumeTaskExecutor) {
+        await taskExecutor.stopAndWaitForActiveTasks();
+      }
+
       // 1. Restore settings FIRST to get the correct userId and data root.
       onProgress?.call('Restoring settings...');
       await _restoreSettings(stagedRestore.settings);
@@ -382,6 +404,7 @@ class BackupService {
 
       // Use the restored userId (from backup settings) for workspace and DB paths
       final restoredUserId = await UserStorage.getUserId() ?? currentUserId;
+      resumeUserId = restoredUserId;
       final dataRoot = await UserStorage.resolveDataRoot(restoredUserId);
       await FileSystemService.init(dataRoot);
       final fs = FileSystemService.instance;
@@ -393,6 +416,7 @@ class BackupService {
       onProgress?.call('Restoring database...');
       if (AppDatabase.isInitialized) {
         databaseClosedForRestore = true;
+        backgroundDatabaseUserId = null;
         await AppDatabase.instance.close();
       }
 
@@ -414,11 +438,19 @@ class BackupService {
         restoredUserId,
         AppDatabase.instance,
       );
+      backgroundDatabaseUserId = restoredUserId;
       databaseClosedForRestore = false;
 
       // 4. Rebuild card cache
       onProgress?.call('Rebuilding cache...');
       await fs.rebuildCardCache(restoredUserId);
+      await _resumeBackgroundWork(
+        taskExecutor: taskExecutor,
+        backgroundCoordinator: backgroundCoordinator,
+        shouldResumeTaskExecutor: shouldResumeTaskExecutor,
+        shouldResumeBackgroundCoordinator: shouldResumeBackgroundCoordinator,
+        userId: resumeUserId,
+      );
 
       _logger.info('Backup restored successfully');
       EventBusService.instance.emitEvent(
@@ -430,12 +462,43 @@ class BackupService {
       return true;
     } catch (e, stack) {
       _logger.severe('Restore failed: $e', e, stack);
-      if (databaseClosedForRestore) {
-        // Try to re-init DB if restore failed after closing it.
+      if (databaseClosedForRestore ||
+          ((shouldResumeTaskExecutor || shouldResumeBackgroundCoordinator) &&
+              backgroundDatabaseUserId != resumeUserId)) {
+        // Settings and the filesystem root may already point at the restored
+        // user even if failure happened before the normal DB replacement.
         try {
-          final userId = await UserStorage.getUserId();
-          if (userId != null) await AppDatabase.init(userId);
+          final activeUserId = await UserStorage.getUserId();
+          if (activeUserId != null) {
+            resumeUserId = activeUserId;
+            await AppDatabase.init(activeUserId);
+            await PersonaChatService.instance.initialize(
+              activeUserId,
+              AppDatabase.instance,
+            );
+            backgroundDatabaseUserId = activeUserId;
+            databaseClosedForRestore = false;
+          }
         } catch (_) {}
+      }
+      try {
+        if (!databaseClosedForRestore &&
+            backgroundDatabaseUserId == resumeUserId) {
+          await _resumeBackgroundWork(
+            taskExecutor: taskExecutor,
+            backgroundCoordinator: backgroundCoordinator,
+            shouldResumeTaskExecutor: shouldResumeTaskExecutor,
+            shouldResumeBackgroundCoordinator:
+                shouldResumeBackgroundCoordinator,
+            userId: resumeUserId,
+          );
+        }
+      } catch (resumeError, resumeStack) {
+        _logger.severe(
+          'Failed to resume background work after restore failure',
+          resumeError,
+          resumeStack,
+        );
       }
       rethrow;
     } finally {
@@ -447,6 +510,24 @@ class BackupService {
           _logger.warning('Failed to delete restore staging dir: $e');
         }
       }
+    }
+  }
+
+  static Future<void> _resumeBackgroundWork({
+    required LocalTaskExecutor taskExecutor,
+    required AgentBackgroundCoordinator backgroundCoordinator,
+    required bool shouldResumeTaskExecutor,
+    required bool shouldResumeBackgroundCoordinator,
+    required String userId,
+  }) async {
+    if (shouldResumeTaskExecutor && !taskExecutor.isRunning) {
+      await taskExecutor.start(userId: userId);
+    }
+    if (shouldResumeBackgroundCoordinator && !backgroundCoordinator.isStarted) {
+      backgroundCoordinator.start(
+        executor: taskExecutor,
+        activityService: LocalAgentActivityService.instance,
+      );
     }
   }
 
@@ -833,6 +914,9 @@ class BackupService {
 
     final prefs = await SharedPreferences.getInstance();
     for (final entry in settings.entries) {
+      // Old backups may contain device-local state from before it was
+      // excluded. Preserve the destination device's state instead.
+      if (UserStorage.isDeviceLocalPreferenceKey(entry.key)) continue;
       final value = entry.value;
       if (value is String) {
         await prefs.setString(entry.key, value);
@@ -1384,6 +1468,7 @@ Future<void> _applyStagedBackupRestore({
   required String appSupportPath,
 }) async {
   final stagingWorkspace = Directory(stagingWorkspacePath);
+  final sourceRelPaths = <String>{};
   if (await stagingWorkspace.exists()) {
     await for (final entity in stagingWorkspace.list(
       recursive: true,
@@ -1399,9 +1484,20 @@ Future<void> _applyStagedBackupRestore({
       if (!BackupService._isPathWithin(workspacePath, targetPath)) {
         throw Exception('Unsafe staged workspace path: $relativePath');
       }
+      sourceRelPaths.add(relativePath);
+      var dir = path.dirname(relativePath);
+      while (dir != '.' && dir.isNotEmpty) {
+        sourceRelPaths.add(dir);
+        dir = path.dirname(dir);
+      }
       await _moveFileReplacing(entity, targetPath);
     }
   }
+
+  await _removeStaleWorkspaceFiles(
+    workspacePath: workspacePath,
+    sourceRelPaths: sourceRelPaths,
+  );
 
   final stagingDb = Directory(stagingDbPath);
   if (await stagingDb.exists()) {
@@ -1422,6 +1518,33 @@ Future<void> _applyStagedBackupRestore({
       }
       await _moveFileReplacing(entity, targetPath);
     }
+  }
+}
+
+/// Delete workspace files that are not in the backup. `Backups/` is excluded
+/// from archives, so it is preserved locally across restore.
+Future<void> _removeStaleWorkspaceFiles({
+  required String workspacePath,
+  required Set<String> sourceRelPaths,
+}) async {
+  final destDir = Directory(workspacePath);
+  if (!await destDir.exists()) return;
+
+  final destEntities = <FileSystemEntity>[];
+  await for (final entity
+      in destDir.list(recursive: true, followLinks: false)) {
+    destEntities.add(entity);
+  }
+  destEntities.sort((a, b) => b.path.length.compareTo(a.path.length));
+
+  for (final entity in destEntities) {
+    final relativePath = path.relative(entity.path, from: workspacePath);
+    if (relativePath == '.' || relativePath.isEmpty) continue;
+    final firstSegment = path.split(relativePath).first;
+    if (firstSegment == 'Backups') continue;
+    if (sourceRelPaths.contains(relativePath)) continue;
+
+    await entity.delete(recursive: entity is Directory);
   }
 }
 
@@ -1626,17 +1749,13 @@ Future<int> _addDirectoryToBackupArchive(
 
     final relativePath = path.relative(entity.path, from: dirPath);
     final archivePath = '$archivePrefix/$relativePath';
-    try {
-      await _addFileToBackupArchive(
-        encoder,
-        entity,
-        archivePath,
-        manifestEntries,
-      );
-      fileCount += 1;
-    } catch (e) {
-      BackupService._logger.warning('Skipping file ${entity.path}: $e');
-    }
+    await _addFileToBackupArchive(
+      encoder,
+      entity,
+      archivePath,
+      manifestEntries,
+    );
+    fileCount += 1;
   }
 
   return fileCount;

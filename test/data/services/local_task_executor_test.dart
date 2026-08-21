@@ -460,6 +460,70 @@ void main() {
       expect((await _getTask(db, 'slow-drain')).status, 'completed');
     });
 
+    test('data replacement stop waits for active task handlers', () async {
+      final started = Completer<void>();
+      final release = Completer<void>();
+      executor.registerHandler('slow_restore_task', (_, __, ___) async {
+        if (!started.isCompleted) started.complete();
+        await release.future;
+      });
+      await _insertTask(
+        db,
+        id: 'slow-restore',
+        type: 'slow_restore_task',
+        status: 'pending',
+        payload: const {},
+      );
+
+      await executor.start(userId: 'user-a');
+      await started.future.timeout(const Duration(seconds: 3));
+
+      var stopped = false;
+      final stopFuture = executor
+          .stopAndWaitForActiveTasks(timeout: const Duration(seconds: 3))
+          .then((_) => stopped = true);
+      await Future<void>.delayed(const Duration(milliseconds: 350));
+
+      expect(stopped, isFalse);
+      expect(executor.isRunning, isFalse);
+
+      release.complete();
+      await stopFuture;
+      expect(executor.isRunning, isFalse);
+      expect((await _getTask(db, 'slow-restore')).status, 'completed');
+    });
+
+    test('data replacement stop resumes polling when the barrier times out',
+        () async {
+      final started = Completer<void>();
+      final release = Completer<void>();
+      executor.registerHandler('blocked_restore_task', (_, __, ___) async {
+        if (!started.isCompleted) started.complete();
+        await release.future;
+      });
+      await _insertTask(
+        db,
+        id: 'blocked-restore',
+        type: 'blocked_restore_task',
+        status: 'pending',
+        payload: const {},
+      );
+
+      await executor.start(userId: 'user-a');
+      await started.future.timeout(const Duration(seconds: 3));
+
+      await expectLater(
+        executor.stopAndWaitForActiveTasks(
+          timeout: const Duration(milliseconds: 20),
+        ),
+        throwsA(isA<StateError>()),
+      );
+      expect(executor.isRunning, isTrue);
+
+      release.complete();
+      await _waitForTaskStatus(db, 'blocked-restore', 'completed');
+    });
+
     test('background drain does not reset already processing tasks', () async {
       await _insertTask(
         db,

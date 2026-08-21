@@ -57,6 +57,7 @@ class AgentBackgroundCoordinator with WidgetsBindingObserver {
   int _publishGeneration = 0;
 
   Stream<void> get openActivityRequests => _openActivityController.stream;
+  bool get isStarted => _started;
 
   void start({
     required LocalTaskExecutor executor,

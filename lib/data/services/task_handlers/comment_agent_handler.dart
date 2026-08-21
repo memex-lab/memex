@@ -6,6 +6,7 @@ import 'package:memex/data/services/character_selection_service.dart';
 import 'package:memex/data/services/character_service.dart';
 import 'package:memex/data/services/comment_settings_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
+import 'package:memex/utils/mention_parser.dart';
 import 'package:memex/data/services/task_handlers/llm_error_utils.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/domain/models/agent_definitions.dart';
@@ -224,7 +225,7 @@ Future<String?> _resolveMentionedCharacterId({
         final trimmed = token.trim();
         if (trimmed.isEmpty) continue;
         final mention = '@$trimmed';
-        final index = content.indexOf(mention);
+        final index = indexOfStandaloneMention(content, mention);
         if (index >= 0) {
           candidates.add((id: character.id, token: mention, index: index));
         }
