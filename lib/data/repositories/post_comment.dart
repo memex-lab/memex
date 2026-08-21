@@ -10,6 +10,7 @@ import 'package:memex/domain/models/agent_definitions.dart';
 import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/data/services/global_event_bus.dart';
 import 'package:memex/data/services/location_context_service.dart';
+import 'package:memex/data/services/task_handlers/llm_error_utils.dart';
 import 'package:memex/domain/models/system_event.dart';
 import 'package:memex/utils/time_context.dart';
 
@@ -280,6 +281,6 @@ Future<void> processAICommentReply({
     }
   } catch (e) {
     _logger.severe('Failed to process AI comment reply for card $cardId: $e');
-    rethrow;
+    rethrowIfNonRetryable(e);
   }
 }

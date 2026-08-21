@@ -16,19 +16,20 @@ int indexOfStandaloneMention(String content, String mention) {
 }
 
 bool _isStandaloneMentionAt(String content, int index, int length) {
-  if (index > 0 && _isAsciiWordChar(content.codeUnitAt(index - 1))) {
+  if (index > 0 && !_isMentionBoundary(content[index - 1])) {
     return false;
   }
   final end = index + length;
-  if (end < content.length && _isAsciiWordChar(content.codeUnitAt(end))) {
+  if (end < content.length && !_isMentionBoundary(content[end])) {
     return false;
   }
   return true;
 }
 
-bool _isAsciiWordChar(int codeUnit) {
-  final isDigit = codeUnit >= 48 && codeUnit <= 57;
-  final isUpper = codeUnit >= 65 && codeUnit <= 90;
-  final isLower = codeUnit >= 97 && codeUnit <= 122;
-  return isDigit || isUpper || isLower || codeUnit == 95;
+bool _isMentionBoundary(String character) {
+  if (character.trim().isEmpty) return true;
+  return _mentionPunctuation.contains(character);
 }
+
+const _mentionPunctuation =
+    r'''!"#$%&'()*+,-./:;<=>?@[\]^`{|}~，。！？；：（）【】《》、“”‘’…—''';

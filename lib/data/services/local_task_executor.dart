@@ -150,6 +150,7 @@ class LocalTaskExecutor {
   AppDatabase get _db => _testDb ?? AppDatabase.instance;
   String? _currentUserId; // Track current user ID for worker context
   String? get currentUserId => _currentUserId;
+  bool get isRunning => _isRunning;
 
   // Handlers registry
   final Map<String, TaskHandler> _handlers = {};
@@ -631,6 +632,52 @@ class LocalTaskExecutor {
 
   /// Stop the worker loop
   Future<void> stop() async {
+    await _beginStop();
+    if (_activeExecutions.isNotEmpty) {
+      await Future.any<void>([
+        Future.wait(_activeExecutions.toList()),
+        Future<void>.delayed(const Duration(milliseconds: 250)),
+      ]);
+    }
+    await _finishStop();
+  }
+
+  /// Stop polling and wait until every claimed task has finished writing.
+  ///
+  /// Unlike [stop], this is a data-replacement barrier: it never reports
+  /// success while an active handler can still touch the workspace or SQLite.
+  /// If the barrier times out, normal polling is restored and the caller must
+  /// not replace application data.
+  Future<void> stopAndWaitForActiveTasks({
+    Duration timeout = const Duration(seconds: 30),
+  }) async {
+    final wasRunning = _isRunning;
+    final wasAutoPollEnabled = _autoPollEnabled;
+    await _beginStop();
+    try {
+      final active = _activeExecutions.toList();
+      if (active.isNotEmpty) {
+        await Future.wait(active).timeout(timeout);
+      }
+      await _finishStop();
+    } on TimeoutException {
+      if (wasRunning) {
+        _isRunning = true;
+        _autoPollEnabled = wasAutoPollEnabled;
+        if (_ownsQueue) {
+          _startQueueLeaseHeartbeat();
+        }
+        if (_autoPollEnabled) {
+          _scheduleNextPoll();
+        }
+      }
+      throw StateError(
+        'Background tasks are still running. Try restoring again after they finish.',
+      );
+    }
+  }
+
+  Future<void> _beginStop() async {
     _isRunning = false;
     _autoPollEnabled = true;
     _pollTimer?.cancel();
@@ -639,12 +686,9 @@ class LocalTaskExecutor {
     while (_isProcessing) {
       await Future<void>.delayed(const Duration(milliseconds: 1));
     }
-    if (_activeExecutions.isNotEmpty) {
-      await Future.any<void>([
-        Future.wait(_activeExecutions.toList()),
-        Future<void>.delayed(const Duration(milliseconds: 250)),
-      ]);
-    }
+  }
+
+  Future<void> _finishStop() async {
     for (final timer in _taskHeartbeatTimers.values) {
       timer.cancel();
     }

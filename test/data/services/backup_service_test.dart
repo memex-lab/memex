@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:memex/data/services/backup_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
+import 'package:memex/data/services/local_task_executor.dart';
 import 'package:memex/db/app_database.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:path/path.dart' as p;
@@ -493,6 +494,27 @@ void main() {
     expect(await cardFile.readAsString(), 'hello backup');
   });
 
+  test('restore resumes a task executor that was running beforehand', () async {
+    final exportedDir = Directory(p.join(tempDir.path, 'ExportedBackups'));
+    final backupPath = await BackupService.createBackup(
+      outputDirectory: exportedDir.path,
+    );
+    await AppDatabase.init('backup-service-user');
+    final executor = LocalTaskExecutor.instance;
+    await executor.start(userId: 'backup-service-user');
+
+    try {
+      await BackupService.restoreBackup(backupPath);
+      expect(executor.isRunning, isTrue);
+      expect(executor.currentUserId, 'backup-service-user');
+    } finally {
+      await executor.stop();
+      if (AppDatabase.isInitialized) {
+        await AppDatabase.instance.close();
+      }
+    }
+  });
+
   test('restore removes workspace files that are not in the backup', () async {
     final exportedDir = Directory(p.join(tempDir.path, 'ExportedBackups'));
     final backupPath = await BackupService.createBackup(
@@ -525,6 +547,32 @@ void main() {
       await File(p.join(workspace.path, 'Cards', 'card.md')).readAsString(),
       'hello backup',
     );
+  });
+
+  test('restore removes stale workspace links without touching their target',
+      () async {
+    final exportedDir = Directory(p.join(tempDir.path, 'ExportedBackups'));
+    final backupPath = await BackupService.createBackup(
+      outputDirectory: exportedDir.path,
+    );
+    final workspace = Directory(
+      FileSystemService.instance.getWorkspacePath('backup-service-user'),
+    );
+    final externalFile = File(p.join(tempDir.path, 'outside.txt'));
+    await externalFile.writeAsString('outside');
+    final staleLink = Link(p.join(workspace.path, 'Cards', 'outside-link'));
+    await staleLink.create(externalFile.path);
+
+    try {
+      await BackupService.restoreBackup(backupPath);
+    } finally {
+      if (AppDatabase.isInitialized) {
+        await AppDatabase.instance.close();
+      }
+    }
+
+    expect(await staleLink.exists(), isFalse);
+    expect(await externalFile.readAsString(), 'outside');
   });
 
   test(

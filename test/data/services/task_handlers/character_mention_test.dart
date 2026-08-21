@@ -14,11 +14,20 @@ void main() {
 
     test('matches when the mention is followed by punctuation', () {
       expect(indexOfStandaloneMention('see @Bob.', '@Bob'), 4);
+      expect(indexOfStandaloneMention('see @Bob/next', '@Bob'), 4);
+      expect(indexOfStandaloneMention('see @Bob-next', '@Bob'), 4);
     });
 
     test('does not match a longer token that shares a prefix', () {
       expect(indexOfStandaloneMention('hello @Bobby', '@Bob'), -1);
       expect(indexOfStandaloneMention('@Anne hi', '@Ann'), -1);
+      expect(indexOfStandaloneMention('hello @Бобби', '@Боб'), -1);
+      expect(indexOfStandaloneMention('你好 @小明明', '@小明'), -1);
+    });
+
+    test('matches non-ASCII mentions with explicit boundaries', () {
+      expect(indexOfStandaloneMention('hello @Боб!', '@Боб'), 6);
+      expect(indexOfStandaloneMention('你好 @小明。', '@小明'), 3);
     });
 
     test('does not match an email-style prefix', () {
