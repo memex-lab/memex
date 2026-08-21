@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:memex/data/services/backup_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
+import 'package:memex/data/services/image_preview_cache_service.dart';
 import 'package:memex/data/services/local_task_executor.dart';
 import 'package:memex/db/app_database.dart';
 import 'package:memex/utils/user_storage.dart';
@@ -510,6 +511,11 @@ void main() {
     );
     final cardFile = File(p.join(workspace.path, 'Cards', 'card.md'));
     await cardFile.writeAsString('local changes after backup');
+    final stalePreview =
+        await ImagePreviewCacheService.instance.cacheFileForSource(
+      p.join(workspace.path, 'Facts', 'assets', 'reused.png'),
+    );
+    await stalePreview.writeAsBytes([0xff, 0xd8, 0xff, 0xd9]);
 
     try {
       await BackupService.restoreBackup(backupPath);
@@ -520,6 +526,7 @@ void main() {
     }
 
     expect(await cardFile.readAsString(), 'hello backup');
+    expect(await stalePreview.exists(), isFalse);
   });
 
   test('restore ignores device-local state contained in an old backup',

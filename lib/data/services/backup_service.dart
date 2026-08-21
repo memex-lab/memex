@@ -11,6 +11,7 @@ import 'package:memex/data/services/agent_activity_service.dart';
 import 'package:memex/data/services/agent_background_coordinator.dart';
 import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
+import 'package:memex/data/services/image_preview_cache_service.dart';
 import 'package:memex/data/services/local_task_executor.dart';
 import 'package:memex/data/services/persona_chat_service.dart';
 import 'package:memex/db/app_database.dart';
@@ -431,6 +432,14 @@ class BackupService {
           appSupportPath: supportDir.path,
         ),
       );
+      try {
+        await ImagePreviewCacheService.instance.clear();
+      } catch (e) {
+        // Preview files are derived data. A cleanup failure must not turn an
+        // already-applied workspace restore into a reported restore failure.
+        _logger
+            .warning('Failed to clear image preview cache after restore: $e');
+      }
 
       // Re-init DB
       await AppDatabase.init(restoredUserId);
