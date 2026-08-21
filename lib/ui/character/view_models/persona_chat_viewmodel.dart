@@ -32,7 +32,11 @@ class PersonaChatViewModel extends ChangeNotifier {
 
   String _currentCharacterId;
   Timer? _typingIndicatorTimer;
+  Future<void>? _refreshLatestFuture;
+  bool _refreshLatestAgain = false;
   bool _replyPending = false;
+  int? _olderCursor;
+  int _newestCursor = 0;
   CharacterModel? character;
   String? userId;
   String? userAvatar;
@@ -82,22 +86,49 @@ class PersonaChatViewModel extends ChangeNotifier {
     );
     if (sent && characterId == _currentCharacterId) {
       _setReplyPending(true);
-      await refreshLatest(extraCapacity: 1);
+      await refreshLatest();
     } else {
       _notify();
     }
     return sent;
   }
 
-  Future<void> refreshLatest({int extraCapacity = 5}) async {
+  Future<void> refreshLatest() {
+    final running = _refreshLatestFuture;
+    if (running != null) {
+      _refreshLatestAgain = true;
+      return running;
+    }
+    final future = _runRefreshLatestLoop();
+    _refreshLatestFuture = future;
+    return future.whenComplete(() {
+      if (identical(_refreshLatestFuture, future)) {
+        _refreshLatestFuture = null;
+      }
+    });
+  }
+
+  Future<void> _runRefreshLatestLoop() async {
+    do {
+      _refreshLatestAgain = false;
+      await _refreshLatestOnce();
+    } while (_refreshLatestAgain && !_disposed);
+  }
+
+  Future<void> _refreshLatestOnce() async {
     final characterId = _currentCharacterId;
-    final result = await _router.fetchPersonaChatMessages(
+    final cursor = _newestCursor;
+    final result = await _router.fetchNewPersonaChatMessages(
       characterId,
-      limit: messages.length + extraCapacity,
+      afterCursor: cursor,
     );
     result.when(
-      onOk: (updated) {
-        if (characterId == _currentCharacterId) messages = updated;
+      onOk: (page) {
+        if (characterId != _currentCharacterId || cursor != _newestCursor) {
+          return;
+        }
+        messages = _mergeMessages(messages, page.messages);
+        _newestCursor = page.newestCursor;
       },
       onError: (error, _) => errorMessage = error.toString(),
     );
@@ -109,16 +140,24 @@ class PersonaChatViewModel extends ChangeNotifier {
     isLoadingMore = true;
     _notify();
     final characterId = _currentCharacterId;
-    final result = await _router.fetchPersonaChatMessages(
+    final beforeCursor = _olderCursor;
+    if (beforeCursor == null) {
+      hasMoreHistory = false;
+      isLoadingMore = false;
+      _notify();
+      return;
+    }
+    final result = await _router.fetchPersonaChatMessagePage(
       characterId,
       limit: pageSize,
-      offset: messages.length,
+      beforeCursor: beforeCursor,
     );
     result.when(
-      onOk: (older) {
+      onOk: (page) {
         if (characterId != _currentCharacterId) return;
-        messages = [...messages, ...older];
-        hasMoreHistory = older.length >= pageSize;
+        messages = _mergeMessages(messages, page.messages);
+        _olderCursor = page.olderCursor;
+        hasMoreHistory = page.olderCursor != null;
       },
       onError: (error, _) => errorMessage = error.toString(),
     );
@@ -143,6 +182,8 @@ class PersonaChatViewModel extends ChangeNotifier {
     _typingIndicatorTimer?.cancel();
     _typingIndicatorTimer = null;
     _replyPending = false;
+    _olderCursor = null;
+    _newestCursor = 0;
     isReplying = false;
     errorMessage = null;
     _notify();
@@ -174,7 +215,21 @@ class PersonaChatViewModel extends ChangeNotifier {
     userId = thread.userId;
     userAvatar = thread.userAvatar;
     messages = thread.messages;
-    hasMoreHistory = thread.messages.length >= pageSize;
+    _olderCursor = thread.olderCursor;
+    _newestCursor = thread.newestCursor;
+    hasMoreHistory = thread.olderCursor != null;
+  }
+
+  List<PersonaChatMessageModel> _mergeMessages(
+    List<PersonaChatMessageModel> current,
+    List<PersonaChatMessageModel> incoming,
+  ) {
+    final byId = <int, PersonaChatMessageModel>{
+      for (final message in current) message.id: message,
+      for (final message in incoming) message.id: message,
+    };
+    return byId.values.toList(growable: false)
+      ..sort((a, b) => b.id.compareTo(a.id));
   }
 
   void _onPersonaChatMessageAdded(EventBusMessage message) {

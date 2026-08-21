@@ -42,6 +42,7 @@ void main() {
       expect(await Directory(p.join(root, 'PKM')).exists(), isTrue);
       expect(await Directory(p.join(root, 'Journal')).exists(), isTrue);
       expect(await Directory(p.join(root, 'World')).exists(), isTrue);
+      expect(await Directory(p.join(root, 'Conversation')).exists(), isTrue);
 
       final identity = await File(
         fileSystem.getCharacterIdentityPath('wujia', 'yaoyao'),
@@ -206,7 +207,7 @@ void main() {
               'keys': ['家里'],
               'content': '家里有一个正在长大的小朋友。',
               'enabled': true,
-        })}\n',
+            })}\n',
       );
       await legacyRelationship.parent.create(recursive: true);
       await legacyRelationship.writeAsString(

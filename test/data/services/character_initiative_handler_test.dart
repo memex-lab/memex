@@ -34,8 +34,7 @@ void main() {
     }
   });
 
-  test('persists one unread contact episode selected by the character',
-      () async {
+  test('persists one unread message turn selected by the character', () async {
     List<CharacterOutgoingMessage>? sentMessages;
     String? sentFactId;
     String? sentEpisodeId;
@@ -81,6 +80,7 @@ void main() {
         required messages,
         required timestamp,
         required contactEpisodeId,
+        required expectedGeneration,
         factId,
       }) async {
         expect(characterId, 'yaoyao');
@@ -114,7 +114,7 @@ void main() {
       ['你刚才那句，', '我过了一会儿还是觉得有点可爱。'],
     );
     expect(sentFactId, '2026/07/13.md#ts_1');
-    expect(sentEpisodeId, 'character_initiative:task-1');
+    expect(sentEpisodeId, 'character_initiative:event-1');
     expect(scheduledWakeAt, now.add(const Duration(hours: 6)));
     expect(scheduledWakeReason, '晚上再想想她今天过得怎么样。');
   });
@@ -163,6 +163,7 @@ void main() {
         required messages,
         required timestamp,
         required contactEpisodeId,
+        required expectedGeneration,
         factId,
       }) async {
         sent = true;
@@ -254,6 +255,7 @@ void main() {
         required messages,
         required timestamp,
         required contactEpisodeId,
+        required expectedGeneration,
         factId,
       }) async {
         sent = true;
@@ -326,6 +328,7 @@ void main() {
         required messages,
         required timestamp,
         required contactEpisodeId,
+        required expectedGeneration,
         factId,
       }) async =>
           true,
@@ -404,6 +407,7 @@ void main() {
         required messages,
         required timestamp,
         required contactEpisodeId,
+        required expectedGeneration,
         factId,
       }) async =>
           true,
@@ -486,6 +490,7 @@ void main() {
         required messages,
         required timestamp,
         required contactEpisodeId,
+        required expectedGeneration,
         factId,
       }) async {
         sent = true;
@@ -580,6 +585,7 @@ void main() {
         required messages,
         required timestamp,
         required contactEpisodeId,
+        required expectedGeneration,
         factId,
       }) async {
         sent = true;

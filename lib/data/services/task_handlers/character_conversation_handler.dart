@@ -74,7 +74,6 @@ class CharacterConversationTaskHandler {
         userId: userId,
         character: character,
         payload: payload,
-        taskContext: taskContext,
       ),
     );
   }
@@ -83,15 +82,27 @@ class CharacterConversationTaskHandler {
     required String userId,
     required CharacterModel character,
     required Map<String, dynamic> payload,
-    required TaskContext taskContext,
   }) async {
-    final incoming = await _chatService.getPendingUserMessages(character.id);
+    final conversationGeneration = await _chatService
+        .getConversationGeneration(character.id, userId: userId);
+    final incoming = await _chatService.getPendingUserMessages(
+      character.id,
+      userId: userId,
+    );
     if (incoming.isEmpty) return;
+    if (await _chatService.getConversationGeneration(
+          character.id,
+          userId: userId,
+        ) !=
+        conversationGeneration) {
+      return;
+    }
 
     final history = await _chatService.getMessagesBefore(
       character.id,
       beforeMessageId: incoming.first.id,
       limit: 24,
+      userId: userId,
     );
     final context = CharacterConversationContext(
       sourceEventId: 'private_chat:${incoming.first.id}',
@@ -108,7 +119,8 @@ class CharacterConversationTaskHandler {
         context: context,
         workspaceService: _workspaceService,
       );
-      final episodeId = 'character_conversation:${taskContext.taskId}';
+      final turnId =
+          'character_conversation:${incoming.first.id}-${incoming.last.id}';
       final incomingIds = incoming.map((message) => message.id).toList();
       var replyPending = false;
       switch (decision.action) {
@@ -117,8 +129,10 @@ class CharacterConversationTaskHandler {
             characterId: character.id,
             consumedThroughMessageId: incoming.last.id,
             characterMessages: decision.messages,
-            episodeId: episodeId,
+            episodeId: turnId,
             timestamp: _clock(),
+            expectedGeneration: conversationGeneration,
+            userId: userId,
           );
           _logger.info(
             'Character ${character.id} replied with '
@@ -126,6 +140,7 @@ class CharacterConversationTaskHandler {
           );
           replyPending = (await _chatService.getPendingUserMessages(
             character.id,
+            userId: userId,
           ))
               .isNotEmpty;
         case CharacterConversationAction.thinkLater:
@@ -134,8 +149,10 @@ class CharacterConversationTaskHandler {
           if (wakeAt == null || !wakeAt.isAfter(_clock()) || reason.isEmpty) {
             throw StateError('Invalid ThinkLater conversation decision.');
           }
-          final latestPending =
-              await _chatService.getPendingUserMessages(character.id);
+          final latestPending = await _chatService.getPendingUserMessages(
+            character.id,
+            userId: userId,
+          );
           final hasNewerInput = latestPending.any(
             (message) => !incomingIds.contains(message.id),
           );
@@ -161,12 +178,14 @@ class CharacterConversationTaskHandler {
           await _chatService.advanceReplyCursor(
             characterId: character.id,
             consumedThroughMessageId: incoming.last.id,
+            userId: userId,
           );
           _logger.info(
             'Character ${character.id} stayed quiet: ${decision.reason}',
           );
           replyPending = (await _chatService.getPendingUserMessages(
             character.id,
+            userId: userId,
           ))
               .isNotEmpty;
       }

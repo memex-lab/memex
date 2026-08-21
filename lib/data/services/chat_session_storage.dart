@@ -4,6 +4,7 @@ import 'dart:math' as math;
 
 import 'package:memex/data/model/chat_artifact.dart';
 import 'package:memex/data/services/file_system_service.dart';
+import 'package:memex/data/services/jsonl_file_store.dart';
 import 'package:memex/data/services/migration_state_service.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/time_context.dart';
@@ -12,7 +13,21 @@ import 'package:synchronized/synchronized.dart';
 import 'package:yaml/yaml.dart';
 
 class ChatSessionStorage {
-  ChatSessionStorage._();
+  ChatSessionStorage._({
+    FileSystemService? fileService,
+    JsonlFileStore? jsonl,
+  })  : _injectedFileService = fileService,
+        _jsonl = jsonl ?? JsonlFileStore(loggerName: 'ChatSessionJsonl');
+
+  factory ChatSessionStorage.forTesting({
+    required FileSystemService fileService,
+    JsonlFileStore? jsonl,
+  }) {
+    return ChatSessionStorage._(
+      fileService: fileService,
+      jsonl: jsonl,
+    );
+  }
 
   static final ChatSessionStorage instance = ChatSessionStorage._();
 
@@ -24,12 +39,15 @@ class ChatSessionStorage {
   static const String storageMigrationKey = 'chat_sessions_jsonl_v1';
 
   final _logger = getLogger('ChatSessionStorage');
+  final FileSystemService? _injectedFileService;
+  final JsonlFileStore _jsonl;
   final Map<String, Future<void>> _migrationFutures = {};
   final Map<String, Lock> _sessionLocks = {};
   final Map<String, Lock> _legacyMigrationLocks = {};
   final Lock _lockMapLock = Lock();
 
-  FileSystemService get _fileService => FileSystemService.instance;
+  FileSystemService get _fileService =>
+      _injectedFileService ?? FileSystemService.instance;
 
   Future<void> ensureMigrated(String userId) {
     final rootPath = _sessionsPath(userId);
@@ -122,7 +140,10 @@ class ChatSessionStorage {
   ) async {
     await ensureMigrated(userId);
     _validateSessionId(sessionId);
-    return _readMessagesFile(_messagesFile(userId, sessionId));
+    final lock = await _lockFor(userId, sessionId);
+    return lock.synchronized(
+      () => _readMessagesFile(_messagesFile(userId, sessionId)),
+    );
   }
 
   Future<ChatSessionMessagePage> loadMessagePage(
@@ -133,41 +154,44 @@ class ChatSessionStorage {
   }) async {
     await ensureMigrated(userId);
     _validateSessionId(sessionId);
-    final messagesFile = _messagesFile(userId, sessionId);
+    final lock = await _lockFor(userId, sessionId);
+    return lock.synchronized(() async {
+      final messagesFile = _messagesFile(userId, sessionId);
 
-    if (limit == null || limit <= 0) {
-      final messages = await _readMessagesFile(messagesFile);
-      return ChatSessionMessagePage(
-        messages: messages,
-        olderCursor: null,
+      if (limit == null || limit <= 0) {
+        final messages = await _readMessagesFile(messagesFile);
+        return ChatSessionMessagePage(
+          messages: messages,
+          olderCursor: null,
+          limit: limit,
+          beforeCursor: beforeCursor,
+        );
+      }
+
+      final linePage = await _readMessageTurnGroupsBefore(
+        messagesFile,
         limit: limit,
         beforeCursor: beforeCursor,
       );
-    }
-
-    final linePage = await _readMessageTurnGroupsBefore(
-      messagesFile,
-      limit: limit,
-      beforeCursor: beforeCursor,
-    );
-    final messages = <Map<String, dynamic>>[];
-    for (final line in linePage.lines) {
-      try {
-        final decoded = jsonDecode(line.text);
-        if (decoded is Map) {
-          messages.add(Map<String, dynamic>.from(decoded));
+      final messages = <Map<String, dynamic>>[];
+      for (final line in linePage.lines) {
+        try {
+          final decoded = jsonDecode(line.text);
+          if (decoded is Map) {
+            messages.add(Map<String, dynamic>.from(decoded));
+          }
+        } catch (e) {
+          _logger.warning('Failed to parse chat message JSONL page line: $e');
         }
-      } catch (e) {
-        _logger.warning('Failed to parse chat message JSONL page line: $e');
       }
-    }
 
-    return ChatSessionMessagePage(
-      messages: messages,
-      olderCursor: linePage.olderCursor,
-      limit: limit,
-      beforeCursor: beforeCursor,
-    );
+      return ChatSessionMessagePage(
+        messages: messages,
+        olderCursor: linePage.olderCursor,
+        limit: limit,
+        beforeCursor: beforeCursor,
+      );
+    });
   }
 
   Future<Map<String, dynamic>> loadSessionData(
@@ -253,13 +277,7 @@ class ChatSessionStorage {
 
       final normalizedMessage = _normalizeMessage(message);
       final messagesFile = _messagesFile(userId, sessionId);
-      await messagesFile.parent.create(recursive: true);
-      await messagesFile.writeAsString(
-        '${jsonEncode(normalizedMessage)}\n',
-        mode: FileMode.append,
-        encoding: utf8,
-        flush: true,
-      );
+      await _jsonl.append(messagesFile, [normalizedMessage]);
 
       final metadata = await _readMetadataFile(metadataFile);
       metadata['last_message_preview'] = previewForMessage(normalizedMessage);
@@ -314,49 +332,55 @@ class ChatSessionStorage {
   ) async {
     await ensureMigrated(userId);
     _validateSessionId(sessionId);
-    const batchSize = 100;
-    final file = _messagesFile(userId, sessionId);
-    String? cursor;
+    final lock = await _lockFor(userId, sessionId);
+    return lock.synchronized(() async {
+      const batchSize = 100;
+      final file = _messagesFile(userId, sessionId);
+      String? cursor;
 
-    while (true) {
-      final page = await _readMessageTurnGroupsBefore(
-        file,
-        limit: batchSize,
-        beforeCursor: cursor,
-      );
-      final lines = page.lines;
-      if (lines.isEmpty) return false;
-      for (final line in lines.reversed) {
-        try {
-          final decoded = jsonDecode(line.text);
-          if (decoded is Map &&
-              decoded['role'] == 'ai' &&
-              decoded['turn_id'] == turnId) {
-            return true;
+      while (true) {
+        final page = await _readMessageTurnGroupsBefore(
+          file,
+          limit: batchSize,
+          beforeCursor: cursor,
+        );
+        final lines = page.lines;
+        if (lines.isEmpty) return false;
+        for (final line in lines.reversed) {
+          try {
+            final decoded = jsonDecode(line.text);
+            if (decoded is Map &&
+                decoded['role'] == 'ai' &&
+                decoded['turn_id'] == turnId) {
+              return true;
+            }
+          } catch (_) {
+            continue;
           }
-        } catch (_) {
-          continue;
         }
+        if (!page.hasMore) return false;
+        cursor = page.olderCursor;
       }
-      if (!page.hasMore) return false;
-      cursor = page.olderCursor;
-    }
+    });
   }
 
   Future<String?> lastMessagePreview(String userId, String sessionId) async {
     _validateSessionId(sessionId);
-    final messagesFile = _messagesFile(userId, sessionId);
-    final page = await _readMessageTurnGroupsBefore(messagesFile, limit: 1);
-    if (page.lines.isEmpty) return null;
-    try {
-      final decoded = jsonDecode(page.lines.last.text);
-      if (decoded is Map) {
-        return previewForMessage(Map<String, dynamic>.from(decoded));
+    final lock = await _lockFor(userId, sessionId);
+    return lock.synchronized(() async {
+      final messagesFile = _messagesFile(userId, sessionId);
+      final page = await _readMessageTurnGroupsBefore(messagesFile, limit: 1);
+      if (page.lines.isEmpty) return null;
+      try {
+        final decoded = jsonDecode(page.lines.last.text);
+        if (decoded is Map) {
+          return previewForMessage(Map<String, dynamic>.from(decoded));
+        }
+      } catch (_) {
+        return null;
       }
-    } catch (_) {
       return null;
-    }
-    return null;
+    });
   }
 
   Future<void> deleteSession(String userId, String sessionId) async {
@@ -561,20 +585,9 @@ class ChatSessionStorage {
   }
 
   Future<List<Map<String, dynamic>>> _readMessagesFile(File file) async {
-    if (!await file.exists()) return const [];
-    final messages = <Map<String, dynamic>>[];
-    for (final line in await file.readAsLines()) {
-      if (line.trim().isEmpty) continue;
-      try {
-        final decoded = jsonDecode(line);
-        if (decoded is Map) {
-          messages.add(Map<String, dynamic>.from(decoded));
-        }
-      } catch (e) {
-        _logger.warning('Failed to parse chat message JSONL line: $e');
-      }
-    }
-    return messages;
+    // Tail recovery may truncate an interrupted append. Public callers hold
+    // the session lock so a live append can never be mistaken for crash debris.
+    return _jsonl.readAllRecoveringTail(file);
   }
 
   Future<_MessageLinePage> _readMessageTurnGroupsBefore(

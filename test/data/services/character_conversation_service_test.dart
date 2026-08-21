@@ -4,14 +4,15 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:memex/data/services/character_conversation_service.dart';
 import 'package:memex/data/services/local_task_executor.dart';
-import 'package:memex/data/services/persona_chat_service.dart';
 import 'package:memex/db/app_database.dart';
+import '../../helpers/persona_chat_test_harness.dart';
 
 void main() {
   test('consecutive user bubbles share one rescheduled reply task', () async {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     final executor = LocalTaskExecutor.forTesting(db: db);
-    final chatService = PersonaChatService.forTesting(db);
+    final chatHarness = await PersonaChatTestHarness.create(userId: 'user-1');
+    final chatService = chatHarness.service;
     final now = DateTime.parse('2026-07-15T09:00:00+08:00');
     final service = CharacterConversationService.forTesting(
       chatService: chatService,
@@ -21,6 +22,7 @@ void main() {
     addTearDown(() async {
       await executor.stop();
       await db.close();
+      await chatHarness.dispose();
     });
 
     await service.sendUserMessage(
@@ -63,11 +65,12 @@ void main() {
     );
   });
 
-  test('initiative recovery creates a missing reply task immediately',
+  test('startup reconciliation rebuilds only missing workspace replies',
       () async {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     final executor = LocalTaskExecutor.forTesting(db: db);
-    final chatService = PersonaChatService.forTesting(db);
+    final chatHarness = await PersonaChatTestHarness.create(userId: 'user-1');
+    final chatService = chatHarness.service;
     final now = DateTime.parse('2026-07-15T09:00:00+08:00');
     final service = CharacterConversationService.forTesting(
       chatService: chatService,
@@ -77,13 +80,17 @@ void main() {
     addTearDown(() async {
       await executor.stop();
       await db.close();
+      await chatHarness.dispose();
     });
 
     await chatService.addUserMessage('yaoyao', '这条消息的任务丢了');
-    await service.ensurePendingReplyScheduled(
-      userId: 'user-1',
-      characterId: 'yaoyao',
+    final handled = await chatService.addUserMessage('auntie', '已经处理的消息');
+    await chatService.advanceReplyCursor(
+      characterId: 'auntie',
+      consumedThroughMessageId: handled,
     );
+    await service.reconcilePendingReplies(userId: 'user-1');
+    await service.reconcilePendingReplies(userId: 'user-1');
 
     final task = (await db.select(db.tasks).get()).single;
     expect(task.bizId, 'character_conversation:yaoyao');
