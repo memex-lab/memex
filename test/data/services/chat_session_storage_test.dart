@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -5,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:memex/data/model/chat_artifact.dart';
 import 'package:memex/data/services/chat_session_storage.dart';
 import 'package:memex/data/services/file_system_service.dart';
+import 'package:memex/data/services/jsonl_file_store.dart';
 import 'package:memex/data/services/local_asset_server.dart';
 import 'package:memex/data/services/migration_state_service.dart';
 import 'package:memex/utils/user_storage.dart';
@@ -255,6 +257,53 @@ void main() {
       expect(await storage.loadMessages(userId, sessionId), hasLength(1));
     });
 
+    test('does not repair a tail while the same session is still appending',
+        () async {
+      const sessionId = 'memex_agent_concurrent_tail';
+      final jsonl = _BlockingJsonlFileStore();
+      final storage = ChatSessionStorage.forTesting(
+        fileService: FileSystemService.instance,
+        jsonl: jsonl,
+      );
+      await storage.createSession(
+        userId: userId,
+        sessionId: sessionId,
+        metadata: {
+          'session_id': sessionId,
+          'agent_name': 'memex_agent',
+          'title': 'Concurrent tail',
+        },
+      );
+
+      jsonl.blockNextAppend();
+      final append = storage.appendMessage(
+        userId: userId,
+        sessionId: sessionId,
+        message: {
+          'role': 'ai',
+          'content': [
+            {'type': 'text', 'text': '完整回复'},
+          ],
+          'timestamp': '2026-06-22T12:01:00.000',
+        },
+      );
+      await jsonl.partialWritten;
+
+      var readCompleted = false;
+      final read = storage.loadMessages(userId, sessionId).then((messages) {
+        readCompleted = true;
+        return messages;
+      });
+      await Future<void>.delayed(Duration.zero);
+      expect(readCompleted, isFalse);
+
+      jsonl.finishAppend();
+      await append;
+      final messages = await read;
+      expect(messages, hasLength(1));
+      expect(_messageText(messages.single), '完整回复');
+    });
+
     test('loads paged messages from newest backwards', () async {
       const sessionId = 'memex_agent_paged_storage';
       final storage = ChatSessionStorage.instance;
@@ -392,6 +441,58 @@ void main() {
       expect(older.hasMoreMessages, isFalse);
     });
   });
+}
+
+class _BlockingJsonlFileStore extends JsonlFileStore {
+  _BlockingJsonlFileStore() : super(loggerName: 'BlockingChatSessionJsonl');
+
+  Completer<void>? _partialWritten;
+  Completer<void>? _finish;
+  bool _blockNext = false;
+
+  Future<void> get partialWritten => _partialWritten!.future;
+
+  void blockNextAppend() {
+    _partialWritten = Completer<void>();
+    _finish = Completer<void>();
+    _blockNext = true;
+  }
+
+  void finishAppend() => _finish!.complete();
+
+  @override
+  Future<JsonlAppendResult> append(
+    File file,
+    List<Map<String, dynamic>> objects,
+  ) async {
+    final partialWritten = _partialWritten;
+    final finish = _finish;
+    if (!_blockNext || partialWritten == null || finish == null) {
+      return super.append(file, objects);
+    }
+    _blockNext = false;
+
+    await file.parent.create(recursive: true);
+    final startOffset = await file.exists() ? await file.length() : 0;
+    final bytes = utf8.encode('${objects.map(jsonEncode).join('\n')}\n');
+    final split = bytes.length - 3;
+    await file.writeAsBytes(
+      bytes.sublist(0, split),
+      mode: FileMode.append,
+      flush: true,
+    );
+    partialWritten.complete();
+    await finish.future;
+    await file.writeAsBytes(
+      bytes.sublist(split),
+      mode: FileMode.append,
+      flush: true,
+    );
+    return JsonlAppendResult(
+      startOffset: startOffset,
+      endOffset: startOffset + bytes.length,
+    );
+  }
 }
 
 String _messageText(Map<String, dynamic> message) {
