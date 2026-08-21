@@ -95,6 +95,35 @@ void main() {
     expect(cachedAgain.cacheHit, isTrue);
   });
 
+  test('clear removes every generated preview', () async {
+    final image = File('${tempDir.path}/cached.png');
+    await image.writeAsBytes(_pngHeader(width: 320, height: 240));
+    final service = ImagePreviewCacheService(
+      tempDirectoryProvider: () async => tempDir,
+    );
+    final preview = await service.getOrCreatePreview(
+      source: image.path,
+      isLocalFile: true,
+    );
+
+    await service.clear();
+
+    expect(await preview.file.exists(), isFalse);
+    expect(
+      await Directory(
+        '${tempDir.path}/${ImagePreviewCacheService.cacheDirectoryName}',
+      ).exists(),
+      isFalse,
+    );
+
+    final regenerated = await service.getOrCreatePreview(
+      source: image.path,
+      isLocalFile: true,
+    );
+    expect(regenerated.cacheHit, isFalse);
+    expect(await regenerated.file.exists(), isTrue);
+  });
+
   test('uses response content type for extensionless network images', () async {
     String? downloadedPath;
     final service = ImagePreviewCacheService(
