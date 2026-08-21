@@ -117,8 +117,8 @@ class MemexRouter {
       _logger.info('Initializing Local DB for user: $userId');
       await ChatSessionStorage.instance.ensureMigrated(userId);
       await AppDatabase.init(userId);
-      PersonaChatService.instance.bindUser(userId);
-      await PersonaChatService.instance.reconcileFromWorkspace(userId);
+      await PersonaChatService.instance
+          .initialize(userId, AppDatabase.instance);
 
       _registerTaskHandlers(LocalTaskExecutor.instance);
       await LocalTaskExecutor.instance.start(userId: userId);
@@ -298,8 +298,7 @@ class MemexRouter {
     await FileSystemService.init(dataRoot);
     await ChatSessionStorage.instance.ensureMigrated(userId);
     await AppDatabase.init(userId);
-    PersonaChatService.instance.bindUser(userId);
-    await PersonaChatService.instance.reconcileFromWorkspace(userId);
+    await PersonaChatService.instance.initialize(userId, AppDatabase.instance);
 
     final taskExecutor = executor ?? LocalTaskExecutor.instance;
     AgentActivityService.setInstance(LocalAgentActivityService.instance);

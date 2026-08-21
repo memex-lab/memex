@@ -101,7 +101,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 20;
+  int get schemaVersion => 19;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -130,7 +130,6 @@ class AppDatabase extends _$AppDatabase {
             'CREATE INDEX IF NOT EXISTS idx_system_actions_status ON system_actions(status)',
           );
           await _createPersonaChatEpisodeIndex();
-          await _createPersonaChatStableIdIndex();
           await _createClarificationRequestIndices();
           await _createUserNotificationIndices();
           // Create FTS5 virtual tables for full-text search
@@ -243,9 +242,6 @@ class AppDatabase extends _$AppDatabase {
           if (from < 19) {
             await _addPersonaChatReplyCursors(m, from: from);
           }
-          if (from < 20) {
-            await _addPersonaChatStableId(m);
-          }
         },
       );
 
@@ -274,33 +270,6 @@ class AppDatabase extends _$AppDatabase {
       'CREATE INDEX IF NOT EXISTS idx_persona_chat_episode '
       'ON persona_chat_messages(character_id, contact_episode_id)',
     );
-  }
-
-  Future<void> _createPersonaChatStableIdIndex() async {
-    await customStatement(
-      'CREATE UNIQUE INDEX IF NOT EXISTS idx_persona_chat_stable_id '
-      'ON persona_chat_messages(character_id, stable_id) '
-      'WHERE stable_id IS NOT NULL',
-    );
-  }
-
-  Future<void> _addPersonaChatStableId(Migrator m) async {
-    try {
-      await m.addColumn(personaChatMessages, personaChatMessages.stableId);
-    } catch (e) {
-      final errorStr = e.toString().toLowerCase();
-      if (errorStr.contains('duplicate column') ||
-          errorStr.contains('stable_id')) {
-        _logger.info('stable_id column may already exist, skipping: $e');
-      } else {
-        rethrow;
-      }
-    }
-    await customStatement(
-      "UPDATE persona_chat_messages SET stable_id = 'legacy-' || id "
-      'WHERE stable_id IS NULL OR stable_id = \'\'',
-    );
-    await _createPersonaChatStableIdIndex();
   }
 
   Future<void> _addPersonaChatReplyCursors(

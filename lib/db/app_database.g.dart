@@ -3333,12 +3333,6 @@ class $PersonaChatMessagesTable extends PersonaChatMessages
   late final GeneratedColumn<String> contactEpisodeId = GeneratedColumn<String>(
       'contact_episode_id', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
-  static const VerificationMeta _stableIdMeta =
-      const VerificationMeta('stableId');
-  @override
-  late final GeneratedColumn<String> stableId = GeneratedColumn<String>(
-      'stable_id', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -3350,8 +3344,7 @@ class $PersonaChatMessagesTable extends PersonaChatMessages
         timestamp,
         messageType,
         origin,
-        contactEpisodeId,
-        stableId
+        contactEpisodeId
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3418,10 +3411,6 @@ class $PersonaChatMessagesTable extends PersonaChatMessages
           contactEpisodeId.isAcceptableOrUnknown(
               data['contact_episode_id']!, _contactEpisodeIdMeta));
     }
-    if (data.containsKey('stable_id')) {
-      context.handle(_stableIdMeta,
-          stableId.isAcceptableOrUnknown(data['stable_id']!, _stableIdMeta));
-    }
     return context;
   }
 
@@ -3451,8 +3440,6 @@ class $PersonaChatMessagesTable extends PersonaChatMessages
           .read(DriftSqlType.string, data['${effectivePrefix}origin'])!,
       contactEpisodeId: attachedDatabase.typeMapping.read(
           DriftSqlType.string, data['${effectivePrefix}contact_episode_id']),
-      stableId: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}stable_id']),
     );
   }
 
@@ -3482,10 +3469,6 @@ class PersonaChatMessage extends DataClass
   /// Groups bubbles produced by one character speaking episode. A stable value
   /// also makes persistent task retries idempotent.
   final String? contactEpisodeId;
-
-  /// Durable identity from the character workspace conversation store.
-  /// SQLite autoincrement [id] is only a rebuildable projection key.
-  final String? stableId;
   const PersonaChatMessage(
       {required this.id,
       required this.characterId,
@@ -3496,8 +3479,7 @@ class PersonaChatMessage extends DataClass
       required this.timestamp,
       required this.messageType,
       required this.origin,
-      this.contactEpisodeId,
-      this.stableId});
+      this.contactEpisodeId});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -3514,9 +3496,6 @@ class PersonaChatMessage extends DataClass
     map['origin'] = Variable<String>(origin);
     if (!nullToAbsent || contactEpisodeId != null) {
       map['contact_episode_id'] = Variable<String>(contactEpisodeId);
-    }
-    if (!nullToAbsent || stableId != null) {
-      map['stable_id'] = Variable<String>(stableId);
     }
     return map;
   }
@@ -3536,9 +3515,6 @@ class PersonaChatMessage extends DataClass
       contactEpisodeId: contactEpisodeId == null && nullToAbsent
           ? const Value.absent()
           : Value(contactEpisodeId),
-      stableId: stableId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(stableId),
     );
   }
 
@@ -3556,7 +3532,6 @@ class PersonaChatMessage extends DataClass
       messageType: serializer.fromJson<String>(json['messageType']),
       origin: serializer.fromJson<String>(json['origin']),
       contactEpisodeId: serializer.fromJson<String?>(json['contactEpisodeId']),
-      stableId: serializer.fromJson<String?>(json['stableId']),
     );
   }
   @override
@@ -3573,7 +3548,6 @@ class PersonaChatMessage extends DataClass
       'messageType': serializer.toJson<String>(messageType),
       'origin': serializer.toJson<String>(origin),
       'contactEpisodeId': serializer.toJson<String?>(contactEpisodeId),
-      'stableId': serializer.toJson<String?>(stableId),
     };
   }
 
@@ -3587,8 +3561,7 @@ class PersonaChatMessage extends DataClass
           DateTime? timestamp,
           String? messageType,
           String? origin,
-          Value<String?> contactEpisodeId = const Value.absent(),
-          Value<String?> stableId = const Value.absent()}) =>
+          Value<String?> contactEpisodeId = const Value.absent()}) =>
       PersonaChatMessage(
         id: id ?? this.id,
         characterId: characterId ?? this.characterId,
@@ -3602,7 +3575,6 @@ class PersonaChatMessage extends DataClass
         contactEpisodeId: contactEpisodeId.present
             ? contactEpisodeId.value
             : this.contactEpisodeId,
-        stableId: stableId.present ? stableId.value : this.stableId,
       );
   PersonaChatMessage copyWithCompanion(PersonaChatMessagesCompanion data) {
     return PersonaChatMessage(
@@ -3622,7 +3594,6 @@ class PersonaChatMessage extends DataClass
       contactEpisodeId: data.contactEpisodeId.present
           ? data.contactEpisodeId.value
           : this.contactEpisodeId,
-      stableId: data.stableId.present ? data.stableId.value : this.stableId,
     );
   }
 
@@ -3638,25 +3609,14 @@ class PersonaChatMessage extends DataClass
           ..write('timestamp: $timestamp, ')
           ..write('messageType: $messageType, ')
           ..write('origin: $origin, ')
-          ..write('contactEpisodeId: $contactEpisodeId, ')
-          ..write('stableId: $stableId')
+          ..write('contactEpisodeId: $contactEpisodeId')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
-      id,
-      characterId,
-      isFromCharacter,
-      content,
-      factId,
-      isRead,
-      timestamp,
-      messageType,
-      origin,
-      contactEpisodeId,
-      stableId);
+  int get hashCode => Object.hash(id, characterId, isFromCharacter, content,
+      factId, isRead, timestamp, messageType, origin, contactEpisodeId);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -3670,8 +3630,7 @@ class PersonaChatMessage extends DataClass
           other.timestamp == this.timestamp &&
           other.messageType == this.messageType &&
           other.origin == this.origin &&
-          other.contactEpisodeId == this.contactEpisodeId &&
-          other.stableId == this.stableId);
+          other.contactEpisodeId == this.contactEpisodeId);
 }
 
 class PersonaChatMessagesCompanion extends UpdateCompanion<PersonaChatMessage> {
@@ -3685,7 +3644,6 @@ class PersonaChatMessagesCompanion extends UpdateCompanion<PersonaChatMessage> {
   final Value<String> messageType;
   final Value<String> origin;
   final Value<String?> contactEpisodeId;
-  final Value<String?> stableId;
   const PersonaChatMessagesCompanion({
     this.id = const Value.absent(),
     this.characterId = const Value.absent(),
@@ -3697,7 +3655,6 @@ class PersonaChatMessagesCompanion extends UpdateCompanion<PersonaChatMessage> {
     this.messageType = const Value.absent(),
     this.origin = const Value.absent(),
     this.contactEpisodeId = const Value.absent(),
-    this.stableId = const Value.absent(),
   });
   PersonaChatMessagesCompanion.insert({
     this.id = const Value.absent(),
@@ -3710,7 +3667,6 @@ class PersonaChatMessagesCompanion extends UpdateCompanion<PersonaChatMessage> {
     this.messageType = const Value.absent(),
     this.origin = const Value.absent(),
     this.contactEpisodeId = const Value.absent(),
-    this.stableId = const Value.absent(),
   })  : characterId = Value(characterId),
         isFromCharacter = Value(isFromCharacter),
         content = Value(content),
@@ -3726,7 +3682,6 @@ class PersonaChatMessagesCompanion extends UpdateCompanion<PersonaChatMessage> {
     Expression<String>? messageType,
     Expression<String>? origin,
     Expression<String>? contactEpisodeId,
-    Expression<String>? stableId,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -3739,7 +3694,6 @@ class PersonaChatMessagesCompanion extends UpdateCompanion<PersonaChatMessage> {
       if (messageType != null) 'message_type': messageType,
       if (origin != null) 'origin': origin,
       if (contactEpisodeId != null) 'contact_episode_id': contactEpisodeId,
-      if (stableId != null) 'stable_id': stableId,
     });
   }
 
@@ -3753,8 +3707,7 @@ class PersonaChatMessagesCompanion extends UpdateCompanion<PersonaChatMessage> {
       Value<DateTime>? timestamp,
       Value<String>? messageType,
       Value<String>? origin,
-      Value<String?>? contactEpisodeId,
-      Value<String?>? stableId}) {
+      Value<String?>? contactEpisodeId}) {
     return PersonaChatMessagesCompanion(
       id: id ?? this.id,
       characterId: characterId ?? this.characterId,
@@ -3766,7 +3719,6 @@ class PersonaChatMessagesCompanion extends UpdateCompanion<PersonaChatMessage> {
       messageType: messageType ?? this.messageType,
       origin: origin ?? this.origin,
       contactEpisodeId: contactEpisodeId ?? this.contactEpisodeId,
-      stableId: stableId ?? this.stableId,
     );
   }
 
@@ -3803,9 +3755,6 @@ class PersonaChatMessagesCompanion extends UpdateCompanion<PersonaChatMessage> {
     if (contactEpisodeId.present) {
       map['contact_episode_id'] = Variable<String>(contactEpisodeId.value);
     }
-    if (stableId.present) {
-      map['stable_id'] = Variable<String>(stableId.value);
-    }
     return map;
   }
 
@@ -3821,8 +3770,7 @@ class PersonaChatMessagesCompanion extends UpdateCompanion<PersonaChatMessage> {
           ..write('timestamp: $timestamp, ')
           ..write('messageType: $messageType, ')
           ..write('origin: $origin, ')
-          ..write('contactEpisodeId: $contactEpisodeId, ')
-          ..write('stableId: $stableId')
+          ..write('contactEpisodeId: $contactEpisodeId')
           ..write(')'))
         .toString();
   }
@@ -6080,7 +6028,6 @@ typedef $$PersonaChatMessagesTableCreateCompanionBuilder
   Value<String> messageType,
   Value<String> origin,
   Value<String?> contactEpisodeId,
-  Value<String?> stableId,
 });
 typedef $$PersonaChatMessagesTableUpdateCompanionBuilder
     = PersonaChatMessagesCompanion Function({
@@ -6094,7 +6041,6 @@ typedef $$PersonaChatMessagesTableUpdateCompanionBuilder
   Value<String> messageType,
   Value<String> origin,
   Value<String?> contactEpisodeId,
-  Value<String?> stableId,
 });
 
 class $$PersonaChatMessagesTableFilterComposer
@@ -6137,9 +6083,6 @@ class $$PersonaChatMessagesTableFilterComposer
   ColumnFilters<String> get contactEpisodeId => $composableBuilder(
       column: $table.contactEpisodeId,
       builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<String> get stableId => $composableBuilder(
-      column: $table.stableId, builder: (column) => ColumnFilters(column));
 }
 
 class $$PersonaChatMessagesTableOrderingComposer
@@ -6182,9 +6125,6 @@ class $$PersonaChatMessagesTableOrderingComposer
   ColumnOrderings<String> get contactEpisodeId => $composableBuilder(
       column: $table.contactEpisodeId,
       builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get stableId => $composableBuilder(
-      column: $table.stableId, builder: (column) => ColumnOrderings(column));
 }
 
 class $$PersonaChatMessagesTableAnnotationComposer
@@ -6225,9 +6165,6 @@ class $$PersonaChatMessagesTableAnnotationComposer
 
   GeneratedColumn<String> get contactEpisodeId => $composableBuilder(
       column: $table.contactEpisodeId, builder: (column) => column);
-
-  GeneratedColumn<String> get stableId =>
-      $composableBuilder(column: $table.stableId, builder: (column) => column);
 }
 
 class $$PersonaChatMessagesTableTableManager extends RootTableManager<
@@ -6270,7 +6207,6 @@ class $$PersonaChatMessagesTableTableManager extends RootTableManager<
             Value<String> messageType = const Value.absent(),
             Value<String> origin = const Value.absent(),
             Value<String?> contactEpisodeId = const Value.absent(),
-            Value<String?> stableId = const Value.absent(),
           }) =>
               PersonaChatMessagesCompanion(
             id: id,
@@ -6283,7 +6219,6 @@ class $$PersonaChatMessagesTableTableManager extends RootTableManager<
             messageType: messageType,
             origin: origin,
             contactEpisodeId: contactEpisodeId,
-            stableId: stableId,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
@@ -6296,7 +6231,6 @@ class $$PersonaChatMessagesTableTableManager extends RootTableManager<
             Value<String> messageType = const Value.absent(),
             Value<String> origin = const Value.absent(),
             Value<String?> contactEpisodeId = const Value.absent(),
-            Value<String?> stableId = const Value.absent(),
           }) =>
               PersonaChatMessagesCompanion.insert(
             id: id,
@@ -6309,7 +6243,6 @@ class $$PersonaChatMessagesTableTableManager extends RootTableManager<
             messageType: messageType,
             origin: origin,
             contactEpisodeId: contactEpisodeId,
-            stableId: stableId,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

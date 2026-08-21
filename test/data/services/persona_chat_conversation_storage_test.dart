@@ -1,13 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/persona_chat_conversation_storage.dart';
 import 'package:memex/data/services/persona_chat_service.dart';
-import 'package:memex/db/app_database.dart';
 import 'package:memex/domain/models/character_message.dart';
+
+const _userId = 'wujia';
+const _characterId = 'yaoyao';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -18,194 +19,324 @@ void main() {
     late PersonaChatConversationStorage storage;
 
     setUp(() async {
-      tempRoot = await Directory.systemTemp.createTemp(
-        'memex_persona_chat_storage_',
-      );
+      tempRoot = await Directory.systemTemp.createTemp('persona_chat_store_');
       fileSystem = FileSystemService.detached(dataRoot: tempRoot.path);
       storage = PersonaChatConversationStorage(fileSystem: fileSystem);
     });
 
     tearDown(() async {
-      if (await tempRoot.exists()) {
-        await tempRoot.delete(recursive: true);
-      }
+      if (await tempRoot.exists()) await tempRoot.delete(recursive: true);
     });
 
-    test('appends user and character messages under Conversation/', () async {
-      await storage.appendMessage(
-        userId: 'wujia',
-        characterId: 'yaoyao',
-        isFromCharacter: false,
-        content: '你醒了吗',
-        timestamp: DateTime.parse('2026-07-15T09:00:00+08:00'),
-        messageType: PersonaChatMessageTypes.text,
-        origin: PersonaChatMessageOrigin.conversation,
-        isRead: true,
-      );
+    test('appends one atomic JSONL envelope per episode and paginates bubbles',
+        () async {
+      await _appendUser(storage, content: '你醒了吗');
       final episode = await storage.appendEpisode(
-        userId: 'wujia',
-        characterId: 'yaoyao',
+        userId: _userId,
+        characterId: _characterId,
         contactEpisodeId: 'character_conversation:task-1',
         expectedRecordCount: 2,
+        consumedThroughSeq: 1,
         records: (nextSeq) => [
-          PersonaChatConversationRecord(
-            id: 'bubble-1',
-            seq: nextSeq,
-            characterId: 'yaoyao',
-            isFromCharacter: true,
-            content: '醒了。',
-            isRead: false,
-            timestamp: DateTime.parse('2026-07-15T09:00:05+08:00'),
-            messageType: PersonaChatMessageTypes.text,
-            origin: PersonaChatMessageOrigin.conversation,
-            contactEpisodeId: 'character_conversation:task-1',
-          ),
-          PersonaChatConversationRecord(
-            id: 'bubble-2',
-            seq: nextSeq + 1,
-            characterId: 'yaoyao',
-            isFromCharacter: true,
-            content: '怎么了？',
-            isRead: false,
-            timestamp: DateTime.parse('2026-07-15T09:00:05+08:00'),
-            messageType: PersonaChatMessageTypes.text,
-            origin: PersonaChatMessageOrigin.conversation,
-            contactEpisodeId: 'character_conversation:task-1',
-          ),
+          _record(nextSeq, '醒了。', id: 'bubble-1'),
+          _record(nextSeq + 1, '怎么了？', id: 'bubble-2'),
         ],
       );
       final retry = await storage.appendEpisode(
-        userId: 'wujia',
-        characterId: 'yaoyao',
+        userId: _userId,
+        characterId: _characterId,
         contactEpisodeId: 'character_conversation:task-1',
         expectedRecordCount: 2,
-        records: (_) => throw StateError('retry must not write again'),
+        consumedThroughSeq: 1,
+        records: (_) => throw StateError('retry must not append'),
       );
 
+      expect(episode.map((record) => record.seq), [2, 3]);
       expect(retry.map((record) => record.id), ['bubble-1', 'bubble-2']);
-      expect(episode, hasLength(2));
-
-      final messagesFile = File(
-        fileSystem.getCharacterConversationMessagesPath('wujia', 'yaoyao'),
+      final lines = await _messagesFile(fileSystem).readAsLines();
+      expect(lines, hasLength(2));
+      expect(jsonDecode(lines.last)['record_type'], 'episode');
+      final receiptDirectory = Directory(
+        fileSystem.getCharacterConversationEpisodeReceiptsPath(
+          _userId,
+          _characterId,
+        ),
       );
-      final lines = (await messagesFile.readAsLines())
-          .where((line) => line.trim().isNotEmpty)
-          .toList();
-      expect(lines, hasLength(3));
-      expect(jsonDecode(lines.first)['speaker'], 'user');
-      expect(jsonDecode(lines[1])['contact_episode_id'],
-          'character_conversation:task-1');
+      final receiptFile = await receiptDirectory
+          .list()
+          .where((entity) => entity is File)
+          .cast<File>()
+          .single;
+      final receipt = jsonDecode(await receiptFile.readAsString());
+      expect(receipt['status'], 'complete');
+      expect(receipt['line_offset'], isNonNegative);
+      expect(receipt, isNot(contains('records')));
+
+      final newest = await storage.loadMessages(
+        userId: _userId,
+        characterId: _characterId,
+        limit: 2,
+      );
+      expect(newest.map((record) => record.content), ['怎么了？', '醒了。']);
+      final older = await storage.loadMessages(
+        userId: _userId,
+        characterId: _characterId,
+        limit: 2,
+        offset: 2,
+      );
+      expect(older.single.content, '你醒了吗');
+
+      await File(
+        fileSystem.getCharacterConversationMetadataPath(
+          _userId,
+          _characterId,
+        ),
+      ).writeAsString('{}\n', flush: true);
+      expect(
+        (await storage.loadMetadata(
+          userId: _userId,
+          characterId: _characterId,
+        ))
+            .consumedThroughSeq,
+        1,
+      );
     });
 
-    test('keeps valid JSONL history when the last line is truncated', () async {
-      await storage.appendMessage(
-        userId: 'wujia',
-        characterId: 'yaoyao',
-        isFromCharacter: false,
-        content: '第一句',
-        timestamp: DateTime.parse('2026-07-15T09:00:00+08:00'),
-        messageType: PersonaChatMessageTypes.text,
-        origin: PersonaChatMessageOrigin.conversation,
-        isRead: true,
-        stableId: 'keep-me',
+    test('recovers a pending episode receipt from the authoritative log',
+        () async {
+      await storage.appendEpisode(
+        userId: _userId,
+        characterId: _characterId,
+        contactEpisodeId: 'character_conversation:task-1',
+        expectedRecordCount: 2,
+        records: (nextSeq) => [
+          _record(nextSeq, '第一句', id: 'bubble-1'),
+          _record(nextSeq + 1, '第二句', id: 'bubble-2'),
+        ],
       );
-      final file = File(
-        fileSystem.getCharacterConversationMessagesPath('wujia', 'yaoyao'),
+      final receiptDirectory = Directory(
+        fileSystem.getCharacterConversationEpisodeReceiptsPath(
+          _userId,
+          _characterId,
+        ),
       );
-      await file.writeAsString(
-        '${await file.readAsString()}{"id":"partial"',
+      final receiptFile = await receiptDirectory
+          .list()
+          .where((entity) => entity is File)
+          .cast<File>()
+          .single;
+      await receiptFile.writeAsString(
+        '${jsonEncode({
+              'episode_id': 'character_conversation:task-1',
+              'status': 'pending',
+            })}\n',
         flush: true,
       );
 
-      final records = await storage.loadMessages(
-        userId: 'wujia',
-        characterId: 'yaoyao',
+      final recovered = await storage.appendEpisode(
+        userId: _userId,
+        characterId: _characterId,
+        contactEpisodeId: 'character_conversation:task-1',
+        expectedRecordCount: 2,
+        records: (_) => throw StateError('recovery must not append'),
       );
-      expect(records.map((record) => record.id), ['keep-me']);
-      expect(await file.readAsString(), isNot(contains('partial')));
 
-      final reloaded = await storage.loadMessages(
-        userId: 'wujia',
-        characterId: 'yaoyao',
-      );
-      expect(reloaded.map((record) => record.id), ['keep-me']);
-      expect(reloaded.single.content, '第一句');
+      expect(recovered.map((record) => record.id), ['bubble-1', 'bubble-2']);
+      expect(await _messagesFile(fileSystem).readAsLines(), hasLength(1));
+      final repairedReceipt = jsonDecode(await receiptFile.readAsString());
+      expect(repairedReceipt['status'], 'complete');
+      expect(repairedReceipt, isNot(contains('records')));
     });
 
-    test('rejects character ids that escape the character workspace', () {
+    test('serializes writers from separate storage instances', () async {
+      final other = PersonaChatConversationStorage(fileSystem: fileSystem);
+      await Future.wait([
+        for (var index = 0; index < 12; index++)
+          (index.isEven ? storage : other).appendMessage(
+            userId: _userId,
+            characterId: _characterId,
+            isFromCharacter: index.isOdd,
+            content: 'message-$index',
+            timestamp: DateTime.parse('2026-07-15T09:00:00+08:00')
+                .add(Duration(seconds: index)),
+            messageType: PersonaChatMessageTypes.text,
+            origin: PersonaChatMessageOrigin.conversation,
+            isRead: index.isEven,
+          ),
+      ]);
+
+      final messages = await storage.loadMessages(
+        userId: _userId,
+        characterId: _characterId,
+        limit: 20,
+      );
+      expect(messages, hasLength(12));
+      expect(messages.map((record) => record.seq).toSet(), hasLength(12));
       expect(
-        () => fileSystem.getCharacterConversationPath('wujia', '../outside'),
-        throwsArgumentError,
-      );
+          (await storage.loadMetadata(
+            userId: _userId,
+            characterId: _characterId,
+          ))
+              .nextSeq,
+          13);
     });
 
-    test('truncates a tail ending inside a UTF-8 code point', () async {
-      await storage.appendMessage(
-        userId: 'wujia',
-        characterId: 'yaoyao',
-        isFromCharacter: false,
-        content: '保留中文',
-        timestamp: DateTime.parse('2026-07-15T09:00:00+08:00'),
+    test('repairs metadata after a crash between JSONL append and metadata',
+        () async {
+      await _appendUser(storage, content: '第一句');
+      final file = _messagesFile(fileSystem);
+      final second = PersonaChatConversationRecord(
+        id: 'crash-gap',
+        seq: 2,
+        characterId: _characterId,
+        isFromCharacter: true,
+        content: '写入后崩溃',
+        isRead: false,
+        timestamp: DateTime.parse('2026-07-15T09:00:05+08:00'),
         messageType: PersonaChatMessageTypes.text,
         origin: PersonaChatMessageOrigin.conversation,
-        isRead: true,
-        stableId: 'utf8-keep',
       );
-      final file = File(
-        fileSystem.getCharacterConversationMessagesPath('wujia', 'yaoyao'),
+      await file.writeAsString(
+        '${jsonEncode(second.toJson())}\n',
+        mode: FileMode.append,
+        flush: true,
       );
+
+      final messages = await storage.loadMessages(
+        userId: _userId,
+        characterId: _characterId,
+      );
+      final metadata = await storage.loadMetadata(
+        userId: _userId,
+        characterId: _characterId,
+      );
+      expect(messages.map((record) => record.content), ['写入后崩溃', '第一句']);
+      expect(metadata.nextSeq, 3);
+      expect(metadata.messageCount, 2);
+      expect(metadata.unreadCount, 1);
+      expect(metadata.messagesByteLength, await file.length());
+    });
+
+    test('truncates an incomplete UTF-8 tail without losing valid history',
+        () async {
+      await _appendUser(storage, content: '保留中文');
+      final file = _messagesFile(fileSystem);
       await file.writeAsBytes(
         [...await file.readAsBytes(), 0xF0, 0x9F],
         flush: true,
       );
 
-      final records = await storage.loadMessages(
-        userId: 'wujia',
-        characterId: 'yaoyao',
+      final first = await storage.loadMessages(
+        userId: _userId,
+        characterId: _characterId,
       );
-      expect(records.map((record) => record.id), ['utf8-keep']);
+      final second = await storage.loadMessages(
+        userId: _userId,
+        characterId: _characterId,
+      );
+      expect(first.single.content, '保留中文');
+      expect(second.single.content, '保留中文');
+    });
+
+    test('read and reply boundaries rebuild from the authoritative log',
+        () async {
+      await _appendUser(storage, content: '用户消息');
+      await storage.appendMessage(
+        userId: _userId,
+        characterId: _characterId,
+        isFromCharacter: true,
+        content: '未读消息',
+        timestamp: DateTime.parse('2026-07-15T09:00:00+08:00'),
+        messageType: PersonaChatMessageTypes.text,
+        origin: PersonaChatMessageOrigin.initiative,
+      );
+      final file = _messagesFile(fileSystem);
+      final before = await file.readAsBytes();
+
+      await storage.advanceCursor(
+        userId: _userId,
+        characterId: _characterId,
+        consumedThroughSeq: 1,
+      );
       expect(
-        await storage.loadMessages(
-          userId: 'wujia',
-          characterId: 'yaoyao',
+        await storage.markAllRead(
+          userId: _userId,
+          characterId: _characterId,
         ),
-        hasLength(1),
+        1,
+      );
+      final after = await file.readAsBytes();
+      expect(after.sublist(0, before.length), before);
+
+      final metadataFile = File(
+        fileSystem.getCharacterConversationMetadataPath(
+          _userId,
+          _characterId,
+        ),
+      );
+      await metadataFile.writeAsString('{}\n', flush: true);
+      final repaired = await storage.loadMetadata(
+        userId: _userId,
+        characterId: _characterId,
+      );
+      expect(repaired.consumedThroughSeq, 1);
+      expect(repaired.readThroughSeq, 2);
+      expect(repaired.unreadCount, 0);
+      expect(
+        (await storage.loadMessages(
+          userId: _userId,
+          characterId: _characterId,
+        ))
+            .first
+            .isRead,
+        isTrue,
       );
     });
 
-    test('clearing a conversation survives a later projection rebuild',
-        () async {
-      await storage.appendMessage(
-        userId: 'wujia',
-        characterId: 'yaoyao',
-        isFromCharacter: false,
-        content: '稍后删掉',
-        timestamp: DateTime.parse('2026-07-15T09:00:00+08:00'),
-        messageType: PersonaChatMessageTypes.text,
-        origin: PersonaChatMessageOrigin.conversation,
-        isRead: true,
+    test('rejects character ids that escape the workspace', () {
+      expect(
+        () => fileSystem.getCharacterConversationPath(_userId, '../outside'),
+        throwsArgumentError,
       );
-      await storage.clearConversation(
-        userId: 'wujia',
-        characterId: 'yaoyao',
-        clearedAt: DateTime.parse('2026-07-15T10:00:00+08:00'),
-      );
-
-      final db = AppDatabase.forTesting(NativeDatabase.memory());
-      addTearDown(db.close);
-      await storage.rebuildSqliteProjection(
-        userId: 'wujia',
-        characterId: 'yaoyao',
-        db: db,
-      );
-      final rows = await db.select(db.personaChatMessages).get();
-      expect(rows, isEmpty);
-      final state = await storage.loadState(
-        userId: 'wujia',
-        characterId: 'yaoyao',
-      );
-      expect(state.clearedAt, isNotNull);
-      expect(state.consumedThroughMessageId, isNull);
     });
   });
 }
+
+PersonaChatConversationRecord _record(
+  int seq,
+  String content, {
+  required String id,
+}) {
+  return PersonaChatConversationRecord(
+    id: id,
+    seq: seq,
+    characterId: _characterId,
+    isFromCharacter: true,
+    content: content,
+    isRead: false,
+    timestamp: DateTime.parse('2026-07-15T09:00:05+08:00'),
+    messageType: PersonaChatMessageTypes.text,
+    origin: PersonaChatMessageOrigin.conversation,
+    contactEpisodeId: 'character_conversation:task-1',
+  );
+}
+
+Future<void> _appendUser(
+  PersonaChatConversationStorage target, {
+  required String content,
+}) async {
+  await target.appendMessage(
+    userId: _userId,
+    characterId: _characterId,
+    isFromCharacter: false,
+    content: content,
+    timestamp: DateTime.parse('2026-07-15T09:00:00+08:00'),
+    messageType: PersonaChatMessageTypes.text,
+    origin: PersonaChatMessageOrigin.conversation,
+    isRead: true,
+  );
+}
+
+File _messagesFile(FileSystemService fs) => File(
+      fs.getCharacterConversationMessagesPath(_userId, _characterId),
+    );

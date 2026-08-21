@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:memex/data/services/character_execution_coordinator.dart';
@@ -9,6 +8,7 @@ import 'package:memex/data/services/character_workspace_service.dart';
 import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/local_task_executor.dart';
+import 'package:memex/data/services/persona_chat_conversation_storage.dart';
 import 'package:memex/data/services/persona_chat_service.dart';
 import 'package:memex/data/services/task_handlers/character_conversation_handler.dart';
 import 'package:memex/db/app_database.dart';
@@ -22,9 +22,14 @@ void main() {
   test('one conversation decision writes several character bubbles', () async {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     final executor = LocalTaskExecutor.forTesting(db: db);
-    final chatService = PersonaChatService.forTesting(db);
     final tempRoot =
         await Directory.systemTemp.createTemp('conversation_handler_');
+    final chatService = PersonaChatService.forTesting(
+      storage: PersonaChatConversationStorage(
+        fileSystem: FileSystemService.detached(dataRoot: tempRoot.path),
+      ),
+      userId: 'user-1',
+    );
     final eventBus = EventBusService.instance;
     await eventBus.connect();
     final eventReceived = Completer<PersonaChatMessageAddedMessage>();
@@ -117,12 +122,12 @@ void main() {
       TaskContext(taskId: 'reply-1', taskType: 'character_conversation_task'),
     );
 
-    final characterRows = await (db.select(db.personaChatMessages)
-          ..where((message) =>
-              message.isFromCharacter.equals(true) &
-              message.origin.equals(PersonaChatMessageOrigin.conversation))
-          ..orderBy([(message) => OrderingTerm.asc(message.id)]))
-        .get();
+    final characterRows = (await chatService.getMessages('yaoyao'))
+        .where((message) =>
+            message.isFromCharacter &&
+            message.origin == PersonaChatMessageOrigin.conversation)
+        .toList()
+        .reversed;
     expect(characterRows.map((message) => message.content), [
       '醒啦。',
       '🙂🙂',

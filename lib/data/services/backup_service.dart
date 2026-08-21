@@ -410,8 +410,10 @@ class BackupService {
 
       // Re-init DB
       await AppDatabase.init(restoredUserId);
-      PersonaChatService.instance.bindUser(restoredUserId);
-      await PersonaChatService.instance.reconcileFromWorkspace(restoredUserId);
+      await PersonaChatService.instance.initialize(
+        restoredUserId,
+        AppDatabase.instance,
+      );
       databaseClosedForRestore = false;
 
       // 4. Rebuild card cache

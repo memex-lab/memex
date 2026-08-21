@@ -4,6 +4,7 @@ import 'dart:math' as math;
 
 import 'package:memex/data/model/chat_artifact.dart';
 import 'package:memex/data/services/file_system_service.dart';
+import 'package:memex/data/services/jsonl_file_store.dart';
 import 'package:memex/data/services/migration_state_service.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/time_context.dart';
@@ -24,6 +25,7 @@ class ChatSessionStorage {
   static const String storageMigrationKey = 'chat_sessions_jsonl_v1';
 
   final _logger = getLogger('ChatSessionStorage');
+  final _jsonl = JsonlFileStore(loggerName: 'ChatSessionJsonl');
   final Map<String, Future<void>> _migrationFutures = {};
   final Map<String, Lock> _sessionLocks = {};
   final Map<String, Lock> _legacyMigrationLocks = {};
@@ -253,13 +255,7 @@ class ChatSessionStorage {
 
       final normalizedMessage = _normalizeMessage(message);
       final messagesFile = _messagesFile(userId, sessionId);
-      await messagesFile.parent.create(recursive: true);
-      await messagesFile.writeAsString(
-        '${jsonEncode(normalizedMessage)}\n',
-        mode: FileMode.append,
-        encoding: utf8,
-        flush: true,
-      );
+      await _jsonl.append(messagesFile, [normalizedMessage]);
 
       final metadata = await _readMetadataFile(metadataFile);
       metadata['last_message_preview'] = previewForMessage(normalizedMessage);
@@ -561,20 +557,7 @@ class ChatSessionStorage {
   }
 
   Future<List<Map<String, dynamic>>> _readMessagesFile(File file) async {
-    if (!await file.exists()) return const [];
-    final messages = <Map<String, dynamic>>[];
-    for (final line in await file.readAsLines()) {
-      if (line.trim().isEmpty) continue;
-      try {
-        final decoded = jsonDecode(line);
-        if (decoded is Map) {
-          messages.add(Map<String, dynamic>.from(decoded));
-        }
-      } catch (e) {
-        _logger.warning('Failed to parse chat message JSONL line: $e');
-      }
-    }
-    return messages;
+    return _jsonl.readAllRecoveringTail(file);
   }
 
   Future<_MessageLinePage> _readMessageTurnGroupsBefore(

@@ -7,6 +7,7 @@ import 'package:memex/data/services/character_workspace_service.dart';
 import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/local_task_executor.dart';
+import 'package:memex/data/services/persona_chat_conversation_storage.dart';
 import 'package:memex/data/services/persona_chat_service.dart';
 import 'package:memex/data/services/task_handlers/character_initiative_handler.dart';
 import 'package:memex/db/app_database.dart';
@@ -21,7 +22,12 @@ void main() {
     final tempRoot =
         await Directory.systemTemp.createTemp('initiative_flow_workspace_');
     final db = AppDatabase.forTesting(NativeDatabase.memory());
-    final chatService = PersonaChatService.forTesting(db);
+    final chatService = PersonaChatService.forTesting(
+      storage: PersonaChatConversationStorage(
+        fileSystem: FileSystemService.detached(dataRoot: tempRoot.path),
+      ),
+      userId: 'user-1',
+    );
     final eventBus = EventBusService.instance;
     await eventBus.connect();
     final eventReceived = Completer<PersonaChatMessageAddedMessage>();

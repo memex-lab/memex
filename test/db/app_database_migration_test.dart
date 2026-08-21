@@ -1,14 +1,14 @@
 import 'dart:io';
 
+import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:memex/data/services/persona_chat_service.dart';
 import 'package:memex/db/app_database.dart';
 import 'package:sqlite3/sqlite3.dart' as sqlite;
 
 void main() {
   group('AppDatabase migrations', () {
-    test('upgrades schema 14 to 20 with a reply cursor baseline', () async {
+    test('upgrades schema 14 to 19 with a reply cursor baseline', () async {
       final tempDir = await Directory.systemTemp.createTemp(
         'memex_app_database_migration_',
       );
@@ -18,7 +18,7 @@ void main() {
       final db = AppDatabase.forTesting(NativeDatabase(dbFile));
       try {
         final schemaVersion = await _userVersion(db);
-        expect(schemaVersion, 20);
+        expect(schemaVersion, 19);
 
         final taskColumns = await _columnNames(db, 'tasks');
         expect(taskColumns, contains('run_id'));
@@ -37,21 +37,17 @@ void main() {
         final chatColumns = await _columnNames(db, 'persona_chat_messages');
         expect(
           chatColumns,
-          containsAll(['origin', 'contact_episode_id', 'stable_id']),
+          containsAll(['origin', 'contact_episode_id']),
         );
         expect(chatColumns, isNot(contains('handled_by_episode_id')));
 
         final chatIndices = await _indexNames(db, 'persona_chat_messages');
         expect(chatIndices, contains('idx_persona_chat_episode'));
-        expect(chatIndices, contains('idx_persona_chat_stable_id'));
         expect(chatIndices, isNot(contains('idx_persona_chat_unhandled')));
 
         final cursor = await db.select(db.personaChatReplyCursors).getSingle();
         expect(cursor.characterId, 'legacy-character');
         expect(cursor.consumedThroughMessageId, 1);
-
-        final migrated = await db.select(db.personaChatMessages).getSingle();
-        expect(migrated.stableId, 'legacy-1');
       } finally {
         await db.close();
         await tempDir.delete(recursive: true);
@@ -68,12 +64,18 @@ void main() {
 
       final db = AppDatabase.forTesting(NativeDatabase(dbFile));
       try {
-        expect(await _userVersion(db), 20);
+        expect(await _userVersion(db), 19);
         final cursor = await db.select(db.personaChatReplyCursors).getSingle();
         expect(cursor.consumedThroughMessageId, 2);
 
-        final pending = await PersonaChatService.forTesting(db)
-            .getPendingUserMessages('legacy-character');
+        final pending = await (db.select(db.personaChatMessages)
+              ..where((message) =>
+                  message.characterId.equals('legacy-character') &
+                  message.isFromCharacter.equals(false) &
+                  message.id.isBiggerThanValue(
+                    cursor.consumedThroughMessageId,
+                  )))
+            .get();
         expect(pending.map((message) => message.content), [
           'pending user message',
         ]);

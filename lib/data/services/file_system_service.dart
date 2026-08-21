@@ -1536,13 +1536,44 @@ class FileSystemService {
     );
   }
 
-  String getCharacterConversationStatePath(
+  String getCharacterConversationMetadataPath(
     String userId,
     String characterId,
   ) {
     return path.join(
       getCharacterConversationPath(userId, characterId),
-      'state.json',
+      'metadata.json',
+    );
+  }
+
+  String getCharacterConversationEpisodeReceiptsPath(
+    String userId,
+    String characterId,
+  ) {
+    return path.join(
+      getCharacterConversationPath(userId, characterId),
+      '_episodes',
+    );
+  }
+
+  String getCharacterConversationEpisodeReceiptPath(
+    String userId,
+    String characterId,
+    String receiptName,
+  ) {
+    return path.join(
+      getCharacterConversationEpisodeReceiptsPath(userId, characterId),
+      '$receiptName.json',
+    );
+  }
+
+  String getCharacterConversationWriteLockPath(
+    String userId,
+    String characterId,
+  ) {
+    return path.join(
+      getCharacterConversationPath(userId, characterId),
+      '.write.lock',
     );
   }
 

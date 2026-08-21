@@ -221,6 +221,40 @@ void main() {
       expect(jsonDecode(lines.single)['role'], 'user');
     });
 
+    test('recovers valid messages from an incomplete UTF-8 tail', () async {
+      const sessionId = 'memex_agent_truncated_tail';
+      final storage = ChatSessionStorage.instance;
+      await storage.createSession(
+        userId: userId,
+        sessionId: sessionId,
+        metadata: {
+          'session_id': sessionId,
+          'agent_name': 'memex_agent',
+          'title': 'Tail recovery',
+        },
+      );
+      await storage.appendMessage(
+        userId: userId,
+        sessionId: sessionId,
+        message: {
+          'role': 'user',
+          'content': [
+            {'type': 'text', 'text': '保留这句'},
+          ],
+          'timestamp': '2026-06-22T12:01:00.000',
+        },
+      );
+      final file = File(storage.messagesPath(userId, sessionId));
+      await file.writeAsBytes(
+        [...await file.readAsBytes(), 0xF0, 0x9F],
+        flush: true,
+      );
+
+      final messages = await storage.loadMessages(userId, sessionId);
+      expect(_messageText(messages.single), '保留这句');
+      expect(await storage.loadMessages(userId, sessionId), hasLength(1));
+    });
+
     test('loads paged messages from newest backwards', () async {
       const sessionId = 'memex_agent_paged_storage';
       final storage = ChatSessionStorage.instance;
