@@ -136,5 +136,18 @@ void main() {
         isFalse,
       );
     });
+
+    test('classifies the permission prompt marker as device-local', () {
+      expect(
+        UserStorage.isDeviceLocalPreferenceKey(
+          'memex_agent_notification_permission_prompted_user-a',
+        ),
+        isTrue,
+      );
+      expect(
+        UserStorage.isDeviceLocalPreferenceKey('language'),
+        isFalse,
+      );
+    });
   });
 }

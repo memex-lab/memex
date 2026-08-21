@@ -291,6 +291,7 @@ class BackupService {
     for (final key in prefs.getKeys()) {
       // Skip Flutter internal keys
       if (_excludePrefKeys.any((prefix) => key.startsWith(prefix))) continue;
+      if (UserStorage.isDeviceLocalPreferenceKey(key)) continue;
       final value = prefs.get(key);
       if (value != null) {
         settings[key] = value;
@@ -913,6 +914,9 @@ class BackupService {
 
     final prefs = await SharedPreferences.getInstance();
     for (final entry in settings.entries) {
+      // Old backups may contain device-local state from before it was
+      // excluded. Preserve the destination device's state instead.
+      if (UserStorage.isDeviceLocalPreferenceKey(entry.key)) continue;
       final value = entry.value;
       if (value is String) {
         await prefs.setString(entry.key, value);

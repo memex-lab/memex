@@ -228,6 +228,19 @@ class UserStorage {
     return '$_keyMemexAgentNotificationPermissionPromptedPrefix$userId';
   }
 
+  /// Whether [key] represents state owned by the current device/OS rather
+  /// than portable user settings.
+  ///
+  /// These values must not cross devices through backup and restore. For
+  /// example, Android notification permission is reset by the OS on a fresh
+  /// install, so restoring an old "already prompted" marker could prevent the
+  /// app from explaining the permission on the new device.
+  static bool isDeviceLocalPreferenceKey(String key) {
+    return key.startsWith(
+      _keyMemexAgentNotificationPermissionPromptedPrefix,
+    );
+  }
+
   static Future<String?> getLatestSuperAgentHomeSessionId() async {
     try {
       final userId = await getUserId();

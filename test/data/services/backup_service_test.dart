@@ -86,6 +86,34 @@ void main() {
     expect(manifestJson['entries'], isNotEmpty);
   });
 
+  test('createBackup excludes device-local notification prompt state',
+      () async {
+    await UserStorage.setMemexAgentNotificationPermissionPrompted();
+    final outputDir = Directory(p.join(tempDir.path, 'Backups'));
+    final backupPath = await BackupService.createBackup(
+      outputDirectory: outputDir.path,
+    );
+
+    final archive = ZipDecoder().decodeBytes(
+      await File(backupPath).readAsBytes(),
+    );
+    final settingsFile = archive.files.firstWhere(
+      (file) => file.name == 'settings.json',
+    );
+    final settings = (jsonDecode(utf8.decode(settingsFile.content)) as Map)
+        .cast<String, dynamic>();
+
+    expect(settings['language'], 'en');
+    expect(
+      settings,
+      isNot(
+        contains(
+          'memex_agent_notification_permission_prompted_backup-service-user',
+        ),
+      ),
+    );
+  });
+
   test('createBackup still compresses small text files', () async {
     final outputDir = Directory(p.join(tempDir.path, 'Backups'));
     final backupPath = await BackupService.createBackup(
@@ -492,6 +520,37 @@ void main() {
     }
 
     expect(await cardFile.readAsString(), 'hello backup');
+  });
+
+  test('restore ignores device-local state contained in an old backup',
+      () async {
+    final settings = {
+      'user_id': 'backup-service-user',
+      'language': 'zh',
+      'memex_agent_notification_permission_prompted_backup-service-user': true,
+    };
+    final settingsBytes = utf8.encode(jsonEncode(settings));
+    final archive = Archive()
+      ..addFile(
+        ArchiveFile('settings.json', settingsBytes.length, settingsBytes),
+      );
+    final backupPath = p.join(tempDir.path, 'legacy-settings.memex');
+    await File(backupPath).writeAsBytes(ZipEncoder().encode(archive));
+
+    try {
+      await BackupService.restoreBackup(backupPath);
+    } finally {
+      if (AppDatabase.isInitialized) {
+        await AppDatabase.instance.close();
+      }
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString('language'), 'zh');
+    expect(
+      await UserStorage.hasPromptedMemexAgentNotificationPermission(),
+      isFalse,
+    );
   });
 
   test('restore resumes a task executor that was running beforehand', () async {
