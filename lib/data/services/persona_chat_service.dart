@@ -1,5 +1,6 @@
-import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
+import 'package:memex/data/services/persona_chat_conversation_storage.dart';
+import 'package:memex/data/services/persona_chat_legacy_migration_service.dart';
 import 'package:memex/db/app_database.dart';
 import 'package:memex/domain/models/character_message.dart';
 
@@ -8,139 +9,199 @@ abstract final class PersonaChatMessageOrigin {
   static const initiative = 'initiative';
 }
 
-/// Service for managing persona chat messages.
-class PersonaChatService {
-  static PersonaChatService? _instance;
-  static PersonaChatService get instance {
-    _instance ??= PersonaChatService._();
-    return _instance!;
-  }
+class PersonaChatMessagePage {
+  const PersonaChatMessagePage({
+    required this.messages,
+    required this.olderCursor,
+    required this.newestCursor,
+  });
 
-  PersonaChatService._() : _testDb = null;
+  final List<PersonaChatMessage> messages;
+  final int? olderCursor;
+  final int newestCursor;
+}
+
+/// Persona chat application service.
+///
+/// Runtime operations delegate to the character workspace store. SQLite is
+/// consulted only by [initialize] for one-way legacy migration.
+class PersonaChatService {
+  PersonaChatService._()
+      : _storage = PersonaChatConversationStorage.instance,
+        _migration = PersonaChatLegacyMigrationService();
 
   @visibleForTesting
-  PersonaChatService.forTesting(AppDatabase database) : _testDb = database;
+  PersonaChatService.forTesting({
+    required PersonaChatConversationStorage storage,
+    required String userId,
+  })  : _storage = storage,
+        _migration = null,
+        _sessionUserId = userId;
 
-  final AppDatabase? _testDb;
+  static final PersonaChatService instance = PersonaChatService._();
 
-  AppDatabase get _db => _testDb ?? AppDatabase.instance;
+  final PersonaChatConversationStorage _storage;
+  final PersonaChatLegacyMigrationService? _migration;
+  String? _sessionUserId;
 
-  Future<List<PersonaChatMessage>> getMessages(String characterId,
-      {int limit = 50, int offset = 0}) async {
-    return (_db.select(_db.personaChatMessages)
-          ..where((t) => t.characterId.equals(characterId))
-          ..orderBy([
-            (t) => OrderingTerm.desc(t.timestamp),
-            (t) => OrderingTerm.desc(t.id),
-          ])
-          ..limit(limit, offset: offset))
-        .get();
+  Future<void> initialize(String userId, AppDatabase database) async {
+    _sessionUserId = userId;
+    await _migration?.ensureMigrated(userId: userId, database: database);
   }
 
-  /// Returns the canonical chat history preceding one already-persisted user
-  /// message. Results remain newest-first, matching [getMessages].
+  Future<List<PersonaChatMessage>> getMessages(
+    String characterId, {
+    int limit = 50,
+    int offset = 0,
+    String? userId,
+  }) async {
+    final records = await _storage.loadMessages(
+      userId: _resolveUserId(userId),
+      characterId: characterId,
+      limit: limit,
+      offset: offset,
+    );
+    return records.map(_toMessage).toList(growable: false);
+  }
+
+  Future<PersonaChatMessagePage> getMessagePage(
+    String characterId, {
+    int limit = 50,
+    int? beforeCursor,
+    String? userId,
+  }) async {
+    final page = await _storage.loadMessagePage(
+      userId: _resolveUserId(userId),
+      characterId: characterId,
+      limit: limit,
+      beforeCursor: beforeCursor,
+    );
+    return PersonaChatMessagePage(
+      messages: page.records.map(_toMessage).toList(growable: false),
+      olderCursor: page.olderCursor,
+      newestCursor: page.newestCursor,
+    );
+  }
+
+  Future<PersonaChatMessagePage> getMessagesAfter(
+    String characterId, {
+    required int afterCursor,
+    String? userId,
+  }) async {
+    final page = await _storage.loadMessagesAfter(
+      userId: _resolveUserId(userId),
+      characterId: characterId,
+      afterCursor: afterCursor,
+    );
+    return PersonaChatMessagePage(
+      messages: page.records.map(_toMessage).toList(growable: false),
+      olderCursor: page.olderCursor,
+      newestCursor: page.newestCursor,
+    );
+  }
+
   Future<List<PersonaChatMessage>> getMessagesBefore(
     String characterId, {
     required int beforeMessageId,
     int limit = 50,
+    String? userId,
   }) async {
-    return (_db.select(_db.personaChatMessages)
-          ..where((t) =>
-              t.characterId.equals(characterId) &
-              t.id.isSmallerThanValue(beforeMessageId))
-          ..orderBy([
-            (t) => OrderingTerm.desc(t.timestamp),
-            (t) => OrderingTerm.desc(t.id),
-          ])
-          ..limit(limit))
-        .get();
+    final records = await _storage.loadMessagesBefore(
+      userId: _resolveUserId(userId),
+      characterId: characterId,
+      beforeMessageId: beforeMessageId,
+      limit: limit,
+    );
+    return records.map(_toMessage).toList(growable: false);
   }
 
-  Future<int> addUserMessage(String characterId, String content,
-      {DateTime? timestamp}) async {
-    final createdAt = timestamp ?? DateTime.now();
+  Future<int> addUserMessage(
+    String characterId,
+    String content, {
+    DateTime? timestamp,
+    String? userId,
+  }) async {
     final normalized = content.trim();
-    final id = await _db.into(_db.personaChatMessages).insert(
-          PersonaChatMessagesCompanion.insert(
-            characterId: characterId,
-            isFromCharacter: false,
-            content: normalized,
-            isRead: const Value(true),
-            timestamp: createdAt,
-            messageType: Value(
-              isEmojiOnlyMessage(normalized)
-                  ? PersonaChatMessageTypes.emoji
-                  : PersonaChatMessageTypes.text,
-            ),
-          ),
-        );
-    return id;
+    final record = await _storage.appendMessage(
+      userId: _resolveUserId(userId),
+      characterId: characterId,
+      isFromCharacter: false,
+      content: normalized,
+      timestamp: timestamp ?? DateTime.now(),
+      messageType: isEmojiOnlyMessage(normalized)
+          ? PersonaChatMessageTypes.emoji
+          : PersonaChatMessageTypes.text,
+      origin: PersonaChatMessageOrigin.conversation,
+      isRead: true,
+    );
+    return record.id;
   }
 
-  Future<int> getReplyCursor(String characterId) async {
-    final cursor = await (_db.select(_db.personaChatReplyCursors)
-          ..where((row) => row.characterId.equals(characterId)))
-        .getSingleOrNull();
-    return cursor?.consumedThroughMessageId ?? 0;
+  Future<int> getReplyCursor(String characterId, {String? userId}) {
+    return _storage.getReplyCursor(
+      userId: _resolveUserId(userId),
+      characterId: characterId,
+    );
+  }
+
+  Future<int> getConversationGeneration(
+    String characterId, {
+    String? userId,
+  }) {
+    return _storage.conversationGeneration(
+      userId: _resolveUserId(userId),
+      characterId: characterId,
+    );
   }
 
   Future<List<PersonaChatMessage>> getPendingUserMessages(
     String characterId, {
     int limit = 50,
+    String? userId,
   }) async {
-    final cursor = await getReplyCursor(characterId);
-    return (_db.select(_db.personaChatMessages)
-          ..where((t) =>
-              t.characterId.equals(characterId) &
-              t.isFromCharacter.equals(false) &
-              t.id.isBiggerThanValue(cursor))
-          ..orderBy([
-            (t) => OrderingTerm.asc(t.id),
-          ])
-          ..limit(limit))
-        .get();
+    final records = await _storage.loadPendingUserMessages(
+      userId: _resolveUserId(userId),
+      characterId: characterId,
+      limit: limit,
+    );
+    return records.map(_toMessage).toList(growable: false);
   }
 
   Future<void> advanceReplyCursor({
     required String characterId,
     required int consumedThroughMessageId,
+    String? userId,
   }) {
-    if (consumedThroughMessageId <= 0) {
-      throw ArgumentError.value(
-        consumedThroughMessageId,
-        'consumedThroughMessageId',
-      );
-    }
-    return _db.transaction(
-      () => _advanceReplyCursor(
-        characterId: characterId,
-        consumedThroughMessageId: consumedThroughMessageId,
-      ),
+    return _storage.advanceCursor(
+      userId: _resolveUserId(userId),
+      characterId: characterId,
+      processedThroughUserMessageId: consumedThroughMessageId,
     );
   }
 
-  Future<int> addCharacterMessage(String characterId, String content,
-      {String? factId,
-      bool isRead = false,
-      DateTime? timestamp,
-      String origin = PersonaChatMessageOrigin.conversation,
-      String? contactEpisodeId}) async {
-    final message = CharacterOutgoingMessage.fromContent(content);
+  Future<int> addCharacterMessage(
+    String characterId,
+    String content, {
+    String? factId,
+    bool isRead = false,
+    DateTime? timestamp,
+    String origin = PersonaChatMessageOrigin.conversation,
+    String? contactEpisodeId,
+    String? userId,
+  }) async {
     final ids = await addCharacterMessages(
       characterId,
-      [message],
+      [CharacterOutgoingMessage.fromContent(content)],
       factId: factId,
       isRead: isRead,
       timestamp: timestamp,
       origin: origin,
       contactEpisodeId: contactEpisodeId,
+      userId: userId,
     );
     return ids.single;
   }
 
-  /// Atomically persists the bubbles from one character contact decision.
-  /// A repeated [contactEpisodeId] returns the existing rows without writing
-  /// duplicate chat or timeline events.
   Future<List<int>> addCharacterMessages(
     String characterId,
     List<CharacterOutgoingMessage> messages, {
@@ -149,55 +210,49 @@ class PersonaChatService {
     DateTime? timestamp,
     String origin = PersonaChatMessageOrigin.conversation,
     String? contactEpisodeId,
+    String? userId,
   }) async {
+    _requireMessages(messages);
+    final resolvedUserId = _resolveUserId(userId);
     final createdAt = timestamp ?? DateTime.now();
-    if (messages.isEmpty) {
-      throw ArgumentError('Character messages must be non-empty.');
+    if (contactEpisodeId != null) {
+      final records = await _storage.appendTurn(
+        userId: resolvedUserId,
+        characterId: characterId,
+        turnId: contactEpisodeId,
+        expectedRecordCount: messages.length,
+        records: (firstMessageId) => _buildRecords(
+          characterId: characterId,
+          messages: messages,
+          firstMessageId: firstMessageId,
+          timestamp: createdAt,
+          origin: origin,
+          factId: factId,
+          isRead: isRead,
+          turnId: contactEpisodeId,
+        ),
+      );
+      return records.map((record) => record.id).toList(growable: false);
     }
 
-    final result = await _db.transaction(() async {
-      if (contactEpisodeId != null) {
-        final existing = await (_db.select(_db.personaChatMessages)
-              ..where((t) =>
-                  t.characterId.equals(characterId) &
-                  t.contactEpisodeId.equals(contactEpisodeId))
-              ..orderBy([(t) => OrderingTerm.asc(t.id)]))
-            .get();
-        if (existing.isNotEmpty) {
-          return (
-            ids: existing.map((message) => message.id).toList(),
-            inserted: false
-          );
-        }
-      }
-
-      final ids = <int>[];
-      for (final message in messages) {
-        ids.add(
-          await _db.into(_db.personaChatMessages).insert(
-                PersonaChatMessagesCompanion.insert(
-                  characterId: characterId,
-                  isFromCharacter: true,
-                  content: message.content,
-                  factId: Value(factId),
-                  isRead: Value(isRead),
-                  timestamp: createdAt,
-                  messageType: Value(message.storageType),
-                  origin: Value(origin),
-                  contactEpisodeId: Value(contactEpisodeId),
-                ),
-              ),
-        );
-      }
-      return (ids: ids, inserted: true);
-    });
-
-    return result.ids;
+    final ids = <int>[];
+    for (final message in messages) {
+      final record = await _storage.appendMessage(
+        userId: resolvedUserId,
+        characterId: characterId,
+        isFromCharacter: true,
+        content: message.content,
+        factId: factId,
+        isRead: isRead,
+        timestamp: createdAt,
+        messageType: message.storageType,
+        origin: origin,
+      );
+      ids.add(record.id);
+    }
+    return ids;
   }
 
-  /// Commits an Initiative episode only when no direct user message is waiting
-  /// for Conversation. The check and inserts share one database transaction so
-  /// a proactive reply cannot knowingly overtake an unanswered user turn.
   Future<bool> tryAddInitiativeMessages(
     String characterId,
     List<CharacterOutgoingMessage> messages, {
@@ -205,57 +260,30 @@ class PersonaChatService {
     bool isRead = false,
     DateTime? timestamp,
     required String contactEpisodeId,
-  }) async {
+    int? expectedGeneration,
+    String? userId,
+  }) {
+    _requireMessages(messages);
     final createdAt = timestamp ?? DateTime.now();
-    if (messages.isEmpty) {
-      throw ArgumentError('Character messages must be non-empty.');
-    }
-
-    return _db.transaction(() async {
-      final existing = await (_db.select(_db.personaChatMessages)
-            ..where((t) =>
-                t.characterId.equals(characterId) &
-                t.contactEpisodeId.equals(contactEpisodeId))
-            ..limit(1))
-          .getSingleOrNull();
-      if (existing != null) return true;
-
-      final cursor = await (_db.select(_db.personaChatReplyCursors)
-            ..where((row) => row.characterId.equals(characterId)))
-          .getSingleOrNull();
-      final pendingUserMessage = await (_db.select(_db.personaChatMessages)
-            ..where((t) =>
-                t.characterId.equals(characterId) &
-                t.isFromCharacter.equals(false) &
-                t.id.isBiggerThanValue(
-                  cursor?.consumedThroughMessageId ?? 0,
-                ))
-            ..limit(1))
-          .getSingleOrNull();
-      if (pendingUserMessage != null) return false;
-
-      for (final message in messages) {
-        await _db.into(_db.personaChatMessages).insert(
-              PersonaChatMessagesCompanion.insert(
-                characterId: characterId,
-                isFromCharacter: true,
-                content: message.content,
-                factId: Value(factId),
-                isRead: Value(isRead),
-                timestamp: createdAt,
-                messageType: Value(message.storageType),
-                origin: const Value(PersonaChatMessageOrigin.initiative),
-                contactEpisodeId: Value(contactEpisodeId),
-              ),
-            );
-      }
-      return true;
-    });
+    return _storage.tryAppendInitiativeTurn(
+      userId: _resolveUserId(userId),
+      characterId: characterId,
+      turnId: contactEpisodeId,
+      expectedRecordCount: messages.length,
+      expectedGeneration: expectedGeneration,
+      records: (firstMessageId) => _buildRecords(
+        characterId: characterId,
+        messages: messages,
+        firstMessageId: firstMessageId,
+        timestamp: createdAt,
+        origin: PersonaChatMessageOrigin.initiative,
+        factId: factId,
+        isRead: isRead,
+        turnId: contactEpisodeId,
+      ),
+    );
   }
 
-  /// Atomically records one character speaking episode and advances the
-  /// private-chat inbox cursor through the messages it considered. Retrying
-  /// the same episode is idempotent.
   Future<List<int>> completeConversationEpisode({
     required String characterId,
     required int consumedThroughMessageId,
@@ -263,6 +291,8 @@ class PersonaChatService {
     required String episodeId,
     required DateTime timestamp,
     bool isRead = false,
+    int? expectedGeneration,
+    String? userId,
   }) async {
     if (consumedThroughMessageId <= 0) {
       throw ArgumentError.value(
@@ -270,152 +300,152 @@ class PersonaChatService {
         'consumedThroughMessageId',
       );
     }
-    if (characterMessages.isEmpty) {
-      throw ArgumentError('Character messages must be non-empty.');
-    }
-
-    return _db.transaction(() async {
-      final existing = await (_db.select(_db.personaChatMessages)
-            ..where((t) =>
-                t.characterId.equals(characterId) &
-                t.contactEpisodeId.equals(episodeId))
-            ..orderBy([(t) => OrderingTerm.asc(t.id)]))
-          .get();
-
-      final ids = existing.map((message) => message.id).toList();
-      if (ids.isEmpty) {
-        for (final message in characterMessages) {
-          ids.add(
-            await _db.into(_db.personaChatMessages).insert(
-                  PersonaChatMessagesCompanion.insert(
-                    characterId: characterId,
-                    isFromCharacter: true,
-                    content: message.content,
-                    isRead: Value(isRead),
-                    timestamp: timestamp,
-                    messageType: Value(message.storageType),
-                    origin: const Value(
-                      PersonaChatMessageOrigin.conversation,
-                    ),
-                    contactEpisodeId: Value(episodeId),
-                  ),
-                ),
-          );
-        }
-      }
-
-      await _advanceReplyCursor(
+    _requireMessages(characterMessages);
+    final records = await _storage.appendTurn(
+      userId: _resolveUserId(userId),
+      characterId: characterId,
+      turnId: episodeId,
+      expectedRecordCount: characterMessages.length,
+      agentProcessedThroughUserMessageId: consumedThroughMessageId,
+      expectedGeneration: expectedGeneration,
+      records: (firstMessageId) => _buildRecords(
         characterId: characterId,
-        consumedThroughMessageId: consumedThroughMessageId,
-      );
-      return ids;
-    });
+        messages: characterMessages,
+        firstMessageId: firstMessageId,
+        timestamp: timestamp,
+        origin: PersonaChatMessageOrigin.conversation,
+        isRead: isRead,
+        turnId: episodeId,
+      ),
+    );
+    return records.map((record) => record.id).toList(growable: false);
   }
 
-  Future<void> _advanceReplyCursor({
-    required String characterId,
-    required int consumedThroughMessageId,
+  Future<int> addActionMessage(
+    String characterId,
+    String content, {
+    String? factId,
+    bool isRead = false,
+    DateTime? timestamp,
+    String? userId,
   }) async {
-    final current = await (_db.select(_db.personaChatReplyCursors)
-          ..where((row) => row.characterId.equals(characterId)))
-        .getSingleOrNull();
-    if (current != null &&
-        current.consumedThroughMessageId >= consumedThroughMessageId) {
-      return;
-    }
+    final record = await _storage.appendMessage(
+      userId: _resolveUserId(userId),
+      characterId: characterId,
+      isFromCharacter: true,
+      content: content,
+      factId: factId,
+      isRead: isRead,
+      timestamp: timestamp ?? DateTime.now(),
+      messageType: PersonaChatMessageTypes.action,
+      origin: PersonaChatMessageOrigin.conversation,
+    );
+    return record.id;
+  }
 
-    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    if (current == null) {
-      await _db.into(_db.personaChatReplyCursors).insert(
-            PersonaChatReplyCursorsCompanion.insert(
-              characterId: characterId,
-              consumedThroughMessageId: Value(consumedThroughMessageId),
-              updatedAt: now,
-            ),
-          );
-      return;
-    }
-    await (_db.update(_db.personaChatReplyCursors)
-          ..where((row) => row.characterId.equals(characterId)))
-        .write(
-      PersonaChatReplyCursorsCompanion(
-        consumedThroughMessageId: Value(consumedThroughMessageId),
-        updatedAt: Value(now),
-      ),
+  Future<int> getUnreadCount(String characterId, {String? userId}) {
+    return _storage.unreadCount(
+      userId: _resolveUserId(userId),
+      characterId: characterId,
     );
   }
 
-  /// Adds a narrative/action message from the character (e.g. *leans closer*).
-  /// Rendered differently in the UI — no bubble, italic, centered.
-  Future<int> addActionMessage(String characterId, String content,
-      {String? factId, bool isRead = false, DateTime? timestamp}) async {
-    final createdAt = timestamp ?? DateTime.now();
-    final id = await _db.into(_db.personaChatMessages).insert(
-          PersonaChatMessagesCompanion.insert(
-            characterId: characterId,
-            isFromCharacter: true,
-            content: content,
-            factId: Value(factId),
-            isRead: Value(isRead),
-            timestamp: createdAt,
-            messageType: const Value(PersonaChatMessageTypes.action),
-          ),
-        );
-    return id;
+  Future<int> getTotalUnreadCount({String? userId}) {
+    return _storage.totalUnreadCount(_resolveUserId(userId));
   }
 
-  Future<int> getUnreadCount(String characterId) async {
-    final query = _db.selectOnly(_db.personaChatMessages)
-      ..addColumns([_db.personaChatMessages.id.count()])
-      ..where(_db.personaChatMessages.characterId.equals(characterId) &
-          _db.personaChatMessages.isFromCharacter.equals(true) &
-          _db.personaChatMessages.isRead.equals(false));
-    final row = await query.getSingle();
-    return row.read(_db.personaChatMessages.id.count()) ?? 0;
+  Future<Set<String>> getCharactersWithPendingUserMessages({String? userId}) {
+    final resolvedUserId = _resolveUserId(userId);
+    return _storage.charactersWithPendingUserMessages(resolvedUserId);
   }
 
-  Future<int> getTotalUnreadCount() async {
-    final query = _db.selectOnly(_db.personaChatMessages)
-      ..addColumns([_db.personaChatMessages.id.count()])
-      ..where(_db.personaChatMessages.isFromCharacter.equals(true) &
-          _db.personaChatMessages.isRead.equals(false));
-    final row = await query.getSingle();
-    return row.read(_db.personaChatMessages.id.count()) ?? 0;
+  Future<int> markAllRead(String characterId, {String? userId}) {
+    return _storage.markAllRead(
+      userId: _resolveUserId(userId),
+      characterId: characterId,
+    );
   }
 
-  Future<int> markAllRead(String characterId) async {
-    return (_db.update(_db.personaChatMessages)
-          ..where((t) =>
-              t.characterId.equals(characterId) &
-              t.isFromCharacter.equals(true) &
-              t.isRead.equals(false)))
-        .write(const PersonaChatMessagesCompanion(isRead: Value(true)));
+  Future<PersonaChatMessage?> getLastMessage(
+    String characterId, {
+    String? userId,
+  }) async {
+    final record = await _storage.lastMessage(
+      userId: _resolveUserId(userId),
+      characterId: characterId,
+    );
+    return record == null ? null : _toMessage(record);
   }
 
-  Future<PersonaChatMessage?> getLastMessage(String characterId) async {
-    final results = await (_db.select(_db.personaChatMessages)
-          ..where((t) => t.characterId.equals(characterId))
-          ..orderBy([
-            (t) => OrderingTerm.desc(t.timestamp),
-            (t) => OrderingTerm.desc(t.id),
-          ])
-          ..limit(1))
-        .get();
-    return results.isEmpty ? null : results.first;
+  Future<int> getLatestMessageId(String characterId, {String? userId}) {
+    return _storage.latestMessageId(
+      userId: _resolveUserId(userId),
+      characterId: characterId,
+    );
   }
 
-  Future<int> getLatestMessageId(String characterId) async {
-    final maxId = _db.personaChatMessages.id.max();
-    final result = await (_db.selectOnly(_db.personaChatMessages)
-          ..addColumns([maxId])
-          ..where(_db.personaChatMessages.characterId.equals(characterId)))
-        .getSingle();
-    return result.read(maxId) ?? 0;
+  Future<int> clearMessages(String characterId, {String? userId}) {
+    return _storage.clearConversation(
+      userId: _resolveUserId(userId),
+      characterId: characterId,
+      clearedAt: DateTime.now(),
+    );
   }
 
-  Future<int> clearMessages(String characterId) async {
-    return (_db.delete(_db.personaChatMessages)
-          ..where((t) => t.characterId.equals(characterId)))
-        .go();
+  String _resolveUserId(String? userId) {
+    final resolved =
+        userId?.trim().isNotEmpty == true ? userId!.trim() : _sessionUserId;
+    if (resolved == null || resolved.isEmpty) {
+      throw StateError('PersonaChatService has not been initialized.');
+    }
+    return resolved;
+  }
+
+  List<PersonaChatConversationRecord> _buildRecords({
+    required String characterId,
+    required List<CharacterOutgoingMessage> messages,
+    required int firstMessageId,
+    required DateTime timestamp,
+    required String origin,
+    required bool isRead,
+    required String turnId,
+    String? factId,
+  }) {
+    return [
+      for (var index = 0; index < messages.length; index++)
+        PersonaChatConversationRecord(
+          id: firstMessageId + index,
+          characterId: characterId,
+          isFromCharacter: true,
+          content: messages[index].content,
+          factId: factId,
+          isRead: isRead,
+          timestamp: timestamp,
+          messageType: messages[index].storageType,
+          origin: origin,
+          turnId: turnId,
+        ),
+    ];
+  }
+
+  PersonaChatMessage _toMessage(PersonaChatConversationRecord record) {
+    return PersonaChatMessage(
+      id: record.id,
+      characterId: record.characterId,
+      isFromCharacter: record.isFromCharacter,
+      content: record.content,
+      factId: record.factId,
+      isRead: record.isRead,
+      timestamp: record.timestamp,
+      messageType: record.messageType,
+      origin: record.origin,
+      contactEpisodeId: record.turnId,
+    );
+  }
+
+  void _requireMessages(List<CharacterOutgoingMessage> messages) {
+    if (messages.isEmpty) {
+      throw ArgumentError('Character messages must be non-empty.');
+    }
   }
 }

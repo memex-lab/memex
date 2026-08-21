@@ -7,6 +7,7 @@ import 'package:memex/data/services/character_initiative_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/global_event_bus.dart';
 import 'package:memex/data/services/local_task_executor.dart';
+import 'package:memex/data/services/persona_chat_conversation_storage.dart';
 import 'package:memex/data/services/persona_chat_service.dart';
 import 'package:memex/data/services/task_handlers/character_initiative_handler.dart';
 import 'package:memex/data/services/task_handlers/character_perception_handler.dart';
@@ -27,7 +28,10 @@ void main() {
     AppDatabase.setTestInstance(db);
     final executor = LocalTaskExecutor.forTesting(db: db);
     final eventBus = GlobalEventBus.forTesting(executor);
-    final chatService = PersonaChatService.forTesting(db);
+    final chatService = PersonaChatService.forTesting(
+      storage: PersonaChatConversationStorage(fileSystem: fileSystem),
+      userId: 'user-1',
+    );
     final initiativeService = CharacterInitiativeService.forTesting(
       taskExecutor: executor,
     );
@@ -111,6 +115,7 @@ void main() {
         required messages,
         required timestamp,
         required contactEpisodeId,
+        required expectedGeneration,
         factId,
       }) async {
         await chatService.addCharacterMessages(

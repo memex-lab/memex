@@ -1,8 +1,8 @@
 import 'dart:io';
 
+import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:memex/data/services/persona_chat_service.dart';
 import 'package:memex/db/app_database.dart';
 import 'package:sqlite3/sqlite3.dart' as sqlite;
 
@@ -68,8 +68,14 @@ void main() {
         final cursor = await db.select(db.personaChatReplyCursors).getSingle();
         expect(cursor.consumedThroughMessageId, 2);
 
-        final pending = await PersonaChatService.forTesting(db)
-            .getPendingUserMessages('legacy-character');
+        final pending = await (db.select(db.personaChatMessages)
+              ..where((message) =>
+                  message.characterId.equals('legacy-character') &
+                  message.isFromCharacter.equals(false) &
+                  message.id.isBiggerThanValue(
+                    cursor.consumedThroughMessageId,
+                  )))
+            .get();
         expect(pending.map((message) => message.content), [
           'pending user message',
         ]);

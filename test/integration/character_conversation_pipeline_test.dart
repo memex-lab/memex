@@ -9,6 +9,7 @@ import 'package:memex/data/services/character_workspace_service.dart';
 import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/local_task_executor.dart';
+import 'package:memex/data/services/persona_chat_conversation_storage.dart';
 import 'package:memex/data/services/persona_chat_service.dart';
 import 'package:memex/data/services/task_handlers/character_conversation_handler.dart';
 import 'package:memex/data/services/task_handlers/character_initiative_handler.dart';
@@ -26,9 +27,14 @@ void main() {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     AppDatabase.setTestInstance(db);
     final executor = LocalTaskExecutor.forTesting(db: db);
-    final chatService = PersonaChatService.forTesting(db);
     final tempRoot =
         await Directory.systemTemp.createTemp('conversation_pipeline_');
+    final chatService = PersonaChatService.forTesting(
+      storage: PersonaChatConversationStorage(
+        fileSystem: FileSystemService.detached(dataRoot: tempRoot.path),
+      ),
+      userId: 'user-1',
+    );
     final workspace = CharacterWorkspaceService(
       fileSystem: FileSystemService.detached(dataRoot: tempRoot.path),
     );
@@ -127,14 +133,19 @@ void main() {
     expect(tasks.single.status, 'completed');
   });
 
-  test('initiative yields one pending user turn to the conversation episode',
+  test('initiative yields one pending user turn to the direct reply task',
       () async {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     AppDatabase.setTestInstance(db);
     final executor = LocalTaskExecutor.forTesting(db: db);
-    final chatService = PersonaChatService.forTesting(db);
     final tempRoot =
         await Directory.systemTemp.createTemp('conversation_ownership_');
+    final chatService = PersonaChatService.forTesting(
+      storage: PersonaChatConversationStorage(
+        fileSystem: FileSystemService.detached(dataRoot: tempRoot.path),
+      ),
+      userId: 'user-1',
+    );
     final workspace = CharacterWorkspaceService(
       fileSystem: FileSystemService.detached(dataRoot: tempRoot.path),
     );
@@ -233,6 +244,7 @@ void main() {
         required messages,
         required timestamp,
         required contactEpisodeId,
+        required expectedGeneration,
         factId,
       }) async {
         initiativeMessages += messages.length;
@@ -344,14 +356,20 @@ void main() {
     );
     expect(
       characterMessages.single.contactEpisodeId,
-      'character_conversation:conversation-task',
+      'character_conversation:1-1',
     );
   });
 
   test('initiative commit cannot overtake a pending direct message', () async {
-    final db = AppDatabase.forTesting(NativeDatabase.memory());
-    final chatService = PersonaChatService.forTesting(db);
-    addTearDown(db.close);
+    final tempRoot =
+        await Directory.systemTemp.createTemp('initiative_commit_');
+    final chatService = PersonaChatService.forTesting(
+      storage: PersonaChatConversationStorage(
+        fileSystem: FileSystemService.detached(dataRoot: tempRoot.path),
+      ),
+      userId: 'user-1',
+    );
+    addTearDown(() => tempRoot.delete(recursive: true));
     final now = DateTime.parse('2026-07-25T16:25:00+08:00');
     final userMessageId = await chatService.addUserMessage(
       'auntie',

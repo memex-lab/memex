@@ -1367,7 +1367,18 @@ class FileSystemService {
     return path.join(getSystemPath(userId), 'character_workspaces');
   }
 
+  /// Ensures a character identifier is safe to use as one path component.
+  static void validateCharacterId(String characterId) {
+    if (characterId.trim().isEmpty ||
+        characterId == '.' ||
+        characterId == '..' ||
+        path.basename(characterId) != characterId) {
+      throw ArgumentError.value(characterId, 'characterId');
+    }
+  }
+
   String getCharacterWorkspacePath(String userId, String characterId) {
+    validateCharacterId(characterId);
     return path.join(getCharacterWorkspacesPath(userId), characterId);
   }
 
@@ -1505,6 +1516,53 @@ class FileSystemService {
     return path.join(
       getCharacterWorkspacePath(userId, characterId),
       'runtime.json',
+    );
+  }
+
+  String getCharacterConversationPath(String userId, String characterId) {
+    return path.join(
+      getCharacterWorkspacePath(userId, characterId),
+      'Conversation',
+    );
+  }
+
+  String getCharacterConversationMessagesPath(
+    String userId,
+    String characterId,
+  ) {
+    return path.join(
+      getCharacterConversationPath(userId, characterId),
+      'messages.jsonl',
+    );
+  }
+
+  String getCharacterConversationMetadataPath(
+    String userId,
+    String characterId,
+  ) {
+    return path.join(
+      getCharacterConversationPath(userId, characterId),
+      'metadata.json',
+    );
+  }
+
+  String getCharacterConversationPendingCommitPath(
+    String userId,
+    String characterId,
+  ) {
+    return path.join(
+      getCharacterConversationPath(userId, characterId),
+      '.pending_commit.json',
+    );
+  }
+
+  String getCharacterConversationWriteLockPath(
+    String userId,
+    String characterId,
+  ) {
+    return path.join(
+      getCharacterConversationPath(userId, characterId),
+      '.write.lock',
     );
   }
 
