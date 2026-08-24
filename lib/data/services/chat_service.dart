@@ -507,7 +507,10 @@ class ChatService {
         // below system maintenance work that may use higher explicit priority.
         priority: 10,
         bizId: 'chat_turn:$finalSessionId:$turnId',
-        dependencies: previousTaskId == null ? null : [previousTaskId],
+        // Super Agent turns form one global sequence. This is an ordering
+        // barrier, not a hard dependency: a failed turn must not poison every
+        // later user message.
+        waitFor: previousTaskId == null ? null : [previousTaskId],
       );
       try {
         await AgentForegroundTaskTracker.instance.trackTask(taskId);

@@ -34,20 +34,40 @@ class EventTaskSubscription {
     required this.taskType,
     required this.payloadBuilder,
     this.dependsOn = const [],
+    this.requiresSuccessOf = const [],
     this.priority = 0,
     this.maxRetries = 5,
     this.dependenciesBuilder,
+    this.successDependenciesBuilder,
     this.shouldEnqueue,
   });
 
   final String subscriptionId;
   final String taskType;
+
+  /// Ordering predecessors. The task waits until these subscriptions reach a
+  /// terminal state, then runs even if one of them failed. This preserves the
+  /// dependency behavior that EventTaskSubscription had before hard
+  /// dependencies were introduced.
   final List<String> dependsOn;
+
+  /// Hard predecessors whose tasks must complete successfully.
+  final List<String> requiresSuccessOf;
   final int priority;
   final int maxRetries;
   final EventTaskPayloadBuilder payloadBuilder;
+
+  /// Dynamically resolved ordering barriers that only need to finish.
   final EventTaskDependencyBuilder? dependenciesBuilder;
+
+  /// Dynamically resolved hard dependencies that must succeed.
+  final EventTaskDependencyBuilder? successDependenciesBuilder;
   final EventTaskShouldEnqueue? shouldEnqueue;
+
+  Iterable<String> get predecessorSubscriptionIds sync* {
+    yield* dependsOn;
+    yield* requiresSuccessOf;
+  }
 }
 
 /// 同步订阅：publish 时直接 await 执行 handler，而非入队任务。
@@ -209,7 +229,8 @@ class GlobalEventBus {
     final skippedSubscriptionIds = <String>{};
 
     for (final subscription in orderedSubscriptions) {
-      if (subscription.dependsOn.any(skippedSubscriptionIds.contains)) {
+      if (subscription.predecessorSubscriptionIds
+          .any(skippedSubscriptionIds.contains)) {
         skippedSubscriptionIds.add(subscription.subscriptionId);
         continue;
       }
@@ -221,16 +242,26 @@ class GlobalEventBus {
       }
 
       final payload = await subscription.payloadBuilder(userId, event);
-      final dependencies = <String>[
+      final waitFor = <String>[
         ...(baseDependencies ?? const []),
         ...subscription.dependsOn
             .map((id) => enqueuedTaskIdsBySubscription[id])
             .whereType<String>(),
       ];
 
+      final dependencies = <String>[
+        ...subscription.requiresSuccessOf
+            .map((id) => enqueuedTaskIdsBySubscription[id])
+            .whereType<String>(),
+      ];
+
       if (subscription.dependenciesBuilder != null) {
-        dependencies
-            .addAll(await subscription.dependenciesBuilder!(userId, event));
+        waitFor.addAll(await subscription.dependenciesBuilder!(userId, event));
+      }
+      if (subscription.successDependenciesBuilder != null) {
+        dependencies.addAll(
+          await subscription.successDependenciesBuilder!(userId, event),
+        );
       }
 
       final taskId = await _taskExecutor.enqueueTask(
@@ -244,6 +275,7 @@ class GlobalEventBus {
         // correlation id across subscriptions.
         bizId: 'event:${event.type}:${event.eventId}',
         dependencies: dependencies.isEmpty ? null : dependencies,
+        waitFor: waitFor.isEmpty ? null : waitFor,
       );
 
       enqueuedTaskIds.add(taskId);
@@ -266,7 +298,7 @@ class GlobalEventBus {
     final dependents = <String, Set<String>>{};
     for (final subscription in subscriptions) {
       indegree.putIfAbsent(subscription.subscriptionId, () => 0);
-      for (final depId in subscription.dependsOn) {
+      for (final depId in subscription.predecessorSubscriptionIds) {
         if (!byId.containsKey(depId)) {
           throw StateError(
             'Subscription ${subscription.subscriptionId} depends on unknown subscription $depId',

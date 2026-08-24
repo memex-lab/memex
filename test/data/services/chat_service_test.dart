@@ -279,6 +279,50 @@ void main() {
       }
     });
 
+    test('queues a later Super Agent turn behind the previous terminal state',
+        () async {
+      const queuedSessionId = '${sessionId}_ordered';
+      await _writeSession(
+        userId: userId,
+        sessionId: queuedSessionId,
+        data: _sessionData(sessionId: queuedSessionId),
+      );
+      await db.into(db.tasks).insert(
+            TasksCompanion.insert(
+              id: 'failed-super-agent-turn',
+              type: 'super_agent_chat_turn_task',
+              payload: Value(jsonEncode({
+                'session_id': 'another-session',
+                'turn_id': 'failed-turn',
+              })),
+              status: 'failed',
+              createdAt: const Value(1700000000),
+            ),
+          );
+
+      final subscription = ChatService.instance
+          .sendMessage(
+            'continue after failure',
+            sessionId: queuedSessionId,
+            agentName: 'memex_agent',
+            scene: 'super_agent_home',
+          )
+          .listen((_) {});
+      try {
+        final task = await _waitForQueuedChatTask(db, queuedSessionId);
+        final dependencies = jsonDecode(task.dependencies!) as List<dynamic>;
+
+        expect(dependencies, [
+          {
+            'task_id': 'failed-super-agent-turn',
+            'condition': 'wait_for_completion',
+          },
+        ]);
+      } finally {
+        await subscription.cancel();
+      }
+    });
+
     test('replaces a missing session id and persists the new turn', () async {
       const missingSessionId = 'memex_agent_missing_session';
       final createdSession = Completer<String>();
