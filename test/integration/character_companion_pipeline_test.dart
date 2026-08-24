@@ -170,7 +170,7 @@ void main() {
       subscription: EventTaskSubscription(
         subscriptionId: 'character_initiative',
         taskType: 'character_initiative_task',
-        dependsOn: const ['comment_agent', 'character_perception'],
+        requiresSuccessOf: const ['comment_agent', 'character_perception'],
         payloadBuilder: (_, event) async {
           final payload = event.payload as UserInputSubmittedPayload;
           return {

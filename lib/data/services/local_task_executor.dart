@@ -78,6 +78,74 @@ class TaskQueueDrainResult {
 
 enum TaskQueueOwnerKind { foreground, background }
 
+/// Defines what a downstream task needs from one upstream task.
+///
+/// [requiresSuccess] is a hard dependency: the downstream task may run only
+/// after the upstream task completed successfully. [waitForCompletion] is an
+/// ordering barrier: the downstream task waits for the upstream task to reach
+/// a terminal state, then runs whether that state is completed or failed.
+enum TaskDependencyCondition {
+  requiresSuccess('requires_success'),
+  waitForCompletion('wait_for_completion');
+
+  const TaskDependencyCondition(this.wireName);
+
+  final String wireName;
+
+  static TaskDependencyCondition fromWireName(String value) {
+    return TaskDependencyCondition.values.firstWhere(
+      (condition) => condition.wireName == value,
+      orElse: () => throw FormatException(
+        'Unknown task dependency condition: $value',
+      ),
+    );
+  }
+}
+
+class TaskDependency {
+  const TaskDependency.requiresSuccess(this.taskId)
+      : condition = TaskDependencyCondition.requiresSuccess;
+
+  const TaskDependency.waitForCompletion(this.taskId)
+      : condition = TaskDependencyCondition.waitForCompletion;
+
+  const TaskDependency({required this.taskId, required this.condition});
+
+  final String taskId;
+  final TaskDependencyCondition condition;
+
+  Map<String, dynamic> toJson() => {
+        'task_id': taskId,
+        'condition': condition.wireName,
+      };
+
+  /// Legacy dependency arrays stored task IDs as strings without recording
+  /// their condition. Callers supply the task type's historical behavior.
+  factory TaskDependency.fromJson(
+    dynamic value, {
+    required TaskDependencyCondition legacyCondition,
+  }) {
+    if (value is String && value.isNotEmpty) {
+      return TaskDependency(taskId: value, condition: legacyCondition);
+    }
+    if (value is! Map) {
+      throw const FormatException('Task dependency must be a string or object');
+    }
+
+    final taskId = value['task_id'];
+    final condition = value['condition'];
+    if (taskId is! String || taskId.isEmpty || condition is! String) {
+      throw const FormatException(
+        'Task dependency requires task_id and condition',
+      );
+    }
+    return TaskDependency(
+      taskId: taskId,
+      condition: TaskDependencyCondition.fromWireName(condition),
+    );
+  }
+}
+
 /// Handler function type
 typedef TaskHandler = Future<void> Function(
   String userId,
@@ -155,6 +223,7 @@ class LocalTaskExecutor {
   // Handlers registry
   final Map<String, TaskHandler> _handlers = {};
   final Map<String, TaskConcurrencyPolicy> _concurrencyPolicies = {};
+  final Set<String> _legacyHardDependencyTaskTypes = <String>{};
   final Set<String> _activeConcurrencyKeys = <String>{};
   final Set<Future<void>> _activeExecutions = <Future<void>>{};
   final Map<String, Timer> _taskHeartbeatTimers = {};
@@ -384,12 +453,18 @@ class LocalTaskExecutor {
     String taskType,
     TaskHandler handler, {
     TaskConcurrencyPolicy? concurrencyPolicy,
+    bool legacyDependenciesRequireSuccess = false,
   }) {
     _handlers[taskType] = handler;
     if (concurrencyPolicy == null) {
       _concurrencyPolicies.remove(taskType);
     } else {
       _concurrencyPolicies[taskType] = concurrencyPolicy;
+    }
+    if (legacyDependenciesRequireSuccess) {
+      _legacyHardDependencyTaskTypes.add(taskType);
+    } else {
+      _legacyHardDependencyTaskTypes.remove(taskType);
     }
   }
 
@@ -738,10 +813,22 @@ class LocalTaskExecutor {
     int? scheduledAt,
     int maxRetries = 5,
     String? bizId,
+
+    /// Hard dependencies that must complete successfully before this task.
     List<String>? dependencies,
+
+    /// Ordering barriers that only need to reach a terminal state. A failed
+    /// predecessor does not fail this task.
+    List<String>? waitFor,
     String? runId,
   }) async {
     final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final taskDependencies = <TaskDependency>[
+      for (final taskId in dependencies ?? const <String>[])
+        TaskDependency.requiresSuccess(taskId),
+      for (final taskId in waitFor ?? const <String>[])
+        TaskDependency.waitForCompletion(taskId),
+    ];
 
     // We use a manual UUID or let Drift handle it?
     // Our schema defined ID as Text. Drift doesn't auto-generate Text IDs usually.
@@ -762,8 +849,12 @@ class LocalTaskExecutor {
             maxRetries: Value(maxRetries),
             bizId: Value(bizId),
             dependencies: Value(
-              dependencies != null && dependencies.isNotEmpty
-                  ? jsonEncode(dependencies)
+              taskDependencies.isNotEmpty
+                  ? jsonEncode(
+                      taskDependencies
+                          .map((dependency) => dependency.toJson())
+                          .toList(),
+                    )
                   : null,
             ),
           ),
@@ -1147,16 +1238,34 @@ class LocalTaskExecutor {
     if (task.dependencies == null) return true;
 
     try {
-      final deps = (jsonDecode(task.dependencies!) as List).cast<String>();
+      final decoded = jsonDecode(task.dependencies!);
+      if (decoded is! List) {
+        throw const FormatException('Task dependencies must be a list');
+      }
+      final legacyCondition = _legacyHardDependencyTaskTypes.contains(task.type)
+          ? TaskDependencyCondition.requiresSuccess
+          : TaskDependencyCondition.waitForCompletion;
+      final deps = decoded
+          .map(
+            (value) => TaskDependency.fromJson(
+              value,
+              legacyCondition: legacyCondition,
+            ),
+          )
+          .toList();
       if (deps.isEmpty) return true;
+
+      final dependencyIds =
+          deps.map((dependency) => dependency.taskId).toList();
 
       final dependenciesQuery = _db.selectOnly(_db.tasks)
         ..addColumns([_db.tasks.id, _db.tasks.status])
-        ..where(_db.tasks.id.isIn(deps));
+        ..where(_db.tasks.id.isIn(dependencyIds));
       final rows = await dependenciesQuery.get();
       final foundIds =
           rows.map((row) => row.read(_db.tasks.id)).whereType<String>().toSet();
-      final missingIds = deps.where((id) => !foundIds.contains(id)).toList();
+      final missingIds =
+          dependencyIds.where((id) => !foundIds.contains(id)).toList();
       if (missingIds.isNotEmpty) {
         await _failTask(
           task,
@@ -1165,10 +1274,19 @@ class LocalTaskExecutor {
         return false;
       }
 
-      final failedIds = rows
-          .where((row) => row.read(_db.tasks.status) == 'failed')
-          .map((row) => row.read(_db.tasks.id))
-          .whereType<String>()
+      final statusById = {
+        for (final row in rows)
+          if (row.read(_db.tasks.id) case final String id)
+            id: row.read(_db.tasks.status),
+      };
+      final failedIds = deps
+          .where(
+            (dependency) =>
+                dependency.condition ==
+                    TaskDependencyCondition.requiresSuccess &&
+                statusById[dependency.taskId] == 'failed',
+          )
+          .map((dependency) => dependency.taskId)
           .toList();
       if (failedIds.isNotEmpty) {
         await _failTask(
@@ -1178,7 +1296,14 @@ class LocalTaskExecutor {
         return false;
       }
 
-      return rows.every((row) => row.read(_db.tasks.status) == 'completed');
+      return deps.every((dependency) {
+        final status = statusById[dependency.taskId];
+        return switch (dependency.condition) {
+          TaskDependencyCondition.requiresSuccess => status == 'completed',
+          TaskDependencyCondition.waitForCompletion =>
+            status == 'completed' || status == 'failed',
+        };
+      });
     } catch (e) {
       _logger.warning('Failed to parse dependencies for task ${task.id}: $e');
       await _failTask(task, 'Invalid task dependencies: $e');

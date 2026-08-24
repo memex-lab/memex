@@ -148,23 +148,122 @@ void main() {
               createdAt: Value(now),
             ),
           );
-      await db.into(db.tasks).insert(
-            TasksCompanion.insert(
-              id: 'dependent',
-              type: 'dependent_task',
-              payload: const Value('{}'),
-              status: 'pending',
-              createdAt: Value(now + 1),
-              dependencies: Value(jsonEncode(['failed-prerequisite'])),
-            ),
-          );
+      final dependentId = await executor.enqueueTask(
+        userId: 'user-a',
+        taskType: 'dependent_task',
+        payload: const {},
+        dependencies: const ['failed-prerequisite'],
+      );
 
       await executor.start(userId: 'user-a');
-      final dependent = await _waitForTaskStatus(db, 'dependent', 'failed');
+      final dependent = await _waitForTaskStatus(db, dependentId, 'failed');
 
       expect(dependentRan, isFalse);
       expect(dependent.error, contains('Dependency tasks failed'));
       expect(dependent.error, contains('failed-prerequisite'));
+      expect(
+        jsonDecode(dependent.dependencies!),
+        [
+          {
+            'task_id': 'failed-prerequisite',
+            'condition': 'requires_success',
+          },
+        ],
+      );
+    });
+
+    test('runs a wait-for-completion task after its predecessor failed',
+        () async {
+      final executionOrder = <String>[];
+      executor.registerHandler('failing_predecessor', (_, __, ___) async {
+        executionOrder.add('predecessor');
+        throw StateError('expected predecessor failure');
+      });
+      executor.registerHandler('waiting_task', (_, __, ___) async {
+        executionOrder.add('waiting');
+      });
+      final predecessorId = await executor.enqueueTask(
+        userId: 'user-a',
+        taskType: 'failing_predecessor',
+        payload: const {},
+        maxRetries: 0,
+      );
+      final waitingTaskId = await executor.enqueueTask(
+        userId: 'user-a',
+        taskType: 'waiting_task',
+        payload: const {},
+        waitFor: [predecessorId],
+      );
+
+      await executor.start(userId: 'user-a');
+      final waitingTask =
+          await _waitForTaskStatus(db, waitingTaskId, 'completed');
+      final predecessor = await _getTask(db, predecessorId);
+
+      expect(predecessor.status, 'failed');
+      expect(executionOrder, ['predecessor', 'waiting']);
+      expect(waitingTask.error, isNull);
+      expect(
+        jsonDecode(waitingTask.dependencies!),
+        [
+          {
+            'task_id': predecessorId,
+            'condition': 'wait_for_completion',
+          },
+        ],
+      );
+    });
+
+    test(
+        'preserves legacy wait semantics unless a task type opts into hard dependencies',
+        () async {
+      var legacyWaiterRan = false;
+      var legacyHardTaskRan = false;
+      executor.registerHandler('legacy_waiter', (_, __, ___) async {
+        legacyWaiterRan = true;
+      });
+      executor.registerHandler(
+        'legacy_hard_task',
+        (_, __, ___) async {
+          legacyHardTaskRan = true;
+        },
+        legacyDependenciesRequireSuccess: true,
+      );
+      final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+      await db.into(db.tasks).insert(
+            TasksCompanion.insert(
+              id: 'legacy-failed-predecessor',
+              type: 'predecessor_task',
+              payload: const Value('{}'),
+              status: 'failed',
+              createdAt: Value(now),
+            ),
+          );
+      for (final entry in const [
+        (id: 'legacy-waiter', type: 'legacy_waiter'),
+        (id: 'legacy-hard', type: 'legacy_hard_task'),
+      ]) {
+        await db.into(db.tasks).insert(
+              TasksCompanion.insert(
+                id: entry.id,
+                type: entry.type,
+                payload: const Value('{}'),
+                status: 'pending',
+                createdAt: Value(now + 1),
+                dependencies: Value(
+                  jsonEncode(['legacy-failed-predecessor']),
+                ),
+              ),
+            );
+      }
+
+      await executor.start(userId: 'user-a');
+      await _waitForTaskStatus(db, 'legacy-waiter', 'completed');
+      final legacyHard = await _waitForTaskStatus(db, 'legacy-hard', 'failed');
+
+      expect(legacyWaiterRan, isTrue);
+      expect(legacyHardTaskRan, isFalse);
+      expect(legacyHard.error, contains('Dependency tasks failed'));
     });
 
     test('uses only available concurrency slots while backlog remains queued',

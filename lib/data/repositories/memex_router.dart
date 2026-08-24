@@ -195,7 +195,7 @@ class MemexRouter {
       subscription: EventTaskSubscription(
         subscriptionId: 'comment_agent',
         taskType: 'comment_agent_task',
-        dependsOn: const ['character_perception'],
+        requiresSuccessOf: const ['character_perception'],
         payloadBuilder: (_, event) {
           final p = event.payload as UserInputSubmittedPayload;
           return Future.value({
@@ -233,7 +233,7 @@ class MemexRouter {
       subscription: EventTaskSubscription(
         subscriptionId: 'character_initiative',
         taskType: CharacterInitiativeService.taskType,
-        dependsOn: const ['comment_agent', 'character_perception'],
+        requiresSuccessOf: const ['comment_agent', 'character_perception'],
         maxRetries: 3,
         payloadBuilder: (_, event) {
           final p = event.payload as UserInputSubmittedPayload;
@@ -325,6 +325,7 @@ class MemexRouter {
     executor.registerHandler(
       'comment_agent_task',
       handleCommentAgentImpl,
+      legacyDependenciesRequireSuccess: true,
     );
     executor.registerHandler(
       'character_perception_task',
@@ -340,6 +341,7 @@ class MemexRouter {
       CharacterInitiativeService.taskType,
       handleCharacterInitiativeImpl,
       concurrencyPolicy: TaskConcurrencyPolicy.byUser(),
+      legacyDependenciesRequireSuccess: true,
     );
     executor.registerHandler(
       CharacterConversationService.taskType,
