@@ -55,9 +55,17 @@
   "clearFailedAgentContexts": "Clear failed conversation context",
   "confirmClearFailedAgentContextsMessage": "Clear the saved conversation context for Insight and Schedule agents? This is useful after changing models when previous agent messages are no longer compatible. Facts, cards, knowledge, memories, and model settings will not be deleted.",
   "failedAgentContextsCleared": "Cleared {count} saved conversation context(s)",
-  "@failedAgentContextsCleared": { "placeholders": { "count": {} } },
+  "@failedAgentContextsCleared": {
+    "placeholders": {
+      "count": {}
+    }
+  },
   "clearFailedAgentContextsFailed": "Failed to clear conversation context: {error}",
-  "@clearFailedAgentContextsFailed": { "placeholders": { "error": {} } },
+  "@clearFailedAgentContextsFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
   "cloneToTestUser": "Clone to test user",
   "confirmCloneToTestUserMessage": "Copy the current workspace into a new local test user and switch to it. Agent runtime state is not copied. Your current user data will not be modified.",
   "testUserIdLabel": "Test user ID",
@@ -65,9 +73,17 @@
   "testUserIdInvalid": "Use only letters, numbers, hyphen, or underscore.",
   "overwriteExistingTestUser": "Replace existing test user with the same ID",
   "testUserCloneSuccess": "Switched to test user {userId}",
-  "@testUserCloneSuccess": { "placeholders": { "userId": {} } },
+  "@testUserCloneSuccess": {
+    "placeholders": {
+      "userId": {}
+    }
+  },
   "testUserCloneFailed": "Failed to clone test user: {error}",
-  "@testUserCloneFailed": { "placeholders": { "error": {} } },
+  "@testUserCloneFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
   "dataClearedSuccess": "Data cleared successfully",
   "@clearDataFailed": {
     "placeholders": {
@@ -207,7 +223,11 @@
   "playing": "Playing...",
   "sendLabel": "Send",
   "attachedImagesMessage": "Sent {count} image(s)",
-  "@attachedImagesMessage": { "placeholders": { "count": {} } },
+  "@attachedImagesMessage": {
+    "placeholders": {
+      "count": {}
+    }
+  },
   "noTaskData": "No task data",
   "@createdAtDate": {
     "placeholders": {
@@ -1031,7 +1051,6 @@
   "saved": "Saved",
   "newAgent": "New Agent",
   "editAgent": "Edit Agent",
-  "save": "Save",
   "agentName": "Agent Name",
   "agentNameHint": "my-custom-agent",
   "agentNameRequired": "Required",
@@ -1065,14 +1084,18 @@
   "downloadFailed": "Download failed: {error}",
   "@downloadFailed": {
     "placeholders": {
-      "error": { "type": "Object" }
+      "error": {
+        "type": "Object"
+      }
     }
   },
   "deleteConfirm": "Confirm Delete",
   "deleteConfirmMessage": "Are you sure you want to delete \"{name}\"?",
   "@deleteConfirmMessage": {
     "placeholders": {
-      "name": { "type": "String" }
+      "name": {
+        "type": "String"
+      }
     }
   },
   "invalidUrl": "Please enter a valid URL",
@@ -1086,7 +1109,9 @@
   "createFailed": "Create failed: {error}",
   "@createFailed": {
     "placeholders": {
-      "error": { "type": "Object" }
+      "error": {
+        "type": "Object"
+      }
     }
   },
   "fileContent": "File Content",
@@ -1094,9 +1119,11 @@
   "downloadToCurrentDir": "The zip will be extracted to current directory: {dir}",
   "@downloadToCurrentDir": {
     "placeholders": {
-      "dir": { "type": "String" }
+      "dir": {
+        "type": "String"
       }
-      },
+    }
+  },
   "privacyPolicy": "Privacy Policy",
   "privacyPolicyDesc": "How Memex handles your data",
   "llmAuthError": "API authentication failed. Please check your LLM configuration in Settings.",
@@ -1109,7 +1136,11 @@
   "goToModelConfig": "Go to Settings",
   "speechModelDownloadTitle": "Download Speech Model",
   "speechModelDownloadDesc": "A one-time model download (~{sizeMB}MB) is required.\n\nOnce downloaded, transcription runs entirely on-device.",
-  "@speechModelDownloadDesc": { "placeholders": { "sizeMB": {} } },
+  "@speechModelDownloadDesc": {
+    "placeholders": {
+      "sizeMB": {}
+    }
+  },
   "speechModelStartDownload": "Start Download",
   "speechModelChooseSource": "Choose download source:",
   "speechModelChinaMirror": "🇨🇳 China Mirror (Faster in CN)",
@@ -1121,7 +1152,11 @@
   "speechModelDeletedSuccess": "Speech model files deleted",
   "speechModelNotDownloaded": "No downloaded speech model files found",
   "speechModelDeleteFailed": "Failed to delete speech model files: {error}",
-  "@speechModelDeleteFailed": { "placeholders": { "error": {} } },
+  "@speechModelDeleteFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
   "speechTranscribing": "Recognizing...",
   "speechNoResult": "No speech detected",
   "useLocalSpeechToTextTitle": "Use local speech to text",
@@ -1438,5 +1473,14 @@
   "dataImportImpactKnowledgeBase": "Memex will read these files and organize useful long-term information into the knowledge base. It will not proactively create timeline records.",
   "dataImportImpactTimelineCards": "Memex will read these files and create timeline records for life events or dated history when appropriate. It will not proactively organize the knowledge base.",
   "dataImportImpactBoth": "Memex will try to create timeline records and organize reusable information into the knowledge base. This is best for a complete personal archive.",
-  "dataImportFinish": "Just save them"
+  "dataImportFinish": "Just save them",
+  "noImages": "No images",
+  "noMessages": "No messages",
+  "sketchContent": "Sketch content",
+  "emptyFolder": "Empty folder",
+  "usernameAlreadyTaken": "Username already taken",
+  "registrationFailed": "Registration failed",
+  "loginFailed": "Login failed",
+  "paymentCreationFailed": "Could not start payment",
+  "completePayment": "Complete payment"
 }

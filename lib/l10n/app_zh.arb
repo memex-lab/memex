@@ -55,9 +55,17 @@
   "clearFailedAgentContexts": "清除失败的对话上下文",
   "confirmClearFailedAgentContextsMessage": "清除 Insight 和 Schedule Agent 已保存的对话上下文？这适用于切换模型后，旧的 agent 消息与新模型 API 不兼容的情况。Facts、卡片、知识库、记忆和模型配置不会被删除。",
   "failedAgentContextsCleared": "已清除 {count} 个已保存的对话上下文",
-  "@failedAgentContextsCleared": { "placeholders": { "count": {} } },
+  "@failedAgentContextsCleared": {
+    "placeholders": {
+      "count": {}
+    }
+  },
   "clearFailedAgentContextsFailed": "清除对话上下文失败: {error}",
-  "@clearFailedAgentContextsFailed": { "placeholders": { "error": {} } },
+  "@clearFailedAgentContextsFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
   "cloneToTestUser": "克隆为测试用户",
   "confirmCloneToTestUserMessage": "将当前工作区复制到一个新的本地测试用户并切换过去。不会复制 Agent 运行态，当前用户数据不会被修改。",
   "testUserIdLabel": "测试用户名",
@@ -65,9 +73,17 @@
   "testUserIdInvalid": "只能使用英文、数字、中划线或下划线。",
   "overwriteExistingTestUser": "覆盖同名测试用户",
   "testUserCloneSuccess": "已切换到测试用户 {userId}",
-  "@testUserCloneSuccess": { "placeholders": { "userId": {} } },
+  "@testUserCloneSuccess": {
+    "placeholders": {
+      "userId": {}
+    }
+  },
   "testUserCloneFailed": "克隆测试用户失败: {error}",
-  "@testUserCloneFailed": { "placeholders": { "error": {} } },
+  "@testUserCloneFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
   "dataClearedSuccess": "数据清除成功",
   "@clearDataFailed": {
     "placeholders": {
@@ -207,7 +223,11 @@
   "playing": "播放中...",
   "sendLabel": "发送",
   "attachedImagesMessage": "发送了 {count} 张图片",
-  "@attachedImagesMessage": { "placeholders": { "count": {} } },
+  "@attachedImagesMessage": {
+    "placeholders": {
+      "count": {}
+    }
+  },
   "noTaskData": "暂无任务数据",
   "@createdAtDate": {
     "placeholders": {
@@ -1011,7 +1031,6 @@
   "saved": "已保存",
   "newAgent": "新建 Agent",
   "editAgent": "编辑 Agent",
-  "save": "保存",
   "agentName": "Agent 名称",
   "agentNameHint": "my-custom-agent",
   "agentNameRequired": "必填",
@@ -1057,11 +1076,13 @@
   "fileContent": "文件内容",
   "saveSuccess": "保存成功",
   "downloadToCurrentDir": "zip 将解压到当前目录：{dir}",
-    "@downloadToCurrentDir": {
+  "@downloadToCurrentDir": {
     "placeholders": {
-      "dir": { "type": "String" }
+      "dir": {
+        "type": "String"
       }
-      },
+    }
+  },
   "privacyPolicy": "隐私政策",
   "privacyPolicyDesc": "了解 Memex 如何处理您的数据",
   "llmAuthError": "API 认证失败，请在设置中检查 LLM 配置。",
@@ -1085,7 +1106,11 @@
   "speechModelDeletedSuccess": "语音识别模型文件已删除",
   "speechModelNotDownloaded": "未找到已下载的语音识别模型文件",
   "speechModelDeleteFailed": "删除语音识别模型文件失败: {error}",
-  "@speechModelDeleteFailed": { "placeholders": { "error": {} } },
+  "@speechModelDeleteFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
   "speechTranscribing": "正在识别...",
   "speechNoResult": "未识别到语音内容",
   "useLocalSpeechToTextTitle": "使用本地语音转文字",
@@ -1402,5 +1427,14 @@
   "dataImportImpactKnowledgeBase": "Memex 会阅读这批文件，把值得长期保存的信息整理进知识库；不会主动生成时间线记录。",
   "dataImportImpactTimelineCards": "Memex 会阅读这批文件，把适合记录生活或事件的内容生成时间线记录；不会主动整理知识库。",
   "dataImportImpactBoth": "Memex 会同时尝试生成时间线记录，并把可复用的信息整理进知识库。适合导入比较完整的历史资料。",
-  "dataImportFinish": "先保存即可"
+  "dataImportFinish": "先保存即可",
+  "noImages": "暂无图片",
+  "noMessages": "暂无消息",
+  "sketchContent": "草图内容",
+  "emptyFolder": "空文件夹",
+  "usernameAlreadyTaken": "用户名已被占用",
+  "registrationFailed": "注册失败",
+  "loginFailed": "登录失败",
+  "paymentCreationFailed": "无法发起支付",
+  "completePayment": "完成支付"
 }

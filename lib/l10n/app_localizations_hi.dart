@@ -3222,4 +3222,31 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get dataImportFinish => 'केवल सहेजें';
+
+  @override
+  String get noImages => 'कोई चित्र नहीं';
+
+  @override
+  String get noMessages => 'कोई संदेश नहीं';
+
+  @override
+  String get sketchContent => 'स्केच';
+
+  @override
+  String get emptyFolder => 'खाली फ़ोल्डर';
+
+  @override
+  String get usernameAlreadyTaken => 'यह उपयोगकर्ता नाम पहले से लिया गया है';
+
+  @override
+  String get registrationFailed => 'पंजीकरण असफल';
+
+  @override
+  String get loginFailed => 'लॉगिन असफल';
+
+  @override
+  String get paymentCreationFailed => 'भुगतान शुरू नहीं हो सका';
+
+  @override
+  String get completePayment => 'भुगतान पूरा करें';
 }

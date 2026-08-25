@@ -1473,5 +1473,14 @@
   "dataImportImpactKnowledgeBase": "Memex leerá estos archivos y organizará la información útil a largo plazo en la base de conocimiento. No creará registros de línea de tiempo de forma proactiva.",
   "dataImportImpactTimelineCards": "Memex leerá estos archivos y creará registros de línea de tiempo para eventos o historial con fecha cuando corresponda. No organizará proactivamente la base de conocimiento.",
   "dataImportImpactBoth": "Memex intentará crear registros de línea de tiempo y organizar información reutilizable en la base de conocimiento. Es lo más adecuado para un archivo personal completo.",
-  "dataImportFinish": "Solo guardar"
+  "dataImportFinish": "Solo guardar",
+  "noImages": "Sin imágenes",
+  "noMessages": "Sin mensajes",
+  "sketchContent": "Contenido del boceto",
+  "emptyFolder": "Carpeta vacía",
+  "usernameAlreadyTaken": "Ese nombre de usuario ya existe",
+  "registrationFailed": "Error al registrarse",
+  "loginFailed": "Error al iniciar sesión",
+  "paymentCreationFailed": "No se pudo iniciar el pago",
+  "completePayment": "Completar pago"
 }

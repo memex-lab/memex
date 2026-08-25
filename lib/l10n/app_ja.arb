@@ -1473,5 +1473,14 @@
   "dataImportImpactKnowledgeBase": "Memex がこれらのファイルを読み、長く残したい情報をナレッジベースに整理します。タイムライン記録は自動では作成しません。",
   "dataImportImpactTimelineCards": "Memex がこれらのファイルを読み、生活上の出来事や日付のある履歴をタイムライン記録にします。ナレッジベースは自動では整理しません。",
   "dataImportImpactBoth": "Memex がタイムライン記録の作成と、再利用できる情報のナレッジベース整理を両方試みます。まとまった個人アーカイブの取り込みに適しています。",
-  "dataImportFinish": "保存だけする"
+  "dataImportFinish": "保存だけする",
+  "noImages": "画像がありません",
+  "noMessages": "メッセージがありません",
+  "sketchContent": "スケッチ",
+  "emptyFolder": "空のフォルダ",
+  "usernameAlreadyTaken": "このユーザー名は既に使われています",
+  "registrationFailed": "登録に失敗しました",
+  "loginFailed": "ログインに失敗しました",
+  "paymentCreationFailed": "支払いを開始できませんでした",
+  "completePayment": "支払いを完了"
 }

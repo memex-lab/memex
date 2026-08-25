@@ -1,0 +1,64 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:memex/l10n/app_localizations.dart';
+import 'package:memex/ui/core/cards/templates/textual/conversation_card.dart';
+import 'package:memex/ui/core/cards/templates/visual/canvas_card.dart';
+import 'package:memex/ui/core/cards/templates/visual/gallery_card.dart';
+import 'package:memex/utils/user_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUpAll(() async {
+    GoogleFonts.config.allowRuntimeFetching = false;
+    SharedPreferences.setMockInitialValues({
+      'language': 'en',
+    });
+    await UserStorage.initL10n();
+  });
+
+  Future<void> pumpCard(WidgetTester tester, Widget card) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: card),
+      ),
+    );
+  }
+
+  testWidgets('GalleryCard with empty image_urls shows noImages', (
+    tester,
+  ) async {
+    await pumpCard(
+      tester,
+      const GalleryCard(data: {'image_urls': <String>[]}),
+    );
+
+    expect(find.text(UserStorage.l10n.noImages), findsOneWidget);
+  });
+
+  testWidgets('ConversationCard with empty messages shows noMessages', (
+    tester,
+  ) async {
+    await pumpCard(
+      tester,
+      const ConversationCard(data: {'messages': <dynamic>[]}),
+    );
+
+    expect(find.text(UserStorage.l10n.noMessages), findsOneWidget);
+  });
+
+  testWidgets('CanvasCard with no image_url shows sketchContent', (
+    tester,
+  ) async {
+    await pumpCard(
+      tester,
+      const CanvasCard(data: {}),
+    );
+
+    expect(find.text(UserStorage.l10n.sketchContent), findsOneWidget);
+  });
+}

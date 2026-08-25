@@ -1473,5 +1473,14 @@
   "dataImportImpactKnowledgeBase": "Memex가 이 파일을 읽고 오래 보관할 만한 정보를 지식 베이스에 정리합니다. 타임라인 기록은 먼저 만들지 않습니다.",
   "dataImportImpactTimelineCards": "Memex가 이 파일을 읽고 생활 이벤트나 날짜가 있는 기록을 타임라인 기록으로 만듭니다. 지식 베이스는 먼저 정리하지 않습니다.",
   "dataImportImpactBoth": "Memex가 타임라인 기록을 만들고 재사용할 수 있는 정보를 지식 베이스에 정리합니다. 완전한 개인 아카이브를 가져올 때 적합합니다.",
-  "dataImportFinish": "저장만 하기"
+  "dataImportFinish": "저장만 하기",
+  "noImages": "이미지 없음",
+  "noMessages": "메시지 없음",
+  "sketchContent": "스케치",
+  "emptyFolder": "빈 폴더",
+  "usernameAlreadyTaken": "이미 사용 중인 사용자 이름입니다",
+  "registrationFailed": "가입에 실패했습니다",
+  "loginFailed": "로그인에 실패했습니다",
+  "paymentCreationFailed": "결제를 시작할 수 없습니다",
+  "completePayment": "결제 완료"
 }
