@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
+import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
@@ -218,7 +220,7 @@ class LocalImage extends StatefulWidget {
   }
 
   /// Get ImageProvider (for DecorationImage, CircleAvatar, etc.)
-  static ImageProvider provider(String url) {
+  static ImageProvider provider(String url, {Duration? timeout}) {
     // try parse local file path (from http://127.0.0.1 URL)
     final localFilePath = _parseLocalFilePath(url);
 
@@ -236,8 +238,10 @@ class LocalImage extends StatefulWidget {
       }
       return FileImage(File(filePath));
     } else {
-      // use network load
-      return NetworkImage(url);
+      return TimeoutNetworkImage(
+        url,
+        timeout: timeout ?? const Duration(seconds: 20),
+      );
     }
   }
 
@@ -535,4 +539,111 @@ class _LocalImageState extends State<LocalImage> {
       colorBlendMode: widget.colorBlendMode,
     );
   }
+}
+
+/// Remote [ImageProvider] with a download timeout so a bad URL cannot hang
+/// [DecorationImage] / [CircleAvatar] the way [NetworkImage] can.
+class TimeoutNetworkImage extends ImageProvider<TimeoutNetworkImage> {
+  const TimeoutNetworkImage(
+    this.url, {
+    this.scale = 1.0,
+    this.timeout = const Duration(seconds: 20),
+  });
+
+  final String url;
+  final double scale;
+  final Duration timeout;
+
+  @override
+  Future<TimeoutNetworkImage> obtainKey(ImageConfiguration configuration) {
+    return SynchronousFuture<TimeoutNetworkImage>(this);
+  }
+
+  @override
+  ImageStreamCompleter loadImage(
+    TimeoutNetworkImage key,
+    ImageDecoderCallback decode,
+  ) {
+    final chunkEvents = StreamController<ImageChunkEvent>();
+
+    return MultiFrameImageStreamCompleter(
+      codec: _loadAsync(key, chunkEvents, decode),
+      chunkEvents: chunkEvents.stream,
+      scale: key.scale,
+      debugLabel: key.url,
+      informationCollector: () => <DiagnosticsNode>[
+        DiagnosticsProperty<ImageProvider>('Image provider', this),
+        DiagnosticsProperty<TimeoutNetworkImage>('Image key', key),
+      ],
+    );
+  }
+
+  Future<ui.Codec> _loadAsync(
+    TimeoutNetworkImage key,
+    StreamController<ImageChunkEvent> chunkEvents,
+    ImageDecoderCallback decode,
+  ) async {
+    assert(key == this);
+
+    final uri = Uri.parse(key.url);
+    final client = HttpClient()
+      ..connectionTimeout = key.timeout
+      ..idleTimeout = key.timeout;
+
+    try {
+      final request = await client.getUrl(uri).timeout(key.timeout);
+      final response = await request.close().timeout(key.timeout);
+      if (response.statusCode != HttpStatus.ok) {
+        await response.drain<void>().timeout(key.timeout);
+        throw NetworkImageLoadException(
+          statusCode: response.statusCode,
+          uri: uri,
+        );
+      }
+
+      final bytes = await consolidateHttpClientResponseBytes(
+        response,
+        onBytesReceived: (int cumulative, int? total) {
+          chunkEvents.add(
+            ImageChunkEvent(
+              cumulativeBytesLoaded: cumulative,
+              expectedTotalBytes: total,
+            ),
+          );
+        },
+      ).timeout(key.timeout);
+
+      if (bytes.isEmpty) {
+        throw Exception('TimeoutNetworkImage is an empty file: $uri');
+      }
+
+      return decode(await ui.ImmutableBuffer.fromUint8List(bytes));
+    } catch (error) {
+      scheduleMicrotask(() {
+        PaintingBinding.instance.imageCache.evict(key);
+      });
+      rethrow;
+    } finally {
+      chunkEvents.close();
+      client.close(force: true);
+    }
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (other.runtimeType != runtimeType) {
+      return false;
+    }
+    return other is TimeoutNetworkImage &&
+        other.url == url &&
+        other.scale == scale &&
+        other.timeout == timeout;
+  }
+
+  @override
+  int get hashCode => Object.hash(url, scale, timeout);
+
+  @override
+  String toString() =>
+      '${objectRuntimeType(this, 'TimeoutNetworkImage')}("$url", scale: ${scale.toStringAsFixed(1)}, timeout: $timeout)';
 }

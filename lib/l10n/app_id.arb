@@ -1473,5 +1473,15 @@
   "dataImportImpactKnowledgeBase": "Memex akan membaca file ini dan mengatur informasi jangka panjang yang berguna ke basis pengetahuan. Catatan timeline tidak akan dibuat secara proaktif.",
   "dataImportImpactTimelineCards": "Memex akan membaca file ini dan membuat catatan timeline untuk peristiwa hidup atau riwayat bertanggal bila sesuai. Basis pengetahuan tidak akan diatur secara proaktif.",
   "dataImportImpactBoth": "Memex akan mencoba membuat catatan timeline dan mengatur informasi yang dapat digunakan kembali ke basis pengetahuan. Ini cocok untuk arsip pribadi yang lengkap.",
-  "dataImportFinish": "Simpan saja"
+  "dataImportFinish": "Simpan saja",
+  "noImages": "Tidak ada gambar",
+  "noMessages": "Tidak ada pesan",
+  "sketchContent": "Konten sketsa",
+  "emptyFolder": "Folder kosong",
+  "usernameAlreadyTaken": "Nama pengguna sudah dipakai",
+  "registrationFailed": "Pendaftaran gagal",
+  "loginFailed": "Login gagal",
+  "paymentCreationFailed": "Tidak bisa memulai pembayaran",
+  "completePayment": "Selesaikan pembayaran",
+  "commentReplyToYou": "Anda"
 }

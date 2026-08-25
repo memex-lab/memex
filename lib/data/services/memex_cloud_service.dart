@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:memex/utils/user_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Memex Cloud Service - 与 memex_server 通信的客户端
@@ -60,12 +61,15 @@ class MemexCloudService {
       }
     }
     if (response.statusCode == 409) {
-      return AuthResult(success: false, error: 'Username already taken');
+      return AuthResult(
+        success: false,
+        error: UserStorage.l10n.usernameAlreadyTaken,
+      );
     }
     final data = jsonDecode(response.body);
     return AuthResult(
       success: false,
-      error: data['error'] ?? 'Registration failed',
+      error: data['error'] ?? UserStorage.l10n.registrationFailed,
     );
   }
 
@@ -89,7 +93,10 @@ class MemexCloudService {
       }
     }
     final data = jsonDecode(response.body);
-    return AuthResult(success: false, error: data['error'] ?? 'Login failed');
+    return AuthResult(
+      success: false,
+      error: data['error'] ?? UserStorage.l10n.loginFailed,
+    );
   }
 
   /// 登出
@@ -153,7 +160,7 @@ class MemexCloudService {
     final data = jsonDecode(response.body);
     return PaymentResult(
       success: false,
-      error: data['error'] ?? 'Payment creation failed',
+      error: data['error'] ?? UserStorage.l10n.paymentCreationFailed,
     );
   }
 
@@ -174,7 +181,7 @@ class MemexCloudService {
     final data = jsonDecode(response.body);
     return PaymentResult(
       success: false,
-      error: data['error'] ?? 'Payment creation failed',
+      error: data['error'] ?? UserStorage.l10n.paymentCreationFailed,
     );
   }
 

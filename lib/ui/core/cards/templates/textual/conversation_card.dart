@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:memex/ui/core/cards/ui/glass_card.dart';
+import 'package:memex/utils/user_storage.dart';
 
 class ConversationCard extends StatelessWidget {
   final Map<String, dynamic> data;
@@ -37,9 +38,9 @@ class ConversationCard extends StatelessWidget {
           ),
 
           if (messages.isEmpty)
-            const Center(
-                child: Text("No messages",
-                    style: TextStyle(color: const Color(0xFF99A1AF)))),
+            Center(
+                child: Text(UserStorage.l10n.noMessages,
+                    style: const TextStyle(color: Color(0xFF99A1AF)))),
 
           // Chat Bubbles
           ...messages.map((m) {

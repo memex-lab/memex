@@ -3271,4 +3271,34 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get dataImportFinish => 'Seulement enregistrer';
+
+  @override
+  String get noImages => 'Aucune image';
+
+  @override
+  String get noMessages => 'Aucun message';
+
+  @override
+  String get sketchContent => 'Contenu du croquis';
+
+  @override
+  String get emptyFolder => 'Dossier vide';
+
+  @override
+  String get usernameAlreadyTaken => 'Ce nom d’utilisateur est déjà pris';
+
+  @override
+  String get registrationFailed => 'Échec de l’inscription';
+
+  @override
+  String get loginFailed => 'Échec de la connexion';
+
+  @override
+  String get paymentCreationFailed => 'Impossible de lancer le paiement';
+
+  @override
+  String get completePayment => 'Finaliser le paiement';
+
+  @override
+  String get commentReplyToYou => 'Vous';
 }

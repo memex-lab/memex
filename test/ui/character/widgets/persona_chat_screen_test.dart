@@ -235,4 +235,29 @@ void main() {
       0,
     );
   });
+
+  test('marks chat read after open even without a scroll client', () async {
+    final events = <String>[];
+
+    await markPersonaChatReadAfterOpen(
+      hasScrollClients: false,
+      scrollToLatest: () async => events.add('scroll'),
+      markRead: () async => events.add('read'),
+    );
+
+    expect(events, ['read']);
+  });
+
+  test('scrolls to latest then marks chat read when a client is attached',
+      () async {
+    final events = <String>[];
+
+    await markPersonaChatReadAfterOpen(
+      hasScrollClients: true,
+      scrollToLatest: () async => events.add('scroll'),
+      markRead: () async => events.add('read'),
+    );
+
+    expect(events, ['scroll', 'read']);
+  });
 }

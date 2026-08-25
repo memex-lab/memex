@@ -1438,5 +1438,15 @@
   "dataImportImpactKnowledgeBase": "Memex will read these files and organize useful long-term information into the knowledge base. It will not proactively create timeline records.",
   "dataImportImpactTimelineCards": "Memex will read these files and create timeline records for life events or dated history when appropriate. It will not proactively organize the knowledge base.",
   "dataImportImpactBoth": "Memex will try to create timeline records and organize reusable information into the knowledge base. This is best for a complete personal archive.",
-  "dataImportFinish": "Just save them"
+  "dataImportFinish": "Just save them",
+  "noImages": "No images",
+  "noMessages": "No messages",
+  "sketchContent": "Sketch content",
+  "emptyFolder": "Empty folder",
+  "usernameAlreadyTaken": "Username already taken",
+  "registrationFailed": "Registration failed",
+  "loginFailed": "Login failed",
+  "paymentCreationFailed": "Could not start payment",
+  "completePayment": "Complete payment",
+  "commentReplyToYou": "You"
 }

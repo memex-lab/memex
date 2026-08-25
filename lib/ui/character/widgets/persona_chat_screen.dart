@@ -160,16 +160,19 @@ class _PersonaChatScreenState extends State<PersonaChatScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await Future<void>.delayed(const Duration(milliseconds: 16));
       if (!mounted) return;
-      if (_scrollController.hasClients) {
-        await _scrollController.animateTo(
+      await markPersonaChatReadAfterOpen(
+        hasScrollClients: _scrollController.hasClients,
+        scrollToLatest: () => _scrollController.animateTo(
           _scrollController.position.minScrollExtent,
           duration: const Duration(milliseconds: 260),
           curve: Curves.easeOut,
-        );
-        if (mounted) {
-          await _viewModel.markVisibleMessagesRead();
-        }
-      }
+        ),
+        markRead: () async {
+          if (mounted) {
+            await _viewModel.markVisibleMessagesRead();
+          }
+        },
+      );
     });
   }
 
@@ -866,6 +869,18 @@ bool shouldAutoScrollPersonaChat({
 }) {
   return previousCharacterId != currentCharacterId ||
       previousNewestMessageId != currentNewestMessageId;
+}
+
+@visibleForTesting
+Future<void> markPersonaChatReadAfterOpen({
+  required bool hasScrollClients,
+  required Future<void> Function() scrollToLatest,
+  required Future<void> Function() markRead,
+}) async {
+  if (hasScrollClients) {
+    await scrollToLatest();
+  }
+  await markRead();
 }
 
 class _ChatAtmosphereBackground extends StatelessWidget {

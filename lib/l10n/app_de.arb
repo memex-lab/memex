@@ -1473,5 +1473,15 @@
   "dataImportImpactKnowledgeBase": "Memex liest diese Dateien und organisiert langfristig nützliche Informationen in der Wissensbasis. Timeline-Einträge werden nicht aktiv erstellt.",
   "dataImportImpactTimelineCards": "Memex liest diese Dateien und erstellt bei passenden Lebensereignissen oder datierten Verläufen Timeline-Einträge. Die Wissensbasis wird nicht aktiv organisiert.",
   "dataImportImpactBoth": "Memex versucht, Timeline-Einträge zu erstellen und wiederverwendbare Informationen in der Wissensbasis zu organisieren. Das passt gut zu vollständigen persönlichen Archiven.",
-  "dataImportFinish": "Nur speichern"
+  "dataImportFinish": "Nur speichern",
+  "noImages": "Keine Bilder",
+  "noMessages": "Keine Nachrichten",
+  "sketchContent": "Skizzeninhalt",
+  "emptyFolder": "Leerer Ordner",
+  "usernameAlreadyTaken": "Benutzername bereits vergeben",
+  "registrationFailed": "Registrierung fehlgeschlagen",
+  "loginFailed": "Anmeldung fehlgeschlagen",
+  "paymentCreationFailed": "Zahlung konnte nicht gestartet werden",
+  "completePayment": "Zahlung abschließen",
+  "commentReplyToYou": "Du"
 }

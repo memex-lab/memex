@@ -166,7 +166,7 @@ Future<CardDetailModel> getCardDetail(String cardId) async {
     rawContent = (assetsAndText['rawText'] as String?) ?? rawContent;
 
     // Read comments (from card file comments field if present)
-    final comments = <Comment>[];
+    final builtComments = <Comment>[];
     // First pass: build comments with character info
     for (final commentData in cardData.comments) {
       try {
@@ -192,7 +192,7 @@ Future<CardDetailModel> getCardDetail(String cardId) async {
           }
         }
 
-        comments.add(
+        builtComments.add(
           Comment(
             id: commentData.id,
             content: commentData.content,
@@ -208,35 +208,10 @@ Future<CardDetailModel> getCardDetail(String cardId) async {
       }
     }
 
-    // Second pass: resolve replyToName from the comment list
-    // Build a lookup: commentId -> display name
-    final commentNameMap = <String, String>{};
-    for (final c in comments) {
-      if (!c.isAi) {
-        // User comment — use the userId as display name
-        commentNameMap[c.id] = userId;
-      } else {
-        commentNameMap[c.id] = c.character?.name ?? 'AI';
-      }
-    }
-    // Resolve replyToName for each comment that has a replyToId
-    for (var i = 0; i < comments.length; i++) {
-      final c = comments[i];
-      if (c.replyToId != null && c.replyToName == null) {
-        final resolvedName = commentNameMap[c.replyToId];
-        if (resolvedName != null) {
-          comments[i] = Comment(
-            id: c.id,
-            content: c.content,
-            isAi: c.isAi,
-            timestamp: c.timestamp,
-            character: c.character,
-            replyToId: c.replyToId,
-            replyToName: resolvedName,
-          );
-        }
-      }
-    }
+    final comments = withResolvedReplyNames(
+      builtComments,
+      userDisplayName: UserStorage.l10n.commentReplyToYou,
+    );
 
     // Get LLM call stats
     LLMStats? llmStats;
@@ -519,4 +494,47 @@ Future<bool> updateCardLocationEndpoint(
     _logger.severe('Failed to update card location for $cardId: $e');
     return false;
   }
+}
+
+String replyDisplayNameFor(Comment c, String userDisplayName) =>
+    c.isAi ? (c.character?.name ?? 'AI') : userDisplayName;
+
+Map<String, String> commentReplyNameMap(
+  Iterable<Comment> comments, {
+  required String userDisplayName,
+}) {
+  final commentNameMap = <String, String>{};
+  for (final c in comments) {
+    commentNameMap[c.id] = replyDisplayNameFor(c, userDisplayName);
+  }
+  return commentNameMap;
+}
+
+List<Comment> withResolvedReplyNames(
+  List<Comment> comments, {
+  required String userDisplayName,
+}) {
+  final commentNameMap = commentReplyNameMap(
+    comments,
+    userDisplayName: userDisplayName,
+  );
+  final resolved = List<Comment>.from(comments);
+  for (var i = 0; i < resolved.length; i++) {
+    final c = resolved[i];
+    if (c.replyToId != null && c.replyToName == null) {
+      final resolvedName = commentNameMap[c.replyToId];
+      if (resolvedName != null) {
+        resolved[i] = Comment(
+          id: c.id,
+          content: c.content,
+          isAi: c.isAi,
+          timestamp: c.timestamp,
+          character: c.character,
+          replyToId: c.replyToId,
+          replyToName: resolvedName,
+        );
+      }
+    }
+  }
+  return resolved;
 }

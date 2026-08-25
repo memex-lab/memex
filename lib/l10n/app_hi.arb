@@ -1473,5 +1473,15 @@
   "dataImportImpactKnowledgeBase": "Memex इन फ़ाइलों को पढ़ेगा और लंबे समय तक काम आने वाली जानकारी को ज्ञान आधार में व्यवस्थित करेगा। यह अपने आप टाइमलाइन रिकॉर्ड नहीं बनाएगा।",
   "dataImportImpactTimelineCards": "Memex इन फ़ाइलों को पढ़ेगा और जीवन की घटनाओं या तारीख वाले इतिहास के लिए टाइमलाइन रिकॉर्ड बनाएगा। यह अपने आप ज्ञान आधार व्यवस्थित नहीं करेगा।",
   "dataImportImpactBoth": "Memex टाइमलाइन रिकॉर्ड बनाने और दोबारा उपयोग होने वाली जानकारी को ज्ञान आधार में व्यवस्थित करने की कोशिश करेगा। यह पूर्ण निजी आर्काइव के लिए सबसे उपयुक्त है।",
-  "dataImportFinish": "केवल सहेजें"
+  "dataImportFinish": "केवल सहेजें",
+  "noImages": "कोई चित्र नहीं",
+  "noMessages": "कोई संदेश नहीं",
+  "sketchContent": "स्केच",
+  "emptyFolder": "खाली फ़ोल्डर",
+  "usernameAlreadyTaken": "यह उपयोगकर्ता नाम पहले से लिया गया है",
+  "registrationFailed": "पंजीकरण असफल",
+  "loginFailed": "लॉगिन असफल",
+  "paymentCreationFailed": "भुगतान शुरू नहीं हो सका",
+  "completePayment": "भुगतान पूरा करें",
+  "commentReplyToYou": "आप"
 }

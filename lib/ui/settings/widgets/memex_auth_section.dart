@@ -1193,7 +1193,7 @@ class _MemexPaymentWebViewState extends State<_MemexPaymentWebView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Complete Payment'),
+        title: Text(UserStorage.l10n.completePayment),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
         elevation: 0,

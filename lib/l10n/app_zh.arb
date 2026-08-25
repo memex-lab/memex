@@ -1402,5 +1402,15 @@
   "dataImportImpactKnowledgeBase": "Memex 会阅读这批文件，把值得长期保存的信息整理进知识库；不会主动生成时间线记录。",
   "dataImportImpactTimelineCards": "Memex 会阅读这批文件，把适合记录生活或事件的内容生成时间线记录；不会主动整理知识库。",
   "dataImportImpactBoth": "Memex 会同时尝试生成时间线记录，并把可复用的信息整理进知识库。适合导入比较完整的历史资料。",
-  "dataImportFinish": "先保存即可"
+  "dataImportFinish": "先保存即可",
+  "noImages": "暂无图片",
+  "noMessages": "暂无消息",
+  "sketchContent": "草图内容",
+  "emptyFolder": "空文件夹",
+  "usernameAlreadyTaken": "用户名已被占用",
+  "registrationFailed": "注册失败",
+  "loginFailed": "登录失败",
+  "paymentCreationFailed": "无法发起支付",
+  "completePayment": "完成支付",
+  "commentReplyToYou": "你"
 }

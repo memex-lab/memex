@@ -3240,4 +3240,34 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get dataImportFinish => 'Только сохранить';
+
+  @override
+  String get noImages => 'Нет изображений';
+
+  @override
+  String get noMessages => 'Нет сообщений';
+
+  @override
+  String get sketchContent => 'Эскиз';
+
+  @override
+  String get emptyFolder => 'Пустая папка';
+
+  @override
+  String get usernameAlreadyTaken => 'Имя пользователя уже занято';
+
+  @override
+  String get registrationFailed => 'Не удалось зарегистрироваться';
+
+  @override
+  String get loginFailed => 'Не удалось войти';
+
+  @override
+  String get paymentCreationFailed => 'Не удалось начать оплату';
+
+  @override
+  String get completePayment => 'Завершить оплату';
+
+  @override
+  String get commentReplyToYou => 'Вы';
 }

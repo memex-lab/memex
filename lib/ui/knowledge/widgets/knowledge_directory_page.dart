@@ -4,6 +4,7 @@ import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/ui/knowledge/widgets/knowledge/knowledge_file_card.dart';
 import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:memex/ui/core/widgets/back_button.dart';
+import 'package:memex/utils/user_storage.dart';
 
 class KnowledgeDirectoryPage extends StatefulWidget {
   final String path;
@@ -122,8 +123,8 @@ class _KnowledgeDirectoryPageState extends State<KnowledgeDirectoryPage> {
                   Container(
                     padding: const EdgeInsets.all(40),
                     alignment: Alignment.center,
-                    child: const Text('Empty folder',
-                        style: TextStyle(color: Color(0xFFCBD5E1))),
+                    child: Text(UserStorage.l10n.emptyFolder,
+                        style: const TextStyle(color: Color(0xFFCBD5E1))),
                   ),
               ],
             ),

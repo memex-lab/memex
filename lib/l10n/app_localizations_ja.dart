@@ -3137,4 +3137,34 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get dataImportFinish => '保存だけする';
+
+  @override
+  String get noImages => '画像がありません';
+
+  @override
+  String get noMessages => 'メッセージがありません';
+
+  @override
+  String get sketchContent => 'スケッチ';
+
+  @override
+  String get emptyFolder => '空のフォルダ';
+
+  @override
+  String get usernameAlreadyTaken => 'このユーザー名は既に使われています';
+
+  @override
+  String get registrationFailed => '登録に失敗しました';
+
+  @override
+  String get loginFailed => 'ログインに失敗しました';
+
+  @override
+  String get paymentCreationFailed => '支払いを開始できませんでした';
+
+  @override
+  String get completePayment => '支払いを完了';
+
+  @override
+  String get commentReplyToYou => 'あなた';
 }

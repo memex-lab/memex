@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:memex/ui/core/cards/ui/glass_card.dart';
 import 'package:memex/ui/core/widgets/local_image.dart';
+import 'package:memex/utils/user_storage.dart';
 
 class CanvasCard extends StatelessWidget {
   final Map<String, dynamic> data;
@@ -79,8 +80,8 @@ class CanvasCard extends StatelessWidget {
                                       .withValues(alpha: 0.2),
                                   width: 2),
                               borderRadius: BorderRadius.circular(12)),
-                          child: const Text("Sketch Content",
-                              style: TextStyle(
+                          child: Text(UserStorage.l10n.sketchContent,
+                              style: const TextStyle(
                                   color: Color(0xFF4A5565), fontSize: 12)),
                         ),
                       ),

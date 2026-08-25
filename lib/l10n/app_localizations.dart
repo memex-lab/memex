@@ -5783,6 +5783,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Just save them'**
   String get dataImportFinish;
+
+  /// No description provided for @noImages.
+  ///
+  /// In en, this message translates to:
+  /// **'No images'**
+  String get noImages;
+
+  /// No description provided for @noMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'No messages'**
+  String get noMessages;
+
+  /// No description provided for @sketchContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Sketch content'**
+  String get sketchContent;
+
+  /// No description provided for @emptyFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Empty folder'**
+  String get emptyFolder;
+
+  /// No description provided for @usernameAlreadyTaken.
+  ///
+  /// In en, this message translates to:
+  /// **'Username already taken'**
+  String get usernameAlreadyTaken;
+
+  /// No description provided for @registrationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Registration failed'**
+  String get registrationFailed;
+
+  /// No description provided for @loginFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Login failed'**
+  String get loginFailed;
+
+  /// No description provided for @paymentCreationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not start payment'**
+  String get paymentCreationFailed;
+
+  /// No description provided for @completePayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete payment'**
+  String get completePayment;
+
+  /// No description provided for @commentReplyToYou.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get commentReplyToYou;
 }
 
 class _AppLocalizationsDelegate

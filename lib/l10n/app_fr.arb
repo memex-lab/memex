@@ -1473,5 +1473,15 @@
   "dataImportImpactKnowledgeBase": "Memex lira ces fichiers et organisera les informations utiles à long terme dans la base de connaissances. Il ne créera pas d'entrées de chronologie de lui-même.",
   "dataImportImpactTimelineCards": "Memex lira ces fichiers et créera des entrées de chronologie pour les événements ou historiques datés quand c'est pertinent. Il n'organisera pas la base de connaissances de lui-même.",
   "dataImportImpactBoth": "Memex essaiera de créer des entrées de chronologie et d'organiser les informations réutilisables dans la base de connaissances. C'est le meilleur choix pour une archive personnelle complète.",
-  "dataImportFinish": "Seulement enregistrer"
+  "dataImportFinish": "Seulement enregistrer",
+  "noImages": "Aucune image",
+  "noMessages": "Aucun message",
+  "sketchContent": "Contenu du croquis",
+  "emptyFolder": "Dossier vide",
+  "usernameAlreadyTaken": "Ce nom d’utilisateur est déjà pris",
+  "registrationFailed": "Échec de l’inscription",
+  "loginFailed": "Échec de la connexion",
+  "paymentCreationFailed": "Impossible de lancer le paiement",
+  "completePayment": "Finaliser le paiement",
+  "commentReplyToYou": "Vous"
 }

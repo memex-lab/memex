@@ -51,6 +51,13 @@ void main() {
             timestamp: 1001,
             replyToId: 'char-comment',
           ),
+          CardComment(
+            id: 'other-char-comment',
+            content: 'I am a different character.',
+            isAi: true,
+            timestamp: 1002,
+            characterId: 'char-b',
+          ),
         ],
       );
     });
@@ -103,6 +110,25 @@ void main() {
     });
 
     test(
+      'without forcedReplyToId, SaveComment treats a self-reply as top-level',
+      () async {
+        final tool = CommentToolFactory(
+          userId: userId,
+          cardId: cardId,
+          characterId: characterId,
+        ).buildSaveCommentTool();
+
+        await Function.apply(tool.executable!, [
+          'Character comments on own previous comment.',
+          'char-comment',
+        ]);
+
+        final latest = await _latestComment(userId, cardId);
+        expect(latest.replyToId, isNull);
+      },
+    );
+
+    test(
       'without forcedReplyToId, SaveComment preserves a valid model-supplied '
       'reply target for character-to-character interactions',
       () async {
@@ -114,11 +140,11 @@ void main() {
 
         await Function.apply(tool.executable!, [
           'Character builds on another character.',
-          'char-comment',
+          'other-char-comment',
         ]);
 
         final latest = await _latestComment(userId, cardId);
-        expect(latest.replyToId, 'char-comment');
+        expect(latest.replyToId, 'other-char-comment');
       },
     );
 

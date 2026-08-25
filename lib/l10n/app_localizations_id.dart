@@ -3232,4 +3232,34 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get dataImportFinish => 'Simpan saja';
+
+  @override
+  String get noImages => 'Tidak ada gambar';
+
+  @override
+  String get noMessages => 'Tidak ada pesan';
+
+  @override
+  String get sketchContent => 'Konten sketsa';
+
+  @override
+  String get emptyFolder => 'Folder kosong';
+
+  @override
+  String get usernameAlreadyTaken => 'Nama pengguna sudah dipakai';
+
+  @override
+  String get registrationFailed => 'Pendaftaran gagal';
+
+  @override
+  String get loginFailed => 'Login gagal';
+
+  @override
+  String get paymentCreationFailed => 'Tidak bisa memulai pembayaran';
+
+  @override
+  String get completePayment => 'Selesaikan pembayaran';
+
+  @override
+  String get commentReplyToYou => 'Anda';
 }

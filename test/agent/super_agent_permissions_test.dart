@@ -118,6 +118,14 @@ void main() {
         isFalse,
       );
     });
+
+    test('excludes the memory write skill', () {
+      expect(SuperAgent.isQuickQuerySkillAllowed('manage_memory'), isFalse);
+    });
+
+    test('excludes the mutating PKM skill', () {
+      expect(SuperAgent.isQuickQuerySkillAllowed('manage_pkm'), isFalse);
+    });
   });
 
   group('SuperAgent run limits', () {
