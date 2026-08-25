@@ -1482,5 +1482,6 @@
   "registrationFailed": "Error al registrarse",
   "loginFailed": "Error al iniciar sesión",
   "paymentCreationFailed": "No se pudo iniciar el pago",
-  "completePayment": "Completar pago"
+  "completePayment": "Completar pago",
+  "commentReplyToYou": "Tú"
 }

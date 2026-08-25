@@ -1482,5 +1482,6 @@
   "registrationFailed": "가입에 실패했습니다",
   "loginFailed": "로그인에 실패했습니다",
   "paymentCreationFailed": "결제를 시작할 수 없습니다",
-  "completePayment": "결제 완료"
+  "completePayment": "결제 완료",
+  "commentReplyToYou": "나"
 }

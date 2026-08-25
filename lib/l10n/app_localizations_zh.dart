@@ -3126,6 +3126,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get completePayment => '完成支付';
+
+  @override
+  String get commentReplyToYou => '你';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -6254,4 +6257,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get completePayment => '完成付款';
+
+  @override
+  String get commentReplyToYou => '你';
 }

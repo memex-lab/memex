@@ -1482,5 +1482,6 @@
   "registrationFailed": "Falha no cadastro",
   "loginFailed": "Falha no login",
   "paymentCreationFailed": "Não foi possível iniciar o pagamento",
-  "completePayment": "Concluir pagamento"
+  "completePayment": "Concluir pagamento",
+  "commentReplyToYou": "Você"
 }

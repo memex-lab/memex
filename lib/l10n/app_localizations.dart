@@ -5837,6 +5837,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Complete payment'**
   String get completePayment;
+
+  /// No description provided for @commentReplyToYou.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get commentReplyToYou;
 }
 
 class _AppLocalizationsDelegate

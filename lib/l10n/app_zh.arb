@@ -1436,5 +1436,6 @@
   "registrationFailed": "注册失败",
   "loginFailed": "登录失败",
   "paymentCreationFailed": "无法发起支付",
-  "completePayment": "完成支付"
+  "completePayment": "完成支付",
+  "commentReplyToYou": "你"
 }

@@ -3163,4 +3163,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get completePayment => '결제 완료';
+
+  @override
+  String get commentReplyToYou => '나';
 }

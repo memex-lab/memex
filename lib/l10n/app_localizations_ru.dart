@@ -3267,4 +3267,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get completePayment => 'Завершить оплату';
+
+  @override
+  String get commentReplyToYou => 'Вы';
 }

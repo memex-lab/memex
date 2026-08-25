@@ -1482,5 +1482,6 @@
   "registrationFailed": "Pendaftaran gagal",
   "loginFailed": "Login gagal",
   "paymentCreationFailed": "Tidak bisa memulai pembayaran",
-  "completePayment": "Selesaikan pembayaran"
+  "completePayment": "Selesaikan pembayaran",
+  "commentReplyToYou": "Anda"
 }

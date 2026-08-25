@@ -3269,4 +3269,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get completePayment => 'Concluir pagamento';
+
+  @override
+  String get commentReplyToYou => 'Você';
 }

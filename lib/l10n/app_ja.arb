@@ -1482,5 +1482,6 @@
   "registrationFailed": "登録に失敗しました",
   "loginFailed": "ログインに失敗しました",
   "paymentCreationFailed": "支払いを開始できませんでした",
-  "completePayment": "支払いを完了"
+  "completePayment": "支払いを完了",
+  "commentReplyToYou": "あなた"
 }

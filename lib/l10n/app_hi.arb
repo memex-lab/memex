@@ -1482,5 +1482,6 @@
   "registrationFailed": "पंजीकरण असफल",
   "loginFailed": "लॉगिन असफल",
   "paymentCreationFailed": "भुगतान शुरू नहीं हो सका",
-  "completePayment": "भुगतान पूरा करें"
+  "completePayment": "भुगतान पूरा करें",
+  "commentReplyToYou": "आप"
 }

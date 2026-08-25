@@ -1482,5 +1482,6 @@
   "registrationFailed": "فشل التسجيل",
   "loginFailed": "فشل تسجيل الدخول",
   "paymentCreationFailed": "تعذر بدء الدفع",
-  "completePayment": "إكمال الدفع"
+  "completePayment": "إكمال الدفع",
+  "commentReplyToYou": "أنت"
 }

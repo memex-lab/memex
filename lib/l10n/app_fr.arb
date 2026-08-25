@@ -1482,5 +1482,6 @@
   "registrationFailed": "Échec de l’inscription",
   "loginFailed": "Échec de la connexion",
   "paymentCreationFailed": "Impossible de lancer le paiement",
-  "completePayment": "Finaliser le paiement"
+  "completePayment": "Finaliser le paiement",
+  "commentReplyToYou": "Vous"
 }
