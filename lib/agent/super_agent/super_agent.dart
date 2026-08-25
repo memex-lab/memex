@@ -48,6 +48,7 @@ const _quickQueryExcludedSkills = {
   'dynamic_timeline_ui',
   'timeline_diagnostics',
   'manage_pkm',
+  'manage_memory',
   'update_knowledge_insight',
   'manage_calendar_and_reminders',
 };
