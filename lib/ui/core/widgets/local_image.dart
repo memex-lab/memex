@@ -617,7 +617,7 @@ class TimeoutNetworkImage extends ImageProvider<TimeoutNetworkImage> {
         throw Exception('TimeoutNetworkImage is an empty file: $uri');
       }
 
-      return decode(await ui.ImmutableBuffer.fromUint8List(bytes));
+      return await decode(await ui.ImmutableBuffer.fromUint8List(bytes));
     } catch (error) {
       scheduleMicrotask(() {
         PaintingBinding.instance.imageCache.evict(key);
