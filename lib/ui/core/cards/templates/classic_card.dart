@@ -117,7 +117,7 @@ class _ClassicCardState extends State<ClassicCard> {
       debugPrint('Audio playback error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to play audio: $e')),
+          SnackBar(content: Text(UserStorage.l10n.operationFailed('$e'))),
         );
       }
     }
