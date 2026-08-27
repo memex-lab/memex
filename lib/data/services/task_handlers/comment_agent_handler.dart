@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 import 'package:memex/agent/prompts.dart';
 import 'package:memex/data/services/local_task_executor.dart';
@@ -6,6 +7,7 @@ import 'package:memex/data/services/character_selection_service.dart';
 import 'package:memex/data/services/character_service.dart';
 import 'package:memex/data/services/comment_settings_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
+import 'package:memex/domain/models/card_model.dart';
 import 'package:memex/utils/mention_parser.dart';
 import 'package:memex/data/services/task_handlers/llm_error_utils.dart';
 import 'package:memex/utils/user_storage.dart';
@@ -178,14 +180,14 @@ Future<void> handleProcessAiReplyImpl(
         cardId,
       );
       if (cardData != null) {
-        for (final c in cardData.comments) {
-          if (c.id == replyToId && c.isAi && c.characterId != null) {
-            targetCharacterId = c.characterId;
-            _logger.info(
-              'User replied to comment $replyToId, routing to character $targetCharacterId',
-            );
-            break;
-          }
+        targetCharacterId = resolveReplyTargetCharacterId(
+          cardData.comments,
+          replyToId,
+        );
+        if (targetCharacterId != null) {
+          _logger.info(
+            'User replied to comment $replyToId, routing to character $targetCharacterId',
+          );
         }
       }
     } catch (e) {
@@ -247,4 +249,28 @@ Future<String?> _resolveMentionedCharacterId({
     _logger.warning('Failed to resolve character mention: $e');
     return null;
   }
+}
+
+/// Walks `reply_to_id` until it finds an AI comment with a character.
+/// Direct replies to an AI comment still resolve in one hop; a reply to a
+/// user comment in that thread walks up to the character that owns it.
+@visibleForTesting
+String? resolveReplyTargetCharacterId(
+  List<CardComment> comments,
+  String replyToId,
+) {
+  final byId = {for (final comment in comments) comment.id: comment};
+  CardComment? current = byId[replyToId];
+  final seen = <String>{};
+  while (current != null && seen.add(current.id)) {
+    if (current.isAi && current.characterId != null) {
+      return current.characterId;
+    }
+    final nextId = current.replyToId;
+    if (nextId == null || nextId.isEmpty) {
+      break;
+    }
+    current = byId[nextId];
+  }
+  return null;
 }
