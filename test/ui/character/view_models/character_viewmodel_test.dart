@@ -1,10 +1,19 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/domain/models/character_model.dart';
 import 'package:memex/ui/character/view_models/character_viewmodel.dart';
 import 'package:memex/utils/result.dart';
+import 'package:memex/utils/user_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  setUp(() async {
+    SharedPreferences.setMockInitialValues({});
+    await UserStorage.initL10n();
+  });
   final character = CharacterModel(
     id: 'friend',
     name: '小安',
@@ -37,6 +46,17 @@ void main() {
     expect(viewModel.errorMessage, contains('write failed'));
   });
 
+  test('does not update enabled state when persist returns false', () async {
+    final router = _FakeMemexRouter(characters: [character]);
+    final viewModel = CharacterViewModel(router: router);
+    await viewModel.loadCharacters();
+    router.enabledResult = const Ok(false);
+
+    expect(await viewModel.setCharacterEnabled(character, false), isFalse);
+    expect(viewModel.characters.single.enabled, isTrue);
+    expect(viewModel.errorMessage, UserStorage.l10n.unknownError);
+  });
+
   test('removes a character only after a successful delete', () async {
     final router = _FakeMemexRouter(characters: [character]);
     final viewModel = CharacterViewModel(router: router);
@@ -45,6 +65,7 @@ void main() {
 
     expect(await viewModel.deleteCharacter(character), isFalse);
     expect(viewModel.characters, [character]);
+    expect(viewModel.errorMessage, UserStorage.l10n.unknownError);
 
     router.deleteResult = const Ok(true);
     expect(await viewModel.deleteCharacter(character), isTrue);
@@ -58,6 +79,7 @@ class _FakeMemexRouter implements MemexRouter {
   final List<CharacterModel> characters;
   Object? fetchError;
   Object? enabledError;
+  Result<bool> enabledResult = const Ok(true);
   Result<bool> deleteResult = const Ok(true);
 
   @override
@@ -75,7 +97,7 @@ class _FakeMemexRouter implements MemexRouter {
   ) async {
     final error = enabledError;
     return error == null
-        ? const Ok(true)
+        ? enabledResult
         : Error<bool>(error, StackTrace.current);
   }
 

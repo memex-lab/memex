@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:memex/domain/models/character_model.dart';
 import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/utils/result.dart';
+import 'package:memex/utils/user_storage.dart';
 
 /// ViewModel for the Character config page. Holds character list and
 /// delegates CRUD to [MemexRouter].
@@ -42,7 +43,7 @@ class CharacterViewModel extends ChangeNotifier {
       onOk: (updated) {
         succeeded = updated;
         if (!updated) {
-          errorMessage = 'Character ${character.id} was not updated.';
+          errorMessage = UserStorage.l10n.unknownError;
           notifyListeners();
           return;
         }
@@ -70,7 +71,7 @@ class CharacterViewModel extends ChangeNotifier {
         if (deleted) {
           characters.removeWhere((c) => c.id == character.id);
         } else {
-          errorMessage = 'Character ${character.id} was not deleted.';
+          errorMessage = UserStorage.l10n.unknownError;
         }
       },
       onError: (error, _) => errorMessage = error.toString(),
