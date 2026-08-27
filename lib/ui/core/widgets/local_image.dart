@@ -586,15 +586,27 @@ class TimeoutNetworkImage extends ImageProvider<TimeoutNetworkImage> {
     assert(key == this);
 
     final uri = Uri.parse(key.url);
+    final stopwatch = Stopwatch()..start();
     final client = HttpClient()
       ..connectionTimeout = key.timeout
       ..idleTimeout = key.timeout;
 
+    Duration remainingTimeout() {
+      final remaining = key.timeout - stopwatch.elapsed;
+      if (remaining <= Duration.zero) {
+        throw TimeoutException(
+          'Timed out loading network image after ${key.timeout}: $uri',
+          key.timeout,
+        );
+      }
+      return remaining;
+    }
+
     try {
-      final request = await client.getUrl(uri).timeout(key.timeout);
-      final response = await request.close().timeout(key.timeout);
+      final request = await client.getUrl(uri).timeout(remainingTimeout());
+      final response = await request.close().timeout(remainingTimeout());
       if (response.statusCode != HttpStatus.ok) {
-        await response.drain<void>().timeout(key.timeout);
+        await response.drain<void>().timeout(remainingTimeout());
         throw NetworkImageLoadException(
           statusCode: response.statusCode,
           uri: uri,
@@ -611,7 +623,7 @@ class TimeoutNetworkImage extends ImageProvider<TimeoutNetworkImage> {
             ),
           );
         },
-      ).timeout(key.timeout);
+      ).timeout(remainingTimeout());
 
       if (bytes.isEmpty) {
         throw Exception('TimeoutNetworkImage is an empty file: $uri');
