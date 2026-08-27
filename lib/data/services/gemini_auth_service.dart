@@ -147,7 +147,7 @@ class GeminiAuthService {
         }
 
         completer.completeError('No code in callback');
-        return 'Invalid callback. Missing code.';
+        return oauthMissingCodePage();
       });
 
       if (!await launchUrl(authUrl, mode: LaunchMode.inAppBrowserView)) {

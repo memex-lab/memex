@@ -1,5 +1,10 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
+import 'package:memex/utils/user_storage.dart';
+
+@visibleForTesting
+String oauthMissingCodePage() => UserStorage.l10n.unknownError;
 
 class LocalServerService {
   static final Logger _logger = Logger('LocalServerService');
