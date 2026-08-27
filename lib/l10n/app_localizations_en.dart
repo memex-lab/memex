@@ -3213,4 +3213,31 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dataImportFinish => 'Just save them';
+
+  @override
+  String get noImages => 'No images';
+
+  @override
+  String get noMessages => 'No messages';
+
+  @override
+  String get sketchContent => 'Sketch content';
+
+  @override
+  String get emptyFolder => 'Empty folder';
+
+  @override
+  String get usernameAlreadyTaken => 'Username already taken';
+
+  @override
+  String get registrationFailed => 'Registration failed';
+
+  @override
+  String get loginFailed => 'Login failed';
+
+  @override
+  String get paymentCreationFailed => 'Could not start payment';
+
+  @override
+  String get completePayment => 'Complete payment';
 }

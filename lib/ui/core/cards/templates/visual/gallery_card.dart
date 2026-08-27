@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:memex/ui/core/cards/ui/glass_card.dart';
 import 'package:memex/ui/core/widgets/local_image.dart';
+import 'package:memex/utils/user_storage.dart';
 
 class GalleryCard extends StatelessWidget {
   final Map<String, dynamic> data;
@@ -20,7 +21,7 @@ class GalleryCard extends StatelessWidget {
     if (imageUrls.isEmpty) {
       return GlassCard(
         onTap: onTap,
-        child: const Center(child: Text('No images')),
+        child: Center(child: Text(UserStorage.l10n.noImages)),
       );
     }
 

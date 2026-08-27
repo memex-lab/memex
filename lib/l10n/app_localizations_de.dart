@@ -3274,4 +3274,31 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get dataImportFinish => 'Nur speichern';
+
+  @override
+  String get noImages => 'Keine Bilder';
+
+  @override
+  String get noMessages => 'Keine Nachrichten';
+
+  @override
+  String get sketchContent => 'Skizzeninhalt';
+
+  @override
+  String get emptyFolder => 'Leerer Ordner';
+
+  @override
+  String get usernameAlreadyTaken => 'Benutzername bereits vergeben';
+
+  @override
+  String get registrationFailed => 'Registrierung fehlgeschlagen';
+
+  @override
+  String get loginFailed => 'Anmeldung fehlgeschlagen';
+
+  @override
+  String get paymentCreationFailed => 'Zahlung konnte nicht gestartet werden';
+
+  @override
+  String get completePayment => 'Zahlung abschließen';
 }

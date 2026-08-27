@@ -3099,6 +3099,33 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get dataImportFinish => '先保存即可';
+
+  @override
+  String get noImages => '暂无图片';
+
+  @override
+  String get noMessages => '暂无消息';
+
+  @override
+  String get sketchContent => '草图内容';
+
+  @override
+  String get emptyFolder => '空文件夹';
+
+  @override
+  String get usernameAlreadyTaken => '用户名已被占用';
+
+  @override
+  String get registrationFailed => '注册失败';
+
+  @override
+  String get loginFailed => '登录失败';
+
+  @override
+  String get paymentCreationFailed => '无法发起支付';
+
+  @override
+  String get completePayment => '完成支付';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -6200,4 +6227,31 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get dataImportFinish => '先保存即可';
+
+  @override
+  String get noImages => '暫無圖片';
+
+  @override
+  String get noMessages => '暫無訊息';
+
+  @override
+  String get sketchContent => '草圖內容';
+
+  @override
+  String get emptyFolder => '空資料夾';
+
+  @override
+  String get usernameAlreadyTaken => '使用者名稱已被占用';
+
+  @override
+  String get registrationFailed => '註冊失敗';
+
+  @override
+  String get loginFailed => '登入失敗';
+
+  @override
+  String get paymentCreationFailed => '無法發起付款';
+
+  @override
+  String get completePayment => '完成付款';
 }

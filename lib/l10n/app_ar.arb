@@ -1473,5 +1473,14 @@
   "dataImportImpactKnowledgeBase": "سيقرأ Memex هذه الملفات وينظم المعلومات المفيدة على المدى الطويل في قاعدة المعرفة. لن ينشئ سجلات زمنية تلقائيًا.",
   "dataImportImpactTimelineCards": "سيقرأ Memex هذه الملفات وينشئ سجلات زمنية لأحداث الحياة أو السجل المؤرخ عندما يكون ذلك مناسبًا. لن ينظم قاعدة المعرفة تلقائيًا.",
   "dataImportImpactBoth": "سيحاول Memex إنشاء سجلات زمنية وتنظيم المعلومات القابلة لإعادة الاستخدام في قاعدة المعرفة. هذا مناسب للأرشيف الشخصي الكامل.",
-  "dataImportFinish": "الحفظ فقط"
+  "dataImportFinish": "الحفظ فقط",
+  "noImages": "لا توجد صور",
+  "noMessages": "لا توجد رسائل",
+  "sketchContent": "محتوى الرسم",
+  "emptyFolder": "مجلد فارغ",
+  "usernameAlreadyTaken": "اسم المستخدم مستخدم بالفعل",
+  "registrationFailed": "فشل التسجيل",
+  "loginFailed": "فشل تسجيل الدخول",
+  "paymentCreationFailed": "تعذر بدء الدفع",
+  "completePayment": "إكمال الدفع"
 }

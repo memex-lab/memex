@@ -3194,4 +3194,31 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get dataImportFinish => 'الحفظ فقط';
+
+  @override
+  String get noImages => 'لا توجد صور';
+
+  @override
+  String get noMessages => 'لا توجد رسائل';
+
+  @override
+  String get sketchContent => 'محتوى الرسم';
+
+  @override
+  String get emptyFolder => 'مجلد فارغ';
+
+  @override
+  String get usernameAlreadyTaken => 'اسم المستخدم مستخدم بالفعل';
+
+  @override
+  String get registrationFailed => 'فشل التسجيل';
+
+  @override
+  String get loginFailed => 'فشل تسجيل الدخول';
+
+  @override
+  String get paymentCreationFailed => 'تعذر بدء الدفع';
+
+  @override
+  String get completePayment => 'إكمال الدفع';
 }

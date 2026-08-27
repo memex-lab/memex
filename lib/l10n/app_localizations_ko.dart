@@ -3136,4 +3136,31 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get dataImportFinish => '저장만 하기';
+
+  @override
+  String get noImages => '이미지 없음';
+
+  @override
+  String get noMessages => '메시지 없음';
+
+  @override
+  String get sketchContent => '스케치';
+
+  @override
+  String get emptyFolder => '빈 폴더';
+
+  @override
+  String get usernameAlreadyTaken => '이미 사용 중인 사용자 이름입니다';
+
+  @override
+  String get registrationFailed => '가입에 실패했습니다';
+
+  @override
+  String get loginFailed => '로그인에 실패했습니다';
+
+  @override
+  String get paymentCreationFailed => '결제를 시작할 수 없습니다';
+
+  @override
+  String get completePayment => '결제 완료';
 }
