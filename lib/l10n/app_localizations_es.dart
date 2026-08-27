@@ -3291,4 +3291,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get completePayment => 'Completar pago';
+
+  @override
+  String get commentReplyToYou => 'Tú';
 }

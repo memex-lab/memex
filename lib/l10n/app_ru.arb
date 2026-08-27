@@ -1482,5 +1482,6 @@
   "registrationFailed": "Не удалось зарегистрироваться",
   "loginFailed": "Не удалось войти",
   "paymentCreationFailed": "Не удалось начать оплату",
-  "completePayment": "Завершить оплату"
+  "completePayment": "Завершить оплату",
+  "commentReplyToYou": "Вы"
 }

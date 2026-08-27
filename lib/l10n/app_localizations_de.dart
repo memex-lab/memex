@@ -3301,4 +3301,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get completePayment => 'Zahlung abschließen';
+
+  @override
+  String get commentReplyToYou => 'Du';
 }

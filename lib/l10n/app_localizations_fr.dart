@@ -3298,4 +3298,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get completePayment => 'Finaliser le paiement';
+
+  @override
+  String get commentReplyToYou => 'Vous';
 }

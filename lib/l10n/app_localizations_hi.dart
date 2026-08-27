@@ -3249,4 +3249,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get completePayment => 'भुगतान पूरा करें';
+
+  @override
+  String get commentReplyToYou => 'आप';
 }

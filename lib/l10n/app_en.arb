@@ -1482,5 +1482,6 @@
   "registrationFailed": "Registration failed",
   "loginFailed": "Login failed",
   "paymentCreationFailed": "Could not start payment",
-  "completePayment": "Complete payment"
+  "completePayment": "Complete payment",
+  "commentReplyToYou": "You"
 }

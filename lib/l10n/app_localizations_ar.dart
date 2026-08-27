@@ -3221,4 +3221,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get completePayment => 'إكمال الدفع';
+
+  @override
+  String get commentReplyToYou => 'أنت';
 }

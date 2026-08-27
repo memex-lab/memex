@@ -3240,4 +3240,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get completePayment => 'Complete payment';
+
+  @override
+  String get commentReplyToYou => 'You';
 }

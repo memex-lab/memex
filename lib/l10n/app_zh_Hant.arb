@@ -1482,5 +1482,6 @@
   "registrationFailed": "註冊失敗",
   "loginFailed": "登入失敗",
   "paymentCreationFailed": "無法發起付款",
-  "completePayment": "完成付款"
+  "completePayment": "完成付款",
+  "commentReplyToYou": "你"
 }

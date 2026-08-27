@@ -3164,4 +3164,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get completePayment => '支払いを完了';
+
+  @override
+  String get commentReplyToYou => 'あなた';
 }

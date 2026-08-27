@@ -3259,4 +3259,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get completePayment => 'Selesaikan pembayaran';
+
+  @override
+  String get commentReplyToYou => 'Anda';
 }
