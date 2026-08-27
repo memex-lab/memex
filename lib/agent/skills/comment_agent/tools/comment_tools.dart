@@ -51,20 +51,32 @@ class CommentToolFactory {
           final fileSystemService = FileSystemService.instance;
           final commentId = const Uuid().v4();
           final now = DateTime.now();
-          final resolvedReplyToId =
-              fixedReplyTarget ?? _normalizedReplyToId(reply_to_id);
 
           final updatedCardData = await fileSystemService.updateCardFile(
             userId,
             cardId,
             (card) {
+              var replyToId =
+                  fixedReplyTarget ?? _normalizedReplyToId(reply_to_id);
+              if (fixedReplyTarget == null &&
+                  replyToId != null &&
+                  characterId != null) {
+                for (final existing in card.comments) {
+                  if (existing.id == replyToId &&
+                      existing.isAi &&
+                      existing.characterId == characterId) {
+                    replyToId = null;
+                    break;
+                  }
+                }
+              }
               final newComment = CardComment(
                 id: commentId,
                 content: content,
                 isAi: true,
                 timestamp: now.millisecondsSinceEpoch ~/ 1000,
                 characterId: characterId,
-                replyToId: resolvedReplyToId,
+                replyToId: replyToId,
               );
               return card.copyWith(comments: [...card.comments, newComment]);
             },
