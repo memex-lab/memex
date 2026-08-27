@@ -1,7 +1,12 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:memex/ui/core/cards/native_widget_factory.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/ui/core/widgets/back_button.dart';
+
+@visibleForTesting
+String insightTemplateBuildError(String templateId) =>
+    UserStorage.l10n.operationFailed(templateId);
 
 class InsightTemplateGalleryPage extends StatelessWidget {
   const InsightTemplateGalleryPage({super.key});
@@ -58,7 +63,7 @@ class InsightTemplateGalleryPage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               color: Colors.red.shade50,
-              child: Text('Failed to build $templateId'),
+              child: Text(insightTemplateBuildError(templateId)),
             ),
       ],
     );
