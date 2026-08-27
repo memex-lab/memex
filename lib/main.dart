@@ -1615,7 +1615,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       ToastHelper.showError(
         context,
         UserStorage.l10n.operationFailed(
-          viewModel.errorMessage ?? 'Failed to queue processing',
+          viewModel.errorMessage ?? UserStorage.l10n.unknownError,
         ),
       );
     }

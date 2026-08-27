@@ -52,7 +52,7 @@ class _DataImportPageState extends State<DataImportPage> {
       ToastHelper.showError(
         context,
         UserStorage.l10n.operationFailed(
-          widget.viewModel.errorMessage ?? 'Failed to queue processing',
+          widget.viewModel.errorMessage ?? UserStorage.l10n.unknownError,
         ),
       );
     }
