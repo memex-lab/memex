@@ -1,12 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:memex/ui/chat/view_models/chat_viewmodel.dart';
+import 'package:memex/utils/date_util.dart';
 import 'package:memex/utils/toast_helper.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:memex/ui/core/widgets/back_button.dart';
 import 'package:memex/ui/chat/widgets/agent_chat_dialog.dart';
 import 'package:memex/ui/core/themes/app_colors.dart';
+
+@visibleForTesting
+String formatChatHistoryDateTime(String? isoString, {DateTime? now}) {
+  if (isoString == null) return '';
+  final dateTime = parseLocalDateTime(isoString);
+  if (dateTime == null) return isoString;
+  final current = now ?? DateTime.now();
+  final difference = current.difference(dateTime);
+
+  if (difference.inDays == 0) {
+    return DateFormat('HH:mm').format(dateTime);
+  } else if (difference.inDays == 1) {
+    return UserStorage.l10n.yesterdayAt(DateFormat('HH:mm').format(dateTime));
+  } else if (difference.inDays < 7) {
+    return UserStorage.l10n.daysAgo(difference.inDays);
+  } else {
+    return DateFormat('MM-dd HH:mm').format(dateTime);
+  }
+}
 
 /// Chat history list screen. Receives [viewModel] from parent (Compass-style).
 class ChatHistoryScreen extends StatefulWidget {
@@ -91,27 +111,8 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
     });
   }
 
-  String _formatDateTime(String? isoString) {
-    if (isoString == null) return '';
-    try {
-      final dateTime = DateTime.parse(isoString);
-      final now = DateTime.now();
-      final difference = now.difference(dateTime);
-
-      if (difference.inDays == 0) {
-        return DateFormat('HH:mm').format(dateTime);
-      } else if (difference.inDays == 1) {
-        return UserStorage.l10n
-            .yesterdayAt(DateFormat('HH:mm').format(dateTime));
-      } else if (difference.inDays < 7) {
-        return UserStorage.l10n.daysAgo(difference.inDays);
-      } else {
-        return DateFormat('MM-dd HH:mm').format(dateTime);
-      }
-    } catch (e) {
-      return isoString;
-    }
-  }
+  String _formatDateTime(String? isoString) =>
+      formatChatHistoryDateTime(isoString);
 
   @override
   Widget build(BuildContext context) {
