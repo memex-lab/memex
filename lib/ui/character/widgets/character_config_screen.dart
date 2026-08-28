@@ -19,6 +19,12 @@ import 'package:memex/ui/core/widgets/back_button.dart';
 import 'package:memex/ui/core/themes/app_colors.dart';
 import 'package:memex/ui/core/widgets/local_image.dart';
 
+@visibleForTesting
+String characterImageImportFailureMessage(String? errorMessage) =>
+    UserStorage.l10n.operationFailed(
+      errorMessage ?? UserStorage.l10n.unknownError,
+    );
+
 /// AI character config screen. Receives [viewModel] from parent (Compass-style).
 class CharacterConfigScreen extends StatefulWidget {
   const CharacterConfigScreen({super.key, required this.viewModel});
@@ -40,7 +46,7 @@ class _CharacterConfigScreenState extends State<CharacterConfigScreen> {
         ToastHelper.showError(
           context,
           UserStorage.l10n.loadCharacterFailed(
-            widget.viewModel.errorMessage ?? 'Unknown error',
+            widget.viewModel.errorMessage ?? UserStorage.l10n.unknownError,
           ),
         );
       }
@@ -58,7 +64,7 @@ class _CharacterConfigScreenState extends State<CharacterConfigScreen> {
       ToastHelper.showError(
         context,
         UserStorage.l10n.operationFailed(
-          vm.errorMessage ?? 'Unknown error',
+          vm.errorMessage ?? UserStorage.l10n.unknownError,
         ),
       );
     }
@@ -95,7 +101,7 @@ class _CharacterConfigScreenState extends State<CharacterConfigScreen> {
         ToastHelper.showError(
           context,
           UserStorage.l10n.deleteFailed(
-            vm.errorMessage ?? 'Unknown error',
+            vm.errorMessage ?? UserStorage.l10n.unknownError,
           ),
         );
       }
@@ -406,7 +412,7 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
       ToastHelper.showError(
         context,
         UserStorage.l10n.loadCharacterFailed(
-          widget.viewModel.errorMessage ?? 'Unknown error',
+          widget.viewModel.errorMessage ?? UserStorage.l10n.unknownError,
         ),
       );
     }
@@ -449,8 +455,13 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
 
       final imported = await widget.viewModel.importImage(pickedPath);
       if (imported == null) {
-        throw StateError(
-            widget.viewModel.errorMessage ?? 'Image import failed');
+        if (mounted) {
+          ToastHelper.showError(
+            context,
+            characterImageImportFailureMessage(widget.viewModel.errorMessage),
+          );
+        }
+        return null;
       }
       if (!mounted) return null;
       setState(() {
@@ -480,8 +491,13 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
 
       final imported = await widget.viewModel.importImage(picked.path);
       if (imported == null) {
-        throw StateError(
-            widget.viewModel.errorMessage ?? 'Image import failed');
+        if (mounted) {
+          ToastHelper.showError(
+            context,
+            characterImageImportFailureMessage(widget.viewModel.errorMessage),
+          );
+        }
+        return;
       }
       if (!mounted) return;
       setState(() {
@@ -593,7 +609,7 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
       ToastHelper.showError(
         context,
         UserStorage.l10n.saveFailed(
-          widget.viewModel.errorMessage ?? 'Unknown error',
+          widget.viewModel.errorMessage ?? UserStorage.l10n.unknownError,
         ),
       );
       return;
