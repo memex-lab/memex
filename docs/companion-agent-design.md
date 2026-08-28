@@ -1,5 +1,7 @@
 # Memex 角色系统设计文档
 
+中文 | [English](companion-agent-design.en.md)
+
 更新时间：2026-05-11
 
 ## 1. 概述
