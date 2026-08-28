@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:memex/db/app_database.dart';
 import 'package:memex/utils/logger.dart';
@@ -97,7 +98,7 @@ Future<Map<String, dynamic>> getAggregatedTimeline({
       );
 
       // Generate labels
-      final labels = _getPeriodLabels(periodId, groupBy);
+      final labels = getPeriodLabels(periodId, groupBy);
 
       items.add({
         'periodId': periodId,
@@ -135,14 +136,16 @@ String _getPeriodId(DateTime dt, String groupBy) {
 }
 
 /// Generates display labels for the period.
-(String label, String subLabel) _getPeriodLabels(
+@visibleForTesting
+(String label, String subLabel) getPeriodLabels(
     String periodId, String groupBy) {
+  final locale = UserStorage.l10n.localeName;
   try {
     switch (groupBy) {
       case 'days':
         final dt = DateFormat('yyyy-MM-dd').parse(periodId);
-        final label = DateFormat('MMM d, yyyy').format(dt);
-        final dayName = DateFormat('EEEE').format(dt);
+        final label = DateFormat('MMM d, yyyy', locale).format(dt);
+        final dayName = DateFormat('EEEE', locale).format(dt);
         return (label, dayName);
 
       case 'weeks':
@@ -155,15 +158,15 @@ String _getPeriodId(DateTime dt, String groupBy) {
           final isoWeekStart = jan4.subtract(Duration(days: dayOfWeek - 1));
           final weekStart = isoWeekStart.add(Duration(days: (week - 1) * 7));
           final weekEnd = weekStart.add(const Duration(days: 6));
-          final startStr = DateFormat('MMM d').format(weekStart);
-          final endStr = DateFormat('MMM d, yyyy').format(weekEnd);
+          final startStr = DateFormat('MMM d', locale).format(weekStart);
+          final endStr = DateFormat('MMM d, yyyy', locale).format(weekEnd);
           return ('Week $week', '$startStr - $endStr');
         }
         return ('Week', periodId);
 
       case 'months':
         final dt = DateFormat('yyyy-MM').parse(periodId);
-        final label = DateFormat('MMMM yyyy').format(dt);
+        final label = DateFormat('MMMM yyyy', locale).format(dt);
         return (label, '');
 
       case 'years':
