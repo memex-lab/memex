@@ -1483,5 +1483,19 @@
   "loginFailed": "فشل تسجيل الدخول",
   "paymentCreationFailed": "تعذر بدء الدفع",
   "completePayment": "إكمال الدفع",
-  "commentReplyToYou": "أنت"
+  "commentReplyToYou": "أنت",
+  "commentAuthorUser": "المستخدم",
+  "commentAuthorAi": "AI",
+  "authorizationCancelled": "تم إلغاء التفويض",
+  "timelineWeekNumberLabel": "الأسبوع {week}",
+  "timelineWeekLabel": "أسبوع",
+  "eventCardDefaultTitle": "حدث",
+  "memoryNoLongTermYet": "لا توجد ذكريات طويلة المدى بعد.",
+  "memoryNoRecentBuffer": "لا توجد ذكريات حديثة في المخزن المؤقت.",
+  "memoryGeneralSubject": "عام",
+  "@timelineWeekNumberLabel": {
+    "placeholders": {
+      "week": {}
+    }
+  }
 }

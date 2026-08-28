@@ -3224,4 +3224,33 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get commentReplyToYou => 'أنت';
+
+  @override
+  String get commentAuthorUser => 'المستخدم';
+
+  @override
+  String get commentAuthorAi => 'AI';
+
+  @override
+  String get authorizationCancelled => 'تم إلغاء التفويض';
+
+  @override
+  String timelineWeekNumberLabel(Object week) {
+    return 'الأسبوع $week';
+  }
+
+  @override
+  String get timelineWeekLabel => 'أسبوع';
+
+  @override
+  String get eventCardDefaultTitle => 'حدث';
+
+  @override
+  String get memoryNoLongTermYet => 'لا توجد ذكريات طويلة المدى بعد.';
+
+  @override
+  String get memoryNoRecentBuffer => 'لا توجد ذكريات حديثة في المخزن المؤقت.';
+
+  @override
+  String get memoryGeneralSubject => 'عام';
 }

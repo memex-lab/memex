@@ -1483,5 +1483,19 @@
   "loginFailed": "ログインに失敗しました",
   "paymentCreationFailed": "支払いを開始できませんでした",
   "completePayment": "支払いを完了",
-  "commentReplyToYou": "あなた"
+  "commentReplyToYou": "あなた",
+  "commentAuthorUser": "ユーザー",
+  "commentAuthorAi": "AI",
+  "authorizationCancelled": "認可がキャンセルされました",
+  "timelineWeekNumberLabel": "第{week}週",
+  "timelineWeekLabel": "週",
+  "eventCardDefaultTitle": "イベント",
+  "memoryNoLongTermYet": "長期記憶はまだありません。",
+  "memoryNoRecentBuffer": "バッファに最近の記憶はありません。",
+  "memoryGeneralSubject": "一般",
+  "@timelineWeekNumberLabel": {
+    "placeholders": {
+      "week": {}
+    }
+  }
 }

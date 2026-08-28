@@ -1483,5 +1483,19 @@
   "loginFailed": "Échec de la connexion",
   "paymentCreationFailed": "Impossible de lancer le paiement",
   "completePayment": "Finaliser le paiement",
-  "commentReplyToYou": "Vous"
+  "commentReplyToYou": "Vous",
+  "commentAuthorUser": "Utilisateur",
+  "commentAuthorAi": "IA",
+  "authorizationCancelled": "Autorisation annulée",
+  "timelineWeekNumberLabel": "Semaine {week}",
+  "timelineWeekLabel": "Semaine",
+  "eventCardDefaultTitle": "Événement",
+  "memoryNoLongTermYet": "Pas encore de souvenirs à long terme.",
+  "memoryNoRecentBuffer": "Aucun souvenir récent dans le tampon.",
+  "memoryGeneralSubject": "Général",
+  "@timelineWeekNumberLabel": {
+    "placeholders": {
+      "week": {}
+    }
+  }
 }

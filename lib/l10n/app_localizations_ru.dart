@@ -3270,4 +3270,33 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get commentReplyToYou => 'Вы';
+
+  @override
+  String get commentAuthorUser => 'Пользователь';
+
+  @override
+  String get commentAuthorAi => 'ИИ';
+
+  @override
+  String get authorizationCancelled => 'Авторизация отменена';
+
+  @override
+  String timelineWeekNumberLabel(Object week) {
+    return 'Неделя $week';
+  }
+
+  @override
+  String get timelineWeekLabel => 'Неделя';
+
+  @override
+  String get eventCardDefaultTitle => 'Событие';
+
+  @override
+  String get memoryNoLongTermYet => 'Долговременных воспоминаний пока нет.';
+
+  @override
+  String get memoryNoRecentBuffer => 'В буфере пока нет недавних воспоминаний.';
+
+  @override
+  String get memoryGeneralSubject => 'Общее';
 }

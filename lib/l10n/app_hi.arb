@@ -1483,5 +1483,19 @@
   "loginFailed": "लॉगिन असफल",
   "paymentCreationFailed": "भुगतान शुरू नहीं हो सका",
   "completePayment": "भुगतान पूरा करें",
-  "commentReplyToYou": "आप"
+  "commentReplyToYou": "आप",
+  "commentAuthorUser": "उपयोगकर्ता",
+  "commentAuthorAi": "AI",
+  "authorizationCancelled": "प्राधिकरण रद्द कर दिया गया",
+  "timelineWeekNumberLabel": "सप्ताह {week}",
+  "timelineWeekLabel": "सप्ताह",
+  "eventCardDefaultTitle": "कार्यक्रम",
+  "memoryNoLongTermYet": "अभी तक कोई दीर्घकालिक स्मृति नहीं है।",
+  "memoryNoRecentBuffer": "बफ़र में कोई हाल की स्मृति नहीं है।",
+  "memoryGeneralSubject": "सामान्य",
+  "@timelineWeekNumberLabel": {
+    "placeholders": {
+      "week": {}
+    }
+  }
 }

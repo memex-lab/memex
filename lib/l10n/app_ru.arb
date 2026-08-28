@@ -1483,5 +1483,19 @@
   "loginFailed": "Не удалось войти",
   "paymentCreationFailed": "Не удалось начать оплату",
   "completePayment": "Завершить оплату",
-  "commentReplyToYou": "Вы"
+  "commentReplyToYou": "Вы",
+  "commentAuthorUser": "Пользователь",
+  "commentAuthorAi": "ИИ",
+  "authorizationCancelled": "Авторизация отменена",
+  "timelineWeekNumberLabel": "Неделя {week}",
+  "timelineWeekLabel": "Неделя",
+  "eventCardDefaultTitle": "Событие",
+  "memoryNoLongTermYet": "Долговременных воспоминаний пока нет.",
+  "memoryNoRecentBuffer": "В буфере пока нет недавних воспоминаний.",
+  "memoryGeneralSubject": "Общее",
+  "@timelineWeekNumberLabel": {
+    "placeholders": {
+      "week": {}
+    }
+  }
 }

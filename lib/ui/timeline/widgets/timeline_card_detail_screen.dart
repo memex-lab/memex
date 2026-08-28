@@ -61,7 +61,7 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
   bool _isLoading = true;
   String? _errorMessage;
   late final MemexRouter _memexRouter;
-  String _userName = 'User';
+  String _userName = '';
   String? _userAvatar;
   double? _firstImageAspectRatio;
   bool _showInsightText = true;
@@ -114,7 +114,7 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
     final settings = await _memexRouter.getCommentSettings();
     if (mounted) {
       setState(() {
-        _userName = name ?? 'User';
+        _userName = name ?? UserStorage.l10n.commentAuthorUser;
         _userAvatar = avatar;
         _showInsightText = settings.showInsightText;
       });
@@ -229,8 +229,9 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
     if (detail.insight.comments.isNotEmpty) {
       buffer.writeln('Comments:');
       for (final comment in detail.insight.comments) {
-        final authorName =
-            comment.isAi ? 'AI' : (comment.character?.name ?? 'User');
+        final authorName = comment.isAi
+            ? (comment.character?.name ?? UserStorage.l10n.commentAuthorAi)
+            : (comment.character?.name ?? UserStorage.l10n.commentAuthorUser);
         final time = formatLocalDateTimeWithZone(
           DateTime.fromMillisecondsSinceEpoch(comment.timestamp * 1000),
         );
@@ -809,8 +810,11 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
     // Other comments
     for (var comment in detail.insight.comments) {
       final isUser = !comment.isAi;
-      final commentName =
-          isUser ? _userName : (comment.character?.name ?? 'AI');
+      final displayUserName =
+          _userName.isNotEmpty ? _userName : UserStorage.l10n.commentAuthorUser;
+      final commentName = isUser
+          ? displayUserName
+          : (comment.character?.name ?? UserStorage.l10n.commentAuthorAi);
       commentWidgets.add(
         _buildShareSingleComment(
           characterId: isUser ? 'user' : comment.character?.id,
@@ -1408,17 +1412,24 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
     if (detail.insight.character != null) {
       commentNameMap['insight'] = detail.insight.character!.name;
     }
+    final displayUserName =
+        _userName.isNotEmpty ? _userName : UserStorage.l10n.commentAuthorUser;
     for (var comment in detail.insight.comments) {
       final isUser = !comment.isAi;
-      final name = isUser ? _userName : (comment.character?.name ?? 'AI');
+      final name = isUser
+          ? displayUserName
+          : (comment.character?.name ?? UserStorage.l10n.commentAuthorAi);
       commentNameMap[comment.id] = name;
     }
 
     // Add other comments
     for (var comment in detail.insight.comments) {
       final isUser = !comment.isAi;
-      final commentName =
-          isUser ? _userName : (comment.character?.name ?? 'AI');
+      final displayUserName =
+          _userName.isNotEmpty ? _userName : UserStorage.l10n.commentAuthorUser;
+      final commentName = isUser
+          ? displayUserName
+          : (comment.character?.name ?? UserStorage.l10n.commentAuthorAi);
       commentWidgets.add(
         Material(
           color: Colors.transparent,
