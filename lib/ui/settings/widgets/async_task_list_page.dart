@@ -5,6 +5,10 @@ import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/ui/core/themes/app_colors.dart';
 
+@visibleForTesting
+String asyncTaskLoadErrorMessage(Object error) =>
+    UserStorage.l10n.operationFailed('$error');
+
 class AsyncTaskListPage extends StatefulWidget {
   const AsyncTaskListPage({super.key});
 
@@ -70,7 +74,7 @@ class _AsyncTaskListPageState extends State<AsyncTaskListPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Load tasks failed: $e')),
+          SnackBar(content: Text(asyncTaskLoadErrorMessage(e))),
         );
       }
     } finally {
