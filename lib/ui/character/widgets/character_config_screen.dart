@@ -19,6 +19,12 @@ import 'package:memex/ui/core/widgets/back_button.dart';
 import 'package:memex/ui/core/themes/app_colors.dart';
 import 'package:memex/ui/core/widgets/local_image.dart';
 
+@visibleForTesting
+String characterImageImportFailureMessage(String? errorMessage) =>
+    UserStorage.l10n.operationFailed(
+      errorMessage ?? UserStorage.l10n.unknownError,
+    );
+
 /// AI character config screen. Receives [viewModel] from parent (Compass-style).
 class CharacterConfigScreen extends StatefulWidget {
   const CharacterConfigScreen({super.key, required this.viewModel});
@@ -449,8 +455,13 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
 
       final imported = await widget.viewModel.importImage(pickedPath);
       if (imported == null) {
-        throw StateError(
-            widget.viewModel.errorMessage ?? UserStorage.l10n.unknownError);
+        if (mounted) {
+          ToastHelper.showError(
+            context,
+            characterImageImportFailureMessage(widget.viewModel.errorMessage),
+          );
+        }
+        return null;
       }
       if (!mounted) return null;
       setState(() {
@@ -480,8 +491,13 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
 
       final imported = await widget.viewModel.importImage(picked.path);
       if (imported == null) {
-        throw StateError(
-            widget.viewModel.errorMessage ?? UserStorage.l10n.unknownError);
+        if (mounted) {
+          ToastHelper.showError(
+            context,
+            characterImageImportFailureMessage(widget.viewModel.errorMessage),
+          );
+        }
+        return;
       }
       if (!mounted) return;
       setState(() {
