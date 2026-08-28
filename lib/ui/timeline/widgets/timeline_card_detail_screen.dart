@@ -36,6 +36,10 @@ import 'package:memex/ui/character/view_models/persona_chat_viewmodel.dart';
 import 'package:memex/utils/share_service.dart';
 import 'package:memex/ui/core/cards/native_card_factory.dart';
 
+@visibleForTesting
+bool shouldShowCardAddress(String address) =>
+    address.isNotEmpty && address != 'Unknown';
+
 /// Timeline card detail screen - plays full card detail
 class TimelineCardDetailScreen extends StatefulWidget {
   final String cardId;
@@ -205,7 +209,7 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
     if (detail.tags.isNotEmpty) {
       buffer.writeln('Tags: ${detail.tags.join(', ')}');
     }
-    if (detail.address.isNotEmpty && detail.address != 'Unknown') {
+    if (shouldShowCardAddress(detail.address)) {
       buffer.writeln('Location: ${detail.address}');
     }
     if (detail.rawContent.isNotEmpty) {
@@ -515,8 +519,7 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                     mainAxisAlignment: MainAxisAlignment.end,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (_detail!.address.isNotEmpty &&
-                          _detail!.address != 'Unknown') ...[
+                      if (shouldShowCardAddress(_detail!.address)) ...[
                         const Icon(
                           Icons.location_on_outlined,
                           size: 14,
@@ -667,7 +670,7 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                 DateFormat('MM-dd').format(detail.timestamp),
                 style: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
               ),
-              if (detail.address.isNotEmpty && detail.address != 'Unknown') ...[
+              if (shouldShowCardAddress(detail.address)) ...[
                 const SizedBox(width: 6),
                 Text(
                   detail.address,
@@ -1156,7 +1159,8 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                                           ),
                                         ),
                                       ),
-                                      if (detail.address.isNotEmpty) ...[
+                                      if (shouldShowCardAddress(
+                                          detail.address)) ...[
                                         const SizedBox(width: 6),
                                         GestureDetector(
                                           onLongPress: _editLocation,
