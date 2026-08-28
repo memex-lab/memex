@@ -6,6 +6,17 @@ import 'package:memex/ui/memory/view_models/memory_viewmodel.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 
+@visibleForTesting
+String formatMemoryListDate(dynamic isoValue) {
+  if (isoValue == null) return '';
+  try {
+    final date = DateTime.parse(isoValue.toString()).toLocal();
+    return '${date.month}/${date.day} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+  } catch (_) {
+    return '';
+  }
+}
+
 /// Memory screen. Receives [viewModel] from parent (Compass-style).
 class MemoryScreen extends StatefulWidget {
   const MemoryScreen({super.key, required this.viewModel});
@@ -206,13 +217,5 @@ class _MemoryScreenState extends State<MemoryScreen> {
     );
   }
 
-  String _formatDate(dynamic isoValue) {
-    if (isoValue == null) return '';
-    try {
-      final date = DateTime.parse(isoValue.toString());
-      return '${date.month}/${date.day} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
-    } catch (_) {
-      return '';
-    }
-  }
+  String _formatDate(dynamic isoValue) => formatMemoryListDate(isoValue);
 }
