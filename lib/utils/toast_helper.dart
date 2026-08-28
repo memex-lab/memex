@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:memex/data/services/api_exception.dart';
+import 'package:memex/utils/user_storage.dart';
 
 /// Helper class for showing toast notifications
 class ToastHelper {
@@ -71,15 +72,6 @@ class ToastHelper {
   }
 
   static SnackBar _buildErrorSnackBar(dynamic error) {
-    String errorMessage = 'Operation failed, please try again later';
-    if (error is ApiException) {
-      errorMessage = error.message;
-    } else if (error is Exception) {
-      errorMessage = error.toString().replaceFirst('Exception: ', '');
-    } else {
-      errorMessage = error.toString();
-    }
-
     return SnackBar(
       content: Row(
         children: [
@@ -87,7 +79,7 @@ class ToastHelper {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              errorMessage,
+              formatErrorMessage(error),
               style: const TextStyle(color: Colors.white, fontSize: 14),
             ),
           ),
@@ -103,5 +95,21 @@ class ToastHelper {
       ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
     );
+  }
+
+  @visibleForTesting
+  static String formatErrorMessage(dynamic error) {
+    String errorMessage;
+    if (error is ApiException) {
+      errorMessage = error.message;
+    } else if (error is Exception) {
+      errorMessage = error.toString().replaceFirst('Exception: ', '');
+    } else {
+      errorMessage = error.toString();
+    }
+    if (errorMessage.trim().isEmpty) {
+      return UserStorage.l10n.unknownError;
+    }
+    return errorMessage;
   }
 }
