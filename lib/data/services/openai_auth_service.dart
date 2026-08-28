@@ -146,7 +146,7 @@ class OpenAiAuthService {
         }
 
         completer.completeError('No code found in callback');
-        return 'Invalid callback response. Missing code.';
+        return oauthMissingCodePage();
       });
 
       // 4. Launch In-App Browser (prevents the app from going to the background and being killed by the OS)

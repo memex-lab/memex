@@ -1,5 +1,8 @@
 import 'dart:io';
 import 'package:logging/logging.dart';
+import 'package:memex/utils/user_storage.dart';
+
+String oauthMissingCodePage() => UserStorage.l10n.unknownError;
 
 class LocalServerService {
   static final Logger _logger = Logger('LocalServerService');
