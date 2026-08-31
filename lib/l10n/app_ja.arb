@@ -255,6 +255,13 @@
   },
   "loadDetailFailedRetry": "詳細の読み込みに失敗しました。後でもう一度お試しください。",
   "loadFailed": "読み込みに失敗しました",
+  "@loadHistoryFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadHistoryFailed": "履歴の読み込みに失敗しました: {error}",
+
   "reload": "再読み込み",
   "aiInsightDetail": "インサイト詳細",
   "relatedRecordsCount": "関連記録（{count}）",
@@ -462,6 +469,17 @@
     }
   },
   "authorized": "認証済み",
+  "@authorizedAs": {
+    "placeholders": {
+      "email": {}
+    }
+  },
+  "authorizedAs": "{email} として認証しました",
+  "authorizedSuccessfully": "認証に成功しました",
+  "reAuthorize": "再認証",
+  "authorizeWithOpenAi": "OpenAI で認証",
+  "authorizeWithGoogle": "Google で認証",
+
   "config": "設定",
   "calendar": "カレンダー",
   "reminders": "リマインダー",

@@ -255,6 +255,13 @@
   },
   "loadDetailFailedRetry": "세부 정보를 불러오지 못했습니다. 나중에 다시 시도해 주세요.",
   "loadFailed": "불러오기 실패",
+  "@loadHistoryFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadHistoryFailed": "기록을 불러오지 못했습니다: {error}",
+
   "reload": "다시 불러오기",
   "aiInsightDetail": "인사이트 세부 정보",
   "relatedRecordsCount": "관련 기록({count})",
@@ -462,6 +469,17 @@
     }
   },
   "authorized": "인증됨",
+  "@authorizedAs": {
+    "placeholders": {
+      "email": {}
+    }
+  },
+  "authorizedAs": "{email}(으)로 인증됨",
+  "authorizedSuccessfully": "인증되었습니다",
+  "reAuthorize": "다시 인증",
+  "authorizeWithOpenAi": "OpenAI로 인증",
+  "authorizeWithGoogle": "Google로 인증",
+
   "config": "설정",
   "calendar": "캘린더",
   "reminders": "미리 알림",

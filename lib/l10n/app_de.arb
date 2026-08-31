@@ -255,6 +255,13 @@
   "retryCount": "Wiederholen: {count}",
   "loadDetailFailedRetry": "Beim Laden der Details ist ein Fehler aufgetreten. Bitte versuchen Sie es später noch einmal.",
   "loadFailed": "Das Laden ist fehlgeschlagen",
+  "@loadHistoryFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadHistoryFailed": "Verlauf konnte nicht geladen werden: {error}",
+
   "reload": "Neu laden",
   "aiInsightDetail": "Insight-Detail",
   "@relatedRecordsCount": {
@@ -462,6 +469,17 @@
   },
   "authFailed": "Authentifizierung fehlgeschlagen: {error}",
   "authorized": "Autorisiert",
+  "@authorizedAs": {
+    "placeholders": {
+      "email": {}
+    }
+  },
+  "authorizedAs": "Autorisiert als {email}",
+  "authorizedSuccessfully": "Erfolgreich autorisiert",
+  "reAuthorize": "Erneut autorisieren",
+  "authorizeWithOpenAi": "Mit OpenAI autorisieren",
+  "authorizeWithGoogle": "Mit Google autorisieren",
+
   "config": "Konfig",
   "calendar": "Kalender",
   "reminders": "Erinnerungen",
