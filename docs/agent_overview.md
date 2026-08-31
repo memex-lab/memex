@@ -1,5 +1,7 @@
 # Memex Agent 能力梳理
 
+中文 | [English](agent_overview.en.md)
+
 本文档基于当前代码整理 Memex 内置 Agent、宿主型 Agent、Prompt 和 Tools。它的目标不是做产品介绍，而是帮助继续深入理解每个 Agent 的职责边界、触发方式、Prompt 来源和工具写入范围。
 
 相关入口：
