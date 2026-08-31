@@ -16,7 +16,7 @@ class EventCard extends StatelessWidget {
     final startTime = parseLocalDateTime(data['start_time']);
     final endTime = parseLocalDateTime(data['end_time']);
 
-    final String title = data['title'] ?? 'Event';
+    final String title = data['title'] ?? UserStorage.l10n.eventCardDefaultTitle;
     final String? location = data['location'];
 
     final localeName = UserStorage.l10n.localeName;

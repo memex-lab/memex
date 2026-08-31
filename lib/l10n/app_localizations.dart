@@ -9,6 +9,7 @@ import 'app_localizations_ar.dart';
 import 'app_localizations_de.dart';
 import 'app_localizations_en.dart';
 import 'app_localizations_es.dart';
+import 'app_localizations_fa.dart';
 import 'app_localizations_fr.dart';
 import 'app_localizations_hi.dart';
 import 'app_localizations_id.dart';
@@ -109,6 +110,7 @@ abstract class AppLocalizations {
     Locale('de'),
     Locale('en'),
     Locale('es'),
+    Locale('fa'),
     Locale('fr'),
     Locale('hi'),
     Locale('id'),
@@ -5845,6 +5847,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You'**
   String get commentReplyToYou;
+
+  /// No description provided for @commentAuthorUser.
+  ///
+  /// In en, this message translates to:
+  /// **'User'**
+  String get commentAuthorUser;
+
+  /// No description provided for @commentAuthorAi.
+  ///
+  /// In en, this message translates to:
+  /// **'AI'**
+  String get commentAuthorAi;
+
+  /// No description provided for @authorizationCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Authorization cancelled'**
+  String get authorizationCancelled;
+
+  /// No description provided for @timelineWeekNumberLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Week {week}'**
+  String timelineWeekNumberLabel(Object week);
+
+  /// No description provided for @timelineWeekLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Week'**
+  String get timelineWeekLabel;
+
+  /// No description provided for @eventCardDefaultTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Event'**
+  String get eventCardDefaultTitle;
+
+  /// No description provided for @memoryNoLongTermYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No long-term memories yet.'**
+  String get memoryNoLongTermYet;
+
+  /// No description provided for @memoryNoRecentBuffer.
+  ///
+  /// In en, this message translates to:
+  /// **'No recent memories in buffer.'**
+  String get memoryNoRecentBuffer;
+
+  /// No description provided for @memoryGeneralSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'General'**
+  String get memoryGeneralSubject;
 }
 
 class _AppLocalizationsDelegate
@@ -5862,6 +5918,7 @@ class _AppLocalizationsDelegate
         'de',
         'en',
         'es',
+        'fa',
         'fr',
         'hi',
         'id',
@@ -5900,6 +5957,8 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
       return AppLocalizationsEn();
     case 'es':
       return AppLocalizationsEs();
+    case 'fa':
+      return AppLocalizationsFa();
     case 'fr':
       return AppLocalizationsFr();
     case 'hi':

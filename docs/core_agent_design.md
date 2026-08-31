@@ -1,5 +1,7 @@
 # Memex 核心 Agent 全量设计
 
+中文 | [English](core_agent_design.en.md)
+
 本文档整理当前 Memex 核心 Agent 的设计意图、触发方式、Prompt 结构、Tools、状态管理、数据写入边界和可改进点。
 
 配套文档：

@@ -1483,5 +1483,19 @@
   "loginFailed": "Login gagal",
   "paymentCreationFailed": "Tidak bisa memulai pembayaran",
   "completePayment": "Selesaikan pembayaran",
-  "commentReplyToYou": "Anda"
+  "commentReplyToYou": "Anda",
+  "commentAuthorUser": "Pengguna",
+  "commentAuthorAi": "AI",
+  "authorizationCancelled": "Otorisasi dibatalkan",
+  "timelineWeekNumberLabel": "Minggu {week}",
+  "timelineWeekLabel": "Minggu",
+  "eventCardDefaultTitle": "Acara",
+  "memoryNoLongTermYet": "Belum ada memori jangka panjang.",
+  "memoryNoRecentBuffer": "Tidak ada memori terbaru di buffer.",
+  "memoryGeneralSubject": "Umum",
+  "@timelineWeekNumberLabel": {
+    "placeholders": {
+      "week": {}
+    }
+  }
 }

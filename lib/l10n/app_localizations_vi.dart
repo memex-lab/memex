@@ -3234,4 +3234,33 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get commentReplyToYou => 'Bạn';
+
+  @override
+  String get commentAuthorUser => 'Người dùng';
+
+  @override
+  String get commentAuthorAi => 'AI';
+
+  @override
+  String get authorizationCancelled => 'Đã hủy ủy quyền';
+
+  @override
+  String timelineWeekNumberLabel(Object week) {
+    return 'Tuần $week';
+  }
+
+  @override
+  String get timelineWeekLabel => 'Tuần';
+
+  @override
+  String get eventCardDefaultTitle => 'Sự kiện';
+
+  @override
+  String get memoryNoLongTermYet => 'Chưa có ký ức dài hạn.';
+
+  @override
+  String get memoryNoRecentBuffer => 'Không có ký ức gần đây trong bộ đệm.';
+
+  @override
+  String get memoryGeneralSubject => 'Chung';
 }

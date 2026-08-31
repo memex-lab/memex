@@ -102,6 +102,13 @@ const List<SupportedLanguage> supportedLanguages = <SupportedLanguage>[
     shortLabel: 'ID',
   ),
   SupportedLanguage(
+    locale: Locale('fa'),
+    localeTag: 'fa',
+    nativeName: 'فارسی',
+    englishName: 'Persian',
+    shortLabel: 'FA',
+  ),
+  SupportedLanguage(
     locale: Locale('vi'),
     localeTag: 'vi',
     nativeName: 'Tiếng Việt',
@@ -130,6 +137,7 @@ const List<Locale> supportedLanguageLocales = <Locale>[
   Locale('pt'),
   Locale('fr'),
   Locale('id'),
+  Locale('fa'),
   Locale('vi'),
   Locale('ru'),
 ];
@@ -147,6 +155,7 @@ const List<String> supportedLanguageTags = <String>[
   'pt',
   'fr',
   'id',
+  'fa',
   'vi',
   'ru',
 ];

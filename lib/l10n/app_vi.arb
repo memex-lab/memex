@@ -1483,5 +1483,19 @@
   "loginFailed": "Đăng nhập thất bại",
   "paymentCreationFailed": "Không thể bắt đầu thanh toán",
   "completePayment": "Hoàn tất thanh toán",
-  "commentReplyToYou": "Bạn"
+  "commentReplyToYou": "Bạn",
+  "commentAuthorUser": "Người dùng",
+  "commentAuthorAi": "AI",
+  "authorizationCancelled": "Đã hủy ủy quyền",
+  "@timelineWeekNumberLabel": {
+    "placeholders": {
+      "week": {}
+    }
+  },
+  "timelineWeekNumberLabel": "Tuần {week}",
+  "timelineWeekLabel": "Tuần",
+  "eventCardDefaultTitle": "Sự kiện",
+  "memoryNoLongTermYet": "Chưa có ký ức dài hạn.",
+  "memoryNoRecentBuffer": "Không có ký ức gần đây trong bộ đệm.",
+  "memoryGeneralSubject": "Chung"
 }

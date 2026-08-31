@@ -3167,4 +3167,33 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get commentReplyToYou => 'あなた';
+
+  @override
+  String get commentAuthorUser => 'ユーザー';
+
+  @override
+  String get commentAuthorAi => 'AI';
+
+  @override
+  String get authorizationCancelled => '認可がキャンセルされました';
+
+  @override
+  String timelineWeekNumberLabel(Object week) {
+    return '第$week週';
+  }
+
+  @override
+  String get timelineWeekLabel => '週';
+
+  @override
+  String get eventCardDefaultTitle => 'イベント';
+
+  @override
+  String get memoryNoLongTermYet => '長期記憶はまだありません。';
+
+  @override
+  String get memoryNoRecentBuffer => 'バッファに最近の記憶はありません。';
+
+  @override
+  String get memoryGeneralSubject => '一般';
 }
