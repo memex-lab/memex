@@ -36,10 +36,7 @@ scrolls.
 
 ## Verification
 
-- Focused suite: 58 tests passed.
-- Full suite: 907 passed, 5 skipped, 3 unrelated existing widget tests failed:
-  two stale `FilledButton("Save")` finders in
-  `location_context_settings_page_test.dart`, and one stale active-download
-  finder in `early_update_settings_card_test.dart`.
+- Focused suite: 62 tests passed.
+- Full suite: 920 passed, 5 skipped.
 - Static analysis: no errors or warnings in changed files. The repository-wide
   analysis still reports pre-existing informational lints outside this feature.

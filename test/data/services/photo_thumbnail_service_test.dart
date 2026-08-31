@@ -13,7 +13,7 @@ void main() {
         height: 100,
       );
 
-  test('uses an iOS delivery mode that completes with photo_manager', () {
+  test('uses a cancellable single-result iOS delivery mode', () {
     final option = buildPhotoThumbnailOption(
       const ThumbnailSize.square(200),
       isApplePlatform: true,
@@ -21,7 +21,7 @@ void main() {
 
     expect(
       option.toMap()['deliveryMode'],
-      DeliveryMode.opportunistic.index,
+      DeliveryMode.highQualityFormat.index,
     );
     expect(option.toMap()['resizeMode'], ResizeMode.fast.index);
     expect(

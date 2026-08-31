@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -15,13 +16,50 @@ import 'package:memex/data/repositories/memex_router.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
 
-/// Cooperative cancellation for expensive recent-photo analysis.
+/// Cancellation for expensive recent-photo analysis and its native requests.
 class PhotoSuggestionCancellationToken {
+  PhotoSuggestionCancellationToken({
+    Future<void> Function(PMCancelToken)? cancelRequest,
+  }) : _cancelRequest = cancelRequest ?? _cancelNativeRequest;
+
   bool _isCancelled = false;
+  final Future<void> Function(PMCancelToken) _cancelRequest;
+  final Set<PMCancelToken> _nativeRequests = {};
 
   bool get isCancelled => _isCancelled;
 
-  void cancel() => _isCancelled = true;
+  bool registerNativeRequest(PMCancelToken token) {
+    if (_isCancelled) {
+      _cancel(token);
+      return false;
+    }
+    _nativeRequests.add(token);
+    return true;
+  }
+
+  void unregisterNativeRequest(PMCancelToken token) {
+    _nativeRequests.remove(token);
+  }
+
+  void cancel() {
+    if (_isCancelled) return;
+    _isCancelled = true;
+    final requests = _nativeRequests.toList(growable: false);
+    _nativeRequests.clear();
+    for (final request in requests) {
+      _cancel(request);
+    }
+  }
+
+  void _cancel(PMCancelToken token) {
+    unawaited(
+      Future<void>.sync(() => _cancelRequest(token)).catchError((_) {}),
+    );
+  }
+
+  static Future<void> _cancelNativeRequest(PMCancelToken token) {
+    return token.cancelRequest();
+  }
 }
 
 /// Photo suggestion service (album images)
@@ -207,14 +245,38 @@ class PhotoSuggestionService {
   }
 
   /// Convert AssetEntity to XFile (for upload). Use originFile to preserve GPS/EXIF.
-  static Future<XFile?> assetToXFile(AssetEntity asset) async {
+  static Future<XFile?> assetToXFile(
+    AssetEntity asset, {
+    PhotoSuggestionCancellationToken? cancellationToken,
+  }) async {
     try {
+      if (cancellationToken?.isCancelled == true) return null;
+
+      // Suggestion analysis must never start an uninterruptible iCloud
+      // original download while the user is opening the picker. Explicit user
+      // selections do not pass a cancellation token and retain the old
+      // download-on-demand behavior.
+      if (cancellationToken != null && (Platform.isIOS || Platform.isMacOS)) {
+        final locallyAvailable = await asset.isLocallyAvailable(isOrigin: true);
+        if (cancellationToken.isCancelled || !locallyAvailable) return null;
+      }
+
       // originFile keeps full EXIF (including GPS); file may lose metadata
-      final file = await asset.originFile;
+      final file = await _loadAssetFile(
+        asset,
+        isOrigin: true,
+        cancellationToken: cancellationToken,
+      );
+      if (cancellationToken?.isCancelled == true) return null;
       if (file == null) {
         _logger.warning('originFile is null, falling back to file');
         // Fallback to file if originFile fails
-        final fallbackFile = await asset.file;
+        final fallbackFile = await _loadAssetFile(
+          asset,
+          isOrigin: false,
+          cancellationToken: cancellationToken,
+        );
+        if (cancellationToken?.isCancelled == true) return null;
         if (fallbackFile == null) {
           return null;
         }
@@ -222,8 +284,33 @@ class PhotoSuggestionService {
       }
       return XFile(file.path);
     } catch (e) {
+      if (cancellationToken?.isCancelled == true) return null;
       _logger.severe('Failed to convert AssetEntity to XFile: $e', e);
       return null;
+    }
+  }
+
+  static Future<File?> _loadAssetFile(
+    AssetEntity asset, {
+    required bool isOrigin,
+    PhotoSuggestionCancellationToken? cancellationToken,
+  }) async {
+    if (cancellationToken == null) {
+      return isOrigin ? asset.originFile : asset.file;
+    }
+    if (cancellationToken.isCancelled) return null;
+
+    final nativeToken = PMCancelToken(
+      debugLabel: 'photo-suggestion-${asset.id}',
+    );
+    if (!cancellationToken.registerNativeRequest(nativeToken)) return null;
+    try {
+      return await asset.loadFile(
+        isOrigin: isOrigin,
+        cancelToken: nativeToken,
+      );
+    } finally {
+      cancellationToken.unregisterNativeRequest(nativeToken);
     }
   }
 
@@ -251,7 +338,10 @@ class PhotoSuggestionService {
         })> photoInfoList = [];
     for (final asset in recentPhotos) {
       if (cancellationToken?.isCancelled == true) return [];
-      final xFile = await assetToXFile(asset);
+      final xFile = await assetToXFile(
+        asset,
+        cancellationToken: cancellationToken,
+      );
       if (cancellationToken?.isCancelled == true) return [];
       if (xFile == null) continue;
 

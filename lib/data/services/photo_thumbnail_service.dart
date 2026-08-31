@@ -19,9 +19,9 @@ typedef PhotoThumbnailCanceller = Future<void> Function(
 /// Builds a PhotoKit-compatible thumbnail request.
 ///
 /// `photo_manager` waits for a non-degraded PhotoKit result before completing
-/// the Dart future. `fastFormat` can return only a degraded image, leaving the
-/// request unresolved until our timeout. Opportunistic delivery can return a
-/// quick degraded frame followed by the final thumbnail the plugin expects.
+/// the Dart future. Its current Apple implementation drops the cancel-token
+/// mapping when opportunistic delivery emits a degraded frame, so use a single
+/// final result to keep the native request cancellable for its whole lifetime.
 @visibleForTesting
 ThumbnailOption buildPhotoThumbnailOption(
   ThumbnailSize size, {
@@ -30,7 +30,7 @@ ThumbnailOption buildPhotoThumbnailOption(
   if (!isApplePlatform) return ThumbnailOption(size: size);
   return ThumbnailOption.ios(
     size: size,
-    deliveryMode: DeliveryMode.opportunistic,
+    deliveryMode: DeliveryMode.highQualityFormat,
     resizeMode: ResizeMode.fast,
     resizeContentMode: ResizeContentMode.fill,
   );
