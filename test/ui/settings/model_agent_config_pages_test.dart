@@ -7,6 +7,7 @@ import 'package:memex/domain/models/agent_definitions.dart';
 import 'package:memex/domain/models/llm_config.dart';
 import 'package:memex/data/services/local_asset_server.dart';
 import 'package:memex/ui/settings/widgets/agent_config_list_page.dart';
+import 'package:memex/ui/settings/widgets/model_config_edit_page.dart';
 import 'package:memex/ui/settings/widgets/model_config_list_page.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -83,6 +84,72 @@ void main() {
       find.text(UserStorage.l10n.modelSetAsDefault(customDefault.modelId)),
       findsOneWidget,
     );
+    await stopLocalAssetServer(tester);
+  });
+
+  testWidgets('model config page exposes a prominent add action', (
+    tester,
+  ) async {
+    await pumpSettingsPage(tester, const ModelConfigListPage());
+
+    final addAction = find.byKey(
+      const ValueKey('add-model-config-button'),
+    );
+    expect(addAction, findsOneWidget);
+    expect(find.text(UserStorage.l10n.addConfiguration), findsOneWidget);
+    expect(find.byType(FloatingActionButton), findsNothing);
+    expect(tester.getSize(addAction).width, greaterThan(500));
+
+    await tester.tap(addAction);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ModelConfigEditPage), findsOneWidget);
+    await stopLocalAssetServer(tester);
+  });
+
+  testWidgets('agent model assignments stay collapsed but remain reachable', (
+    tester,
+  ) async {
+    await pumpSettingsPage(tester, const ModelConfigListPage());
+
+    final advancedSettings = find.byKey(
+      const ValueKey('advanced-agent-model-settings'),
+    );
+    expect(advancedSettings, findsOneWidget);
+    expect(find.text(UserStorage.l10n.advancedSettings), findsOneWidget);
+    expect(
+      find.text(UserStorage.l10n.aiSetupAdvancedCustomizationDescription),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const ValueKey('agent-model-assignments-action')),
+      findsNothing,
+    );
+
+    await tester.tap(advancedSettings);
+    await tester.pumpAndSettle();
+
+    final assignmentsAction = find.byKey(
+      const ValueKey('agent-model-assignments-action'),
+    );
+    expect(assignmentsAction, findsOneWidget);
+    expect(
+      find.text(UserStorage.l10n.aiSetupAdvancedCustomizationDescription),
+      findsOneWidget,
+    );
+    final advancedTheme = tester.widget<Theme>(
+      find.byKey(const ValueKey('advanced-agent-model-settings-theme')),
+    );
+    expect(advancedTheme.data.dividerColor, Colors.transparent);
+    final expandedTile = tester.widget<ExpansionTile>(advancedSettings);
+    expect(
+      (expandedTile.shape! as RoundedRectangleBorder).side,
+      BorderSide.none,
+    );
+    await tester.tap(assignmentsAction);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AgentConfigListPage), findsOneWidget);
     await stopLocalAssetServer(tester);
   });
 

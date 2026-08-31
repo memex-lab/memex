@@ -880,11 +880,11 @@ class AppLocalizationsRu extends AppLocalizations {
       'Выберите один способ подключения, чтобы включить AI-организацию записей, медиа и инсайтов.';
 
   @override
-  String get aiSetupStatusMemexTitle => 'Используется официальный сервис MemeX';
+  String get aiSetupStatusMemexTitle => 'Используется официальный сервис Memex';
 
   @override
   String get aiSetupStatusMemexDescription =>
-      'Memex будет использовать официальное подключение и API-учетные данные, управляемые вашим аккаунтом MemeX.';
+      'Memex будет использовать официальное подключение и API-учетные данные, управляемые вашим аккаунтом Memex.';
 
   @override
   String get aiSetupStatusCustomTitle =>
@@ -903,11 +903,11 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get aiSetupOfficialRouteDescription =>
-      'Войдите в MemeX и используйте официальный сервис без выбора провайдеров, ключей или моделей уровня агента.';
+      'Войдите в Memex, чтобы использовать официальный ИИ-сервис.';
 
   @override
   String get aiSetupCustomRouteDescription =>
-      'Добавьте учетные данные своего провайдера, выберите модель для Super Agent и при необходимости переопределите модели по агентам.';
+      'Добавьте своего провайдера и API-ключ.';
 
   @override
   String get aiSetupCustomPageTitle => 'Свой AI-сервис';

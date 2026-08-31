@@ -884,11 +884,11 @@ class AppLocalizationsEs extends AppLocalizations {
       'Elige un método de conexión para activar la organización por IA de registros, medios e insights.';
 
   @override
-  String get aiSetupStatusMemexTitle => 'Usando el servicio oficial de MemeX';
+  String get aiSetupStatusMemexTitle => 'Usando el servicio oficial de Memex';
 
   @override
   String get aiSetupStatusMemexDescription =>
-      'Memex usará la conexión oficial y las credenciales de API administradas por tu cuenta de MemeX.';
+      'Memex usará la conexión oficial y las credenciales de API administradas por tu cuenta de Memex.';
 
   @override
   String get aiSetupStatusCustomTitle =>
@@ -907,11 +907,11 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get aiSetupOfficialRouteDescription =>
-      'Inicia sesión en MemeX y usa el servicio oficial sin elegir proveedores, claves ni modelos por Agent.';
+      'Inicia sesión en Memex para usar el servicio oficial de IA.';
 
   @override
   String get aiSetupCustomRouteDescription =>
-      'Añade tus propias credenciales de proveedor, elige el modelo que debe usar Super Agent y, opcionalmente, sobrescribe modelos por Agent.';
+      'Añade tu propio proveedor y clave API.';
 
   @override
   String get aiSetupCustomPageTitle => 'Servicio de IA personalizado';

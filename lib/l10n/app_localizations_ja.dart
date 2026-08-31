@@ -854,11 +854,11 @@ class AppLocalizationsJa extends AppLocalizations {
       '記録、メディア、インサイトの AI 整理を有効にするには、接続方法を選択してください。';
 
   @override
-  String get aiSetupStatusMemexTitle => 'MemeX 公式サービスを使用中';
+  String get aiSetupStatusMemexTitle => 'Memex 公式サービスを使用中';
 
   @override
   String get aiSetupStatusMemexDescription =>
-      'Memex は、MemeX アカウントで管理される公式接続と API 認証情報を使用します。';
+      'Memex は、Memex アカウントで管理される公式接続と API 認証情報を使用します。';
 
   @override
   String get aiSetupStatusCustomTitle => 'カスタムプロバイダー設定を使用中';
@@ -876,11 +876,10 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get aiSetupOfficialRouteDescription =>
-      'MemeX にサインインし、プロバイダー、キー、エージェント単位のモデルを選ばずに公式サービスを使用します。';
+      'Memex にサインインして公式 AI サービスを利用します。';
 
   @override
-  String get aiSetupCustomRouteDescription =>
-      '自分のプロバイダー認証情報を追加し、スーパーエージェントが使用するモデルを選び、必要に応じて エージェントごとのモデルを上書きします。';
+  String get aiSetupCustomRouteDescription => '自分のプロバイダーと API キーを追加します。';
 
   @override
   String get aiSetupCustomPageTitle => 'カスタム AI サービス';

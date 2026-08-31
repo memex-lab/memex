@@ -5,7 +5,6 @@ import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/data/services/settings_registry.dart';
 import 'package:memex/domain/models/llm_config.dart';
 import 'package:memex/ui/settings/view_models/ai_service_setup_viewmodel.dart';
-import 'package:memex/ui/settings/widgets/agent_config_list_page.dart';
 import 'package:memex/ui/settings/widgets/ai_service_setup_page.dart';
 import 'package:memex/ui/settings/widgets/model_config_edit_page.dart';
 import 'package:memex/ui/settings/widgets/model_config_list_page.dart';
@@ -45,6 +44,12 @@ void main() {
       find.byKey(const ValueKey('ai-service-custom-route-card')),
       findsOneWidget,
     );
+    expect(
+      find.text(UserStorage.l10n.aiSetupCustomRouteDescription),
+      findsOneWidget,
+    );
+    expect(find.textContaining('Super Agent'), findsNothing);
+    expect(find.textContaining('单个 Agent'), findsNothing);
     expect(find.text(UserStorage.l10n.modelRolesTitle), findsNothing);
     expect(find.text(UserStorage.l10n.textModelRoleTitle), findsNothing);
     expect(
@@ -52,6 +57,63 @@ void main() {
       findsNothing,
     );
     expect(find.text(UserStorage.l10n.memexUsername), findsNothing);
+  });
+
+  testWidgets('current setup shows only the active config name', (
+    tester,
+  ) async {
+    const activeConfig = LLMConfig(
+      key: 'daily-driver',
+      type: LLMConfig.typeDeepSeek,
+      modelId: 'deepseek-v4-flash',
+      apiKey: 'sk-test',
+      baseUrl: 'https://api.deepseek.com',
+    );
+    await UserStorage.saveLLMConfigs([
+      LLMConfig.createDefaultClientConfig(),
+      activeConfig,
+    ]);
+    await UserStorage.setDefaultLLMConfigKey(activeConfig.key);
+
+    await _pumpPage(tester, const AiServiceSetupPage());
+
+    expect(find.text(activeConfig.key), findsOneWidget);
+    expect(find.textContaining(activeConfig.modelId), findsNothing);
+    expect(
+      find.text(UserStorage.l10n.aiSetupStatusCustomTitle),
+      findsNothing,
+    );
+    expect(
+      find.text(UserStorage.l10n.aiSetupStatusCustomDescription),
+      findsNothing,
+    );
+  });
+
+  testWidgets('current setup names the Memex official connection', (
+    tester,
+  ) async {
+    const memexConfig = LLMConfig(
+      key: LLMConfig.defaultClientKey,
+      type: LLMConfig.typeMemex,
+      modelId: 'memex-fast',
+      apiKey: 'memex-key',
+      baseUrl: 'https://memex.example/v1',
+    );
+    await UserStorage.saveLLMConfigs([memexConfig]);
+    await UserStorage.setDefaultLLMConfigKey(memexConfig.key);
+
+    await _pumpPage(tester, const AiServiceSetupPage());
+
+    expect(
+      find.text(UserStorage.l10n.aiSetupStatusMemexTitle),
+      findsOneWidget,
+    );
+    expect(find.text(memexConfig.key), findsNothing);
+    expect(find.textContaining(memexConfig.modelId), findsNothing);
+    expect(
+      find.text(UserStorage.l10n.aiSetupStatusMemexDescription),
+      findsNothing,
+    );
   });
 
   testWidgets('settings registry model config entry opens AI model hub', (
@@ -89,6 +151,8 @@ void main() {
     tester,
   ) async {
     await _pumpPage(tester, const AiServiceSetupPage());
+
+    expect(find.textContaining('MemeX'), findsNothing);
 
     await _tapByKey(tester, const ValueKey('ai-service-official-route-card'));
 
@@ -141,150 +205,88 @@ void main() {
     expect(memexConfig.baseUrl, 'https://memex.example/v1');
   });
 
-  testWidgets('custom route groups provider roles capabilities and advanced', (
+  testWidgets('first custom setup opens the compact model editor directly', (
     tester,
   ) async {
-    await _pumpCustomPage(tester);
+    await _pumpPage(tester, const AiServiceSetupPage());
 
-    expect(find.byType(CustomAiServiceSetupPage), findsOneWidget);
-    expect(find.text(UserStorage.l10n.aiSetupProviderCredentialsTitle),
-        findsOneWidget);
-    expect(find.text(UserStorage.l10n.modelRolesTitle), findsOneWidget);
-    expect(find.text(UserStorage.l10n.textModelRoleTitle), findsOneWidget);
-    expect(
-      find.byKey(const ValueKey('ai-model-vision-slot')),
-      findsNothing,
-    );
-    expect(find.text(UserStorage.l10n.aiSetupServiceCapabilitiesTitle),
-        findsOneWidget);
-    expect(
-        find.text(UserStorage.l10n.locationProviderSettings), findsOneWidget);
-    expect(find.text(UserStorage.l10n.speechProviderSettings), findsOneWidget);
-    await _scrollUntilVisible(
-      tester,
-      find.text(UserStorage.l10n.aiSetupAdvancedCustomizationTitle),
-    );
-    expect(
-      find.text(UserStorage.l10n.aiSetupAdvancedCustomizationTitle),
-      findsOneWidget,
-    );
-    expect(
-      find.text(UserStorage.l10n.advancedAgentModelAssignments),
-      findsOneWidget,
-    );
-    expect(find.text(UserStorage.l10n.aiServiceMemexRouteTitle), findsNothing);
-  });
-
-  testWidgets('model role selector updates the primary model', (
-    tester,
-  ) async {
-    const textConfig = LLMConfig(
-      key: 'text-fast',
-      type: LLMConfig.typeDeepSeek,
-      modelId: 'deepseek-v4-flash',
-      apiKey: 'sk-text',
-      baseUrl: 'https://api.deepseek.com',
-    );
-    const otherConfig = LLMConfig(
-      key: 'other-main',
-      type: LLMConfig.typeChatCompletion,
-      modelId: 'gpt-5.4',
-      apiKey: 'sk-other',
-      baseUrl: 'https://api.openai.com/v1',
-    );
-    await UserStorage.saveLLMConfigs([
-      LLMConfig.createDefaultClientConfig(),
-      textConfig,
-      otherConfig,
-    ]);
-
-    await _pumpCustomPage(tester);
-
-    final textDropdown = find.byKey(
-      const ValueKey('ai-model-text-slot-dropdown'),
-    );
-    await tester.ensureVisible(textDropdown);
-    await tester.tap(textDropdown);
-    await tester.pumpAndSettle();
-    await tester.tap(find.textContaining(textConfig.key).last);
-    await tester.pumpAndSettle();
-
-    expect(await UserStorage.getDefaultLLMConfigKey(), textConfig.key);
-  });
-
-  testWidgets('custom route does not expose a separate vision model slot', (
-    tester,
-  ) async {
-    const textOnlyConfig = LLMConfig(
-      key: 'text-only',
-      type: LLMConfig.typeDeepSeek,
-      modelId: 'deepseek-v4-flash',
-      apiKey: 'sk-text',
-      baseUrl: 'https://api.deepseek.com',
-    );
-    await UserStorage.saveLLMConfigs([
-      LLMConfig.createDefaultClientConfig(),
-      textOnlyConfig,
-    ]);
-
-    await _pumpCustomPage(tester);
-
-    expect(
-      find.byKey(const ValueKey('ai-model-text-slot-dropdown')),
-      findsOneWidget,
-    );
-    expect(
-      find.byKey(const ValueKey('ai-model-vision-slot-dropdown')),
-      findsNothing,
-    );
-  });
-
-  testWidgets('speech transcription switch persists the local setting', (
-    tester,
-  ) async {
-    await UserStorage.setUseLocalSpeechToText(true);
-    await _pumpCustomPage(tester);
-
-    final speechSwitch = find.byKey(
-      const ValueKey('ai-service-speech-local-switch'),
-    );
-    await _centerFinder(tester, speechSwitch);
-    expect(speechSwitch, findsOneWidget);
-    await tester.tap(speechSwitch);
-    await tester.pumpAndSettle();
-
-    expect(await UserStorage.getUseLocalSpeechToText(), isFalse);
-  });
-
-  testWidgets('custom provider action opens model configuration', (
-    tester,
-  ) async {
-    await _pumpCustomPage(tester);
-
-    final customModelAction = find.byKey(
-      const ValueKey('ai-model-custom-config-button'),
-    );
-    await _centerFinder(tester, customModelAction);
-    await tester.tap(customModelAction);
-    await tester.pumpAndSettle();
+    await _tapByKey(tester, const ValueKey('ai-service-custom-route-card'));
 
     expect(find.byType(ModelConfigEditPage), findsOneWidget);
     expect(find.byType(ModelConfigListPage), findsNothing);
     expect(find.text(UserStorage.l10n.keyIdLabel), findsNothing);
+    expect(find.text(UserStorage.l10n.baseUrlLabel), findsNothing);
+    expect(find.byIcon(Icons.save), findsNothing);
+    expect(
+      find.byKey(const ValueKey('model_config_bottom_save_button')),
+      findsOneWidget,
+    );
+    expect(find.text(UserStorage.l10n.modelRolesTitle), findsNothing);
+    expect(
+      find.text(UserStorage.l10n.locationProviderSettings),
+      findsNothing,
+    );
+    expect(find.text(UserStorage.l10n.speechProviderSettings), findsNothing);
+    expect(
+      find.text(UserStorage.l10n.advancedAgentModelAssignments),
+      findsNothing,
+    );
   });
 
-  testWidgets('advanced model routing opens agent assignments', (
+  testWidgets('one valid custom model opens that model directly', (
     tester,
   ) async {
-    await _pumpCustomPage(tester);
+    const customConfig = LLMConfig(
+      key: 'custom-openai',
+      type: LLMConfig.typeChatCompletion,
+      modelId: 'gpt-5.4',
+      apiKey: 'sk-test',
+      baseUrl: 'https://api.openai.com/v1',
+    );
+    await UserStorage.saveLLMConfigs([
+      LLMConfig.createDefaultClientConfig(),
+      customConfig,
+    ]);
+    await _pumpPage(tester, const AiServiceSetupPage());
 
-    final agentAssignments =
-        find.text(UserStorage.l10n.advancedAgentModelAssignments);
-    await _scrollUntilVisible(tester, agentAssignments);
-    await tester.tap(agentAssignments);
-    await tester.pumpAndSettle();
+    await _tapByKey(tester, const ValueKey('ai-service-custom-route-card'));
 
-    expect(find.byType(AgentConfigListPage), findsOneWidget);
+    expect(find.byType(ModelConfigEditPage), findsOneWidget);
+    expect(find.byType(ModelConfigListPage), findsNothing);
+    expect(find.text(customConfig.modelId), findsOneWidget);
+    expect(find.text(UserStorage.l10n.keyIdLabel), findsNothing);
+  });
+
+  testWidgets('multiple valid custom models open the model list', (
+    tester,
+  ) async {
+    const firstConfig = LLMConfig(
+      key: 'custom-openai',
+      type: LLMConfig.typeChatCompletion,
+      modelId: 'gpt-5.4',
+      apiKey: 'sk-openai',
+      baseUrl: 'https://api.openai.com/v1',
+    );
+    const secondConfig = LLMConfig(
+      key: 'custom-deepseek',
+      type: LLMConfig.typeDeepSeek,
+      modelId: 'deepseek-v4-flash',
+      apiKey: 'sk-deepseek',
+      baseUrl: 'https://api.deepseek.com',
+    );
+    await UserStorage.saveLLMConfigs([
+      LLMConfig.createDefaultClientConfig(),
+      firstConfig,
+      secondConfig,
+    ]);
+    await _pumpPage(tester, const AiServiceSetupPage());
+
+    await _tapByKey(tester, const ValueKey('ai-service-custom-route-card'));
+
+    expect(find.byType(ModelConfigListPage), findsOneWidget);
+    expect(find.byType(ModelConfigEditPage), findsNothing);
+    expect(find.text(firstConfig.key), findsOneWidget);
+    expect(find.text(secondConfig.key), findsOneWidget);
   });
 
   testWidgets('onboarding skip completes without saving credentials', (
@@ -335,28 +337,16 @@ void main() {
     );
 
     await _tapByKey(tester, const ValueKey('ai-service-custom-route-card'));
-
-    final customModelAction = find.byKey(
-      const ValueKey('ai-model-custom-config-button'),
+    expect(find.byType(ModelConfigEditPage), findsOneWidget);
+    await tester.tap(
+      find.byKey(const ValueKey('model_config_bottom_save_button')),
     );
-    await _centerFinder(tester, customModelAction);
-    await tester.tap(customModelAction);
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text(customConfig.key));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.save));
     await tester.pumpAndSettle();
 
     expect(completed, isTrue);
     expect(find.byType(ModelConfigListPage), findsNothing);
+    expect(await UserStorage.getDefaultLLMConfigKey(), customConfig.key);
   });
-}
-
-Future<void> _pumpCustomPage(WidgetTester tester) async {
-  await _pumpPage(tester, const AiServiceSetupPage());
-  await _tapByKey(tester, const ValueKey('ai-service-custom-route-card'));
-  expect(find.byType(CustomAiServiceSetupPage), findsOneWidget);
 }
 
 Future<void> _pumpPage(WidgetTester tester, Widget page) async {
@@ -375,15 +365,6 @@ Future<void> _tapByKey(WidgetTester tester, Key key) async {
   final finder = find.byKey(key);
   await _centerFinder(tester, finder);
   await tester.tap(finder);
-  await tester.pumpAndSettle();
-}
-
-Future<void> _scrollUntilVisible(WidgetTester tester, Finder finder) async {
-  await tester.scrollUntilVisible(
-    finder,
-    240,
-    scrollable: find.byType(Scrollable).last,
-  );
   await tester.pumpAndSettle();
 }
 

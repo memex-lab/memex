@@ -209,4 +209,48 @@ void main() {
       expect(find.text('deepseek-v4-flash'), findsOneWidget);
     });
   });
+
+  group('ModelConfigEditPage simple setup mode', () {
+    testWidgets('hides the internal key and generates one when saved', (
+      tester,
+    ) async {
+      final defaultConfig = LLMConfig.createDefaultClientConfig();
+      const setupConfig = LLMConfig(
+        key: '',
+        type: LLMConfig.typeDeepSeek,
+        modelId: 'deepseek-v4-flash',
+        apiKey: 'sk-test',
+        baseUrl: 'https://api.deepseek.com',
+      );
+      await UserStorage.saveLLMConfigs([defaultConfig]);
+      await UserStorage.saveLLMConsent(
+        true,
+        providerType: LLMConfig.typeDeepSeek,
+      );
+
+      await tester.pumpWidget(
+        buildTestableWidget(
+          const ModelConfigEditPage(
+            duplicateSource: setupConfig,
+            simpleSetupMode: true,
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.text(UserStorage.l10n.keyIdLabel), findsNothing);
+      expect(find.text(UserStorage.l10n.baseUrlLabel), findsNothing);
+      expect(find.byIcon(Icons.save), findsNothing);
+      await tester.tap(
+        find.byKey(const ValueKey('model_config_bottom_save_button')),
+      );
+      await tester.pumpAndSettle();
+
+      final configs = await UserStorage.getLLMConfigs();
+      final savedConfig = configs.firstWhere(
+        (config) => config.type == LLMConfig.typeDeepSeek,
+      );
+      expect(savedConfig.key, 'deepseek');
+    });
+  });
 }

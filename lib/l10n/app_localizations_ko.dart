@@ -854,11 +854,11 @@ class AppLocalizationsKo extends AppLocalizations {
       '기록, 미디어, 인사이트의 AI 정리를 활성화하려면 연결 방법을 선택하세요.';
 
   @override
-  String get aiSetupStatusMemexTitle => 'MemeX 공식 서비스 사용 중';
+  String get aiSetupStatusMemexTitle => 'Memex 공식 서비스 사용 중';
 
   @override
   String get aiSetupStatusMemexDescription =>
-      'Memex는 MemeX 계정에서 관리하는 공식 연결과 API 인증 정보를 사용합니다.';
+      'Memex는 Memex 계정에서 관리하는 공식 연결과 API 인증 정보를 사용합니다.';
 
   @override
   String get aiSetupStatusCustomTitle => '사용자 지정 제공업체 설정 사용 중';
@@ -876,11 +876,10 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get aiSetupOfficialRouteDescription =>
-      'MemeX에 로그인하여 제공업체, 키, 에이전트별 모델을 선택하지 않고 공식 서비스를 사용합니다.';
+      'Memex에 로그인하여 공식 AI 서비스를 이용하세요.';
 
   @override
-  String get aiSetupCustomRouteDescription =>
-      '직접 보유한 제공업체 인증 정보를 추가하고 슈퍼 에이전트가 사용할 모델을 선택하며, 필요하면 에이전트별 모델을 덮어씁니다.';
+  String get aiSetupCustomRouteDescription => '자체 제공업체와 API 키를 추가합니다.';
 
   @override
   String get aiSetupCustomPageTitle => '사용자 지정 AI 서비스';

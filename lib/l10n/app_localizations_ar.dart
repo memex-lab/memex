@@ -871,11 +871,11 @@ class AppLocalizationsAr extends AppLocalizations {
       'اختر طريقة اتصال لتفعيل تنظيم الذكاء الاصطناعي للسجلات والوسائط والرؤى.';
 
   @override
-  String get aiSetupStatusMemexTitle => 'استخدام خدمة MemeX الرسمية';
+  String get aiSetupStatusMemexTitle => 'استخدام خدمة Memex الرسمية';
 
   @override
   String get aiSetupStatusMemexDescription =>
-      'سيستخدم Memex الاتصال الرسمي وبيانات واجهة البرمجة التي يديرها حساب MemeX الخاص بك.';
+      'سيستخدم Memex الاتصال الرسمي وبيانات واجهة البرمجة التي يديرها حساب Memex الخاص بك.';
 
   @override
   String get aiSetupStatusCustomTitle => 'استخدام إعدادات مزود مخصص';
@@ -893,11 +893,10 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get aiSetupOfficialRouteDescription =>
-      'سجل الدخول إلى MemeX واستخدم الخدمة الرسمية دون اختيار مزودين أو مفاتيح أو نماذج على مستوى الوكيل.';
+      'سجل الدخول إلى Memex لاستخدام خدمة الذكاء الاصطناعي الرسمية.';
 
   @override
-  String get aiSetupCustomRouteDescription =>
-      'أضف بيانات مزودك، واختر النموذج الذي سيستخدمه الوكيل الفائق، ويمكنك اختياريا تجاوز النماذج لكل وكيل.';
+  String get aiSetupCustomRouteDescription => 'أضف مزودك ومفتاح API الخاص بك.';
 
   @override
   String get aiSetupCustomPageTitle => 'خدمة الذكاء الاصطناعي مخصصة';
