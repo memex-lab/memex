@@ -691,7 +691,10 @@ class AppLocalizationsFa extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-      Object running, Object pending, Object retrying) {
+    Object running,
+    Object pending,
+    Object retrying,
+  ) {
     return 'در حال اجرا $running، در انتظار $pending، تلاش مجدد $retrying';
   }
 
@@ -3247,4 +3250,33 @@ class AppLocalizationsFa extends AppLocalizations {
 
   @override
   String get commentReplyToYou => 'شما';
+
+  @override
+  String get commentAuthorUser => 'کاربر';
+
+  @override
+  String get commentAuthorAi => 'هوش مصنوعی';
+
+  @override
+  String get authorizationCancelled => 'مجوز لغو شد';
+
+  @override
+  String timelineWeekNumberLabel(Object week) {
+    return 'هفته $week';
+  }
+
+  @override
+  String get timelineWeekLabel => 'هفته';
+
+  @override
+  String get eventCardDefaultTitle => 'رویداد';
+
+  @override
+  String get memoryNoLongTermYet => 'هنوز هیچ خاطره بلندمدتی وجود ندارد.';
+
+  @override
+  String get memoryNoRecentBuffer => 'هیچ خاطره جدیدی در بافر وجود ندارد.';
+
+  @override
+  String get memoryGeneralSubject => 'عمومی';
 }

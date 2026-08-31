@@ -1483,5 +1483,19 @@
   "loginFailed": "ورود ناموفق بود",
   "paymentCreationFailed": "شروع پرداخت ممکن نشد",
   "completePayment": "تکمیل پرداخت",
-  "commentReplyToYou": "شما"
+  "commentReplyToYou": "شما",
+  "commentAuthorUser": "کاربر",
+  "commentAuthorAi": "هوش مصنوعی",
+  "authorizationCancelled": "مجوز لغو شد",
+  "@timelineWeekNumberLabel": {
+    "placeholders": {
+      "week": {}
+    }
+  },
+  "timelineWeekNumberLabel": "هفته {week}",
+  "timelineWeekLabel": "هفته",
+  "eventCardDefaultTitle": "رویداد",
+  "memoryNoLongTermYet": "هنوز هیچ خاطره بلندمدتی وجود ندارد.",
+  "memoryNoRecentBuffer": "هیچ خاطره جدیدی در بافر وجود ندارد.",
+  "memoryGeneralSubject": "عمومی"
 }
