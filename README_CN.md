@@ -254,7 +254,7 @@ lib/
 ├── data/           # 数据仓库与服务
 ├── db/             # Drift 数据库定义
 ├── domain/         # 领域模型
-├── l10n/           # 国际化（en, zh, zh_Hant, de, ja, ko, es, hi, ar, pt, fr, id, ru）
+├── l10n/           # 国际化（en, zh, zh_Hant, de, ja, ko, es, hi, ar, pt, fr, id, fa, vi, ru）
 ├── llm_client/     # LLM 客户端抽象层
 ├── ui/             # 展示层 (MVVM)
 └── utils/          # 工具类

@@ -1,5 +1,7 @@
 # GitHub Project Setup
 
+[中文](github-project.zh.md) | English
+
 Use GitHub Projects for roadmap execution and roadmap issues for product direction. The project should track roadmap epics, feature issues, and implementation progress without turning repository docs into a task board.
 
 ## Project
