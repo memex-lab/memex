@@ -254,7 +254,7 @@ lib/
 ├── data/           # Repositories & services
 ├── db/             # Drift database schema
 ├── domain/         # Domain models
-├── l10n/           # i18n (English, Chinese)
+├── l10n/           # i18n (en, zh, zh_Hant, de, ja, ko, es, hi, ar, pt, fr, id, ru)
 ├── llm_client/     # LLM client abstraction layer
 ├── ui/             # Presentation layer (MVVM)
 └── utils/          # Shared utilities
