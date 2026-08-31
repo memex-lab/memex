@@ -676,7 +676,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-      Object running, Object pending, Object retrying) {
+    Object running,
+    Object pending,
+    Object retrying,
+  ) {
     return '执行中 $running，排队中 $pending，重试中 $retrying';
   }
 
@@ -3832,7 +3835,10 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String agentBackgroundTaskSummary(
-      Object running, Object pending, Object retrying) {
+    Object running,
+    Object pending,
+    Object retrying,
+  ) {
     return '執行中 $running，排隊中 $pending，重試中 $retrying';
   }
 

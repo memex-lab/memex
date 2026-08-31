@@ -1,0 +1,1501 @@
+{
+  "@@locale": "th",
+  "timesLabel": "ครั้ง",
+  "@modelSetAsDefault": {
+    "placeholders": {
+      "modelId": {}
+    }
+  },
+  "modelSetAsDefault": "ตั้ง {modelId} เป็นโมเดลเริ่มต้น",
+  "retry": "ลองอีกครั้ง",
+  "unknownModel": "โมเดลที่ไม่รู้จัก",
+  "notSet": "ยังไม่ได้ตั้งค่า",
+  "confirmClear": "ยืนยันการล้าง",
+  "confirmClearTokenMessage": "ล้างผู้ใช้ปัจจุบัน? คุณจะต้องป้อนรหัสผู้ใช้อีกครั้ง",
+  "cancel": "ยกเลิก",
+  "confirm": "ยืนยัน",
+  "tokenCleared": "ล้างผู้ใช้แล้ว",
+  "@clearTokenFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "clearTokenFailed": "ล้างผู้ใช้ล้มเหลว: {error}",
+  "selectDateRangeOptional": "เลือกช่วงวันที่ (ไม่บังคับ):",
+  "startDate": "วันที่เริ่มต้น",
+  "endDate": "วันที่สิ้นสุด",
+  "select": "เลือก",
+  "processLimitOptional": "ขีดจำกัดการประมวลผล (ไม่บังคับ)",
+  "leaveEmptyForAll": "เว้นว่างเพื่อประมวลผลทั้งหมด",
+  "startProcessing": "เริ่มประมวลผล",
+  "userIdNotFound": "ไม่พบรหัสผู้ใช้",
+  "@createTaskFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "createTaskFailed": "สร้างงานล้มเหลว: {error}",
+  "reprocessCards": "ประมวลผลบัตรใหม่",
+  "reprocessCardsTaskCreated": "คิวคำขอประมวลผลใหม่ใน Super Agent แล้ว",
+  "reprocessCardsDownstreamMode": "ขอบเขต",
+  "reprocessCardsCardOnly": "เฉพาะบัตร",
+  "reprocessCardsCardOnlyDesc": "ขอให้ Super Agent ตรวจสอบและสร้างบัตรไทม์ไลน์ที่เลือกใหม่",
+  "reprocessCardsRerunDownstream": "บัตรและการติดตามที่เกี่ยวข้อง",
+  "reprocessCardsRerunDownstreamDesc": "ขอให้ Super Agent พิจารณาการอัปเดต PKM และข้อมูลเชิงลึกที่เกี่ยวข้องเมื่อจำเป็น",
+  "reanalyzeMediaAssets": "อ่านไฟล์แนบสื่ออีกครั้ง",
+  "reanalyzeMediaAssetsDesc": "ขอให้ Super Agent ตรวจสอบสื่อที่แนบอีกครั้งเมื่อสร้างบัตรใหม่",
+  "regenerateComments": "สร้างความคิดเห็นใหม่",
+  "regenerateCommentsTaskCreated": "สร้างงานสร้างความคิดเห็นใหม่แล้ว กำลังทำงานในพื้นหลัง",
+  "rebuildSearchIndex": "สร้างดัชนีการค้นหาใหม่",
+  "rebuildSearchIndexSuccess": "สร้างดัชนีการค้นหาใหม่สำเร็จ",
+  "rebuildSearchIndexFailed": "สร้างดัชนีการค้นหาใหม่ล้มเหลว",
+  "clearData": "ล้างข้อมูล",
+  "confirmClearDataMessage": "ล้างข้อมูล?",
+  "confirmClearDataDeletesWorkspaceMessage": "ข้อมูลพื้นที่ทำงานในเครื่องทั้งหมดของผู้ใช้ปัจจุบันจะถูกลบ รวมถึงบัตร สื่อ ไฟล์ความรู้ ข้อมูลเชิงลึก ความทรงจำ ประวัติแชท และสถานะระบบ\n\nการดำเนินการนี้ไม่สามารถยกเลิกได้!",
+  "clearFailedAgentContexts": "ล้างบริบทการสนทนาที่ล้มเหลว",
+  "confirmClearFailedAgentContextsMessage": "ล้างบริบทการสนทนาที่บันทึกไว้สำหรับ Insight และ Schedule agents? มีประโยชน์หลังเปลี่ยนโมเดลเมื่อข้อความ agent ก่อนหน้าไม่เข้ากัน ข้อเท็จจริง บัตร ความรู้ ความทรงจำ และการตั้งค่าโมเดลจะไม่ถูกลบ",
+  "failedAgentContextsCleared": "ล้างบริบทการสนทนาที่บันทึกไว้ {count} รายการ",
+  "@failedAgentContextsCleared": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "clearFailedAgentContextsFailed": "ล้างบริบทการสนทนาล้มเหลว: {error}",
+  "@clearFailedAgentContextsFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "cloneToTestUser": "โคลนไปยังผู้ใช้ทดสอบ",
+  "confirmCloneToTestUserMessage": "คัดลอกพื้นที่ทำงานปัจจุบันไปยังผู้ใช้ทดสอบในเครื่องใหม่และสลับไปใช้ สถานะ runtime ของ agent จะไม่ถูกคัดลอก ข้อมูลผู้ใช้ปัจจุบันของคุณจะไม่ถูกแก้ไข",
+  "testUserIdLabel": "รหัสผู้ใช้ทดสอบ",
+  "testUserIdHelper": "ใช้ตัวอักษร ตัวเลข ขีดกลาง หรือขีดล่าง",
+  "testUserIdInvalid": "ใช้ได้เฉพาะตัวอักษร ตัวเลข ขีดกลาง หรือขีดล่าง",
+  "overwriteExistingTestUser": "แทนที่ผู้ใช้ทดสอบที่มี ID เดียวกัน",
+  "testUserCloneSuccess": "สลับไปยังผู้ใช้ทดสอบ {userId} แล้ว",
+  "@testUserCloneSuccess": {
+    "placeholders": {
+      "userId": {}
+    }
+  },
+  "testUserCloneFailed": "โคลนผู้ใช้ทดสอบล้มเหลว: {error}",
+  "@testUserCloneFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "dataClearedSuccess": "ล้างข้อมูลสำเร็จ",
+  "@clearDataFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "clearDataFailed": "ล้างข้อมูลล้มเหลว: {error}",
+  "personalCenter": "ศูนย์ส่วนตัว",
+  "viewLogs": "ดูบันทึก",
+  "systemAuthorization": "การอนุญาตระบบ",
+  "aiCharacterConfig": "การกำหนดค่าตัวละคร AI",
+  "modelConfig": "การกำหนดค่าโมเดล",
+  "agentConfig": "การกำหนดค่า Agent",
+  "experimentalLab": "Labs",
+  "experimentalLabDescription": "ฟีเจอร์ทดลองที่อาจเปลี่ยนแปลงหรือย้ายในภายหลัง",
+  "modelUsageStats": "สถิติการใช้โมเดล",
+  "asyncTaskList": "รายการงานแบบอะซิงโครนัส",
+  "clearLocalToken": "ล้างผู้ใช้",
+  "insightCardTemplates": "เทมเพลตบัตรข้อมูลเชิงลึก",
+  "timelineCardTemplates": "เทมเพลตบัตรไทม์ไลน์",
+  "logViewer": "ตัวดูบันทึก",
+  "autoRefresh": "รีเฟรชอัตโนมัติ",
+  "lineCount": "จำนวนบรรทัด: ",
+  "all": "ทั้งหมด",
+  "schedule": "ตารางเวลา",
+  "appLockConfig": "การกำหนดค่าการล็อกแอป",
+  "@loadStatsFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadStatsFailed": "โหลดสถิติล้มเหลว: {error}",
+  "overview": "ภาพรวม",
+  "daily": "รายวัน",
+  "modelStatsByAgent": "ตาม agent",
+  "detail": "รายละเอียด",
+  "date": "วันที่",
+  "agent": "Agent",
+  "noData": "ไม่มีข้อมูล",
+  "totalCalls": "การเรียกทั้งหมด",
+  "calls": "การโทร",
+  "@callsCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "callsCount": "{count} สาย",
+  "selectDateRange": "เลือกช่วงวันที่",
+  "totalTokens": "โทเค็นทั้งหมด",
+  "cacheRate": "อัตราแคช",
+  "promptTokens": "โทเค็น prompt",
+  "completionTokens": "โทเค็นการตอบ",
+  "cachedTokens": "โทเค็นที่แคช",
+  "thoughtTokens": "โทเค็นความคิด",
+  "prompt": "Prompt",
+  "completion": "การเสร็จสมบูรณ์",
+  "cached": "แคชแล้ว",
+  "thought": "ความคิด",
+  "model": "โมเดล",
+  "scene": "ฉาก",
+  "sceneId": "รหัสฉาก",
+  "tokenUsage": "การใช้โทเค็น",
+  "handler": "Handler",
+  "modelBreakdown": "รายละเอียดโมเดล",
+  "callDetails": "รายละเอียดการโทร",
+  "@recordDetailsTitle": {
+    "placeholders": {
+      "scene": {}
+    }
+  },
+  "recordDetailsTitle": "รายละเอียดบันทึก: {scene}",
+  "@saveLlmConfigFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "saveLlmConfigFailed": "บันทึกการกำหนดค่า LLM ล้มเหลว: {error}",
+  "webHtmlPreviewUnavailable": "ไม่สามารถแสดงตัวอย่าง HTML บนเว็บได้ โปรดดูบนมือถือ",
+  "@saveUserInfoFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "saveUserInfoFailed": "บันทึกข้อมูลผู้ใช้ล้มเหลว: {error}",
+  "totalEstimatedCost": "ค่าใช้จ่ายโดยประมาณทั้งหมด",
+  "close": "ปิด",
+  "totalTokenConsumption": "การใช้โทเค็นทั้งหมด",
+  "dataLoadFailedRetry": "โหลดข้อมูลล้มเหลว โปรดลองอีกครั้งในภายหลัง",
+  "timelineLoadFailedRetry": "โหลดไทม์ไลน์ล้มเหลว โปรดลองอีกครั้งในภายหลัง",
+  "newPerspective": "มุมมองใหม่",
+  "startPoint": "จุดเริ่มต้น",
+  "endPoint": "จุดสิ้นสุด",
+  "originalInput": "ข้อมูลป้อนเดิม",
+  "referenceContent": "เนื้อหาอ้างอิง",
+  "@referenceWithTitle": {
+    "placeholders": {
+      "title": {}
+    }
+  },
+  "referenceWithTitle": "อ้างอิง: {title}",
+  "actionCenterTitle": "การดำเนินการที่รอดำเนินการ",
+  "noPendingActions": "ไม่มีการดำเนินการที่รอดำเนินการ",
+  "clarificationNeeded": "Memex ต้องการยืนยัน",
+  "clarificationTextHint": "พิมพ์คำตอบสั้นๆ",
+  "clarificationTextRequired": "เพิ่มคำตอบสั้นๆ ก่อน",
+  "clarificationAnswered": "ตอบแล้ว",
+  "@clarificationAnswerPrefix": {
+    "placeholders": {
+      "answer": {}
+    }
+  },
+  "clarificationAnswerPrefix": "คำตอบ: {answer}",
+  "answerSaved": "บันทึกคำตอบแล้ว",
+  "clarificationOtherAnswer": "ป้อนด้วยตนเอง",
+  "clarificationNotSure": "ไม่แน่ใจ / ไม่ต้องการตอบ",
+  "yes": "ใช่",
+  "no": "ไม่",
+  "footprintMap": "แผนที่รอยเท้า",
+  "waypointPlaces": "สถานที่จุดแวะ",
+  "unknownPlace": "สถานที่ที่ไม่รู้จัก",
+  "releaseToSend": "ปล่อยเพื่อส่ง",
+  "selectFromAlbum": "เลือกจากอัลบั้ม",
+  "clipboardPreviewTitle": "คลิปบอร์ดใหม่",
+  "clipboardPreviewImageTitle": "รูปภาพในคลิปบอร์ด",
+  "clipboardPreviewImageDescription": "รูปภาพพร้อมเพิ่ม",
+  "clipboardPreviewUnprocessed": "ยังไม่ได้วาง",
+  "clipboardPreviewPasteToInput": "วางลงในช่องป้อน",
+  "clipboardPreviewAddImageToInput": "เพิ่มรูปภาพ",
+  "clipboardPreviewImageFailed": "ไม่สามารถอ่านรูปภาพจากคลิปบอร์ด",
+  "tellAiWhatHappened": "บอก AI ว่าเกิดอะไรขึ้น...",
+  "@recordingWithDuration": {
+    "placeholders": {
+      "duration": {}
+    }
+  },
+  "recordingWithDuration": "กำลังบันทึก: {duration}",
+  "playing": "กำลังเล่น...",
+  "sendLabel": "ส่ง",
+  "attachedImagesMessage": "ส่งรูปภาพ {count} รูป",
+  "@attachedImagesMessage": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "noTaskData": "ไม่มีข้อมูลงาน",
+  "@createdAtDate": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "createdAtDate": "สร้างเมื่อ: {date}",
+  "@updatedAtDate": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "updatedAtDate": "อัปเดต: {date}",
+  "@durationLabel": {
+    "placeholders": {
+      "duration": {}
+    }
+  },
+  "durationLabel": "ระยะเวลา: {duration}",
+  "@retryCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "retryCount": "ลองใหม่: {count}",
+  "loadDetailFailedRetry": "โหลดรายละเอียดล้มเหลว โปรดลองอีกครั้งในภายหลัง",
+  "loadFailed": "โหลดล้มเหลว",
+  "reload": "โหลดใหม่",
+  "aiInsightDetail": "รายละเอียดข้อมูลเชิงลึก",
+  "@relatedRecordsCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "relatedRecordsCount": "บันทึกที่เกี่ยวข้อง ({count})",
+  "noRelatedRecords": "ไม่มีบันทึกที่เกี่ยวข้อง",
+  "useFingerprintToUnlock": "ใช้ลายนิ้วมือเพื่อปลดล็อก",
+  "locked": "ล็อกแล้ว",
+  "wrongPassword": "รหัสผ่านผิด",
+  "enterPassword": "ป้อนรหัสผ่าน",
+  "memexLocked": "Memex ถูกล็อก",
+  "calendarShortSun": "อา.",
+  "calendarShortMon": "จ.",
+  "calendarShortTue": "อ.",
+  "calendarShortWed": "พ.",
+  "calendarShortThu": "พฤ.",
+  "calendarShortFri": "ศ.",
+  "calendarShortSat": "ส.",
+  "@noRecordsOnDate": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "noRecordsOnDate": "ไม่มีบันทึกในวันที่ {date}",
+  "footprintPath": "เส้นทางรอยเท้า",
+  "lifeCompositionTable": "องค์ประกอบชีวิต",
+  "emotionReframe": "ปรับมุมมองอารมณ์",
+  "chronicleOfThings": "บันทึกเหตุการณ์",
+  "goalProgress": "ความคืบหน้าเป้าหมาย",
+  "trendChart": "แผนภูมิแนวโน้ม",
+  "comparisonChart": "แผนภูมิเปรียบเทียบ",
+  "todayTimeFlow": "การไหลของเวลาวันนี้",
+  "aiInputHint": "ไม่ว่าจะเป็นความทรงจำหรือปัจจุบัน ฉันอยู่ที่นี่...",
+  "refreshSuperAgentStateTooltip": "ล้างบริบท Memex Agent",
+  "refreshSuperAgentStateTitle": "ล้างบริบทประวัติ Memex Agent?",
+  "refreshSuperAgentStateMessage": "ประวัติแชทที่มองเห็นจะยังอยู่ แต่บริบท runtime ประวัติของ Memex Agent จะถูกล้างและการตอบกลับในอนาคตจะเริ่มจากบริบทใหม่ ความทรงจำถาวร ไฟล์ฐานความรู้ บัตร และข้อมูลที่บันทึกอื่นๆ ไม่ได้รับผลกระทบ ใช้เมื่อ Memex Agent ทำงานผิดปกติซ้ำๆ ดำเนินการต่อ?",
+  "refreshSuperAgentStateActiveRunMessage": "รอจนกว่าข้อความ Memex Agent ปัจจุบันจะเสร็จก่อนล้างบริบท",
+  "refreshSuperAgentStateSuccess": "ล้างบริบท Memex Agent แล้ว",
+  "@refreshSuperAgentStateFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "refreshSuperAgentStateFailed": "ล้างบริบท Memex Agent ล้มเหลว: {error}",
+  "nothingHere": "ยังไม่มีอะไรที่นี่",
+  "nothingHereHint": "แตะปุ่มด้านล่างเพื่อสร้างบัตรแรกของคุณ",
+  "agentProcessing": "AI กำลังประมวลผล...",
+  "keepAppOpen": "อย่าปิดแอป",
+  "activityDetail": "รายละเอียดกิจกรรม",
+  "noAgentActivityYet": "ยังไม่มีกิจกรรม agent",
+  "processingEllipsis": "กำลังประมวลผล...",
+  "agentBackgroundTitle": "Memex Agent",
+  "agentBackgroundPausedTitle": "Memex Agent หยุดชั่วคราว",
+  "agentBackgroundNeedsAttentionTitle": "Memex Agent ต้องการความสนใจ",
+  "agentBackgroundStageIdle": "ว่าง",
+  "agentBackgroundStageProcessing": "กำลังประมวลผล",
+  "agentBackgroundStageQueued": "อยู่ในคิว",
+  "agentBackgroundStageRetrying": "กำลังรอลองใหม่",
+  "agentBackgroundStagePaused": "หยุดชั่วคราว",
+  "agentBackgroundStageCompleted": "เสร็จสิ้น",
+  "agentBackgroundStageNeedsAttention": "ต้องการความสนใจ",
+  "agentBackgroundStageAnalyzingMedia": "กำลังวิเคราะห์สื่อ",
+  "agentBackgroundStageGeneratingCard": "กำลังสร้างบัตร",
+  "agentBackgroundStageUpdatingKnowledge": "กำลังอัปเดตความรู้",
+  "agentBackgroundStagePreparingComment": "กำลังเตรียมความคิดเห็น",
+  "agentBackgroundStageRoutingFollowUps": "กำลังจัดการการติดตาม",
+  "@agentBackgroundTaskSummary": {
+    "placeholders": {
+      "running": {},
+      "pending": {},
+      "retrying": {}
+    }
+  },
+  "agentBackgroundTaskSummary": "กำลังทำงาน {running}, รอดำเนินการ {pending}, ลองใหม่ {retrying}",
+  "@agentBackgroundTaskDetail": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "agentBackgroundTaskDetail": "กำลังประมวลผล {count} งานในคิว",
+  "agentBackgroundNoTasks": "ไม่มีงานพื้นหลัง",
+  "agentBackgroundStarting": "กำลังเริ่มการประมวลผล",
+  "agentBackgroundCompletedDetail": "งานพื้นหลังทั้งหมดเสร็จสิ้นแล้ว",
+  "agentBackgroundFailedDetail": "การประมวลผลหยุดลงเนื่องจากข้อผิดพลาด",
+  "agentBackgroundPausedDetail": "การประมวลผลถูกหยุดชั่วคราวและจะดำเนินต่อในภายหลัง",
+  "agentBackgroundQueuedDetail": "กำลังรอขั้นตอนการประมวลผลถัดไป",
+  "agentBackgroundRetryingDetail": "ขั้นตอนปัจจุบันจะลองใหม่อัตโนมัติ",
+  "agentBackgroundAnalyzeMediaDetail": "กำลังอ่านไฟล์แนบและบริบทในเครื่อง",
+  "agentBackgroundGeneratingCardDetail": "กำลังแปลงบันทึกเป็นบัตรไทม์ไลน์",
+  "agentBackgroundUpdatingKnowledgeDetail": "กำลังอัปเดตความรู้และความทรงจำในเครื่อง",
+  "agentBackgroundPreparingCommentDetail": "กำลังเตรียมการตอบกลับของผู้ช่วย",
+  "agentBackgroundRoutingFollowUpsDetail": "กำลังตรวจสอบการดำเนินการติดตามสำหรับบัตรนี้",
+  "@agentBackgroundPausedStatus": {
+    "placeholders": {
+      "summary": {}
+    }
+  },
+  "agentBackgroundPausedStatus": "หยุดชั่วคราว - {summary}",
+  "@agentBackgroundNeedsAttentionStatus": {
+    "placeholders": {
+      "summary": {}
+    }
+  },
+  "agentBackgroundNeedsAttentionStatus": "ต้องการความสนใจ - {summary}",
+  "settings": "การตั้งค่า",
+  "languageSettings": "ภาษา",
+  "languageSettingsDesc": "เปลี่ยนภาษาที่แสดงในแอป",
+  "noPendingActionsToast": "ไม่มีการดำเนินการที่รอดำเนินการ",
+  "knowledgeNewDiscovery": "การค้นพบความรู้ใหม่",
+  "@discoveredNewInsightsCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "discoveredNewInsightsCount": "พบข้อมูลเชิงลึกใหม่ {count} รายการ",
+  "@updatedExistingInsightsCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "updatedExistingInsightsCount": "อัปเดตข้อมูลเชิงลึกที่มีอยู่ {count} รายการ",
+  "sectionNewInsights": "ข้อมูลเชิงลึกใหม่",
+  "sectionUpdatedInsights": "ข้อมูลเชิงลึกที่อัปเดต",
+  "unnamedInsight": "ข้อมูลเชิงลึกไม่มีชื่อ",
+  "copiedToClipboard": "คัดลอกไปยังคลิปบอร์ดแล้ว",
+  "copy": "คัดลอก",
+  "selectedLocation": "ตำแหน่งที่เลือก",
+  "confirmLocationName": "ยืนยันชื่อตำแหน่ง",
+  "confirmLocationNameHint": "คุณสามารถแก้ไขชื่อได้ (พิกัดยังคงเดิม)",
+  "nameLabel": "ชื่อ",
+  "inputPlaceNameHint": "ป้อนชื่อสถานที่...",
+  "@currentCoordinates": {
+    "placeholders": {
+      "lat": {},
+      "lng": {}
+    }
+  },
+  "currentCoordinates": "พิกัด: {lat}, {lng}",
+  "confirmLocation": "ยืนยันตำแหน่ง",
+  "welcomeToMemex": "ยินดีต้อนรับสู่ Memex",
+  "createUserIdToStart": "สร้างโปรไฟล์ของคุณ",
+  "userIdLabel": "ชื่อ / ชื่อเล่นของคุณ",
+  "userIdHint": "ป้อนชื่อหรือชื่อเล่นของคุณ",
+  "pleaseEnterUserId": "โปรดป้อนชื่อของคุณ",
+  "userIdMaxLength": "ชื่อต้องไม่เกิน 50 ตัวอักษร",
+  "startUsing": "ดำเนินการต่อ",
+  "userIdTip": "จะใช้เพื่อปรับแต่งประสบการณ์ของคุณ",
+  "setupModelConfigTitle": "ตั้งค่าโมเดล AI",
+  "setupModelConfigSubtitle": "Memex ต้องการโมเดล AI ระดับแนวหน้าเพื่อจัดระเบียบบันทึก วิเคราะห์รูปภาพ และสร้างข้อมูลเชิงลึก เลือกวิธีการเชื่อมต่อหนึ่งวิธี",
+  "setupModelConfigComplete": "เสร็จสิ้นและไปต่อ",
+  "aiService": "บริการโมเดล Memex",
+  "aiModelHubTitle": "โมเดลและบริการ AI",
+  "aiModelHubSubtitle": "เลือกบริการอย่างเป็นทางการของ Memex หรือนำผู้ให้บริการของคุณเองมาใช้ การกำหนดเส้นทางโมเดลขั้นสูงยังคงพร้อมใช้งานเมื่อคุณต้องการ",
+  "aiSetupCurrentStatusTitle": "การตั้งค่าปัจจุบัน",
+  "aiSetupStatusNotConfiguredTitle": "ยังไม่ได้กำหนดค่าบริการ AI",
+  "aiSetupStatusNotConfiguredDescription": "เลือกวิธีการเชื่อมต่อหนึ่งวิธีเพื่อเปิดใช้งานการจัดระเบียบ AI สำหรับบันทึก สื่อ และข้อมูลเชิงลึก",
+  "aiSetupStatusMemexTitle": "ใช้บริการอย่างเป็นทางการของ MemeX",
+  "aiSetupStatusMemexDescription": "Memex จะใช้การเชื่อมต่ออย่างเป็นทางการและข้อมูลรับรอง API ที่จัดการโดยบัญชี MemeX ของคุณ",
+  "aiSetupStatusCustomTitle": "ใช้การตั้งค่าผู้ให้บริการแบบกำหนดเอง",
+  "aiSetupStatusCustomDescription": "Memex จะใช้ข้อมูลรับรองผู้ให้บริการและการเลือกบทบาทโมเดลที่คุณกำหนดค่า",
+  "aiSetupChooseConnectionTitle": "เลือกวิธีการเชื่อมต่อ",
+  "aiSetupChooseConnectionDescription": "เริ่มต้นด้วยวิธีที่ตรงกับวิธีที่คุณต้องการให้ Memex เข้าถึงโมเดล AI",
+  "aiSetupOfficialRouteDescription": "ลงชื่อเข้าใช้ MemeX และใช้บริการอย่างเป็นทางการโดยไม่ต้องเลือกผู้ให้บริการ key หรือโมเดลระดับ agent",
+  "aiSetupCustomRouteDescription": "เพิ่มข้อมูลรับรองผู้ให้บริการของคุณ เลือกโมเดลที่ Super Agent ควรใช้ และแทนที่โมเดลต่อ agent ได้ตามต้องการ",
+  "aiSetupCustomPageTitle": "บริการ AI แบบกำหนดเอง",
+  "aiSetupCustomPageSubtitle": "กำหนดค่าข้อมูลรับรองผู้ให้บริการก่อน จากนั้นเลือกโมเดลที่ Memex ควรใช้",
+  "aiSetupProviderCredentialsTitle": "ผู้ให้บริการและ API keys",
+  "aiSetupProviderCredentialsDescription": "เพิ่มหรือแก้ไข OpenAI, Anthropic, DeepSeek, Gemini, OpenRouter, Ollama หรือผู้ให้บริการที่เข้ากันได้อื่น",
+  "modelRolesTitle": "เลือกโมเดลหลัก",
+  "modelRolesDescription": "Super Agent ใช้โมเดลเดียวสำหรับข้อความและรูปภาพ การแทนที่ agent ขั้นสูงยังมีด้านล่าง",
+  "textModelRoleTitle": "โมเดลหลัก",
+  "textModelRoleDescription": "Super Agent ใช้สำหรับข้อความ รูปภาพ บัตร ความรู้ ข้อมูลเชิงลึก แชท ความคิดเห็น และความทรงจำ",
+  "modelConnectionsTitle": "ผู้ให้บริการโมเดลและ API keys",
+  "modelConnectionsDescription": "เชื่อมต่อบริการอย่างเป็นทางการของ Memex หรือเพิ่มข้อมูลรับรองผู้ให้บริการของคุณเอง",
+  "relatedAiCapabilitiesTitle": "ความสามารถขั้นสูงและที่เกี่ยวข้อง",
+  "relatedAiCapabilitiesDescription": "ปรับแต่งการกำหนด agent ผู้ให้บริการตำแหน่ง และพฤติกรรมการถอดเสียง",
+  "aiSetupServiceCapabilitiesTitle": "ความสามารถของบริการ",
+  "aiSetupServiceCapabilitiesDescription": "เลือกผู้ให้บริการที่ Memex ใช้สำหรับความสามารถ AI ที่เกี่ยวข้อง เช่น การพูดและ reverse geocoding",
+  "aiSetupAdvancedCustomizationTitle": "การกำหนดเส้นทางโมเดลขั้นสูง",
+  "aiSetupAdvancedCustomizationDescription": "สำหรับผู้ใช้ขั้นสูงที่ต้องการให้แต่ละ agent ใช้ผู้ให้บริการหรือการกำหนดค่าโมเดลที่แตกต่างกัน",
+  "locationProviderSettings": "ผู้ให้บริการตำแหน่ง",
+  "speechProviderSettings": "การถอดเสียง",
+  "advancedAgentModelAssignments": "การกำหนดโมเดลของ Agent",
+  "openAdvancedAgentModelAssignments": "แทนที่ agent แต่ละตัว",
+  "noConfiguredModelOptions": "เพิ่มผู้ให้บริการหรือ API key ก่อนเลือกบทบาทโมเดล",
+  "modelSlotUpdated": "อัปเดตบทบาทโมเดลแล้ว",
+  "aiServiceMemexRouteTitle": "เชื่อมต่อผ่าน Memex",
+  "aiServiceLongDescription": "Memex ใช้ระบบ multi-agent เพื่อจัดระเบียบบันทึกชีวิต บันทึกความรู้ และบริบททางสังคม ค้นหาข้อมูลเชิงลึกที่ลึกซึ้งยิ่งขึ้น และให้การเป็นเพื่อน AI ที่มีความทรงจำถาวร ข้อมูลของคุณจัดเก็บเป็น Markdown ข้อความธรรมดา รักษาอิสระและความสามารถในการพกพาของข้อมูล",
+  "aiServiceCustomApiRouteTitle": "ฉันมี API key",
+  "aiServiceCustomModelDescription": "เลือกตัวเลือกนี้ก่อนหากคุณมี API key จาก OpenAI, Anthropic, DeepSeek, Gemini หรือผู้ให้บริการอื่น",
+  "enableAiService": "เชื่อมต่อด้วย Memex",
+  "aiServiceReadyToast": "เปิดการจัดระเบียบ AI แล้ว",
+  "aiServiceSettingsDescription": "หากคุณไม่มี API key ให้ใช้บัญชี Memex เพื่อเชื่อมต่อกับบริการโมเดลหลัก",
+  "advancedModelConfiguration": "กำหนดค่า API key",
+  "skipForNow": "ข้ามไปก่อน",
+  "clearAuth": "ล้างการยืนยันตัวตน",
+  "authorizing": "กำลังอนุญาต...",
+  "@authFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "authFailed": "การยืนยันตัวตนล้มเหลว: {error}",
+  "authorized": "อนุญาตแล้ว",
+  "config": "การกำหนดค่า",
+  "calendar": "ปฏิทิน",
+  "reminders": "การเตือนความจำ",
+  "writeToSystemFailed": "เขียนไปยังระบบล้มเหลว",
+  "@permissionRequired": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "permissionRequired": "ต้องการสิทธิ์ {name}",
+  "@permissionRationale": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "permissionRationale": "โปรดอนุญาตให้แอปเข้าถึง {name} ของคุณในการตั้งค่าเพื่อให้เราสร้างให้คุณได้",
+  "goToSettings": "ไปที่การตั้งค่า",
+  "unknownAction": "การดำเนินการที่ไม่รู้จัก",
+  "discoveredCalendarEvent": "กิจกรรมในปฏิทินรอการยืนยัน",
+  "discoveredReminder": "การเตือนความจำรอการยืนยัน",
+  "addToCalendar": "เพิ่มในปฏิทิน",
+  "addToReminders": "เพิ่มในการเตือนความจำ",
+  "systemActionPendingExplanation": "ยังไม่ได้เพิ่ม แตะด้านล่างเพื่อขอสิทธิ์และเพิ่มในอุปกรณ์ของคุณ",
+  "@addedToSuccess": {
+    "placeholders": {
+      "target": {}
+    }
+  },
+  "addedToSuccess": "เพิ่มใน {target} สำเร็จแล้ว",
+  "ignore": "เพิกเฉย",
+  "confirmDelete": "ยืนยันการลบ",
+  "confirmDeleteSessionMessage": "ลบการสนทนานี้? การดำเนินการนี้ไม่สามารถยกเลิกได้",
+  "delete": "ลบ",
+  "deleteSuccess": "ลบสำเร็จ",
+  "@deleteFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "deleteFailed": "ลบล้มเหลว: {error}",
+  "daysAgo": "{count} วันที่แล้ว",
+  "chatHistory": "ประวัติแชท",
+  "enterFullScreenTooltip": "เข้าโหมดเต็มหน้าจอ",
+  "exitFullScreenTooltip": "ออกจากโหมดเต็มหน้าจอ",
+  "noConversations": "ไม่มีการสนทนา",
+  "@loadSessionListFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadSessionListFailed": "โหลดรายการเซสชันล้มเหลว: {error}",
+  "@yesterdayAt": {
+    "placeholders": {
+      "time": {}
+    }
+  },
+  "yesterdayAt": "เมื่อวาน {time}",
+  "newChat": "แชทใหม่",
+  "@messageCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "messageCount": "{count} ข้อความ",
+  "organize": "จัดระเบียบ",
+  "pkmCategoryProject": "Projects",
+  "pkmCategoryProjectSubtitle": "ระยะสั้น · เป้าหมาย · กำหนดเวลา",
+  "pkmCategoryArea": "Areas",
+  "pkmCategoryAreaSubtitle": "ระยะยาว · ความรับผิดชอบ · มาตรฐาน",
+  "pkmCategoryResource": "Resources",
+  "pkmCategoryResourceSubtitle": "ความสนใจ · แรงบันดาลใจ · สำรอง",
+  "pkmCategoryArchive": "Archives",
+  "pkmCategoryArchiveSubtitle": "เสร็จแล้ว · ไม่ใช้งาน · อ้างอิง",
+  "recentChanges": "การเปลี่ยนแปลงล่าสุด",
+  "noRecentChangesInThreeDays": "ไม่มีการเปลี่ยนแปลงใน 3 วันที่ผ่านมา",
+  "unpinned": "เลิกปักหมุดแล้ว",
+  "pinnedStyle": "ปักหมุดสไตล์แล้ว",
+  "@operationFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "operationFailed": "ดำเนินการล้มเหลว: {error}",
+  "refreshingInsightData": "กำลังรีเฟรชข้อมูลเชิงลึก อาจใช้เวลาสักครู่...",
+  "@refreshFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "refreshFailed": "รีเฟรชล้มเหลว: {error}",
+  "sortUpdated": "อัปเดตลำดับการจัดเรียงแล้ว",
+  "@sortSaveFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "sortSaveFailed": "บันทึกการจัดเรียงล้มเหลว: {error}",
+  "insightCardDeleted": "ลบบัตรข้อมูลเชิงลึกแล้ว",
+  "@deleteFailedShort": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "deleteFailedShort": "ลบล้มเหลว: {error}",
+  "knowledgeInsight": "ข้อมูลเชิงลึกความรู้",
+  "completeSort": "จัดเรียงเสร็จ",
+  "noKnowledgeInsight": "ไม่มีข้อมูลเชิงลึกความรู้",
+  "@insightProcessingBacklogMessage": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "insightProcessingBacklogMessage": "ยังมีงานพื้นหลัง {count} งานกำลังประมวลผล",
+  "insightUnavailableMessage": "ข้อมูลเชิงลึกนี้ยังกำลังสร้างหรือถูกอัปเดต รีเฟรชข้อมูลเชิงลึกแล้วลองอีกครั้งในภายหลัง",
+  "artifactOpen": "เปิด",
+  "updating": "กำลังอัปเดต...",
+  "update": "อัปเดต",
+  "enabled": "เปิดใช้งาน",
+  "disabled": "ปิดใช้งาน",
+  "appLockOn": "เปิดการล็อกแอป",
+  "appLockOff": "ปิดการล็อกแอป",
+  "enableAppLockFirst": "โปรดเปิดการล็อกแอปก่อน",
+  "enterFourDigitPassword": "ป้อนรหัสผ่าน 4 หลัก",
+  "passwordSetAndLockOn": "ตั้งรหัสผ่านและเปิดการล็อกแอปแล้ว",
+  "appLockSettings": "การตั้งค่าการล็อกแอป",
+  "enableAppLock": "เปิดการล็อกแอป",
+  "enableAppLockSubtitle": "ต้องใส่รหัสผ่านเมื่อเปิดแอป",
+  "enableBiometrics": "เปิดไบโอเมตริก",
+  "biometricsSubtitle": "ใช้ Face ID หรือ Touch ID เพื่อปลดล็อก",
+  "changePassword": "เปลี่ยนรหัสผ่าน",
+  "setFourDigitPassword": "ตั้งรหัสผ่าน 4 หลัก",
+  "reenterPasswordToConfirm": "ป้อนรหัสผ่านอีกครั้งเพื่อยืนยัน",
+  "passwordMismatch": "รหัสผ่านไม่ตรงกัน โปรดลองอีกครั้ง",
+  "@confirmDeleteCharacter": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "confirmDeleteCharacter": "ลบตัวละคร \"{name}\"? การดำเนินการนี้ไม่สามารถยกเลิกได้",
+  "configureAiCharacter": "กำหนดค่าตัวละคร AI",
+  "addCharacter": "เพิ่มตัวละคร",
+  "addCharacterSubtitle": "เลือกตัวละคร AI เพื่อเข้าร่วมทีมข้อมูลเชิงลึกของคุณ พวกเขาจะวิเคราะห์ข้อมูลชีวิตของคุณจากมุมมองต่างๆ",
+  "noCharacters": "ไม่มีตัวละคร",
+  "@loadCharacterFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadCharacterFailed": "โหลดตัวละครล้มเหลว: {error}",
+  "noTags": "ไม่มีแท็ก",
+  "createSuccess": "สร้างสำเร็จ",
+  "updateSuccess": "อัปเดตสำเร็จ",
+  "@saveFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "saveFailed": "บันทึกล้มเหลว: {error}",
+  "newCharacter": "ตัวละครใหม่",
+  "editCharacter": "แก้ไขตัวละคร",
+  "save": "บันทึก",
+  "characterName": "ชื่อตัวละคร",
+  "characterNameHint": "ตั้งชื่อให้ตัวละครของคุณ",
+  "pleaseEnterCharacterName": "โปรดป้อนชื่อตัวละคร",
+  "tagsLabel": "แท็ก",
+  "tagsHint": "เช่น wisdom, recognition, macro\nแยกหลายแท็กด้วยเครื่องหมายจุลภาค",
+  "characterPersonaLabel": "บุคลิกตัวละคร",
+  "characterPersonaHint": "รวมบุคลิก คู่มือสไตล์ ตัวอย่างบทสนทนา ตัวกรองความรู้ ฯลฯ\nใช้ ## สำหรับหัวข้อส่วน",
+  "pleaseEnterCharacterPersona": "โปรดป้อนบุคลิกตัวละคร",
+  "@permissionRequestError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "permissionRequestError": "ข้อผิดพลาดการขอสิทธิ์: {error}",
+  "permissionRequiredTitle": "ต้องการสิทธิ์",
+  "permissionPermanentlyDeniedMessage": "คุณปฏิเสธสิทธิ์นี้อย่างถาวรหรือระบบต้องการ โปรดเปิดใช้งานในการตั้งค่าระบบ",
+  "getting": "กำลังดึง...",
+  "unauthorized": "ไม่ได้รับอนุญาต",
+  "authorizedGoToSettings": "อนุญาตแล้ว ไปที่การตั้งค่าระบบเพื่อเปลี่ยนแปลง",
+  "location": "ตำแหน่ง",
+  "locationPermissionReason": "สำหรับบันทึกสถานที่และฟีเจอร์ที่เกี่ยวกับตำแหน่ง",
+  "photos": "รูปภาพ",
+  "photosPermissionReason": "สำหรับเลือกรูปภาพ บันทึกรูปที่สร้าง ฯลฯ",
+  "camera": "กล้อง",
+  "cameraPermissionReason": "สำหรับถ่ายภาพและวิดีโอ",
+  "microphone": "ไมโครโฟน",
+  "microphonePermissionReason": "สำหรับการรู้จำเสียง การบันทึก ฯลฯ",
+  "calendarPermissionReason": "สำหรับบันทึกตารางเวลาและอ่านกิจกรรมในปฏิทิน",
+  "remindersPermissionReason": "สำหรับบันทึกและอ่านการเตือนความจำของคุณ",
+  "fitnessAndMotion": "Fitness และการเคลื่อนไหว",
+  "fitnessPermissionReason": "สำหรับบันทึกข้อมูลสุขภาพและการเคลื่อนไหว",
+  "notification": "การแจ้งเตือน",
+  "notificationPermissionReason": "สำหรับส่งตารางเวลาและการเตือนที่สำคัญ",
+  "memexAgentNotificationPermissionTitle": "ให้ Memex Agent ทำงานในพื้นหลัง",
+  "memexAgentNotificationPermissionMessage": "Memex Agent ทำงานในเครื่องของคุณ การแจ้งเตือนช่วยให้ Memex แสดงความคืบหน้าและประมวลผลต่อหลังคุณออกจากแอปหรือปิดหน้าจอ หากปิดการแจ้งเตือน ให้เปิด Memex ไว้ที่หน้าจอจนกว่างานจะเสร็จ",
+  "loadDetailFailedRetryShort": "โหลดรายละเอียดล้มเหลว โปรดลองอีกครั้งในภายหลัง",
+  "total": "รวม",
+  "estimatedCost": "ค่าใช้จ่ายโดยประมาณ",
+  "byAgent": "ตาม Agent",
+  "timeUpdated": "อัปเดตเวลาแล้ว",
+  "@updateFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "updateFailed": "อัปเดตล้มเหลว: {error}",
+  "locationUpdated": "อัปเดตตำแหน่งแล้ว",
+  "confirmDeleteCardMessage": "ลบบัตรนี้? การดำเนินการนี้ไม่สามารถยกเลิกได้",
+  "cardDetailNotFound": "ไม่พบรายละเอียดบัตร",
+  "saySomething": "พูดอะไรสักอย่าง...",
+  "relatedMemories": "ความทรงจำที่เกี่ยวข้อง",
+  "viewMore": "ดูเพิ่มเติม",
+  "relatedRecords": "บันทึกที่เกี่ยวข้อง",
+  "reply": "ตอบกลับ",
+  "replySent": "ส่งการตอบกลับแล้ว",
+  "insightTemplateGalleryTitle": "เทมเพลตบัตรข้อมูลเชิงลึก",
+  "timelineTemplateGalleryTitle": "เทมเพลตบัตรไทม์ไลน์",
+  "categoryTextual": "ข้อความ",
+  "timelineFilterAll": "ทั้งหมด",
+  "insights": "ข้อมูลเชิงลึก",
+  "memoryTitle": "ความทรงจำ",
+  "longTermProfile": "โปรไฟล์ระยะยาว",
+  "recentBuffer": "บัฟเฟอร์ล่าสุด",
+  "@errorLoadingMemory": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "errorLoadingMemory": "โหลดความทรงจำผิดพลาด: {error}",
+  "agentConfiguration": "การกำหนดค่า Agent",
+  "resetToDefaults": "รีเซ็ตเป็นค่าเริ่มต้น",
+  "resetAllAgentConfigurationsTitle": "รีเซ็ตการกำหนดค่า Agent ทั้งหมด",
+  "resetAllAgentConfigurationsMessage": "คุณแน่ใจหรือไม่ว่าต้องการรีเซ็ตการกำหนดค่า agent ทั้งหมดเป็นค่าเริ่มต้น? การดำเนินการนี้ไม่สามารถยกเลิกได้",
+  "resetButton": "รีเซ็ต",
+  "@loadDataFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadDataFailed": "โหลดข้อมูลล้มเหลว: {error}",
+  "@saveConfigFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "saveConfigFailed": "บันทึกการกำหนดค่าล้มเหลว: {error}",
+  "selectLlmClient": "เลือก LLM Client:",
+  "agentConfigurationsReset": "รีเซ็ตการกำหนดค่า Agent แล้ว",
+  "@resetFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "resetFailed": "รีเซ็ตล้มเหลว: {error}",
+  "modelConfiguration": "การกำหนดค่าโมเดล",
+  "resetAllConfigurationsTitle": "รีเซ็ตการกำหนดค่าทั้งหมด",
+  "resetAllModelConfigurationsMessage": "คุณแน่ใจหรือไม่ว่าต้องการรีเซ็ตการกำหนดค่าโมเดลทั้งหมดเป็นค่าเริ่มต้น? การดำเนินการนี้ไม่สามารถยกเลิกได้",
+  "modelConfigurationsReset": "รีเซ็ตการกำหนดค่าโมเดลแล้ว",
+  "cannotDeleteDefaultConfiguration": "ไม่สามารถลบการกำหนดค่าเริ่มต้น",
+  "cannotDeleteConfigurationTitle": "ไม่สามารถลบการกำหนดค่า",
+  "@configUsedByAgentsMessage": {
+    "placeholders": {
+      "agentList": {}
+    }
+  },
+  "configUsedByAgentsMessage": "การกำหนดค่านี้ถูกใช้โดย agent ต่อไปนี้:\n\n{agentList}\n\nโปรดกำหนด agent เหล่านี้ใหม่ก่อนลบ",
+  "ok": "ตกลง",
+  "deleteConfigurationTitle": "ลบการกำหนดค่า",
+  "@confirmDeleteConfigMessage": {
+    "placeholders": {
+      "key": {}
+    }
+  },
+  "confirmDeleteConfigMessage": "คุณแน่ใจหรือไม่ว่าต้องการลบ \"{key}\"?",
+  "defaultLabel": "ค่าเริ่มต้น",
+  "setAsDefault": "ตั้งเป็นค่าเริ่มต้น",
+  "invalidJsonInExtraField": "JSON ไม่ถูกต้องในช่องเพิ่มเติม",
+  "keyAlreadyExists": "มี key นี้อยู่แล้ว",
+  "resetConfigurationTitle": "รีเซ็ตการกำหนดค่า",
+  "resetConfigurationMessage": "รีเซ็ตการกำหนดค่านี้เป็นค่าเริ่มต้นเดิม? การเปลี่ยนแปลงปัจจุบันจะหายไป",
+  "configurationResetPressSave": "รีเซ็ตการกำหนดค่าแล้ว กดบันทึกเพื่อใช้งาน",
+  "addConfiguration": "เพิ่มการกำหนดค่า",
+  "editConfiguration": "แก้ไขการกำหนดค่า",
+  "duplicateConfiguration": "ทำสำเนาการกำหนดค่า",
+  "duplicate": "ทำสำเนา",
+  "keyIdLabel": "รหัสการกำหนดค่า",
+  "keyIdHelper": "ตั้งชื่อการตั้งค่านี้ เช่น deepseek หรือ work-gpt",
+  "required": "จำเป็น",
+  "clientLabel": "ผู้ให้บริการโมเดล",
+  "providerGroupOpenAi": "OpenAI",
+  "providerGroupAnthropic": "Anthropic",
+  "providerGroupGoogle": "Google",
+  "providerGroupOthers": "ยอดนิยม",
+  "providerOpenAiApiKey": "API Key",
+  "providerOpenAiResponses": "API Key (Responses)",
+  "providerChatGptOauth": "ChatGPT Pro/Plus",
+  "providerClaudeApiKey": "API Key",
+  "providerBedrockSecret": "Bedrock Secret",
+  "providerGemini": "Gemini",
+  "providerGeminiOauth": "Gemini (Google OAuth)",
+  "providerKimi": "Kimi (Moonshot)",
+  "providerQwen": "Aliyun",
+  "providerSeed": "Volcengine",
+  "providerZhipu": "Zhipu GLM",
+  "providerDeepSeek": "DeepSeek",
+  "providerMinimax": "MiniMax",
+  "providerOpenRouter": "OpenRouter",
+  "providerOllama": "Ollama (Local)",
+  "providerMimo": "Xiaomi MIMO",
+  "providerMemex": "บริการพร็อกซี Memex",
+  "memexSignIn": "ลงชื่อเข้าใช้",
+  "memexCreateAccount": "สร้างบัญชี",
+  "memexUsername": "ชื่อผู้ใช้",
+  "memexPassword": "รหัสผ่าน",
+  "memexCreateAccountLink": "สร้างบัญชี",
+  "memexSignInLink": "ลงชื่อเข้าใช้แทน",
+  "memexTopUp": "เติมเงินเพื่อเริ่มใช้ Memex AI",
+  "memexTopUpSuccess": "เติมเงินสำเร็จ!",
+  "memexFillAllFields": "โปรดกรอกทุกช่อง",
+  "memexUsernameTooShort": "ชื่อผู้ใช้ต้องมีอย่างน้อย 6 ตัวอักษร",
+  "memexAuthFailed": "การยืนยันตัวตนล้มเหลว",
+  "memexPaymentFailed": "สร้างการชำระเงินล้มเหลว",
+  "memexLogout": "ออกจากระบบ",
+  "memexTopUpButton": "เติมเงิน",
+  "memexTopUpChooseAmount": "เลือกจำนวน",
+  "memexTopUpEstimatedRecords": "ประมาณ {range} บันทึก",
+  "@memexTopUpEstimatedRecords": {
+    "placeholders": {
+      "range": {}
+    }
+  },
+  "memexTopUpPlanStarter": "เริ่มต้น",
+  "memexTopUpPlanEveryday": "ใช้งานประจำ",
+  "memexTopUpPlanHighVolume": "ปริมาณสูง",
+  "memexTopUpPlanCustom": "เครดิตกำหนดเอง",
+  "memexTopUpPlanStarterSubtitle": "เหมาะสำหรับลอง Memex AI",
+  "memexTopUpPlanEverydaySubtitle": "เหมาะสำหรับการจัดระเบียบเป็นประจำ",
+  "memexTopUpPlanHighVolumeSubtitle": "เหมาะสำหรับชุดข้อมูลขนาดใหญ่",
+  "memexTopUpPlanCustomSubtitle": "ป้อน USD 1-10,000",
+  "memexTopUpCustomEstimate": "การประมาณการอิงตามจำนวนที่ป้อน",
+  "memexCustomAmount": "จำนวนกำหนดเอง",
+  "memexViewHistory": "ประวัติการใช้งาน",
+  "memexBalanceLabel": "ยอดคงเหลือ: {amount}",
+  "@memexBalanceLabel": {
+    "placeholders": {
+      "amount": {}
+    }
+  },
+  "memexConfirmPassword": "ยืนยันรหัสผ่าน",
+  "memexPasswordMismatch": "รหัสผ่านไม่ตรงกัน",
+  "memexPayAmount": "เติม {amount}",
+  "@memexPayAmount": {
+    "placeholders": {
+      "amount": {}
+    }
+  },
+  "modelIdLabel": "โมเดล",
+  "modelIdHelper": "เช่น gemini-3.1-pro-preview, gpt-4o",
+  "fetchingModels": "กำลังดึงโมเดล...",
+  "fetchModelsButton": "ดึงโมเดล",
+  "enterApiKeyFirst": "ป้อน API Key ก่อนเพื่อดึงโมเดล",
+  "apiKeyLabel": "API Key",
+  "baseUrlLabel": "API endpoint",
+  "advancedSettings": "การตั้งค่าขั้นสูง",
+  "testConnectionSuccess": "การเชื่อมต่อสำเร็จ",
+  "testConnectionFailed": "การเชื่อมต่อล้มเหลว",
+  "testTypeText": "ข้อความ",
+  "testTypeVision": "Vision",
+  "testButton": "ทดสอบ",
+  "testing": "กำลังทดสอบ...",
+  "proxyUrlOptional": "Proxy URL (ไม่บังคับ)",
+  "proxyUrlHelper": "เช่น http://127.0.0.1:7890",
+  "temperatureLabel": "Temperature",
+  "topPLabel": "Top P",
+  "maxTokensLabel": "Max Tokens",
+  "extraParamsJson": "พารามิเตอร์เพิ่มเติม (JSON)",
+  "invalidJson": "JSON ไม่ถูกต้อง",
+  "warning": "การตั้งค่าไม่สมบูรณ์",
+  "invalidConfigurationWarning": "การกำหนดค่ายังไม่สมบูรณ์ (เช่น ขาด API Key หรือ Model ID) คุณยังบันทึกและกำหนดค่าภายหลังได้ ดำเนินการต่อ?",
+  "invalidModelConfigDetailed": "AI Agent \"{agentId}\" ต้องการการกำหนดค่าโมเดลที่ถูกต้อง (key: \"{configKey}\") เพื่อทำงาน โปรดตรวจสอบการตั้งค่าโมเดล",
+  "discardChangesTitle": "ออกจากหน้านี้?",
+  "discardChangesMessage": "หากคุณทำการเปลี่ยนแปลง โปรดบันทึกก่อนออก",
+  "discardButton": "ทิ้ง",
+  "chooseLanguage": "เลือกภาษา",
+  "chooseAvatar": "เลือกอวตาร",
+  "configureNow": "กำหนดค่าตอนนี้",
+  "modelNotConfiguredBanner": "ยังไม่ได้กำหนดค่าโมเดล AI ตั้งค่าเพื่อปลดล็อกฟีเจอร์ทั้งหมด",
+  "modelNotConfiguredSubmitHint": "โปรดกำหนดค่าโมเดล AI ก่อนเผยแพร่",
+  "processingStatus": "กำลังประมวลผล",
+  "failedStatus": "ล้มเหลว",
+  "failureReason": "สาเหตุที่ล้มเหลว",
+  "unknownError": "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ",
+  "enableFitness": "เปิด Fitness",
+  "fitnessBannerMessage": "อนุญาตการเข้าถึง Fitness เพื่อติดตามข้อมูลสุขภาพและกิจกรรมของคุณ",
+  "fitnessDismissTitle": "ข้ามการเข้าถึง Fitness?",
+  "fitnessDismissMessage": "หากไม่มีสิทธิ์ Fitness แอปจะไม่สามารถรวบรวมข้อมูลสุขภาพอัตโนมัติสำหรับข้อมูลเชิงลึกและการบันทึกอัตโนมัติ",
+  "skipAnyway": "ข้ามต่อไป",
+  "proModelHint": "โมเดลนี้ต้องการการสมัครสมาชิก ChatGPT Pro/Plus",
+  "searchKnowledgeBase": "ค้นหาฐานความรู้...",
+  "searchKnowledgeHint": "ป้อนคำสำคัญเพื่อค้นหาชื่อไฟล์หรือเนื้อหา",
+  "@noSearchResults": {
+    "placeholders": {
+      "query": {}
+    }
+  },
+  "noSearchResults": "ไม่พบผลลัพธ์สำหรับ \"{query}\"",
+  "onlyMarkdownPreview": "รองรับเฉพาะการแสดงตัวอย่าง Markdown",
+  "backupAndRestore": "สำรองและกู้คืน",
+  "createBackup": "สร้างการสำรองข้อมูล",
+  "restoreBackup": "กู้คืนการสำรองข้อมูล",
+  "backupDescription": "รวมข้อมูลทั้งหมดของคุณ (บัตร ฐานความรู้ ข้อมูลเชิงลึก การตั้งค่า) เป็นไฟล์ .memex บันทึกไว้ใน iCloud Drive, Google Drive หรือตำแหน่งใดก็ได้ผ่านแผ่นแชร์",
+  "restoreDescription": "เลือกไฟล์สำรอง .memex เพื่อกู้คืนข้อมูลทั้งหมด การดำเนินการนี้จะเขียนทับข้อมูลปัจจุบัน",
+  "selectBackupFile": "เลือกไฟล์สำรอง",
+  "estimatedSize": "ขนาดโดยประมาณ",
+  "backupComplete": "สร้างการสำรองข้อมูลแล้ว",
+  "@backupFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "backupFailed": "การสำรองข้อมูลล้มเหลว: {error}",
+  "confirmRestore": "ยืนยันการกู้คืน",
+  "confirmRestoreMessage": "การกู้คืนจะเขียนทับข้อมูลปัจจุบันทั้งหมด รวมถึงบัตร ฐานความรู้ ข้อมูลเชิงลึก และการตั้งค่า การดำเนินการนี้ไม่สามารถยกเลิกได้ ดำเนินการต่อ?",
+  "restoreComplete": "กู้คืนเสร็จสิ้น",
+  "restoreRestartHint": "กู้คืนข้อมูลแล้ว โปรดเริ่มแอปใหม่เพื่อให้การเปลี่ยนแปลงทั้งหมดมีผล",
+  "@restoreFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "restoreFailed": "กู้คืนล้มเหลว: {error}",
+  "invalidBackupFile": "ไฟล์สำรองไม่ถูกต้อง โปรดเลือกไฟล์ .memex",
+  "automaticBackup": "การสำรองข้อมูลอัตโนมัติ",
+  "autoBackupDescription": "เมื่อเปิดใช้งาน Memex จะสร้างสแนปช็อตในเครื่องได้มากที่สุดหนึ่งครั้งต่อวันหลังเริ่มต้นหรือเมื่อกลับมาที่หน้าจอหน้า",
+  "backupSensitiveSettingsHint": "การสำรองข้อมูลรวมการตั้งค่าและ API keys ของผู้ให้บริการโมเดล เก็บไฟล์สำรองไว้ในที่ที่คุณไว้วางใจ",
+  "backupLocation": "ตำแหน่ง",
+  "backupLocationDetails": "รายละเอียดตำแหน่ง",
+  "backupLocationSummary": "แสดงในแอป",
+  "backupLocationFullPath": "เส้นทางเต็ม",
+  "backupLocationUri": "Folder access URI",
+  "copyBackupLocationPath": "คัดลอกเส้นทาง",
+  "backupLocationCopied": "คัดลอกตำแหน่งการสำรองข้อมูลแล้ว",
+  "androidBackupLocationSelected": "โฟลเดอร์ที่เลือก: {folderName}",
+  "@androidBackupLocationSelected": {
+    "placeholders": {
+      "folderName": {}
+    }
+  },
+  "iosICloudBackupLocation": "iCloud Drive > Memex > Backups",
+  "iosAppDocumentsBackupLocation": "Files > On My iPhone > Memex > Backups",
+  "autoBackupStatus": "สถานะ",
+  "noAutoBackupYet": "ยังไม่มีการสำรองอัตโนมัติ",
+  "@lastBackupAt": {
+    "placeholders": {
+      "time": {}
+    }
+  },
+  "lastBackupAt": "สำรองล่าสุด: {time}",
+  "autoBackupRetention": "การเก็บรักษา",
+  "@autoBackupRetentionDays": {
+    "placeholders": {
+      "days": {}
+    }
+  },
+  "autoBackupRetentionDays": "{days} วัน",
+  "autoBackupRetentionForever": "เก็บไว้ตลอดไป",
+  "autoBackupMaxSize": "ขีดจำกัดพื้นที่จัดเก็บ",
+  "@autoBackupRetentionLimitHint": {
+    "placeholders": {
+      "size": {}
+    }
+  },
+  "autoBackupRetentionLimitHint": "การล้างอัตโนมัติจะเก็บสแนปช็อตอัตโนมัติไว้ต่ำกว่า {size} สแนปช็อตความปลอดภัยและการส่งออกด้วยตนเองจะเก็บแยกต่างหาก",
+  "createSnapshotNow": "สำรองตอนนี้",
+  "backupLocationMenu": "เปลี่ยนตำแหน่ง",
+  "defaultBackupLocation": "โฟลเดอร์สำรองข้อมูลเริ่มต้น",
+  "defaultBackupLocationAndroidDesc": "ใช้โฟลเดอร์ไฟล์ภายนอกเฉพาะแอปของ Memex ไม่ต้องขอสิทธิ์พื้นที่จัดเก็บ",
+  "chooseBackupLocation": "เลือกโฟลเดอร์สำรองข้อมูล",
+  "chooseBackupLocationAndroidDesc": "เลือกโฟลเดอร์ด้วยตัวเลือกระบบของ Android และให้สิทธิ์การเข้าถึงถาวรแก่ Memex",
+  "storedBackups": "การสำรองที่เก็บไว้",
+  "noStoredBackups": "การสำรองอัตโนมัติจะปรากฏที่นี่หลังสแนปช็อตแรก",
+  "backupTypeAutoSnapshot": "สแนปช็อตอัตโนมัติ",
+  "backupTypeSafetySnapshot": "สแนปช็อตความปลอดภัย",
+  "backupTypeManualBackup": "การสำรองข้อมูลด้วยตนเอง",
+  "refresh": "รีเฟรช",
+  "restoreThisBackup": "กู้คืนการสำรองข้อมูลนี้",
+  "deleteThisBackup": "ลบการสำรองข้อมูลนี้",
+  "confirmDeleteBackup": "ลบการสำรองข้อมูล?",
+  "@confirmDeleteBackupMessage": {
+    "placeholders": {
+      "fileName": {}
+    }
+  },
+  "confirmDeleteBackupMessage": "ลบ {fileName}? การดำเนินการนี้จะลบไฟล์สำรองที่เก็บไว้และไม่สามารถยกเลิกได้",
+  "@backupDeleted": {
+    "placeholders": {
+      "fileName": {}
+    }
+  },
+  "backupDeleted": "ลบการสำรองข้อมูลแล้ว: {fileName}",
+  "@backupDeleteFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "backupDeleteFailed": "ไม่สามารถลบการสำรองข้อมูล: {error}",
+  "creatingSafetySnapshot": "กำลังสร้างสแนปช็อตความปลอดภัย...",
+  "@autoBackupCreated": {
+    "placeholders": {
+      "fileName": {}
+    }
+  },
+  "autoBackupCreated": "สร้างสแนปช็อตแล้ว: {fileName}",
+  "@backupLocationFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "backupLocationFailed": "ไม่สามารถอัปเดตตำแหน่งการสำรองข้อมูล: {error}",
+  "backupImportCreatedAt": "สร้างเมื่อ",
+  "backupImportSourceVersion": "เวอร์ชันต้นทาง",
+  "backupImportFlavor": "Build",
+  "backupLegacyFormat": "การสำรองข้อมูลแบบเก่า (ไม่มี manifest)",
+  "restoreInProgress": "กำลังกู้คืนการสำรองข้อมูล...",
+  "dataStorage": "การจัดเก็บข้อมูล",
+  "dataStorageDescriptionAndroid": "เลือกโฟลเดอร์กำหนดเองเพื่อเก็บพื้นที่ทำงาน ข้อมูลจะคงอยู่เมื่อติดตั้งแอปใหม่",
+  "dataStorageDescriptionIOS": "เปิด iCloud เพื่อซิงค์พื้นที่ทำงานข้ามอุปกรณ์และเก็บข้อมูลเมื่อติดตั้งแอปใหม่",
+  "storageLocationApp": "พื้นที่จัดเก็บในแอป",
+  "storageLocationAppDesc": "ข้อมูลจัดเก็บในแอปและจะถูกลบเมื่อถอนการติดตั้ง",
+  "storageLocationCustom": "พื้นที่จัดเก็บอุปกรณ์ (โฟลเดอร์กำหนดเอง)",
+  "storageLocationCustomDesc": "จัดเก็บข้อมูลในโฟลเดอร์ที่คุณเลือก ข้อมูลคงอยู่หลังติดตั้งใหม่หากโฟลเดอร์ยังอยู่",
+  "storageLocationICloud": "จัดเก็บใน iCloud",
+  "storageLocationICloudDesc": "ซิงค์พื้นที่ทำงานข้ามอุปกรณ์ Apple ข้อมูลยังอยู่หลังติดตั้งใหม่",
+  "storageLocationCurrent": "ปัจจุบัน: {location}",
+  "icloudRequiresCapability": "ลงชื่อเข้าใช้ iCloud และเปิด iCloud Drive เพื่อใช้พื้นที่จัดเก็บ iCloud",
+  "loadingFromICloud": "กำลังกู้คืนข้อมูลจาก iCloud…",
+  "switchingToICloud": "กำลังสลับไปยังพื้นที่จัดเก็บ iCloud…",
+  "switchingStorage": "กำลังสลับพื้นที่จัดเก็บ…",
+  "customFolderAccessDenied": "ไม่สามารถอ่านหรือเขียนโฟลเดอร์นี้ โปรดให้สิทธิ์พื้นที่จัดเก็บหรือเลือกตำแหน่งอื่น",
+  "@storageLocationCurrent": {
+    "placeholders": {
+      "location": {}
+    }
+  },
+  "configured": "กำหนดค่าแล้ว",
+  "apiKeyNotSet": "ยังไม่ได้ตั้งค่า API Key — แตะเพื่อกำหนดค่า",
+  "bottomNavTimeline": "ไทม์ไลน์",
+  "bottomNavLibrary": "คลัง",
+  "aiGeneratedLabel": "สร้างโดย AI",
+  "@sourceTraceWithCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "sourceTraceWithCount": "ติดตามแหล่งที่มา ({count})",
+  "deleteAccount": "ลบบัญชี",
+  "deleteAccountDesc": "ลบข้อมูลในเครื่องทั้งหมดอย่างถาวรและรีเซ็ตแอป",
+  "deleteAccountConfirmTitle": "ลบบัญชี?",
+  "deleteAccountConfirmMessage": "การดำเนินการนี้จะลบข้อมูลทั้งหมดของคุณอย่างถาวร รวมถึงบัตรไทม์ไลน์ ฐานความรู้ การบันทึก และการตั้งค่า ไม่สามารถยกเลิกได้",
+  "deleteAccountTypeName": "พิมพ์ \"{name}\" เพื่อยืนยัน",
+  "@deleteAccountTypeName": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "deleteAccountTypeHint": "ป้อนชื่อผู้ใช้เพื่อยืนยัน",
+  "llmConsentTitle": "ความยินยอมในการแชร์ข้อมูล",
+  "llmConsentMessage": "เพื่อเปิดใช้งานฟีเจอร์ AI Memex ต้องส่งข้อมูลของคุณไปยัง {provider} เพื่อประมวลผล รวมถึง:\n\n• ข้อความที่คุณป้อน (บันทึก การถอดเสียง)\n• ข้อมูลเมตาของรูปภาพและข้อความที่สกัด (OCR)\n• สรุปสุขภาพและฟิตเนส\n• เนื้อหาบัตรไทม์ไลน์\n\nข้อมูลของคุณถูกส่งตรงจากอุปกรณ์ไปยัง {provider} Memex ไม่เก็บหรือส่งต่อข้อมูลผ่านเซิร์ฟเวอร์อื่น\n\nโปรดอ่านนโยบายความเป็นส่วนตัวของ {provider} เกี่ยวกับการจัดการข้อมูลของคุณ\n\nคุณยอมรับที่จะส่งข้อมูลไปยัง {provider} เพื่อประมวลผล AI หรือไม่?",
+  "@llmConsentMessage": {
+    "placeholders": {
+      "provider": {}
+    }
+  },
+  "llmConsentAgree": "ยอมรับ",
+  "llmConsentDecline": "ปฏิเสธ",
+  "customAgents": "Agent แบบกำหนดเอง",
+  "noCustomAgents": "ยังไม่ได้กำหนด agent แบบกำหนดเอง",
+  "deleteAgent": "ลบ Agent",
+  "deleteAgentConfirm": "ลบ agent แบบกำหนดเอง \"{name}\"?",
+  "@deleteAgentConfirm": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "deleted": "ลบแล้ว",
+  "saved": "บันทึกแล้ว",
+  "newAgent": "Agent ใหม่",
+  "editAgent": "แก้ไข Agent",
+  "agentName": "ชื่อ Agent",
+  "agentNameHint": "my-custom-agent",
+  "agentNameRequired": "จำเป็น",
+  "agentNameInvalid": "ใช้ได้เฉพาะตัวอักษร ตัวเลข และขีดกลาง",
+  "agentNameExists": "ชื่อนี้มีอยู่แล้ว",
+  "hostAgentType": "ประเภท Host Agent",
+  "skillDirectory": "ไดเรกทอรี Skill",
+  "skillDirInvalid": "ต้องเป็นเส้นทางสัมพัทธ์ (ไม่มี / หรือ .. นำหน้า)",
+  "workingDirectory": "ไดเรกทอรีทำงาน (ไม่บังคับ)",
+  "workingDirectoryHint": "เว้นว่างเพื่อใช้ค่าเริ่มต้นของพื้นที่ทำงาน",
+  "llmConfig": "การกำหนดค่า LLM",
+  "eventType": "ประเภทกิจกรรม",
+  "executionMode": "โหมดการทำงาน",
+  "executionModeAsync": "อะซิงโครนัส",
+  "executionModeSync": "ซิงโครนัส",
+  "dependsOn": "ขึ้นกับ",
+  "dependsOnHint": "เลือกการพึ่งพา",
+  "priority": "ลำดับความสำคัญ",
+  "maxRetries": "จำนวนลองใหม่สูงสุด",
+  "systemPromptLabel": "System Prompt (ไม่บังคับ)",
+  "systemPromptHint": "คำสั่งเพิ่มเติมที่ต่อท้าย prompt ของ host agent",
+  "eventSerializer": "Event Serializer",
+  "eventSerializerDefault": "ค่าเริ่มต้น (XML)",
+  "enabledLabel": "เปิดใช้งาน",
+  "skillsManagement": "การจัดการ Skills",
+  "skillsManagementEmpty": "ยังไม่มี skill",
+  "downloadSkill": "ดาวน์โหลด Skill",
+  "downloadFile": "ดาวน์โหลดไฟล์",
+  "downloading": "กำลังดาวน์โหลด...",
+  "downloadSuccess": "ดาวน์โหลด Skill สำเร็จ",
+  "downloadFailed": "ดาวน์โหลดล้มเหลว: {error}",
+  "@downloadFailed": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "deleteConfirm": "ยืนยันการลบ",
+  "deleteConfirmMessage": "คุณแน่ใจหรือไม่ว่าต้องการลบ \"{name}\"?",
+  "@deleteConfirmMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "invalidUrl": "โปรดป้อน URL ที่ถูกต้อง",
+  "urlHint": "https://example.com/skill.zip",
+  "newFolder": "โฟลเดอร์ใหม่",
+  "newFile": "ไฟล์ใหม่",
+  "folderName": "ชื่อโฟลเดอร์",
+  "fileName": "ชื่อไฟล์",
+  "nameRequired": "ต้องระบุชื่อ",
+  "nameInvalid": "ชื่อต้องไม่มี / หรือ ..",
+  "createFailed": "สร้างล้มเหลว: {error}",
+  "@createFailed": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "fileContent": "เนื้อหาไฟล์",
+  "saveSuccess": "บันทึกสำเร็จ",
+  "downloadToCurrentDir": "ไฟล์ ZIP จะถูกแตกไปยังไดเรกทอรีปัจจุบัน: {dir}",
+  "@downloadToCurrentDir": {
+    "placeholders": {
+      "dir": {
+        "type": "String"
+      }
+    }
+  },
+  "privacyPolicy": "นโยบายความเป็นส่วนตัว",
+  "privacyPolicyDesc": "Memex จัดการข้อมูลของคุณอย่างไร",
+  "llmAuthError": "การยืนยันตัวตน API ล้มเหลว โปรดตรวจสอบการกำหนดค่า LLM ในการตั้งค่า",
+  "llmBadRequestError": "คำขอถูกปฏิเสธโดยผู้ให้บริการ LLM รูปแบบข้อมูลอาจไม่รองรับโดยโมเดลปัจจุบัน",
+  "llmRateLimitError": "เกินขีดจำกัดอัตรา API โปรดลองอีกครั้งในภายหลัง",
+  "llmServerError": "บริการ LLM ไม่พร้อมใช้งานชั่วคราว โปรดลองอีกครั้งในภายหลัง",
+  "llmNetworkError": "การเชื่อมต่อเครือข่ายล้มเหลว โปรดตรวจสอบการเชื่อมต่ออินเทอร์เน็ต",
+  "llmUnknownError": "เกิดข้อผิดพลาดที่ไม่คาดคิดขณะประมวลผลเนื้อหาของคุณ",
+  "llmErrorDialogTitle": "ประมวลผลล้มเหลว",
+  "goToModelConfig": "ไปที่การตั้งค่า",
+  "speechModelDownloadTitle": "ดาวน์โหลดโมเดลเสียงพูด",
+  "speechModelDownloadDesc": "ต้องดาวน์โหลดโมเดลครั้งเดียว (~{sizeMB}MB)\n\nเมื่อดาวน์โหลดแล้ว การถอดเสียงจะทำงานทั้งหมดในเครื่อง",
+  "@speechModelDownloadDesc": {
+    "placeholders": {
+      "sizeMB": {}
+    }
+  },
+  "speechModelStartDownload": "เริ่มดาวน์โหลด",
+  "speechModelChooseSource": "เลือกแหล่งดาวน์โหลด:",
+  "speechModelChinaMirror": "🇨🇳 China Mirror (เร็วกว่าในจีน)",
+  "speechModelGithub": "🌐 GitHub (ทั่วโลก)",
+  "speechModelDownloading": "กำลังดาวน์โหลดโมเดล...",
+  "speechModelConnecting": "กำลังเชื่อมต่อ...",
+  "deleteSpeechModel": "ลบโมเดลเสียงพูด",
+  "confirmDeleteSpeechModelMessage": "ลบไฟล์โมเดลการรู้จำเสียงพูดในเครื่องที่ดาวน์โหลดแล้ว? จะดาวน์โหลดอีกครั้งเมื่อใช้ speech-to-text ในเครื่องครั้งถัดไป",
+  "speechModelDeletedSuccess": "ลบไฟล์โมเดลเสียงพูดแล้ว",
+  "speechModelNotDownloaded": "ไม่พบไฟล์โมเดลเสียงพูดที่ดาวน์โหลด",
+  "speechModelDeleteFailed": "ลบไฟล์โมเดลเสียงพูดล้มเหลว: {error}",
+  "@speechModelDeleteFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "speechTranscribing": "กำลังรู้จำ...",
+  "speechNoResult": "ไม่ตรวจพบเสียงพูด",
+  "useLocalSpeechToTextTitle": "ใช้ speech to text ในเครื่อง",
+  "useLocalSpeechToTextDesc": "เมื่อเปิดใช้งาน เสียงจะถอดในเครื่องก่อนส่ง — มีประโยชน์สำหรับโมเดลที่ไม่รองรับการป้อนเสียง เมื่อปิด จะส่งเสียงต้นฉบับตรงไปยังโมเดล",
+  "pendingAiProcessingHint": "ตั้งค่าโมเดล AI เพื่อประมวลผล",
+  "demoWelcome": "ยินดีต้อนรับสู่ Memex!\nมาทัวร์สั้นๆ ดูว่า AI ช่วยบันทึกของคุณได้อย่างไร",
+  "demoTapAdd": "แตะที่นี่เพื่อสร้างบันทึกแรกของคุณ",
+  "demoTapSend": "แตะเพื่อส่งบันทึกแรกของคุณ",
+  "demoTapCard": "แตะเพื่อดูว่า AI จัดระเบียบบันทึกของคุณอย่างไร",
+  "demoDetailHint": "นี่คือรายละเอียดบันทึกที่ AI จัดระเบียบให้คุณ เลื่อนดู แล้วกลับเพื่อดำเนินการทัวร์ต่อ",
+  "demoTapInsight": "แตะเพื่อดูข้อมูลเชิงลึกที่ AI สร้าง",
+  "demoTapInsightUpdate": "แตะเพื่อสร้างข้อมูลเชิงลึกจากบันทึกของคุณ",
+  "demoTapKnowledge": "ตรวจสอบไฟล์ความรู้ที่จัดระเบียบอัตโนมัติ",
+  "demoDone": "เริ่มบันทึกชีวิตของคุณ",
+  "demoStartTour": "เริ่มทัวร์",
+  "demoGetStarted": "เริ่มต้น",
+  "demoSkip": "ข้าม",
+  "demoPrefillText": "สวัสดี Memex! นี่คือบันทึกแรกของฉัน 🎉",
+  "visionBadge": "Vision",
+  "notMultimodalHint": "Memex พึ่งพาความสามารถโมเดลมัลติโมดัลสำหรับการวิเคราะห์สื่อ หากบันทึกของคุณมีรูปภาพ โปรดตรวจสอบว่าโมเดลที่กำหนดรองรับการป้อนรูปภาพ",
+  "defaultModelPrefix": "ค่าเริ่มต้น",
+  "recommendedBadge": "แนะนำ",
+  "readOnlyBadge": "CHAT",
+  "switchCompanion": "สลับคู่หู",
+  "personaChatInputHint": "พิมพ์ข้อความ...",
+  "today": "วันนี้",
+  "tomorrow": "พรุ่งนี้",
+  "yesterday": "เมื่อวาน",
+  "showInsightTextTitle": "แสดงความคิดเห็นข้อมูลเชิงลึก Memex",
+  "showInsightTextDesc": "แสดงข้อมูลเชิงลึก Memex เป็นความคิดเห็นปักหมุดในส่วนความคิดเห็นรายละเอียดบัตรหรือไม่",
+  "enableCharacterCommentTitle": "ความคิดเห็นอัตโนมัติของตัวละคร",
+  "enableCharacterCommentDesc": "ตัวละครจะแสดงความคิดเห็นอัตโนมัติเมื่อมีบันทึกใหม่",
+  "maxCommentCharactersTitle": "ตัวอักษรความคิดเห็นสูงสุด",
+  "maxCommentCharactersDesc": "จำนวนตัวอักษรสูงสุดที่แสดงความคิดเห็นในแต่ละบันทึก",
+  "replyTo": "ตอบกลับ {name}",
+  "@replyTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "cdnSignalsComments": "ได้รับการตอบกลับใหม่",
+  "cdnSignalsInsight": "สร้างข้อมูลเชิงลึกใหม่แล้ว",
+  "cdnSignalsBoth": "การตอบกลับและข้อมูลเชิงลึกใหม่",
+  "untitledCard": "บัตรไม่มีชื่อ",
+  "locationContextTitle": "บริบทตำแหน่ง",
+  "locationContextDescription": "บริบทเมืองและย่านปัจจุบันสำหรับแชท agent",
+  "locationContextAttachTitle": "แนบตำแหน่งปัจจุบันในแชท",
+  "locationContextAttachDesc": "ใช้ GPS ของอุปกรณ์และ reverse geocoding เพื่อให้บริบทเมือง เขต และย่านแก่ agent",
+  "reverseGeocodingProvider": "ผู้ให้บริการ reverse geocoding",
+  "amapProviderName": "Amap",
+  "amapApiKey": "Amap API Key",
+  "amapGcj02Note": "Amap ใช้พิกัด GCJ-02 จะแปลง GPS ของอุปกรณ์ก่อน reverse geocoding",
+  "contextGranularity": "ความละเอียดของบริบท",
+  "granularityCity": "เมือง",
+  "granularityDistrict": "เขต",
+  "granularityNeighborhood": "ย่าน",
+  "granularityStreet": "ถนน",
+  "granularityFullAddress": "ที่อยู่เต็ม (ตัวเลือก)",
+  "locationFreshness": "ความสดของตำแหน่ง",
+  "minutesShort": "{minutes} นาที",
+  "@minutesShort": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "oneHour": "1 ชั่วโมง",
+  "testCurrentLocation": "ทดสอบตำแหน่งปัจจุบัน",
+  "locationTestFailed": "ล้มเหลว: {error}",
+  "@locationTestFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "locationDebugGps": "GPS",
+  "locationDebugReverseGeocode": "Reverse geocode",
+  "locationDebugProvider": "ผู้ให้บริการ",
+  "locationDebugAgentContext": "บริบท agent",
+  "locationDebugSource": "แหล่งที่มา",
+  "locationDebugAddressSummary": "สรุปที่อยู่",
+  "locationDebugFullAddress": "ที่อยู่เต็ม",
+  "locationDebugCoordinates": "พิกัด",
+  "locationDebugAccuracy": "ความแม่นยำ",
+  "locationDebugReason": "เหตุผล",
+  "locationDebugOk": "OK",
+  "locationDebugUnavailable": "ไม่พร้อมใช้งาน",
+  "locationDebugInjected": "แนบแล้ว",
+  "locationDebugNotInjected": "ยังไม่แนบ",
+  "locationStatusUpdatedAt": "อัปเดต",
+  "locationStatusSuccessTitle": "ตำแหน่งปัจจุบันพร้อมใช้งาน",
+  "locationStatusSuccessBody": "Memex สามารถแนบสรุปตำแหน่งนี้เมื่อบริบทตำแหน่งเกี่ยวข้อง",
+  "locationStatusApproximateTitle": "ตำแหน่งโดยประมาณเท่านั้น",
+  "locationStatusApproximateBody": "ความแม่นยำอยู่ในระดับเมืองหรือพื้นที่ คุณสามารถใช้งานต่อหรือเปิด Precise Location ในการตั้งค่าระบบเพื่อบริบทที่ละเอียดขึ้น",
+  "locationStatusServiceDisabledTitle": "ปิดบริการตำแหน่งระบบ",
+  "locationStatusServiceDisabledBody": "Memex ใช้เฉพาะ GPS ของอุปกรณ์และจะไม่อนุมานตำแหน่งจากเครือข่ายหรือ IP บน Android เปิดการตั้งค่าตำแหน่ง บน iOS เปิด Settings > Privacy & Security > Location Services",
+  "locationStatusPermissionDeniedTitle": "ต้องการสิทธิ์ตำแหน่ง",
+  "locationStatusPermissionDeniedBody": "อนุญาตให้ Memex ใช้ตำแหน่งขณะทดสอบหรือเมื่อต้องการบริบทตำแหน่ง ไม่ขอสิทธิ์ตลอดเวลา",
+  "locationStatusPermissionForeverTitle": "สิทธิ์ตำแหน่งถูกบล็อก",
+  "locationStatusPermissionForeverBody": "เปิดการตั้งค่าแอปและอนุญาตตำแหน่งสำหรับ Memex บน iOS ใช้ While Using the App ก็เพียงพอ",
+  "locationStatusDisabledTitle": "ปิดบริบทตำแหน่ง",
+  "locationStatusDisabledBody": "เปิดสวิตช์ด้านบนและบันทึกเมื่อต้องการให้ Memex แนบตำแหน่งอุปกรณ์ในบริบท agent",
+  "locationStatusGeocodeUnavailableTitle": "GPS ใช้งานได้ แต่ค้นหาที่อยู่ล้มเหลว",
+  "locationStatusGeocodeUnavailableBody": "Memex มีพิกัดแต่จะไม่แนบบริบท GPS เท่านั้นใน agent ตรวจสอบผู้ให้บริการ reverse geocoding แล้วลองอีกครั้ง",
+  "locationStatusUnavailableTitle": "ตำแหน่งไม่พร้อมใช้งาน",
+  "locationStatusUnavailableBody": "ตรวจสอบบริการตำแหน่งระบบและสิทธิ์แอป แล้วทดสอบอีกครั้ง",
+  "allowLocationPermissionButton": "อนุญาตสิทธิ์ตำแหน่ง",
+  "openAppSettingsButton": "เปิดการตั้งค่าแอป",
+  "openLocationSettingsButton": "เปิดการตั้งค่าตำแหน่ง",
+  "locationSettingsOpenFailed": "ไม่สามารถเปิดการตั้งค่าระบบ",
+  "locationActionFailed": "การดำเนินการตำแหน่งล้มเหลว: {error}",
+  "@locationActionFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsSearchPlaceholder": "ค้นหาการตั้งค่า...",
+  "settingsSearchEmpty": "ไม่พบการตั้งค่าที่ตรงกัน",
+  "importCharacterCard": "นำเข้าบัตรตัวละคร",
+  "firstMessageLabel": "ข้อความแรก",
+  "firstMessageHint": "ข้อความทักทายเมื่อเริ่มการสนทนาครั้งแรก (ไม่บังคับ)",
+  "systemPromptOverrideLabel": "แทนที่ System Prompt",
+  "systemPromptOverrideHint": "แทนที่ system prompt เริ่มต้น (ขั้นสูง ไม่บังคับ)",
+  "postHistoryInstructionsLabel": "คำสั่งหลังประวัติ",
+  "postHistoryInstructionsHint": "คำสั่งที่แทรกหลังประวัติแชท ก่อนตอบ (ไม่บังคับ)",
+  "mesExampleLabel": "ตัวอย่างข้อความ",
+  "mesExampleHint": "ตัวอย่างบทสนทนาแสดงสไตล์ตัวละคร (ไม่บังคับ)",
+  "worldBookTitle": "World Book",
+  "worldBookSubtitle": "ความรู้พื้นหลังที่แทรกเมื่อคำสำคัญถูกทริกเกอร์",
+  "characterMemoryTitle": "ความทรงจำตัวละคร",
+  "characterMemorySubtitle": "พลวัตความสัมพันธ์และความทรงจำในการโต้ตอบระหว่างตัวละครและผู้ใช้",
+  "addTooltip": "เพิ่ม",
+  "constantBadge": "ค่าคงที่",
+  "@worldEntryFallbackName": {
+    "placeholders": {
+      "index": {}
+    }
+  },
+  "worldEntryFallbackName": "รายการ {index}",
+  "@keywordsPrefix": {
+    "placeholders": {
+      "keys": {}
+    }
+  },
+  "keywordsPrefix": "คำสำคัญ: {keys}",
+  "@memoryFallbackName": {
+    "placeholders": {
+      "index": {}
+    }
+  },
+  "memoryFallbackName": "ความทรงจำ {index}",
+  "addWorldEntry": "เพิ่มรายการ World Book",
+  "editWorldEntry": "แก้ไขรายการ World Book",
+  "commentTitleLabel": "ความคิดเห็น / หัวข้อ",
+  "entryDescriptionHint": "คำอธิบายรายการ (ไม่บังคับ)",
+  "triggerKeywordsLabel": "คำสำคัญทริกเกอร์",
+  "triggerKeywordsHint": "คั่นด้วยเครื่องหมายจุลภาค เช่น: magic, spell",
+  "contentLabel": "เนื้อหา",
+  "worldEntryContentHint": "ความรู้พื้นหลังที่แทรกเมื่อคำสำคัญทริกเกอร์",
+  "enabledCheckbox": "เปิดใช้งาน",
+  "addMemory": "เพิ่มความทรงจำ",
+  "editMemory": "แก้ไขความทรงจำ",
+  "memoryLabelField": "ป้ายกำกับ",
+  "memoryLabelHint": "ตัวระบุเฉพาะ เช่น: ความชอบชื่อ",
+  "memoryContentHint": "เนื้อหาความทรงจำ",
+  "salienceLabel": "ความสำคัญ: ",
+  "labelCannotBeEmpty": "ป้ายกำกับต้องไม่ว่าง",
+  "@importSuccess": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "importSuccess": "นำเข้า {name} สำเร็จ",
+  "@importFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "importFailed": "นำเข้าล้มเหลว: {error}",
+  "supportedFormats": "รูปแบบที่รองรับ",
+  "tavernImportDescription": "• บัตรตัวละคร SillyTavern V2 (.json)\n• รูป PNG ที่ฝังบัตร (.png)\n\nฟิลด์เช่น persona, World Book ฯลฯ จะถูกแมปไปยังรูปแบบตัวละคร Memex อัตโนมัติ",
+  "pickCharacterFile": "เลือกไฟล์ตัวละคร",
+  "repickFile": "เลือกไฟล์อื่น",
+  "personaSettingSection": "บุคลิก",
+  "systemPromptSection": "System Prompt",
+  "@worldEntriesCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "worldEntriesCount": "World Book: {count} รายการ",
+  "@fileLabel": {
+    "placeholders": {
+      "filename": {}
+    }
+  },
+  "fileLabel": "ไฟล์: {filename}",
+  "@conflictWarning": {
+    "placeholders": {
+      "names": {}
+    }
+  },
+  "conflictWarning": "มีตัวละครชื่อเดียวกันอยู่แล้ว: {names} การนำเข้าจะสร้างตัวละครใหม่โดยไม่เขียนทับตัวที่มีอยู่",
+  "setPrimaryCompanionTitle": "ตั้งเป็นคู่หูหลัก",
+  "setPrimaryCompanionSubtitle": "ตั้งเป็นคู่หูหลักอัตโนมัติหลังนำเข้า",
+  "confirmImport": "ยืนยันการนำเข้า",
+  "chatBackground": "พื้นหลังแชท",
+  "chooseChatBackgroundImage": "เลือกรูปพื้นหลัง",
+  "earlyUpdateSettingsTitle": "อัปเดต Early access",
+  "earlyUpdateSettingsDesc": "ตรวจสอบ GitHub pre-releases สำหรับ Early APK ที่ตรงกัน ดาวน์โหลด และส่งให้ตัวติดตั้ง Android",
+  "earlyUpdateUnsupported": "อัปเดต Early ใช้ได้เฉพาะใน Android Early build",
+  "earlyUpdateAutoCheckTitle": "ตรวจสอบอัปเดตอัตโนมัติ",
+  "earlyUpdateAutoCheckDesc": "ตรวจสอบเมื่อเริ่มต้นได้มากที่สุดทุก 12 ชั่วโมง",
+  "earlyUpdateWifiOnlyTitle": "ดาวน์โหลดเฉพาะ Wi-Fi",
+  "earlyUpdateWifiOnlyDesc": "ข้ามการดาวน์โหลดอัปเดตเมื่อใช้ข้อมูลมือถือ",
+  "earlyUpdateAutoInstallTitle": "ดาวน์โหลดและติดตั้งอัตโนมัติ",
+  "earlyUpdateAutoInstallDesc": "เมื่อพบ build ใหม่ จะดาวน์โหลดและเปิดตัวติดตั้ง Android อัตโนมัติ",
+  "earlyUpdateCheckNow": "ตรวจสอบตอนนี้",
+  "earlyUpdateChecking": "กำลังตรวจสอบ GitHub pre-releases...",
+  "earlyUpdateSkippedMobile": "ข้ามเพราะเปิดดาวน์โหลดเฉพาะ Wi-Fi",
+  "earlyUpdateNoUpdate": "คุณใช้ Early build ล่าสุดอยู่แล้ว",
+  "@earlyUpdateFound": {
+    "placeholders": {
+      "version": {},
+      "build": {}
+    }
+  },
+  "earlyUpdateFound": "มี Early build {version}+{build}",
+  "earlyUpdateDownloadAndInstall": "ดาวน์โหลดและติดตั้ง",
+  "earlyUpdateDownloadInProgress": "กำลังดาวน์โหลดอัปเดต...",
+  "@earlyUpdateDownloadingPercent": {
+    "placeholders": {
+      "percent": {}
+    }
+  },
+  "earlyUpdateDownloadingPercent": "กำลังดาวน์โหลดอัปเดต: {percent}%",
+  "earlyUpdateDownloadReadyToInstall": "ดาวน์โหลดแพ็กเกจอัปเดตแล้ว พร้อมติดตั้ง",
+  "earlyUpdateInstallDownloadedPackage": "ติดตั้งแพ็กเกจที่ดาวน์โหลด",
+  "earlyUpdateClearDownloadedPackage": "ล้างแพ็กเกจที่ดาวน์โหลด",
+  "earlyUpdateClearDownloadedPackageSuccess": "ล้างแพ็กเกจอัปเดตที่ดาวน์โหลดแล้ว",
+  "earlyUpdateInstallStarted": "เปิดตัวติดตั้ง Android แล้ว",
+  "earlyUpdateInstallPermissionRequired": "อนุญาตให้ Memex ติดตั้งแอปที่ไม่รู้จัก แล้วแตะดาวน์โหลดและติดตั้งอีกครั้ง",
+  "@earlyUpdateLastChecked": {
+    "placeholders": {
+      "time": {}
+    }
+  },
+  "earlyUpdateLastChecked": "ตรวจสอบล่าสุด: {time}",
+  "@earlyUpdateCheckFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "earlyUpdateCheckFailed": "ตรวจสอบอัปเดตล้มเหลว: {error}",
+  "earlyUpdateDialogTitle": "มีอัปเดต Early",
+  "earlyUpdateReleaseNotes": "บันทึกการเผยแพร่",
+  "dismissAllNotifications": "ล้างทั้งหมด",
+  "dismissByType": "ล้างตามประเภท",
+  "dismissTypeSystemAction": "การเตือนและกิจกรรม",
+  "dismissTypeClarification": "การชี้แจง",
+  "dismissTypeCardUpdate": "อัปเดตบัตร",
+  "dismissedCount": "ล้างแล้ว {count} รายการ",
+  "@dismissedCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportTitle": "นำเข้าไฟล์",
+  "dataImportSettingsDescription": "นำไฟล์เก่าเข้า Memex แล้วตัดสินใจว่าจะจัดระเบียบหรือไม่",
+  "dataImportDescription": "เลือกบันทึกเก่า บันทึกที่ส่งออก เอกสาร หรือไฟล์ ZIP Memex จะบันทึกสำเนาก่อนและไม่แตะต้องไฟล์ต้นฉบับ หลังนำเข้า คุณสามารถตัดสินใจว่า Memex ควรช่วยจัดระเบียบหรือไม่",
+  "dataImportSelectFiles": "เลือกไฟล์ที่จะนำเข้า",
+  "dataImportImporting": "กำลังบันทึกไฟล์...",
+  "dataImportSuccess": "บันทึกไฟล์ใน Memex แล้ว",
+  "dataImportOnlyStored": "บันทึกไฟล์แล้ว ยังไม่เริ่มการจัดระเบียบ",
+  "dataImportQueued": "Memex จะจัดระเบียบการนำเข้านี้ในพื้นหลัง",
+  "dataImportResultTitle": "นำเข้าเสร็จสิ้น",
+  "dataImportResultSummary": "บันทึก {count} ไฟล์แล้ว คุณสามารถจัดระเบียบตอนนี้หรือเก็บเป็นวัสดุต้นฉบับ",
+  "@dataImportResultSummary": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportRenamedConflicts": "{count} รายการมีชื่อซ้ำและถูกเปลี่ยนชื่อเพื่อไม่ให้เขียนทับ",
+  "@dataImportRenamedConflicts": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportSkippedUnsafeEntries": "ข้ามรายการในไฟล์บีบอัดที่ผิดปกติ {count} รายการ ส่วนที่เหลือนำเข้าตามปกติ",
+  "@dataImportSkippedUnsafeEntries": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportChooseProcessing": "จัดระเบียบไฟล์เหล่านี้",
+  "dataImportProcessTitle": "จัดระเบียบการนำเข้านี้?",
+  "dataImportProcessPrompt": "คุณนำเข้า {count} ไฟล์ เลือกว่า Memex ควรจัดระเบียบตอนนี้หรือเก็บต้นฉบับไว้",
+  "@dataImportProcessPrompt": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportProcessKnowledgeBase": "จัดระเบียบลงฐานความรู้",
+  "dataImportProcessKnowledgeBaseDesc": "เหมาะสำหรับเอกสาร บันทึก วัสดุโครงการ และอ้างอิง Memex จะดึงข้อมูลที่มีประโยชน์และจัดกลุ่มเพื่อใช้ในภายหลัง",
+  "dataImportProcessTimelineCards": "สร้างบันทึกไทม์ไลน์",
+  "dataImportProcessTimelineCardsDesc": "เหมาะสำหรับไดอารี่ บันทึกแชท ประวัติกิจกรรม และการส่งออกเก่า Memex จะแปลงเนื้อหาตามเวลาเป็นบันทึกเมื่อเหมาะสม",
+  "dataImportImpactNone": "Memex จะเก็บไฟล์ต้นฉบับเท่านั้น จะไม่เริ่มการจัดระเบียบ AI",
+  "dataImportImpactKnowledgeBase": "Memex จะอ่านไฟล์เหล่านี้และจัดระเบียบข้อมูลระยะยาวที่มีประโยชน์ลงในฐานความรู้ จะไม่สร้างบันทึกไทม์ไลน์โดยอัตโนมัติ",
+  "dataImportImpactTimelineCards": "Memex จะอ่านไฟล์เหล่านี้และสร้างบันทึกไทม์ไลน์สำหรับเหตุการณ์ในชีวิตหรือประวัติที่มีวันที่เมื่อเหมาะสม จะไม่จัดระเบียบฐานความรู้โดยอัตโนมัติ",
+  "dataImportImpactBoth": "Memex จะพยายามสร้างบันทึกไทม์ไลน์และจัดระเบียบข้อมูลที่นำกลับมาใช้ได้ลงในฐานความรู้ เหมาะสำหรับคลังส่วนตัวที่สมบูรณ์",
+  "dataImportFinish": "เก็บไว้อย่างเดียว",
+  "noImages": "ไม่มีรูปภาพ",
+  "noMessages": "ไม่มีข้อความ",
+  "sketchContent": "เนื้อหาสเก็ตช์",
+  "emptyFolder": "โฟลเดอร์ว่าง",
+  "usernameAlreadyTaken": "ชื่อผู้ใช้นี้ถูกใช้แล้ว",
+  "registrationFailed": "ลงทะเบียนล้มเหลว",
+  "loginFailed": "เข้าสู่ระบบล้มเหลว",
+  "paymentCreationFailed": "ไม่สามารถเริ่มการชำระเงิน",
+  "completePayment": "ชำระเงินให้เสร็จ",
+  "commentReplyToYou": "คุณ",
+  "commentAuthorUser": "ผู้ใช้",
+  "commentAuthorAi": "AI",
+  "authorizationCancelled": "ยกเลิกการอนุญาตแล้ว",
+  "@timelineWeekNumberLabel": {
+    "placeholders": {
+      "week": {}
+    }
+  },
+  "timelineWeekNumberLabel": "สัปดาห์ {week}",
+  "timelineWeekLabel": "สัปดาห์",
+  "eventCardDefaultTitle": "กิจกรรม",
+  "memoryNoLongTermYet": "ยังไม่มีความทรงจำระยะยาว",
+  "memoryNoRecentBuffer": "ไม่มีความทรงจำล่าสุดในบัฟเฟอร์",
+  "memoryGeneralSubject": "ทั่วไป"
+}

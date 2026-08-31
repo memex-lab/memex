@@ -689,7 +689,10 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-      Object running, Object pending, Object retrying) {
+    Object running,
+    Object pending,
+    Object retrying,
+  ) {
     return 'قيد التشغيل $running، معلق $pending، إعادة محاولة $retrying';
   }
 
