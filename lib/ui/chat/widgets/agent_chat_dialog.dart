@@ -1366,7 +1366,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
       if (!mounted) return;
       _pausePhotoSuggestionsForPicker();
       try {
-        final result = await pickReliableImageAssets(context, maxAssets: 9);
+        final result = await pickPlatformImageAssets(context, maxAssets: 9);
         if (result == null) return;
 
         for (final asset in result) {

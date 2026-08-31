@@ -6,9 +6,29 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:memex/data/services/photo_thumbnail_service.dart';
 import 'package:memex/ui/core/widgets/reliable_asset_picker.dart';
-import 'package:photo_manager/photo_manager.dart';
+import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
 void main() {
+  test('keeps Android on the platform default thumbnail backend', () {
+    expect(
+      photoPickerBackendFor(TargetPlatform.android),
+      PhotoPickerBackend.platformDefault,
+    );
+    expect(
+      photoPickerBackendFor(TargetPlatform.iOS),
+      PhotoPickerBackend.reliableApple,
+    );
+  });
+
+  test('Android picker config preserves the original image-only behavior', () {
+    final config = buildPlatformDefaultImagePickerConfig(maxAssets: 9);
+
+    expect(config.maxAssets, 9);
+    expect(config.requestType, RequestType.image);
+    expect(config.pageSize, const AssetPickerConfig().pageSize);
+    expect(config.filterOptions, isA<FilterOptionGroup>());
+  });
+
   testWidgets('shows loading, retries once, and offers a manual retry',
       (tester) async {
     var loadCount = 0;

@@ -30,6 +30,28 @@ void main() {
     );
   });
 
+  test('preheats only newly published Apple picker assets', () async {
+    final calls = <({List<String> ids, ThumbnailOption option})>[];
+    final preheater = PhotoThumbnailPreheater.forTesting(
+      preloader: (assets, option) async {
+        calls.add(
+            (ids: assets.map((asset) => asset.id).toList(), option: option));
+      },
+    );
+
+    await preheater.preheat([asset('first'), asset('second')]);
+    await preheater.preheat([asset('second'), asset('third')]);
+
+    expect(calls.map((call) => call.ids), [
+      ['first', 'second'],
+      ['third'],
+    ]);
+    expect(
+      calls.first.option.toMap()['deliveryMode'],
+      DeliveryMode.opportunistic.index,
+    );
+  });
+
   test('bounds concurrent native thumbnail requests', () async {
     final completers = <String, Completer<Uint8List?>>{};
     var active = 0;

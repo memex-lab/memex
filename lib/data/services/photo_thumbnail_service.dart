@@ -16,6 +16,11 @@ typedef PhotoThumbnailCanceller = Future<void> Function(
   PMCancelToken cancelToken,
 );
 
+typedef PhotoThumbnailPreloader = Future<void> Function(
+  List<AssetEntity> assets,
+  ThumbnailOption option,
+);
+
 /// Builds a PhotoKit-compatible thumbnail request.
 ///
 /// `photo_manager` waits for a non-degraded PhotoKit result before completing
@@ -34,6 +39,70 @@ ThumbnailOption buildPhotoThumbnailOption(
     resizeMode: ResizeMode.fast,
     resizeContentMode: ResizeContentMode.fill,
   );
+}
+
+/// Builds an Apple cache-warming request that can accept an early image.
+///
+/// Unlike a visible cell request, PhotoKit preheating has no Dart future or
+/// per-asset cancel token to complete. Opportunistic delivery is therefore
+/// safe here and lets the caching manager prepare lower-cost results first.
+@visibleForTesting
+ThumbnailOption buildPhotoThumbnailPreheatOption(ThumbnailSize size) {
+  return ThumbnailOption.ios(
+    size: size,
+    deliveryMode: DeliveryMode.opportunistic,
+    resizeMode: ResizeMode.fast,
+    resizeContentMode: ResizeContentMode.fill,
+  );
+}
+
+/// Warms PhotoKit's thumbnail cache as soon as a picker page is available.
+///
+/// The picker provider publishes a whole page before its grid cells are built.
+/// Preheating at that point lets visible cells reuse PhotoKit work instead of
+/// starting every request from cold. Asset IDs are retained for this picker
+/// session so provider notifications do not repeatedly warm the same page.
+class PhotoThumbnailPreheater {
+  PhotoThumbnailPreheater._({required PhotoThumbnailPreloader preloader})
+      : _preloader = preloader;
+
+  factory PhotoThumbnailPreheater() => PhotoThumbnailPreheater._(
+        preloader: (assets, option) => PhotoCachingManager().requestCacheAssets(
+          assets: assets,
+          option: option,
+        ),
+      );
+
+  factory PhotoThumbnailPreheater.forTesting({
+    required PhotoThumbnailPreloader preloader,
+  }) =>
+      PhotoThumbnailPreheater._(preloader: preloader);
+
+  final _logger = getLogger('PhotoThumbnailPreheater');
+  final PhotoThumbnailPreloader _preloader;
+  final Set<String> _preheatedAssetIds = <String>{};
+
+  Future<void> preheat(
+    Iterable<AssetEntity> assets, {
+    ThumbnailSize size = const ThumbnailSize.square(200),
+  }) async {
+    final newAssets = <AssetEntity>[];
+    for (final asset in assets) {
+      if (_preheatedAssetIds.add(asset.id)) newAssets.add(asset);
+    }
+    if (newAssets.isEmpty) return;
+
+    try {
+      await _preloader(
+        newAssets,
+        buildPhotoThumbnailPreheatOption(size),
+      );
+    } catch (e, st) {
+      // Preheating is an optimization. Visible cells still issue their own
+      // reliable request when the native cache cannot be warmed.
+      _logger.fine('Failed to preheat ${newAssets.length} thumbnails', e, st);
+    }
+  }
 }
 
 /// A cancellable subscription to one shared thumbnail request.
@@ -90,7 +159,10 @@ class PhotoThumbnailService {
   static final PhotoThumbnailService instance = PhotoThumbnailService._(
     loader: _loadThumbnail,
     canceller: (token) => token.cancelRequest(),
-    maxConcurrent: 8,
+    // The Apple-only picker preheats each page first, so these mostly resolve
+    // from PhotoKit's cache. Sixteen slots cover a typical visible grid in two
+    // waves while still bounding rapid-scroll pressure.
+    maxConcurrent: 16,
     maxCacheEntries: 160,
     requestTimeout: const Duration(seconds: 12),
   );

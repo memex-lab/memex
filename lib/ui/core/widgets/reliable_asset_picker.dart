@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:memex/data/services/photo_thumbnail_service.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
@@ -8,6 +8,41 @@ import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 const Key reliableThumbnailLoadingKey = Key('reliable-thumbnail-loading');
 const Key reliableThumbnailFailureKey = Key('reliable-thumbnail-failure');
 const Key reliableThumbnailImageKey = Key('reliable-thumbnail-image');
+
+enum PhotoPickerBackend { platformDefault, reliableApple }
+
+@visibleForTesting
+PhotoPickerBackend photoPickerBackendFor(TargetPlatform platform) {
+  return switch (platform) {
+    TargetPlatform.iOS ||
+    TargetPlatform.macOS =>
+      PhotoPickerBackend.reliableApple,
+    _ => PhotoPickerBackend.platformDefault,
+  };
+}
+
+FilterOptionGroup _imagePickerFilterOptions() => FilterOptionGroup(
+      containsPathModified: true,
+      createTimeCond: DateTimeCond.def().copyWith(ignore: true),
+      updateTimeCond: DateTimeCond.def().copyWith(ignore: true),
+      videoOption: const FilterOption(
+        durationConstraint: DurationConstraint(
+          min: Duration.zero,
+          max: Duration.zero,
+        ),
+      ),
+    );
+
+@visibleForTesting
+AssetPickerConfig buildPlatformDefaultImagePickerConfig({
+  required int maxAssets,
+}) {
+  return AssetPickerConfig(
+    maxAssets: maxAssets,
+    requestType: RequestType.image,
+    filterOptions: _imagePickerFilterOptions(),
+  );
+}
 
 /// A picker grid thumbnail that participates in bounded, cancellable loading.
 class ReliableAssetThumbnail extends StatefulWidget {
@@ -143,9 +178,30 @@ class ReliableAssetPickerBuilderDelegate
     required super.provider,
     required super.initialPermission,
     required super.locale,
-  }) : super(
+    PhotoThumbnailPreheater? preheater,
+  })  : _preheater = preheater ?? PhotoThumbnailPreheater(),
+        super(
           gridThumbnailSize: const ThumbnailSize.square(200),
-        );
+        ) {
+    provider.addListener(_preheatLoadedAssets);
+  }
+
+  final PhotoThumbnailPreheater _preheater;
+
+  void _preheatLoadedAssets() {
+    unawaited(
+      _preheater.preheat(
+        provider.currentAssets,
+        size: gridThumbnailSize,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    provider.removeListener(_preheatLoadedAssets);
+    super.dispose();
+  }
 
   @override
   Widget imageAndVideoItemBuilder(
@@ -170,7 +226,7 @@ class ReliableAssetPickerBuilderDelegate
   }
 }
 
-/// Opens the image-only picker with lower page pressure and reliable cells.
+/// Opens the Apple image picker with bounded requests and PhotoKit preheating.
 Future<List<AssetEntity>?> pickReliableImageAssets(
   BuildContext context, {
   int maxAssets = 9,
@@ -190,6 +246,7 @@ Future<List<AssetEntity>?> pickReliableImageAssets(
     maxAssets: maxAssets,
     pageSize: 40,
     requestType: RequestType.image,
+    filterOptions: _imagePickerFilterOptions(),
   );
   final delegate = ReliableAssetPickerBuilderDelegate(
     provider: provider,
@@ -202,4 +259,30 @@ Future<List<AssetEntity>?> pickReliableImageAssets(
     delegate: delegate,
     permissionRequestOption: permissionOption,
   );
+}
+
+/// Chooses the platform-native thumbnail path for each operating system.
+///
+/// Android deliberately uses the package's default builder so thumbnails go
+/// through [AssetEntityImageProvider] and Glide's memory/disk caches. The
+/// bounded byte loader above exists only to work around PhotoKit completion
+/// behavior on Apple platforms.
+Future<List<AssetEntity>?> pickPlatformImageAssets(
+  BuildContext context, {
+  int maxAssets = 9,
+  TargetPlatform? platform,
+}) {
+  final backend = photoPickerBackendFor(platform ?? defaultTargetPlatform);
+  return switch (backend) {
+    PhotoPickerBackend.platformDefault => AssetPicker.pickAssets(
+        context,
+        pickerConfig: buildPlatformDefaultImagePickerConfig(
+          maxAssets: maxAssets,
+        ),
+      ),
+    PhotoPickerBackend.reliableApple => pickReliableImageAssets(
+        context,
+        maxAssets: maxAssets,
+      ),
+  };
 }
