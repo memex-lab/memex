@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App shortcut labels for Quick Note (home-screen shortcut). Thai locale. -->
+    <string name="shortcut_quick_note">บันทึกด่วน</string>
+    <string name="shortcut_quick_note_long">บันทึกด่วน</string>
+</resources>

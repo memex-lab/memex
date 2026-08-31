@@ -41,6 +41,8 @@
 			<string>id</string><!-- Indonesian -->
 			<string>fa</string><!-- Persian -->
 			<string>vi</string><!-- Vietnamese -->
+			<string>th</string><!-- Thai (i18n wishlist) -->
+			<string>tr</string><!-- Turkish (extra UI locale) -->
 			<string>ru</string><!-- Russian -->
 		</array>
 		<key>CFBundleAllowMixedLocalizations</key>
