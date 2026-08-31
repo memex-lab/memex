@@ -4,20 +4,19 @@
 
 ## Problem
 
-Memex already ships **13 UI locales**: English (`en`), Simplified Chinese (`zh`), Traditional Chinese (`zh_Hant`), German (`de`), Japanese (`ja`), Korean (`ko`), Spanish (`es`), Hindi (`hi`), Arabic (`ar`), Portuguese (`pt`), French (`fr`), Indonesian (`id`), and Russian (`ru`).
+Memex already ships **15 UI locales**: English (`en`), Simplified Chinese (`zh`), Traditional Chinese (`zh_Hant`), German (`de`), Japanese (`ja`), Korean (`ko`), Spanish (`es`), Hindi (`hi`), Arabic (`ar`), Portuguese (`pt`), French (`fr`), Indonesian (`id`), Persian (`fa`), Vietnamese (`vi`), and Russian (`ru`).
 
-Two locales from the original expansion list are still missing:
+One locale from the original expansion list is still missing:
 
 | # | Locale | Language | Speakers |
 |---|--------|----------|----------|
 | 1 | `th` | ไทย (Thai) | ~70M+ |
-| 2 | `vi` | Tiếng Việt (Vietnamese) | ~85M+ |
 
 This file previously said Memex only supported English and Simplified Chinese. Update it whenever a locale lands so contributors do not re-add languages that already exist.
 
 ## Proposed solution
 
-Add Thai and Vietnamese using the same two-layer localization setup as the existing locales.
+Add Thai using the same two-layer localization setup as the existing locales.
 
 ### 1. ARB files (short UI strings)
 
@@ -56,8 +55,9 @@ Arabic is already shipped. Keep verifying layouts under `TextDirection.rtl`.
 - [x] ARB files for the original 11 expansion locales (ko, ja, zh_Hant, es, hi, ar, pt, fr, ru, de, id)
 - [x] `AppLocalizationsExt` implementations for those locales
 - [x] `lookupAppLocalizationsExt()` switch cases
+- [x] Persian (`fa`) ARB + Ext
+- [x] Vietnamese (`vi`) ARB + Ext
 - [ ] Thai (`th`) ARB + Ext
-- [ ] Vietnamese (`vi`) ARB + Ext
 - [ ] iOS `Info.plist` locales beyond `en` / `zh-Hans`
 - [ ] Android `values-<locale>/strings.xml` per locale
 - [ ] Arabic RTL layout pass

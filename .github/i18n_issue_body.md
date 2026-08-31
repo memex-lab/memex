@@ -4,20 +4,19 @@
 
 ## 问题
 
-Memex 已经提供 **13 种界面语言**：English (`en`)、简体中文 (`zh`)、繁體中文 (`zh_Hant`)、Deutsch (`de`)、日本語 (`ja`)、한국어 (`ko`)、Español (`es`)、हिन्दी (`hi`)、العربية (`ar`)、Português (`pt`)、Français (`fr`)、Bahasa Indonesia (`id`)、Русский (`ru`)。
+Memex 已经提供 **15 种界面语言**：English (`en`)、简体中文 (`zh`)、繁體中文 (`zh_Hant`)、Deutsch (`de`)、日本語 (`ja`)、한국어 (`ko`)、Español (`es`)、हिन्दी (`hi`)、العربية (`ar`)、Português (`pt`)、Français (`fr`)、Bahasa Indonesia (`id`)、فارسی (`fa`)、Tiếng Việt (`vi`)、Русский (`ru`)。
 
-原扩展清单里还缺两种：
+原扩展清单里还缺一种：
 
 | # | Locale | 语言 | 使用人数 |
 |---|--------|----------|----------|
 | 1 | `th` | ไทย (Thai) | ~70M+ |
-| 2 | `vi` | Tiếng Việt (Vietnamese) | ~85M+ |
 
 本文过去写的是「仅支持 English 和简体中文」。有新语言合入后请同步更新，避免贡献者重复添加已有语言。
 
 ## 方案
 
-用与现有语言相同的两层本地化机制补齐泰语和越南语。
+用与现有语言相同的两层本地化机制补齐泰语。
 
 ### 1. ARB 文件（短 UI 字符串）
 
@@ -56,8 +55,9 @@ Memex 已经提供 **13 种界面语言**：English (`en`)、简体中文 (`zh`)
 - [x] 原扩展清单中 11 种语言的 ARB（ko, ja, zh_Hant, es, hi, ar, pt, fr, ru, de, id）
 - [x] 对应的 `AppLocalizationsExt` 实现
 - [x] `lookupAppLocalizationsExt()` switch
+- [x] 波斯语 (`fa`) ARB + Ext
+- [x] 越南语 (`vi`) ARB + Ext
 - [ ] 泰语 (`th`) ARB + Ext
-- [ ] 越南语 (`vi`) ARB + Ext
 - [ ] iOS `Info.plist` 补齐 `en` / `zh-Hans` 以外的 locale
 - [ ] 各语言 Android `values-<locale>/strings.xml`
 - [ ] 阿拉伯语 RTL 布局检查
