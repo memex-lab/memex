@@ -227,7 +227,9 @@ Future<void> processAICommentReply({
       final buf = StringBuffer();
       buf.writeln('\n<existing_comments>');
       for (final c in cardData.comments) {
-        final author = c.isAi ? (c.characterId ?? 'AI') : 'User';
+        final author = c.isAi
+            ? (c.characterId ?? UserStorage.l10n.commentAuthorAi)
+            : UserStorage.l10n.commentAuthorUser;
         final replyInfo =
             c.replyToId != null ? ' (replying to ${c.replyToId})' : '';
         final commentTime = formatLocalDateTimeWithZone(

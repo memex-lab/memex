@@ -160,9 +160,12 @@ String _getPeriodId(DateTime dt, String groupBy) {
           final weekEnd = weekStart.add(const Duration(days: 6));
           final startStr = DateFormat('MMM d', locale).format(weekStart);
           final endStr = DateFormat('MMM d, yyyy', locale).format(weekEnd);
-          return ('Week $week', '$startStr - $endStr');
+          return (
+            UserStorage.l10n.timelineWeekNumberLabel(week.toString()),
+            '$startStr - $endStr',
+          );
         }
-        return ('Week', periodId);
+        return (UserStorage.l10n.timelineWeekLabel, periodId);
 
       case 'months':
         final dt = DateFormat('yyyy-MM').parse(periodId);

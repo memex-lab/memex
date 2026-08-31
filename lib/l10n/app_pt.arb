@@ -1483,5 +1483,19 @@
   "loginFailed": "Falha no login",
   "paymentCreationFailed": "Não foi possível iniciar o pagamento",
   "completePayment": "Concluir pagamento",
-  "commentReplyToYou": "Você"
+  "commentReplyToYou": "Você",
+  "commentAuthorUser": "Usuário",
+  "commentAuthorAi": "IA",
+  "authorizationCancelled": "Autorização cancelada",
+  "timelineWeekNumberLabel": "Semana {week}",
+  "timelineWeekLabel": "Semana",
+  "eventCardDefaultTitle": "Evento",
+  "memoryNoLongTermYet": "Ainda não há memórias de longo prazo.",
+  "memoryNoRecentBuffer": "Não há memórias recentes no buffer.",
+  "memoryGeneralSubject": "Geral",
+  "@timelineWeekNumberLabel": {
+    "placeholders": {
+      "week": {}
+    }
+  }
 }

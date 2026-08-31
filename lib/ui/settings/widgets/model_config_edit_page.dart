@@ -232,7 +232,7 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
           _dismissAuthDialog();
           ToastHelper.showError(
             context,
-            UserStorage.l10n.authFailed('Authorization cancelled'),
+            UserStorage.l10n.authFailed(UserStorage.l10n.authorizationCancelled),
           );
         }
       });

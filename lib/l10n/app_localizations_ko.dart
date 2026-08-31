@@ -3166,4 +3166,33 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get commentReplyToYou => '나';
+
+  @override
+  String get commentAuthorUser => '사용자';
+
+  @override
+  String get commentAuthorAi => 'AI';
+
+  @override
+  String get authorizationCancelled => '인증이 취소되었습니다';
+
+  @override
+  String timelineWeekNumberLabel(Object week) {
+    return '$week주차';
+  }
+
+  @override
+  String get timelineWeekLabel => '주';
+
+  @override
+  String get eventCardDefaultTitle => '이벤트';
+
+  @override
+  String get memoryNoLongTermYet => '아직 장기 기억이 없습니다.';
+
+  @override
+  String get memoryNoRecentBuffer => '버퍼에 최근 기억이 없습니다.';
+
+  @override
+  String get memoryGeneralSubject => '일반';
 }

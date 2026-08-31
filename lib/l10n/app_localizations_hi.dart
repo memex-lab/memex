@@ -3252,4 +3252,33 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get commentReplyToYou => 'आप';
+
+  @override
+  String get commentAuthorUser => 'उपयोगकर्ता';
+
+  @override
+  String get commentAuthorAi => 'AI';
+
+  @override
+  String get authorizationCancelled => 'प्राधिकरण रद्द कर दिया गया';
+
+  @override
+  String timelineWeekNumberLabel(Object week) {
+    return 'सप्ताह $week';
+  }
+
+  @override
+  String get timelineWeekLabel => 'सप्ताह';
+
+  @override
+  String get eventCardDefaultTitle => 'कार्यक्रम';
+
+  @override
+  String get memoryNoLongTermYet => 'अभी तक कोई दीर्घकालिक स्मृति नहीं है।';
+
+  @override
+  String get memoryNoRecentBuffer => 'बफ़र में कोई हाल की स्मृति नहीं है।';
+
+  @override
+  String get memoryGeneralSubject => 'सामान्य';
 }

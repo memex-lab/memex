@@ -169,7 +169,7 @@ class OpenAiAuthService {
       } catch (_) {}
 
       if (result == null) {
-        onError('Authorization cancelled by user');
+        onError(UserStorage.l10n.authorizationCancelled);
         return;
       }
 

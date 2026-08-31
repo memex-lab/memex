@@ -3262,4 +3262,33 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get commentReplyToYou => 'Anda';
+
+  @override
+  String get commentAuthorUser => 'Pengguna';
+
+  @override
+  String get commentAuthorAi => 'AI';
+
+  @override
+  String get authorizationCancelled => 'Otorisasi dibatalkan';
+
+  @override
+  String timelineWeekNumberLabel(Object week) {
+    return 'Minggu $week';
+  }
+
+  @override
+  String get timelineWeekLabel => 'Minggu';
+
+  @override
+  String get eventCardDefaultTitle => 'Acara';
+
+  @override
+  String get memoryNoLongTermYet => 'Belum ada memori jangka panjang.';
+
+  @override
+  String get memoryNoRecentBuffer => 'Tidak ada memori terbaru di buffer.';
+
+  @override
+  String get memoryGeneralSubject => 'Umum';
 }

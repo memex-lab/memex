@@ -3272,4 +3272,33 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get commentReplyToYou => 'Você';
+
+  @override
+  String get commentAuthorUser => 'Usuário';
+
+  @override
+  String get commentAuthorAi => 'IA';
+
+  @override
+  String get authorizationCancelled => 'Autorização cancelada';
+
+  @override
+  String timelineWeekNumberLabel(Object week) {
+    return 'Semana $week';
+  }
+
+  @override
+  String get timelineWeekLabel => 'Semana';
+
+  @override
+  String get eventCardDefaultTitle => 'Evento';
+
+  @override
+  String get memoryNoLongTermYet => 'Ainda não há memórias de longo prazo.';
+
+  @override
+  String get memoryNoRecentBuffer => 'Não há memórias recentes no buffer.';
+
+  @override
+  String get memoryGeneralSubject => 'Geral';
 }

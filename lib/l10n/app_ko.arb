@@ -1483,5 +1483,19 @@
   "loginFailed": "로그인에 실패했습니다",
   "paymentCreationFailed": "결제를 시작할 수 없습니다",
   "completePayment": "결제 완료",
-  "commentReplyToYou": "나"
+  "commentReplyToYou": "나",
+  "commentAuthorUser": "사용자",
+  "commentAuthorAi": "AI",
+  "authorizationCancelled": "인증이 취소되었습니다",
+  "timelineWeekNumberLabel": "{week}주차",
+  "timelineWeekLabel": "주",
+  "eventCardDefaultTitle": "이벤트",
+  "memoryNoLongTermYet": "아직 장기 기억이 없습니다.",
+  "memoryNoRecentBuffer": "버퍼에 최근 기억이 없습니다.",
+  "memoryGeneralSubject": "일반",
+  "@timelineWeekNumberLabel": {
+    "placeholders": {
+      "week": {}
+    }
+  }
 }

@@ -1483,5 +1483,19 @@
   "loginFailed": "登入失敗",
   "paymentCreationFailed": "無法發起付款",
   "completePayment": "完成付款",
-  "commentReplyToYou": "你"
+  "commentReplyToYou": "你",
+  "commentAuthorUser": "用戶",
+  "commentAuthorAi": "AI",
+  "authorizationCancelled": "授權已取消",
+  "timelineWeekNumberLabel": "第 {week} 週",
+  "timelineWeekLabel": "週",
+  "eventCardDefaultTitle": "事件",
+  "memoryNoLongTermYet": "還沒有長期記憶。",
+  "memoryNoRecentBuffer": "緩衝區中還沒有近期記憶。",
+  "memoryGeneralSubject": "通用",
+  "@timelineWeekNumberLabel": {
+    "placeholders": {
+      "week": {}
+    }
+  }
 }
