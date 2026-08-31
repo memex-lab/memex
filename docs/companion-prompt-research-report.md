@@ -1,5 +1,7 @@
 # Memex 情感陪伴角色 Prompt 调研报告
 
+中文 | [English](companion-prompt-research-report.en.md)
+
 更新时间：2026-05-29
 
 ## 1. 背景与结论
