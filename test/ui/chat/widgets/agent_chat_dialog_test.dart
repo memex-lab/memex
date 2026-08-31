@@ -448,6 +448,35 @@ void main() {
       expect(reply.artifacts.single.artifact.title, 'Schedule presentation');
     });
 
+    test('coalesces artifact revisions without changing card order', () {
+      final current = <ArtifactItem>[
+        ArtifactItem(
+          ChatArtifact.timelineCard(
+            cardId: 'xinjiang',
+            title: 'Draft',
+            updated: false,
+          ),
+        ),
+        ArtifactItem(
+          ChatArtifact.schedule(title: 'Schedule', updated: false),
+        ),
+      ];
+
+      mergeArtifactItems(current, [
+        ArtifactItem(
+          ChatArtifact.timelineCard(
+            cardId: 'xinjiang',
+            title: 'Final',
+            updated: true,
+          ),
+        ),
+      ]);
+
+      expect(current, hasLength(2));
+      expect(current.first.artifact.title, 'Final');
+      expect(current.last.artifact.kind, ChatArtifact.kindSchedule);
+    });
+
     test('attaches pending artifacts only to the same assistant turn', () {
       expect(
         shouldAttachArtifactsToAssistantReply(

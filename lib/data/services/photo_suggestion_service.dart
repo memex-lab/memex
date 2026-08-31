@@ -15,6 +15,15 @@ import 'package:memex/data/repositories/memex_router.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
 
+/// Cooperative cancellation for expensive recent-photo analysis.
+class PhotoSuggestionCancellationToken {
+  bool _isCancelled = false;
+
+  bool get isCancelled => _isCancelled;
+
+  void cancel() => _isCancelled = true;
+}
+
 /// Photo suggestion service (album images)
 class PhotoSuggestionService {
   static final Logger _logger = getLogger('PhotoSuggestionService');
@@ -222,10 +231,11 @@ class PhotoSuggestionService {
   static Future<List<List<EnhancedPhoto>>> fetchAndClusterRecentPhotos({
     int maxCount = 10,
     bool ignoreLastPublishTime = true,
+    PhotoSuggestionCancellationToken? cancellationToken,
   }) async {
     final recentPhotos = await getRecentPhotos(
         maxCount: maxCount, ignoreLastPublishTime: ignoreLastPublishTime);
-    if (recentPhotos.isEmpty) {
+    if (recentPhotos.isEmpty || cancellationToken?.isCancelled == true) {
       return [];
     }
 
@@ -240,11 +250,14 @@ class PhotoSuggestionService {
           XFile xFile
         })> photoInfoList = [];
     for (final asset in recentPhotos) {
+      if (cancellationToken?.isCancelled == true) return [];
       final xFile = await assetToXFile(asset);
+      if (cancellationToken?.isCancelled == true) return [];
       if (xFile == null) continue;
 
       final length = await xFile.length();
       final trueTitle = await asset.titleAsync;
+      if (cancellationToken?.isCancelled == true) return [];
       final effectiveName = trueTitle.isNotEmpty ? trueTitle : xFile.name;
       final rawHashStr = 'photo_${effectiveName}_$length';
 
@@ -256,6 +269,7 @@ class PhotoSuggestionService {
 
     // Load cache early to check unprocessed fast
     var cache = await UserStorage.getPhotoSuggestionCache();
+    if (cancellationToken?.isCancelled == true) return [];
     bool cacheChanged = false;
 
     // If cache version mismatch, clear and start fresh
@@ -279,6 +293,7 @@ class PhotoSuggestionService {
         cache['data'] as Map<String, dynamic>;
 
     for (int i = 0; i < photoInfoList.length; i++) {
+      if (cancellationToken?.isCancelled == true) return [];
       var pi = photoInfoList[i];
       final rawData = cacheData[pi.rawHashStr];
       if (rawData is Map<String, dynamic>) {
@@ -313,6 +328,7 @@ class PhotoSuggestionService {
           .warning('Batch hash check failed, treating all as unprocessed: $e');
       unprocessedHashes = photoInfoList.map((pi) => pi.md5Hash).toList();
     }
+    if (cancellationToken?.isCancelled == true) return [];
 
     final unprocessedSet = unprocessedHashes.toSet();
     final List<
@@ -370,8 +386,10 @@ class PhotoSuggestionService {
           'info': info,
         };
         prefetchFutures.add(() async {
+          if (cancellationToken?.isCancelled == true) return;
           final latlng = await info.asset.latlngAsync();
           final trueTitle = await info.asset.titleAsync;
+          if (cancellationToken?.isCancelled == true) return;
           final effectiveName =
               trueTitle.isNotEmpty ? trueTitle : info.xFile.name;
 
@@ -385,8 +403,10 @@ class PhotoSuggestionService {
     if (prefetchFutures.isNotEmpty) {
       await Future.wait(prefetchFutures);
     }
+    if (cancellationToken?.isCancelled == true) return [];
 
     for (final data in processedData) {
+      if (cancellationToken?.isCancelled == true) return [];
       final isHit = data['isHit'] as bool;
       final info = data['info'];
       final asset = info.asset;
@@ -418,6 +438,7 @@ class PhotoSuggestionService {
 
         _logger.fine('Cache miss: $effectiveName');
         final ocrResult = await _processImageOCR(xFile);
+        if (cancellationToken?.isCancelled == true) return [];
         ocrBlocks = ocrResult.ocrBlocks;
         labels = ocrResult.labels;
         fileModifiedTime = ocrResult.modifiedTime;
@@ -483,9 +504,12 @@ class PhotoSuggestionService {
 
     // Save cache if modified
     if (cacheChanged) {
+      if (cancellationToken?.isCancelled == true) return [];
       cache['__version__'] = _cacheVersion;
       await UserStorage.savePhotoSuggestionCache(cache);
     }
+
+    if (cancellationToken?.isCancelled == true) return [];
 
     final clustering = GlobalPhotoClustering();
     final clusters = clustering.performGlobalClustering(enhancedPhotos);

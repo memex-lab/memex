@@ -71,7 +71,28 @@ class ChatArtifact {
   /// Domain-specific display hints such as tags, image paths, or file excerpts.
   final Map<String, dynamic> metadata;
 
+  /// Stable identity used to coalesce append-only artifact revisions.
+  ///
+  /// Destinations are preferred because older producers did not always mint
+  /// [artifactId] consistently, while the destination still names the same
+  /// user-visible object.
+  String get identityKey => targetUri ?? storageUri ?? artifactId;
+
   bool get updated => operation == operationUpdate;
+
+  /// Whether this revision would render the same user-visible artifact.
+  ///
+  /// Provenance and timestamps deliberately do not participate: a recovered
+  /// task can replay an identical tool result with a new tool call id.
+  bool hasSamePresentationAs(ChatArtifact other) {
+    return kind == other.kind &&
+        operation == other.operation &&
+        title == other.title &&
+        summary == other.summary &&
+        targetUri == other.targetUri &&
+        storageUri == other.storageUri &&
+        _deepEquals(metadata, other.metadata);
+  }
 
   List<String> get imagePaths => _stringList(metadata['image_paths']);
 
@@ -439,10 +460,39 @@ class ChatArtifact {
         .where((item) => item.isNotEmpty)
         .toList();
   }
+
+  static bool _deepEquals(dynamic left, dynamic right) {
+    if (identical(left, right)) return true;
+    if (left is Map && right is Map) {
+      if (left.length != right.length) return false;
+      for (final entry in left.entries) {
+        if (!right.containsKey(entry.key) ||
+            !_deepEquals(entry.value, right[entry.key])) {
+          return false;
+        }
+      }
+      return true;
+    }
+    if (left is List && right is List) {
+      if (left.length != right.length) return false;
+      for (var index = 0; index < left.length; index++) {
+        if (!_deepEquals(left[index], right[index])) return false;
+      }
+      return true;
+    }
+    return left == right;
+  }
 }
 
 class ChatTurnArtifactCollector {
-  ChatTurnArtifactCollector({required this.sourceRunId});
+  ChatTurnArtifactCollector({
+    required this.sourceRunId,
+    Iterable<ChatArtifact> initialArtifacts = const [],
+  }) {
+    for (final artifact in initialArtifacts) {
+      _artifactsByKey[artifact.identityKey] = artifact;
+    }
+  }
 
   final String sourceRunId;
   final Map<String, ChatArtifact> _artifactsByKey = {};
@@ -452,27 +502,24 @@ class ChatTurnArtifactCollector {
     String? sourceToolCallId,
     DateTime? createdAt,
   }) {
-    final added = <ChatArtifact>[];
+    final revisions = <ChatArtifact>[];
     for (final artifact in ChatArtifact.listFromToolMetadata(metadata)) {
       final sourced = artifact.withSource(
         sourceRunId: sourceRunId,
         sourceToolCallId: sourceToolCallId,
         createdAt: createdAt,
       );
-      final key = _keyFor(sourced);
-      if (!_artifactsByKey.containsKey(key)) {
-        added.add(sourced);
+      final key = sourced.identityKey;
+      final previous = _artifactsByKey[key];
+      if (previous == null || !previous.hasSamePresentationAs(sourced)) {
+        revisions.add(sourced);
       }
       _artifactsByKey[key] = sourced;
     }
-    return added;
+    return revisions;
   }
 
   List<ChatArtifact> get artifacts => List.unmodifiable(_artifactsByKey.values);
-
-  String _keyFor(ChatArtifact artifact) {
-    return artifact.targetUri ?? artifact.storageUri ?? artifact.artifactId;
-  }
 }
 
 class ChatArtifactSessionMigration {

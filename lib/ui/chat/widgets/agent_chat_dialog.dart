@@ -24,6 +24,7 @@ import 'package:memex/data/services/input_draft_service.dart';
 import 'package:memex/ui/card_attachments/widgets/system_action_card.dart';
 import 'package:memex/ui/core/widgets/html_webview_card.dart';
 import 'package:memex/ui/core/widgets/local_image.dart';
+import 'package:memex/ui/core/widgets/reliable_asset_picker.dart';
 import 'package:memex/ui/insight/widgets/insight_detail_page.dart';
 import 'package:memex/ui/knowledge/widgets/knowledge_file_page.dart';
 import 'package:memex/ui/timeline/widgets/timeline_card_detail_screen.dart';
@@ -153,6 +154,29 @@ class ArtifactItem extends ChatDisplayItem {
   final DateTime? timestamp;
 
   ArtifactItem(this.artifact, {this.html, this.timestamp});
+}
+
+/// Merges append-only artifact revisions into their current UI projection.
+/// Existing positions are preserved so an update does not make a card jump.
+@visibleForTesting
+void mergeArtifactItems(
+  List<ArtifactItem> current,
+  Iterable<ArtifactItem> incoming,
+) {
+  final indexByIdentity = <String, int>{};
+  for (var index = 0; index < current.length; index++) {
+    indexByIdentity[current[index].artifact.identityKey] = index;
+  }
+  for (final item in incoming) {
+    final identity = item.artifact.identityKey;
+    final existingIndex = indexByIdentity[identity];
+    if (existingIndex == null) {
+      indexByIdentity[identity] = current.length;
+      current.add(item);
+    } else {
+      current[existingIndex] = item;
+    }
+  }
 }
 
 /// Inline ask-first approval card for one pending mutating tool call.
@@ -488,6 +512,10 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   bool _isApplyingDraft = false;
   bool _isLoadingPhotoSuggestions = false;
   bool _hasLoadedPhotoSuggestions = false;
+  bool _isPhotoPickerActive = false;
+  PhotoSuggestionCancellationToken? _photoSuggestionCancellationToken;
+  Future<void>? _photoSuggestionLoadFuture;
+  bool _reloadPhotoSuggestionsAfterCurrentWork = false;
   bool _notificationPermissionPromptInFlight = false;
   List<List<EnhancedPhoto>> _photoSuggestionClusters = [];
   double _lastKeyboardBottomOffset = 0;
@@ -556,12 +584,14 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   void _handleEntranceAnimationStatus(AnimationStatus status) {
     if (status == AnimationStatus.completed) {
       _controller.removeStatusListener(_handleEntranceAnimationStatus);
-      unawaited(_loadPhotoSuggestions());
+      _requestPhotoSuggestions();
     }
   }
 
   @override
   void dispose() {
+    _photoSuggestionCancellationToken?.cancel();
+    _photoSuggestionCancellationToken = null;
     _chatSubscription?.cancel();
     for (final subscription in _queuedSendSubscriptions) {
       subscription.cancel();
@@ -726,15 +756,17 @@ class _AgentChatDialogState extends State<AgentChatDialog>
       if (turnId != null && turnId.isNotEmpty) {
         final reply = repliesByTurn[turnId];
         if (reply != null) {
-          reply.artifacts.addAll(artifacts);
+          mergeArtifactItems(reply.artifacts, artifacts);
           return;
         }
-        bufferedArtifactsByTurn
-            .putIfAbsent(turnId, () => <ArtifactItem>[])
-            .addAll(artifacts);
+        final buffered = bufferedArtifactsByTurn.putIfAbsent(
+          turnId,
+          () => <ArtifactItem>[],
+        );
+        mergeArtifactItems(buffered, artifacts);
         return;
       }
-      orphanArtifacts.addAll(artifacts);
+      mergeArtifactItems(orphanArtifacts, artifacts);
     }
 
     for (final msg in messages) {
@@ -790,12 +822,15 @@ class _AgentChatDialogState extends State<AgentChatDialog>
         }
         if (text.isNotEmpty) {
           final turnId = message['turn_id']?.toString();
-          final itemArtifacts = <ArtifactItem>[
-            if (turnId != null && turnId.isNotEmpty)
-              ...?bufferedArtifactsByTurn.remove(turnId),
-            ...orphanArtifacts,
-            ...artifacts,
-          ];
+          final itemArtifacts = <ArtifactItem>[];
+          if (turnId != null && turnId.isNotEmpty) {
+            mergeArtifactItems(
+              itemArtifacts,
+              bufferedArtifactsByTurn.remove(turnId) ?? const [],
+            );
+          }
+          mergeArtifactItems(itemArtifacts, orphanArtifacts);
+          mergeArtifactItems(itemArtifacts, artifacts);
           orphanArtifacts.clear();
           final item = AIMessageItem(
             text,
@@ -895,16 +930,25 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   }
 
   Future<void> _loadPhotoSuggestions() async {
-    if (_isLoadingPhotoSuggestions || _photoSuggestionClusters.isNotEmpty) {
+    if (_isPhotoPickerActive ||
+        _isLoadingPhotoSuggestions ||
+        _photoSuggestionClusters.isNotEmpty) {
       return;
     }
 
+    final cancellationToken = PhotoSuggestionCancellationToken();
+    _photoSuggestionCancellationToken = cancellationToken;
     setState(() => _isLoadingPhotoSuggestions = true);
     try {
       final clusters = await PhotoSuggestionService.fetchAndClusterRecentPhotos(
         maxCount: 10,
+        cancellationToken: cancellationToken,
       );
-      if (!mounted) return;
+      if (!mounted ||
+          cancellationToken.isCancelled ||
+          !identical(_photoSuggestionCancellationToken, cancellationToken)) {
+        return;
+      }
       setState(() {
         _photoSuggestionClusters =
             clusters.where((cluster) => cluster.isNotEmpty).take(8).toList();
@@ -913,11 +957,55 @@ class _AgentChatDialogState extends State<AgentChatDialog>
       });
     } catch (e, st) {
       _logger.warning('Failed to load photo suggestions: $e', e, st);
-      if (!mounted) return;
+      if (!mounted ||
+          cancellationToken.isCancelled ||
+          !identical(_photoSuggestionCancellationToken, cancellationToken)) {
+        return;
+      }
       setState(() {
         _isLoadingPhotoSuggestions = false;
         _hasLoadedPhotoSuggestions = true;
       });
+    } finally {
+      if (identical(_photoSuggestionCancellationToken, cancellationToken)) {
+        _photoSuggestionCancellationToken = null;
+      }
+    }
+  }
+
+  void _requestPhotoSuggestions() {
+    if (_isPhotoPickerActive || _photoSuggestionLoadFuture != null) return;
+
+    late final Future<void> loadFuture;
+    loadFuture = _loadPhotoSuggestions().whenComplete(() {
+      if (!identical(_photoSuggestionLoadFuture, loadFuture)) return;
+      _photoSuggestionLoadFuture = null;
+      if (!mounted) return;
+      if (_reloadPhotoSuggestionsAfterCurrentWork) {
+        _reloadPhotoSuggestionsAfterCurrentWork = false;
+        _requestPhotoSuggestions();
+      }
+    });
+    _photoSuggestionLoadFuture = loadFuture;
+  }
+
+  void _pausePhotoSuggestionsForPicker() {
+    _isPhotoPickerActive = true;
+    _photoSuggestionCancellationToken?.cancel();
+    _photoSuggestionCancellationToken = null;
+    if (_isLoadingPhotoSuggestions && mounted) {
+      setState(() => _isLoadingPhotoSuggestions = false);
+    }
+  }
+
+  void _resumePhotoSuggestionsAfterPicker() {
+    _isPhotoPickerActive = false;
+    if (!_hasLoadedPhotoSuggestions && _photoSuggestionClusters.isEmpty) {
+      if (_photoSuggestionLoadFuture != null) {
+        _reloadPhotoSuggestionsAfterCurrentWork = true;
+      } else {
+        _requestPhotoSuggestions();
+      }
     }
   }
 
@@ -1276,34 +1364,22 @@ class _AgentChatDialogState extends State<AgentChatDialog>
       }
 
       if (!mounted) return;
-      final result = await AssetPicker.pickAssets(
-        context,
-        pickerConfig: AssetPickerConfig(
-          maxAssets: 9,
-          requestType: RequestType.image,
-          filterOptions: FilterOptionGroup(
-            containsPathModified: true,
-            createTimeCond: DateTimeCond.def().copyWith(ignore: true),
-            updateTimeCond: DateTimeCond.def().copyWith(ignore: true),
-            videoOption: const FilterOption(
-              durationConstraint: DurationConstraint(
-                min: Duration.zero,
-                max: Duration.zero,
-              ),
-            ),
-          ),
-        ),
-      );
-      if (result == null) return;
+      _pausePhotoSuggestionsForPicker();
+      try {
+        final result = await pickReliableImageAssets(context, maxAssets: 9);
+        if (result == null) return;
 
-      for (final asset in result) {
-        final xFile = await PhotoSuggestionService.assetToXFile(asset);
-        if (xFile == null) continue;
-        final originalName = await asset.titleAsync;
-        _originalFilenames[xFile.path] = originalName;
-        if (mounted) {
-          setState(() => _selectedImages.add(xFile));
+        for (final asset in result) {
+          final xFile = await PhotoSuggestionService.assetToXFile(asset);
+          if (xFile == null) continue;
+          final originalName = await asset.titleAsync;
+          _originalFilenames[xFile.path] = originalName;
+          if (mounted) {
+            setState(() => _selectedImages.add(xFile));
+          }
         }
+      } finally {
+        if (mounted) _resumePhotoSuggestionsAfterPicker();
       }
     } catch (e) {
       if (mounted) {
@@ -1561,12 +1637,14 @@ class _AgentChatDialogState extends State<AgentChatDialog>
       turnId: turnId,
       primaryItem: primary,
     )) {
-      (primary as AIMessageItem).artifacts.addAll(artifacts);
+      mergeArtifactItems((primary as AIMessageItem).artifacts, artifacts);
       return;
     }
-    _pendingReplyArtifactsByTurn
-        .putIfAbsent(turnId, () => <ArtifactItem>[])
-        .addAll(artifacts);
+    final pending = _pendingReplyArtifactsByTurn.putIfAbsent(
+      turnId,
+      () => <ArtifactItem>[],
+    );
+    mergeArtifactItems(pending, artifacts);
   }
 
   bool _hasPendingReplyArtifacts(String turnId) {

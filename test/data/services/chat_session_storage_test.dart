@@ -440,6 +440,61 @@ void main() {
       ]);
       expect(older.hasMoreMessages, isFalse);
     });
+
+    test('loads only the latest artifact revision for a recovered turn',
+        () async {
+      const sessionId = 'memex_agent_artifact_recovery';
+      const turnId = 'turn-recovered';
+      final storage = ChatSessionStorage.instance;
+      final draft = ChatArtifact.timelineCard(
+        cardId: '2026/08/29.md#xinjiang',
+        title: '新疆草稿',
+        updated: false,
+      );
+      final finalRevision = ChatArtifact.timelineCard(
+        cardId: '2026/08/29.md#xinjiang',
+        title: '新疆记录',
+        updated: true,
+      );
+
+      await storage.createSession(
+        userId: userId,
+        sessionId: sessionId,
+        metadata: {
+          'session_id': sessionId,
+          'agent_name': 'memex_agent',
+          'title': 'Artifact recovery',
+          'created_at': '2026-08-29T12:00:00.000',
+          'updated_at': '2026-08-29T12:00:00.000',
+        },
+        messages: [
+          {
+            'role': 'artifact',
+            'turn_id': turnId,
+            'content': const [],
+            'artifacts': [draft.toJson()],
+            'timestamp': '2026-08-29T12:00:01.000',
+          },
+          {
+            'role': 'artifact',
+            'turn_id': turnId,
+            'content': const [],
+            'artifacts': [finalRevision.toJson()],
+            'timestamp': '2026-08-29T12:00:02.000',
+          },
+        ],
+      );
+
+      final artifacts = await storage.loadArtifactsForTurn(
+        userId,
+        sessionId,
+        turnId,
+      );
+
+      expect(artifacts, hasLength(1));
+      expect(artifacts.single.title, '新疆记录');
+      expect(artifacts.single.updated, isTrue);
+    });
   });
 }
 

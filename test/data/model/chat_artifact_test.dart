@@ -151,14 +151,53 @@ void main() {
           ).toJson(),
         },
       );
+      final replayedArtifacts = collector.addFromToolResult(
+        sourceToolCallId: 'tool-3',
+        metadata: {
+          'artifact': ChatArtifact.timelineCard(
+            cardId: '2026/06/10.md#ts_3',
+            title: 'Final',
+            updated: true,
+          ).toJson(),
+        },
+      );
 
       expect(firstArtifacts, hasLength(1));
-      expect(secondArtifacts, isEmpty);
+      expect(secondArtifacts, hasLength(1));
+      expect(replayedArtifacts, isEmpty);
       expect(collector.artifacts, hasLength(1));
       expect(collector.artifacts.single.title, 'Final');
       expect(collector.artifacts.single.updated, isTrue);
       expect(collector.artifacts.single.sourceRunId, 'turn-1');
-      expect(collector.artifacts.single.sourceToolCallId, 'tool-2');
+      expect(collector.artifacts.single.sourceToolCallId, 'tool-3');
+    });
+
+    test('seeds recovered turns and suppresses an identical replay', () {
+      final persisted = ChatArtifact.timelineCard(
+        cardId: '2026/06/10.md#ts_3',
+        title: 'Already saved',
+        updated: false,
+        sourceRunId: 'turn-1',
+        sourceToolCallId: 'old-tool',
+      );
+      final collector = ChatTurnArtifactCollector(
+        sourceRunId: 'turn-1',
+        initialArtifacts: [persisted],
+      );
+
+      final replayed = collector.addFromToolResult(
+        sourceToolCallId: 'recovered-tool',
+        metadata: {
+          'artifact': ChatArtifact.timelineCard(
+            cardId: '2026/06/10.md#ts_3',
+            title: 'Already saved',
+            updated: false,
+          ).toJson(),
+        },
+      );
+
+      expect(replayed, isEmpty);
+      expect(collector.artifacts, hasLength(1));
     });
   });
 
