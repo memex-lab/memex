@@ -28,11 +28,22 @@ import 'package:memex/utils/time_context.dart';
 import 'package:memex/domain/models/agent_definitions.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/utils/token_usage_utils.dart';
+import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:memex/data/model/chat_events.dart';
 
 export 'package:memex/data/model/chat_events.dart';
+
+@visibleForTesting
+String chatErrorUserNotLoggedIn() => UserStorage.l10n.userIdNotFound;
+
+@visibleForTesting
+String chatErrorEmptyMessage() => UserStorage.l10n.unknownError;
+
+@visibleForTesting
+String chatErrorOperationFailed(Object error) =>
+    UserStorage.l10n.operationFailed('$error');
 
 // --- Chat Service ---
 
@@ -375,7 +386,7 @@ class ChatService {
     final turnId = _uuid.v4();
     final userId = await UserStorage.getUserId();
     if (userId == null) {
-      yield ChatErrorEvent(turnId, 'User not logged in');
+      yield ChatErrorEvent(turnId, chatErrorUserNotLoggedIn());
       return;
     }
 
@@ -397,12 +408,12 @@ class ChatService {
       }
     } catch (e) {
       _logger.severe('Failed to prepare chat image attachment', e);
-      yield ChatErrorEvent(turnId, 'Failed to prepare image attachment: $e');
+      yield ChatErrorEvent(turnId, chatErrorOperationFailed(e));
       return;
     }
 
     if (trimmedMessage.isEmpty && preparedImages.isEmpty) {
-      yield ChatErrorEvent(turnId, 'Message is empty');
+      yield ChatErrorEvent(turnId, chatErrorEmptyMessage());
       return;
     }
 
@@ -475,7 +486,7 @@ class ChatService {
       }
     } catch (e) {
       _logger.severe('Failed to manage session', e);
-      yield ChatErrorEvent(turnId, 'Failed to initialize session: $e');
+      yield ChatErrorEvent(turnId, chatErrorOperationFailed(e));
       return;
     }
 
@@ -523,7 +534,7 @@ class ChatService {
       }
     } catch (e, st) {
       _logger.severe('Failed to enqueue chat turn', e, st);
-      run.add(ChatErrorEvent(turnId, 'Failed to enqueue chat turn: $e'));
+      run.add(ChatErrorEvent(turnId, chatErrorOperationFailed(e)));
       run.close();
     }
 
@@ -739,7 +750,7 @@ class ChatService {
       }
     } catch (e) {
       _logger.severe('Failed to initialize agent', e);
-      run.add(ChatErrorEvent(turnId, 'Failed to initialize agent: $e'));
+      run.add(ChatErrorEvent(turnId, chatErrorOperationFailed(e)));
       if (await _shouldCloseRunAfterTask(taskId)) {
         run.close();
       }

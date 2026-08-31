@@ -3129,6 +3129,35 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get commentReplyToYou => '你';
+
+  @override
+  String get commentAuthorUser => '用户';
+
+  @override
+  String get commentAuthorAi => 'AI';
+
+  @override
+  String get authorizationCancelled => '授权已取消';
+
+  @override
+  String timelineWeekNumberLabel(Object week) {
+    return '第 $week 周';
+  }
+
+  @override
+  String get timelineWeekLabel => '周';
+
+  @override
+  String get eventCardDefaultTitle => '事件';
+
+  @override
+  String get memoryNoLongTermYet => '还没有长期记忆。';
+
+  @override
+  String get memoryNoRecentBuffer => '缓冲区中还没有近期记忆。';
+
+  @override
+  String get memoryGeneralSubject => '通用';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -6260,4 +6289,33 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get commentReplyToYou => '你';
+
+  @override
+  String get commentAuthorUser => '用戶';
+
+  @override
+  String get commentAuthorAi => 'AI';
+
+  @override
+  String get authorizationCancelled => '授權已取消';
+
+  @override
+  String timelineWeekNumberLabel(Object week) {
+    return '第 $week 週';
+  }
+
+  @override
+  String get timelineWeekLabel => '週';
+
+  @override
+  String get eventCardDefaultTitle => '事件';
+
+  @override
+  String get memoryNoLongTermYet => '還沒有長期記憶。';
+
+  @override
+  String get memoryNoRecentBuffer => '緩衝區中還沒有近期記憶。';
+
+  @override
+  String get memoryGeneralSubject => '通用';
 }

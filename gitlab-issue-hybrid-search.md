@@ -1,5 +1,7 @@
 # [Feature] 引入混合检索（FTS5 + Vector）提升 PKM 搜索与 Agent 语义发现能力
 
+中文 | [English](gitlab-issue-hybrid-search.en.md)
+
 ## 一、背景与问题
 
 Memex 当前的知识库搜索使用简单的文件遍历 + 字串匹配（`toLowerCase().contains()`），存在以下问题：

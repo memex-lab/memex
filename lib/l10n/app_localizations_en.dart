@@ -3243,4 +3243,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get commentReplyToYou => 'You';
+
+  @override
+  String get commentAuthorUser => 'User';
+
+  @override
+  String get commentAuthorAi => 'AI';
+
+  @override
+  String get authorizationCancelled => 'Authorization cancelled';
+
+  @override
+  String timelineWeekNumberLabel(Object week) {
+    return 'Week $week';
+  }
+
+  @override
+  String get timelineWeekLabel => 'Week';
+
+  @override
+  String get eventCardDefaultTitle => 'Event';
+
+  @override
+  String get memoryNoLongTermYet => 'No long-term memories yet.';
+
+  @override
+  String get memoryNoRecentBuffer => 'No recent memories in buffer.';
+
+  @override
+  String get memoryGeneralSubject => 'General';
 }

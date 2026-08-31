@@ -9,23 +9,30 @@ import 'package:memex/ui/core/widgets/back_button.dart';
 import 'package:memex/ui/chat/widgets/agent_chat_dialog.dart';
 import 'package:memex/ui/core/themes/app_colors.dart';
 
+bool _isSameCalendarDay(DateTime a, DateTime b) =>
+    a.year == b.year && a.month == b.month && a.day == b.day;
+
 @visibleForTesting
 String formatChatHistoryDateTime(String? isoString, {DateTime? now}) {
   if (isoString == null) return '';
   final dateTime = parseLocalDateTime(isoString);
   if (dateTime == null) return isoString;
   final current = now ?? DateTime.now();
-  final difference = current.difference(dateTime);
+  final time = DateFormat('HH:mm').format(dateTime);
 
-  if (difference.inDays == 0) {
-    return DateFormat('HH:mm').format(dateTime);
-  } else if (difference.inDays == 1) {
-    return UserStorage.l10n.yesterdayAt(DateFormat('HH:mm').format(dateTime));
-  } else if (difference.inDays < 7) {
-    return UserStorage.l10n.daysAgo(difference.inDays);
-  } else {
-    return DateFormat('MM-dd HH:mm').format(dateTime);
+  if (_isSameCalendarDay(dateTime, current)) {
+    return time;
   }
+  if (_isSameCalendarDay(dateTime, current.subtract(const Duration(days: 1)))) {
+    return UserStorage.l10n.yesterdayAt(time);
+  }
+  final daysAgo = DateTime(current.year, current.month, current.day)
+      .difference(DateTime(dateTime.year, dateTime.month, dateTime.day))
+      .inDays;
+  if (daysAgo < 7) {
+    return UserStorage.l10n.daysAgo(daysAgo);
+  }
+  return DateFormat('MM-dd HH:mm').format(dateTime);
 }
 
 /// Chat history list screen. Receives [viewModel] from parent (Compass-style).

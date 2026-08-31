@@ -165,7 +165,7 @@ class GeminiAuthService {
       } catch (_) {}
 
       if (result == null) {
-        onError('Authorization cancelled');
+        onError(UserStorage.l10n.authorizationCancelled);
         return;
       }
 

@@ -3294,4 +3294,33 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get commentReplyToYou => 'Tú';
+
+  @override
+  String get commentAuthorUser => 'Usuario';
+
+  @override
+  String get commentAuthorAi => 'IA';
+
+  @override
+  String get authorizationCancelled => 'Autorización cancelada';
+
+  @override
+  String timelineWeekNumberLabel(Object week) {
+    return 'Semana $week';
+  }
+
+  @override
+  String get timelineWeekLabel => 'Semana';
+
+  @override
+  String get eventCardDefaultTitle => 'Evento';
+
+  @override
+  String get memoryNoLongTermYet => 'Aún no hay recuerdos a largo plazo.';
+
+  @override
+  String get memoryNoRecentBuffer => 'No hay recuerdos recientes en el búfer.';
+
+  @override
+  String get memoryGeneralSubject => 'General';
 }
