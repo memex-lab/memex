@@ -1,5 +1,7 @@
 # Memex Agent 全链路评估体系
 
+中文 | [English](memex-evaluation-framework.en.md)
+
 本文档只覆盖 Agent 评测：从标准化输入进入 Memex Agent 链路开始，到 Card、Memory、PKM、检索问答、Comment、Schedule、Insight、工具轨迹、成本与稳定性产物结束。
 
 不覆盖产品 UI、备份/恢复、语音转写、原始图片 OCR、分享导入、权限、设置页等非 Agent 能力。如果输入包含位置、健康、图片分析文本或 OCR 文本，本文只评估 Agent 是否正确使用这些已给定上下文，不评估这些上下文本身的采集质量。
