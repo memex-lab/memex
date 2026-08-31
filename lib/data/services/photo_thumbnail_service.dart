@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:io';
-import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:photo_manager/photo_manager.dart';
 
@@ -15,6 +15,26 @@ typedef PhotoThumbnailLoader = Future<Uint8List?> Function(
 typedef PhotoThumbnailCanceller = Future<void> Function(
   PMCancelToken cancelToken,
 );
+
+/// Builds a PhotoKit-compatible thumbnail request.
+///
+/// `photo_manager` waits for a non-degraded PhotoKit result before completing
+/// the Dart future. `fastFormat` can return only a degraded image, leaving the
+/// request unresolved until our timeout. Opportunistic delivery can return a
+/// quick degraded frame followed by the final thumbnail the plugin expects.
+@visibleForTesting
+ThumbnailOption buildPhotoThumbnailOption(
+  ThumbnailSize size, {
+  required bool isApplePlatform,
+}) {
+  if (!isApplePlatform) return ThumbnailOption(size: size);
+  return ThumbnailOption.ios(
+    size: size,
+    deliveryMode: DeliveryMode.opportunistic,
+    resizeMode: ResizeMode.fast,
+    resizeContentMode: ResizeContentMode.fill,
+  );
+}
 
 /// A cancellable subscription to one shared thumbnail request.
 class PhotoThumbnailRequest {
@@ -201,14 +221,10 @@ class PhotoThumbnailService {
     ThumbnailSize size,
     PMCancelToken cancelToken,
   ) {
-    final option = Platform.isIOS || Platform.isMacOS
-        ? ThumbnailOption.ios(
-            size: size,
-            deliveryMode: DeliveryMode.fastFormat,
-            resizeMode: ResizeMode.fast,
-            resizeContentMode: ResizeContentMode.fill,
-          )
-        : ThumbnailOption(size: size);
+    final option = buildPhotoThumbnailOption(
+      size,
+      isApplePlatform: Platform.isIOS || Platform.isMacOS,
+    );
     return asset.thumbnailDataWithOption(option, cancelToken: cancelToken);
   }
 }

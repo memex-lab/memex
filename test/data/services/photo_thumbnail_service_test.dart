@@ -13,6 +13,23 @@ void main() {
         height: 100,
       );
 
+  test('uses an iOS delivery mode that completes with photo_manager', () {
+    final option = buildPhotoThumbnailOption(
+      const ThumbnailSize.square(200),
+      isApplePlatform: true,
+    );
+
+    expect(
+      option.toMap()['deliveryMode'],
+      DeliveryMode.opportunistic.index,
+    );
+    expect(option.toMap()['resizeMode'], ResizeMode.fast.index);
+    expect(
+      option.toMap()['resizeContentMode'],
+      ResizeContentMode.fill.index,
+    );
+  });
+
   test('bounds concurrent native thumbnail requests', () async {
     final completers = <String, Completer<Uint8List?>>{};
     var active = 0;
