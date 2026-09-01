@@ -889,11 +889,11 @@ class AppLocalizationsTr extends AppLocalizations {
       'Kayıtlar, medya ve öngörüler için yapay zeka organizasyonunu etkinleştirmek üzere bir bağlantı yöntemi seçin.';
 
   @override
-  String get aiSetupStatusMemexTitle => 'MemeX resmi hizmetini kullanma';
+  String get aiSetupStatusMemexTitle => 'Memex resmi hizmeti kullanılıyor';
 
   @override
   String get aiSetupStatusMemexDescription =>
-      'Memex, MemeX hesabınız tarafından yönetilen resmi bağlantıyı ve API kimlik bilgilerini kullanacaktır.';
+      'Memex, Memex hesabınız tarafından yönetilen resmi bağlantıyı ve API kimlik bilgilerini kullanacaktır.';
 
   @override
   String get aiSetupStatusCustomTitle => 'Özel sağlayıcı ayarlarını kullanma';
@@ -911,11 +911,11 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get aiSetupOfficialRouteDescription =>
-      'MemeX\'te oturum açın ve sağlayıcıları, anahtarları veya aracı düzeyindeki modelleri seçmeden resmi hizmeti kullanın.';
+      'Resmi AI hizmetini kullanmak için Memex\'te oturum açın.';
 
   @override
   String get aiSetupCustomRouteDescription =>
-      'Kendi sağlayıcı kimlik bilgilerinizi ekleyin, Super Agent\'ın kullanması gereken modeli seçin ve isteğe bağlı olarak aracı başına modelleri geçersiz kılın.';
+      'Kendi sağlayıcınızı ve API anahtarınızı ekleyin.';
 
   @override
   String get aiSetupCustomPageTitle => 'Özel yapay zeka hizmeti';

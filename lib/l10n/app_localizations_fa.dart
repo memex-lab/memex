@@ -882,11 +882,11 @@ class AppLocalizationsFa extends AppLocalizations {
       'برای فعال‌سازی سازمان‌دهی هوش مصنوعی سوابق، رسانه و بینش، یک روش اتصال انتخاب کنید.';
 
   @override
-  String get aiSetupStatusMemexTitle => 'استفاده از سرویس رسمی MemeX';
+  String get aiSetupStatusMemexTitle => 'استفاده از سرویس رسمی Memex';
 
   @override
   String get aiSetupStatusMemexDescription =>
-      'Memex از اتصال رسمی و اعتبارنامه‌های API مدیریت‌شده توسط حساب MemeX شما استفاده می‌کند.';
+      'Memex از اتصال رسمی و اعتبارنامه‌های API مدیریت‌شده توسط حساب Memex شما استفاده می‌کند.';
 
   @override
   String get aiSetupStatusCustomTitle =>
@@ -905,11 +905,11 @@ class AppLocalizationsFa extends AppLocalizations {
 
   @override
   String get aiSetupOfficialRouteDescription =>
-      'به MemeX وارد شوید و بدون انتخاب ارائه‌دهنده، کلید یا مدل‌های سطح عامل، از سرویس رسمی استفاده کنید.';
+      'برای استفاده از سرویس رسمی هوش مصنوعی وارد Memex شوید.';
 
   @override
   String get aiSetupCustomRouteDescription =>
-      'اعتبارنامه ارائه‌دهنده خود را اضافه کنید، مدلی را که Super Agent باید استفاده کند انتخاب کنید و در صورت تمایل مدل‌ها را برای هر عامل تغییر دهید.';
+      'ارائه‌دهنده و کلید API خود را اضافه کنید.';
 
   @override
   String get aiSetupCustomPageTitle => 'سرویس هوش مصنوعی سفارشی';

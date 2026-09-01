@@ -12,17 +12,20 @@ import 'package:memex/utils/toast_helper.dart';
 import 'package:memex/ui/core/widgets/searchable_dropdown.dart';
 import 'package:memex/config/app_config.dart';
 import 'package:memex/ui/core/themes/app_colors.dart';
+import 'package:memex/ui/settings/widgets/bottom_primary_action_bar.dart';
 
 class ModelConfigEditPage extends StatefulWidget {
   final LLMConfig? config;
   final LLMConfig? duplicateSource;
   final bool isDefaultConfig;
+  final bool simpleSetupMode;
 
   const ModelConfigEditPage({
     super.key,
     this.config,
     this.duplicateSource,
     this.isDefaultConfig = false,
+    this.simpleSetupMode = false,
   });
 
   @override
@@ -758,6 +761,10 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
+    if (widget.simpleSetupMode && _keyController.text.trim().isEmpty) {
+      _keyController.text = await _nextSimpleConfigKey();
+      if (!mounted) return;
+    }
 
     // Validate JSON
     Map<String, dynamic> extraMap = {};
@@ -884,7 +891,38 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
     }
 
     await MemexRouter().saveLLMConfigs(configs);
-    if (mounted) Navigator.pop(context, true);
+    if (mounted) Navigator.pop(context, newConfig.key);
+  }
+
+  Future<String> _nextSimpleConfigKey() async {
+    final configs = await MemexRouter().getLLMConfigs();
+    final existingKeys = configs.map((config) => config.key).toSet();
+    final baseKey = switch (_selectedType) {
+      LLMConfig.typeChatCompletion => 'openai',
+      LLMConfig.typeResponses => 'openai-responses',
+      LLMConfig.typeOpenAiOauth => 'chatgpt',
+      LLMConfig.typeClaude => 'claude',
+      LLMConfig.typeBedrockClaude => 'bedrock',
+      LLMConfig.typeGemini => 'gemini',
+      LLMConfig.typeGeminiOauth => 'gemini-oauth',
+      LLMConfig.typeKimi => 'kimi',
+      LLMConfig.typeQwen => 'qwen',
+      LLMConfig.typeSeed => 'doubao',
+      LLMConfig.typeZhipu => 'zhipu',
+      LLMConfig.typeDeepSeek => 'deepseek',
+      LLMConfig.typeMinimax => 'minimax',
+      LLMConfig.typeOpenRouter => 'openrouter',
+      LLMConfig.typeOllama => 'ollama',
+      _ => 'custom',
+    };
+
+    var candidate = baseKey;
+    var suffix = 2;
+    while (existingKeys.contains(candidate)) {
+      candidate = '$baseKey-$suffix';
+      suffix++;
+    }
+    return candidate;
   }
 
   Future<bool> _isKeyExists(String key) async {
@@ -1219,6 +1257,27 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
     );
   }
 
+  bool get _showsBaseUrlField =>
+      _selectedType != LLMConfig.typeBedrockClaude &&
+      _selectedType != LLMConfig.typeOpenAiOauth &&
+      _selectedType != LLMConfig.typeGeminiOauth;
+
+  Widget _buildBaseUrlField() {
+    return TextFormField(
+      controller: _baseUrlController,
+      decoration: InputDecoration(
+        labelText: UserStorage.l10n.baseUrlLabel,
+        border: const OutlineInputBorder(),
+      ),
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return UserStorage.l10n.required;
+        }
+        return null;
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isBuiltInDefault = widget.config?.isDefault ?? false;
@@ -1245,31 +1304,33 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
                     : UserStorage.l10n.addConfiguration)
                 : UserStorage.l10n.editConfiguration,
           ),
-          actions: [
-            if (isBuiltInDefault)
-              IconButton(
-                icon: const Icon(Icons.restore),
-                tooltip: UserStorage.l10n.resetToDefaults,
-                onPressed: _resetToDefault,
-              ),
-            AnimatedBuilder(
-              animation: _animationController,
-              builder: (context, child) {
-                return Transform.scale(
-                  scale: _hasChanges
-                      ? 1.0 + (_animationController.value * 0.2)
-                      : 1.0,
-                  child: IconButton(
-                    icon: Icon(
-                      Icons.save,
-                      color: _hasChanges ? Colors.blue.shade700 : null,
+          actions: widget.simpleSetupMode
+              ? null
+              : [
+                  if (isBuiltInDefault)
+                    IconButton(
+                      icon: const Icon(Icons.restore),
+                      tooltip: UserStorage.l10n.resetToDefaults,
+                      onPressed: _resetToDefault,
                     ),
-                    onPressed: _save,
+                  AnimatedBuilder(
+                    animation: _animationController,
+                    builder: (context, child) {
+                      return Transform.scale(
+                        scale: _hasChanges
+                            ? 1.0 + (_animationController.value * 0.2)
+                            : 1.0,
+                        child: IconButton(
+                          icon: Icon(
+                            Icons.save,
+                            color: _hasChanges ? Colors.blue.shade700 : null,
+                          ),
+                          onPressed: _save,
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
-          ],
+                ],
         ),
         body: Form(
           key: _formKey,
@@ -1338,7 +1399,7 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
                 },
               ),
               const SizedBox(height: 16),
-              if (!locksKey) ...[
+              if (!locksKey && !widget.simpleSetupMode) ...[
                 TextFormField(
                   controller: _keyController,
                   decoration: InputDecoration(
@@ -1442,22 +1503,8 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
                 ],
 
                 // Base URL
-                if (_selectedType != LLMConfig.typeBedrockClaude &&
-                    _selectedType != LLMConfig.typeOpenAiOauth &&
-                    _selectedType != LLMConfig.typeGeminiOauth) ...[
-                  TextFormField(
-                    controller: _baseUrlController,
-                    decoration: InputDecoration(
-                      labelText: UserStorage.l10n.baseUrlLabel,
-                      border: const OutlineInputBorder(),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return UserStorage.l10n.required;
-                      }
-                      return null;
-                    },
-                  ),
+                if (_showsBaseUrlField && !widget.simpleSetupMode) ...[
+                  _buildBaseUrlField(),
                   const SizedBox(height: 16),
                 ],
 
@@ -1670,6 +1717,10 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
                   title: Text(UserStorage.l10n.advancedSettings),
                   children: [
                     const SizedBox(height: 8),
+                    if (widget.simpleSetupMode && _showsBaseUrlField) ...[
+                      _buildBaseUrlField(),
+                      const SizedBox(height: 16),
+                    ],
                     TextFormField(
                       controller: _proxyUrlController,
                       decoration: InputDecoration(
@@ -1763,45 +1814,11 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
   }
 
   Widget _buildBottomSaveBar() {
-    return SafeArea(
-      top: false,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: const Border(top: BorderSide(color: Color(0xFFE5E7EB))),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 16,
-              offset: const Offset(0, -4),
-            ),
-          ],
-        ),
-        child: SizedBox(
-          width: double.infinity,
-          height: 48,
-          child: FilledButton.icon(
-            key: const ValueKey('model_config_bottom_save_button'),
-            onPressed: _save,
-            icon: const Icon(Icons.save_rounded, size: 18),
-            label: Text(
-              UserStorage.l10n.save,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
-        ),
-      ),
+    return BottomPrimaryActionBar(
+      buttonKey: const ValueKey('model_config_bottom_save_button'),
+      label: UserStorage.l10n.save,
+      icon: Icons.save_rounded,
+      onPressed: _save,
     );
   }
 }

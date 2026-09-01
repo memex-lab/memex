@@ -899,11 +899,11 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get aiSetupStatusMemexTitle =>
-      'Nutzung des offiziellen MemeX-Dienstes';
+      'Nutzung des offiziellen Memex-Dienstes';
 
   @override
   String get aiSetupStatusMemexDescription =>
-      'Memex verwendet die offiziellen Verbindungs- und API-Anmeldeinformationen, die von Ihrem MemeX-Konto verwaltet werden.';
+      'Memex verwendet die offiziellen Verbindungs- und API-Anmeldeinformationen, die von Ihrem Memex-Konto verwaltet werden.';
 
   @override
   String get aiSetupStatusCustomTitle =>
@@ -923,11 +923,11 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get aiSetupOfficialRouteDescription =>
-      'Melden Sie sich bei MemeX an und nutzen Sie den offiziellen Dienst, ohne sich für Anbieter, Schlüssel oder Modelle auf Agentenebene entscheiden zu müssen.';
+      'Melden Sie sich bei Memex an, um den offiziellen KI-Dienst zu nutzen.';
 
   @override
   String get aiSetupCustomRouteDescription =>
-      'Fügen Sie Ihre eigenen Anbieteranmeldeinformationen hinzu, wählen Sie Text- und Visionsmodelle aus und überschreiben Sie optional Modelle pro Agent.';
+      'Fügen Sie Ihren eigenen Anbieter und API-Schlüssel hinzu.';
 
   @override
   String get aiSetupCustomPageTitle => 'Benutzerdefinierter KI-Dienst';

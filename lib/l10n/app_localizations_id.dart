@@ -888,11 +888,11 @@ class AppLocalizationsId extends AppLocalizations {
       'Pilih satu metode koneksi untuk mengaktifkan pengorganisasian AI atas catatan, media, dan insight.';
 
   @override
-  String get aiSetupStatusMemexTitle => 'Menggunakan layanan resmi MemeX';
+  String get aiSetupStatusMemexTitle => 'Menggunakan layanan resmi Memex';
 
   @override
   String get aiSetupStatusMemexDescription =>
-      'Memex akan memakai koneksi resmi dan kredensial API yang dikelola oleh akun MemeX Anda.';
+      'Memex akan memakai koneksi resmi dan kredensial API yang dikelola oleh akun Memex Anda.';
 
   @override
   String get aiSetupStatusCustomTitle =>
@@ -911,11 +911,11 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get aiSetupOfficialRouteDescription =>
-      'Masuk ke MemeX dan gunakan layanan resmi tanpa memilih penyedia, key, atau model tingkat agen.';
+      'Masuk ke Memex untuk menggunakan layanan AI resmi.';
 
   @override
   String get aiSetupCustomRouteDescription =>
-      'Tambahkan kredensial penyedia Anda sendiri, pilih model yang digunakan Super Agent, dan opsional timpa model per agen.';
+      'Tambahkan penyedia dan kunci API Anda sendiri.';
 
   @override
   String get aiSetupCustomPageTitle => 'Layanan AI khusus';

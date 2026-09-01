@@ -3,6 +3,8 @@ import 'package:memex/domain/models/llm_config.dart';
 import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
+import 'package:memex/ui/settings/widgets/agent_config_list_page.dart';
+import 'package:memex/ui/settings/widgets/bottom_primary_action_bar.dart';
 import 'model_config_edit_page.dart';
 import 'package:memex/ui/core/themes/app_colors.dart';
 
@@ -13,10 +15,12 @@ class ModelConfigListPage extends StatefulWidget {
     super.key,
     this.popOnConfigSaved = false,
     this.autoOpenFirstConfig = false,
+    this.simpleSetupMode = false,
   });
 
   final bool popOnConfigSaved;
   final bool autoOpenFirstConfig;
+  final bool simpleSetupMode;
 
   @override
   State<ModelConfigListPage> createState() => _ModelConfigListPageState();
@@ -95,16 +99,19 @@ class _ModelConfigListPageState extends State<ModelConfigListPage> {
 
   bool get _shouldAutoOpenFirstConfig {
     if (!widget.autoOpenFirstConfig || _didAutoOpenFirstConfig) return false;
-    final manualConfigs =
-        _configs.where((c) => c.type != LLMConfig.typeMemex).toList();
-    if (manualConfigs.any((c) => c.isValid)) return false;
-    return manualConfigs.length <= 1;
+    return _autoOpenConfig != null ||
+        !_configs.any((config) => config.type != LLMConfig.typeMemex);
   }
 
   LLMConfig? get _autoOpenConfig {
     final manualConfigs =
         _configs.where((c) => c.type != LLMConfig.typeMemex).toList();
-    if (manualConfigs.length == 1 && !manualConfigs.first.isValid) {
+    final validManualConfigs =
+        manualConfigs.where((config) => config.isValid).toList();
+    if (validManualConfigs.length == 1) {
+      return validManualConfigs.single;
+    }
+    if (validManualConfigs.isEmpty && manualConfigs.length == 1) {
       return manualConfigs.first;
     }
     return null;
@@ -214,21 +221,22 @@ class _ModelConfigListPageState extends State<ModelConfigListPage> {
   }
 
   void _editConfig(LLMConfig? config, {LLMConfig? duplicateSource}) async {
-    final result = await Navigator.push<bool>(
+    final savedConfigKey = await Navigator.push<String>(
       context,
       MaterialPageRoute(
         builder: (context) => ModelConfigEditPage(
           config: config,
           duplicateSource: duplicateSource,
           isDefaultConfig: config != null && _isDefaultConfig(config),
+          simpleSetupMode: widget.simpleSetupMode,
         ),
       ),
     );
 
-    if (result == true) {
+    if (savedConfigKey != null) {
       if (widget.popOnConfigSaved) {
         if (mounted) {
-          Navigator.pop(context, true);
+          Navigator.pop(context, savedConfigKey);
         }
         return;
       }
@@ -241,6 +249,71 @@ class _ModelConfigListPageState extends State<ModelConfigListPage> {
       existingKeys: _configs.map((c) => c.key).toList(),
     );
     _editConfig(null, duplicateSource: duplicated);
+  }
+
+  Future<void> _openAdvancedAgentConfig() async {
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute(builder: (context) => const AgentConfigListPage()),
+    );
+  }
+
+  Widget _buildAdvancedAgentSettings() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 20),
+      child: Card(
+        elevation: 0,
+        color: AppColors.background,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: const BorderSide(color: Color(0xFFE2E2E5)),
+        ),
+        child: Theme(
+          key: const ValueKey('advanced-agent-model-settings-theme'),
+          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+          child: ExpansionTile(
+            key: const ValueKey('advanced-agent-model-settings'),
+            shape: const RoundedRectangleBorder(side: BorderSide.none),
+            collapsedShape: const RoundedRectangleBorder(
+              side: BorderSide.none,
+            ),
+            leading: const Icon(
+              Icons.tune_rounded,
+              color: AppColors.textSecondary,
+            ),
+            title: Text(
+              UserStorage.l10n.advancedSettings,
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+            children: [
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
+                child: Text(
+                  UserStorage.l10n.aiSetupAdvancedCustomizationDescription,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    height: 1.4,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+              ListTile(
+                key: const ValueKey('agent-model-assignments-action'),
+                leading: const Icon(Icons.people_outline),
+                title: Text(UserStorage.l10n.advancedAgentModelAssignments),
+                subtitle: Text(
+                  UserStorage.l10n.openAdvancedAgentModelAssignments,
+                ),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: _openAdvancedAgentConfig,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -315,8 +388,11 @@ class _ModelConfigListPageState extends State<ModelConfigListPage> {
               children: [
                 Expanded(
                   child: ListView.builder(
-                    itemCount: _configs.length,
+                    itemCount: _configs.length + 1,
                     itemBuilder: (context, index) {
+                      if (index == _configs.length) {
+                        return _buildAdvancedAgentSettings();
+                      }
                       final config = _configs[index];
                       final isDefaultConfig = _isDefaultConfig(config);
                       final canDelete = !isDefaultConfig && !config.isDefault;
@@ -516,9 +592,11 @@ class _ModelConfigListPageState extends State<ModelConfigListPage> {
                 ),
               ],
             ),
-      floatingActionButton: FloatingActionButton(
+      bottomNavigationBar: BottomPrimaryActionBar(
+        buttonKey: const ValueKey('add-model-config-button'),
+        label: UserStorage.l10n.addConfiguration,
+        icon: Icons.add_rounded,
         onPressed: () => _editConfig(null),
-        child: const Icon(Icons.add),
       ),
     );
   }

@@ -843,7 +843,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get aiModelHubTitle => 'AI 模型与服务';
 
   @override
-  String get aiModelHubSubtitle => '先选择使用 MemeX 官方服务，或接入自己的服务商；需要时再进入高级模型分配。';
+  String get aiModelHubSubtitle => '先选择使用 Memex 官方服务，或接入自己的服务商；需要时再进入高级模型分配。';
 
   @override
   String get aiSetupCurrentStatusTitle => '当前配置';
@@ -856,11 +856,11 @@ class AppLocalizationsZh extends AppLocalizations {
       '选择一种连接方式后，Memex 才能开始整理记录、分析媒体并生成洞察。';
 
   @override
-  String get aiSetupStatusMemexTitle => '正在使用 MemeX 官方服务';
+  String get aiSetupStatusMemexTitle => '正在使用 Memex 官方服务';
 
   @override
   String get aiSetupStatusMemexDescription =>
-      'Memex 会使用 MemeX 账号管理的官方连接和 API 凭证。';
+      'Memex 会使用 Memex 账号管理的官方连接和 API 凭证。';
 
   @override
   String get aiSetupStatusCustomTitle => '正在使用自定义服务商';
@@ -877,12 +877,10 @@ class AppLocalizationsZh extends AppLocalizations {
       '先选择你希望 Memex 通过哪条路径访问 AI 模型。';
 
   @override
-  String get aiSetupOfficialRouteDescription =>
-      '登录 MemeX 后直接使用官方服务，不需要理解 provider、API Key 或单个 Agent 模型。';
+  String get aiSetupOfficialRouteDescription => '登录 Memex 后即可使用官方 AI 服务。';
 
   @override
-  String get aiSetupCustomRouteDescription =>
-      '添加自己的服务商凭证，选择 Super Agent 使用的模型；需要时可进一步为单个 Agent 覆盖模型。';
+  String get aiSetupCustomRouteDescription => '添加自己的服务商和 API Key。';
 
   @override
   String get aiSetupCustomPageTitle => '自定义 AI 服务';
@@ -4024,7 +4022,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get aiModelHubTitle => 'AI 模型與服務';
 
   @override
-  String get aiModelHubSubtitle => '先選擇使用 MemeX 官方服務，或接入自己的服務商；需要時再進入進階模型分配。';
+  String get aiModelHubSubtitle => '先選擇使用 Memex 官方服務，或接入自己的服務商；需要時再進入進階模型分配。';
 
   @override
   String get aiSetupCurrentStatusTitle => '目前設定';
@@ -4037,11 +4035,11 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
       '選擇一種連線方式後，Memex 才能開始整理記錄、分析媒體並產生洞察。';
 
   @override
-  String get aiSetupStatusMemexTitle => '正在使用 MemeX 官方服務';
+  String get aiSetupStatusMemexTitle => '正在使用 Memex 官方服務';
 
   @override
   String get aiSetupStatusMemexDescription =>
-      'Memex 會使用 MemeX 帳號管理的官方連線和 API 憑證。';
+      'Memex 會使用 Memex 帳號管理的官方連線和 API 憑證。';
 
   @override
   String get aiSetupStatusCustomTitle => '正在使用自訂服務商';
@@ -4058,12 +4056,10 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
       '先選擇你希望 Memex 透過哪條路徑存取 AI 模型。';
 
   @override
-  String get aiSetupOfficialRouteDescription =>
-      '登入 MemeX 後直接使用官方服務，不需要理解 provider、API 金鑰 或單一 智慧體 模型。';
+  String get aiSetupOfficialRouteDescription => '登入 Memex 後即可使用官方 AI 服務。';
 
   @override
-  String get aiSetupCustomRouteDescription =>
-      '新增自己的服務商憑證，選擇 超級智慧體 使用的模型；需要時可進一步為單一 智慧體 覆蓋模型。';
+  String get aiSetupCustomRouteDescription => '新增自己的服務商和 API Key。';
 
   @override
   String get aiSetupCustomPageTitle => '自訂 AI 服務';

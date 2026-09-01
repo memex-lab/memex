@@ -1676,13 +1676,13 @@ abstract class AppLocalizations {
   /// No description provided for @aiSetupStatusMemexTitle.
   ///
   /// In en, this message translates to:
-  /// **'Using MemeX official service'**
+  /// **'Using Memex official service'**
   String get aiSetupStatusMemexTitle;
 
   /// No description provided for @aiSetupStatusMemexDescription.
   ///
   /// In en, this message translates to:
-  /// **'Memex will use the official connection and API credentials managed by your MemeX account.'**
+  /// **'Memex will use the official connection and API credentials managed by your Memex account.'**
   String get aiSetupStatusMemexDescription;
 
   /// No description provided for @aiSetupStatusCustomTitle.
@@ -1712,13 +1712,13 @@ abstract class AppLocalizations {
   /// No description provided for @aiSetupOfficialRouteDescription.
   ///
   /// In en, this message translates to:
-  /// **'Sign in to MemeX and use the official service without choosing providers, keys, or agent-level models.'**
+  /// **'Sign in to Memex to use the official AI service.'**
   String get aiSetupOfficialRouteDescription;
 
   /// No description provided for @aiSetupCustomRouteDescription.
   ///
   /// In en, this message translates to:
-  /// **'Add your own provider credentials, choose the model Super Agent should use, and optionally override models per agent.'**
+  /// **'Add your own provider and API key.'**
   String get aiSetupCustomRouteDescription;
 
   /// No description provided for @aiSetupCustomPageTitle.

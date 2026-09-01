@@ -880,11 +880,11 @@ class AppLocalizationsVi extends AppLocalizations {
       'Chọn một phương thức kết nối để bật tổ chức AI cho bản ghi, phương tiện và insight.';
 
   @override
-  String get aiSetupStatusMemexTitle => 'Đang dùng dịch vụ chính thức MemeX';
+  String get aiSetupStatusMemexTitle => 'Đang dùng dịch vụ chính thức Memex';
 
   @override
   String get aiSetupStatusMemexDescription =>
-      'Memex sẽ dùng kết nối chính thức và thông tin API Key do tài khoản MemeX quản lý.';
+      'Memex sẽ dùng kết nối chính thức và thông tin API Key do tài khoản Memex quản lý.';
 
   @override
   String get aiSetupStatusCustomTitle =>
@@ -903,11 +903,11 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get aiSetupOfficialRouteDescription =>
-      'Đăng nhập MemeX và dùng dịch vụ chính thức mà không cần chọn nhà cung cấp, API Key hoặc mô hình theo agent.';
+      'Đăng nhập Memex để sử dụng dịch vụ AI chính thức.';
 
   @override
   String get aiSetupCustomRouteDescription =>
-      'Thêm thông tin nhà cung cấp, chọn mô hình Super Agent nên dùng và tùy chọn ghi đè mô hình theo agent.';
+      'Thêm nhà cung cấp và API Key của bạn.';
 
   @override
   String get aiSetupCustomPageTitle => 'Dịch vụ AI tùy chỉnh';

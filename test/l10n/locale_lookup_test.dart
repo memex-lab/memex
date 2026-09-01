@@ -41,4 +41,37 @@ void main() {
     expect(l10n.retry, 'تلاش مجدد');
     expect(l10n.cancel, 'لغو');
   });
+
+  test('new locales expose the simplified AI setup copy', () {
+    const expectedCopy = <String, List<String>>{
+      'fa': [
+        'استفاده از سرویس رسمی Memex',
+        'برای استفاده از سرویس رسمی هوش مصنوعی وارد Memex شوید.',
+        'ارائه‌دهنده و کلید API خود را اضافه کنید.',
+      ],
+      'vi': [
+        'Đang dùng dịch vụ chính thức Memex',
+        'Đăng nhập Memex để sử dụng dịch vụ AI chính thức.',
+        'Thêm nhà cung cấp và API Key của bạn.',
+      ],
+      'th': [
+        'ใช้บริการอย่างเป็นทางการของ Memex',
+        'ลงชื่อเข้าใช้ Memex เพื่อใช้บริการ AI อย่างเป็นทางการ',
+        'เพิ่มผู้ให้บริการและ API Key ของคุณ',
+      ],
+      'tr': [
+        'Memex resmi hizmeti kullanılıyor',
+        "Resmi AI hizmetini kullanmak için Memex'te oturum açın.",
+        'Kendi sağlayıcınızı ve API anahtarınızı ekleyin.',
+      ],
+    };
+
+    for (final entry in expectedCopy.entries) {
+      final l10n = lookupAppLocalizations(Locale(entry.key));
+      expect(l10n.aiSetupStatusMemexTitle, entry.value[0]);
+      expect(l10n.aiSetupOfficialRouteDescription, entry.value[1]);
+      expect(l10n.aiSetupCustomRouteDescription, entry.value[2]);
+      expect(l10n.aiSetupStatusMemexDescription, isNot(contains('MemeX')));
+    }
+  });
 }
