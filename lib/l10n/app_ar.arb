@@ -255,6 +255,13 @@
   },
   "loadDetailFailedRetry": "فشل تحميل التفاصيل، يرجى المحاولة لاحقا.",
   "loadFailed": "فشل التحميل",
+  "@loadHistoryFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadHistoryFailed": "فشل تحميل السجل: {error}",
+
   "reload": "إعادة التحميل",
   "aiInsightDetail": "تفاصيل الرؤية",
   "relatedRecordsCount": "السجلات المرتبطة ({count})",
@@ -462,6 +469,17 @@
     }
   },
   "authorized": "مفوّض",
+  "@authorizedAs": {
+    "placeholders": {
+      "email": {}
+    }
+  },
+  "authorizedAs": "تم التفويض كـ {email}",
+  "authorizedSuccessfully": "تم التفويض بنجاح",
+  "reAuthorize": "إعادة التفويض",
+  "authorizeWithOpenAi": "التفويض عبر OpenAI",
+  "authorizeWithGoogle": "التفويض عبر Google",
+
   "config": "الإعداد",
   "calendar": "التقويم",
   "reminders": "التذكيرات",

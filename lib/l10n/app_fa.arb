@@ -255,6 +255,13 @@
   "retryCount": "تلاش مجدد: {count}",
   "loadDetailFailedRetry": "بارگذاری جزئیات ناموفق بود، لطفاً بعداً دوباره تلاش کنید.",
   "loadFailed": "بارگذاری ناموفق بود",
+  "@loadHistoryFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadHistoryFailed": "بارگذاری تاریخچه ناموفق بود: {error}",
+
   "reload": "بارگذاری مجدد",
   "aiInsightDetail": "جزئیات بینش",
   "@relatedRecordsCount": {
@@ -462,6 +469,17 @@
   },
   "authFailed": "احراز هویت ناموفق بود: {error}",
   "authorized": "احراز هویت شده",
+  "@authorizedAs": {
+    "placeholders": {
+      "email": {}
+    }
+  },
+  "authorizedAs": "احراز هویت شده به عنوان {email}",
+  "authorizedSuccessfully": "احراز هویت با موفقیت انجام شد",
+  "reAuthorize": "احراز هویت مجدد",
+  "authorizeWithOpenAi": "احراز هویت با OpenAI",
+  "authorizeWithGoogle": "احراز هویت با Google",
+
   "config": "پیکربندی",
   "calendar": "تقویم",
   "reminders": "یادآورها",
