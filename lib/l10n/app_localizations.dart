@@ -17,6 +17,7 @@ import 'app_localizations_ja.dart';
 import 'app_localizations_ko.dart';
 import 'app_localizations_pt.dart';
 import 'app_localizations_ru.dart';
+import 'app_localizations_th.dart';
 import 'app_localizations_tr.dart';
 import 'app_localizations_vi.dart';
 import 'app_localizations_zh.dart';
@@ -119,6 +120,7 @@ abstract class AppLocalizations {
     Locale('ko'),
     Locale('pt'),
     Locale('ru'),
+    Locale('th'),
     Locale('tr'),
     Locale('vi'),
     Locale('zh'),
@@ -1025,6 +1027,12 @@ abstract class AppLocalizations {
   /// **'Load failed'**
   String get loadFailed;
 
+  /// No description provided for @loadHistoryFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load history: {error}'**
+  String loadHistoryFailed(Object error);
+
   /// No description provided for @reload.
   ///
   /// In en, this message translates to:
@@ -1922,6 +1930,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Authorized'**
   String get authorized;
+
+  /// No description provided for @authorizedAs.
+  ///
+  /// In en, this message translates to:
+  /// **'Authorized as {email}'**
+  String authorizedAs(Object email);
+
+  /// No description provided for @authorizedSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'Authorized successfully'**
+  String get authorizedSuccessfully;
+
+  /// No description provided for @reAuthorize.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-authorize'**
+  String get reAuthorize;
+
+  /// No description provided for @authorizeWithOpenAi.
+  ///
+  /// In en, this message translates to:
+  /// **'Authorize with OpenAI'**
+  String get authorizeWithOpenAi;
+
+  /// No description provided for @authorizeWithGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Authorize with Google'**
+  String get authorizeWithGoogle;
 
   /// No description provided for @config.
   ///
@@ -5931,6 +5969,7 @@ class _AppLocalizationsDelegate
     'ko',
     'pt',
     'ru',
+    'th',
     'tr',
     'vi',
     'zh',
@@ -5979,6 +6018,8 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
       return AppLocalizationsPt();
     case 'ru':
       return AppLocalizationsRu();
+    case 'th':
+      return AppLocalizationsTh();
     case 'tr':
       return AppLocalizationsTr();
     case 'vi':

@@ -11,6 +11,7 @@ import 'app_localizations_ext_fa.dart';
 import 'app_localizations_ext_id.dart';
 import 'app_localizations_ext_tr.dart';
 import 'app_localizations_ext_vi.dart';
+import 'app_localizations_ext_th.dart';
 import 'app_localizations_ext_ja.dart';
 import 'app_localizations_ext_ko.dart';
 import 'app_localizations_ext_pt.dart';
@@ -376,6 +377,8 @@ AppLocalizationsExt lookupAppLocalizationsExt(Locale locale) {
       return AppLocalizationsExtTr();
     case 'vi':
       return AppLocalizationsExtVi();
+    case 'th':
+      return AppLocalizationsExtTh();
     case 'ja':
       return AppLocalizationsExtJa();
     case 'ko':

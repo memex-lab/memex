@@ -521,6 +521,11 @@ class AppLocalizationsTr extends AppLocalizations {
   String get loadFailed => 'Yükleme başarısız oldu';
 
   @override
+  String loadHistoryFailed(Object error) {
+    return 'Geçmiş yüklenemedi: $error';
+  }
+
+  @override
   String get reload => 'Yeniden yükle';
 
   @override
@@ -1031,6 +1036,23 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get authorized => 'Yetkili';
+
+  @override
+  String authorizedAs(Object email) {
+    return '$email olarak yetkilendirildi';
+  }
+
+  @override
+  String get authorizedSuccessfully => 'Yetkilendirme başarılı';
+
+  @override
+  String get reAuthorize => 'Yeniden yetkilendir';
+
+  @override
+  String get authorizeWithOpenAi => 'OpenAI ile yetkilendir';
+
+  @override
+  String get authorizeWithGoogle => 'Google ile yetkilendir';
 
   @override
   String get config => 'Yapılandırma';

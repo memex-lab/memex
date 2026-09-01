@@ -255,6 +255,13 @@
   },
   "loadDetailFailedRetry": "載入詳情失敗，請稍後重試",
   "loadFailed": "載入失敗",
+  "@loadHistoryFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadHistoryFailed": "載入歷史記錄失敗：{error}",
+
   "reload": "重新載入",
   "aiInsightDetail": "洞察詳情",
   "relatedRecordsCount": "關聯記錄（{count}）",
@@ -462,6 +469,17 @@
     }
   },
   "authorized": "已授權",
+  "@authorizedAs": {
+    "placeholders": {
+      "email": {}
+    }
+  },
+  "authorizedAs": "已授權為 {email}",
+  "authorizedSuccessfully": "授權成功",
+  "reAuthorize": "重新授權",
+  "authorizeWithOpenAi": "使用 OpenAI 授權",
+  "authorizeWithGoogle": "使用 Google 授權",
+
   "config": "設定",
   "calendar": "行事曆",
   "reminders": "提醒事項",

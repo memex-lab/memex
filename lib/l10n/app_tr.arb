@@ -255,6 +255,12 @@
   "retryCount": "Tekrar dene: {count}",
   "loadDetailFailedRetry": "Ayrıntı yüklenemedi. Lütfen daha sonra tekrar deneyin.",
   "loadFailed": "Yükleme başarısız oldu",
+  "@loadHistoryFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadHistoryFailed": "Geçmiş yüklenemedi: {error}",
   "reload": "Yeniden yükle",
   "aiInsightDetail": "Analiz Detayı",
   "@relatedRecordsCount": {
@@ -462,6 +468,16 @@
   },
   "authFailed": "Kimlik doğrulama başarısız oldu: {error}",
   "authorized": "Yetkili",
+  "@authorizedAs": {
+    "placeholders": {
+      "email": {}
+    }
+  },
+  "authorizedAs": "{email} olarak yetkilendirildi",
+  "authorizedSuccessfully": "Yetkilendirme başarılı",
+  "reAuthorize": "Yeniden yetkilendir",
+  "authorizeWithOpenAi": "OpenAI ile yetkilendir",
+  "authorizeWithGoogle": "Google ile yetkilendir",
   "config": "Yapılandırma",
   "calendar": "Takvim",
   "reminders": "Hatırlatıcılar",

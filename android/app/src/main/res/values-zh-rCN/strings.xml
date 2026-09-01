@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App shortcut labels for Quick Note (home-screen shortcut). -->
+    <!-- Mirrors default values/ (Simplified Chinese). -->
+    <string name="shortcut_quick_note">记一下</string>
+    <string name="shortcut_quick_note_long">记一下</string>
+</resources>

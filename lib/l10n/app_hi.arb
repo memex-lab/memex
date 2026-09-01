@@ -255,6 +255,13 @@
   },
   "loadDetailFailedRetry": "विवरण लोड नहीं हो सका, कृपया बाद में फिर कोशिश करें।",
   "loadFailed": "लोड विफल",
+  "@loadHistoryFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadHistoryFailed": "इतिहास लोड करने में विफल: {error}",
+
   "reload": "फिर लोड करें",
   "aiInsightDetail": "अंतर्दृष्टि विवरण",
   "relatedRecordsCount": "संबंधित रिकॉर्ड ({count})",
@@ -462,6 +469,17 @@
     }
   },
   "authorized": "अधिकृत",
+  "@authorizedAs": {
+    "placeholders": {
+      "email": {}
+    }
+  },
+  "authorizedAs": "{email} के रूप में प्राधिकृत",
+  "authorizedSuccessfully": "सफलतापूर्वक प्राधिकृत",
+  "reAuthorize": "पुनः प्राधिकृत करें",
+  "authorizeWithOpenAi": "OpenAI के साथ प्राधिकृत करें",
+  "authorizeWithGoogle": "Google के साथ प्राधिकृत करें",
+
   "config": "कॉन्फ़िग",
   "calendar": "कैलेंडर",
   "reminders": "रिमाइंडर",

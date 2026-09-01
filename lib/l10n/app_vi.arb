@@ -255,6 +255,13 @@
   "retryCount": "Thử lại: {count}",
   "loadDetailFailedRetry": "Tải chi tiết thất bại, vui lòng thử lại sau.",
   "loadFailed": "Tải thất bại",
+  "@loadHistoryFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadHistoryFailed": "Không thể tải lịch sử: {error}",
+
   "reload": "Tải lại",
   "aiInsightDetail": "Chi tiết insight",
   "@relatedRecordsCount": {
@@ -462,6 +469,17 @@
   },
   "authFailed": "Ủy quyền thất bại: {error}",
   "authorized": "Đã ủy quyền",
+  "@authorizedAs": {
+    "placeholders": {
+      "email": {}
+    }
+  },
+  "authorizedAs": "Đã ủy quyền dưới tên {email}",
+  "authorizedSuccessfully": "Ủy quyền thành công",
+  "reAuthorize": "Ủy quyền lại",
+  "authorizeWithOpenAi": "Ủy quyền với OpenAI",
+  "authorizeWithGoogle": "Ủy quyền với Google",
+
   "config": "Cấu hình",
   "calendar": "Lịch",
   "reminders": "Nhắc nhở",

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App shortcut labels for Quick Note (home-screen shortcut). -->
+    <string name="shortcut_quick_note">빠른 메모</string>
+    <string name="shortcut_quick_note_long">빠른 메모</string>
+</resources>
