@@ -686,10 +686,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-    Object running,
-    Object pending,
-    Object retrying,
-  ) {
+      Object running, Object pending, Object retrying) {
     return '실행 중 $running, 대기 중 $pending, 재시도 $retrying';
   }
 

@@ -709,10 +709,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-    Object running,
-    Object pending,
-    Object retrying,
-  ) {
+      Object running, Object pending, Object retrying) {
     return '$running wird ausgeführt, $pending steht aus, $retrying erneut versuchen';
   }
 

@@ -696,10 +696,7 @@ class AppLocalizationsFa extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-    Object running,
-    Object pending,
-    Object retrying,
-  ) {
+      Object running, Object pending, Object retrying) {
     return 'در حال اجرا $running، در انتظار $pending، تلاش مجدد $retrying';
   }
 

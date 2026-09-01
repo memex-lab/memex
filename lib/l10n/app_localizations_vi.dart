@@ -696,10 +696,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-    Object running,
-    Object pending,
-    Object retrying,
-  ) {
+      Object running, Object pending, Object retrying) {
     return 'Đang chạy $running, Chờ $pending, Thử lại $retrying';
   }
 

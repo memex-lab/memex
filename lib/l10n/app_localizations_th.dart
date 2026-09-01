@@ -694,10 +694,7 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-    Object running,
-    Object pending,
-    Object retrying,
-  ) {
+      Object running, Object pending, Object retrying) {
     return 'กำลังทำงาน $running, รอดำเนินการ $pending, ลองใหม่ $retrying';
   }
 

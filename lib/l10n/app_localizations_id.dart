@@ -700,10 +700,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-    Object running,
-    Object pending,
-    Object retrying,
-  ) {
+      Object running, Object pending, Object retrying) {
     return 'Berjalan $running, Tertunda $pending, Coba ulang $retrying';
   }
 

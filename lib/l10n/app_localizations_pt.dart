@@ -704,10 +704,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-    Object running,
-    Object pending,
-    Object retrying,
-  ) {
+      Object running, Object pending, Object retrying) {
     return 'Executando $running, pendentes $pending, nova tentativa $retrying';
   }
 
