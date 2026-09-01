@@ -523,6 +523,11 @@ class AppLocalizationsFr extends AppLocalizations {
   String get loadFailed => 'Échec du chargement';
 
   @override
+  String loadHistoryFailed(Object error) {
+    return 'Échec du chargement de l\'historique : $error';
+  }
+
+  @override
   String get reload => 'Recharger';
 
   @override
@@ -1037,6 +1042,23 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get authorized => 'Autorisé';
+
+  @override
+  String authorizedAs(Object email) {
+    return 'Autorisé en tant que $email';
+  }
+
+  @override
+  String get authorizedSuccessfully => 'Autorisation réussie';
+
+  @override
+  String get reAuthorize => 'Ré-autoriser';
+
+  @override
+  String get authorizeWithOpenAi => 'Autoriser avec OpenAI';
+
+  @override
+  String get authorizeWithGoogle => 'Autoriser avec Google';
 
   @override
   String get config => 'Configuration';

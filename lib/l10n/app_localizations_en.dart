@@ -515,6 +515,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loadFailed => 'Load failed';
 
   @override
+  String loadHistoryFailed(Object error) {
+    return 'Failed to load history: $error';
+  }
+
+  @override
   String get reload => 'Reload';
 
   @override
@@ -1021,6 +1026,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get authorized => 'Authorized';
+
+  @override
+  String authorizedAs(Object email) {
+    return 'Authorized as $email';
+  }
+
+  @override
+  String get authorizedSuccessfully => 'Authorized successfully';
+
+  @override
+  String get reAuthorize => 'Re-authorize';
+
+  @override
+  String get authorizeWithOpenAi => 'Authorize with OpenAI';
+
+  @override
+  String get authorizeWithGoogle => 'Authorize with Google';
 
   @override
   String get config => 'Config';

@@ -523,6 +523,11 @@ class AppLocalizationsRu extends AppLocalizations {
   String get loadFailed => 'Загрузка не удалась';
 
   @override
+  String loadHistoryFailed(Object error) {
+    return 'Не удалось загрузить историю: $error';
+  }
+
+  @override
   String get reload => 'Перезагрузить';
 
   @override
@@ -1033,6 +1038,23 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get authorized => 'Авторизовано';
+
+  @override
+  String authorizedAs(Object email) {
+    return 'Авторизован как $email';
+  }
+
+  @override
+  String get authorizedSuccessfully => 'Авторизация успешна';
+
+  @override
+  String get reAuthorize => 'Повторная авторизация';
+
+  @override
+  String get authorizeWithOpenAi => 'Авторизовать через OpenAI';
+
+  @override
+  String get authorizeWithGoogle => 'Авторизовать через Google';
 
   @override
   String get config => 'Конфигурация';

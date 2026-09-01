@@ -520,6 +520,11 @@ class AppLocalizationsVi extends AppLocalizations {
   String get loadFailed => 'Tải thất bại';
 
   @override
+  String loadHistoryFailed(Object error) {
+    return 'Không thể tải lịch sử: $error';
+  }
+
+  @override
   String get reload => 'Tải lại';
 
   @override
@@ -1022,6 +1027,23 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get authorized => 'Đã ủy quyền';
+
+  @override
+  String authorizedAs(Object email) {
+    return 'Đã ủy quyền dưới tên $email';
+  }
+
+  @override
+  String get authorizedSuccessfully => 'Ủy quyền thành công';
+
+  @override
+  String get reAuthorize => 'Ủy quyền lại';
+
+  @override
+  String get authorizeWithOpenAi => 'Ủy quyền với OpenAI';
+
+  @override
+  String get authorizeWithGoogle => 'Ủy quyền với Google';
 
   @override
   String get config => 'Cấu hình';

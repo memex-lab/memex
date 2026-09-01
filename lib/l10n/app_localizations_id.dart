@@ -520,6 +520,11 @@ class AppLocalizationsId extends AppLocalizations {
   String get loadFailed => 'Gagal memuat';
 
   @override
+  String loadHistoryFailed(Object error) {
+    return 'Gagal memuat riwayat: $error';
+  }
+
+  @override
   String get reload => 'Muat ulang';
 
   @override
@@ -1030,6 +1035,23 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get authorized => 'Terotorisasi';
+
+  @override
+  String authorizedAs(Object email) {
+    return 'Diotorisasi sebagai $email';
+  }
+
+  @override
+  String get authorizedSuccessfully => 'Berhasil diotorisasi';
+
+  @override
+  String get reAuthorize => 'Otorisasi ulang';
+
+  @override
+  String get authorizeWithOpenAi => 'Otorisasi dengan OpenAI';
+
+  @override
+  String get authorizeWithGoogle => 'Otorisasi dengan Google';
 
   @override
   String get config => 'Konfigurasi';

@@ -510,6 +510,11 @@ class AppLocalizationsKo extends AppLocalizations {
   String get loadFailed => '불러오기 실패';
 
   @override
+  String loadHistoryFailed(Object error) {
+    return '기록을 불러오지 못했습니다: $error';
+  }
+
+  @override
   String get reload => '다시 불러오기';
 
   @override
@@ -1002,6 +1007,23 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get authorized => '인증됨';
+
+  @override
+  String authorizedAs(Object email) {
+    return '$email(으)로 인증됨';
+  }
+
+  @override
+  String get authorizedSuccessfully => '인증되었습니다';
+
+  @override
+  String get reAuthorize => '다시 인증';
+
+  @override
+  String get authorizeWithOpenAi => 'OpenAI로 인증';
+
+  @override
+  String get authorizeWithGoogle => 'Google로 인증';
 
   @override
   String get config => '설정';

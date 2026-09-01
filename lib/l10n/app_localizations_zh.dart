@@ -505,6 +505,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get loadFailed => '加载失败';
 
   @override
+  String loadHistoryFailed(Object error) {
+    return '加载历史记录失败：$error';
+  }
+
+  @override
   String get reload => '重新加载';
 
   @override
@@ -994,6 +999,23 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get authorized => '已授权';
+
+  @override
+  String authorizedAs(Object email) {
+    return '已授权为 $email';
+  }
+
+  @override
+  String get authorizedSuccessfully => '授权成功';
+
+  @override
+  String get reAuthorize => '重新授权';
+
+  @override
+  String get authorizeWithOpenAi => '使用 OpenAI 授权';
+
+  @override
+  String get authorizeWithGoogle => '使用 Google 授权';
 
   @override
   String get config => '配置';
@@ -3664,6 +3686,11 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get loadFailed => '載入失敗';
 
   @override
+  String loadHistoryFailed(Object error) {
+    return '載入歷史記錄失敗：$error';
+  }
+
+  @override
   String get reload => '重新載入';
 
   @override
@@ -4152,6 +4179,23 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get authorized => '已授權';
+
+  @override
+  String authorizedAs(Object email) {
+    return '已授權為 $email';
+  }
+
+  @override
+  String get authorizedSuccessfully => '授權成功';
+
+  @override
+  String get reAuthorize => '重新授權';
+
+  @override
+  String get authorizeWithOpenAi => '使用 OpenAI 授權';
+
+  @override
+  String get authorizeWithGoogle => '使用 Google 授權';
 
   @override
   String get config => '設定';

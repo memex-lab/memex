@@ -255,6 +255,12 @@
   "retryCount": "ลองใหม่: {count}",
   "loadDetailFailedRetry": "โหลดรายละเอียดล้มเหลว โปรดลองอีกครั้งในภายหลัง",
   "loadFailed": "โหลดล้มเหลว",
+  "@loadHistoryFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadHistoryFailed": "โหลดประวัติล้มเหลว: {error}",
   "reload": "โหลดใหม่",
   "aiInsightDetail": "รายละเอียดข้อมูลเชิงลึก",
   "@relatedRecordsCount": {
@@ -462,6 +468,16 @@
   },
   "authFailed": "การยืนยันตัวตนล้มเหลว: {error}",
   "authorized": "อนุญาตแล้ว",
+  "@authorizedAs": {
+    "placeholders": {
+      "email": {}
+    }
+  },
+  "authorizedAs": "อนุญาตในชื่อ {email}",
+  "authorizedSuccessfully": "อนุญาตสำเร็จ",
+  "reAuthorize": "อนุญาตอีกครั้ง",
+  "authorizeWithOpenAi": "อนุญาตด้วย OpenAI",
+  "authorizeWithGoogle": "อนุญาตด้วย Google",
   "config": "การกำหนดค่า",
   "calendar": "ปฏิทิน",
   "reminders": "การเตือนความจำ",

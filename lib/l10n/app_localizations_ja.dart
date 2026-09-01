@@ -510,6 +510,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get loadFailed => '読み込みに失敗しました';
 
   @override
+  String loadHistoryFailed(Object error) {
+    return '履歴の読み込みに失敗しました: $error';
+  }
+
+  @override
   String get reload => '再読み込み';
 
   @override
@@ -1003,6 +1008,23 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get authorized => '認証済み';
+
+  @override
+  String authorizedAs(Object email) {
+    return '$email として認証しました';
+  }
+
+  @override
+  String get authorizedSuccessfully => '認証に成功しました';
+
+  @override
+  String get reAuthorize => '再認証';
+
+  @override
+  String get authorizeWithOpenAi => 'OpenAI で認証';
+
+  @override
+  String get authorizeWithGoogle => 'Google で認証';
 
   @override
   String get config => '設定';

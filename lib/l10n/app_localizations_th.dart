@@ -516,6 +516,11 @@ class AppLocalizationsTh extends AppLocalizations {
   String get loadFailed => 'โหลดล้มเหลว';
 
   @override
+  String loadHistoryFailed(Object error) {
+    return 'โหลดประวัติล้มเหลว: $error';
+  }
+
+  @override
   String get reload => 'โหลดใหม่';
 
   @override
@@ -1021,6 +1026,23 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get authorized => 'อนุญาตแล้ว';
+
+  @override
+  String authorizedAs(Object email) {
+    return 'อนุญาตในชื่อ $email';
+  }
+
+  @override
+  String get authorizedSuccessfully => 'อนุญาตสำเร็จ';
+
+  @override
+  String get reAuthorize => 'อนุญาตอีกครั้ง';
+
+  @override
+  String get authorizeWithOpenAi => 'อนุญาตด้วย OpenAI';
+
+  @override
+  String get authorizeWithGoogle => 'อนุญาตด้วย Google';
 
   @override
   String get config => 'การกำหนดค่า';

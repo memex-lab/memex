@@ -517,6 +517,11 @@ class AppLocalizationsHi extends AppLocalizations {
   String get loadFailed => 'लोड विफल';
 
   @override
+  String loadHistoryFailed(Object error) {
+    return 'इतिहास लोड करने में विफल: $error';
+  }
+
+  @override
   String get reload => 'फिर लोड करें';
 
   @override
@@ -1024,6 +1029,23 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get authorized => 'अधिकृत';
+
+  @override
+  String authorizedAs(Object email) {
+    return '$email के रूप में प्राधिकृत';
+  }
+
+  @override
+  String get authorizedSuccessfully => 'सफलतापूर्वक प्राधिकृत';
+
+  @override
+  String get reAuthorize => 'पुनः प्राधिकृत करें';
+
+  @override
+  String get authorizeWithOpenAi => 'OpenAI के साथ प्राधिकृत करें';
+
+  @override
+  String get authorizeWithGoogle => 'Google के साथ प्राधिकृत करें';
 
   @override
   String get config => 'कॉन्फ़िग';
