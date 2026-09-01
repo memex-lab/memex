@@ -24,10 +24,24 @@
 		<true/>
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>
+		<!-- Matches lib/l10n/supported_languages.dart (Flutter UI locales). -->
 		<key>CFBundleLocalizations</key>
 		<array>
-			<string>en</string>
-			<string>zh-Hans</string>
+			<string>en</string><!-- English -->
+			<string>zh-Hans</string><!-- Simplified Chinese (zh) -->
+			<string>zh-Hant</string><!-- Traditional Chinese (zh_Hant) -->
+			<string>de</string><!-- German -->
+			<string>ja</string><!-- Japanese -->
+			<string>ko</string><!-- Korean -->
+			<string>es</string><!-- Spanish -->
+			<string>hi</string><!-- Hindi -->
+			<string>ar</string><!-- Arabic -->
+			<string>pt</string><!-- Portuguese -->
+			<string>fr</string><!-- French -->
+			<string>id</string><!-- Indonesian -->
+			<string>fa</string><!-- Persian -->
+			<string>vi</string><!-- Vietnamese -->
+			<string>ru</string><!-- Russian -->
 		</array>
 		<key>CFBundleAllowMixedLocalizations</key>
 		<true/>
