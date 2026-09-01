@@ -123,6 +123,14 @@ const List<SupportedLanguage> supportedLanguages = <SupportedLanguage>[
     englishName: 'Thai',
     shortLabel: 'TH',
   ),
+  // Turkish expands UI coverage beyond the original i18n wishlist.
+  SupportedLanguage(
+    locale: Locale('tr'),
+    localeTag: 'tr',
+    nativeName: 'Türkçe',
+    englishName: 'Turkish',
+    shortLabel: 'TR',
+  ),
   SupportedLanguage(
     locale: Locale('ru'),
     localeTag: 'ru',
@@ -148,6 +156,7 @@ const List<Locale> supportedLanguageLocales = <Locale>[
   Locale('fa'),
   Locale('vi'),
   Locale('th'),
+  Locale('tr'),
   Locale('ru'),
 ];
 
@@ -167,6 +176,7 @@ const List<String> supportedLanguageTags = <String>[
   'fa',
   'vi',
   'th',
+  'tr',
   'ru',
 ];
 

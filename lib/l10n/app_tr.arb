@@ -1,0 +1,1517 @@
+{
+  "@@locale": "tr",
+  "timesLabel": "Kez",
+  "@modelSetAsDefault": {
+    "placeholders": {
+      "modelId": {}
+    }
+  },
+  "modelSetAsDefault": "{modelId}'yi varsayılan model olarak ayarla",
+  "retry": "Yeniden dene",
+  "unknownModel": "Bilinmeyen model",
+  "notSet": "Ayarlanmadı",
+  "confirmClear": "Temizlemeyi onayla",
+  "confirmClearTokenMessage": "Mevcut kullanıcı silinsin mi? Kullanıcı kimliğini tekrar girmeniz gerekecektir.",
+  "cancel": "İptal etmek",
+  "confirm": "Onaylamak",
+  "tokenCleared": "Kullanıcı temizlendi",
+  "@clearTokenFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "clearTokenFailed": "Kullanıcı temizlenemedi: {error}",
+  "selectDateRangeOptional": "Tarih aralığını seçin (isteğe bağlı):",
+  "startDate": "Başlangıç ​​tarihi",
+  "endDate": "Bitiş tarihi",
+  "select": "Seçme",
+  "processLimitOptional": "İşlem sınırı (isteğe bağlı)",
+  "leaveEmptyForAll": "Tümünü işlemek için boş bırakın",
+  "startProcessing": "İşlemeyi başlat",
+  "userIdNotFound": "Kullanıcı kimliği bulunamadı",
+  "@createTaskFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "createTaskFailed": "Görev oluşturulamadı: {error}",
+  "reprocessCards": "Kartları yeniden işle",
+  "reprocessCardsTaskCreated": "Yeniden işleme isteği Super Agent'ta kuyruğa alındı",
+  "reprocessCardsDownstreamMode": "Kapsam",
+  "reprocessCardsCardOnly": "Yalnızca kartlar",
+  "reprocessCardsCardOnlyDesc": "Süper Temsilciden seçilen zaman çizelgesi kartlarını incelemesini ve yeniden oluşturmasını isteyin.",
+  "reprocessCardsRerunDownstream": "Kartlar ve ilgili takipler",
+  "reprocessCardsRerunDownstreamDesc": "Süper Temsilciden, gerektiğinde ilgili PKM ve içgörü güncellemelerini de dikkate almasını isteyin.",
+  "reanalyzeMediaAssets": "Medya eklerini yeniden okuyun",
+  "reanalyzeMediaAssetsDesc": "Süper Temsilciden kartları yeniden oluştururken ekli medyayı tekrar incelemesini isteyin.",
+  "regenerateComments": "Yorumları yeniden oluştur",
+  "regenerateCommentsTaskCreated": "Arka planda çalışan, oluşturulan yorumları yeniden oluşturma görevi",
+  "rebuildSearchIndex": "Arama dizinini yeniden oluştur",
+  "rebuildSearchIndexSuccess": "Arama dizini başarıyla yeniden oluşturuldu",
+  "rebuildSearchIndexFailed": "Arama dizini yeniden oluşturulamadı",
+  "clearData": "Verileri temizle",
+  "confirmClearDataMessage": "Veriler temizlensin mi?",
+  "confirmClearDataDeletesWorkspaceMessage": "Kartlar, medya, bilgi dosyaları, öngörüler, bellek, sohbet geçmişi ve sistem durumu dahil olmak üzere mevcut kullanıcıya ait tüm yerel çalışma alanı verileri silinecek.\n\nBu işlem geri alınamaz!",
+  "clearFailedAgentContexts": "Başarısız olan görüşme içeriğini temizle",
+  "confirmClearFailedAgentContextsMessage": "Insight ve Schedule aracıları için kayıtlı konuşma bağlamı temizlensin mi? Bu, önceki temsilci mesajları artık uyumlu olmadığında modelleri değiştirdikten sonra kullanışlıdır. Gerçekler, kartlar, bilgiler, anılar ve model ayarları silinmeyecektir.",
+  "@failedAgentContextsCleared": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "failedAgentContextsCleared": "{count} kayıtlı görüşme bağlamı temizlendi",
+  "@clearFailedAgentContextsFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "clearFailedAgentContextsFailed": "Görüşme bağlamı temizlenemedi: {error}",
+  "cloneToTestUser": "Kullanıcıyı test etmek için klonlayın",
+  "confirmCloneToTestUserMessage": "Geçerli çalışma alanını yeni bir yerel test kullanıcısına kopyalayın ve ona geçin. Aracı çalışma zamanı durumu kopyalanmaz. Mevcut kullanıcı verileriniz değiştirilmeyecektir.",
+  "testUserIdLabel": "Kullanıcı kimliğini test edin",
+  "testUserIdHelper": "Harf, sayı, kısa çizgi veya alt çizgi kullanın.",
+  "testUserIdInvalid": "Yalnızca harf, sayı, kısa çizgi veya alt çizgi kullanın.",
+  "overwriteExistingTestUser": "Mevcut test kullanıcısını aynı kimlikle değiştir",
+  "@testUserCloneSuccess": {
+    "placeholders": {
+      "userId": {}
+    }
+  },
+  "testUserCloneSuccess": "{userId} test kullanıcısına geçildi",
+  "@testUserCloneFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "testUserCloneFailed": "Test kullanıcısı klonlanamadı: {error}",
+  "dataClearedSuccess": "Veriler başarıyla temizlendi",
+  "@clearDataFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "clearDataFailed": "Veriler temizlenemedi: {error}",
+  "personalCenter": "Kişisel merkez",
+  "viewLogs": "Günlükleri görüntüle",
+  "systemAuthorization": "Sistem yetkilendirmesi",
+  "aiCharacterConfig": "AI karakter yapılandırması",
+  "modelConfig": "Model yapılandırması",
+  "agentConfig": "Aracı yapılandırması",
+  "experimentalLab": "Laboratuvarlar",
+  "experimentalLabDescription": "Daha sonra değişebilecek veya taşınabilecek deneysel özellikler.",
+  "modelUsageStats": "Model kullanım istatistikleri",
+  "asyncTaskList": "Eşzamansız görev listesi",
+  "clearLocalToken": "Kullanıcıyı temizle",
+  "insightCardTemplates": "İçgörü kartı şablonları",
+  "timelineCardTemplates": "Zaman çizelgesi kartı şablonları",
+  "logViewer": "Günlük görüntüleyici",
+  "autoRefresh": "Otomatik yenileme",
+  "lineCount": "Satır sayısı:",
+  "all": "Tüm",
+  "schedule": "Takvim",
+  "appLockConfig": "Uygulama kilidi yapılandırması",
+  "@loadStatsFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadStatsFailed": "İstatistikler yüklenemedi: {error}",
+  "overview": "Genel Bakış",
+  "daily": "Günlük",
+  "modelStatsByAgent": "Temsilci tarafından",
+  "detail": "Detay",
+  "date": "Tarih",
+  "agent": "Ajan",
+  "noData": "Veri yok",
+  "totalCalls": "Toplam çağrı",
+  "calls": "Aramalar",
+  "@callsCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "callsCount": "{count} çağrı",
+  "selectDateRange": "Tarih aralığını seçin",
+  "totalTokens": "Toplam jeton",
+  "cacheRate": "Önbellek oranı",
+  "promptTokens": "İstem jetonları",
+  "completionTokens": "Tamamlama jetonları",
+  "cachedTokens": "Önbelleğe alınmış jetonlar",
+  "thoughtTokens": "Düşünce belirteçleri",
+  "prompt": "Çabuk",
+  "completion": "Tamamlama",
+  "cached": "Önbelleğe alındı",
+  "thought": "Düşünce",
+  "model": "Modeli",
+  "scene": "Sahne",
+  "sceneId": "Sahne Kimliği",
+  "tokenUsage": "Jeton kullanımı",
+  "handler": "İşleyici",
+  "modelBreakdown": "Model dökümü",
+  "callDetails": "Arama ayrıntıları",
+  "@recordDetailsTitle": {
+    "placeholders": {
+      "scene": {}
+    }
+  },
+  "recordDetailsTitle": "Kayıt ayrıntıları: {scene}",
+  "@saveLlmConfigFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "saveLlmConfigFailed": "LLM yapılandırması kaydedilemedi: {error}",
+  "webHtmlPreviewUnavailable": "HTML önizlemesi web'de mevcut değildir. Lütfen mobilden görüntüleyiniz.",
+  "@saveUserInfoFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "saveUserInfoFailed": "Kullanıcı bilgileri kaydedilemedi: {error}",
+  "totalEstimatedCost": "Toplam tahmini maliyet",
+  "close": "Kapalı",
+  "totalTokenConsumption": "Toplam jeton tüketimi",
+  "dataLoadFailedRetry": "Veri yükleme başarısız oldu, lütfen daha sonra tekrar deneyin.",
+  "timelineLoadFailedRetry": "Zaman çizelgesi yüklemesi başarısız oldu. Lütfen daha sonra tekrar deneyin.",
+  "newPerspective": "Yeni bakış açısı",
+  "startPoint": "Başlangıç",
+  "endPoint": "Son",
+  "originalInput": "Orijinal giriş",
+  "referenceContent": "Referans içeriği",
+  "@referenceWithTitle": {
+    "placeholders": {
+      "title": {}
+    }
+  },
+  "referenceWithTitle": "Referans: {title}",
+  "actionCenterTitle": "Bekleyen işlemler",
+  "noPendingActions": "Bekleyen işlem yok",
+  "clarificationNeeded": "Memex onaylamak istiyor",
+  "clarificationTextHint": "Kısa bir yanıt yazın",
+  "clarificationTextRequired": "Önce kısa bir cevap ekleyin",
+  "clarificationAnswered": "Yanıtlandı",
+  "@clarificationAnswerPrefix": {
+    "placeholders": {
+      "answer": {}
+    }
+  },
+  "clarificationAnswerPrefix": "Cevap: {answer}",
+  "answerSaved": "Yanıt kaydedildi",
+  "clarificationOtherAnswer": "Manuel giriş",
+  "clarificationNotSure": "Emin değilim / söylememeyi tercih ediyorum",
+  "yes": "Evet",
+  "no": "HAYIR",
+  "footprintMap": "Ayak izi haritası",
+  "waypointPlaces": "Ara nokta yerleri",
+  "unknownPlace": "Bilinmeyen yer",
+  "releaseToSend": "Göndermek için bırakın",
+  "selectFromAlbum": "Albümden seç",
+  "clipboardPreviewTitle": "Yeni pano",
+  "clipboardPreviewImageTitle": "Pano resmi",
+  "clipboardPreviewImageDescription": "Resim eklenmeye hazır",
+  "clipboardPreviewUnprocessed": "Henüz yapıştırılmadı",
+  "clipboardPreviewPasteToInput": "Girişe yapıştır",
+  "clipboardPreviewAddImageToInput": "Resim ekle",
+  "clipboardPreviewImageFailed": "Pano resmi okunamadı",
+  "tellAiWhatHappened": "AI'a ne olduğunu anlat...",
+  "@recordingWithDuration": {
+    "placeholders": {
+      "duration": {}
+    }
+  },
+  "recordingWithDuration": "Kayıt: {duration}",
+  "playing": "Oynanıyor...",
+  "sendLabel": "Göndermek",
+  "@attachedImagesMessage": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "attachedImagesMessage": "{count} resim gönderildi",
+  "noTaskData": "Görev verisi yok",
+  "@createdAtDate": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "createdAtDate": "Oluşturuldu: {date}",
+  "@updatedAtDate": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "updatedAtDate": "Güncellendi: {date}",
+  "@durationLabel": {
+    "placeholders": {
+      "duration": {}
+    }
+  },
+  "durationLabel": "Süre: {duration}",
+  "@retryCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "retryCount": "Tekrar dene: {count}",
+  "loadDetailFailedRetry": "Ayrıntı yüklenemedi. Lütfen daha sonra tekrar deneyin.",
+  "loadFailed": "Yükleme başarısız oldu",
+  "@loadHistoryFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadHistoryFailed": "Geçmiş yüklenemedi: {error}",
+  "reload": "Yeniden yükle",
+  "aiInsightDetail": "Analiz Detayı",
+  "@relatedRecordsCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "relatedRecordsCount": "İlgili kayıtlar ({count})",
+  "noRelatedRecords": "İlgili kayıt yok",
+  "useFingerprintToUnlock": "Kilidi açmak için parmak izini kullanın",
+  "locked": "Kilitli",
+  "wrongPassword": "Yanlış şifre",
+  "enterPassword": "Şifreyi girin",
+  "memexLocked": "Memex kilitlendi",
+  "calendarShortSun": "Güneş",
+  "calendarShortMon": "Pazartesi",
+  "calendarShortTue": "Salı",
+  "calendarShortWed": "Çar",
+  "calendarShortThu": "Per",
+  "calendarShortFri": "Cuma",
+  "calendarShortSat": "Doygunluk",
+  "@noRecordsOnDate": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "noRecordsOnDate": "{date} tarihinde kayıt yok",
+  "footprintPath": "Ayak izi yolu",
+  "lifeCompositionTable": "Yaşam kompozisyonu",
+  "emotionReframe": "Duygu yeniden çerçeveleme",
+  "chronicleOfThings": "Şeylerin kroniği",
+  "goalProgress": "Hedef ilerlemesi",
+  "trendChart": "Trend grafiği",
+  "comparisonChart": "Karşılaştırma tablosu",
+  "todayTimeFlow": "Bugünün zaman akışı",
+  "aiInputHint": "Anılar olsun, şimdiki zaman olsun, buradayım...",
+  "refreshSuperAgentStateTooltip": "Memex Agent içeriğini temizle",
+  "refreshSuperAgentStateTitle": "Memex Agent geçmişi bağlamı temizlensin mi?",
+  "refreshSuperAgentStateMessage": "Görünür sohbet geçmişi kalacak ancak Memex Agent'ın geçmiş çalışma zamanı bağlamı temizlenecek ve gelecekteki yanıtlar yeni bir bağlamdan başlayacak. Kalıcı bellek, bilgi tabanı dosyaları, kartlar ve kayıtlı diğer veriler etkilenmez. Memex Agent anormal davranmaya devam ettiğinde bunu kullanın. Devam etmek?",
+  "refreshSuperAgentStateActiveRunMessage": "Bağlamı temizlemeden önce mevcut Memex Agent mesajının bitmesini bekleyin.",
+  "refreshSuperAgentStateSuccess": "Memex Agent bağlamı temizlendi",
+  "@refreshSuperAgentStateFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "refreshSuperAgentStateFailed": "Memex Agent bağlamı temizlenemedi: {error}",
+  "nothingHere": "Henüz burada hiçbir şey yok",
+  "nothingHereHint": "İlk kartınızı oluşturmak için aşağıdaki düğmeye dokunun",
+  "agentProcessing": "Yapay zeka işliyor...",
+  "keepAppOpen": "Uygulamayı kapatmayın",
+  "activityDetail": "Etkinlik Detayı",
+  "noAgentActivityYet": "Henüz temsilci etkinliği yok",
+  "processingEllipsis": "İşleme...",
+  "agentBackgroundTitle": "Memex Temsilcisi",
+  "agentBackgroundPausedTitle": "Memex Aracısı duraklatıldı",
+  "agentBackgroundNeedsAttentionTitle": "Memex Agent'ın dikkat etmesi gerekiyor",
+  "agentBackgroundStageIdle": "Boşta",
+  "agentBackgroundStageProcessing": "İşleme",
+  "agentBackgroundStageQueued": "Sıraya alındı",
+  "agentBackgroundStageRetrying": "Yeniden denemek bekleniyor",
+  "agentBackgroundStagePaused": "Duraklatıldı",
+  "agentBackgroundStageCompleted": "Tamamlanmış",
+  "agentBackgroundStageNeedsAttention": "Dikkat edilmesi gerekiyor",
+  "agentBackgroundStageAnalyzingMedia": "Medyayı analiz etme",
+  "agentBackgroundStageGeneratingCard": "Kart oluşturuluyor",
+  "agentBackgroundStageUpdatingKnowledge": "Bilgiyi güncelleme",
+  "agentBackgroundStagePreparingComment": "Yorum hazırlanıyor",
+  "agentBackgroundStageRoutingFollowUps": "Yönlendirme takipleri",
+  "@agentBackgroundTaskSummary": {
+    "placeholders": {
+      "running": {},
+      "pending": {},
+      "retrying": {}
+    }
+  },
+  "agentBackgroundTaskSummary": "Çalıştırılıyor {running}, Beklemede {pending}, Yeniden Dene {retrying}",
+  "@agentBackgroundTaskDetail": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "agentBackgroundTaskDetail": "{count} sıraya alınmış görev işleniyor.",
+  "agentBackgroundNoTasks": "Arka plan görevi yok.",
+  "agentBackgroundStarting": "İşleme başlıyor.",
+  "agentBackgroundCompletedDetail": "Tüm arka plan görevleri tamamlandı.",
+  "agentBackgroundFailedDetail": "İşleme bir hata nedeniyle durduruldu.",
+  "agentBackgroundPausedDetail": "İşleme duraklatıldı ve daha sonra devam edecek.",
+  "agentBackgroundQueuedDetail": "Bir sonraki işlem adımı bekleniyor.",
+  "agentBackgroundRetryingDetail": "Geçerli adım otomatik olarak yeniden denenecektir.",
+  "agentBackgroundAnalyzeMediaDetail": "Ekleri ve yerel bağlamı okuma.",
+  "agentBackgroundGeneratingCardDetail": "Kaydı bir zaman çizelgesi kartına dönüştürmek.",
+  "agentBackgroundUpdatingKnowledgeDetail": "Yerel bilgi ve hafızanın güncellenmesi.",
+  "agentBackgroundPreparingCommentDetail": "Asistan takibi hazırlamak.",
+  "agentBackgroundRoutingFollowUpsDetail": "Bu kart için takip işlemleri kontrol ediliyor.",
+  "@agentBackgroundPausedStatus": {
+    "placeholders": {
+      "summary": {}
+    }
+  },
+  "agentBackgroundPausedStatus": "Duraklatıldı - {summary}",
+  "@agentBackgroundNeedsAttentionStatus": {
+    "placeholders": {
+      "summary": {}
+    }
+  },
+  "agentBackgroundNeedsAttentionStatus": "Dikkat edilmesi gerekiyor - {summary}",
+  "settings": "Ayarlar",
+  "languageSettings": "Dil",
+  "languageSettingsDesc": "Uygulama görüntüleme dilini değiştirme",
+  "noPendingActionsToast": "Bekleyen işlem yok",
+  "knowledgeNewDiscovery": "Bilgi yeni keşif",
+  "@discoveredNewInsightsCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "discoveredNewInsightsCount": "{count} yeni analiz keşfedildi",
+  "@updatedExistingInsightsCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "updatedExistingInsightsCount": "{count} mevcut analiz güncellendi",
+  "sectionNewInsights": "Yeni bilgiler",
+  "sectionUpdatedInsights": "Güncellenen bilgiler",
+  "unnamedInsight": "Adsız analiz",
+  "copiedToClipboard": "Panoya kopyalandı",
+  "copy": "Kopyala",
+  "selectedLocation": "Seçilen konum",
+  "confirmLocationName": "Konum adını onaylayın",
+  "confirmLocationNameHint": "Adı düzenleyebilirsiniz (koordinatlar aynı kalır)",
+  "nameLabel": "İsim",
+  "inputPlaceNameHint": "Yer adını girin...",
+  "@currentCoordinates": {
+    "placeholders": {
+      "lat": {},
+      "lng": {}
+    }
+  },
+  "currentCoordinates": "Koordinatlar: {lat}, {lng}",
+  "confirmLocation": "Konumu onayla",
+  "welcomeToMemex": "Memex'e hoş geldiniz",
+  "createUserIdToStart": "Profilinizi oluşturun",
+  "userIdLabel": "Adınız / Takma Adınız",
+  "userIdHint": "Adınızı veya takma adınızı girin",
+  "pleaseEnterUserId": "Lütfen adınızı girin",
+  "userIdMaxLength": "Ad 50 karakteri geçmemelidir",
+  "startUsing": "Devam etmek",
+  "userIdTip": "Bu, deneyiminizi kişiselleştirmek için kullanılacaktır.",
+  "setupModelConfigTitle": "Yapay zeka modeli kurma",
+  "setupModelConfigSubtitle": "Memex'in kayıtları düzenlemek, görüntüleri analiz etmek ve içgörüler oluşturmak için öncü bir yapay zeka modeline ihtiyacı var. Bir bağlantı yöntemi seçin.",
+  "setupModelConfigComplete": "Tamamla ve Git",
+  "aiService": "Memex Model Hizmeti",
+  "aiModelHubTitle": "Yapay zeka modelleri ve hizmetleri",
+  "aiModelHubSubtitle": "Memex'in resmi hizmetini seçin veya kendi sağlayıcınızı getirin. Gelişmiş model yönlendirme, ihtiyacınız olduğunda kullanılabilir durumda kalır.",
+  "aiSetupCurrentStatusTitle": "Mevcut kurulum",
+  "aiSetupStatusNotConfiguredTitle": "AI hizmeti yapılandırılmadı",
+  "aiSetupStatusNotConfiguredDescription": "Kayıtlar, medya ve öngörüler için yapay zeka organizasyonunu etkinleştirmek üzere bir bağlantı yöntemi seçin.",
+  "aiSetupStatusMemexTitle": "MemeX resmi hizmetini kullanma",
+  "aiSetupStatusMemexDescription": "Memex, MemeX hesabınız tarafından yönetilen resmi bağlantıyı ve API kimlik bilgilerini kullanacaktır.",
+  "aiSetupStatusCustomTitle": "Özel sağlayıcı ayarlarını kullanma",
+  "aiSetupStatusCustomDescription": "Memex, yapılandırılmış sağlayıcı kimlik bilgilerinizi ve model rolü seçimlerinizi kullanacaktır.",
+  "aiSetupChooseConnectionTitle": "Bir bağlantı yöntemi seçin",
+  "aiSetupChooseConnectionDescription": "Memex'in yapay zeka modellerine nasıl erişmesini istediğinizle eşleşen yolla başlayın.",
+  "aiSetupOfficialRouteDescription": "MemeX'te oturum açın ve sağlayıcıları, anahtarları veya aracı düzeyindeki modelleri seçmeden resmi hizmeti kullanın.",
+  "aiSetupCustomRouteDescription": "Kendi sağlayıcı kimlik bilgilerinizi ekleyin, Super Agent'ın kullanması gereken modeli seçin ve isteğe bağlı olarak aracı başına modelleri geçersiz kılın.",
+  "aiSetupCustomPageTitle": "Özel yapay zeka hizmeti",
+  "aiSetupCustomPageSubtitle": "Önce sağlayıcı kimlik bilgilerini yapılandırın, ardından Memex'in kullanması gereken modeli seçin.",
+  "aiSetupProviderCredentialsTitle": "Sağlayıcı ve API anahtarları",
+  "aiSetupProviderCredentialsDescription": "OpenAI, Anthropic, DeepSeek, Gemini, OpenRouter, Ollama veya başka bir uyumlu sağlayıcıyı ekleyin veya düzenleyin.",
+  "modelRolesTitle": "Birincil modeli seçin",
+  "modelRolesDescription": "Super Agent, metin ve resim girişleri için tek bir model kullanır. Gelişmiş aracı geçersiz kılmaları aşağıda mevcuttur.",
+  "textModelRoleTitle": "Birincil model",
+  "textModelRoleDescription": "Super Agent tarafından metin, görseller, kartlar, bilgi, içgörüler, sohbet, yorumlar ve hafıza için kullanılır.",
+  "modelConnectionsTitle": "Model sağlayıcıları ve API anahtarları",
+  "modelConnectionsDescription": "Memex'in resmi hizmetine bağlanın veya kendi sağlayıcı kimlik bilgilerinizi ekleyin.",
+  "relatedAiCapabilitiesTitle": "Gelişmiş ve ilgili yetenekler",
+  "relatedAiCapabilitiesDescription": "Temsilci atamalarına, konum sağlayıcısına ve konuşma transkripsiyon davranışına ince ayar yapın.",
+  "aiSetupServiceCapabilitiesTitle": "Hizmet yetenekleri",
+  "aiSetupServiceCapabilitiesDescription": "Memex'in konuşma ve ters coğrafi kodlama gibi bitişik yapay zeka destekli yetenekler için kullandığı sağlayıcıları seçin.",
+  "aiSetupAdvancedCustomizationTitle": "Gelişmiş model yönlendirme",
+  "aiSetupAdvancedCustomizationDescription": "Bireysel aracıların farklı sağlayıcılar veya model yapılandırmaları kullanmasını isteyen uzman kullanıcılar için.",
+  "locationProviderSettings": "Konum sağlayıcı",
+  "speechProviderSettings": "Konuşma transkripsiyonu",
+  "advancedAgentModelAssignments": "Aracı modeli atamaları",
+  "openAdvancedAgentModelAssignments": "Bireysel aracıları geçersiz kıl",
+  "noConfiguredModelOptions": "Model rollerini seçmeden önce bir sağlayıcı veya API anahtarı ekleyin.",
+  "modelSlotUpdated": "Model rolü güncellendi",
+  "aiServiceMemexRouteTitle": "Memex aracılığıyla bağlanın",
+  "aiServiceLongDescription": "Memex, yaşam kayıtlarını, bilgi notlarını ve sosyal bağlamı düzenlemek, daha derin içgörüler keşfetmek ve kalıcı hafıza ile yapay zeka yoldaşlığı sağlamak için çok aracılı bir sistem kullanıyor. Verileriniz, veri özgürlüğünü ve taşınabilirliğini koruyarak düz metin Markdown olarak depolanır.",
+  "aiServiceCustomApiRouteTitle": "Bir API anahtarım var",
+  "aiServiceCustomModelDescription": "OpenAI, Anthropic, DeepSeek, Gemini veya başka bir sağlayıcıdan zaten bir API anahtarınız varsa önce bunu seçin.",
+  "enableAiService": "Memex'e bağlanın",
+  "aiServiceReadyToast": "Yapay zeka organizasyonu açık",
+  "aiServiceSettingsDescription": "API anahtarınız yoksa ana model hizmetlere bağlanmak için Memex hesabını kullanın.",
+  "advancedModelConfiguration": "API anahtarını yapılandırın",
+  "skipForNow": "Şimdilik atla",
+  "clearAuth": "Yetkilendirmeyi temizle",
+  "authorizing": "Yetki veriliyor...",
+  "@authFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "authFailed": "Kimlik doğrulama başarısız oldu: {error}",
+  "authorized": "Yetkili",
+  "@authorizedAs": {
+    "placeholders": {
+      "email": {}
+    }
+  },
+  "authorizedAs": "{email} olarak yetkilendirildi",
+  "authorizedSuccessfully": "Yetkilendirme başarılı",
+  "reAuthorize": "Yeniden yetkilendir",
+  "authorizeWithOpenAi": "OpenAI ile yetkilendir",
+  "authorizeWithGoogle": "Google ile yetkilendir",
+  "config": "Yapılandırma",
+  "calendar": "Takvim",
+  "reminders": "Hatırlatıcılar",
+  "writeToSystemFailed": "Sisteme yazılamadı",
+  "@permissionRequired": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "permissionRequired": "{name} izin gerekli",
+  "@permissionRationale": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "permissionRationale": "Sizin için oluşturabilmemiz için lütfen uygulamanın Ayarlar'da {name} cihazınıza erişmesine izin verin.",
+  "goToSettings": "Ayarlar'a gidin",
+  "unknownAction": "Bilinmeyen eylem",
+  "discoveredCalendarEvent": "Onay bekleyen takvim etkinliği",
+  "discoveredReminder": "Onay bekleyen hatırlatıcı",
+  "addToCalendar": "Takvime ekle",
+  "addToReminders": "Hatırlatıcılara ekle",
+  "systemActionPendingExplanation": "Henüz eklenmedi. İzin istemek ve cihazınıza eklemek için aşağıya dokunun.",
+  "@addedToSuccess": {
+    "placeholders": {
+      "target": {}
+    }
+  },
+  "addedToSuccess": "{target} öğesine başarıyla eklendi",
+  "ignore": "Görmezden gelmek",
+  "confirmDelete": "Silmeyi onayla",
+  "confirmDeleteSessionMessage": "Bu görüşme silinsin mi? Bu geri alınamaz.",
+  "delete": "Silmek",
+  "deleteSuccess": "Başarıyla silindi",
+  "@deleteFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "deleteFailed": "Silinemedi: {error}",
+  "daysAgo": "{count} gün önce",
+  "chatHistory": "Sohbet geçmişi",
+  "enterFullScreenTooltip": "Tam ekrana girin",
+  "exitFullScreenTooltip": "Tam ekrandan çık",
+  "noConversations": "Konuşma yok",
+  "@loadSessionListFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadSessionListFailed": "Oturum listesi yüklenemedi: {error}",
+  "@yesterdayAt": {
+    "placeholders": {
+      "time": {}
+    }
+  },
+  "yesterdayAt": "Dün {time}",
+  "newChat": "Yeni sohbet",
+  "@messageCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "messageCount": "{count} mesaj",
+  "organize": "Organize et",
+  "pkmCategoryProject": "Proje",
+  "pkmCategoryProjectSubtitle": "Kısa vadeli · Hedefler · Son teslim tarihleri",
+  "pkmCategoryArea": "Alan",
+  "pkmCategoryAreaSubtitle": "Uzun Vadeli · Sorumluluk · Standartlar",
+  "pkmCategoryResource": "Kaynak",
+  "pkmCategoryResourceSubtitle": "İlgi Alanları · İlham · Rezerv",
+  "pkmCategoryArchive": "Arşiv",
+  "pkmCategoryArchiveSubtitle": "Bitti · Hareketsiz · Referans",
+  "recentChanges": "Son değişiklikler",
+  "noRecentChangesInThreeDays": "Son 3 günde değişiklik yok",
+  "unpinned": "Sabitleme kaldırıldı",
+  "pinnedStyle": "Stil sabitlendi",
+  "@operationFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "operationFailed": "İşlem başarısız oldu: {error}",
+  "refreshingInsightData": "Analiz verileri yenileniyor. Bu işlem biraz zaman alabilir...",
+  "@refreshFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "refreshFailed": "Yenileme başarısız oldu: {error}",
+  "sortUpdated": "Sıralama düzeni güncellendi",
+  "@sortSaveFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "sortSaveFailed": "Sıralama kaydedilemedi: {error}",
+  "insightCardDeleted": "Analiz kartı silindi",
+  "@deleteFailedShort": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "deleteFailedShort": "Silinemedi: {error}",
+  "knowledgeInsight": "Bilgi içgörüsü",
+  "completeSort": "Sıralamayı tamamla",
+  "noKnowledgeInsight": "Bilgi içgörüsü yok",
+  "@insightProcessingBacklogMessage": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "insightProcessingBacklogMessage": "{count} arka plan görevleri hâlâ işleniyor.",
+  "insightUnavailableMessage": "Bu analiz hâlâ oluşturuluyor veya güncelleniyor. Analizleri yenileyin ve daha sonra tekrar deneyin.",
+  "artifactOpen": "Açık",
+  "updating": "Güncelleniyor...",
+  "update": "Güncelleme",
+  "enabled": "Etkinleştirilmiş",
+  "disabled": "Engelli",
+  "appLockOn": "Uygulama kilidi etkin",
+  "appLockOff": "Uygulama kilidi devre dışı bırakıldı",
+  "enableAppLockFirst": "Lütfen önce uygulama kilidini etkinleştirin",
+  "enterFourDigitPassword": "4 haneli şifreyi girin",
+  "passwordSetAndLockOn": "Şifre ayarlandı ve uygulama kilidi etkinleştirildi",
+  "appLockSettings": "Uygulama kilidi ayarları",
+  "enableAppLock": "Uygulama kilidini etkinleştir",
+  "enableAppLockSubtitle": "Uygulamayı başlatırken şifre gerekli",
+  "enableBiometrics": "Biyometriyi etkinleştir",
+  "biometricsSubtitle": "Kilidi açmak için Face ID veya Touch ID'yi kullanın",
+  "changePassword": "Şifre değiştir",
+  "setFourDigitPassword": "4 haneli şifre belirleyin",
+  "reenterPasswordToConfirm": "Onaylamak için şifreyi tekrar girin",
+  "passwordMismatch": "Şifreler eşleşmiyor. Lütfen tekrar deneyin.",
+  "@confirmDeleteCharacter": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "confirmDeleteCharacter": "\"{name}\" karakteri silinsin mi? Bu geri alınamaz.",
+  "configureAiCharacter": "AI karakterini yapılandırın",
+  "addCharacter": "Karakter ekle",
+  "addCharacterSubtitle": "İçgörü ekibinize katılmak için AI karakterlerini seçin. Yaşam verilerinizi farklı açılardan analiz edecekler.",
+  "noCharacters": "Karakter yok",
+  "@loadCharacterFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadCharacterFailed": "Karakterler yüklenemedi: {error}",
+  "noTags": "Etiket yok",
+  "createSuccess": "Başarıyla oluşturuldu",
+  "updateSuccess": "Başarıyla güncellendi",
+  "@saveFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "saveFailed": "Kaydetme başarısız oldu: {error}",
+  "newCharacter": "Yeni karakter",
+  "editCharacter": "Karakteri düzenle",
+  "save": "Kaydetmek",
+  "characterName": "Karakter adı",
+  "characterNameHint": "Karakterinize bir isim verin",
+  "pleaseEnterCharacterName": "Lütfen karakter adını girin",
+  "tagsLabel": "Etiketler",
+  "tagsHint": "örneğin bilgelik, tanınma, makro\nBirden fazla etiketi virgülle ayırın",
+  "characterPersonaLabel": "Karakter kişiliği",
+  "characterPersonaHint": "Persona, stil kılavuzu, örnek diyalog, bilgi filtreleri vb. ekleyin.\nBölüm başlıkları için ## kullanın.",
+  "pleaseEnterCharacterPersona": "Lütfen karakterin kişiliğini girin",
+  "@permissionRequestError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "permissionRequestError": "İzin isteği hatası: {error}",
+  "permissionRequiredTitle": "İzin gerekli",
+  "permissionPermanentlyDeniedMessage": "Bu izni kalıcı olarak reddettiniz veya sistem bunu gerektiriyor. Lütfen sistem ayarlarında etkinleştirin.",
+  "getting": "Edinme...",
+  "unauthorized": "Yetkisiz",
+  "authorizedGoToSettings": "Yetkili. Değiştirmek için sistem ayarlarına gidin.",
+  "location": "Konum",
+  "locationPermissionReason": "Yerleri ve konumla ilgili özellikleri kaydetmek için",
+  "photos": "Fotoğraflar",
+  "photosPermissionReason": "Fotoğrafları seçmek, oluşturulan görüntüleri kaydetmek vb. için.",
+  "camera": "Kamera",
+  "cameraPermissionReason": "Fotoğraf ve video çekmek için",
+  "microphone": "Mikrofon",
+  "microphonePermissionReason": "Ses tanıma, kayıt vb. için.",
+  "calendarPermissionReason": "Programı kaydetmek ve takvim etkinliklerini okumak için",
+  "remindersPermissionReason": "Hatırlatıcılarınızı kaydetmek ve okumak için",
+  "fitnessAndMotion": "Fitness ve hareket",
+  "fitnessPermissionReason": "Sağlık ve hareket verilerini kaydetmek için",
+  "notification": "Bildiri",
+  "notificationPermissionReason": "Program ve önemli hatırlatıcıların gönderilmesi için",
+  "memexAgentNotificationPermissionTitle": "Memex Agent'ın arka planda çalışmasını sağlayın",
+  "memexAgentNotificationPermissionMessage": "Memex Agent cihazınızda yerel olarak çalışır. Bildirimler, Memex'in ilerlemeyi göstermesine ve uygulamadan çıktıktan veya ekranı kapattıktan sonra işleme devam etmesine olanak tanır. Bildirimler kapalıysa görev bitene kadar Memex'i ön planda açık tutun.",
+  "loadDetailFailedRetryShort": "Ayrıntı yüklenemedi. Lütfen daha sonra tekrar deneyin.",
+  "total": "Toplam",
+  "estimatedCost": "Tahmini maliyet",
+  "byAgent": "Temsilci tarafından",
+  "timeUpdated": "Zaman güncellendi",
+  "@updateFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "updateFailed": "Güncelleme başarısız oldu: {error}",
+  "locationUpdated": "Konum güncellendi",
+  "confirmDeleteCardMessage": "Bu kart silinsin mi? Bu geri alınamaz.",
+  "cardDetailNotFound": "Kart detayı bulunamadı",
+  "saySomething": "Bir şey söylemek...",
+  "relatedMemories": "İlgili anılar",
+  "viewMore": "Daha fazlasını görüntüle",
+  "relatedRecords": "İlgili kayıtlar",
+  "reply": "Cevap vermek",
+  "replySent": "Yanıt gönderildi",
+  "insightTemplateGalleryTitle": "İçgörü kartı şablonları",
+  "timelineTemplateGalleryTitle": "Zaman çizelgesi kartı şablonları",
+  "categoryTextual": "Metinsel",
+  "timelineFilterAll": "TÜM",
+  "insights": "Analizler",
+  "memoryTitle": "Hafıza",
+  "longTermProfile": "Uzun Vadeli Profil",
+  "recentBuffer": "Son Arabellek",
+  "@errorLoadingMemory": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "errorLoadingMemory": "Bellek yüklenirken hata oluştu: {error}",
+  "agentConfiguration": "Aracı Yapılandırması",
+  "resetToDefaults": "Varsayılanlara Sıfırla",
+  "resetAllAgentConfigurationsTitle": "Tüm Aracı Yapılandırmalarını Sıfırla",
+  "resetAllAgentConfigurationsMessage": "Tüm aracı yapılandırmalarını varsayılan değerlerine sıfırlamak istediğinizden emin misiniz? Bu eylem geri alınamaz.",
+  "resetButton": "Sıfırla",
+  "@loadDataFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadDataFailed": "Veriler yüklenemedi: {error}",
+  "@saveConfigFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "saveConfigFailed": "Yapılandırma kaydedilemedi: {error}",
+  "selectLlmClient": "LLM İstemcisini seçin:",
+  "agentConfigurationsReset": "Aracı yapılandırmaları sıfırlandı",
+  "@resetFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "resetFailed": "Sıfırlanamadı: {error}",
+  "modelConfiguration": "Model Yapılandırması",
+  "resetAllConfigurationsTitle": "Tüm Yapılandırmaları Sıfırla",
+  "resetAllModelConfigurationsMessage": "Tüm model konfigürasyonlarını varsayılan değerlerine sıfırlamak istediğinizden emin misiniz? Bu eylem geri alınamaz.",
+  "modelConfigurationsReset": "Model yapılandırmaları sıfırlandı",
+  "cannotDeleteDefaultConfiguration": "Varsayılan yapılandırma silinemiyor",
+  "cannotDeleteConfigurationTitle": "Yapılandırma Silinemiyor",
+  "@configUsedByAgentsMessage": {
+    "placeholders": {
+      "agentList": {}
+    }
+  },
+  "configUsedByAgentsMessage": "Bu yapılandırma şu anda aşağıdaki aracılar tarafından kullanılmaktadır:\n\n{agentList}\n\nLütfen silmeden önce bu temsilcileri yeniden atayın.",
+  "ok": "TAMAM",
+  "deleteConfigurationTitle": "Yapılandırmayı Sil",
+  "@confirmDeleteConfigMessage": {
+    "placeholders": {
+      "key": {}
+    }
+  },
+  "confirmDeleteConfigMessage": "\"{key}\" ifadesini silmek istediğinizden emin misiniz?",
+  "defaultLabel": "Varsayılan",
+  "setAsDefault": "Varsayılan olarak ayarla",
+  "invalidJsonInExtraField": "Ekstra alanda geçersiz JSON",
+  "keyAlreadyExists": "Anahtar zaten mevcut",
+  "resetConfigurationTitle": "Yapılandırmayı Sıfırla",
+  "resetConfigurationMessage": "Bu yapılandırma başlangıçtaki varsayılan değerlerine sıfırlansın mı? Mevcut değişiklikler kaybolacak.",
+  "configurationResetPressSave": "Yapılandırma sıfırlama. Uygulamak için Kaydet'e basın.",
+  "addConfiguration": "Yapılandırma Ekle",
+  "editConfiguration": "Yapılandırmayı Düzenle",
+  "duplicateConfiguration": "Yinelenen Yapılandırma",
+  "duplicate": "Kopyalamak",
+  "keyIdLabel": "Yapılandırma Kimliği",
+  "keyIdHelper": "Bu kuruluma deepseek veya work-gpt gibi bir ad verin.",
+  "required": "Gerekli",
+  "clientLabel": "Model sağlayıcı",
+  "providerGroupOpenAi": "OpenAI",
+  "providerGroupAnthropic": "Antropik",
+  "providerGroupGoogle": "Google",
+  "providerGroupOthers": "Popüler",
+  "providerOpenAiApiKey": "API Anahtarı",
+  "providerOpenAiResponses": "API Anahtarı (Yanıtlar)",
+  "providerChatGptOauth": "ChatGPT Pro/Artı",
+  "providerClaudeApiKey": "API Anahtarı",
+  "providerBedrockSecret": "Ana Kaya Sırrı",
+  "providerGemini": "İkizler burcu",
+  "providerGeminiOauth": "İkizler (Google OAuth)",
+  "providerKimi": "Kimi (Ay Atışı)",
+  "providerQwen": "Aliyun",
+  "providerSeed": "Volcengin",
+  "providerZhipu": "Zhipu GLM",
+  "providerDeepSeek": "Derin Arama",
+  "providerMinimax": "MiniMaks",
+  "providerOpenRouter": "Açık Yönlendirici",
+  "providerOllama": "Ollama (Yerel)",
+  "providerMimo": "Xiaomi MIMO",
+  "providerMemex": "Memex proxy hizmeti",
+  "memexSignIn": "Oturum aç",
+  "memexCreateAccount": "Hesap oluşturmak",
+  "memexUsername": "Kullanıcı adı",
+  "memexPassword": "Şifre",
+  "memexCreateAccountLink": "Hesap oluşturmak",
+  "memexSignInLink": "Bunun yerine oturum açın",
+  "memexTopUp": "Memex AI'yi kullanmaya başlamak için yükleme yapın",
+  "memexTopUpSuccess": "Başarılı bir şekilde tamamlayın!",
+  "memexFillAllFields": "Lütfen tüm alanları doldurun",
+  "memexUsernameTooShort": "Kullanıcı adı en az 6 karakterden oluşmalıdır",
+  "memexAuthFailed": "Kimlik doğrulama başarısız oldu",
+  "memexPaymentFailed": "Ödeme oluşturulamadı",
+  "memexLogout": "Oturumu kapat",
+  "memexTopUpButton": "Yükleme",
+  "memexTopUpChooseAmount": "Bir miktar seçin",
+  "@memexTopUpEstimatedRecords": {
+    "placeholders": {
+      "range": {}
+    }
+  },
+  "memexTopUpEstimatedRecords": "{range} kayıtları hakkında",
+  "memexTopUpPlanStarter": "Başlangıç",
+  "memexTopUpPlanEveryday": "Her gün",
+  "memexTopUpPlanHighVolume": "Yüksek hacim",
+  "memexTopUpPlanCustom": "Özel krediler",
+  "memexTopUpPlanStarterSubtitle": "Memex AI'yi denemek için iyi",
+  "memexTopUpPlanEverydaySubtitle": "Düzenli organizasyon için iyi",
+  "memexTopUpPlanHighVolumeSubtitle": "Daha büyük partiler için iyi",
+  "memexTopUpPlanCustomSubtitle": "1-10.000 ABD Doları girin",
+  "memexTopUpCustomEstimate": "Tahmin girilen tutara dayanmaktadır",
+  "memexCustomAmount": "Özel Tutar",
+  "memexViewHistory": "Kullanım Geçmişi",
+  "@memexBalanceLabel": {
+    "placeholders": {
+      "amount": {}
+    }
+  },
+  "memexBalanceLabel": "Bakiye: {amount}",
+  "memexConfirmPassword": "Şifreyi Onayla",
+  "memexPasswordMismatch": "Şifreler eşleşmiyor",
+  "@memexPayAmount": {
+    "placeholders": {
+      "amount": {}
+    }
+  },
+  "memexPayAmount": "{amount} yükleme yapın",
+  "modelIdLabel": "Modeli",
+  "modelIdHelper": "örneğin gemini-3.1-pro-önizleme, gpt-4o",
+  "fetchingModels": "Modeller getiriliyor...",
+  "fetchModelsButton": "Modelleri Getir",
+  "enterApiKeyFirst": "Modelleri getirmek için önce API Anahtarını girin",
+  "apiKeyLabel": "API Anahtarı",
+  "baseUrlLabel": "API uç noktası",
+  "advancedSettings": "Gelişmiş Ayarlar",
+  "testConnectionSuccess": "Bağlantı Başarılı",
+  "testConnectionFailed": "Bağlantı Başarısız",
+  "testTypeText": "Metin",
+  "testTypeVision": "Görüş",
+  "testButton": "Test",
+  "testing": "Test...",
+  "proxyUrlOptional": "Proxy URL'si (İsteğe bağlı)",
+  "proxyUrlHelper": "örneğin http://127.0.0.1:7890",
+  "temperatureLabel": "Sıcaklık",
+  "topPLabel": "Üst P",
+  "maxTokensLabel": "Maksimum Jeton",
+  "extraParamsJson": "Ekstra Parametreler (JSON)",
+  "invalidJson": "Geçersiz JSON",
+  "warning": "Eksik Kurulum",
+  "invalidConfigurationWarning": "Yapılandırma henüz tamamlanmadı (ör. API Anahtarı veya Model Kimliği eksik). Daha sonra kaydedip yapılandırabilirsiniz. Devam etmek?",
+  "invalidModelConfigDetailed": "AI Aracısı \"{agentId}\", çalışması için geçerli bir model yapılandırmasına (anahtar: \"{configKey}\") ihtiyaç duyar. Lütfen model ayarlarını kontrol edin.",
+  "discardChangesTitle": "Bu sayfadan ayrılmak mı istiyorsunuz?",
+  "discardChangesMessage": "Herhangi bir değişiklik yaptıysanız lütfen ayrılmadan önce bunları kaydedin.",
+  "discardButton": "At",
+  "chooseLanguage": "Dil Seçin",
+  "chooseAvatar": "Avatar'ı seçin",
+  "configureNow": "Şimdi Yapılandır",
+  "modelNotConfiguredBanner": "AI modeli henüz yapılandırılmadı. Tüm özelliklerin kilidini açmak için ayarlayın.",
+  "modelNotConfiguredSubmitHint": "Lütfen yayınlamadan önce bir AI modeli yapılandırın",
+  "processingStatus": "İşleme",
+  "failedStatus": "Arızalı",
+  "failureReason": "Arıza Sebebi",
+  "unknownError": "Bilinmeyen hata oluştu",
+  "enableFitness": "Fitness'ı Etkinleştir",
+  "fitnessBannerMessage": "Sağlık ve etkinlik verilerinizi takip etmek için fitness erişimine izin verin.",
+  "fitnessDismissTitle": "Fitness Erişimi atlansın mı?",
+  "fitnessDismissMessage": "Fitness izni olmadan uygulama, öngörüler ve otomatik kayıt için sağlık verilerinizi otomatik olarak toplayamayacaktır.",
+  "skipAnyway": "Yine de Atla",
+  "proModelHint": "Bu model ChatGPT Pro/Plus aboneliği gerektirir.",
+  "searchKnowledgeBase": "Bilgi tabanında ara...",
+  "searchKnowledgeHint": "Dosya adlarını veya içeriğini aramak için anahtar kelimeyi girin",
+  "@noSearchResults": {
+    "placeholders": {
+      "query": {}
+    }
+  },
+  "noSearchResults": "\"{query}\" için sonuç bulunamadı",
+  "onlyMarkdownPreview": "Yalnızca Markdown önizlemesi desteklenir",
+  "backupAndRestore": "Yedekleme ve Geri Yükleme",
+  "createBackup": "Yedekleme Oluştur",
+  "restoreBackup": "Yedeklemeyi Geri Yükle",
+  "backupDescription": "Tüm verilerinizi (kartlar, bilgi tabanı, öngörüler, ayarlar) bir .memex dosyasına paketleyin. Paylaşım sayfasını kullanarak bunu iCloud Drive'a, Google Drive'a veya herhangi bir konuma kaydedin.",
+  "restoreDescription": "Tüm verileri geri yüklemek için bir .memex yedekleme dosyası seçin. Bu, mevcut verilerin üzerine yazacaktır.",
+  "selectBackupFile": "Yedekleme Dosyasını Seçin",
+  "estimatedSize": "Tahmini boyut",
+  "backupComplete": "Yedekleme oluşturuldu",
+  "@backupFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "backupFailed": "Yedekleme başarısız oldu: {error}",
+  "confirmRestore": "Geri Yüklemeyi Onayla",
+  "confirmRestoreMessage": "Geri yükleme işlemi kartlar, bilgi tabanı, analizler ve ayarlar dahil tüm mevcut verilerin üzerine yazılacaktır. Bu geri alınamaz. Devam etmek?",
+  "restoreComplete": "Geri yükleme tamamlandı",
+  "restoreRestartHint": "Veriler geri yüklendi. Tüm değişikliklerin etkili olması için lütfen uygulamayı yeniden başlatın.",
+  "@restoreFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "restoreFailed": "Geri yükleme başarısız oldu: {error}",
+  "invalidBackupFile": "Geçersiz yedekleme dosyası. Lütfen bir .memex dosyası seçin.",
+  "automaticBackup": "Otomatik Yedekleme",
+  "autoBackupDescription": "Etkinleştirildiğinde Memex, başlangıçtan sonra veya ön plana geri döndüğünüzde günde en fazla bir yerel anlık görüntü oluşturur.",
+  "backupSensitiveSettingsHint": "Yedeklemeler, ayarları ve model sağlayıcı anahtarlarını içerir. Yedekleme dosyalarını güvendiğiniz bir yerde saklayın.",
+  "backupLocation": "Konum",
+  "backupLocationDetails": "Konum ayrıntıları",
+  "backupLocationSummary": "Uygulamada gösteriliyor",
+  "backupLocationFullPath": "Tam yol",
+  "backupLocationUri": "Klasör erişim URI'si",
+  "copyBackupLocationPath": "Yolu kopyala",
+  "backupLocationCopied": "Yedekleme konumu kopyalandı",
+  "@androidBackupLocationSelected": {
+    "placeholders": {
+      "folderName": {}
+    }
+  },
+  "androidBackupLocationSelected": "Seçilen klasör: {folderName}",
+  "iosICloudBackupLocation": "iCloud Drive > Memex > Yedeklemeler",
+  "iosAppDocumentsBackupLocation": "Dosyalar > iPhone'umda > Memex > Yedeklemeler",
+  "autoBackupStatus": "Durum",
+  "noAutoBackupYet": "Henüz otomatik yedekleme yok",
+  "@lastBackupAt": {
+    "placeholders": {
+      "time": {}
+    }
+  },
+  "lastBackupAt": "Son yedekleme: {time}",
+  "autoBackupRetention": "Tutulma",
+  "@autoBackupRetentionDays": {
+    "placeholders": {
+      "days": {}
+    }
+  },
+  "autoBackupRetentionDays": "{days} gün",
+  "autoBackupRetentionForever": "Sonsuza kadar sakla",
+  "autoBackupMaxSize": "Saklama kapağı",
+  "@autoBackupRetentionLimitHint": {
+    "placeholders": {
+      "size": {}
+    }
+  },
+  "autoBackupRetentionLimitHint": "Otomatik temizleme, otomatik anlık görüntüleri {size} altında tutar. Güvenlik anlık görüntüleri ve manuel dışa aktarmalar ayrı tutulur.",
+  "createSnapshotNow": "Şimdi yedekle",
+  "backupLocationMenu": "Konumu değiştir",
+  "defaultBackupLocation": "Varsayılan yedekleme klasörü",
+  "defaultBackupLocationAndroidDesc": "Memex'in uygulamaya özel harici dosyalar klasörünü kullanın. Depolama iznine gerek yok.",
+  "chooseBackupLocation": "Yedekleme klasörünü seçin",
+  "chooseBackupLocationAndroidDesc": "Android'in sistem seçicisini kullanarak bir klasör seçin ve Memex'e kalıcı erişim izni verin.",
+  "storedBackups": "Saklanan Yedeklemeler",
+  "noStoredBackups": "Otomatik yedeklemeler ilk anlık görüntüden sonra burada görünecektir.",
+  "backupTypeAutoSnapshot": "Otomatik anlık görüntü",
+  "backupTypeSafetySnapshot": "Güvenlik anlık görüntüsü",
+  "backupTypeManualBackup": "Manuel yedekleme",
+  "refresh": "Yenile",
+  "restoreThisBackup": "Bu yedeği geri yükle",
+  "deleteThisBackup": "Bu yedeği sil",
+  "confirmDeleteBackup": "Yedekleme silinsin mi?",
+  "@confirmDeleteBackupMessage": {
+    "placeholders": {
+      "fileName": {}
+    }
+  },
+  "confirmDeleteBackupMessage": "{fileName} silinsin mi? Bu, depolanan yedekleme dosyasını kaldırır ve geri alınamaz.",
+  "@backupDeleted": {
+    "placeholders": {
+      "fileName": {}
+    }
+  },
+  "backupDeleted": "Yedekleme silindi: {fileName}",
+  "@backupDeleteFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "backupDeleteFailed": "Yedekleme silinemedi: {error}",
+  "creatingSafetySnapshot": "Güvenlik anlık görüntüsü oluşturuluyor...",
+  "@autoBackupCreated": {
+    "placeholders": {
+      "fileName": {}
+    }
+  },
+  "autoBackupCreated": "Anlık görüntü oluşturuldu: {fileName}",
+  "@backupLocationFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "backupLocationFailed": "Yedekleme konumu güncellenemedi: {error}",
+  "backupImportCreatedAt": "Oluşturuldu",
+  "backupImportSourceVersion": "Kaynak sürümü",
+  "backupImportFlavor": "İnşa etmek",
+  "backupLegacyFormat": "Eski yedekleme (bildirim yok)",
+  "restoreInProgress": "Yedekleme geri yükleniyor...",
+  "dataStorage": "Veri Depolama",
+  "dataStorageDescriptionAndroid": "Çalışma alanınızı depolamak için özel bir klasör seçin. Uygulamayı yeniden yüklediğinizde veriler korunur.",
+  "dataStorageDescriptionIOS": "Çalışma alanınızı aygıtlar arasında senkronize etmek ve uygulamayı yeniden yüklediğinizde verileri korumak için iCloud'u açın.",
+  "storageLocationApp": "Uygulama depolama",
+  "storageLocationAppDesc": "Veriler uygulamanın içinde saklanır ve uygulamayı kaldırdığınızda kaldırılır.",
+  "storageLocationCustom": "Cihaz depolama alanı (özel klasör)",
+  "storageLocationCustomDesc": "Verileri seçtiğiniz bir klasörde saklayın. Klasör kalırsa, yeniden yükleme sırasında veriler kalır.",
+  "storageLocationICloud": "iCloud'da saklayın",
+  "storageLocationICloudDesc": "Çalışma alanınızı Apple aygıtları arasında senkronize edin. Yeniden yükleme sonrasında veriler kalır.",
+  "@storageLocationCurrent": {
+    "placeholders": {
+      "location": {}
+    }
+  },
+  "storageLocationCurrent": "Güncel: {location}",
+  "icloudRequiresCapability": "iCloud saklama alanını kullanmak için iCloud'da oturum açın ve iCloud Drive'ı açın.",
+  "loadingFromICloud": "Veriler iCloud'dan geri yükleniyor…",
+  "switchingToICloud": "iCloud saklama alanına geçiliyor…",
+  "switchingStorage": "Depolama alanı değiştiriliyor…",
+  "customFolderAccessDenied": "Bu klasör okunamıyor veya yazılamıyor. Lütfen depolama izni verin veya başka bir konum seçin.",
+  "configured": "Yapılandırılmış",
+  "apiKeyNotSet": "API Anahtarı ayarlanmadı — yapılandırmak için dokunun",
+  "bottomNavTimeline": "Zaman çizelgesi",
+  "bottomNavLibrary": "Kütüphane",
+  "aiGeneratedLabel": "Yapay Zeka Oluşturuldu",
+  "@sourceTraceWithCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "sourceTraceWithCount": "KAYNAK İZLEME ({count})",
+  "deleteAccount": "Hesabı Sil",
+  "deleteAccountDesc": "Tüm yerel verileri kalıcı olarak silin ve uygulamayı sıfırlayın.",
+  "deleteAccountConfirmTitle": "Hesap Silinsin mi?",
+  "deleteAccountConfirmMessage": "Bu, zaman çizelgesi kartları, bilgi tabanı, kayıtlar ve ayarlar dahil tüm verilerinizi kalıcı olarak silecektir. Bu eylem geri alınamaz.",
+  "@deleteAccountTypeName": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "deleteAccountTypeName": "Onaylamak için \"{name}\" yazın",
+  "deleteAccountTypeHint": "Onaylamak için kullanıcı adınızı girin",
+  "llmConsentTitle": "Veri Paylaşım Onayı",
+  "@llmConsentMessage": {
+    "placeholders": {
+      "provider": {}
+    }
+  },
+  "llmConsentMessage": "Yapay zeka özelliklerini etkinleştirmek için Memex'in verilerinizi işlenmek üzere {provider} adresine göndermesi gerekiyor. Bu şunları içerir:\n\n• Girdiğiniz metin (notlar, sesli çeviriler)\n• Fotoğraf meta verileri ve çıkarılan metin (OCR)\n• Sağlık ve fitness özetleri\n• Zaman çizelgesi kartı içeriği\n\nVerileriniz doğrudan cihazınızdan {provider} adresine gönderilir. Memex, verilerinizi başka bir sunucu üzerinden saklamaz veya aktarmaz.\n\nVerilerinizi nasıl kullandıklarını öğrenmek için lütfen {provider}'nin gizlilik politikasını inceleyin.\n\nYapay zekanın işlenmesi için verilerinizi {provider} adresine göndermeyi kabul ediyor musunuz?",
+  "llmConsentAgree": "Kabul ediyorum",
+  "llmConsentDecline": "Reddetmek",
+  "customAgents": "Özel Temsilciler",
+  "noCustomAgents": "Hiçbir özel aracı yapılandırılmadı.",
+  "deleteAgent": "Temsilciyi Sil",
+  "@deleteAgentConfirm": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "deleteAgentConfirm": "\"{name}\" özel aracısı silinsin mi?",
+  "deleted": "Silindi",
+  "saved": "Kaydedildi",
+  "newAgent": "Yeni Temsilci",
+  "editAgent": "Temsilciyi Düzenle",
+  "agentName": "Temsilci Adı",
+  "agentNameHint": "benim-gümrük-acentem",
+  "agentNameRequired": "Gerekli",
+  "agentNameInvalid": "Yalnızca harfler, rakamlar ve kısa çizgiler",
+  "agentNameExists": "Ad zaten mevcut",
+  "hostAgentType": "Ana Bilgisayar Aracısı Türü",
+  "skillDirectory": "Beceri Dizini",
+  "skillDirInvalid": "Göreli bir yol olmalı (önde gelen / veya .. yok)",
+  "workingDirectory": "Çalışma Dizini (isteğe bağlı)",
+  "workingDirectoryHint": "Çalışma alanı varsayılanı için boş bırakın",
+  "llmConfig": "Yüksek Lisans Yapılandırması",
+  "eventType": "Etkinlik Türü",
+  "executionMode": "Yürütme Modu",
+  "executionModeAsync": "Eşzamansız",
+  "executionModeSync": "Senkronizasyon",
+  "dependsOn": "bağlıdır",
+  "dependsOnHint": "Bağımlılıkları seçin",
+  "priority": "Öncelik",
+  "maxRetries": "Maksimum Yeniden Deneme Sayısı",
+  "systemPromptLabel": "Sistem İstemi (isteğe bağlı)",
+  "systemPromptHint": "Ana makine aracısı istemine eklenen ek talimatlar",
+  "eventSerializer": "Olay Serileştirici",
+  "eventSerializerDefault": "Varsayılan (XML)",
+  "enabledLabel": "Etkinleştirilmiş",
+  "skillsManagement": "Beceri Yönetimi",
+  "skillsManagementEmpty": "Henüz beceri yok",
+  "downloadSkill": "Beceriyi İndir",
+  "downloadFile": "Dosyayı indir",
+  "downloading": "İndiriliyor...",
+  "downloadSuccess": "Beceri başarıyla indirildi",
+  "@downloadFailed": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "downloadFailed": "İndirme başarısız oldu: {error}",
+  "deleteConfirm": "Silmeyi Onayla",
+  "@deleteConfirmMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteConfirmMessage": "\"{name}\" ifadesini silmek istediğinizden emin misiniz?",
+  "invalidUrl": "Lütfen geçerli bir URL girin",
+  "urlHint": "https://example.com/skill.zip",
+  "newFolder": "Yeni Klasör",
+  "newFile": "Yeni Dosya",
+  "folderName": "Klasör Adı",
+  "fileName": "Dosya adı",
+  "nameRequired": "Ad gerekli",
+  "nameInvalid": "Ad / veya .. içeremez.",
+  "@createFailed": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "createFailed": "Oluşturulamadı: {error}",
+  "fileContent": "Dosya İçeriği",
+  "saveSuccess": "Başarıyla kaydedildi",
+  "@downloadToCurrentDir": {
+    "placeholders": {
+      "dir": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadToCurrentDir": "Zip geçerli dizine çıkarılacak: {dir}",
+  "privacyPolicy": "Gizlilik Politikası",
+  "privacyPolicyDesc": "Memex verilerinizi nasıl işler?",
+  "llmAuthError": "API kimlik doğrulaması başarısız oldu. Lütfen Ayarlar'da LLM yapılandırmanızı kontrol edin.",
+  "llmBadRequestError": "İstek LLM sağlayıcısı tarafından reddedildi. Giriş formatı mevcut model tarafından desteklenmiyor olabilir.",
+  "llmRateLimitError": "API oranı sınırı aşıldı. Lütfen daha sonra tekrar deneyin.",
+  "llmServerError": "LLM hizmeti geçici olarak kullanılamıyor. Lütfen daha sonra tekrar deneyin.",
+  "llmNetworkError": "Ağ bağlantısı başarısız oldu. Lütfen internet bağlantınızı kontrol edin.",
+  "llmUnknownError": "İçeriğiniz işlenirken beklenmeyen bir hata oluştu.",
+  "llmErrorDialogTitle": "İşleme Başarısız",
+  "goToModelConfig": "Ayarlar'a gidin",
+  "speechModelDownloadTitle": "Konuşma Modelini İndirin",
+  "@speechModelDownloadDesc": {
+    "placeholders": {
+      "sizeMB": {}
+    }
+  },
+  "speechModelDownloadDesc": "Bir kerelik model indirmesi (~{sizeMB}MB) gerekiyor.\n\nİndirildikten sonra transkripsiyon tamamen cihazda çalışır.",
+  "speechModelStartDownload": "İndirmeyi Başlat",
+  "speechModelChooseSource": "İndirme kaynağını seçin:",
+  "speechModelChinaMirror": "🇨🇳 Çin Aynası (CN'de daha hızlı)",
+  "speechModelGithub": "🌐 GitHub (Global)",
+  "speechModelDownloading": "Model indiriliyor...",
+  "speechModelConnecting": "Bağlanıyor...",
+  "deleteSpeechModel": "Konuşma modelini sil",
+  "confirmDeleteSpeechModelMessage": "İndirilen yerel konuşma tanıma modeli dosyaları silinsin mi? Yerel konuşmayı metne dönüştürme özelliğinin bir sonraki kullanımında bunlar yeniden indirilecektir.",
+  "speechModelDeletedSuccess": "Konuşma modeli dosyaları silindi",
+  "speechModelNotDownloaded": "İndirilmiş konuşma modeli dosyası bulunamadı",
+  "@speechModelDeleteFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "speechModelDeleteFailed": "Konuşma modeli dosyaları silinemedi: {error}",
+  "speechTranscribing": "Tanınıyor...",
+  "speechNoResult": "Konuşma algılanmadı",
+  "useLocalSpeechToTextTitle": "Metne yerel konuşmayı kullanma",
+  "useLocalSpeechToTextDesc": "Etkinleştirildiğinde, ses gönderilmeden önce cihazda metne dönüştürülür; bu, ses girişini desteklemeyen modeller için kullanışlıdır. Devre dışı bırakıldığında orijinal ses doğrudan modele gönderilir.",
+  "pendingAiProcessingHint": "İşlemek için AI modelini ayarlayın",
+  "demoWelcome": "Memex'e hoş geldiniz!\nYapay zekanın kayıtlarınız için neler yapabileceğine dair kısa bir tur atalım.",
+  "demoTapAdd": "İlk kaydınızı oluşturmak için buraya dokunun",
+  "demoTapSend": "İlk kaydınızı göndermek için dokunun",
+  "demoTapCard": "Yapay zekanın kaydınızı nasıl düzenlediğini görmek için dokunun",
+  "demoDetailHint": "Bu, yapay zeka tarafından düzenlenen kayıt ayrıntınızdır. Etrafı kaydırın ve tura devam etmek için geri dönün.",
+  "demoTapInsight": "Yapay zeka tarafından oluşturulan öngörüleri görmek için dokunun",
+  "demoTapInsightUpdate": "Kayıtlarınızdan öngörüler oluşturmak için dokunun",
+  "demoTapKnowledge": "Otomatik olarak düzenlenen bilgi dosyalarınızı kontrol edin",
+  "demoDone": "Hayatınızı kaydetmeye başlayın.",
+  "demoStartTour": "Turu Başlat",
+  "demoGetStarted": "Başlayın",
+  "demoSkip": "Atlamak",
+  "demoPrefillText": "Merhaba Memex! Bu benim ilk kaydım 🎉",
+  "visionBadge": "Görüş",
+  "notMultimodalHint": "Memex, medya analizi için çok modlu model yeteneklerine güvenir. Kayıtlarınız görseller içeriyorsa lütfen yapılandırdığınız modelin görsel girişini desteklediğinden emin olun.",
+  "defaultModelPrefix": "Varsayılan",
+  "recommendedBadge": "Tavsiye edilen",
+  "readOnlyBadge": "SOHBET",
+  "switchCompanion": "Tamamlayıcıyı değiştir",
+  "personaChatInputHint": "Bir mesaj yazın...",
+  "today": "Bugün",
+  "tomorrow": "Yarın",
+  "yesterday": "Dün",
+  "showInsightTextTitle": "Memex içgörü yorumunu göster",
+  "showInsightTextDesc": "Kart ayrıntısı yorum bölümünde Memex öngörüsünün sabitlenmiş yorum olarak gösterilip gösterilmeyeceği.",
+  "enableCharacterCommentTitle": "Karakter otomatik yorumu",
+  "enableCharacterCommentDesc": "Karakterler yeni kayıtlara otomatik olarak yorum yapar.",
+  "maxCommentCharactersTitle": "Maksimum yorum yapma karakterleri",
+  "maxCommentCharactersDesc": "Her kayda kaç karakter yorum yapabilir?",
+  "@replyTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "replyTo": "{name} adlı kullanıcıya yanıt ver",
+  "cdnSignalsComments": "Yeni yanıt alındı",
+  "cdnSignalsInsight": "Yeni içgörü oluşturuldu",
+  "cdnSignalsBoth": "Yeni yanıt ve içgörü",
+  "untitledCard": "Başlıksız kart",
+  "locationContextTitle": "Konum Bağlamı",
+  "locationContextDescription": "Temsilci sohbeti için mevcut şehir ve mahalle bağlamı",
+  "locationContextAttachTitle": "Geçerli konumu sohbete ekle",
+  "locationContextAttachDesc": "Temsilciye şehir, bölge ve mahalle bağlamını sağlamak için cihaz GPS'sini ve ters coğrafi kodlamayı kullanır.",
+  "reverseGeocodingProvider": "Ters coğrafi kodlama sağlayıcısı",
+  "amapProviderName": "Harita",
+  "amapApiKey": "Amap API Anahtarı",
+  "amapGcj02Note": "Amap, GCJ-02 koordinatlarını kullanır. Cihaz GPS'si ters coğrafi kodlamadan önce dönüştürülür.",
+  "contextGranularity": "Bağlam ayrıntı düzeyi",
+  "granularityCity": "Şehir",
+  "granularityDistrict": "Semt",
+  "granularityNeighborhood": "Komşu",
+  "granularityStreet": "Sokak",
+  "granularityFullAddress": "Tam adres adayı",
+  "locationFreshness": "Konum tazeliği",
+  "@minutesShort": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "minutesShort": "{minutes} dakika",
+  "oneHour": "1 saat",
+  "testCurrentLocation": "Mevcut konumu test et",
+  "@locationTestFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "locationTestFailed": "Başarısız: {error}",
+  "locationDebugGps": "Küresel Konumlama Sistemi",
+  "locationDebugReverseGeocode": "Coğrafi kodu ters çevir",
+  "locationDebugProvider": "sağlayıcı",
+  "locationDebugAgentContext": "Aracı bağlamı",
+  "locationDebugSource": "Kaynak",
+  "locationDebugAddressSummary": "Adres özeti",
+  "locationDebugFullAddress": "Tam adres",
+  "locationDebugCoordinates": "Koordinatlar",
+  "locationDebugAccuracy": "Kesinlik",
+  "locationDebugReason": "Sebep",
+  "locationDebugOk": "TAMAM",
+  "locationDebugUnavailable": "müsait değil",
+  "locationDebugInjected": "enjekte edildi",
+  "locationDebugNotInjected": "enjekte edilmemiş",
+  "locationStatusUpdatedAt": "Güncellendi",
+  "locationStatusSuccessTitle": "Mevcut konum hazır",
+  "locationStatusSuccessBody": "Memex, konum bağlamı ilgili olduğunda bu konum özetini ekleyebilir.",
+  "locationStatusApproximateTitle": "Yalnızca yaklaşık konum",
+  "locationStatusApproximateBody": "Doğruluk şehir veya bölge düzeyinde görünüyor. Bunu kullanmaya devam edebilir veya daha sıkı bir bağlam için sistem ayarlarında Kesin Konum'u etkinleştirebilirsiniz.",
+  "locationStatusServiceDisabledTitle": "Sistem konumu kapalı",
+  "locationStatusServiceDisabledBody": "Memex yalnızca cihazın GPS'ini kullanır ve ağdan veya IP'den konum çıkarımı yapmaz. Android'de Konum ayarlarını açın; iOS'ta Ayarlar > Gizlilik ve Güvenlik > Konum Servisleri'ni etkinleştirin.",
+  "locationStatusPermissionDeniedTitle": "Konum izni gerekli",
+  "locationStatusPermissionDeniedBody": "Memex'in test sırasında veya konum bağlamına ihtiyaç duyulduğunda konumu kullanmasına izin verin. Her zaman erişim talep edilmez.",
+  "locationStatusPermissionForeverTitle": "Konum izni engellendi",
+  "locationStatusPermissionForeverBody": "Uygulama ayarlarını açın ve Memex için konuma izin verin. İOS'ta Uygulamayı Kullanırken yeterlidir.",
+  "locationStatusDisabledTitle": "Konum Bağlamı kapalı",
+  "locationStatusDisabledBody": "Memex'in cihaz konumunu aracı bağlamına eklemesini istediğinizde yukarıdaki anahtarı açın ve kaydedin.",
+  "locationStatusGeocodeUnavailableTitle": "GPS çalışıyor, adres araması başarısız oldu",
+  "locationStatusGeocodeUnavailableBody": "Memex'in koordinatları vardır ancak aracıya yalnızca GPS içeriğini eklemez. Ters coğrafi kodlama sağlayıcısını kontrol edin ve tekrar deneyin.",
+  "locationStatusUnavailableTitle": "Konum kullanılamıyor",
+  "locationStatusUnavailableBody": "Sistem konum hizmetlerini ve uygulama iznini kontrol edip tekrar test edin.",
+  "allowLocationPermissionButton": "Konum iznine izin ver",
+  "openAppSettingsButton": "Uygulama ayarlarını aç",
+  "openLocationSettingsButton": "Konum ayarlarını aç",
+  "locationSettingsOpenFailed": "Sistem ayarları açılamadı.",
+  "@locationActionFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "locationActionFailed": "Konum işlemi başarısız oldu: {error}",
+  "settingsSearchPlaceholder": "Arama ayarları...",
+  "settingsSearchEmpty": "Eşleşen ayar bulunamadı",
+  "importCharacterCard": "Karakter Kartını İçe Aktar",
+  "firstMessageLabel": "İlk Mesaj",
+  "firstMessageHint": "İlk görüşmede gönderilen tebrik (isteğe bağlı)",
+  "systemPromptOverrideLabel": "Sistem İstemini Geçersiz Kılma",
+  "systemPromptOverrideHint": "Varsayılan sistem istemini geçersiz kıl (gelişmiş, isteğe bağlı)",
+  "postHistoryInstructionsLabel": "Tarih Sonrası Talimatlar",
+  "postHistoryInstructionsHint": "Sohbet geçmişinden sonra, yanıtlamadan önce eklenen talimatlar (isteğe bağlı)",
+  "mesExampleLabel": "Mesaj Örnekleri",
+  "mesExampleHint": "Karakter stilini gösteren örnek diyaloglar (isteğe bağlı)",
+  "worldBookTitle": "Dünya Kitabı",
+  "worldBookSubtitle": "Anahtar kelimeler tetiklendiğinde enjekte edilen arka plan bilgisi",
+  "characterMemoryTitle": "Karakter Hafızası",
+  "characterMemorySubtitle": "Karakter ve kullanıcı arasındaki ilişki dinamikleri ve etkileşim anıları",
+  "addTooltip": "Eklemek",
+  "constantBadge": "Devamlı",
+  "@worldEntryFallbackName": {
+    "placeholders": {
+      "index": {}
+    }
+  },
+  "worldEntryFallbackName": "Giriş {index}",
+  "@keywordsPrefix": {
+    "placeholders": {
+      "keys": {}
+    }
+  },
+  "keywordsPrefix": "Anahtar kelimeler: {keys}",
+  "@memoryFallbackName": {
+    "placeholders": {
+      "index": {}
+    }
+  },
+  "memoryFallbackName": "Bellek {index}",
+  "addWorldEntry": "Dünya Kitap Girişi Ekle",
+  "editWorldEntry": "Dünya Kitap Girişini Düzenle",
+  "commentTitleLabel": "Yorum / Başlık",
+  "entryDescriptionHint": "Giriş açıklaması (isteğe bağlı)",
+  "triggerKeywordsLabel": "Tetikleyici Anahtar Kelimeler",
+  "triggerKeywordsHint": "Virgülle ayrılmış, örneğin: büyü, büyü",
+  "contentLabel": "İçerik",
+  "worldEntryContentHint": "Anahtar kelimeler tetiklendiğinde enjekte edilen arka plan bilgisi",
+  "enabledCheckbox": "Etkinleştirilmiş",
+  "addMemory": "Bellek Ekle",
+  "editMemory": "Belleği Düzenle",
+  "memoryLabelField": "Etiket",
+  "memoryLabelHint": "Benzersiz tanımlayıcı, örneğin: ad tercihi",
+  "memoryContentHint": "Bellek içeriği",
+  "salienceLabel": "belirginlik:",
+  "labelCannotBeEmpty": "Etiket boş olamaz",
+  "@importSuccess": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "importSuccess": "{name} başarıyla içe aktarıldı",
+  "@importFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "importFailed": "İçe aktarma başarısız oldu: {error}",
+  "supportedFormats": "Desteklenen Formatlar",
+  "tavernImportDescription": "• SillyTavern V2 karakter kartları (.json)\n• Gömülü kartlar içeren PNG resimleri (.png)\n\nPersona, dünya kitabı vb. alanlar otomatik olarak Memex karakter formatına eşlenecektir.",
+  "pickCharacterFile": "Karakter Dosyasını Seç",
+  "repickFile": "Başka Bir Dosya Seç",
+  "personaSettingSection": "Kişilik",
+  "systemPromptSection": "Sistem İstemi",
+  "@worldEntriesCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "worldEntriesCount": "Dünya Kitabı: {count} giriş",
+  "@fileLabel": {
+    "placeholders": {
+      "filename": {}
+    }
+  },
+  "fileLabel": "Dosya: {filename}",
+  "@conflictWarning": {
+    "placeholders": {
+      "names": {}
+    }
+  },
+  "conflictWarning": "Aynı ada sahip bir karakter zaten mevcut: {names}. İçe aktarma, mevcut karakterlerin üzerine yazmadan yeni bir karakter oluşturacaktır.",
+  "setPrimaryCompanionTitle": "Birincil Yardımcı Olarak Ayarla",
+  "setPrimaryCompanionSubtitle": "İçe aktarma sonrasında otomatik olarak birincil arkadaşınız olarak ayarlayın",
+  "confirmImport": "İçe Aktarmayı Onayla",
+  "chatBackground": "Sohbet Arka Planı",
+  "chooseChatBackgroundImage": "Arka plan resmini seçin",
+  "earlyUpdateSettingsTitle": "Erken erişim güncellemeleri",
+  "earlyUpdateSettingsDesc": "Eşleşen Erken APK için GitHub ön sürümlerini kontrol edin, indirin ve Android'in yükleyicisine verin.",
+  "earlyUpdateUnsupported": "Erken güncellemeler yalnızca Android Early sürümünde mevcuttur.",
+  "earlyUpdateAutoCheckTitle": "Güncellemeleri otomatik olarak kontrol et",
+  "earlyUpdateAutoCheckDesc": "Başlangıçta en fazla 12 saatte bir kontrol edin.",
+  "earlyUpdateWifiOnlyTitle": "Yalnızca Wi-Fi üzerinden indirin",
+  "earlyUpdateWifiOnlyDesc": "Mobil verileri kullanırken güncelleme indirmelerini atlayın.",
+  "earlyUpdateAutoInstallTitle": "Otomatik indirme ve yükleme",
+  "earlyUpdateAutoInstallDesc": "Yeni bir yapı bulunduğunda onu indirin ve Android yükleyicisini otomatik olarak açın.",
+  "earlyUpdateCheckNow": "Şimdi kontrol et",
+  "earlyUpdateChecking": "GitHub ön sürümleri kontrol ediliyor...",
+  "earlyUpdateSkippedMobile": "Yalnızca Wi-Fi üzerinden indirmeler etkinleştirildiği için atlandı.",
+  "earlyUpdateNoUpdate": "Zaten en son Erken sürümdesiniz.",
+  "@earlyUpdateFound": {
+    "placeholders": {
+      "version": {},
+      "build": {}
+    }
+  },
+  "earlyUpdateFound": "Erken derleme {version}+{build} mevcut.",
+  "earlyUpdateDownloadAndInstall": "İndirin ve yükleyin",
+  "earlyUpdateDownloadInProgress": "Güncelleme indiriliyor...",
+  "@earlyUpdateDownloadingPercent": {
+    "placeholders": {
+      "percent": {}
+    }
+  },
+  "earlyUpdateDownloadingPercent": "Güncelleme indiriliyor: {percent}%",
+  "earlyUpdateDownloadReadyToInstall": "Güncelleme paketi indirildi. Kuruluma hazır.",
+  "earlyUpdateInstallDownloadedPackage": "İndirilen paketi yükleyin",
+  "earlyUpdateClearDownloadedPackage": "İndirilen paketi temizle",
+  "earlyUpdateClearDownloadedPackageSuccess": "İndirilen güncelleme paketi temizlendi.",
+  "earlyUpdateInstallStarted": "Android yükleyici açıldı.",
+  "earlyUpdateInstallPermissionRequired": "Memex'in bilinmeyen uygulamaları yüklemesine izin verin, ardından indir ve yükle'ye tekrar dokunun.",
+  "@earlyUpdateLastChecked": {
+    "placeholders": {
+      "time": {}
+    }
+  },
+  "earlyUpdateLastChecked": "Son kontrol: {time}",
+  "@earlyUpdateCheckFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "earlyUpdateCheckFailed": "Güncelleme kontrolü başarısız oldu: {error}",
+  "earlyUpdateDialogTitle": "Erken güncelleme mevcut",
+  "earlyUpdateReleaseNotes": "Sürüm notları",
+  "dismissAllNotifications": "Tümünü temizle",
+  "dismissByType": "Türe göre temizle",
+  "dismissTypeSystemAction": "Hatırlatıcılar ve etkinlikler",
+  "dismissTypeClarification": "Açıklamalar",
+  "dismissTypeCardUpdate": "Kart güncellemeleri",
+  "@dismissedCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dismissedCount": "{count} temizlendi",
+  "dataImportTitle": "Dosyaları içe aktar",
+  "dataImportSettingsDescription": "Eski dosyaları Memex'e taşıyın ve ardından bunları organize edip etmeyeceğinize karar verin.",
+  "dataImportDescription": "Eski notları, dışa aktarılan kayıtları, belgeleri veya ZIP arşivlerini seçin. Memex önce bir kopyasını kaydeder ve orijinal dosyalara dokunmadan bırakır. İçe aktarma işleminden sonra Memex'in bunları düzenlemeye yardımcı olup olmayacağına karar verebilirsiniz.",
+  "dataImportSelectFiles": "İçe aktarılacak dosyaları seçin",
+  "dataImportImporting": "Dosyalar kaydediliyor...",
+  "dataImportSuccess": "Memex'e kaydedilen dosyalar",
+  "dataImportOnlyStored": "Dosyalar kaydedildi. Herhangi bir organizasyon başlamadı.",
+  "dataImportQueued": "Memex bu içe aktarma işlemini arka planda düzenleyecektir.",
+  "dataImportResultTitle": "İçe aktarma tamamlandı",
+  "@dataImportResultSummary": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportResultSummary": "{count} dosya kaydedildi. Bunları şimdi düzenleyebilir veya orijinal kaynak materyal olarak bırakabilirsiniz.",
+  "@dataImportRenamedConflicts": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportRenamedConflicts": "{count} öğe/öğeler aynı ada sahipti ve herhangi bir şeyin üzerine yazılmasını önlemek için yeniden adlandırıldı.",
+  "@dataImportSkippedUnsafeEntries": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportSkippedUnsafeEntries": "{count} sıra dışı arşiv öğesi atlandı; geri kalanı normal şekilde ithal edildi.",
+  "dataImportChooseProcessing": "Bu dosyaları düzenleyin",
+  "dataImportProcessTitle": "Bu içe aktarma organize edilsin mi?",
+  "@dataImportProcessPrompt": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportProcessPrompt": "{count} dosyayı içe aktardınız. Memex'in bunları şimdi mi organize edeceğini yoksa sadece orijinalleri mi saklayacağını seçin.",
+  "dataImportProcessKnowledgeBase": "Bilgi tabanında organize olun",
+  "dataImportProcessKnowledgeBaseDesc": "Belgeler, notlar, proje materyalleri ve referanslar için en iyisi. Memex yararlı bilgileri çıkaracak ve daha sonra kullanmak üzere gruplayacaktır.",
+  "dataImportProcessTimelineCards": "Zaman çizelgesi kayıtları oluşturun",
+  "dataImportProcessTimelineCardsDesc": "Günlükler, sohbet günlükleri, etkinlik geçmişi ve eski dışa aktarmalar için en iyisi. Memex, mantıklı olduğunda zamana dayalı içerikleri kayıtlara dönüştürecek.",
+  "dataImportImpactNone": "Memex yalnızca bu orijinal dosyaları saklayacaktır. Hiçbir AI organizasyonu başlamayacak.",
+  "dataImportImpactKnowledgeBase": "Memex bu dosyaları okuyacak ve uzun vadeli yararlı bilgileri bilgi tabanında düzenleyecektir. Proaktif olarak zaman çizelgesi kayıtları oluşturmaz.",
+  "dataImportImpactTimelineCards": "Memex bu dosyaları okuyacak ve uygun olduğunda yaşam olayları veya tarihli geçmiş için zaman çizelgesi kayıtları oluşturacaktır. Bilgi tabanını proaktif olarak organize etmeyecektir.",
+  "dataImportImpactBoth": "Memex, zaman çizelgesi kayıtları oluşturmaya ve yeniden kullanılabilir bilgileri bilgi tabanında düzenlemeye çalışacaktır. Bu tam bir kişisel arşiv için en iyisidir.",
+  "dataImportFinish": "Sadece onları kurtar",
+  "noImages": "Resim yok",
+  "noMessages": "Mesaj yok",
+  "sketchContent": "Taslak içeriği",
+  "emptyFolder": "Boş klasör",
+  "usernameAlreadyTaken": "Kullanıcı adı zaten alınmış",
+  "registrationFailed": "Kayıt başarısız oldu",
+  "loginFailed": "giriş başarısız oldu",
+  "paymentCreationFailed": "Ödeme başlatılamadı",
+  "completePayment": "Ödemeyi tamamla",
+  "commentReplyToYou": "Sen",
+  "commentAuthorUser": "Kullanıcı",
+  "commentAuthorAi": "yapay zeka",
+  "authorizationCancelled": "Yetkilendirme iptal edildi",
+  "@timelineWeekNumberLabel": {
+    "placeholders": {
+      "week": {}
+    }
+  },
+  "timelineWeekNumberLabel": "Hafta {week}",
+  "timelineWeekLabel": "Hafta",
+  "eventCardDefaultTitle": "Etkinlik",
+  "memoryNoLongTermYet": "Henüz uzun süreli anılar yok.",
+  "memoryNoRecentBuffer": "Ara bellekte yeni anı yok.",
+  "memoryGeneralSubject": "Genel"
+}
