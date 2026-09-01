@@ -523,6 +523,11 @@ class AppLocalizationsPt extends AppLocalizations {
   String get loadFailed => 'Falha ao carregar';
 
   @override
+  String loadHistoryFailed(Object error) {
+    return 'Falha ao carregar o histórico: $error';
+  }
+
+  @override
   String get reload => 'Recarregar';
 
   @override
@@ -699,7 +704,10 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-      Object running, Object pending, Object retrying) {
+    Object running,
+    Object pending,
+    Object retrying,
+  ) {
     return 'Executando $running, pendentes $pending, nova tentativa $retrying';
   }
 
@@ -1033,6 +1041,23 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get authorized => 'Autorizado';
+
+  @override
+  String authorizedAs(Object email) {
+    return 'Autorizado como $email';
+  }
+
+  @override
+  String get authorizedSuccessfully => 'Autorizado com sucesso';
+
+  @override
+  String get reAuthorize => 'Reautorizar';
+
+  @override
+  String get authorizeWithOpenAi => 'Autorizar com OpenAI';
+
+  @override
+  String get authorizeWithGoogle => 'Autorizar com Google';
 
   @override
   String get config => 'Configuração';
