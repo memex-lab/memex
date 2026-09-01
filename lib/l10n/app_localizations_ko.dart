@@ -510,6 +510,11 @@ class AppLocalizationsKo extends AppLocalizations {
   String get loadFailed => '불러오기 실패';
 
   @override
+  String loadHistoryFailed(Object error) {
+    return '기록을 불러오지 못했습니다: $error';
+  }
+
+  @override
   String get reload => '다시 불러오기';
 
   @override
@@ -681,7 +686,10 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-      Object running, Object pending, Object retrying) {
+    Object running,
+    Object pending,
+    Object retrying,
+  ) {
     return '실행 중 $running, 대기 중 $pending, 재시도 $retrying';
   }
 
@@ -998,6 +1006,23 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get authorized => '인증됨';
+
+  @override
+  String authorizedAs(Object email) {
+    return '$email(으)로 인증됨';
+  }
+
+  @override
+  String get authorizedSuccessfully => '인증되었습니다';
+
+  @override
+  String get reAuthorize => '다시 인증';
+
+  @override
+  String get authorizeWithOpenAi => 'OpenAI로 인증';
+
+  @override
+  String get authorizeWithGoogle => 'Google로 인증';
 
   @override
   String get config => '설정';
@@ -3165,4 +3190,33 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get commentReplyToYou => '나';
+
+  @override
+  String get commentAuthorUser => '사용자';
+
+  @override
+  String get commentAuthorAi => 'AI';
+
+  @override
+  String get authorizationCancelled => '인증이 취소되었습니다';
+
+  @override
+  String timelineWeekNumberLabel(Object week) {
+    return '$week주차';
+  }
+
+  @override
+  String get timelineWeekLabel => '주';
+
+  @override
+  String get eventCardDefaultTitle => '이벤트';
+
+  @override
+  String get memoryNoLongTermYet => '아직 장기 기억이 없습니다.';
+
+  @override
+  String get memoryNoRecentBuffer => '버퍼에 최근 기억이 없습니다.';
+
+  @override
+  String get memoryGeneralSubject => '일반';
 }

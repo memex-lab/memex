@@ -1,5 +1,7 @@
 # Contributing to Memex
 
+[简体中文](CONTRIBUTING_CN.md) | English
+
 Thanks for helping make Memex better. Memex is a local-first, AI-native personal knowledge app, so we are careful about changes that affect privacy, local data, database migrations, agent behavior, and LLM provider boundaries.
 
 Opening an issue helps us understand demand, but it does not guarantee that the feature will be implemented. Maintainers use issues as a signal pool, the project board as an execution queue, and the roadmap as a statement of direction.

@@ -255,6 +255,13 @@
   "retryCount": "Повтор: {count}",
   "loadDetailFailedRetry": "Не удалось загрузить детали, повторите позже.",
   "loadFailed": "Загрузка не удалась",
+  "@loadHistoryFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadHistoryFailed": "Не удалось загрузить историю: {error}",
+
   "reload": "Перезагрузить",
   "aiInsightDetail": "Детали инсайта",
   "@relatedRecordsCount": {
@@ -462,6 +469,17 @@
   },
   "authFailed": "Авторизация не удалась: {error}",
   "authorized": "Авторизовано",
+  "@authorizedAs": {
+    "placeholders": {
+      "email": {}
+    }
+  },
+  "authorizedAs": "Авторизован как {email}",
+  "authorizedSuccessfully": "Авторизация успешна",
+  "reAuthorize": "Повторная авторизация",
+  "authorizeWithOpenAi": "Авторизовать через OpenAI",
+  "authorizeWithGoogle": "Авторизовать через Google",
+
   "config": "Конфигурация",
   "calendar": "Календарь",
   "reminders": "Напоминания",
@@ -1483,5 +1501,19 @@
   "loginFailed": "Не удалось войти",
   "paymentCreationFailed": "Не удалось начать оплату",
   "completePayment": "Завершить оплату",
-  "commentReplyToYou": "Вы"
+  "commentReplyToYou": "Вы",
+  "commentAuthorUser": "Пользователь",
+  "commentAuthorAi": "ИИ",
+  "authorizationCancelled": "Авторизация отменена",
+  "timelineWeekNumberLabel": "Неделя {week}",
+  "timelineWeekLabel": "Неделя",
+  "eventCardDefaultTitle": "Событие",
+  "memoryNoLongTermYet": "Долговременных воспоминаний пока нет.",
+  "memoryNoRecentBuffer": "В буфере пока нет недавних воспоминаний.",
+  "memoryGeneralSubject": "Общее",
+  "@timelineWeekNumberLabel": {
+    "placeholders": {
+      "week": {}
+    }
+  }
 }

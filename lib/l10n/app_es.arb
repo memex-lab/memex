@@ -255,6 +255,13 @@
   },
   "loadDetailFailedRetry": "No se pudo cargar el detalle; inténtalo de nuevo más tarde.",
   "loadFailed": "Carga fallida",
+  "@loadHistoryFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadHistoryFailed": "No se pudo cargar el historial: {error}",
+
   "reload": "Recargar",
   "aiInsightDetail": "Detalle del insight",
   "relatedRecordsCount": "Registros relacionados ({count})",
@@ -462,6 +469,17 @@
     }
   },
   "authorized": "Autorizado",
+  "@authorizedAs": {
+    "placeholders": {
+      "email": {}
+    }
+  },
+  "authorizedAs": "Autorizado como {email}",
+  "authorizedSuccessfully": "Autorizado correctamente",
+  "reAuthorize": "Volver a autorizar",
+  "authorizeWithOpenAi": "Autorizar con OpenAI",
+  "authorizeWithGoogle": "Autorizar con Google",
+
   "config": "Configuración",
   "calendar": "Calendario",
   "reminders": "Recordatorios",
@@ -1483,5 +1501,19 @@
   "loginFailed": "Error al iniciar sesión",
   "paymentCreationFailed": "No se pudo iniciar el pago",
   "completePayment": "Completar pago",
-  "commentReplyToYou": "Tú"
+  "commentReplyToYou": "Tú",
+  "commentAuthorUser": "Usuario",
+  "commentAuthorAi": "IA",
+  "authorizationCancelled": "Autorización cancelada",
+  "timelineWeekNumberLabel": "Semana {week}",
+  "timelineWeekLabel": "Semana",
+  "eventCardDefaultTitle": "Evento",
+  "memoryNoLongTermYet": "Aún no hay recuerdos a largo plazo.",
+  "memoryNoRecentBuffer": "No hay recuerdos recientes en el búfer.",
+  "memoryGeneralSubject": "General",
+  "@timelineWeekNumberLabel": {
+    "placeholders": {
+      "week": {}
+    }
+  }
 }

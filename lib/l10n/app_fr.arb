@@ -255,6 +255,13 @@
   },
   "loadDetailFailedRetry": "Échec du chargement des détails, veuillez réessayer plus tard.",
   "loadFailed": "Échec du chargement",
+  "@loadHistoryFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadHistoryFailed": "Échec du chargement de l'historique : {error}",
+
   "reload": "Recharger",
   "aiInsightDetail": "Détail de l'insight",
   "relatedRecordsCount": "Enregistrements liés ({count})",
@@ -462,6 +469,17 @@
     }
   },
   "authorized": "Autorisé",
+  "@authorizedAs": {
+    "placeholders": {
+      "email": {}
+    }
+  },
+  "authorizedAs": "Autorisé en tant que {email}",
+  "authorizedSuccessfully": "Autorisation réussie",
+  "reAuthorize": "Ré-autoriser",
+  "authorizeWithOpenAi": "Autoriser avec OpenAI",
+  "authorizeWithGoogle": "Autoriser avec Google",
+
   "config": "Configuration",
   "calendar": "Calendrier",
   "reminders": "Rappels",
@@ -1483,5 +1501,19 @@
   "loginFailed": "Échec de la connexion",
   "paymentCreationFailed": "Impossible de lancer le paiement",
   "completePayment": "Finaliser le paiement",
-  "commentReplyToYou": "Vous"
+  "commentReplyToYou": "Vous",
+  "commentAuthorUser": "Utilisateur",
+  "commentAuthorAi": "IA",
+  "authorizationCancelled": "Autorisation annulée",
+  "timelineWeekNumberLabel": "Semaine {week}",
+  "timelineWeekLabel": "Semaine",
+  "eventCardDefaultTitle": "Événement",
+  "memoryNoLongTermYet": "Pas encore de souvenirs à long terme.",
+  "memoryNoRecentBuffer": "Aucun souvenir récent dans le tampon.",
+  "memoryGeneralSubject": "Général",
+  "@timelineWeekNumberLabel": {
+    "placeholders": {
+      "week": {}
+    }
+  }
 }

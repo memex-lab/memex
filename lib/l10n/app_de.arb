@@ -255,6 +255,13 @@
   "retryCount": "Wiederholen: {count}",
   "loadDetailFailedRetry": "Beim Laden der Details ist ein Fehler aufgetreten. Bitte versuchen Sie es später noch einmal.",
   "loadFailed": "Das Laden ist fehlgeschlagen",
+  "@loadHistoryFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadHistoryFailed": "Verlauf konnte nicht geladen werden: {error}",
+
   "reload": "Neu laden",
   "aiInsightDetail": "Insight-Detail",
   "@relatedRecordsCount": {
@@ -462,6 +469,17 @@
   },
   "authFailed": "Authentifizierung fehlgeschlagen: {error}",
   "authorized": "Autorisiert",
+  "@authorizedAs": {
+    "placeholders": {
+      "email": {}
+    }
+  },
+  "authorizedAs": "Autorisiert als {email}",
+  "authorizedSuccessfully": "Erfolgreich autorisiert",
+  "reAuthorize": "Erneut autorisieren",
+  "authorizeWithOpenAi": "Mit OpenAI autorisieren",
+  "authorizeWithGoogle": "Mit Google autorisieren",
+
   "config": "Konfig",
   "calendar": "Kalender",
   "reminders": "Erinnerungen",
@@ -1483,5 +1501,19 @@
   "loginFailed": "Anmeldung fehlgeschlagen",
   "paymentCreationFailed": "Zahlung konnte nicht gestartet werden",
   "completePayment": "Zahlung abschließen",
-  "commentReplyToYou": "Du"
+  "commentReplyToYou": "Du",
+  "commentAuthorUser": "Benutzer",
+  "commentAuthorAi": "KI",
+  "authorizationCancelled": "Autorisierung abgebrochen",
+  "timelineWeekNumberLabel": "Woche {week}",
+  "timelineWeekLabel": "Woche",
+  "eventCardDefaultTitle": "Ereignis",
+  "memoryNoLongTermYet": "Noch keine Langzeit-Erinnerungen.",
+  "memoryNoRecentBuffer": "Keine recenten Erinnerungen im Puffer.",
+  "memoryGeneralSubject": "Allgemein",
+  "@timelineWeekNumberLabel": {
+    "placeholders": {
+      "week": {}
+    }
+  }
 }

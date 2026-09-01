@@ -1,0 +1,1519 @@
+{
+  "@@locale": "fa",
+  "timesLabel": "بار",
+  "@modelSetAsDefault": {
+    "placeholders": {
+      "modelId": {}
+    }
+  },
+  "modelSetAsDefault": "تنظیم {modelId} به‌عنوان مدل پیش‌فرض",
+  "retry": "تلاش مجدد",
+  "unknownModel": "مدل ناشناخته",
+  "notSet": "تنظیم نشده",
+  "confirmClear": "تأیید پاک‌سازی",
+  "confirmClearTokenMessage": "کاربر فعلی پاک شود؟ باید دوباره شناسه کاربر را وارد کنید.",
+  "cancel": "لغو",
+  "confirm": "تأیید",
+  "tokenCleared": "کاربر پاک شد",
+  "@clearTokenFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "clearTokenFailed": "پاک‌سازی کاربر ناموفق بود: {error}",
+  "selectDateRangeOptional": "انتخاب بازه زمانی (اختیاری):",
+  "startDate": "تاریخ شروع",
+  "endDate": "تاریخ پایان",
+  "select": "انتخاب",
+  "processLimitOptional": "محدودیت پردازش (اختیاری)",
+  "leaveEmptyForAll": "برای پردازش همه خالی بگذارید",
+  "startProcessing": "شروع پردازش",
+  "userIdNotFound": "شناسه کاربر یافت نشد",
+  "@createTaskFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "createTaskFailed": "ایجاد وظیفه ناموفق بود: {error}",
+  "reprocessCards": "پردازش مجدد کارت‌ها",
+  "reprocessCardsTaskCreated": "درخواست پردازش مجدد در صف Super Agent قرار گرفت",
+  "reprocessCardsDownstreamMode": "دامنه",
+  "reprocessCardsCardOnly": "فقط کارت‌ها",
+  "reprocessCardsCardOnlyDesc": "از Super Agent بخواهید کارت‌های انتخاب‌شده خط زمانی را بازبینی و دوباره بسازد.",
+  "reprocessCardsRerunDownstream": "کارت‌ها و پیگیری‌های مرتبط",
+  "reprocessCardsRerunDownstreamDesc": "در صورت نیاز، از Super Agent بخواهید به‌روزرسانی‌های PKM و بینش مرتبط را نیز در نظر بگیرد.",
+  "reanalyzeMediaAssets": "خواندن مجدد پیوست‌های رسانه‌ای",
+  "reanalyzeMediaAssetsDesc": "هنگام بازسازی کارت‌ها، از Super Agent بخواهید رسانه‌های پیوست‌شده را دوباره بررسی کند.",
+  "regenerateComments": "بازسازی نظرات",
+  "regenerateCommentsTaskCreated": "وظیفه بازسازی نظرات ایجاد شد و در پس‌زمینه در حال اجراست",
+  "rebuildSearchIndex": "بازسازی نمایه جستجو",
+  "rebuildSearchIndexSuccess": "نمایه جستجو با موفقیت بازسازی شد",
+  "rebuildSearchIndexFailed": "بازسازی نمایه جستجو ناموفق بود",
+  "clearData": "پاک‌سازی داده‌ها",
+  "confirmClearDataMessage": "داده‌ها پاک شوند؟",
+  "confirmClearDataDeletesWorkspaceMessage": "تمام داده‌های محلی فضای کاری کاربر فعلی حذف می‌شود، از جمله کارت‌ها، رسانه‌ها، فایل‌های دانش، بینش‌ها، حافظه، تاریخچه گفتگو و وضعیت سیستم.\n\nاین عمل قابل بازگشت نیست!",
+  "clearFailedAgentContexts": "پاک‌سازی زمینه گفتگوی ناموفق",
+  "confirmClearFailedAgentContextsMessage": "زمینه گفتگوی ذخیره‌شده عوامل Insight و Schedule پاک شود؟ پس از تغییر مدل، وقتی پیام‌های قبلی عامل دیگر سازگار نیستند مفید است. حقایق، کارت‌ها، دانش، خاطرات و تنظیمات مدل حذف نمی‌شوند.",
+  "failedAgentContextsCleared": "{count} زمینه گفتگوی ذخیره‌شده پاک شد",
+  "@failedAgentContextsCleared": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "clearFailedAgentContextsFailed": "پاک‌سازی زمینه گفتگو ناموفق بود: {error}",
+  "@clearFailedAgentContextsFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "cloneToTestUser": "کپی به کاربر آزمایشی",
+  "confirmCloneToTestUserMessage": "فضای کاری فعلی در یک کاربر آزمایشی محلی جدید کپی و به آن منتقل شود. وضعیت زمان اجرای عامل کپی نمی‌شود. داده‌های کاربر فعلی شما تغییر نمی‌کند.",
+  "testUserIdLabel": "شناسه کاربر آزمایشی",
+  "testUserIdHelper": "از حروف، اعداد، خط تیره یا زیرخط استفاده کنید.",
+  "testUserIdInvalid": "فقط از حروف، اعداد، خط تیره یا زیرخط استفاده کنید.",
+  "overwriteExistingTestUser": "جایگزینی کاربر آزمایشی موجود با همین شناسه",
+  "testUserCloneSuccess": "به کاربر آزمایشی {userId} تغییر کرد",
+  "@testUserCloneSuccess": {
+    "placeholders": {
+      "userId": {}
+    }
+  },
+  "testUserCloneFailed": "کپی کاربر آزمایشی ناموفق بود: {error}",
+  "@testUserCloneFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "dataClearedSuccess": "داده‌ها با موفقیت پاک شدند",
+  "@clearDataFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "clearDataFailed": "پاک‌سازی داده‌ها ناموفق بود: {error}",
+  "personalCenter": "مرکز شخصی",
+  "viewLogs": "مشاهده گزارش‌ها",
+  "systemAuthorization": "مجوز سیستم",
+  "aiCharacterConfig": "تنظیمات شخصیت هوش مصنوعی",
+  "modelConfig": "تنظیمات مدل",
+  "agentConfig": "تنظیمات عامل",
+  "experimentalLab": "آزمایشگاه",
+  "experimentalLabDescription": "قابلیت‌های آزمایشی که ممکن است بعداً تغییر کنند یا جابه‌جا شوند.",
+  "modelUsageStats": "آمار استفاده از مدل",
+  "asyncTaskList": "فهرست وظایف ناهمگام",
+  "clearLocalToken": "پاک‌سازی کاربر",
+  "insightCardTemplates": "قالب‌های کارت بینش",
+  "timelineCardTemplates": "قالب‌های کارت خط زمانی",
+  "logViewer": "نمایشگر گزارش",
+  "autoRefresh": "به‌روزرسانی خودکار",
+  "lineCount": "تعداد خط: ",
+  "all": "همه",
+  "schedule": "برنامه زمان‌بندی",
+  "appLockConfig": "تنظیمات قفل برنامه",
+  "@loadStatsFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadStatsFailed": "بارگذاری آمار ناموفق بود: {error}",
+  "overview": "نمای کلی",
+  "daily": "روزانه",
+  "modelStatsByAgent": "بر اساس عامل",
+  "detail": "جزئیات",
+  "date": "تاریخ",
+  "agent": "عامل",
+  "noData": "داده‌ای وجود ندارد",
+  "totalCalls": "کل تماس‌ها",
+  "calls": "تماس‌ها",
+  "@callsCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "callsCount": "{count} تماس",
+  "selectDateRange": "انتخاب بازه زمانی",
+  "totalTokens": "کل توکن‌ها",
+  "cacheRate": "نرخ کش",
+  "promptTokens": "توکن‌های درخواست",
+  "completionTokens": "توکن‌های پاسخ",
+  "cachedTokens": "توکن‌های کش‌شده",
+  "thoughtTokens": "توکن‌های تفکر",
+  "prompt": "درخواست",
+  "completion": "پاسخ",
+  "cached": "کش‌شده",
+  "thought": "تفکر",
+  "model": "مدل",
+  "scene": "سناریو",
+  "sceneId": "شناسه سناریو",
+  "tokenUsage": "مصرف توکن",
+  "handler": "پردازشگر",
+  "modelBreakdown": "تفکیک مدل",
+  "callDetails": "جزئیات تماس",
+  "@recordDetailsTitle": {
+    "placeholders": {
+      "scene": {}
+    }
+  },
+  "recordDetailsTitle": "جزئیات رکورد: {scene}",
+  "@saveLlmConfigFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "saveLlmConfigFailed": "ذخیره تنظیمات LLM ناموفق بود: {error}",
+  "webHtmlPreviewUnavailable": "پیش‌نمایش HTML در وب در دسترس نیست. لطفاً روی موبایل مشاهده کنید.",
+  "@saveUserInfoFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "saveUserInfoFailed": "ذخیره اطلاعات کاربر ناموفق بود: {error}",
+  "totalEstimatedCost": "هزینه تخمینی کل",
+  "close": "بستن",
+  "totalTokenConsumption": "مصرف کل توکن",
+  "dataLoadFailedRetry": "بارگذاری داده ناموفق بود، لطفاً بعداً دوباره تلاش کنید.",
+  "timelineLoadFailedRetry": "بارگذاری خط زمانی ناموفق بود، لطفاً بعداً دوباره تلاش کنید.",
+  "newPerspective": "دیدگاه جدید",
+  "startPoint": "شروع",
+  "endPoint": "پایان",
+  "originalInput": "ورودی اصلی",
+  "referenceContent": "محتوای مرجع",
+  "@referenceWithTitle": {
+    "placeholders": {
+      "title": {}
+    }
+  },
+  "referenceWithTitle": "مرجع: {title}",
+  "actionCenterTitle": "اقدامات در انتظار",
+  "noPendingActions": "اقدام در انتظاری وجود ندارد",
+  "clarificationNeeded": "Memex می‌خواهد تأیید کند",
+  "clarificationTextHint": "یک پاسخ کوتاه بنویسید",
+  "clarificationTextRequired": "ابتدا یک پاسخ کوتاه وارد کنید",
+  "clarificationAnswered": "پاسخ داده شد",
+  "@clarificationAnswerPrefix": {
+    "placeholders": {
+      "answer": {}
+    }
+  },
+  "clarificationAnswerPrefix": "پاسخ: {answer}",
+  "answerSaved": "پاسخ ذخیره شد",
+  "clarificationOtherAnswer": "ورود دستی",
+  "clarificationNotSure": "مطمئن نیستم / ترجیح می‌دهم نگویم",
+  "yes": "بله",
+  "no": "خیر",
+  "footprintMap": "نقشه ردپا",
+  "waypointPlaces": "مکان‌های میانی",
+  "unknownPlace": "مکان ناشناخته",
+  "releaseToSend": "رها کنید تا ارسال شود",
+  "selectFromAlbum": "انتخاب از آلبوم",
+  "clipboardPreviewTitle": "بریده‌دان جدید",
+  "clipboardPreviewImageTitle": "تصویر بریده‌دان",
+  "clipboardPreviewImageDescription": "تصویر آماده افزودن است",
+  "clipboardPreviewUnprocessed": "هنوز جایگذاری نشده",
+  "clipboardPreviewPasteToInput": "جایگذاری در ورودی",
+  "clipboardPreviewAddImageToInput": "افزودن تصویر",
+  "clipboardPreviewImageFailed": "خواندن تصویر بریده‌دان ممکن نبود",
+  "tellAiWhatHappened": "به هوش مصنوعی بگویید چه اتفاقی افتاد...",
+  "@recordingWithDuration": {
+    "placeholders": {
+      "duration": {}
+    }
+  },
+  "recordingWithDuration": "در حال ضبط: {duration}",
+  "playing": "در حال پخش...",
+  "sendLabel": "ارسال",
+  "attachedImagesMessage": "{count} تصویر ارسال شد",
+  "@attachedImagesMessage": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "noTaskData": "داده وظیفه‌ای وجود ندارد",
+  "@createdAtDate": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "createdAtDate": "ایجاد شده: {date}",
+  "@updatedAtDate": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "updatedAtDate": "به‌روز شده: {date}",
+  "@durationLabel": {
+    "placeholders": {
+      "duration": {}
+    }
+  },
+  "durationLabel": "مدت: {duration}",
+  "@retryCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "retryCount": "تلاش مجدد: {count}",
+  "loadDetailFailedRetry": "بارگذاری جزئیات ناموفق بود، لطفاً بعداً دوباره تلاش کنید.",
+  "loadFailed": "بارگذاری ناموفق بود",
+  "@loadHistoryFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadHistoryFailed": "بارگذاری تاریخچه ناموفق بود: {error}",
+
+  "reload": "بارگذاری مجدد",
+  "aiInsightDetail": "جزئیات بینش",
+  "@relatedRecordsCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "relatedRecordsCount": "رکوردهای مرتبط ({count})",
+  "noRelatedRecords": "رکورد مرتبطی وجود ندارد",
+  "useFingerprintToUnlock": "برای باز کردن از اثر انگشت استفاده کنید",
+  "locked": "قفل شده",
+  "wrongPassword": "رمز عبور اشتباه است",
+  "enterPassword": "رمز عبور را وارد کنید",
+  "memexLocked": "Memex قفل است",
+  "calendarShortSun": "ی",
+  "calendarShortMon": "د",
+  "calendarShortTue": "س",
+  "calendarShortWed": "چ",
+  "calendarShortThu": "پ",
+  "calendarShortFri": "ج",
+  "calendarShortSat": "ش",
+  "@noRecordsOnDate": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "noRecordsOnDate": "در {date} رکوردی وجود ندارد",
+  "footprintPath": "مسیر ردپا",
+  "lifeCompositionTable": "ترکیب زندگی",
+  "emotionReframe": "بازنگری هیجان",
+  "chronicleOfThings": "وقایع‌نگاری امور",
+  "goalProgress": "پیشرفت هدف",
+  "trendChart": "نمودار روند",
+  "comparisonChart": "نمودار مقایسه",
+  "todayTimeFlow": "جریان زمان امروز",
+  "aiInputHint": "چه خاطره باشد چه حال، اینجا هستم...",
+  "refreshSuperAgentStateTooltip": "پاک‌سازی زمینه Memex Agent",
+  "refreshSuperAgentStateTitle": "زمینه تاریخی Memex Agent پاک شود؟",
+  "refreshSuperAgentStateMessage": "تاریخچه گفتگوی قابل‌مشاهده باقی می‌ماند، اما زمینه زمان اجرای تاریخی Memex Agent پاک می‌شود و پاسخ‌های بعدی از زمینه‌ای تازه شروع می‌شوند. حافظه پایدار، فایل‌های پایگاه دانش، کارت‌ها و سایر داده‌های ذخیره‌شده تحت تأثیر قرار نمی‌گیرند. وقتی Memex Agent رفتار غیرعادی دارد از این استفاده کنید. ادامه می‌دهید؟",
+  "refreshSuperAgentStateActiveRunMessage": "تا پایان پیام فعلی Memex Agent صبر کنید، سپس زمینه را پاک کنید.",
+  "refreshSuperAgentStateSuccess": "زمینه Memex Agent پاک شد",
+  "@refreshSuperAgentStateFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "refreshSuperAgentStateFailed": "پاک‌سازی زمینه Memex Agent ناموفق بود: {error}",
+  "nothingHere": "هنوز چیزی اینجا نیست",
+  "nothingHereHint": "برای ساخت اولین کارت، دکمه زیر را لمس کنید",
+  "agentProcessing": "هوش مصنوعی در حال پردازش است...",
+  "keepAppOpen": "برنامه را نبندید",
+  "activityDetail": "جزئیات فعالیت",
+  "noAgentActivityYet": "هنوز فعالیت عاملی وجود ندارد",
+  "processingEllipsis": "در حال پردازش...",
+  "agentBackgroundTitle": "Memex Agent",
+  "agentBackgroundPausedTitle": "Memex Agent متوقف شد",
+  "agentBackgroundNeedsAttentionTitle": "Memex Agent نیاز به توجه دارد",
+  "agentBackgroundStageIdle": "بیکار",
+  "agentBackgroundStageProcessing": "در حال پردازش",
+  "agentBackgroundStageQueued": "در صف",
+  "agentBackgroundStageRetrying": "در انتظار تلاش مجدد",
+  "agentBackgroundStagePaused": "متوقف",
+  "agentBackgroundStageCompleted": "تکمیل شد",
+  "agentBackgroundStageNeedsAttention": "نیاز به توجه",
+  "agentBackgroundStageAnalyzingMedia": "تحلیل رسانه",
+  "agentBackgroundStageGeneratingCard": "ساخت کارت",
+  "agentBackgroundStageUpdatingKnowledge": "به‌روزرسانی دانش",
+  "agentBackgroundStagePreparingComment": "آماده‌سازی نظر",
+  "agentBackgroundStageRoutingFollowUps": "مسیریابی پیگیری‌ها",
+  "@agentBackgroundTaskSummary": {
+    "placeholders": {
+      "running": {},
+      "pending": {},
+      "retrying": {}
+    }
+  },
+  "agentBackgroundTaskSummary": "در حال اجرا {running}، در انتظار {pending}، تلاش مجدد {retrying}",
+  "@agentBackgroundTaskDetail": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "agentBackgroundTaskDetail": "در حال پردازش {count} وظیفه در صف.",
+  "agentBackgroundNoTasks": "وظیفه پس‌زمینه‌ای وجود ندارد.",
+  "agentBackgroundStarting": "پردازش در حال شروع است.",
+  "agentBackgroundCompletedDetail": "همه وظایف پس‌زمینه به پایان رسید.",
+  "agentBackgroundFailedDetail": "پردازش با خطا متوقف شد.",
+  "agentBackgroundPausedDetail": "پردازش متوقف شده و بعداً ادامه می‌یابد.",
+  "agentBackgroundQueuedDetail": "در انتظار مرحله پردازش بعدی.",
+  "agentBackgroundRetryingDetail": "مرحله فعلی به‌طور خودکار دوباره تلاش می‌شود.",
+  "agentBackgroundAnalyzeMediaDetail": "خواندن پیوست‌ها و زمینه محلی.",
+  "agentBackgroundGeneratingCardDetail": "تبدیل رکورد به کارت خط زمانی.",
+  "agentBackgroundUpdatingKnowledgeDetail": "به‌روزرسانی دانش و حافظه محلی.",
+  "agentBackgroundPreparingCommentDetail": "آماده‌سازی پیگیری دستیار.",
+  "agentBackgroundRoutingFollowUpsDetail": "بررسی اقدامات پیگیری برای این کارت.",
+  "@agentBackgroundPausedStatus": {
+    "placeholders": {
+      "summary": {}
+    }
+  },
+  "agentBackgroundPausedStatus": "متوقف - {summary}",
+  "@agentBackgroundNeedsAttentionStatus": {
+    "placeholders": {
+      "summary": {}
+    }
+  },
+  "agentBackgroundNeedsAttentionStatus": "نیاز به توجه - {summary}",
+  "settings": "تنظیمات",
+  "languageSettings": "زبان",
+  "languageSettingsDesc": "تغییر زبان نمایش برنامه",
+  "noPendingActionsToast": "اقدام در انتظاری وجود ندارد",
+  "knowledgeNewDiscovery": "کشف جدید دانش",
+  "@discoveredNewInsightsCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "discoveredNewInsightsCount": "{count} بینش جدید کشف شد",
+  "@updatedExistingInsightsCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "updatedExistingInsightsCount": "{count} بینش موجود به‌روز شد",
+  "sectionNewInsights": "بینش‌های جدید",
+  "sectionUpdatedInsights": "بینش‌های به‌روز شده",
+  "unnamedInsight": "بینش بدون نام",
+  "copiedToClipboard": "در بریده‌دان کپی شد",
+  "copy": "کپی",
+  "selectedLocation": "مکان انتخاب‌شده",
+  "confirmLocationName": "تأیید نام مکان",
+  "confirmLocationNameHint": "می‌توانید نام را ویرایش کنید (مختصات ثابت می‌ماند)",
+  "nameLabel": "نام",
+  "inputPlaceNameHint": "نام مکان را وارد کنید...",
+  "@currentCoordinates": {
+    "placeholders": {
+      "lat": {},
+      "lng": {}
+    }
+  },
+  "currentCoordinates": "مختصات: {lat}, {lng}",
+  "confirmLocation": "تأیید مکان",
+  "welcomeToMemex": "به Memex خوش آمدید",
+  "createUserIdToStart": "پروفایل خود را بسازید",
+  "userIdLabel": "نام / نام‌مستعار شما",
+  "userIdHint": "نام یا نام‌مستعار خود را وارد کنید",
+  "pleaseEnterUserId": "لطفاً نام خود را وارد کنید",
+  "userIdMaxLength": "نام نباید بیش از ۵۰ نویسه باشد",
+  "startUsing": "ادامه",
+  "userIdTip": "برای شخصی‌سازی تجربه شما استفاده می‌شود.",
+  "setupModelConfigTitle": "راه‌اندازی مدل هوش مصنوعی",
+  "setupModelConfigSubtitle": "Memex برای سازمان‌دهی سوابق، تحلیل تصاویر و تولید بینش به یک مدل پیشرفته هوش مصنوعی نیاز دارد. یک روش اتصال را انتخاب کنید.",
+  "setupModelConfigComplete": "تکمیل و شروع",
+  "aiService": "سرویس مدل Memex",
+  "aiModelHubTitle": "مدل‌ها و سرویس‌های هوش مصنوعی",
+  "aiModelHubSubtitle": "سرویس رسمی Memex را انتخاب کنید یا ارائه‌دهنده خود را بیاورید. مسیریابی پیشرفته مدل در صورت نیاز در دسترس است.",
+  "aiSetupCurrentStatusTitle": "پیکربندی فعلی",
+  "aiSetupStatusNotConfiguredTitle": "سرویس هوش مصنوعی پیکربندی نشده است",
+  "aiSetupStatusNotConfiguredDescription": "برای فعال‌سازی سازمان‌دهی هوش مصنوعی سوابق، رسانه و بینش، یک روش اتصال انتخاب کنید.",
+  "aiSetupStatusMemexTitle": "استفاده از سرویس رسمی MemeX",
+  "aiSetupStatusMemexDescription": "Memex از اتصال رسمی و اعتبارنامه‌های API مدیریت‌شده توسط حساب MemeX شما استفاده می‌کند.",
+  "aiSetupStatusCustomTitle": "استفاده از تنظیمات ارائه‌دهنده سفارشی",
+  "aiSetupStatusCustomDescription": "Memex از اعتبارنامه‌های ارائه‌دهنده و انتخاب‌های نقش مدل شما استفاده می‌کند.",
+  "aiSetupChooseConnectionTitle": "انتخاب روش اتصال",
+  "aiSetupChooseConnectionDescription": "با مسیری شروع کنید که با نحوه دسترسی Memex به مدل‌های هوش مصنوعی هم‌خوان باشد.",
+  "aiSetupOfficialRouteDescription": "به MemeX وارد شوید و بدون انتخاب ارائه‌دهنده، کلید یا مدل‌های سطح عامل، از سرویس رسمی استفاده کنید.",
+  "aiSetupCustomRouteDescription": "اعتبارنامه ارائه‌دهنده خود را اضافه کنید، مدلی را که Super Agent باید استفاده کند انتخاب کنید و در صورت تمایل مدل‌ها را برای هر عامل تغییر دهید.",
+  "aiSetupCustomPageTitle": "سرویس هوش مصنوعی سفارشی",
+  "aiSetupCustomPageSubtitle": "ابتدا اعتبارنامه ارائه‌دهنده را پیکربندی کنید، سپس مدلی را که Memex باید استفاده کند انتخاب کنید.",
+  "aiSetupProviderCredentialsTitle": "ارائه‌دهنده و کلیدهای API",
+  "aiSetupProviderCredentialsDescription": "OpenAI، Anthropic، DeepSeek، Gemini، OpenRouter، Ollama یا ارائه‌دهنده سازگار دیگری را اضافه یا ویرایش کنید.",
+  "modelRolesTitle": "انتخاب مدل اصلی",
+  "modelRolesDescription": "Super Agent از یک مدل برای ورودی متنی و تصویری استفاده می‌کند. تغییرات پیشرفته عامل در پایین در دسترس است.",
+  "textModelRoleTitle": "مدل اصلی",
+  "textModelRoleDescription": "توسط Super Agent برای متن، تصاویر، کارت‌ها، دانش، بینش‌ها، گفت‌وگو، نظرات و حافظه استفاده می‌شود.",
+  "modelConnectionsTitle": "ارائه‌دهندگان مدل و کلیدهای API",
+  "modelConnectionsDescription": "سرویس رسمی Memex را متصل کنید یا اعتبارنامه ارائه‌دهنده خود را اضافه کنید.",
+  "relatedAiCapabilitiesTitle": "قابلیت‌های پیشرفته و مرتبط",
+  "relatedAiCapabilitiesDescription": "تخصیص عامل‌ها، ارائه‌دهنده مکان و رفتار رونویسی گفتار را تنظیم کنید.",
+  "aiSetupServiceCapabilitiesTitle": "قابلیت‌های سرویس",
+  "aiSetupServiceCapabilitiesDescription": "ارائه‌دهندگانی را که Memex برای قابلیت‌های مکمل مبتنی بر هوش مصنوعی مانند گفتار و تبدیل مختصات به آدرس استفاده می‌کند انتخاب کنید.",
+  "aiSetupAdvancedCustomizationTitle": "مسیریابی پیشرفته مدل",
+  "aiSetupAdvancedCustomizationDescription": "برای کاربران حرفه‌ای که می‌خواهند عامل‌های جداگانه از ارائه‌دهندگان یا پیکربندی‌های مدل متفاوت استفاده کنند.",
+  "locationProviderSettings": "ارائه‌دهنده مکان",
+  "speechProviderSettings": "رونویسی گفتار",
+  "advancedAgentModelAssignments": "تخصیص مدل به عامل‌ها",
+  "openAdvancedAgentModelAssignments": "تغییر عامل‌های جداگانه",
+  "noConfiguredModelOptions": "قبل از انتخاب نقش‌های مدل، یک ارائه‌دهنده یا کلید API اضافه کنید.",
+  "modelSlotUpdated": "نقش مدل به‌روزرسانی شد",
+  "aiServiceMemexRouteTitle": "اتصال از طریق Memex",
+  "aiServiceLongDescription": "Memex از یک سامانه چندعامله برای سازمان‌دهی سوابق زندگی، یادداشت‌های دانشی و زمینه اجتماعی، کشف بینش‌های عمیق‌تر و ارائه همراهی هوش مصنوعی با حافظه پایدار استفاده می‌کند. داده‌های شما به‌صورت Markdown متنی ساده ذخیره می‌شوند و آزادی و قابلیت انتقال داده حفظ می‌شود.",
+  "aiServiceCustomApiRouteTitle": "کلید API دارم",
+  "aiServiceCustomModelDescription": "اگر از قبل کلید API از OpenAI، Anthropic، DeepSeek، Gemini یا ارائه‌دهنده دیگری دارید، ابتدا این را انتخاب کنید.",
+  "enableAiService": "اتصال با Memex",
+  "aiServiceReadyToast": "سازمان‌دهی هوش مصنوعی فعال است",
+  "aiServiceSettingsDescription": "اگر کلید API ندارید، با حساب Memex به سرویس‌های مدل اصلی متصل شوید.",
+  "advancedModelConfiguration": "پیکربندی کلید API",
+  "skipForNow": "فعلاً رد شو",
+  "clearAuth": "پاک کردن احراز هویت",
+  "authorizing": "در حال احراز هویت...",
+  "@authFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "authFailed": "احراز هویت ناموفق بود: {error}",
+  "authorized": "احراز هویت شده",
+  "@authorizedAs": {
+    "placeholders": {
+      "email": {}
+    }
+  },
+  "authorizedAs": "احراز هویت شده به عنوان {email}",
+  "authorizedSuccessfully": "احراز هویت با موفقیت انجام شد",
+  "reAuthorize": "احراز هویت مجدد",
+  "authorizeWithOpenAi": "احراز هویت با OpenAI",
+  "authorizeWithGoogle": "احراز هویت با Google",
+
+  "config": "پیکربندی",
+  "calendar": "تقویم",
+  "reminders": "یادآورها",
+  "writeToSystemFailed": "نوشتن در سیستم ناموفق بود",
+  "@permissionRequired": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "permissionRequired": "مجوز {name} لازم است",
+  "@permissionRationale": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "permissionRationale": "لطفاً در تنظیمات به برنامه اجازه دسترسی به {name} خود را بدهید تا بتوانیم آن را برایتان ایجاد کنیم.",
+  "goToSettings": "رفتن به تنظیمات",
+  "unknownAction": "اقدام ناشناخته",
+  "discoveredCalendarEvent": "رویداد تقویم در انتظار تأیید",
+  "discoveredReminder": "یادآور در انتظار تأیید",
+  "addToCalendar": "افزودن به تقویم",
+  "addToReminders": "افزودن به یادآورها",
+  "systemActionPendingExplanation": "هنوز افزوده نشده است. برای درخواست مجوز و افزودن به دستگاه، پایین را لمس کنید.",
+  "@addedToSuccess": {
+    "placeholders": {
+      "target": {}
+    }
+  },
+  "addedToSuccess": "با موفقیت به {target} افزوده شد",
+  "ignore": "نادیده گرفتن",
+  "confirmDelete": "تأیید حذف",
+  "confirmDeleteSessionMessage": "این گفت‌وگو حذف شود؟ این کار قابل بازگشت نیست.",
+  "delete": "حذف",
+  "deleteSuccess": "با موفقیت حذف شد",
+  "@deleteFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "deleteFailed": "حذف ناموفق بود: {error}",
+  "daysAgo": "{count} روز پیش",
+  "chatHistory": "تاریخچه گفت‌وگو",
+  "enterFullScreenTooltip": "ورود به حالت تمام‌صفحه",
+  "exitFullScreenTooltip": "خروج از حالت تمام‌صفحه",
+  "noConversations": "گفت‌وگویی وجود ندارد",
+  "@loadSessionListFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadSessionListFailed": "بارگذاری فهرست نشست ناموفق بود: {error}",
+  "@yesterdayAt": {
+    "placeholders": {
+      "time": {}
+    }
+  },
+  "yesterdayAt": "دیروز {time}",
+  "newChat": "گفت‌وگوی جدید",
+  "@messageCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "messageCount": "{count} پیام",
+  "organize": "سازمان‌دهی",
+  "pkmCategoryProject": "پروژه",
+  "pkmCategoryProjectSubtitle": "کوتاه‌مدت · اهداف · مهلت‌ها",
+  "pkmCategoryArea": "حوزه",
+  "pkmCategoryAreaSubtitle": "بلندمدت · مسئولیت · استانداردها",
+  "pkmCategoryResource": "منابع",
+  "pkmCategoryResourceSubtitle": "علاقه‌مندی‌ها · الهام · ذخیره",
+  "pkmCategoryArchive": "بایگانی",
+  "pkmCategoryArchiveSubtitle": "انجام‌شده · غیرفعال · مرجع",
+  "recentChanges": "تغییرات اخیر",
+  "noRecentChangesInThreeDays": "در ۳ روز گذشته تغییری نبوده است",
+  "unpinned": "سنجاق برداشته شد",
+  "pinnedStyle": "سبک سنجاق شد",
+  "@operationFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "operationFailed": "عملیات ناموفق بود: {error}",
+  "refreshingInsightData": "در حال به‌روزرسانی داده‌های بینش، ممکن است کمی طول بکشد...",
+  "@refreshFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "refreshFailed": "به‌روزرسانی ناموفق بود: {error}",
+  "sortUpdated": "ترتیب مرتب‌سازی به‌روزرسانی شد",
+  "@sortSaveFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "sortSaveFailed": "ذخیره مرتب‌سازی ناموفق بود: {error}",
+  "insightCardDeleted": "کارت بینش حذف شد",
+  "@deleteFailedShort": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "deleteFailedShort": "حذف ناموفق بود: {error}",
+  "knowledgeInsight": "بینش دانشی",
+  "completeSort": "تکمیل مرتب‌سازی",
+  "noKnowledgeInsight": "بینشی وجود ندارد",
+  "@insightProcessingBacklogMessage": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "insightProcessingBacklogMessage": "{count} وظیفه پس‌زمینه هنوز در حال پردازش است.",
+  "insightUnavailableMessage": "این بینش هنوز در حال تولید است یا به‌روزرسانی شده. بینش‌ها را تازه‌سازی کنید و بعداً دوباره امتحان کنید.",
+  "artifactOpen": "باز کردن",
+  "updating": "در حال به‌روزرسانی...",
+  "update": "به‌روزرسانی",
+  "enabled": "فعال",
+  "disabled": "غیرفعال",
+  "appLockOn": "قفل برنامه فعال شد",
+  "appLockOff": "قفل برنامه غیرفعال شد",
+  "enableAppLockFirst": "لطفاً ابتدا قفل برنامه را فعال کنید",
+  "enterFourDigitPassword": "رمز ۴ رقمی را وارد کنید",
+  "passwordSetAndLockOn": "رمز تنظیم شد و قفل برنامه فعال شد",
+  "appLockSettings": "تنظیمات قفل برنامه",
+  "enableAppLock": "فعال‌سازی قفل برنامه",
+  "enableAppLockSubtitle": "هنگام باز کردن برنامه رمز لازم است",
+  "enableBiometrics": "فعال‌سازی بیومتریک",
+  "biometricsSubtitle": "برای باز کردن از Face ID یا Touch ID استفاده کنید",
+  "changePassword": "تغییر رمز",
+  "setFourDigitPassword": "تنظیم رمز ۴ رقمی",
+  "reenterPasswordToConfirm": "رمز را دوباره برای تأیید وارد کنید",
+  "passwordMismatch": "رمزها مطابقت ندارند. لطفاً دوباره امتحان کنید.",
+  "@confirmDeleteCharacter": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "confirmDeleteCharacter": "شخصیت «{name}» حذف شود؟ این کار قابل بازگشت نیست.",
+  "configureAiCharacter": "پیکربندی شخصیت هوش مصنوعی",
+  "addCharacter": "افزودن شخصیت",
+  "addCharacterSubtitle": "شخصیت‌های هوش مصنوعی را برای پیوستن به تیم بینش خود انتخاب کنید. آن‌ها داده‌های زندگی شما را از زوایای مختلف تحلیل می‌کنند.",
+  "noCharacters": "شخصیتی وجود ندارد",
+  "@loadCharacterFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadCharacterFailed": "بارگذاری شخصیت‌ها ناموفق بود: {error}",
+  "noTags": "برچسبی وجود ندارد",
+  "createSuccess": "با موفقیت ایجاد شد",
+  "updateSuccess": "با موفقیت به‌روزرسانی شد",
+  "@saveFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "saveFailed": "ذخیره ناموفق بود: {error}",
+  "newCharacter": "شخصیت جدید",
+  "editCharacter": "ویرایش شخصیت",
+  "save": "ذخیره",
+  "characterName": "نام شخصیت",
+  "characterNameHint": "برای شخصیت خود نامی انتخاب کنید",
+  "pleaseEnterCharacterName": "لطفاً نام شخصیت را وارد کنید",
+  "tagsLabel": "برچسب‌ها",
+  "tagsHint": "مثلاً wisdom، recognition، macro\nبرچسب‌های متعدد را با ویرگول جدا کنید",
+  "characterPersonaLabel": "شخصیت‌پردازی",
+  "characterPersonaHint": "شخصیت‌پردازی، راهنمای سبک، نمونه گفت‌وگو، فیلترهای دانش و غیره را وارد کنید.\nبرای سرتیتر بخش‌ها از ## استفاده کنید.",
+  "pleaseEnterCharacterPersona": "لطفاً شخصیت‌پردازی را وارد کنید",
+  "@permissionRequestError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "permissionRequestError": "خطای درخواست مجوز: {error}",
+  "permissionRequiredTitle": "مجوز لازم است",
+  "permissionPermanentlyDeniedMessage": "این مجوز را برای همیشه رد کرده‌اید یا سیستم آن را الزامی کرده است. لطفاً در تنظیمات سیستم آن را فعال کنید.",
+  "getting": "در حال دریافت...",
+  "unauthorized": "غیرمجاز",
+  "authorizedGoToSettings": "مجاز. برای تغییر به تنظیمات سیستم بروید.",
+  "location": "مکان",
+  "locationPermissionReason": "برای ثبت مکان‌ها و قابلیت‌های مرتبط با موقعیت",
+  "photos": "عکس‌ها",
+  "photosPermissionReason": "برای انتخاب عکس، ذخیره تصاویر تولیدشده و غیره",
+  "camera": "دوربین",
+  "cameraPermissionReason": "برای گرفتن عکس و ویدیو",
+  "microphone": "میکروفون",
+  "microphonePermissionReason": "برای تشخیص گفتار، ضبط و غیره",
+  "calendarPermissionReason": "برای ثبت برنامه و خواندن رویدادهای تقویم",
+  "remindersPermissionReason": "برای ثبت و خواندن یادآورهای شما",
+  "fitnessAndMotion": "تناسب اندام و حرکت",
+  "fitnessPermissionReason": "برای ثبت داده‌های سلامت و حرکت",
+  "notification": "اعلان",
+  "notificationPermissionReason": "برای ارسال برنامه و یادآورهای مهم",
+  "memexAgentNotificationPermissionTitle": "اجرای Memex Agent در پس‌زمینه",
+  "memexAgentNotificationPermissionMessage": "Memex Agent به‌صورت محلی روی دستگاه شما اجرا می‌شود. اعلان‌ها به Memex اجازه می‌دهند پیشرفت را نشان دهد و پس از خروج از برنامه یا خاموش کردن صفحه، پردازش را ادامه دهد. اگر اعلان‌ها خاموش باشند، تا پایان وظیفه Memex را در پیش‌زمینه باز نگه دارید.",
+  "loadDetailFailedRetryShort": "بارگذاری جزئیات ناموفق بود، لطفاً بعداً دوباره امتحان کنید.",
+  "total": "جمع",
+  "estimatedCost": "هزینه تخمینی",
+  "byAgent": "بر اساس عامل",
+  "timeUpdated": "زمان به‌روزرسانی شد",
+  "@updateFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "updateFailed": "به‌روزرسانی ناموفق بود: {error}",
+  "locationUpdated": "مکان به‌روزرسانی شد",
+  "confirmDeleteCardMessage": "این کارت حذف شود؟ این کار قابل بازگشت نیست.",
+  "cardDetailNotFound": "جزئیات کارت یافت نشد",
+  "saySomething": "چیزی بنویسید...",
+  "relatedMemories": "خاطرات مرتبط",
+  "viewMore": "مشاهده بیشتر",
+  "relatedRecords": "سوابق مرتبط",
+  "reply": "پاسخ",
+  "replySent": "پاسخ ارسال شد",
+  "insightTemplateGalleryTitle": "قالب‌های کارت بینش",
+  "timelineTemplateGalleryTitle": "قالب‌های کارت خط زمانی",
+  "categoryTextual": "متنی",
+  "timelineFilterAll": "همه",
+  "insights": "بینش‌ها",
+  "memoryTitle": "حافظه",
+  "longTermProfile": "پروفایل بلندمدت",
+  "recentBuffer": "بافر اخیر",
+  "@errorLoadingMemory": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "errorLoadingMemory": "خطا در بارگذاری حافظه: {error}",
+  "agentConfiguration": "پیکربندی عامل",
+  "resetToDefaults": "بازنشانی به پیش‌فرض",
+  "resetAllAgentConfigurationsTitle": "بازنشانی همه پیکربندی‌های عامل",
+  "resetAllAgentConfigurationsMessage": "آیا مطمئن هستید می‌خواهید همه پیکربندی‌های عامل را به مقادیر پیش‌فرض بازنشانی کنید؟ این کار قابل بازگشت نیست.",
+  "resetButton": "بازنشانی",
+  "@loadDataFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadDataFailed": "بارگذاری داده ناموفق بود: {error}",
+  "@saveConfigFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "saveConfigFailed": "ذخیره پیکربندی ناموفق بود: {error}",
+  "selectLlmClient": "انتخاب کلاینت LLM:",
+  "agentConfigurationsReset": "پیکربندی‌های عامل بازنشانی شد",
+  "@resetFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "resetFailed": "بازنشانی ناموفق بود: {error}",
+  "modelConfiguration": "پیکربندی مدل",
+  "resetAllConfigurationsTitle": "بازنشانی همه پیکربندی‌ها",
+  "resetAllModelConfigurationsMessage": "آیا مطمئن هستید می‌خواهید همه پیکربندی‌های مدل را به مقادیر پیش‌فرض بازنشانی کنید؟ این کار قابل بازگشت نیست.",
+  "modelConfigurationsReset": "پیکربندی‌های مدل بازنشانی شد",
+  "cannotDeleteDefaultConfiguration": "پیکربندی پیش‌فرض قابل حذف نیست",
+  "cannotDeleteConfigurationTitle": "حذف پیکربندی ممکن نیست",
+  "@configUsedByAgentsMessage": {
+    "placeholders": {
+      "agentList": {}
+    }
+  },
+  "configUsedByAgentsMessage": "این پیکربندی در حال حاضر توسط عامل‌های زیر استفاده می‌شود:\n\n{agentList}\n\nلطفاً قبل از حذف، این عامل‌ها را تخصیص مجدد دهید.",
+  "ok": "باشه",
+  "deleteConfigurationTitle": "حذف پیکربندی",
+  "@confirmDeleteConfigMessage": {
+    "placeholders": {
+      "key": {}
+    }
+  },
+  "confirmDeleteConfigMessage": "آیا مطمئن هستید می‌خواهید «{key}» را حذف کنید؟",
+  "defaultLabel": "پیش‌فرض",
+  "setAsDefault": "تنظیم به‌عنوان پیش‌فرض",
+  "invalidJsonInExtraField": "JSON نامعتبر در فیلد Extra",
+  "keyAlreadyExists": "کلید از قبل وجود دارد",
+  "resetConfigurationTitle": "بازنشانی پیکربندی",
+  "resetConfigurationMessage": "این پیکربندی به مقادیر پیش‌فرض اولیه بازنشانی شود؟ تغییرات فعلی از بین می‌روند.",
+  "configurationResetPressSave": "پیکربندی بازنشانی شد. برای اعمال دکمه ذخیره را بزنید.",
+  "addConfiguration": "افزودن پیکربندی",
+  "editConfiguration": "ویرایش پیکربندی",
+  "duplicateConfiguration": "تکثیر پیکربندی",
+  "duplicate": "تکثیر",
+  "keyIdLabel": "شناسه پیکربندی",
+  "keyIdHelper": "نامی برای این پیکربندی انتخاب کنید، مثل deepseek یا work-gpt.",
+  "required": "الزامی",
+  "clientLabel": "ارائه‌دهنده مدل",
+  "providerGroupOpenAi": "OpenAI",
+  "providerGroupAnthropic": "Anthropic",
+  "providerGroupGoogle": "Google",
+  "providerGroupOthers": "محبوب",
+  "providerOpenAiApiKey": "کلید API",
+  "providerOpenAiResponses": "کلید API (Responses)",
+  "providerChatGptOauth": "ChatGPT Pro/Plus",
+  "providerClaudeApiKey": "کلید API",
+  "providerBedrockSecret": "رمز Bedrock",
+  "providerGemini": "Gemini",
+  "providerGeminiOauth": "Gemini (Google OAuth)",
+  "providerKimi": "Kimi (Moonshot)",
+  "providerQwen": "Aliyun",
+  "providerSeed": "Volcengine",
+  "providerZhipu": "Zhipu GLM",
+  "providerDeepSeek": "DeepSeek",
+  "providerMinimax": "MiniMax",
+  "providerOpenRouter": "OpenRouter",
+  "providerOllama": "Ollama (محلی)",
+  "providerMimo": "Xiaomi MIMO",
+  "providerMemex": "سرویس پراکسی Memex",
+  "memexSignIn": "ورود",
+  "memexCreateAccount": "ایجاد حساب",
+  "memexUsername": "نام کاربری",
+  "memexPassword": "رمز عبور",
+  "memexCreateAccountLink": "ایجاد حساب",
+  "memexSignInLink": "ورود به‌جای آن",
+  "memexTopUp": "برای شروع استفاده از Memex AI، حساب را شارژ کنید",
+  "memexTopUpSuccess": "شارژ حساب با موفقیت انجام شد!",
+  "memexFillAllFields": "لطفاً همه فیلدها را پر کنید",
+  "memexUsernameTooShort": "نام کاربری باید حداقل ۶ کاراکتر باشد",
+  "memexAuthFailed": "احراز هویت ناموفق بود",
+  "memexPaymentFailed": "ایجاد پرداخت ناموفق بود",
+  "memexLogout": "خروج",
+  "memexTopUpButton": "شارژ",
+  "memexTopUpChooseAmount": "مبلغ را انتخاب کنید",
+  "memexTopUpEstimatedRecords": "حدود {range} رکورد",
+  "@memexTopUpEstimatedRecords": {
+    "placeholders": {
+      "range": {}
+    }
+  },
+  "memexTopUpPlanStarter": "شروع",
+  "memexTopUpPlanEveryday": "روزانه",
+  "memexTopUpPlanHighVolume": "حجم بالا",
+  "memexTopUpPlanCustom": "اعتبار سفارشی",
+  "memexTopUpPlanStarterSubtitle": "مناسب برای آزمایش Memex AI",
+  "memexTopUpPlanEverydaySubtitle": "مناسب برای سازماندهی روزانه",
+  "memexTopUpPlanHighVolumeSubtitle": "مناسب برای پردازش‌های بزرگ‌تر",
+  "memexTopUpPlanCustomSubtitle": "مبلغ بین ۱ تا ۱۰٬۰۰۰ دلار وارد کنید",
+  "memexTopUpCustomEstimate": "برآورد بر اساس مبلغ واردشده محاسبه می‌شود",
+  "memexCustomAmount": "مبلغ سفارشی",
+  "memexViewHistory": "تاریخچه استفاده",
+  "memexBalanceLabel": "موجودی: {amount}",
+  "@memexBalanceLabel": {
+    "placeholders": {
+      "amount": {}
+    }
+  },
+  "memexConfirmPassword": "تأیید رمز عبور",
+  "memexPasswordMismatch": "رمزهای عبور یکسان نیستند",
+  "memexPayAmount": "شارژ {amount}",
+  "@memexPayAmount": {
+    "placeholders": {
+      "amount": {}
+    }
+  },
+  "modelIdLabel": "مدل",
+  "modelIdHelper": "مثال: gemini-3.1-pro-preview، gpt-4o",
+  "fetchingModels": "در حال دریافت مدل‌ها...",
+  "fetchModelsButton": "دریافت مدل‌ها",
+  "enterApiKeyFirst": "ابتدا کلید API را وارد کنید تا مدل‌ها دریافت شوند",
+  "apiKeyLabel": "کلید API",
+  "baseUrlLabel": "نقطه پایانی API",
+  "advancedSettings": "تنظیمات پیشرفته",
+  "testConnectionSuccess": "اتصال موفق",
+  "testConnectionFailed": "اتصال ناموفق",
+  "testTypeText": "متن",
+  "testTypeVision": "بینایی",
+  "testButton": "آزمون",
+  "testing": "در حال آزمون...",
+  "proxyUrlOptional": "آدرس پروکسی (اختیاری)",
+  "proxyUrlHelper": "مثال: http://127.0.0.1:7890",
+  "temperatureLabel": "دما",
+  "topPLabel": "Top P",
+  "maxTokensLabel": "حداکثر توکن",
+  "extraParamsJson": "پارامترهای اضافی (JSON)",
+  "invalidJson": "JSON نامعتبر",
+  "warning": "تنظیمات ناقص",
+  "invalidConfigurationWarning": "پیکربندی هنوز کامل نیست (مثلاً کلید API یا شناسه مدل وارد نشده). می‌توانید ذخیره کنید و بعداً تکمیلش کنید. ادامه می‌دهید؟",
+  "invalidModelConfigDetailed": "عامل هوش مصنوعی «{agentId}» برای کارکرد به پیکربندی معتبر مدل (کلید: «{configKey}») نیاز دارد. لطفاً تنظیمات مدل را بررسی کنید.",
+  "discardChangesTitle": "این صفحه را ترک می‌کنید؟",
+  "discardChangesMessage": "اگر تغییری داده‌اید، قبل از خروج آن را ذخیره کنید.",
+  "discardButton": "صرف‌نظر",
+  "chooseLanguage": "انتخاب زبان",
+  "chooseAvatar": "انتخاب آواتار",
+  "configureNow": "اکنون پیکربندی کنید",
+  "modelNotConfiguredBanner": "مدل هوش مصنوعی هنوز پیکربندی نشده. برای فعال‌سازی همه قابلیت‌ها آن را تنظیم کنید.",
+  "modelNotConfiguredSubmitHint": "لطفاً قبل از انتشار، یک مدل هوش مصنوعی پیکربندی کنید",
+  "processingStatus": "در حال پردازش",
+  "failedStatus": "ناموفق",
+  "failureReason": "دلیل خطا",
+  "unknownError": "خطای ناشناخته رخ داد",
+  "enableFitness": "فعال‌سازی تناسب اندام",
+  "fitnessBannerMessage": "برای ردیابی داده‌های سلامت و فعالیت، دسترسی به تناسب اندام را مجاز کنید.",
+  "fitnessDismissTitle": "رد کردن دسترسی به تناسب اندام؟",
+  "fitnessDismissMessage": "بدون مجوز تناسب اندام، برنامه نمی‌تواند به‌طور خودکار داده‌های سلامت شما را برای بینش‌ها و ثبت خودکار جمع‌آوری کند.",
+  "skipAnyway": "با این حال رد شو",
+  "proModelHint": "این مدل به اشتراک ChatGPT Pro/Plus نیاز دارد.",
+  "searchKnowledgeBase": "جستجو در پایگاه دانش...",
+  "searchKnowledgeHint": "کلیدواژه‌ای برای جستجو در نام یا محتوای فایل‌ها وارد کنید",
+  "@noSearchResults": {
+    "placeholders": {
+      "query": {}
+    }
+  },
+  "noSearchResults": "نتیجه‌ای برای «{query}» یافت نشد",
+  "onlyMarkdownPreview": "فقط پیش‌نمایش Markdown پشتیبانی می‌شود",
+  "backupAndRestore": "پشتیبان‌گیری و بازیابی",
+  "createBackup": "ایجاد پشتیبان",
+  "restoreBackup": "بازیابی پشتیبان",
+  "backupDescription": "همه داده‌های شما (کارت‌ها، پایگاه دانش، بینش‌ها، تنظیمات) را در یک فایل .memex بسته‌بندی کنید. از طریق برگه اشتراک‌گذاری آن را در iCloud Drive، Google Drive یا هر مکان دیگری ذخیره کنید.",
+  "restoreDescription": "یک فایل پشتیبان .memex انتخاب کنید تا همه داده‌ها بازیابی شوند. این کار داده‌های فعلی را بازنویسی می‌کند.",
+  "selectBackupFile": "انتخاب فایل پشتیبان",
+  "estimatedSize": "حجم تقریبی",
+  "backupComplete": "پشتیبان ایجاد شد",
+  "@backupFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "backupFailed": "پشتیبان‌گیری ناموفق بود: {error}",
+  "confirmRestore": "تأیید بازیابی",
+  "confirmRestoreMessage": "بازیابی همه داده‌های فعلی از جمله کارت‌ها، پایگاه دانش، بینش‌ها و تنظیمات را بازنویسی می‌کند. این کار قابل بازگشت نیست. ادامه می‌دهید؟",
+  "restoreComplete": "بازیابی کامل شد",
+  "restoreRestartHint": "داده‌ها بازیابی شدند. برای اعمال همه تغییرات، برنامه را مجدداً راه‌اندازی کنید.",
+  "@restoreFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "restoreFailed": "بازیابی ناموفق بود: {error}",
+  "invalidBackupFile": "فایل پشتیبان نامعتبر است. لطفاً یک فایل .memex انتخاب کنید.",
+  "automaticBackup": "پشتیبان‌گیری خودکار",
+  "autoBackupDescription": "در صورت فعال بودن، Memex حداکثر یک نسخه محلی در روز پس از راه‌اندازی یا بازگشت به پیش‌زمینه ایجاد می‌کند.",
+  "backupSensitiveSettingsHint": "پشتیبان‌ها شامل تنظیمات و کلیدهای ارائه‌دهنده مدل هستند. فایل‌های پشتیبان را در مکانی امن نگه دارید.",
+  "backupLocation": "مکان",
+  "backupLocationDetails": "جزئیات مکان",
+  "backupLocationSummary": "نمایش در برنامه",
+  "backupLocationFullPath": "مسیر کامل",
+  "backupLocationUri": "URI دسترسی به پوشه",
+  "copyBackupLocationPath": "کپی مسیر",
+  "backupLocationCopied": "مکان پشتیبان کپی شد",
+  "androidBackupLocationSelected": "پوشه انتخاب‌شده: {folderName}",
+  "@androidBackupLocationSelected": {
+    "placeholders": {
+      "folderName": {}
+    }
+  },
+  "iosICloudBackupLocation": "iCloud Drive > Memex > Backups",
+  "iosAppDocumentsBackupLocation": "Files > On My iPhone > Memex > Backups",
+  "autoBackupStatus": "وضعیت",
+  "noAutoBackupYet": "هنوز پشتیبان خودکاری وجود ندارد",
+  "@lastBackupAt": {
+    "placeholders": {
+      "time": {}
+    }
+  },
+  "lastBackupAt": "آخرین پشتیبان: {time}",
+  "autoBackupRetention": "نگهداری",
+  "@autoBackupRetentionDays": {
+    "placeholders": {
+      "days": {}
+    }
+  },
+  "autoBackupRetentionDays": "{days} روز",
+  "autoBackupRetentionForever": "نگهداری دائمی",
+  "autoBackupMaxSize": "سقف فضای ذخیره‌سازی",
+  "@autoBackupRetentionLimitHint": {
+    "placeholders": {
+      "size": {}
+    }
+  },
+  "autoBackupRetentionLimitHint": "پاک‌سازی خودکار نسخه‌های خودکار را زیر {size} نگه می‌دارد. نسخه‌های ایمنی و خروجی‌های دستی جداگانه نگه داشته می‌شوند.",
+  "createSnapshotNow": "اکنون پشتیبان بگیر",
+  "backupLocationMenu": "تغییر مکان",
+  "defaultBackupLocation": "پوشه پیش‌فرض پشتیبان",
+  "defaultBackupLocationAndroidDesc": "از پوشه فایل‌های خارجی اختصاصی Memex استفاده کنید. نیازی به مجوز ذخیره‌سازی نیست.",
+  "chooseBackupLocation": "انتخاب پوشه پشتیبان",
+  "chooseBackupLocationAndroidDesc": "با انتخابگر سیستم Android یک پوشه انتخاب کنید و به Memex دسترسی دائمی بدهید.",
+  "storedBackups": "پشتیبان‌های ذخیره‌شده",
+  "noStoredBackups": "پس از اولین نسخه، پشتیبان‌های خودکار اینجا نمایش داده می‌شوند.",
+  "backupTypeAutoSnapshot": "نسخه خودکار",
+  "backupTypeSafetySnapshot": "نسخه ایمنی",
+  "backupTypeManualBackup": "پشتیبان دستی",
+  "refresh": "بازخوانی",
+  "restoreThisBackup": "بازیابی این پشتیبان",
+  "deleteThisBackup": "حذف این پشتیبان",
+  "confirmDeleteBackup": "پشتیبان حذف شود؟",
+  "@confirmDeleteBackupMessage": {
+    "placeholders": {
+      "fileName": {}
+    }
+  },
+  "confirmDeleteBackupMessage": "{fileName} حذف شود؟ این کار فایل پشتیبان ذخیره‌شده را حذف می‌کند و قابل بازگشت نیست.",
+  "@backupDeleted": {
+    "placeholders": {
+      "fileName": {}
+    }
+  },
+  "backupDeleted": "پشتیبان حذف شد: {fileName}",
+  "@backupDeleteFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "backupDeleteFailed": "حذف پشتیبان ممکن نشد: {error}",
+  "creatingSafetySnapshot": "در حال ایجاد نسخه ایمنی...",
+  "@autoBackupCreated": {
+    "placeholders": {
+      "fileName": {}
+    }
+  },
+  "autoBackupCreated": "نسخه ایجاد شد: {fileName}",
+  "@backupLocationFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "backupLocationFailed": "به‌روزرسانی مکان پشتیبان ممکن نشد: {error}",
+  "backupImportCreatedAt": "ایجاد شده",
+  "backupImportSourceVersion": "نسخه منبع",
+  "backupImportFlavor": "ساخت",
+  "backupLegacyFormat": "پشتیبان قدیمی (بدون مانیفست)",
+  "restoreInProgress": "در حال بازیابی پشتیبان...",
+  "dataStorage": "ذخیره‌سازی داده",
+  "dataStorageDescriptionAndroid": "یک پوشه سفارشی برای ذخیره فضای کاری انتخاب کنید. داده‌ها پس از نصب مجدد برنامه حفظ می‌شوند.",
+  "dataStorageDescriptionIOS": "iCloud را فعال کنید تا فضای کاری در دستگاه‌ها همگام‌سازی شود و پس از نصب مجدد حفظ بماند.",
+  "storageLocationApp": "ذخیره‌سازی در برنامه",
+  "storageLocationAppDesc": "داده‌ها داخل برنامه ذخیره می‌شوند و با حذف برنامه پاک می‌شوند.",
+  "storageLocationCustom": "ذخیره‌سازی دستگاه (پوشه سفارشی)",
+  "storageLocationCustomDesc": "داده‌ها در پوشه‌ای که انتخاب می‌کنید ذخیره می‌شوند. اگر پوشه باقی بماند، پس از نصب مجدد حفظ می‌شوند.",
+  "storageLocationICloud": "ذخیره در iCloud",
+  "storageLocationICloudDesc": "فضای کاری را در دستگاه‌های Apple همگام‌سازی کنید. داده‌ها پس از نصب مجدد باقی می‌مانند.",
+  "storageLocationCurrent": "فعلی: {location}",
+  "icloudRequiresCapability": "برای استفاده از ذخیره‌سازی iCloud، به iCloud وارد شوید و iCloud Drive را فعال کنید.",
+  "loadingFromICloud": "در حال بازیابی داده از iCloud…",
+  "switchingToICloud": "در حال تغییر به ذخیره‌سازی iCloud…",
+  "switchingStorage": "در حال تغییر محل ذخیره‌سازی…",
+  "customFolderAccessDenied": "خواندن یا نوشتن در این پوشه ممکن نیست. لطفاً مجوز ذخیره‌سازی بدهید یا مکان دیگری انتخاب کنید.",
+  "@storageLocationCurrent": {
+    "placeholders": {
+      "location": {}
+    }
+  },
+  "configured": "پیکربندی شده",
+  "apiKeyNotSet": "کلید API تنظیم نشده — برای پیکربندی ضربه بزنید",
+  "bottomNavTimeline": "خط زمانی",
+  "bottomNavLibrary": "کتابخانه",
+  "aiGeneratedLabel": "تولیدشده با هوش مصنوعی",
+  "@sourceTraceWithCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "sourceTraceWithCount": "ردیابی منبع ({count})",
+  "deleteAccount": "حذف حساب",
+  "deleteAccountDesc": "همه داده‌های محلی را برای همیشه حذف و برنامه را بازنشانی کنید.",
+  "deleteAccountConfirmTitle": "حساب حذف شود؟",
+  "deleteAccountConfirmMessage": "این کار همه داده‌های شما از جمله کارت‌های خط زمانی، پایگاه دانش، ضبط‌ها و تنظیمات را برای همیشه حذف می‌کند. این عمل قابل بازگشت نیست.",
+  "deleteAccountTypeName": "برای تأیید «{name}» را تایپ کنید",
+  "@deleteAccountTypeName": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "deleteAccountTypeHint": "نام کاربری خود را برای تأیید وارد کنید",
+  "llmConsentTitle": "رضایت‌نامه اشتراک‌گذاری داده",
+  "llmConsentMessage": "برای فعال‌سازی قابلیت‌های هوش مصنوعی، Memex باید داده‌های شما را برای پردازش به {provider} ارسال کند. این شامل موارد زیر است:\n\n• متنی که وارد می‌کنید (یادداشت‌ها، رونوشت صدا)\n• فراداده عکس و متن استخراج‌شده (OCR)\n• خلاصه‌های سلامت و تناسب اندام\n• محتوای کارت‌های خط زمانی\n\nداده‌های شما مستقیماً از دستگاه شما به {provider} ارسال می‌شوند. Memex داده‌های شما را در هیچ سرور دیگری ذخیره یا منتقل نمی‌کند.\n\nلطفاً سیاست حریم خصوصی {provider} را درباره نحوه مدیریت داده‌هایتان مطالعه کنید.\n\nآیا با ارسال داده‌هایتان به {provider} برای پردازش هوش مصنوعی موافقید؟",
+  "@llmConsentMessage": {
+    "placeholders": {
+      "provider": {}
+    }
+  },
+  "llmConsentAgree": "موافقم",
+  "llmConsentDecline": "رد",
+  "customAgents": "عامل‌های سفارشی",
+  "noCustomAgents": "عامل سفارشی پیکربندی نشده است.",
+  "deleteAgent": "حذف عامل",
+  "deleteAgentConfirm": "عامل سفارشی «{name}» حذف شود؟",
+  "@deleteAgentConfirm": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "deleted": "حذف شد",
+  "saved": "ذخیره شد",
+  "newAgent": "عامل جدید",
+  "editAgent": "ویرایش عامل",
+  "agentName": "نام عامل",
+  "agentNameHint": "my-custom-agent",
+  "agentNameRequired": "الزامی",
+  "agentNameInvalid": "فقط حروف، اعداد و خط تیره",
+  "agentNameExists": "این نام از قبل وجود دارد",
+  "hostAgentType": "نوع عامل میزبان",
+  "skillDirectory": "پوشه مهارت",
+  "skillDirInvalid": "باید مسیر نسبی باشد (بدون / یا .. در ابتدا)",
+  "workingDirectory": "پوشه کاری (اختیاری)",
+  "workingDirectoryHint": "برای پیش‌فرض فضای کاری خالی بگذارید",
+  "llmConfig": "پیکربندی LLM",
+  "eventType": "نوع رویداد",
+  "executionMode": "حالت اجرا",
+  "executionModeAsync": "ناهمزمان",
+  "executionModeSync": "همزمان",
+  "dependsOn": "وابسته به",
+  "dependsOnHint": "وابستگی‌ها را انتخاب کنید",
+  "priority": "اولویت",
+  "maxRetries": "حداکثر تلاش مجدد",
+  "systemPromptLabel": "دستور سیستم (اختیاری)",
+  "systemPromptHint": "دستورالعمل‌های اضافی که به دستور عامل میزبان اضافه می‌شوند",
+  "eventSerializer": "سریال‌ساز رویداد",
+  "eventSerializerDefault": "پیش‌فرض (XML)",
+  "enabledLabel": "فعال",
+  "skillsManagement": "مدیریت مهارت‌ها",
+  "skillsManagementEmpty": "هنوز مهارتی وجود ندارد",
+  "downloadSkill": "دانلود مهارت",
+  "downloadFile": "دانلود فایل",
+  "downloading": "در حال دانلود...",
+  "downloadSuccess": "مهارت با موفقیت دانلود شد",
+  "downloadFailed": "دانلود ناموفق بود: {error}",
+  "@downloadFailed": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "deleteConfirm": "تأیید حذف",
+  "deleteConfirmMessage": "آیا مطمئنید که می‌خواهید «{name}» را حذف کنید؟",
+  "@deleteConfirmMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "invalidUrl": "لطفاً یک URL معتبر وارد کنید",
+  "urlHint": "https://example.com/skill.zip",
+  "newFolder": "پوشه جدید",
+  "newFile": "فایل جدید",
+  "folderName": "نام پوشه",
+  "fileName": "نام فایل",
+  "nameRequired": "نام الزامی است",
+  "nameInvalid": "نام نمی‌تواند شامل / یا .. باشد",
+  "createFailed": "ایجاد ناموفق بود: {error}",
+  "@createFailed": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "fileContent": "محتوای فایل",
+  "saveSuccess": "با موفقیت ذخیره شد",
+  "downloadToCurrentDir": "فایل zip در پوشهٔ فعلی استخراج خواهد شد: {dir}",
+  "@downloadToCurrentDir": {
+    "placeholders": {
+      "dir": {
+        "type": "String"
+      }
+    }
+  },
+  "privacyPolicy": "سیاست حریم خصوصی",
+  "privacyPolicyDesc": "نحوهٔ رسیدگی Memex به داده‌های شما",
+  "llmAuthError": "احراز هویت API ناموفق بود. لطفاً پیکربندی LLM خود را در تنظیمات بررسی کنید.",
+  "llmBadRequestError": "درخواست توسط ارائه‌دهندهٔ LLM رد شد. ممکن است قالب ورودی توسط مدل فعلی پشتیبانی نشود.",
+  "llmRateLimitError": "محدودیت نرخ API فراتر رفت. لطفاً بعداً دوباره تلاش کنید.",
+  "llmServerError": "سرویس LLM موقتاً در دسترس نیست. لطفاً بعداً دوباره تلاش کنید.",
+  "llmNetworkError": "اتصال شبکه برقرار نشد. لطفاً اتصال اینترنت خود را بررسی کنید.",
+  "llmUnknownError": "هنگام پردازش محتوای شما خطای غیرمنتظره‌ای رخ داد.",
+  "llmErrorDialogTitle": "پردازش ناموفق بود",
+  "goToModelConfig": "رفتن به تنظیمات",
+  "speechModelDownloadTitle": "دانلود مدل گفتار",
+  "speechModelDownloadDesc": "یک دانلود یک‌بارهٔ مدل (~{sizeMB} مگابایت) لازم است.\n\nپس از دانلود، رونویسی کاملاً روی دستگاه انجام می‌شود.",
+  "@speechModelDownloadDesc": {
+    "placeholders": {
+      "sizeMB": {}
+    }
+  },
+  "speechModelStartDownload": "شروع دانلود",
+  "speechModelChooseSource": "منبع دانلود را انتخاب کنید:",
+  "speechModelChinaMirror": "🇨🇳 آینهٔ چین (سریع‌تر در چین)",
+  "speechModelGithub": "🌐 GitHub (جهانی)",
+  "speechModelDownloading": "در حال دانلود مدل...",
+  "speechModelConnecting": "در حال اتصال...",
+  "deleteSpeechModel": "حذف مدل گفتار",
+  "confirmDeleteSpeechModelMessage": "فایل‌های مدل تشخیص گفتار محلی دانلودشده حذف شوند؟ دفعهٔ بعدی که از گفتار به متن محلی استفاده کنید، دوباره دانلود خواهند شد.",
+  "speechModelDeletedSuccess": "فایل‌های مدل گفتار حذف شدند",
+  "speechModelNotDownloaded": "فایل مدل گفتار دانلودشده‌ای یافت نشد",
+  "speechModelDeleteFailed": "حذف فایل‌های مدل گفتار ناموفق بود: {error}",
+  "@speechModelDeleteFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "speechTranscribing": "در حال شناسایی...",
+  "speechNoResult": "گفتاری شناسایی نشد",
+  "useLocalSpeechToTextTitle": "استفاده از گفتار به متن محلی",
+  "useLocalSpeechToTextDesc": "در صورت فعال بودن، صدا قبل از ارسال روی دستگاه رونویسی می‌شود — برای مدل‌هایی که ورودی صوتی را پشتیبانی نمی‌کنند مفید است. در صورت غیرفعال بودن، صدای اصلی مستقیماً به مدل ارسال می‌شود.",
+  "pendingAiProcessingHint": "برای پردازش، مدل هوش مصنوعی را تنظیم کنید",
+  "demoWelcome": "به Memex خوش آمدید!\nبیایید سریعی ببینیم هوش مصنوعی چه کاری می‌تواند برای رکوردهای شما انجام دهد.",
+  "demoTapAdd": "اینجا بزنید تا اولین رکورد خود را بسازید",
+  "demoTapSend": "برای ارسال اولین رکورد بزنید",
+  "demoTapCard": "بزنید تا ببینید هوش مصنوعی رکورد شما را چگونه سازماندهی کرده",
+  "demoDetailHint": "این جزئیات رکورد سازماندهی‌شده توسط هوش مصنوعی است. پیمایش کنید، سپس برای ادامهٔ تور برگردید.",
+  "demoTapInsight": "برای دیدن بینش‌های تولیدشده توسط هوش مصنوعی بزنید",
+  "demoTapInsightUpdate": "برای تولید بینش از رکوردهای خود بزنید",
+  "demoTapKnowledge": "فایل‌های دانش سازماندهی‌شدهٔ خودکار خود را ببینید",
+  "demoDone": "زندگی خود را ثبت کنید.",
+  "demoStartTour": "شروع تور",
+  "demoGetStarted": "شروع کنید",
+  "demoSkip": "رد کردن",
+  "demoPrefillText": "سلام Memex! این اولین رکورد من است 🎉",
+  "visionBadge": "بینایی",
+  "notMultimodalHint": "Memex برای تحلیل رسانه به قابلیت‌های مدل چندوجهی متکی است. اگر رکوردهای شما تصویر دارند، مطمئن شوید مدل پیکربندی‌شده ورودی تصویر را پشتیبانی می‌کند.",
+  "defaultModelPrefix": "پیش‌فرض",
+  "recommendedBadge": "توصیه‌شده",
+  "readOnlyBadge": "گفتگو",
+  "switchCompanion": "تعویض همراه",
+  "personaChatInputHint": "پیامی بنویسید...",
+  "today": "امروز",
+  "tomorrow": "فردا",
+  "yesterday": "دیروز",
+  "showInsightTextTitle": "نمایش نظر بینش Memex",
+  "showInsightTextDesc": "نمایش بینش Memex به‌عنوان نظر سنجاق‌شده در بخش نظرات جزئیات کارت.",
+  "enableCharacterCommentTitle": "نظر خودکار شخصیت",
+  "enableCharacterCommentDesc": "شخصیت‌ها به‌طور خودکار روی رکوردهای جدید نظر می‌گذارند.",
+  "maxCommentCharactersTitle": "حداکثر شخصیت‌های نظردهنده",
+  "maxCommentCharactersDesc": "چند شخصیت می‌توانند روی هر رکورد نظر بگذارند.",
+  "replyTo": "پاسخ به {name}",
+  "@replyTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "cdnSignalsComments": "پاسخ جدید دریافت شد",
+  "cdnSignalsInsight": "بینش جدید تولید شد",
+  "cdnSignalsBoth": "پاسخ و بینش جدید",
+  "untitledCard": "کارت بدون عنوان",
+  "locationContextTitle": "زمینهٔ موقعیت مکانی",
+  "locationContextDescription": "زمینهٔ شهر و محلهٔ فعلی برای گفتگوی عامل",
+  "locationContextAttachTitle": "پیوست موقعیت فعلی به گفتگو",
+  "locationContextAttachDesc": "از GPS دستگاه و تبدیل مختصات به آدرس برای ارائهٔ زمینهٔ شهر، منطقه و محله به عامل استفاده می‌کند.",
+  "reverseGeocodingProvider": "ارائه‌دهندهٔ تبدیل مختصات به آدرس",
+  "amapProviderName": "Amap",
+  "amapApiKey": "کلید API Amap",
+  "amapGcj02Note": "Amap از مختصات GCJ-02 استفاده می‌کند. GPS دستگاه قبل از تبدیل به آدرس تبدیل می‌شود.",
+  "contextGranularity": "دقت زمینه",
+  "granularityCity": "شهر",
+  "granularityDistrict": "منطقه",
+  "granularityNeighborhood": "محله",
+  "granularityStreet": "خیابان",
+  "granularityFullAddress": "آدرس کامل احتمالی",
+  "locationFreshness": "تازگی موقعیت",
+  "minutesShort": "{minutes} دقیقه",
+  "@minutesShort": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "oneHour": "۱ ساعت",
+  "testCurrentLocation": "آزمون موقعیت فعلی",
+  "locationTestFailed": "ناموفق: {error}",
+  "@locationTestFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "locationDebugGps": "GPS",
+  "locationDebugReverseGeocode": "تبدیل به آدرس",
+  "locationDebugProvider": "ارائه‌دهنده",
+  "locationDebugAgentContext": "زمینهٔ عامل",
+  "locationDebugSource": "منبع",
+  "locationDebugAddressSummary": "خلاصهٔ آدرس",
+  "locationDebugFullAddress": "آدرس کامل",
+  "locationDebugCoordinates": "مختصات",
+  "locationDebugAccuracy": "دقت",
+  "locationDebugReason": "دلیل",
+  "locationDebugOk": "تأیید",
+  "locationDebugUnavailable": "در دسترس نیست",
+  "locationDebugInjected": "تزریق‌شده",
+  "locationDebugNotInjected": "تزریق‌نشده",
+  "locationStatusUpdatedAt": "به‌روزرسانی",
+  "locationStatusSuccessTitle": "موقعیت فعلی آماده است",
+  "locationStatusSuccessBody": "Memex می‌تواند این خلاصهٔ موقعیت را در صورت مرتبط بودن زمینهٔ مکانی پیوست کند.",
+  "locationStatusApproximateTitle": "فقط موقعیت تقریبی",
+  "locationStatusApproximateBody": "دقت در سطح شهر یا منطقه به نظر می‌رسد. می‌توانید از آن استفاده کنید، یا برای زمینهٔ دقیق‌تر موقعیت دقیق را در تنظیمات سیستم فعال کنید.",
+  "locationStatusServiceDisabledTitle": "موقعیت‌یابی سیستم خاموش است",
+  "locationStatusServiceDisabledBody": "Memex فقط از GPS دستگاه استفاده می‌کند و موقعیت را از شبکه یا IP حدس نمی‌زند. در Android تنظیمات موقعیت را باز کنید؛ در iOS تنظیمات > حریم خصوصی و امنیت > سرویس‌های موقعیت‌یابی را فعال کنید.",
+  "locationStatusPermissionDeniedTitle": "مجوز موقعیت مکانی لازم است",
+  "locationStatusPermissionDeniedBody": "به Memex اجازه دهید هنگام آزمون یا در صورت نیاز به زمینهٔ مکانی از موقعیت استفاده کند. دسترسی همیشگی درخواست نمی‌شود.",
+  "locationStatusPermissionForeverTitle": "مجوز موقعیت مسدود شده است",
+  "locationStatusPermissionForeverBody": "تنظیمات برنامه را باز کنید و موقعیت را برای Memex مجاز کنید. در iOS «هنگام استفاده از برنامه» کافی است.",
+  "locationStatusDisabledTitle": "زمینهٔ موقعیت مکانی خاموش است",
+  "locationStatusDisabledBody": "وقتی می‌خواهید Memex موقعیت دستگاه را به زمینهٔ عامل پیوست کند، کلید بالا را روشن کنید و ذخیره کنید.",
+  "locationStatusGeocodeUnavailableTitle": "GPS کار می‌کند، جستجوی آدرس ناموفق بود",
+  "locationStatusGeocodeUnavailableBody": "Memex مختصات را دارد اما زمینهٔ فقط GPS را به عامل تزریق نمی‌کند. ارائه‌دهندهٔ تبدیل مختصات به آدرس را بررسی کنید و دوباره تلاش کنید.",
+  "locationStatusUnavailableTitle": "موقعیت در دسترس نیست",
+  "locationStatusUnavailableBody": "سرویس‌های موقعیت‌یابی سیستم و مجوز برنامه را بررسی کنید، سپس دوباره آزمون کنید.",
+  "allowLocationPermissionButton": "مجاز کردن دسترسی موقعیت",
+  "openAppSettingsButton": "باز کردن تنظیمات برنامه",
+  "openLocationSettingsButton": "باز کردن تنظیمات موقعیت",
+  "locationSettingsOpenFailed": "باز کردن تنظیمات سیستم ممکن نشد.",
+  "locationActionFailed": "عملیات موقعیت ناموفق بود: {error}",
+  "@locationActionFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsSearchPlaceholder": "جستجو در تنظیمات...",
+  "settingsSearchEmpty": "تنظیمات مطابقتی یافت نشد",
+  "importCharacterCard": "وارد کردن کارت شخصیت",
+  "firstMessageLabel": "اولین پیام",
+  "firstMessageHint": "سلام ارسالی در اولین گفتگو (اختیاری)",
+  "systemPromptOverrideLabel": "جایگزینی دستور سیستم",
+  "systemPromptOverrideHint": "جایگزینی دستور سیستم پیش‌فرض (پیشرفته، اختیاری)",
+  "postHistoryInstructionsLabel": "دستورات پس از تاریخچه",
+  "postHistoryInstructionsHint": "دستورات تزریق‌شده پس از تاریخچهٔ گفتگو، قبل از پاسخ (اختیاری)",
+  "mesExampleLabel": "نمونه پیام‌ها",
+  "mesExampleHint": "گفتگوهای نمونه برای نمایش سبک شخصیت (اختیاری)",
+  "worldBookTitle": "کتاب جهان",
+  "worldBookSubtitle": "دانش پس‌زمینه تزریق‌شده هنگام فعال شدن کلیدواژه‌ها",
+  "characterMemoryTitle": "حافظهٔ شخصیت",
+  "characterMemorySubtitle": "پویایی رابطه و خاطرات تعامل بین شخصیت و کاربر",
+  "addTooltip": "افزودن",
+  "constantBadge": "ثابت",
+  "@worldEntryFallbackName": {
+    "placeholders": {
+      "index": {}
+    }
+  },
+  "worldEntryFallbackName": "ورودی {index}",
+  "@keywordsPrefix": {
+    "placeholders": {
+      "keys": {}
+    }
+  },
+  "keywordsPrefix": "کلیدواژه‌ها: {keys}",
+  "@memoryFallbackName": {
+    "placeholders": {
+      "index": {}
+    }
+  },
+  "memoryFallbackName": "خاطره {index}",
+  "addWorldEntry": "افزودن ورودی کتاب جهان",
+  "editWorldEntry": "ویرایش ورودی کتاب جهان",
+  "commentTitleLabel": "نظر / عنوان",
+  "entryDescriptionHint": "توضیح ورودی (اختیاری)",
+  "triggerKeywordsLabel": "کلیدواژه‌های محرک",
+  "triggerKeywordsHint": "با ویرگول جدا کنید، مثلاً: جادو، طلسم",
+  "contentLabel": "محتوا",
+  "worldEntryContentHint": "دانش پس‌زمینه تزریق‌شده هنگام فعال شدن کلیدواژه‌ها",
+  "enabledCheckbox": "فعال",
+  "addMemory": "افزودن خاطره",
+  "editMemory": "ویرایش خاطره",
+  "memoryLabelField": "برچسب",
+  "memoryLabelHint": "شناسهٔ یکتا، مثلاً: ترجیح نام",
+  "memoryContentHint": "محتوای خاطره",
+  "salienceLabel": "اهمیت: ",
+  "labelCannotBeEmpty": "برچسب نمی‌تواند خالی باشد",
+  "@importSuccess": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "importSuccess": "{name} با موفقیت وارد شد",
+  "@importFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "importFailed": "وارد کردن ناموفق بود: {error}",
+  "supportedFormats": "قالب‌های پشتیبانی‌شده",
+  "tavernImportDescription": "• کارت‌های شخصیت SillyTavern V2 (.json)\n• تصاویر PNG با کارت جاسازی‌شده (.png)\n\nفیلدهایی مانند شخصیت، کتاب جهان و غیره به‌طور خودکار به قالب شخصیت Memex نگاشت می‌شوند.",
+  "pickCharacterFile": "انتخاب فایل شخصیت",
+  "repickFile": "انتخاب فایل دیگر",
+  "personaSettingSection": "شخصیت",
+  "systemPromptSection": "دستور سیستم",
+  "@worldEntriesCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "worldEntriesCount": "کتاب جهان: {count} ورودی",
+  "@fileLabel": {
+    "placeholders": {
+      "filename": {}
+    }
+  },
+  "fileLabel": "فایل: {filename}",
+  "@conflictWarning": {
+    "placeholders": {
+      "names": {}
+    }
+  },
+  "conflictWarning": "شخصیتی با همین نام از قبل وجود دارد: {names}. وارد کردن شخصیت جدیدی ایجاد می‌کند بدون بازنویسی موارد موجود.",
+  "setPrimaryCompanionTitle": "تنظیم به‌عنوان همراه اصلی",
+  "setPrimaryCompanionSubtitle": "پس از وارد کردن به‌طور خودکار به‌عنوان همراه اصلی شما تنظیم شود",
+  "confirmImport": "تأیید وارد کردن",
+  "chatBackground": "پس‌زمینهٔ گفتگو",
+  "chooseChatBackgroundImage": "انتخاب تصویر پس‌زمینه",
+  "earlyUpdateSettingsTitle": "به‌روزرسانی دسترسی زودهنگام",
+  "earlyUpdateSettingsDesc": "پیش‌انتشارهای GitHub را برای APK Early مربوطه بررسی کنید، آن را دانلود کنید و به نصب‌کنندهٔ Android بسپارید.",
+  "earlyUpdateUnsupported": "به‌روزرسانی‌های زودهنگام فقط در نسخهٔ Early اندروید در دسترس است.",
+  "earlyUpdateAutoCheckTitle": "بررسی خودکار به‌روزرسانی",
+  "earlyUpdateAutoCheckDesc": "حداکثر هر ۱۲ ساعت یک‌بار هنگام راه‌اندازی بررسی شود.",
+  "earlyUpdateWifiOnlyTitle": "دانلود فقط با Wi-Fi",
+  "earlyUpdateWifiOnlyDesc": "هنگام استفاده از دادهٔ موبایل از دانلود به‌روزرسانی صرف‌نظر شود.",
+  "earlyUpdateAutoInstallTitle": "دانلود و نصب خودکار",
+  "earlyUpdateAutoInstallDesc": "وقتی نسخهٔ جدیدی یافت شد، آن را دانلود کنید و نصب‌کنندهٔ Android را به‌طور خودکار باز کنید.",
+  "earlyUpdateCheckNow": "بررسی اکنون",
+  "earlyUpdateChecking": "در حال بررسی پیش‌انتشارهای GitHub...",
+  "earlyUpdateSkippedMobile": "به‌دلیل فعال بودن دانلود فقط با Wi-Fi رد شد.",
+  "earlyUpdateNoUpdate": "شما از جدیدترین نسخهٔ Early استفاده می‌کنید.",
+  "@earlyUpdateFound": {
+    "placeholders": {
+      "version": {},
+      "build": {}
+    }
+  },
+  "earlyUpdateFound": "نسخهٔ Early {version}+{build} در دسترس است.",
+  "earlyUpdateDownloadAndInstall": "دانلود و نصب",
+  "earlyUpdateDownloadInProgress": "در حال دانلود به‌روزرسانی...",
+  "@earlyUpdateDownloadingPercent": {
+    "placeholders": {
+      "percent": {}
+    }
+  },
+  "earlyUpdateDownloadingPercent": "در حال دانلود به‌روزرسانی: {percent}٪",
+  "earlyUpdateDownloadReadyToInstall": "بستهٔ به‌روزرسانی دانلود شد. آمادهٔ نصب.",
+  "earlyUpdateInstallDownloadedPackage": "نصب بستهٔ دانلودشده",
+  "earlyUpdateClearDownloadedPackage": "پاک کردن بستهٔ دانلودشده",
+  "earlyUpdateClearDownloadedPackageSuccess": "بستهٔ به‌روزرسانی دانلودشده پاک شد.",
+  "earlyUpdateInstallStarted": "نصب‌کنندهٔ Android باز شد.",
+  "earlyUpdateInstallPermissionRequired": "به Memex اجازهٔ نصب برنامه‌های ناشناس را بدهید، سپس دوباره دانلود و نصب را بزنید.",
+  "@earlyUpdateLastChecked": {
+    "placeholders": {
+      "time": {}
+    }
+  },
+  "earlyUpdateLastChecked": "آخرین بررسی: {time}",
+  "@earlyUpdateCheckFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "earlyUpdateCheckFailed": "بررسی به‌روزرسانی ناموفق بود: {error}",
+  "earlyUpdateDialogTitle": "به‌روزرسانی زودهنگام در دسترس است",
+  "earlyUpdateReleaseNotes": "یادداشت‌های انتشار",
+  "dismissAllNotifications": "پاک کردن همه",
+  "dismissByType": "پاک کردن بر اساس نوع",
+  "dismissTypeSystemAction": "یادآورها و رویدادها",
+  "dismissTypeClarification": "توضیحات",
+  "dismissTypeCardUpdate": "به‌روزرسانی کارت‌ها",
+  "dismissedCount": "{count} مورد پاک شد",
+  "@dismissedCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportTitle": "وارد کردن فایل‌ها",
+  "dataImportSettingsDescription": "فایل‌های قدیمی را به Memex بیاورید، سپس تصمیم بگیرید آیا سازماندهی شوند.",
+  "dataImportDescription": "یادداشت‌ها، رکوردهای صادرشده، اسناد یا آرشیوهای ZIP قدیمی را انتخاب کنید. Memex ابتدا یک کپی ذخیره می‌کند و فایل‌های اصلی دست‌نخورده می‌مانند. پس از وارد کردن می‌توانید تصمیم بگیرید Memex در سازماندهی آن‌ها کمک کند یا نه.",
+  "dataImportSelectFiles": "انتخاب فایل‌ها برای وارد کردن",
+  "dataImportImporting": "در حال ذخیرهٔ فایل‌ها...",
+  "dataImportSuccess": "فایل‌ها در Memex ذخیره شدند",
+  "dataImportOnlyStored": "فایل‌ها ذخیره شدند. سازماندهی آغاز نشد.",
+  "dataImportQueued": "Memex این وارد کردن را در پس‌زمینه سازماندهی خواهد کرد.",
+  "dataImportResultTitle": "وارد کردن کامل شد",
+  "dataImportResultSummary": "{count} فایل ذخیره شد. می‌توانید اکنون آن‌ها را سازماندهی کنید یا به‌عنوان منبع اصلی نگه دارید.",
+  "@dataImportResultSummary": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportRenamedConflicts": "{count} مورد نام یکسان داشتند و برای جلوگیری از بازنویسی تغییر نام یافتند.",
+  "@dataImportRenamedConflicts": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportSkippedUnsafeEntries": "{count} مورد غیرمعمول در آرشیو رد شد؛ بقیه به‌طور عادی وارد شدند.",
+  "@dataImportSkippedUnsafeEntries": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportChooseProcessing": "سازماندهی این فایل‌ها",
+  "dataImportProcessTitle": "این وارد کردن سازماندهی شود؟",
+  "dataImportProcessPrompt": "شما {count} فایل وارد کردید. انتخاب کنید Memex اکنون آن‌ها را سازماندهی کند یا فقط نسخه‌های اصلی را نگه دارد.",
+  "@dataImportProcessPrompt": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportProcessKnowledgeBase": "سازماندهی در پایگاه دانش",
+  "dataImportProcessKnowledgeBaseDesc": "مناسب برای اسناد، یادداشت‌ها، مطالب پروژه و مراجع. Memex اطلاعات مفید را استخراج و برای استفادهٔ بعدی گروه‌بندی می‌کند.",
+  "dataImportProcessTimelineCards": "ایجاد رکوردهای خط زمانی",
+  "dataImportProcessTimelineCardsDesc": "مناسب برای خاطرات روزانه، گفتگوها، تاریخچهٔ فعالیت و صادرات قدیمی. Memex محتوای زمان‌محور را در صورت مناسب بودن به رکورد تبدیل می‌کند.",
+  "dataImportImpactNone": "Memex فقط این فایل‌های اصلی را نگه می‌دارد. سازماندهی هوش مصنوعی آغاز نمی‌شود.",
+  "dataImportImpactKnowledgeBase": "Memex این فایل‌ها را می‌خواند و اطلاعات بلندمدت مفید را در پایگاه دانش سازماندهی می‌کند. به‌طور فعال رکوردهای خط زمانی ایجاد نمی‌کند.",
+  "dataImportImpactTimelineCards": "Memex این فایل‌ها را می‌خواند و در صورت مناسب بودن رکوردهای خط زمانی برای رویدادهای زندگی یا تاریخچهٔ تاریخ‌دار ایجاد می‌کند. به‌طور فعال پایگاه دانش را سازماندهی نمی‌کند.",
+  "dataImportImpactBoth": "Memex تلاش می‌کند رکوردهای خط زمانی ایجاد کند و اطلاعات قابل استفادهٔ مجدد را در پایگاه دانش سازماندهی کند. این برای آرشیو شخصی کامل بهترین است.",
+  "dataImportFinish": "فقط ذخیره شوند",
+  "noImages": "تصویری نیست",
+  "noMessages": "پیامی نیست",
+  "sketchContent": "محتوای طرح",
+  "emptyFolder": "پوشه خالی",
+  "usernameAlreadyTaken": "نام کاربری قبلاً گرفته شده است",
+  "registrationFailed": "ثبت‌نام ناموفق بود",
+  "loginFailed": "ورود ناموفق بود",
+  "paymentCreationFailed": "شروع پرداخت ممکن نشد",
+  "completePayment": "تکمیل پرداخت",
+  "commentReplyToYou": "شما",
+  "commentAuthorUser": "کاربر",
+  "commentAuthorAi": "هوش مصنوعی",
+  "authorizationCancelled": "مجوز لغو شد",
+  "@timelineWeekNumberLabel": {
+    "placeholders": {
+      "week": {}
+    }
+  },
+  "timelineWeekNumberLabel": "هفته {week}",
+  "timelineWeekLabel": "هفته",
+  "eventCardDefaultTitle": "رویداد",
+  "memoryNoLongTermYet": "هنوز هیچ خاطره بلندمدتی وجود ندارد.",
+  "memoryNoRecentBuffer": "هیچ خاطره جدیدی در بافر وجود ندارد.",
+  "memoryGeneralSubject": "عمومی"
+}

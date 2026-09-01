@@ -517,6 +517,11 @@ class AppLocalizationsAr extends AppLocalizations {
   String get loadFailed => 'فشل التحميل';
 
   @override
+  String loadHistoryFailed(Object error) {
+    return 'فشل تحميل السجل: $error';
+  }
+
+  @override
   String get reload => 'إعادة التحميل';
 
   @override
@@ -689,7 +694,10 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-      Object running, Object pending, Object retrying) {
+    Object running,
+    Object pending,
+    Object retrying,
+  ) {
     return 'قيد التشغيل $running، معلق $pending، إعادة محاولة $retrying';
   }
 
@@ -1016,6 +1024,23 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get authorized => 'مفوّض';
+
+  @override
+  String authorizedAs(Object email) {
+    return 'تم التفويض كـ $email';
+  }
+
+  @override
+  String get authorizedSuccessfully => 'تم التفويض بنجاح';
+
+  @override
+  String get reAuthorize => 'إعادة التفويض';
+
+  @override
+  String get authorizeWithOpenAi => 'التفويض عبر OpenAI';
+
+  @override
+  String get authorizeWithGoogle => 'التفويض عبر Google';
 
   @override
   String get config => 'الإعداد';
@@ -3223,4 +3248,33 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get commentReplyToYou => 'أنت';
+
+  @override
+  String get commentAuthorUser => 'المستخدم';
+
+  @override
+  String get commentAuthorAi => 'AI';
+
+  @override
+  String get authorizationCancelled => 'تم إلغاء التفويض';
+
+  @override
+  String timelineWeekNumberLabel(Object week) {
+    return 'الأسبوع $week';
+  }
+
+  @override
+  String get timelineWeekLabel => 'أسبوع';
+
+  @override
+  String get eventCardDefaultTitle => 'حدث';
+
+  @override
+  String get memoryNoLongTermYet => 'لا توجد ذكريات طويلة المدى بعد.';
+
+  @override
+  String get memoryNoRecentBuffer => 'لا توجد ذكريات حديثة في المخزن المؤقت.';
+
+  @override
+  String get memoryGeneralSubject => 'عام';
 }

@@ -255,6 +255,13 @@
   },
   "loadDetailFailedRetry": "Falha ao carregar detalhes, tente novamente mais tarde.",
   "loadFailed": "Falha ao carregar",
+  "@loadHistoryFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadHistoryFailed": "Falha ao carregar o histórico: {error}",
+
   "reload": "Recarregar",
   "aiInsightDetail": "Detalhe do insight",
   "relatedRecordsCount": "Registros relacionados ({count})",
@@ -462,6 +469,17 @@
     }
   },
   "authorized": "Autorizado",
+  "@authorizedAs": {
+    "placeholders": {
+      "email": {}
+    }
+  },
+  "authorizedAs": "Autorizado como {email}",
+  "authorizedSuccessfully": "Autorizado com sucesso",
+  "reAuthorize": "Reautorizar",
+  "authorizeWithOpenAi": "Autorizar com OpenAI",
+  "authorizeWithGoogle": "Autorizar com Google",
+
   "config": "Configuração",
   "calendar": "Calendário",
   "reminders": "Lembretes",
@@ -1483,5 +1501,19 @@
   "loginFailed": "Falha no login",
   "paymentCreationFailed": "Não foi possível iniciar o pagamento",
   "completePayment": "Concluir pagamento",
-  "commentReplyToYou": "Você"
+  "commentReplyToYou": "Você",
+  "commentAuthorUser": "Usuário",
+  "commentAuthorAi": "IA",
+  "authorizationCancelled": "Autorização cancelada",
+  "timelineWeekNumberLabel": "Semana {week}",
+  "timelineWeekLabel": "Semana",
+  "eventCardDefaultTitle": "Evento",
+  "memoryNoLongTermYet": "Ainda não há memórias de longo prazo.",
+  "memoryNoRecentBuffer": "Não há memórias recentes no buffer.",
+  "memoryGeneralSubject": "Geral",
+  "@timelineWeekNumberLabel": {
+    "placeholders": {
+      "week": {}
+    }
+  }
 }

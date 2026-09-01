@@ -523,6 +523,11 @@ class AppLocalizationsPt extends AppLocalizations {
   String get loadFailed => 'Falha ao carregar';
 
   @override
+  String loadHistoryFailed(Object error) {
+    return 'Falha ao carregar o histórico: $error';
+  }
+
+  @override
   String get reload => 'Recarregar';
 
   @override
@@ -699,7 +704,10 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-      Object running, Object pending, Object retrying) {
+    Object running,
+    Object pending,
+    Object retrying,
+  ) {
     return 'Executando $running, pendentes $pending, nova tentativa $retrying';
   }
 
@@ -1033,6 +1041,23 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get authorized => 'Autorizado';
+
+  @override
+  String authorizedAs(Object email) {
+    return 'Autorizado como $email';
+  }
+
+  @override
+  String get authorizedSuccessfully => 'Autorizado com sucesso';
+
+  @override
+  String get reAuthorize => 'Reautorizar';
+
+  @override
+  String get authorizeWithOpenAi => 'Autorizar com OpenAI';
+
+  @override
+  String get authorizeWithGoogle => 'Autorizar com Google';
 
   @override
   String get config => 'Configuração';
@@ -3272,4 +3297,33 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get commentReplyToYou => 'Você';
+
+  @override
+  String get commentAuthorUser => 'Usuário';
+
+  @override
+  String get commentAuthorAi => 'IA';
+
+  @override
+  String get authorizationCancelled => 'Autorização cancelada';
+
+  @override
+  String timelineWeekNumberLabel(Object week) {
+    return 'Semana $week';
+  }
+
+  @override
+  String get timelineWeekLabel => 'Semana';
+
+  @override
+  String get eventCardDefaultTitle => 'Evento';
+
+  @override
+  String get memoryNoLongTermYet => 'Ainda não há memórias de longo prazo.';
+
+  @override
+  String get memoryNoRecentBuffer => 'Não há memórias recentes no buffer.';
+
+  @override
+  String get memoryGeneralSubject => 'Geral';
 }

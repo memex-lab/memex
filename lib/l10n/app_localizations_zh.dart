@@ -505,6 +505,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get loadFailed => '加载失败';
 
   @override
+  String loadHistoryFailed(Object error) {
+    return '加载历史记录失败：$error';
+  }
+
+  @override
   String get reload => '重新加载';
 
   @override
@@ -676,7 +681,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-      Object running, Object pending, Object retrying) {
+    Object running,
+    Object pending,
+    Object retrying,
+  ) {
     return '执行中 $running，排队中 $pending，重试中 $retrying';
   }
 
@@ -989,6 +997,23 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get authorized => '已授权';
+
+  @override
+  String authorizedAs(Object email) {
+    return '已授权为 $email';
+  }
+
+  @override
+  String get authorizedSuccessfully => '授权成功';
+
+  @override
+  String get reAuthorize => '重新授权';
+
+  @override
+  String get authorizeWithOpenAi => '使用 OpenAI 授权';
+
+  @override
+  String get authorizeWithGoogle => '使用 Google 授权';
 
   @override
   String get config => '配置';
@@ -3127,6 +3152,35 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get commentReplyToYou => '你';
+
+  @override
+  String get commentAuthorUser => '用户';
+
+  @override
+  String get commentAuthorAi => 'AI';
+
+  @override
+  String get authorizationCancelled => '授权已取消';
+
+  @override
+  String timelineWeekNumberLabel(Object week) {
+    return '第 $week 周';
+  }
+
+  @override
+  String get timelineWeekLabel => '周';
+
+  @override
+  String get eventCardDefaultTitle => '事件';
+
+  @override
+  String get memoryNoLongTermYet => '还没有长期记忆。';
+
+  @override
+  String get memoryNoRecentBuffer => '缓冲区中还没有近期记忆。';
+
+  @override
+  String get memoryGeneralSubject => '通用';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -3630,6 +3684,11 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get loadFailed => '載入失敗';
 
   @override
+  String loadHistoryFailed(Object error) {
+    return '載入歷史記錄失敗：$error';
+  }
+
+  @override
   String get reload => '重新載入';
 
   @override
@@ -3801,7 +3860,10 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String agentBackgroundTaskSummary(
-      Object running, Object pending, Object retrying) {
+    Object running,
+    Object pending,
+    Object retrying,
+  ) {
     return '執行中 $running，排隊中 $pending，重試中 $retrying';
   }
 
@@ -4113,6 +4175,23 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get authorized => '已授權';
+
+  @override
+  String authorizedAs(Object email) {
+    return '已授權為 $email';
+  }
+
+  @override
+  String get authorizedSuccessfully => '授權成功';
+
+  @override
+  String get reAuthorize => '重新授權';
+
+  @override
+  String get authorizeWithOpenAi => '使用 OpenAI 授權';
+
+  @override
+  String get authorizeWithGoogle => '使用 Google 授權';
 
   @override
   String get config => '設定';
@@ -6256,4 +6335,33 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get commentReplyToYou => '你';
+
+  @override
+  String get commentAuthorUser => '用戶';
+
+  @override
+  String get commentAuthorAi => 'AI';
+
+  @override
+  String get authorizationCancelled => '授權已取消';
+
+  @override
+  String timelineWeekNumberLabel(Object week) {
+    return '第 $week 週';
+  }
+
+  @override
+  String get timelineWeekLabel => '週';
+
+  @override
+  String get eventCardDefaultTitle => '事件';
+
+  @override
+  String get memoryNoLongTermYet => '還沒有長期記憶。';
+
+  @override
+  String get memoryNoRecentBuffer => '緩衝區中還沒有近期記憶。';
+
+  @override
+  String get memoryGeneralSubject => '通用';
 }

@@ -510,6 +510,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get loadFailed => '読み込みに失敗しました';
 
   @override
+  String loadHistoryFailed(Object error) {
+    return '履歴の読み込みに失敗しました: $error';
+  }
+
+  @override
   String get reload => '再読み込み';
 
   @override
@@ -681,7 +686,10 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-      Object running, Object pending, Object retrying) {
+    Object running,
+    Object pending,
+    Object retrying,
+  ) {
     return '実行中 $running、保留中 $pending、再試行 $retrying';
   }
 
@@ -999,6 +1007,23 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get authorized => '認証済み';
+
+  @override
+  String authorizedAs(Object email) {
+    return '$email として認証しました';
+  }
+
+  @override
+  String get authorizedSuccessfully => '認証に成功しました';
+
+  @override
+  String get reAuthorize => '再認証';
+
+  @override
+  String get authorizeWithOpenAi => 'OpenAI で認証';
+
+  @override
+  String get authorizeWithGoogle => 'Google で認証';
 
   @override
   String get config => '設定';
@@ -3166,4 +3191,33 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get commentReplyToYou => 'あなた';
+
+  @override
+  String get commentAuthorUser => 'ユーザー';
+
+  @override
+  String get commentAuthorAi => 'AI';
+
+  @override
+  String get authorizationCancelled => '認可がキャンセルされました';
+
+  @override
+  String timelineWeekNumberLabel(Object week) {
+    return '第$week週';
+  }
+
+  @override
+  String get timelineWeekLabel => '週';
+
+  @override
+  String get eventCardDefaultTitle => 'イベント';
+
+  @override
+  String get memoryNoLongTermYet => '長期記憶はまだありません。';
+
+  @override
+  String get memoryNoRecentBuffer => 'バッファに最近の記憶はありません。';
+
+  @override
+  String get memoryGeneralSubject => '一般';
 }

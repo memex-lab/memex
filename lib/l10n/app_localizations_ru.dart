@@ -523,6 +523,11 @@ class AppLocalizationsRu extends AppLocalizations {
   String get loadFailed => 'Загрузка не удалась';
 
   @override
+  String loadHistoryFailed(Object error) {
+    return 'Не удалось загрузить историю: $error';
+  }
+
+  @override
   String get reload => 'Перезагрузить';
 
   @override
@@ -698,7 +703,10 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-      Object running, Object pending, Object retrying) {
+    Object running,
+    Object pending,
+    Object retrying,
+  ) {
     return 'Выполняется $running, ожидает $pending, повтор $retrying';
   }
 
@@ -1030,6 +1038,23 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get authorized => 'Авторизовано';
+
+  @override
+  String authorizedAs(Object email) {
+    return 'Авторизован как $email';
+  }
+
+  @override
+  String get authorizedSuccessfully => 'Авторизация успешна';
+
+  @override
+  String get reAuthorize => 'Повторная авторизация';
+
+  @override
+  String get authorizeWithOpenAi => 'Авторизовать через OpenAI';
+
+  @override
+  String get authorizeWithGoogle => 'Авторизовать через Google';
 
   @override
   String get config => 'Конфигурация';
@@ -3270,4 +3295,33 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get commentReplyToYou => 'Вы';
+
+  @override
+  String get commentAuthorUser => 'Пользователь';
+
+  @override
+  String get commentAuthorAi => 'ИИ';
+
+  @override
+  String get authorizationCancelled => 'Авторизация отменена';
+
+  @override
+  String timelineWeekNumberLabel(Object week) {
+    return 'Неделя $week';
+  }
+
+  @override
+  String get timelineWeekLabel => 'Неделя';
+
+  @override
+  String get eventCardDefaultTitle => 'Событие';
+
+  @override
+  String get memoryNoLongTermYet => 'Долговременных воспоминаний пока нет.';
+
+  @override
+  String get memoryNoRecentBuffer => 'В буфере пока нет недавних воспоминаний.';
+
+  @override
+  String get memoryGeneralSubject => 'Общее';
 }

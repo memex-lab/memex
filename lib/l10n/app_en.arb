@@ -255,6 +255,13 @@
   "retryCount": "Retry: {count}",
   "loadDetailFailedRetry": "Load detail failed, please retry later.",
   "loadFailed": "Load failed",
+  "@loadHistoryFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadHistoryFailed": "Failed to load history: {error}",
+
   "reload": "Reload",
   "aiInsightDetail": "Insight Detail",
   "@relatedRecordsCount": {
@@ -462,6 +469,17 @@
   },
   "authFailed": "Auth failed: {error}",
   "authorized": "Authorized",
+  "@authorizedAs": {
+    "placeholders": {
+      "email": {}
+    }
+  },
+  "authorizedAs": "Authorized as {email}",
+  "authorizedSuccessfully": "Authorized successfully",
+  "reAuthorize": "Re-authorize",
+  "authorizeWithOpenAi": "Authorize with OpenAI",
+  "authorizeWithGoogle": "Authorize with Google",
+
   "config": "Config",
   "calendar": "Calendar",
   "reminders": "Reminders",
@@ -1483,5 +1501,19 @@
   "loginFailed": "Login failed",
   "paymentCreationFailed": "Could not start payment",
   "completePayment": "Complete payment",
-  "commentReplyToYou": "You"
+  "commentReplyToYou": "You",
+  "commentAuthorUser": "User",
+  "commentAuthorAi": "AI",
+  "authorizationCancelled": "Authorization cancelled",
+  "@timelineWeekNumberLabel": {
+    "placeholders": {
+      "week": {}
+    }
+  },
+  "timelineWeekNumberLabel": "Week {week}",
+  "timelineWeekLabel": "Week",
+  "eventCardDefaultTitle": "Event",
+  "memoryNoLongTermYet": "No long-term memories yet.",
+  "memoryNoRecentBuffer": "No recent memories in buffer.",
+  "memoryGeneralSubject": "General"
 }

@@ -497,7 +497,9 @@ Future<bool> updateCardLocationEndpoint(
 }
 
 String replyDisplayNameFor(Comment c, String userDisplayName) =>
-    c.isAi ? (c.character?.name ?? 'AI') : userDisplayName;
+    c.isAi
+        ? (c.character?.name ?? UserStorage.l10n.commentAuthorAi)
+        : userDisplayName;
 
 Map<String, String> commentReplyNameMap(
   Iterable<Comment> comments, {

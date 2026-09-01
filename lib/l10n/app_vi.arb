@@ -1,0 +1,1519 @@
+{
+  "@@locale": "vi",
+  "timesLabel": "Số lần",
+  "@modelSetAsDefault": {
+    "placeholders": {
+      "modelId": {}
+    }
+  },
+  "modelSetAsDefault": "Đặt {modelId} làm mô hình mặc định",
+  "retry": "Thử lại",
+  "unknownModel": "Mô hình không xác định",
+  "notSet": "Chưa đặt",
+  "confirmClear": "Xác nhận xóa",
+  "confirmClearTokenMessage": "Xóa người dùng hiện tại? Bạn sẽ cần nhập lại ID người dùng.",
+  "cancel": "Hủy",
+  "confirm": "Xác nhận",
+  "tokenCleared": "Đã xóa người dùng",
+  "@clearTokenFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "clearTokenFailed": "Không thể xóa người dùng: {error}",
+  "selectDateRangeOptional": "Chọn khoảng ngày (tùy chọn):",
+  "startDate": "Ngày bắt đầu",
+  "endDate": "Ngày kết thúc",
+  "select": "Chọn",
+  "processLimitOptional": "Giới hạn xử lý (tùy chọn)",
+  "leaveEmptyForAll": "Để trống để xử lý tất cả",
+  "startProcessing": "Bắt đầu xử lý",
+  "userIdNotFound": "Không tìm thấy ID người dùng",
+  "@createTaskFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "createTaskFailed": "Không thể tạo tác vụ: {error}",
+  "reprocessCards": "Xử lý lại thẻ",
+  "reprocessCardsTaskCreated": "Yêu cầu xử lý lại đã được đưa vào hàng đợi Super Agent",
+  "reprocessCardsDownstreamMode": "Phạm vi",
+  "reprocessCardsCardOnly": "Chỉ thẻ",
+  "reprocessCardsCardOnlyDesc": "Yêu cầu Super Agent xem xét và tạo lại các thẻ dòng thời gian đã chọn.",
+  "reprocessCardsRerunDownstream": "Thẻ và các bước theo dõi liên quan",
+  "reprocessCardsRerunDownstreamDesc": "Yêu cầu Super Agent cũng xem xét các cập nhật PKM và insight liên quan khi cần.",
+  "reanalyzeMediaAssets": "Đọc lại tệp đính kèm phương tiện",
+  "reanalyzeMediaAssetsDesc": "Yêu cầu Super Agent kiểm tra lại phương tiện đính kèm khi tạo lại thẻ.",
+  "regenerateComments": "Tạo lại bình luận",
+  "regenerateCommentsTaskCreated": "Tác vụ tạo lại bình luận đã được tạo, đang chạy nền",
+  "rebuildSearchIndex": "Xây dựng lại chỉ mục tìm kiếm",
+  "rebuildSearchIndexSuccess": "Đã xây dựng lại chỉ mục tìm kiếm thành công",
+  "rebuildSearchIndexFailed": "Không thể xây dựng lại chỉ mục tìm kiếm",
+  "clearData": "Xóa dữ liệu",
+  "confirmClearDataMessage": "Xóa dữ liệu?",
+  "confirmClearDataDeletesWorkspaceMessage": "Tất cả dữ liệu workspace cục bộ của người dùng hiện tại sẽ bị xóa, bao gồm thẻ, phương tiện, tệp kiến thức, insight, bộ nhớ, lịch sử trò chuyện và trạng thái hệ thống.\n\nHành động này không thể hoàn tác!",
+  "clearFailedAgentContexts": "Xóa ngữ cảnh hội thoại lỗi",
+  "confirmClearFailedAgentContextsMessage": "Xóa ngữ cảnh hội thoại đã lưu cho agent Insight và Schedule? Hữu ích sau khi đổi mô hình khi tin nhắn agent trước đó không còn tương thích. Sự kiện, thẻ, kiến thức, bộ nhớ và cài đặt mô hình sẽ không bị xóa.",
+  "failedAgentContextsCleared": "Đã xóa {count} ngữ cảnh hội thoại đã lưu",
+  "@failedAgentContextsCleared": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "clearFailedAgentContextsFailed": "Không thể xóa ngữ cảnh hội thoại: {error}",
+  "@clearFailedAgentContextsFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "cloneToTestUser": "Sao chép sang người dùng thử nghiệm",
+  "confirmCloneToTestUserMessage": "Sao chép workspace hiện tại sang người dùng thử nghiệm cục bộ mới và chuyển sang đó. Trạng thái runtime của agent không được sao chép. Dữ liệu người dùng hiện tại sẽ không bị thay đổi.",
+  "testUserIdLabel": "ID người dùng thử nghiệm",
+  "testUserIdHelper": "Dùng chữ cái, số, gạch ngang hoặc gạch dưới.",
+  "testUserIdInvalid": "Chỉ dùng chữ cái, số, gạch ngang hoặc gạch dưới.",
+  "overwriteExistingTestUser": "Thay thế người dùng thử nghiệm hiện có cùng ID",
+  "testUserCloneSuccess": "Đã chuyển sang người dùng thử nghiệm {userId}",
+  "@testUserCloneSuccess": {
+    "placeholders": {
+      "userId": {}
+    }
+  },
+  "testUserCloneFailed": "Không thể sao chép người dùng thử nghiệm: {error}",
+  "@testUserCloneFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "dataClearedSuccess": "Đã xóa dữ liệu thành công",
+  "@clearDataFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "clearDataFailed": "Không thể xóa dữ liệu: {error}",
+  "personalCenter": "Trung tâm cá nhân",
+  "viewLogs": "Xem nhật ký",
+  "systemAuthorization": "Ủy quyền hệ thống",
+  "aiCharacterConfig": "Cấu hình nhân vật AI",
+  "modelConfig": "Cấu hình mô hình",
+  "agentConfig": "Cấu hình agent",
+  "experimentalLab": "Phòng thí nghiệm",
+  "experimentalLabDescription": "Tính năng thử nghiệm có thể thay đổi hoặc di chuyển sau này.",
+  "modelUsageStats": "Thống kê sử dụng mô hình",
+  "asyncTaskList": "Danh sách tác vụ bất đồng bộ",
+  "clearLocalToken": "Xóa người dùng",
+  "insightCardTemplates": "Mẫu thẻ insight",
+  "timelineCardTemplates": "Mẫu thẻ dòng thời gian",
+  "logViewer": "Trình xem nhật ký",
+  "autoRefresh": "Tự động làm mới",
+  "lineCount": "Số dòng: ",
+  "all": "Tất cả",
+  "schedule": "Lịch trình",
+  "appLockConfig": "Cấu hình khóa ứng dụng",
+  "@loadStatsFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadStatsFailed": "Không thể tải thống kê: {error}",
+  "overview": "Tổng quan",
+  "daily": "Hàng ngày",
+  "modelStatsByAgent": "Theo agent",
+  "detail": "Chi tiết",
+  "date": "Ngày",
+  "agent": "Agent",
+  "noData": "Không có dữ liệu",
+  "totalCalls": "Tổng số lần gọi",
+  "calls": "Cuộc gọi",
+  "@callsCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "callsCount": "{count} cuộc gọi",
+  "selectDateRange": "Chọn khoảng ngày",
+  "totalTokens": "Tổng token",
+  "cacheRate": "Tỷ lệ cache",
+  "promptTokens": "Token prompt",
+  "completionTokens": "Token hoàn thành",
+  "cachedTokens": "Token đã cache",
+  "thoughtTokens": "Token suy nghĩ",
+  "prompt": "Prompt",
+  "completion": "Hoàn thành",
+  "cached": "Đã cache",
+  "thought": "Suy nghĩ",
+  "model": "Mô hình",
+  "scene": "Cảnh",
+  "sceneId": "ID cảnh",
+  "tokenUsage": "Sử dụng token",
+  "handler": "Trình xử lý",
+  "modelBreakdown": "Phân tích theo mô hình",
+  "callDetails": "Chi tiết cuộc gọi",
+  "@recordDetailsTitle": {
+    "placeholders": {
+      "scene": {}
+    }
+  },
+  "recordDetailsTitle": "Chi tiết bản ghi: {scene}",
+  "@saveLlmConfigFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "saveLlmConfigFailed": "Không thể lưu cấu hình LLM: {error}",
+  "webHtmlPreviewUnavailable": "Xem trước HTML không khả dụng trên web. Vui lòng xem trên thiết bị di động.",
+  "@saveUserInfoFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "saveUserInfoFailed": "Không thể lưu thông tin người dùng: {error}",
+  "totalEstimatedCost": "Tổng chi phí ước tính",
+  "close": "Đóng",
+  "totalTokenConsumption": "Tổng tiêu thụ token",
+  "dataLoadFailedRetry": "Tải dữ liệu thất bại, vui lòng thử lại sau.",
+  "timelineLoadFailedRetry": "Tải dòng thời gian thất bại, vui lòng thử lại sau.",
+  "newPerspective": "Góc nhìn mới",
+  "startPoint": "Bắt đầu",
+  "endPoint": "Kết thúc",
+  "originalInput": "Đầu vào gốc",
+  "referenceContent": "Nội dung tham chiếu",
+  "@referenceWithTitle": {
+    "placeholders": {
+      "title": {}
+    }
+  },
+  "referenceWithTitle": "Tham chiếu: {title}",
+  "actionCenterTitle": "Hành động đang chờ",
+  "noPendingActions": "Không có hành động đang chờ",
+  "clarificationNeeded": "Memex muốn xác nhận",
+  "clarificationTextHint": "Nhập câu trả lời ngắn",
+  "clarificationTextRequired": "Hãy thêm câu trả lời ngắn trước",
+  "clarificationAnswered": "Đã trả lời",
+  "@clarificationAnswerPrefix": {
+    "placeholders": {
+      "answer": {}
+    }
+  },
+  "clarificationAnswerPrefix": "Trả lời: {answer}",
+  "answerSaved": "Đã lưu câu trả lời",
+  "clarificationOtherAnswer": "Nhập thủ công",
+  "clarificationNotSure": "Không chắc / không muốn nói",
+  "yes": "Có",
+  "no": "Không",
+  "footprintMap": "Bản đồ dấu chân",
+  "waypointPlaces": "Địa điểm dừng chân",
+  "unknownPlace": "Địa điểm không xác định",
+  "releaseToSend": "Thả để gửi",
+  "selectFromAlbum": "Chọn từ album",
+  "clipboardPreviewTitle": "Clipboard mới",
+  "clipboardPreviewImageTitle": "Ảnh clipboard",
+  "clipboardPreviewImageDescription": "Ảnh sẵn sàng để thêm",
+  "clipboardPreviewUnprocessed": "Chưa dán",
+  "clipboardPreviewPasteToInput": "Dán vào ô nhập",
+  "clipboardPreviewAddImageToInput": "Thêm ảnh",
+  "clipboardPreviewImageFailed": "Không thể đọc ảnh clipboard",
+  "tellAiWhatHappened": "Kể cho AI biết chuyện gì đã xảy ra...",
+  "@recordingWithDuration": {
+    "placeholders": {
+      "duration": {}
+    }
+  },
+  "recordingWithDuration": "Đang ghi: {duration}",
+  "playing": "Đang phát...",
+  "sendLabel": "Gửi",
+  "attachedImagesMessage": "Đã gửi {count} ảnh",
+  "@attachedImagesMessage": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "noTaskData": "Không có dữ liệu tác vụ",
+  "@createdAtDate": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "createdAtDate": "Tạo: {date}",
+  "@updatedAtDate": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "updatedAtDate": "Cập nhật: {date}",
+  "@durationLabel": {
+    "placeholders": {
+      "duration": {}
+    }
+  },
+  "durationLabel": "Thời lượng: {duration}",
+  "@retryCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "retryCount": "Thử lại: {count}",
+  "loadDetailFailedRetry": "Tải chi tiết thất bại, vui lòng thử lại sau.",
+  "loadFailed": "Tải thất bại",
+  "@loadHistoryFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadHistoryFailed": "Không thể tải lịch sử: {error}",
+
+  "reload": "Tải lại",
+  "aiInsightDetail": "Chi tiết insight",
+  "@relatedRecordsCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "relatedRecordsCount": "Bản ghi liên quan ({count})",
+  "noRelatedRecords": "Không có bản ghi liên quan",
+  "useFingerprintToUnlock": "Dùng vân tay để mở khóa",
+  "locked": "Đã khóa",
+  "wrongPassword": "Mật khẩu sai",
+  "enterPassword": "Nhập mật khẩu",
+  "memexLocked": "Memex đã khóa",
+  "calendarShortSun": "CN",
+  "calendarShortMon": "T2",
+  "calendarShortTue": "T3",
+  "calendarShortWed": "T4",
+  "calendarShortThu": "T5",
+  "calendarShortFri": "T6",
+  "calendarShortSat": "T7",
+  "@noRecordsOnDate": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "noRecordsOnDate": "Không có bản ghi vào {date}",
+  "footprintPath": "Lộ trình dấu chân",
+  "lifeCompositionTable": "Thành phần cuộc sống",
+  "emotionReframe": "Tái khung cảm xúc",
+  "chronicleOfThings": "Biên niên sự kiện",
+  "goalProgress": "Tiến độ mục tiêu",
+  "trendChart": "Biểu đồ xu hướng",
+  "comparisonChart": "Biểu đồ so sánh",
+  "todayTimeFlow": "Dòng thời gian hôm nay",
+  "aiInputHint": "Dù là ký ức hay hiện tại, tôi luôn ở đây...",
+  "refreshSuperAgentStateTooltip": "Xóa ngữ cảnh Memex Agent",
+  "refreshSuperAgentStateTitle": "Xóa ngữ cảnh lịch sử Memex Agent?",
+  "refreshSuperAgentStateMessage": "Lịch sử trò chuyện hiển thị sẽ giữ nguyên, nhưng ngữ cảnh runtime lịch sử của Memex Agent sẽ bị xóa và các phản hồi sau sẽ bắt đầu từ ngữ cảnh mới. Bộ nhớ lâu dài, tệp cơ sở kiến thức, thẻ và dữ liệu đã lưu khác không bị ảnh hưởng. Dùng khi Memex Agent hoạt động bất thường. Tiếp tục?",
+  "refreshSuperAgentStateActiveRunMessage": "Đợi tin nhắn Memex Agent hiện tại hoàn tất trước khi xóa ngữ cảnh.",
+  "refreshSuperAgentStateSuccess": "Đã xóa ngữ cảnh Memex Agent",
+  "@refreshSuperAgentStateFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "refreshSuperAgentStateFailed": "Không thể xóa ngữ cảnh Memex Agent: {error}",
+  "nothingHere": "Chưa có gì ở đây",
+  "nothingHereHint": "Nhấn nút bên dưới để tạo thẻ đầu tiên",
+  "agentProcessing": "AI đang xử lý...",
+  "keepAppOpen": "Đừng đóng ứng dụng",
+  "activityDetail": "Chi tiết hoạt động",
+  "noAgentActivityYet": "Chưa có hoạt động agent",
+  "processingEllipsis": "Đang xử lý...",
+  "agentBackgroundTitle": "Memex Agent",
+  "agentBackgroundPausedTitle": "Memex Agent đã tạm dừng",
+  "agentBackgroundNeedsAttentionTitle": "Memex Agent cần chú ý",
+  "agentBackgroundStageIdle": "Nhàn rỗi",
+  "agentBackgroundStageProcessing": "Đang xử lý",
+  "agentBackgroundStageQueued": "Đang chờ",
+  "agentBackgroundStageRetrying": "Đang chờ thử lại",
+  "agentBackgroundStagePaused": "Đã tạm dừng",
+  "agentBackgroundStageCompleted": "Hoàn tất",
+  "agentBackgroundStageNeedsAttention": "Cần chú ý",
+  "agentBackgroundStageAnalyzingMedia": "Đang phân tích phương tiện",
+  "agentBackgroundStageGeneratingCard": "Đang tạo thẻ",
+  "agentBackgroundStageUpdatingKnowledge": "Đang cập nhật kiến thức",
+  "agentBackgroundStagePreparingComment": "Đang chuẩn bị bình luận",
+  "agentBackgroundStageRoutingFollowUps": "Đang định tuyến theo dõi",
+  "@agentBackgroundTaskSummary": {
+    "placeholders": {
+      "running": {},
+      "pending": {},
+      "retrying": {}
+    }
+  },
+  "agentBackgroundTaskSummary": "Đang chạy {running}, Chờ {pending}, Thử lại {retrying}",
+  "@agentBackgroundTaskDetail": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "agentBackgroundTaskDetail": "Đang xử lý {count} tác vụ trong hàng đợi.",
+  "agentBackgroundNoTasks": "Không có tác vụ nền.",
+  "agentBackgroundStarting": "Đang bắt đầu xử lý.",
+  "agentBackgroundCompletedDetail": "Tất cả tác vụ nền đã hoàn tất.",
+  "agentBackgroundFailedDetail": "Xử lý dừng do lỗi.",
+  "agentBackgroundPausedDetail": "Xử lý đã tạm dừng và sẽ tiếp tục sau.",
+  "agentBackgroundQueuedDetail": "Đang chờ bước xử lý tiếp theo.",
+  "agentBackgroundRetryingDetail": "Bước hiện tại sẽ tự động thử lại.",
+  "agentBackgroundAnalyzeMediaDetail": "Đang đọc tệp đính kèm và ngữ cảnh cục bộ.",
+  "agentBackgroundGeneratingCardDetail": "Đang biến bản ghi thành thẻ dòng thời gian.",
+  "agentBackgroundUpdatingKnowledgeDetail": "Đang cập nhật kiến thức và bộ nhớ cục bộ.",
+  "agentBackgroundPreparingCommentDetail": "Đang chuẩn bị phản hồi trợ lý.",
+  "agentBackgroundRoutingFollowUpsDetail": "Đang kiểm tra hành động theo dõi cho thẻ này.",
+  "@agentBackgroundPausedStatus": {
+    "placeholders": {
+      "summary": {}
+    }
+  },
+  "agentBackgroundPausedStatus": "Tạm dừng - {summary}",
+  "@agentBackgroundNeedsAttentionStatus": {
+    "placeholders": {
+      "summary": {}
+    }
+  },
+  "agentBackgroundNeedsAttentionStatus": "Cần chú ý - {summary}",
+  "settings": "Cài đặt",
+  "languageSettings": "Ngôn ngữ",
+  "languageSettingsDesc": "Thay đổi ngôn ngữ hiển thị ứng dụng",
+  "noPendingActionsToast": "Không có hành động đang chờ",
+  "knowledgeNewDiscovery": "Phát hiện kiến thức mới",
+  "@discoveredNewInsightsCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "discoveredNewInsightsCount": "Đã phát hiện {count} insight mới",
+  "@updatedExistingInsightsCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "updatedExistingInsightsCount": "Đã cập nhật {count} insight hiện có",
+  "sectionNewInsights": "Insight mới",
+  "sectionUpdatedInsights": "Insight đã cập nhật",
+  "unnamedInsight": "Insight chưa đặt tên",
+  "copiedToClipboard": "Đã sao chép vào clipboard",
+  "copy": "Sao chép",
+  "selectedLocation": "Vị trí đã chọn",
+  "confirmLocationName": "Xác nhận tên vị trí",
+  "confirmLocationNameHint": "Bạn có thể chỉnh tên (tọa độ giữ nguyên)",
+  "nameLabel": "Tên",
+  "inputPlaceNameHint": "Nhập tên địa điểm...",
+  "@currentCoordinates": {
+    "placeholders": {
+      "lat": {},
+      "lng": {}
+    }
+  },
+  "currentCoordinates": "Tọa độ: {lat}, {lng}",
+  "confirmLocation": "Xác nhận vị trí",
+  "welcomeToMemex": "Chào mừng đến Memex",
+  "createUserIdToStart": "Tạo hồ sơ của bạn",
+  "userIdLabel": "Tên / Biệt danh của bạn",
+  "userIdHint": "Nhập tên hoặc biệt danh",
+  "pleaseEnterUserId": "Vui lòng nhập tên",
+  "userIdMaxLength": "Tên không được vượt quá 50 ký tự",
+  "startUsing": "Tiếp tục",
+  "userIdTip": "Sẽ được dùng để cá nhân hóa trải nghiệm của bạn.",
+  "setupModelConfigTitle": "Thiết lập mô hình AI",
+  "setupModelConfigSubtitle": "Memex cần mô hình AI tiên tiến để sắp xếp bản ghi, phân tích ảnh và tạo insight. Chọn một phương thức kết nối.",
+  "setupModelConfigComplete": "Hoàn tất & Bắt đầu",
+  "aiService": "Dịch vụ mô hình Memex",
+  "aiModelHubTitle": "Mô hình AI và dịch vụ",
+  "aiModelHubSubtitle": "Chọn dịch vụ chính thức của Memex hoặc mang nhà cung cấp của bạn. Định tuyến mô hình nâng cao vẫn khả dụng khi cần.",
+  "aiSetupCurrentStatusTitle": "Thiết lập hiện tại",
+  "aiSetupStatusNotConfiguredTitle": "Dịch vụ AI chưa được cấu hình",
+  "aiSetupStatusNotConfiguredDescription": "Chọn một phương thức kết nối để bật tổ chức AI cho bản ghi, phương tiện và insight.",
+  "aiSetupStatusMemexTitle": "Đang dùng dịch vụ chính thức MemeX",
+  "aiSetupStatusMemexDescription": "Memex sẽ dùng kết nối chính thức và thông tin API Key do tài khoản MemeX quản lý.",
+  "aiSetupStatusCustomTitle": "Đang dùng cài đặt nhà cung cấp tùy chỉnh",
+  "aiSetupStatusCustomDescription": "Memex sẽ dùng thông tin nhà cung cấp và lựa chọn vai trò mô hình đã cấu hình.",
+  "aiSetupChooseConnectionTitle": "Chọn phương thức kết nối",
+  "aiSetupChooseConnectionDescription": "Bắt đầu với đường dẫn phù hợp cách bạn muốn Memex truy cập mô hình AI.",
+  "aiSetupOfficialRouteDescription": "Đăng nhập MemeX và dùng dịch vụ chính thức mà không cần chọn nhà cung cấp, API Key hoặc mô hình theo agent.",
+  "aiSetupCustomRouteDescription": "Thêm thông tin nhà cung cấp, chọn mô hình Super Agent nên dùng và tùy chọn ghi đè mô hình theo agent.",
+  "aiSetupCustomPageTitle": "Dịch vụ AI tùy chỉnh",
+  "aiSetupCustomPageSubtitle": "Cấu hình thông tin nhà cung cấp trước, sau đó chọn mô hình Memex nên dùng.",
+  "aiSetupProviderCredentialsTitle": "Nhà cung cấp và API Key",
+  "aiSetupProviderCredentialsDescription": "Thêm hoặc chỉnh OpenAI, Anthropic, DeepSeek, Gemini, OpenRouter, Ollama hoặc nhà cung cấp tương thích khác.",
+  "modelRolesTitle": "Chọn mô hình chính",
+  "modelRolesDescription": "Super Agent dùng một mô hình cho đầu vào văn bản và hình ảnh. Ghi đè agent nâng cao vẫn khả dụng bên dưới.",
+  "textModelRoleTitle": "Mô hình chính",
+  "textModelRoleDescription": "Super Agent dùng cho văn bản, hình ảnh, thẻ, kiến thức, insight, trò chuyện, bình luận và bộ nhớ.",
+  "modelConnectionsTitle": "Nhà cung cấp mô hình và API Key",
+  "modelConnectionsDescription": "Kết nối dịch vụ chính thức Memex hoặc thêm thông tin nhà cung cấp của bạn.",
+  "relatedAiCapabilitiesTitle": "Khả năng nâng cao và liên quan",
+  "relatedAiCapabilitiesDescription": "Tinh chỉnh phân công agent, nhà cung cấp vị trí và hành vi chuyển giọng nói thành văn bản.",
+  "aiSetupServiceCapabilitiesTitle": "Khả năng dịch vụ",
+  "aiSetupServiceCapabilitiesDescription": "Chọn nhà cung cấp Memex dùng cho khả năng AI liền kề như giọng nói và mã hóa ngược địa lý.",
+  "aiSetupAdvancedCustomizationTitle": "Định tuyến mô hình nâng cao",
+  "aiSetupAdvancedCustomizationDescription": "Dành cho người dùng nâng cao muốn từng agent dùng nhà cung cấp hoặc cấu hình mô hình khác nhau.",
+  "locationProviderSettings": "Nhà cung cấp vị trí",
+  "speechProviderSettings": "Chuyển giọng nói thành văn bản",
+  "advancedAgentModelAssignments": "Phân công mô hình agent",
+  "openAdvancedAgentModelAssignments": "Ghi đè từng agent",
+  "noConfiguredModelOptions": "Thêm nhà cung cấp hoặc API Key trước khi chọn vai trò mô hình.",
+  "modelSlotUpdated": "Đã cập nhật vai trò mô hình",
+  "aiServiceMemexRouteTitle": "Kết nối qua Memex",
+  "aiServiceLongDescription": "Memex dùng hệ thống đa agent để sắp xếp bản ghi cuộc sống, ghi chú kiến thức và ngữ cảnh xã hội, khám phá insight sâu hơn và cung cấp đồng hành AI với bộ nhớ lâu dài. Dữ liệu được lưu dạng Markdown văn bản thuần, bảo toàn tự do và khả năng di chuyển dữ liệu.",
+  "aiServiceCustomApiRouteTitle": "Tôi có API Key",
+  "aiServiceCustomModelDescription": "Chọn mục này trước nếu bạn đã có API Key từ OpenAI, Anthropic, DeepSeek, Gemini hoặc nhà cung cấp khác.",
+  "enableAiService": "Kết nối với Memex",
+  "aiServiceReadyToast": "Tổ chức AI đã bật",
+  "aiServiceSettingsDescription": "Nếu bạn chưa có API Key, dùng tài khoản Memex để kết nối dịch vụ mô hình phổ biến.",
+  "advancedModelConfiguration": "Cấu hình API Key",
+  "skipForNow": "Bỏ qua tạm thời",
+  "clearAuth": "Xóa ủy quyền",
+  "authorizing": "Đang ủy quyền...",
+  "@authFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "authFailed": "Ủy quyền thất bại: {error}",
+  "authorized": "Đã ủy quyền",
+  "@authorizedAs": {
+    "placeholders": {
+      "email": {}
+    }
+  },
+  "authorizedAs": "Đã ủy quyền dưới tên {email}",
+  "authorizedSuccessfully": "Ủy quyền thành công",
+  "reAuthorize": "Ủy quyền lại",
+  "authorizeWithOpenAi": "Ủy quyền với OpenAI",
+  "authorizeWithGoogle": "Ủy quyền với Google",
+
+  "config": "Cấu hình",
+  "calendar": "Lịch",
+  "reminders": "Nhắc nhở",
+  "writeToSystemFailed": "Không thể ghi vào hệ thống",
+  "@permissionRequired": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "permissionRequired": "Cần quyền {name}",
+  "@permissionRationale": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "permissionRationale": "Vui lòng cho phép ứng dụng truy cập {name} trong Cài đặt để chúng tôi có thể tạo cho bạn.",
+  "goToSettings": "Đi tới Cài đặt",
+  "unknownAction": "Hành động không xác định",
+  "discoveredCalendarEvent": "Sự kiện lịch đang chờ xác nhận",
+  "discoveredReminder": "Nhắc nhở đang chờ xác nhận",
+  "addToCalendar": "Thêm vào lịch",
+  "addToReminders": "Thêm vào nhắc nhở",
+  "systemActionPendingExplanation": "Chưa thêm. Nhấn bên dưới để yêu cầu quyền và thêm vào thiết bị.",
+  "@addedToSuccess": {
+    "placeholders": {
+      "target": {}
+    }
+  },
+  "addedToSuccess": "Đã thêm thành công vào {target}",
+  "ignore": "Bỏ qua",
+  "confirmDelete": "Xác nhận xóa",
+  "confirmDeleteSessionMessage": "Xóa cuộc trò chuyện này? Không thể hoàn tác.",
+  "delete": "Xóa",
+  "deleteSuccess": "Đã xóa thành công",
+  "@deleteFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "deleteFailed": "Xóa thất bại: {error}",
+  "daysAgo": "{count} ngày trước",
+  "chatHistory": "Lịch sử trò chuyện",
+  "enterFullScreenTooltip": "Vào toàn màn hình",
+  "exitFullScreenTooltip": "Thoát toàn màn hình",
+  "noConversations": "Không có cuộc trò chuyện",
+  "@loadSessionListFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadSessionListFailed": "Không thể tải danh sách phiên: {error}",
+  "@yesterdayAt": {
+    "placeholders": {
+      "time": {}
+    }
+  },
+  "yesterdayAt": "Hôm qua {time}",
+  "newChat": "Trò chuyện mới",
+  "@messageCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "messageCount": "{count} tin nhắn",
+  "organize": "Sắp xếp",
+  "pkmCategoryProject": "Dự án",
+  "pkmCategoryProjectSubtitle": "Ngắn hạn · Mục tiêu · Hạn chót",
+  "pkmCategoryArea": "Lĩnh vực",
+  "pkmCategoryAreaSubtitle": "Dài hạn · Trách nhiệm · Tiêu chuẩn",
+  "pkmCategoryResource": "Tài nguyên",
+  "pkmCategoryResourceSubtitle": "Sở thích · Cảm hứng · Dự trữ",
+  "pkmCategoryArchive": "Lưu trữ",
+  "pkmCategoryArchiveSubtitle": "Hoàn tất · Ngủ · Tham khảo",
+  "recentChanges": "Thay đổi gần đây",
+  "noRecentChangesInThreeDays": "Không có thay đổi trong 3 ngày qua",
+  "unpinned": "Đã bỏ ghim",
+  "pinnedStyle": "Đã ghim phong cách",
+  "@operationFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "operationFailed": "Thao tác thất bại: {error}",
+  "refreshingInsightData": "Đang làm mới dữ liệu insight, có thể mất một lúc...",
+  "@refreshFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "refreshFailed": "Làm mới thất bại: {error}",
+  "sortUpdated": "Đã cập nhật thứ tự sắp xếp",
+  "@sortSaveFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "sortSaveFailed": "Không thể lưu thứ tự sắp xếp: {error}",
+  "insightCardDeleted": "Đã xóa thẻ insight",
+  "@deleteFailedShort": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "deleteFailedShort": "Xóa thất bại: {error}",
+  "knowledgeInsight": "Insight kiến thức",
+  "completeSort": "Hoàn tất sắp xếp",
+  "noKnowledgeInsight": "Không có insight kiến thức",
+  "@insightProcessingBacklogMessage": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "insightProcessingBacklogMessage": "{count} tác vụ nền vẫn đang xử lý.",
+  "insightUnavailableMessage": "Insight này vẫn đang được tạo hoặc đã được cập nhật. Làm mới insight và thử lại sau.",
+  "artifactOpen": "Mở",
+  "updating": "Đang cập nhật...",
+  "update": "Cập nhật",
+  "enabled": "Đã bật",
+  "disabled": "Đã tắt",
+  "appLockOn": "Đã bật khóa ứng dụng",
+  "appLockOff": "Đã tắt khóa ứng dụng",
+  "enableAppLockFirst": "Vui lòng bật khóa ứng dụng trước",
+  "enterFourDigitPassword": "Nhập mật khẩu 4 chữ số",
+  "passwordSetAndLockOn": "Đã đặt mật khẩu và bật khóa ứng dụng",
+  "appLockSettings": "Cài đặt khóa ứng dụng",
+  "enableAppLock": "Bật khóa ứng dụng",
+  "enableAppLockSubtitle": "Yêu cầu mật khẩu khi mở ứng dụng",
+  "enableBiometrics": "Bật sinh trắc học",
+  "biometricsSubtitle": "Dùng Face ID hoặc Touch ID để mở khóa",
+  "changePassword": "Đổi mật khẩu",
+  "setFourDigitPassword": "Đặt mật khẩu 4 chữ số",
+  "reenterPasswordToConfirm": "Nhập lại mật khẩu để xác nhận",
+  "passwordMismatch": "Mật khẩu không khớp. Vui lòng thử lại.",
+  "@confirmDeleteCharacter": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "confirmDeleteCharacter": "Xóa nhân vật \"{name}\"? Không thể hoàn tác.",
+  "configureAiCharacter": "Cấu hình nhân vật AI",
+  "addCharacter": "Thêm nhân vật",
+  "addCharacterSubtitle": "Chọn nhân vật AI tham gia đội insight của bạn. Họ sẽ phân tích dữ liệu cuộc sống từ nhiều góc độ.",
+  "noCharacters": "Không có nhân vật",
+  "@loadCharacterFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadCharacterFailed": "Không thể tải nhân vật: {error}",
+  "noTags": "Không có thẻ",
+  "createSuccess": "Tạo thành công",
+  "updateSuccess": "Cập nhật thành công",
+  "@saveFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "saveFailed": "Lưu thất bại: {error}",
+  "newCharacter": "Nhân vật mới",
+  "editCharacter": "Chỉnh sửa nhân vật",
+  "save": "Lưu",
+  "characterName": "Tên nhân vật",
+  "characterNameHint": "Đặt tên cho nhân vật",
+  "pleaseEnterCharacterName": "Vui lòng nhập tên nhân vật",
+  "tagsLabel": "Thẻ",
+  "tagsHint": "vd. trí tuệ, nhận thức, vĩ mô\nPhân tách nhiều thẻ bằng dấu phẩy",
+  "characterPersonaLabel": "Nhân cách nhân vật",
+  "characterPersonaHint": "Bao gồm nhân cách, hướng dẫn phong cách, hội thoại mẫu, bộ lọc kiến thức, v.v.\nDùng ## cho tiêu đề mục.",
+  "pleaseEnterCharacterPersona": "Vui lòng nhập nhân cách nhân vật",
+  "@permissionRequestError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "permissionRequestError": "Lỗi yêu cầu quyền: {error}",
+  "permissionRequiredTitle": "Cần quyền",
+  "permissionPermanentlyDeniedMessage": "Bạn đã từ chối vĩnh viễn quyền này hoặc hệ thống yêu cầu. Vui lòng bật trong cài đặt hệ thống.",
+  "getting": "Đang lấy...",
+  "unauthorized": "Chưa ủy quyền",
+  "authorizedGoToSettings": "Đã ủy quyền. Vào cài đặt hệ thống để thay đổi.",
+  "location": "Vị trí",
+  "locationPermissionReason": "Để ghi lại địa điểm và tính năng liên quan vị trí",
+  "photos": "Ảnh",
+  "photosPermissionReason": "Để chọn ảnh, lưu ảnh đã tạo, v.v.",
+  "camera": "Camera",
+  "cameraPermissionReason": "Để chụp ảnh và quay video",
+  "microphone": "Micro",
+  "microphonePermissionReason": "Để nhận dạng giọng nói, ghi âm, v.v.",
+  "calendarPermissionReason": "Để ghi lịch trình và đọc sự kiện lịch",
+  "remindersPermissionReason": "Để ghi và đọc nhắc nhở",
+  "fitnessAndMotion": "Sức khỏe & vận động",
+  "fitnessPermissionReason": "Để ghi dữ liệu sức khỏe và vận động",
+  "notification": "Thông báo",
+  "notificationPermissionReason": "Để gửi lịch trình và nhắc nhở quan trọng",
+  "memexAgentNotificationPermissionTitle": "Giữ Memex Agent chạy nền",
+  "memexAgentNotificationPermissionMessage": "Memex Agent chạy cục bộ trên thiết bị. Thông báo giúp Memex hiển thị tiến độ và tiếp tục xử lý sau khi bạn rời ứng dụng hoặc tắt màn hình. Nếu tắt thông báo, hãy giữ Memex mở ở nền trước cho đến khi tác vụ hoàn tất.",
+  "loadDetailFailedRetryShort": "Tải chi tiết thất bại, vui lòng thử lại sau.",
+  "total": "Tổng",
+  "estimatedCost": "Chi phí ước tính",
+  "byAgent": "Theo agent",
+  "timeUpdated": "Thời gian cập nhật",
+  "@updateFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "updateFailed": "Cập nhật thất bại: {error}",
+  "locationUpdated": "Đã cập nhật vị trí",
+  "confirmDeleteCardMessage": "Xóa thẻ này? Không thể hoàn tác.",
+  "cardDetailNotFound": "Không tìm thấy chi tiết thẻ",
+  "saySomething": "Nói gì đó...",
+  "relatedMemories": "Bộ nhớ liên quan",
+  "viewMore": "Xem thêm",
+  "relatedRecords": "Bản ghi liên quan",
+  "reply": "Trả lời",
+  "replySent": "Đã gửi trả lời",
+  "insightTemplateGalleryTitle": "Mẫu thẻ insight",
+  "timelineTemplateGalleryTitle": "Mẫu thẻ dòng thời gian",
+  "categoryTextual": "Văn bản",
+  "timelineFilterAll": "TẤT CẢ",
+  "insights": "Insight",
+  "memoryTitle": "Bộ nhớ",
+  "longTermProfile": "Hồ sơ dài hạn",
+  "recentBuffer": "Bộ đệm gần đây",
+  "@errorLoadingMemory": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "errorLoadingMemory": "Lỗi tải bộ nhớ: {error}",
+  "agentConfiguration": "Cấu hình agent",
+  "resetToDefaults": "Đặt lại mặc định",
+  "resetAllAgentConfigurationsTitle": "Đặt lại tất cả cấu hình agent",
+  "resetAllAgentConfigurationsMessage": "Bạn có chắc muốn đặt lại tất cả cấu hình agent về giá trị mặc định? Không thể hoàn tác.",
+  "resetButton": "Đặt lại",
+  "@loadDataFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadDataFailed": "Không thể tải dữ liệu: {error}",
+  "@saveConfigFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "saveConfigFailed": "Không thể lưu cấu hình: {error}",
+  "selectLlmClient": "Chọn LLM Client:",
+  "agentConfigurationsReset": "Đã đặt lại cấu hình agent",
+  "@resetFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "resetFailed": "Không thể đặt lại: {error}",
+  "modelConfiguration": "Cấu hình mô hình",
+  "resetAllConfigurationsTitle": "Đặt lại tất cả cấu hình",
+  "resetAllModelConfigurationsMessage": "Bạn có chắc muốn đặt lại tất cả cấu hình mô hình về giá trị mặc định? Không thể hoàn tác.",
+  "modelConfigurationsReset": "Đã đặt lại cấu hình mô hình",
+  "cannotDeleteDefaultConfiguration": "Không thể xóa cấu hình mặc định",
+  "cannotDeleteConfigurationTitle": "Không thể xóa cấu hình",
+  "@configUsedByAgentsMessage": {
+    "placeholders": {
+      "agentList": {}
+    }
+  },
+  "configUsedByAgentsMessage": "Cấu hình này hiện được các agent sau sử dụng:\n\n{agentList}\n\nVui lòng gán lại các agent này trước khi xóa.",
+  "ok": "OK",
+  "deleteConfigurationTitle": "Xóa cấu hình",
+  "@confirmDeleteConfigMessage": {
+    "placeholders": {
+      "key": {}
+    }
+  },
+  "confirmDeleteConfigMessage": "Bạn có chắc muốn xóa \"{key}\"?",
+  "defaultLabel": "Mặc định",
+  "setAsDefault": "Đặt làm mặc định",
+  "invalidJsonInExtraField": "JSON không hợp lệ trong trường Extra",
+  "keyAlreadyExists": "Khóa đã tồn tại",
+  "resetConfigurationTitle": "Đặt lại cấu hình",
+  "resetConfigurationMessage": "Đặt lại cấu hình này về giá trị mặc định ban đầu? Thay đổi hiện tại sẽ mất.",
+  "configurationResetPressSave": "Đã đặt lại cấu hình. Nhấn Lưu để áp dụng.",
+  "addConfiguration": "Thêm cấu hình",
+  "editConfiguration": "Chỉnh sửa cấu hình",
+  "duplicateConfiguration": "Nhân bản cấu hình",
+  "duplicate": "Nhân bản",
+  "keyIdLabel": "ID cấu hình",
+  "keyIdHelper": "Đặt tên cấu hình này, vd. deepseek hoặc work-gpt.",
+  "required": "Bắt buộc",
+  "clientLabel": "Nhà cung cấp mô hình",
+  "providerGroupOpenAi": "OpenAI",
+  "providerGroupAnthropic": "Anthropic",
+  "providerGroupGoogle": "Google",
+  "providerGroupOthers": "Phổ biến",
+  "providerOpenAiApiKey": "API Key",
+  "providerOpenAiResponses": "API Key (Responses)",
+  "providerChatGptOauth": "ChatGPT Pro/Plus",
+  "providerClaudeApiKey": "API Key",
+  "providerBedrockSecret": "Bedrock Secret",
+  "providerGemini": "Gemini",
+  "providerGeminiOauth": "Gemini (Google OAuth)",
+  "providerKimi": "Kimi (Moonshot)",
+  "providerQwen": "Aliyun",
+  "providerSeed": "Volcengine",
+  "providerZhipu": "Zhipu GLM",
+  "providerDeepSeek": "DeepSeek",
+  "providerMinimax": "MiniMax",
+  "providerOpenRouter": "OpenRouter",
+  "providerOllama": "Ollama (Local)",
+  "providerMimo": "Xiaomi MIMO",
+  "providerMemex": "Dịch vụ proxy Memex",
+  "memexSignIn": "Đăng nhập",
+  "memexCreateAccount": "Tạo tài khoản",
+  "memexUsername": "Tên người dùng",
+  "memexPassword": "Mật khẩu",
+  "memexCreateAccountLink": "Tạo tài khoản",
+  "memexSignInLink": "Đăng nhập thay thế",
+  "memexTopUp": "Nạp tiền để bắt đầu dùng Memex AI",
+  "memexTopUpSuccess": "Nạp tiền thành công!",
+  "memexFillAllFields": "Vui lòng điền tất cả các trường",
+  "memexUsernameTooShort": "Tên người dùng phải có ít nhất 6 ký tự",
+  "memexAuthFailed": "Xác thực thất bại",
+  "memexPaymentFailed": "Không thể tạo thanh toán",
+  "memexLogout": "Đăng xuất",
+  "memexTopUpButton": "Nạp tiền",
+  "memexTopUpChooseAmount": "Chọn số tiền",
+  "memexTopUpEstimatedRecords": "Khoảng {range} bản ghi",
+  "@memexTopUpEstimatedRecords": {
+    "placeholders": {
+      "range": {}
+    }
+  },
+  "memexTopUpPlanStarter": "Khởi đầu",
+  "memexTopUpPlanEveryday": "Hàng ngày",
+  "memexTopUpPlanHighVolume": "Khối lượng lớn",
+  "memexTopUpPlanCustom": "Tín dụng tùy chỉnh",
+  "memexTopUpPlanStarterSubtitle": "Phù hợp để thử Memex AI",
+  "memexTopUpPlanEverydaySubtitle": "Phù hợp để sắp xếp thường xuyên",
+  "memexTopUpPlanHighVolumeSubtitle": "Phù hợp cho lô lớn",
+  "memexTopUpPlanCustomSubtitle": "Nhập USD 1-10.000",
+  "memexTopUpCustomEstimate": "Ước tính dựa trên số tiền đã nhập",
+  "memexCustomAmount": "Số tiền tùy chỉnh",
+  "memexViewHistory": "Lịch sử sử dụng",
+  "memexBalanceLabel": "Số dư: {amount}",
+  "@memexBalanceLabel": {
+    "placeholders": {
+      "amount": {}
+    }
+  },
+  "memexConfirmPassword": "Xác nhận mật khẩu",
+  "memexPasswordMismatch": "Mật khẩu không khớp",
+  "memexPayAmount": "Nạp {amount}",
+  "@memexPayAmount": {
+    "placeholders": {
+      "amount": {}
+    }
+  },
+  "modelIdLabel": "Mô hình",
+  "modelIdHelper": "vd. gemini-3.1-pro-preview, gpt-4o",
+  "fetchingModels": "Đang lấy mô hình...",
+  "fetchModelsButton": "Lấy mô hình",
+  "enterApiKeyFirst": "Nhập API Key trước để lấy mô hình",
+  "apiKeyLabel": "API Key",
+  "baseUrlLabel": "Điểm cuối API",
+  "advancedSettings": "Cài đặt nâng cao",
+  "testConnectionSuccess": "Kết nối thành công",
+  "testConnectionFailed": "Kết nối thất bại",
+  "testTypeText": "Văn bản",
+  "testTypeVision": "Hình ảnh",
+  "testButton": "Kiểm tra",
+  "testing": "Đang kiểm tra...",
+  "proxyUrlOptional": "URL proxy (Tùy chọn)",
+  "proxyUrlHelper": "vd. http://127.0.0.1:7890",
+  "temperatureLabel": "Temperature",
+  "topPLabel": "Top P",
+  "maxTokensLabel": "Max Tokens",
+  "extraParamsJson": "Tham số bổ sung (JSON)",
+  "invalidJson": "JSON không hợp lệ",
+  "warning": "Thiết lập chưa hoàn tất",
+  "invalidConfigurationWarning": "Cấu hình chưa hoàn tất (vd. thiếu API Key hoặc Model ID). Bạn vẫn có thể lưu và cấu hình sau. Tiếp tục?",
+  "invalidModelConfigDetailed": "AI Agent \"{agentId}\" cần cấu hình mô hình hợp lệ (key: \"{configKey}\") để hoạt động. Vui lòng kiểm tra cài đặt mô hình.",
+  "discardChangesTitle": "Rời trang này?",
+  "discardChangesMessage": "Nếu bạn đã thay đổi, hãy lưu trước khi rời đi.",
+  "discardButton": "Bỏ qua",
+  "chooseLanguage": "Chọn ngôn ngữ",
+  "chooseAvatar": "Chọn avatar",
+  "configureNow": "Cấu hình ngay",
+  "modelNotConfiguredBanner": "Mô hình AI chưa được cấu hình. Thiết lập để mở khóa tất cả tính năng.",
+  "modelNotConfiguredSubmitHint": "Vui lòng cấu hình mô hình AI trước khi xuất bản",
+  "processingStatus": "Đang xử lý",
+  "failedStatus": "Thất bại",
+  "failureReason": "Lý do thất bại",
+  "unknownError": "Đã xảy ra lỗi không xác định",
+  "enableFitness": "Bật Fitness",
+  "fitnessBannerMessage": "Cho phép truy cập fitness để theo dõi dữ liệu sức khỏe và hoạt động.",
+  "fitnessDismissTitle": "Bỏ qua quyền Fitness?",
+  "fitnessDismissMessage": "Không có quyền fitness, ứng dụng sẽ không thể tự động thu thập dữ liệu sức khỏe cho insight và ghi tự động.",
+  "skipAnyway": "Vẫn bỏ qua",
+  "proModelHint": "Mô hình này yêu cầu đăng ký ChatGPT Pro/Plus.",
+  "searchKnowledgeBase": "Tìm kiếm cơ sở kiến thức...",
+  "searchKnowledgeHint": "Nhập từ khóa để tìm tên tệp hoặc nội dung",
+  "@noSearchResults": {
+    "placeholders": {
+      "query": {}
+    }
+  },
+  "noSearchResults": "Không tìm thấy kết quả cho \"{query}\"",
+  "onlyMarkdownPreview": "Chỉ hỗ trợ xem trước Markdown",
+  "backupAndRestore": "Sao lưu & Khôi phục",
+  "createBackup": "Tạo bản sao lưu",
+  "restoreBackup": "Khôi phục bản sao lưu",
+  "backupDescription": "Đóng gói tất cả dữ liệu (thẻ, cơ sở kiến thức, insight, cài đặt) vào tệp .memex. Lưu vào iCloud Drive, Google Drive hoặc bất kỳ vị trí nào qua bảng chia sẻ.",
+  "restoreDescription": "Chọn tệp sao lưu .memex để khôi phục tất cả dữ liệu. Sẽ ghi đè dữ liệu hiện tại.",
+  "selectBackupFile": "Chọn tệp sao lưu",
+  "estimatedSize": "Kích thước ước tính",
+  "backupComplete": "Đã tạo bản sao lưu",
+  "@backupFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "backupFailed": "Sao lưu thất bại: {error}",
+  "confirmRestore": "Xác nhận khôi phục",
+  "confirmRestoreMessage": "Khôi phục sẽ ghi đè tất cả dữ liệu hiện tại bao gồm thẻ, cơ sở kiến thức, insight và cài đặt. Không thể hoàn tác. Tiếp tục?",
+  "restoreComplete": "Khôi phục hoàn tất",
+  "restoreRestartHint": "Dữ liệu đã được khôi phục. Vui lòng khởi động lại ứng dụng để mọi thay đổi có hiệu lực.",
+  "@restoreFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "restoreFailed": "Khôi phục thất bại: {error}",
+  "invalidBackupFile": "Tệp sao lưu không hợp lệ. Vui lòng chọn tệp .memex.",
+  "automaticBackup": "Sao lưu tự động",
+  "autoBackupDescription": "Khi bật, Memex tạo tối đa một ảnh chụp cục bộ mỗi ngày sau khi khởi động hoặc khi quay lại nền trước.",
+  "backupSensitiveSettingsHint": "Bản sao lưu bao gồm cài đặt và API Key nhà cung cấp mô hình. Giữ tệp sao lưu ở nơi bạn tin tưởng.",
+  "backupLocation": "Vị trí",
+  "backupLocationDetails": "Chi tiết vị trí",
+  "backupLocationSummary": "Hiển thị trong ứng dụng",
+  "backupLocationFullPath": "Đường dẫn đầy đủ",
+  "backupLocationUri": "URI quyền truy cập thư mục",
+  "copyBackupLocationPath": "Sao chép đường dẫn",
+  "backupLocationCopied": "Đã sao chép vị trí sao lưu",
+  "androidBackupLocationSelected": "Thư mục đã chọn: {folderName}",
+  "@androidBackupLocationSelected": {
+    "placeholders": {
+      "folderName": {}
+    }
+  },
+  "iosICloudBackupLocation": "iCloud Drive > Memex > Backups",
+  "iosAppDocumentsBackupLocation": "Files > Trên iPhone của tôi > Memex > Backups",
+  "autoBackupStatus": "Trạng thái",
+  "noAutoBackupYet": "Chưa có sao lưu tự động",
+  "@lastBackupAt": {
+    "placeholders": {
+      "time": {}
+    }
+  },
+  "lastBackupAt": "Sao lưu lần cuối: {time}",
+  "autoBackupRetention": "Lưu giữ",
+  "@autoBackupRetentionDays": {
+    "placeholders": {
+      "days": {}
+    }
+  },
+  "autoBackupRetentionDays": "{days} ngày",
+  "autoBackupRetentionForever": "Giữ mãi mãi",
+  "autoBackupMaxSize": "Giới hạn dung lượng",
+  "@autoBackupRetentionLimitHint": {
+    "placeholders": {
+      "size": {}
+    }
+  },
+  "autoBackupRetentionLimitHint": "Dọn dẹp tự động giữ ảnh chụp tự động dưới {size}. Ảnh chụp an toàn và xuất thủ công được giữ riêng.",
+  "createSnapshotNow": "Sao lưu ngay",
+  "backupLocationMenu": "Đổi vị trí",
+  "defaultBackupLocation": "Thư mục sao lưu mặc định",
+  "defaultBackupLocationAndroidDesc": "Dùng thư mục tệp ngoài riêng của Memex. Không cần quyền lưu trữ.",
+  "chooseBackupLocation": "Chọn thư mục sao lưu",
+  "chooseBackupLocationAndroidDesc": "Chọn thư mục bằng bộ chọn hệ thống Android và cấp Memex quyền truy cập lâu dài.",
+  "storedBackups": "Bản sao lưu đã lưu",
+  "noStoredBackups": "Sao lưu tự động sẽ xuất hiện ở đây sau ảnh chụp đầu tiên.",
+  "backupTypeAutoSnapshot": "Ảnh chụp tự động",
+  "backupTypeSafetySnapshot": "Ảnh chụp an toàn",
+  "backupTypeManualBackup": "Sao lưu thủ công",
+  "refresh": "Làm mới",
+  "restoreThisBackup": "Khôi phục bản sao lưu này",
+  "deleteThisBackup": "Xóa bản sao lưu này",
+  "confirmDeleteBackup": "Xóa bản sao lưu?",
+  "@confirmDeleteBackupMessage": {
+    "placeholders": {
+      "fileName": {}
+    }
+  },
+  "confirmDeleteBackupMessage": "Xóa {fileName}? Sẽ xóa tệp sao lưu đã lưu và không thể hoàn tác.",
+  "@backupDeleted": {
+    "placeholders": {
+      "fileName": {}
+    }
+  },
+  "backupDeleted": "Đã xóa bản sao lưu: {fileName}",
+  "@backupDeleteFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "backupDeleteFailed": "Không thể xóa bản sao lưu: {error}",
+  "creatingSafetySnapshot": "Đang tạo ảnh chụp an toàn...",
+  "@autoBackupCreated": {
+    "placeholders": {
+      "fileName": {}
+    }
+  },
+  "autoBackupCreated": "Đã tạo ảnh chụp: {fileName}",
+  "@backupLocationFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "backupLocationFailed": "Không thể cập nhật vị trí sao lưu: {error}",
+  "backupImportCreatedAt": "Đã tạo",
+  "backupImportSourceVersion": "Phiên bản nguồn",
+  "backupImportFlavor": "Bản dựng",
+  "backupLegacyFormat": "Sao lưu cũ (không có manifest)",
+  "restoreInProgress": "Đang khôi phục bản sao lưu...",
+  "dataStorage": "Lưu trữ dữ liệu",
+  "dataStorageDescriptionAndroid": "Chọn thư mục tùy chỉnh để lưu workspace. Dữ liệu được giữ khi cài lại ứng dụng.",
+  "dataStorageDescriptionIOS": "Bật iCloud để đồng bộ workspace trên các thiết bị và giữ dữ liệu khi cài lại ứng dụng.",
+  "storageLocationApp": "Lưu trữ ứng dụng",
+  "storageLocationAppDesc": "Dữ liệu lưu trong ứng dụng và sẽ bị xóa khi gỡ cài đặt.",
+  "storageLocationCustom": "Lưu trữ thiết bị (thư mục tùy chỉnh)",
+  "storageLocationCustomDesc": "Lưu dữ liệu trong thư mục bạn chọn. Dữ liệu tồn tại qua cài lại nếu thư mục còn.",
+  "storageLocationICloud": "Lưu trên iCloud",
+  "storageLocationICloudDesc": "Đồng bộ workspace trên thiết bị Apple. Dữ liệu giữ sau khi cài lại.",
+  "storageLocationCurrent": "Hiện tại: {location}",
+  "icloudRequiresCapability": "Đăng nhập iCloud và bật iCloud Drive để dùng lưu trữ iCloud.",
+  "loadingFromICloud": "Đang khôi phục dữ liệu từ iCloud…",
+  "switchingToICloud": "Đang chuyển sang lưu trữ iCloud…",
+  "switchingStorage": "Đang chuyển lưu trữ…",
+  "customFolderAccessDenied": "Không thể đọc hoặc ghi thư mục này. Vui lòng cấp quyền lưu trữ hoặc chọn thư mục khác.",
+  "@storageLocationCurrent": {
+    "placeholders": {
+      "location": {}
+    }
+  },
+  "configured": "Đã cấu hình",
+  "apiKeyNotSet": "Chưa đặt API Key — nhấn để cấu hình",
+  "bottomNavTimeline": "Dòng thời gian",
+  "bottomNavLibrary": "Thư viện",
+  "aiGeneratedLabel": "Do AI tạo",
+  "@sourceTraceWithCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "sourceTraceWithCount": "NGUỒN GỐC ({count})",
+  "deleteAccount": "Xóa tài khoản",
+  "deleteAccountDesc": "Xóa vĩnh viễn tất cả dữ liệu cục bộ và đặt lại ứng dụng.",
+  "deleteAccountConfirmTitle": "Xóa tài khoản?",
+  "deleteAccountConfirmMessage": "Sẽ xóa vĩnh viễn tất cả dữ liệu bao gồm thẻ dòng thời gian, cơ sở kiến thức, bản ghi và cài đặt. Không thể hoàn tác.",
+  "deleteAccountTypeName": "Nhập \"{name}\" để xác nhận",
+  "@deleteAccountTypeName": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "deleteAccountTypeHint": "Nhập tên người dùng để xác nhận",
+  "llmConsentTitle": "Đồng ý chia sẻ dữ liệu",
+  "llmConsentMessage": "Để bật tính năng AI, Memex cần gửi dữ liệu của bạn tới {provider} để xử lý. Bao gồm:\n\n• Văn bản bạn nhập (ghi chú, chuyển giọng nói)\n• Siêu dữ liệu ảnh và văn bản trích xuất (OCR)\n• Tóm tắt sức khỏe và fitness\n• Nội dung thẻ dòng thời gian\n\nDữ liệu được gửi trực tiếp từ thiết bị tới {provider}. Memex không lưu trữ hoặc chuyển tiếp dữ liệu qua máy chủ khác.\n\nVui lòng xem chính sách quyền riêng tư của {provider} về cách họ xử lý dữ liệu.\n\nBạn có đồng ý gửi dữ liệu tới {provider} để xử lý AI không?",
+  "@llmConsentMessage": {
+    "placeholders": {
+      "provider": {}
+    }
+  },
+  "llmConsentAgree": "Tôi đồng ý",
+  "llmConsentDecline": "Từ chối",
+  "customAgents": "Agent tùy chỉnh",
+  "noCustomAgents": "Chưa cấu hình agent tùy chỉnh.",
+  "deleteAgent": "Xóa agent",
+  "deleteAgentConfirm": "Xóa agent tùy chỉnh \"{name}\"?",
+  "@deleteAgentConfirm": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "deleted": "Đã xóa",
+  "saved": "Đã lưu",
+  "newAgent": "Agent mới",
+  "editAgent": "Chỉnh sửa agent",
+  "agentName": "Tên agent",
+  "agentNameHint": "my-custom-agent",
+  "agentNameRequired": "Bắt buộc",
+  "agentNameInvalid": "Chỉ chữ cái, chữ số và gạch ngang",
+  "agentNameExists": "Tên đã tồn tại",
+  "hostAgentType": "Loại host agent",
+  "skillDirectory": "Thư mục skill",
+  "skillDirInvalid": "Phải là đường dẫn tương đối (không có / hoặc .. ở đầu)",
+  "workingDirectory": "Thư mục làm việc (Tùy chọn)",
+  "workingDirectoryHint": "Để trống cho mặc định workspace",
+  "llmConfig": "Cấu hình LLM",
+  "eventType": "Loại sự kiện",
+  "executionMode": "Chế độ thực thi",
+  "executionModeAsync": "Bất đồng bộ",
+  "executionModeSync": "Đồng bộ",
+  "dependsOn": "Phụ thuộc",
+  "dependsOnHint": "Chọn phụ thuộc",
+  "priority": "Ưu tiên",
+  "maxRetries": "Số lần thử lại tối đa",
+  "systemPromptLabel": "System Prompt (Tùy chọn)",
+  "systemPromptHint": "Hướng dẫn bổ sung thêm vào prompt host agent",
+  "eventSerializer": "Event Serializer",
+  "eventSerializerDefault": "Mặc định (XML)",
+  "enabledLabel": "Đã bật",
+  "skillsManagement": "Quản lý skill",
+  "skillsManagementEmpty": "Chưa có skill",
+  "downloadSkill": "Tải skill",
+  "downloadFile": "Tải tệp",
+  "downloading": "Đang tải...",
+  "downloadSuccess": "Đã tải skill thành công",
+  "downloadFailed": "Tải thất bại: {error}",
+  "@downloadFailed": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "deleteConfirm": "Xác nhận xóa",
+  "deleteConfirmMessage": "Bạn có chắc muốn xóa \"{name}\"?",
+  "@deleteConfirmMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "invalidUrl": "Vui lòng nhập URL hợp lệ",
+  "urlHint": "https://example.com/skill.zip",
+  "newFolder": "Thư mục mới",
+  "newFile": "Tệp mới",
+  "folderName": "Tên thư mục",
+  "fileName": "Tên tệp",
+  "nameRequired": "Tên là bắt buộc",
+  "nameInvalid": "Tên không được chứa / hoặc ..",
+  "createFailed": "Tạo thất bại: {error}",
+  "@createFailed": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "fileContent": "Nội dung tệp",
+  "saveSuccess": "Đã lưu thành công",
+  "downloadToCurrentDir": "Tệp zip sẽ được giải nén vào thư mục hiện tại: {dir}",
+  "@downloadToCurrentDir": {
+    "placeholders": {
+      "dir": {
+        "type": "String"
+      }
+    }
+  },
+  "privacyPolicy": "Chính sách quyền riêng tư",
+  "privacyPolicyDesc": "Cách Memex xử lý dữ liệu của bạn",
+  "llmAuthError": "Xác thực API thất bại. Vui lòng kiểm tra cấu hình LLM trong Cài đặt.",
+  "llmBadRequestError": "Yêu cầu bị nhà cung cấp LLM từ chối. Định dạng đầu vào có thể không được mô hình hiện tại hỗ trợ.",
+  "llmRateLimitError": "Vượt giới hạn tốc độ API. Vui lòng thử lại sau.",
+  "llmServerError": "Dịch vụ LLM tạm thời không khả dụng. Vui lòng thử lại sau.",
+  "llmNetworkError": "Kết nối mạng thất bại. Vui lòng kiểm tra kết nối internet.",
+  "llmUnknownError": "Đã xảy ra lỗi không mong đợi khi xử lý nội dung.",
+  "llmErrorDialogTitle": "Xử lý thất bại",
+  "goToModelConfig": "Đi tới Cài đặt",
+  "speechModelDownloadTitle": "Tải mô hình giọng nói",
+  "speechModelDownloadDesc": "Cần tải mô hình một lần (~{sizeMB}MB).\n\nSau khi tải, chuyển giọng nói chạy hoàn toàn trên thiết bị.",
+  "@speechModelDownloadDesc": {
+    "placeholders": {
+      "sizeMB": {}
+    }
+  },
+  "speechModelStartDownload": "Bắt đầu tải",
+  "speechModelChooseSource": "Chọn nguồn tải:",
+  "speechModelChinaMirror": "🇨🇳 Gương Trung Quốc (Nhanh hơn ở CN)",
+  "speechModelGithub": "🌐 GitHub (Toàn cầu)",
+  "speechModelDownloading": "Đang tải mô hình...",
+  "speechModelConnecting": "Đang kết nối...",
+  "deleteSpeechModel": "Xóa mô hình giọng nói",
+  "confirmDeleteSpeechModelMessage": "Xóa tệp mô hình nhận dạng giọng nói cục bộ đã tải? Sẽ được tải lại lần sau khi dùng chuyển giọng nói cục bộ.",
+  "speechModelDeletedSuccess": "Đã xóa tệp mô hình giọng nói",
+  "speechModelNotDownloaded": "Không tìm thấy tệp mô hình giọng nói đã tải",
+  "speechModelDeleteFailed": "Không thể xóa tệp mô hình giọng nói: {error}",
+  "@speechModelDeleteFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "speechTranscribing": "Đang nhận dạng...",
+  "speechNoResult": "Không phát hiện giọng nói",
+  "useLocalSpeechToTextTitle": "Dùng chuyển giọng nói cục bộ",
+  "useLocalSpeechToTextDesc": "Khi bật, âm thanh được chuyển thành văn bản trên thiết bị trước khi gửi — hữu ích cho mô hình không hỗ trợ đầu vào âm thanh. Khi tắt, âm thanh gốc được gửi trực tiếp tới mô hình.",
+  "pendingAiProcessingHint": "Thiết lập mô hình AI để xử lý",
+  "demoWelcome": "Chào mừng đến Memex!\nHãy xem nhanh AI có thể làm gì cho bản ghi của bạn.",
+  "demoTapAdd": "Nhấn đây để tạo bản ghi đầu tiên",
+  "demoTapSend": "Nhấn để gửi bản ghi đầu tiên",
+  "demoTapCard": "Nhấn để xem AI đã sắp xếp bản ghi như thế nào",
+  "demoDetailHint": "Đây là chi tiết bản ghi do AI sắp xếp. Cuộn xem, rồi quay lại để tiếp tục tour.",
+  "demoTapInsight": "Nhấn để xem insight do AI tạo",
+  "demoTapInsightUpdate": "Nhấn để tạo insight từ bản ghi",
+  "demoTapKnowledge": "Xem tệp kiến thức được sắp xếp tự động",
+  "demoDone": "Bắt đầu ghi lại cuộc sống.",
+  "demoStartTour": "Bắt đầu tour",
+  "demoGetStarted": "Bắt đầu",
+  "demoSkip": "Bỏ qua",
+  "demoPrefillText": "Xin chào Memex! Đây là bản ghi đầu tiên của tôi 🎉",
+  "visionBadge": "Vision",
+  "notMultimodalHint": "Memex dựa vào khả năng mô hình đa phương thức để phân tích phương tiện. Nếu bản ghi có ảnh, hãy đảm bảo mô hình đã cấu hình hỗ trợ đầu vào hình ảnh.",
+  "defaultModelPrefix": "Mặc định",
+  "recommendedBadge": "Đề xuất",
+  "readOnlyBadge": "CHAT",
+  "switchCompanion": "Đổi đồng hành",
+  "personaChatInputHint": "Nhập tin nhắn...",
+  "today": "Hôm nay",
+  "tomorrow": "Ngày mai",
+  "yesterday": "Hôm qua",
+  "showInsightTextTitle": "Hiển thị bình luận insight Memex",
+  "showInsightTextDesc": "Có hiển thị insight Memex dưới dạng bình luận ghim trong phần bình luận chi tiết thẻ.",
+  "enableCharacterCommentTitle": "Tự động bình luận nhân vật",
+  "enableCharacterCommentDesc": "Nhân vật tự động bình luận trên bản ghi mới.",
+  "maxCommentCharactersTitle": "Số ký tự bình luận tối đa",
+  "maxCommentCharactersDesc": "Số ký tự có thể bình luận trên mỗi bản ghi.",
+  "replyTo": "Trả lời {name}",
+  "@replyTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "cdnSignalsComments": "Đã nhận trả lời mới",
+  "cdnSignalsInsight": "Đã tạo insight mới",
+  "cdnSignalsBoth": "Trả lời mới và insight",
+  "untitledCard": "Thẻ chưa đặt tên",
+  "locationContextTitle": "Ngữ cảnh vị trí",
+  "locationContextDescription": "Ngữ cảnh thành phố và khu vực hiện tại cho trò chuyện agent",
+  "locationContextAttachTitle": "Đính kèm vị trí hiện tại vào trò chuyện",
+  "locationContextAttachDesc": "Dùng GPS thiết bị và mã hóa ngược địa lý để cung cấp ngữ cảnh thành phố, quận và khu vực cho agent.",
+  "reverseGeocodingProvider": "Nhà cung cấp mã hóa ngược địa lý",
+  "amapProviderName": "Amap",
+  "amapApiKey": "Amap API Key",
+  "amapGcj02Note": "Amap dùng tọa độ GCJ-02. GPS thiết bị được chuyển đổi trước khi mã hóa ngược địa lý.",
+  "contextGranularity": "Độ chi tiết ngữ cảnh",
+  "granularityCity": "Thành phố",
+  "granularityDistrict": "Quận",
+  "granularityNeighborhood": "Khu vực",
+  "granularityStreet": "Đường",
+  "granularityFullAddress": "Ứng viên địa chỉ đầy đủ",
+  "locationFreshness": "Độ mới vị trí",
+  "minutesShort": "{minutes} phút",
+  "@minutesShort": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "oneHour": "1 giờ",
+  "testCurrentLocation": "Kiểm tra vị trí hiện tại",
+  "locationTestFailed": "Thất bại: {error}",
+  "@locationTestFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "locationDebugGps": "GPS",
+  "locationDebugReverseGeocode": "Mã hóa ngược địa lý",
+  "locationDebugProvider": "Nhà cung cấp",
+  "locationDebugAgentContext": "Ngữ cảnh agent",
+  "locationDebugSource": "Nguồn",
+  "locationDebugAddressSummary": "Tóm tắt địa chỉ",
+  "locationDebugFullAddress": "Địa chỉ đầy đủ",
+  "locationDebugCoordinates": "Tọa độ",
+  "locationDebugAccuracy": "Độ chính xác",
+  "locationDebugReason": "Lý do",
+  "locationDebugOk": "OK",
+  "locationDebugUnavailable": "không khả dụng",
+  "locationDebugInjected": "đã chèn",
+  "locationDebugNotInjected": "chưa chèn",
+  "locationStatusUpdatedAt": "Đã cập nhật",
+  "locationStatusSuccessTitle": "Vị trí hiện tại đã sẵn sàng",
+  "locationStatusSuccessBody": "Memex có thể đính kèm tóm tắt vị trí này khi ngữ cảnh vị trí liên quan.",
+  "locationStatusApproximateTitle": "Chỉ vị trí gần đúng",
+  "locationStatusApproximateBody": "Độ chính xác ở mức thành phố hoặc khu vực. Bạn có thể tiếp tục dùng, hoặc bật Vị trí chính xác trong cài đặt hệ thống để ngữ cảnh chặt hơn.",
+  "locationStatusServiceDisabledTitle": "Vị trí hệ thống đã tắt",
+  "locationStatusServiceDisabledBody": "Memex chỉ dùng GPS thiết bị và không suy luận vị trí từ mạng hoặc IP. Trên Android, mở Cài đặt Vị trí; trên iOS, bật Cài đặt > Quyền riêng tư & Bảo mật > Dịch vụ vị trí.",
+  "locationStatusPermissionDeniedTitle": "Cần quyền vị trí",
+  "locationStatusPermissionDeniedBody": "Cho phép Memex dùng vị trí khi kiểm tra hoặc khi cần ngữ cảnh vị trí. Không yêu cầu quyền Luôn luôn.",
+  "locationStatusPermissionForeverTitle": "Quyền vị trí bị chặn",
+  "locationStatusPermissionForeverBody": "Mở cài đặt ứng dụng và cho phép vị trí cho Memex. Trên iOS, Khi dùng ứng dụng là đủ.",
+  "locationStatusDisabledTitle": "Ngữ cảnh vị trí đã tắt",
+  "locationStatusDisabledBody": "Bật công tắc phía trên và lưu khi bạn muốn Memex đính kèm vị trí thiết bị vào ngữ cảnh agent.",
+  "locationStatusGeocodeUnavailableTitle": "GPS hoạt động, tra cứu địa chỉ thất bại",
+  "locationStatusGeocodeUnavailableBody": "Memex có tọa độ nhưng sẽ không chèn ngữ cảnh chỉ GPS vào agent. Kiểm tra nhà cung cấp mã hóa ngược địa lý và thử lại.",
+  "locationStatusUnavailableTitle": "Vị trí không khả dụng",
+  "locationStatusUnavailableBody": "Kiểm tra dịch vụ vị trí hệ thống và quyền ứng dụng, rồi thử lại.",
+  "allowLocationPermissionButton": "Cho phép quyền vị trí",
+  "openAppSettingsButton": "Mở cài đặt ứng dụng",
+  "openLocationSettingsButton": "Mở cài đặt vị trí",
+  "locationSettingsOpenFailed": "Không thể mở cài đặt hệ thống.",
+  "locationActionFailed": "Hành động vị trí thất bại: {error}",
+  "@locationActionFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsSearchPlaceholder": "Tìm kiếm cài đặt...",
+  "settingsSearchEmpty": "Không tìm thấy cài đặt phù hợp",
+  "importCharacterCard": "Nhập thẻ nhân vật",
+  "firstMessageLabel": "Tin nhắn đầu tiên",
+  "firstMessageHint": "Lời chào gửi ở cuộc trò chuyện đầu (tùy chọn)",
+  "systemPromptOverrideLabel": "Ghi đè System Prompt",
+  "systemPromptOverrideHint": "Ghi đè system prompt mặc định (nâng cao, tùy chọn)",
+  "postHistoryInstructionsLabel": "Hướng dẫn sau lịch sử",
+  "postHistoryInstructionsHint": "Hướng dẫn chèn sau lịch sử trò chuyện, trước phản hồi (tùy chọn)",
+  "mesExampleLabel": "Ví dụ tin nhắn",
+  "mesExampleHint": "Hội thoại mẫu thể hiện phong cách nhân vật (tùy chọn)",
+  "worldBookTitle": "World Book",
+  "worldBookSubtitle": "Kiến thức nền được chèn khi từ khóa được kích hoạt",
+  "characterMemoryTitle": "Bộ nhớ nhân vật",
+  "characterMemorySubtitle": "Động lực quan hệ và ký ức tương tác giữa nhân vật và người dùng",
+  "addTooltip": "Thêm",
+  "constantBadge": "Hằng số",
+  "@worldEntryFallbackName": {
+    "placeholders": {
+      "index": {}
+    }
+  },
+  "worldEntryFallbackName": "Mục {index}",
+  "@keywordsPrefix": {
+    "placeholders": {
+      "keys": {}
+    }
+  },
+  "keywordsPrefix": "Từ khóa: {keys}",
+  "@memoryFallbackName": {
+    "placeholders": {
+      "index": {}
+    }
+  },
+  "memoryFallbackName": "Bộ nhớ {index}",
+  "addWorldEntry": "Thêm mục World Book",
+  "editWorldEntry": "Chỉnh sửa mục World Book",
+  "commentTitleLabel": "Bình luận / Tiêu đề",
+  "entryDescriptionHint": "Mô tả mục (tùy chọn)",
+  "triggerKeywordsLabel": "Từ khóa kích hoạt",
+  "triggerKeywordsHint": "Phân tách bằng dấu phẩy, vd.: magic, spell",
+  "contentLabel": "Nội dung",
+  "worldEntryContentHint": "Kiến thức nền được chèn khi từ khóa kích hoạt",
+  "enabledCheckbox": "Đã bật",
+  "addMemory": "Thêm bộ nhớ",
+  "editMemory": "Chỉnh sửa bộ nhớ",
+  "memoryLabelField": "Nhãn",
+  "memoryLabelHint": "Định danh duy nhất, vd.: name preference",
+  "memoryContentHint": "Nội dung bộ nhớ",
+  "salienceLabel": "Mức độ nổi bật: ",
+  "labelCannotBeEmpty": "Nhãn không được để trống",
+  "@importSuccess": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "importSuccess": "Đã nhập {name} thành công",
+  "@importFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "importFailed": "Nhập thất bại: {error}",
+  "supportedFormats": "Định dạng hỗ trợ",
+  "tavernImportDescription": "• Thẻ nhân vật SillyTavern V2 (.json)\n• Ảnh PNG có thẻ nhúng (.png)\n\nCác trường như persona, world book, v.v. sẽ tự động ánh xạ sang định dạng nhân vật Memex.",
+  "pickCharacterFile": "Chọn tệp nhân vật",
+  "repickFile": "Chọn tệp khác",
+  "personaSettingSection": "Persona",
+  "systemPromptSection": "System Prompt",
+  "@worldEntriesCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "worldEntriesCount": "World Book: {count} mục",
+  "@fileLabel": {
+    "placeholders": {
+      "filename": {}
+    }
+  },
+  "fileLabel": "Tệp: {filename}",
+  "@conflictWarning": {
+    "placeholders": {
+      "names": {}
+    }
+  },
+  "conflictWarning": "Nhân vật cùng tên đã tồn tại: {names}. Nhập sẽ tạo nhân vật mới mà không ghi đè nhân vật hiện có.",
+  "setPrimaryCompanionTitle": "Đặt làm đồng hành chính",
+  "setPrimaryCompanionSubtitle": "Tự động đặt làm đồng hành chính sau khi nhập",
+  "confirmImport": "Xác nhận nhập",
+  "chatBackground": "Nền trò chuyện",
+  "chooseChatBackgroundImage": "Chọn ảnh nền",
+  "earlyUpdateSettingsTitle": "Cập nhật Early access",
+  "earlyUpdateSettingsDesc": "Kiểm tra pre-release GitHub cho APK Early tương ứng, tải và chuyển cho trình cài Android.",
+  "earlyUpdateUnsupported": "Cập nhật Early chỉ khả dụng trên bản dựng Android Early.",
+  "earlyUpdateAutoCheckTitle": "Tự động kiểm tra cập nhật",
+  "earlyUpdateAutoCheckDesc": "Kiểm tra khi khởi động tối đa mỗi 12 giờ một lần.",
+  "earlyUpdateWifiOnlyTitle": "Chỉ tải trên Wi-Fi",
+  "earlyUpdateWifiOnlyDesc": "Bỏ qua tải cập nhật khi dùng dữ liệu di động.",
+  "earlyUpdateAutoInstallTitle": "Tự động tải và cài đặt",
+  "earlyUpdateAutoInstallDesc": "Khi tìm thấy bản dựng mới, tải và mở trình cài Android tự động.",
+  "earlyUpdateCheckNow": "Kiểm tra ngay",
+  "earlyUpdateChecking": "Đang kiểm tra pre-release GitHub...",
+  "earlyUpdateSkippedMobile": "Đã bỏ qua vì chỉ tải trên Wi-Fi đang bật.",
+  "earlyUpdateNoUpdate": "Bạn đã ở bản Early mới nhất.",
+  "@earlyUpdateFound": {
+    "placeholders": {
+      "version": {},
+      "build": {}
+    }
+  },
+  "earlyUpdateFound": "Bản Early {version}+{build} đã có.",
+  "earlyUpdateDownloadAndInstall": "Tải và cài đặt",
+  "earlyUpdateDownloadInProgress": "Đang tải cập nhật...",
+  "@earlyUpdateDownloadingPercent": {
+    "placeholders": {
+      "percent": {}
+    }
+  },
+  "earlyUpdateDownloadingPercent": "Đang tải cập nhật: {percent}%",
+  "earlyUpdateDownloadReadyToInstall": "Đã tải gói cập nhật. Sẵn sàng cài đặt.",
+  "earlyUpdateInstallDownloadedPackage": "Cài gói đã tải",
+  "earlyUpdateClearDownloadedPackage": "Xóa gói đã tải",
+  "earlyUpdateClearDownloadedPackageSuccess": "Đã xóa gói cập nhật đã tải.",
+  "earlyUpdateInstallStarted": "Đã mở trình cài Android.",
+  "earlyUpdateInstallPermissionRequired": "Cho phép Memex cài ứng dụng không xác định, rồi nhấn tải và cài lại.",
+  "@earlyUpdateLastChecked": {
+    "placeholders": {
+      "time": {}
+    }
+  },
+  "earlyUpdateLastChecked": "Kiểm tra lần cuối: {time}",
+  "@earlyUpdateCheckFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "earlyUpdateCheckFailed": "Kiểm tra cập nhật thất bại: {error}",
+  "earlyUpdateDialogTitle": "Có bản cập nhật Early",
+  "earlyUpdateReleaseNotes": "Ghi chú phát hành",
+  "dismissAllNotifications": "Xóa tất cả",
+  "dismissByType": "Xóa theo loại",
+  "dismissTypeSystemAction": "Nhắc nhở & sự kiện",
+  "dismissTypeClarification": "Làm rõ",
+  "dismissTypeCardUpdate": "Cập nhật thẻ",
+  "dismissedCount": "Đã xóa {count}",
+  "@dismissedCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportTitle": "Nhập tệp",
+  "dataImportSettingsDescription": "Đưa tệp cũ vào Memex, rồi quyết định có sắp xếp hay không.",
+  "dataImportDescription": "Chọn ghi chú cũ, bản ghi xuất, tài liệu hoặc kho lưu trữ ZIP. Memex lưu bản sao trước và không đụng tệp gốc. Sau khi nhập, bạn có thể quyết định Memex có giúp sắp xếp không.",
+  "dataImportSelectFiles": "Chọn tệp để nhập",
+  "dataImportImporting": "Đang lưu tệp...",
+  "dataImportSuccess": "Đã lưu tệp trong Memex",
+  "dataImportOnlyStored": "Đã lưu tệp. Chưa bắt đầu sắp xếp.",
+  "dataImportQueued": "Memex sẽ sắp xếp lần nhập này ở nền.",
+  "dataImportResultTitle": "Nhập hoàn tất",
+  "dataImportResultSummary": "Đã lưu {count} tệp. Bạn có thể sắp xếp ngay hoặc giữ làm nguyên liệu nguồn.",
+  "@dataImportResultSummary": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportRenamedConflicts": "{count} mục trùng tên đã được đổi tên để tránh ghi đè.",
+  "@dataImportRenamedConflicts": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportSkippedUnsafeEntries": "{count} mục kho lưu trữ bất thường đã bỏ qua; phần còn lại nhập bình thường.",
+  "@dataImportSkippedUnsafeEntries": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportChooseProcessing": "Sắp xếp các tệp này",
+  "dataImportProcessTitle": "Sắp xếp lần nhập này?",
+  "dataImportProcessPrompt": "Bạn đã nhập {count} tệp. Chọn Memex có sắp xếp ngay hay chỉ giữ bản gốc.",
+  "@dataImportProcessPrompt": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportProcessKnowledgeBase": "Sắp xếp vào cơ sở kiến thức",
+  "dataImportProcessKnowledgeBaseDesc": "Tốt cho tài liệu, ghi chú, tài liệu dự án và tham chiếu. Memex trích xuất thông tin hữu ích và nhóm để dùng sau.",
+  "dataImportProcessTimelineCards": "Tạo bản ghi dòng thời gian",
+  "dataImportProcessTimelineCardsDesc": "Tốt cho nhật ký, nhật ký trò chuyện, lịch sử hoạt động và bản xuất cũ. Memex biến nội dung theo thời gian thành bản ghi khi phù hợp.",
+  "dataImportImpactNone": "Memex chỉ giữ các tệp gốc. Không bắt đầu tổ chức AI.",
+  "dataImportImpactKnowledgeBase": "Memex đọc các tệp và sắp xếp thông tin dài hạn hữu ích vào cơ sở kiến thức. Không chủ động tạo bản ghi dòng thời gian.",
+  "dataImportImpactTimelineCards": "Memex đọc các tệp và tạo bản ghi dòng thời gian cho sự kiện cuộc sống hoặc lịch sử có ngày khi phù hợp. Không chủ động sắp xếp cơ sở kiến thức.",
+  "dataImportImpactBoth": "Memex sẽ cố tạo bản ghi dòng thời gian và sắp xếp thông tin tái sử dụng vào cơ sở kiến thức. Tốt nhất cho kho lưu trữ cá nhân đầy đủ.",
+  "dataImportFinish": "Chỉ lưu",
+  "noImages": "Không có ảnh",
+  "noMessages": "Không có tin nhắn",
+  "sketchContent": "Nội dung phác thảo",
+  "emptyFolder": "Thư mục trống",
+  "usernameAlreadyTaken": "Tên người dùng đã được dùng",
+  "registrationFailed": "Đăng ký thất bại",
+  "loginFailed": "Đăng nhập thất bại",
+  "paymentCreationFailed": "Không thể bắt đầu thanh toán",
+  "completePayment": "Hoàn tất thanh toán",
+  "commentReplyToYou": "Bạn",
+  "commentAuthorUser": "Người dùng",
+  "commentAuthorAi": "AI",
+  "authorizationCancelled": "Đã hủy ủy quyền",
+  "@timelineWeekNumberLabel": {
+    "placeholders": {
+      "week": {}
+    }
+  },
+  "timelineWeekNumberLabel": "Tuần {week}",
+  "timelineWeekLabel": "Tuần",
+  "eventCardDefaultTitle": "Sự kiện",
+  "memoryNoLongTermYet": "Chưa có ký ức dài hạn.",
+  "memoryNoRecentBuffer": "Không có ký ức gần đây trong bộ đệm.",
+  "memoryGeneralSubject": "Chung"
+}

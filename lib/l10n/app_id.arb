@@ -255,6 +255,13 @@
   "retryCount": "Coba lagi: {count}",
   "loadDetailFailedRetry": "Gagal memuat detail, coba lagi nanti.",
   "loadFailed": "Gagal memuat",
+  "@loadHistoryFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadHistoryFailed": "Gagal memuat riwayat: {error}",
+
   "reload": "Muat ulang",
   "aiInsightDetail": "Detail insight",
   "@relatedRecordsCount": {
@@ -462,6 +469,17 @@
   },
   "authFailed": "Otorisasi gagal: {error}",
   "authorized": "Terotorisasi",
+  "@authorizedAs": {
+    "placeholders": {
+      "email": {}
+    }
+  },
+  "authorizedAs": "Diotorisasi sebagai {email}",
+  "authorizedSuccessfully": "Berhasil diotorisasi",
+  "reAuthorize": "Otorisasi ulang",
+  "authorizeWithOpenAi": "Otorisasi dengan OpenAI",
+  "authorizeWithGoogle": "Otorisasi dengan Google",
+
   "config": "Konfigurasi",
   "calendar": "Kalender",
   "reminders": "Pengingat",
@@ -1483,5 +1501,19 @@
   "loginFailed": "Login gagal",
   "paymentCreationFailed": "Tidak bisa memulai pembayaran",
   "completePayment": "Selesaikan pembayaran",
-  "commentReplyToYou": "Anda"
+  "commentReplyToYou": "Anda",
+  "commentAuthorUser": "Pengguna",
+  "commentAuthorAi": "AI",
+  "authorizationCancelled": "Otorisasi dibatalkan",
+  "timelineWeekNumberLabel": "Minggu {week}",
+  "timelineWeekLabel": "Minggu",
+  "eventCardDefaultTitle": "Acara",
+  "memoryNoLongTermYet": "Belum ada memori jangka panjang.",
+  "memoryNoRecentBuffer": "Tidak ada memori terbaru di buffer.",
+  "memoryGeneralSubject": "Umum",
+  "@timelineWeekNumberLabel": {
+    "placeholders": {
+      "week": {}
+    }
+  }
 }

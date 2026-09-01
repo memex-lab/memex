@@ -255,6 +255,13 @@
   "retryCount": "重试: {count}",
   "loadDetailFailedRetry": "加载详情失败，请稍后重试",
   "loadFailed": "加载失败",
+  "@loadHistoryFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadHistoryFailed": "加载历史记录失败：{error}",
+
   "reload": "重新加载",
   "aiInsightDetail": "洞察详情",
   "@relatedRecordsCount": {
@@ -462,6 +469,17 @@
   },
   "authFailed": "授权失败: {error}",
   "authorized": "已授权",
+  "@authorizedAs": {
+    "placeholders": {
+      "email": {}
+    }
+  },
+  "authorizedAs": "已授权为 {email}",
+  "authorizedSuccessfully": "授权成功",
+  "reAuthorize": "重新授权",
+  "authorizeWithOpenAi": "使用 OpenAI 授权",
+  "authorizeWithGoogle": "使用 Google 授权",
+
   "config": "配置",
   "calendar": "日历",
   "reminders": "提醒事项",
@@ -1437,5 +1455,19 @@
   "loginFailed": "登录失败",
   "paymentCreationFailed": "无法发起支付",
   "completePayment": "完成支付",
-  "commentReplyToYou": "你"
+  "commentReplyToYou": "你",
+  "commentAuthorUser": "用户",
+  "commentAuthorAi": "AI",
+  "authorizationCancelled": "授权已取消",
+  "timelineWeekNumberLabel": "第 {week} 周",
+  "timelineWeekLabel": "周",
+  "eventCardDefaultTitle": "事件",
+  "memoryNoLongTermYet": "还没有长期记忆。",
+  "memoryNoRecentBuffer": "缓冲区中还没有近期记忆。",
+  "memoryGeneralSubject": "通用",
+  "@timelineWeekNumberLabel": {
+    "placeholders": {
+      "week": {}
+    }
+  }
 }

@@ -255,6 +255,13 @@
   },
   "loadDetailFailedRetry": "فشل تحميل التفاصيل، يرجى المحاولة لاحقا.",
   "loadFailed": "فشل التحميل",
+  "@loadHistoryFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadHistoryFailed": "فشل تحميل السجل: {error}",
+
   "reload": "إعادة التحميل",
   "aiInsightDetail": "تفاصيل الرؤية",
   "relatedRecordsCount": "السجلات المرتبطة ({count})",
@@ -462,6 +469,17 @@
     }
   },
   "authorized": "مفوّض",
+  "@authorizedAs": {
+    "placeholders": {
+      "email": {}
+    }
+  },
+  "authorizedAs": "تم التفويض كـ {email}",
+  "authorizedSuccessfully": "تم التفويض بنجاح",
+  "reAuthorize": "إعادة التفويض",
+  "authorizeWithOpenAi": "التفويض عبر OpenAI",
+  "authorizeWithGoogle": "التفويض عبر Google",
+
   "config": "الإعداد",
   "calendar": "التقويم",
   "reminders": "التذكيرات",
@@ -1483,5 +1501,19 @@
   "loginFailed": "فشل تسجيل الدخول",
   "paymentCreationFailed": "تعذر بدء الدفع",
   "completePayment": "إكمال الدفع",
-  "commentReplyToYou": "أنت"
+  "commentReplyToYou": "أنت",
+  "commentAuthorUser": "المستخدم",
+  "commentAuthorAi": "AI",
+  "authorizationCancelled": "تم إلغاء التفويض",
+  "timelineWeekNumberLabel": "الأسبوع {week}",
+  "timelineWeekLabel": "أسبوع",
+  "eventCardDefaultTitle": "حدث",
+  "memoryNoLongTermYet": "لا توجد ذكريات طويلة المدى بعد.",
+  "memoryNoRecentBuffer": "لا توجد ذكريات حديثة في المخزن المؤقت.",
+  "memoryGeneralSubject": "عام",
+  "@timelineWeekNumberLabel": {
+    "placeholders": {
+      "week": {}
+    }
+  }
 }

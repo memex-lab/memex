@@ -102,6 +102,36 @@ const List<SupportedLanguage> supportedLanguages = <SupportedLanguage>[
     shortLabel: 'ID',
   ),
   SupportedLanguage(
+    locale: Locale('fa'),
+    localeTag: 'fa',
+    nativeName: 'فارسی',
+    englishName: 'Persian',
+    shortLabel: 'FA',
+  ),
+  SupportedLanguage(
+    locale: Locale('vi'),
+    localeTag: 'vi',
+    nativeName: 'Tiếng Việt',
+    englishName: 'Vietnamese',
+    shortLabel: 'VI',
+  ),
+  // th was on the upstream i18n wishlist
+  SupportedLanguage(
+    locale: Locale('th'),
+    localeTag: 'th',
+    nativeName: 'ไทย',
+    englishName: 'Thai',
+    shortLabel: 'TH',
+  ),
+  // Turkish expands UI coverage beyond the original i18n wishlist.
+  SupportedLanguage(
+    locale: Locale('tr'),
+    localeTag: 'tr',
+    nativeName: 'Türkçe',
+    englishName: 'Turkish',
+    shortLabel: 'TR',
+  ),
+  SupportedLanguage(
     locale: Locale('ru'),
     localeTag: 'ru',
     nativeName: 'Русский',
@@ -123,6 +153,10 @@ const List<Locale> supportedLanguageLocales = <Locale>[
   Locale('pt'),
   Locale('fr'),
   Locale('id'),
+  Locale('fa'),
+  Locale('vi'),
+  Locale('th'),
+  Locale('tr'),
   Locale('ru'),
 ];
 
@@ -139,6 +173,10 @@ const List<String> supportedLanguageTags = <String>[
   'pt',
   'fr',
   'id',
+  'fa',
+  'vi',
+  'th',
+  'tr',
   'ru',
 ];
 

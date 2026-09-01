@@ -1,5 +1,7 @@
 # Memex Agent Prompt / Tools 代码索引
 
+中文 | [English](agent_prompt_tools_code_index.en.md)
+
 这份索引按“想理解某个 Agent 时应该读哪些代码”的顺序组织。它补充 [agent_overview.md](agent_overview.md)，偏源码入口、类名、函数名和工具名。
 
 ## 1. 全局入口

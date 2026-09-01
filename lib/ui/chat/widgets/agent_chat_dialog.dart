@@ -696,7 +696,12 @@ class _AgentChatDialogState extends State<AgentChatDialog>
       _logger.severe('Error loading history', e);
       unawaited(_clearLatestSuperAgentHomeSessionIdIfCurrent());
       setState(() => _isLoading = false);
-      if (mounted) ToastHelper.showError(context, 'Failed to load history: $e');
+      if (mounted) {
+        ToastHelper.showError(
+          context,
+          UserStorage.l10n.loadHistoryFailed('$e'),
+        );
+      }
     }
     // After history is on screen, resume following an in-flight run if the
     // dialog was closed mid-reply.

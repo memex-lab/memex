@@ -523,6 +523,11 @@ class AppLocalizationsFr extends AppLocalizations {
   String get loadFailed => 'Échec du chargement';
 
   @override
+  String loadHistoryFailed(Object error) {
+    return 'Échec du chargement de l\'historique : $error';
+  }
+
+  @override
   String get reload => 'Recharger';
 
   @override
@@ -701,7 +706,10 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-      Object running, Object pending, Object retrying) {
+    Object running,
+    Object pending,
+    Object retrying,
+  ) {
     return 'En cours $running, en attente $pending, nouvelle tentative $retrying';
   }
 
@@ -1034,6 +1042,23 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get authorized => 'Autorisé';
+
+  @override
+  String authorizedAs(Object email) {
+    return 'Autorisé en tant que $email';
+  }
+
+  @override
+  String get authorizedSuccessfully => 'Autorisation réussie';
+
+  @override
+  String get reAuthorize => 'Ré-autoriser';
+
+  @override
+  String get authorizeWithOpenAi => 'Autoriser avec OpenAI';
+
+  @override
+  String get authorizeWithGoogle => 'Autoriser avec Google';
 
   @override
   String get config => 'Configuration';
@@ -3301,4 +3326,33 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get commentReplyToYou => 'Vous';
+
+  @override
+  String get commentAuthorUser => 'Utilisateur';
+
+  @override
+  String get commentAuthorAi => 'IA';
+
+  @override
+  String get authorizationCancelled => 'Autorisation annulée';
+
+  @override
+  String timelineWeekNumberLabel(Object week) {
+    return 'Semaine $week';
+  }
+
+  @override
+  String get timelineWeekLabel => 'Semaine';
+
+  @override
+  String get eventCardDefaultTitle => 'Événement';
+
+  @override
+  String get memoryNoLongTermYet => 'Pas encore de souvenirs à long terme.';
+
+  @override
+  String get memoryNoRecentBuffer => 'Aucun souvenir récent dans le tampon.';
+
+  @override
+  String get memoryGeneralSubject => 'Général';
 }

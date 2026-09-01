@@ -517,6 +517,11 @@ class AppLocalizationsHi extends AppLocalizations {
   String get loadFailed => 'लोड विफल';
 
   @override
+  String loadHistoryFailed(Object error) {
+    return 'इतिहास लोड करने में विफल: $error';
+  }
+
+  @override
   String get reload => 'फिर लोड करें';
 
   @override
@@ -692,7 +697,10 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-      Object running, Object pending, Object retrying) {
+    Object running,
+    Object pending,
+    Object retrying,
+  ) {
     return 'चल रहे $running, लंबित $pending, पुनः प्रयास $retrying';
   }
 
@@ -1021,6 +1029,23 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get authorized => 'अधिकृत';
+
+  @override
+  String authorizedAs(Object email) {
+    return '$email के रूप में प्राधिकृत';
+  }
+
+  @override
+  String get authorizedSuccessfully => 'सफलतापूर्वक प्राधिकृत';
+
+  @override
+  String get reAuthorize => 'पुनः प्राधिकृत करें';
+
+  @override
+  String get authorizeWithOpenAi => 'OpenAI के साथ प्राधिकृत करें';
+
+  @override
+  String get authorizeWithGoogle => 'Google के साथ प्राधिकृत करें';
 
   @override
   String get config => 'कॉन्फ़िग';
@@ -3252,4 +3277,33 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get commentReplyToYou => 'आप';
+
+  @override
+  String get commentAuthorUser => 'उपयोगकर्ता';
+
+  @override
+  String get commentAuthorAi => 'AI';
+
+  @override
+  String get authorizationCancelled => 'प्राधिकरण रद्द कर दिया गया';
+
+  @override
+  String timelineWeekNumberLabel(Object week) {
+    return 'सप्ताह $week';
+  }
+
+  @override
+  String get timelineWeekLabel => 'सप्ताह';
+
+  @override
+  String get eventCardDefaultTitle => 'कार्यक्रम';
+
+  @override
+  String get memoryNoLongTermYet => 'अभी तक कोई दीर्घकालिक स्मृति नहीं है।';
+
+  @override
+  String get memoryNoRecentBuffer => 'बफ़र में कोई हाल की स्मृति नहीं है।';
+
+  @override
+  String get memoryGeneralSubject => 'सामान्य';
 }

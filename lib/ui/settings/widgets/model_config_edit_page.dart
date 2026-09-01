@@ -235,7 +235,7 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
           _dismissAuthDialog();
           ToastHelper.showError(
             context,
-            UserStorage.l10n.authFailed('Authorization cancelled'),
+            UserStorage.l10n.authFailed(UserStorage.l10n.authorizationCancelled),
           );
         }
       });
@@ -316,7 +316,10 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
         _authFlowCompleted = true;
         _dismissAuthDialog();
         if (mounted) {
-          ToastHelper.showSuccess(context, 'Authorized successfully');
+          ToastHelper.showSuccess(
+            context,
+            UserStorage.l10n.authorizedSuccessfully,
+          );
           _loadOpenAiTokens();
         }
       },
@@ -376,7 +379,10 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
         _authFlowCompleted = true;
         _dismissAuthDialog();
         if (mounted) {
-          ToastHelper.showSuccess(context, 'Authorized as $email');
+          ToastHelper.showSuccess(
+            context,
+            UserStorage.l10n.authorizedAs(email),
+          );
           _loadGeminiTokens();
         }
       },
@@ -394,6 +400,7 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
   }
 
   Widget _buildOpenAiAuthSection() {
+    final l10n = UserStorage.l10n;
     final bool isAuthorized = _openAiTokens != null;
 
     return Container(
@@ -415,7 +422,8 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
               ),
               const SizedBox(width: 8),
               Text(
-                isAuthorized ? 'Authorized' : 'Not authorized',
+                // OAuth status: reuse authorized / unauthorized
+                isAuthorized ? l10n.authorized : l10n.unauthorized,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   color: isAuthorized ? Colors.green : Colors.orange,
@@ -430,7 +438,7 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
               onPressed: _startOpenAiAuth,
               icon: const Icon(Icons.login),
               label: Text(
-                isAuthorized ? 'Re-authorize' : 'Authorize with OpenAI',
+                isAuthorized ? l10n.reAuthorize : l10n.authorizeWithOpenAi,
               ),
             ),
           ),
@@ -458,6 +466,7 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
   }
 
   Widget _buildGeminiAuthSection() {
+    final l10n = UserStorage.l10n;
     final bool isAuthorized = _geminiTokens != null;
 
     return Container(
@@ -479,7 +488,8 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
               ),
               const SizedBox(width: 8),
               Text(
-                isAuthorized ? 'Authorized' : 'Not authorized',
+                // OAuth status: reuse authorized / unauthorized
+                isAuthorized ? l10n.authorized : l10n.unauthorized,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   color: isAuthorized ? Colors.green : Colors.orange,
@@ -494,7 +504,7 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
               onPressed: _startGeminiAuth,
               icon: const Icon(Icons.login),
               label: Text(
-                isAuthorized ? 'Re-authorize' : 'Authorize with Google',
+                isAuthorized ? l10n.reAuthorize : l10n.authorizeWithGoogle,
               ),
             ),
           ),

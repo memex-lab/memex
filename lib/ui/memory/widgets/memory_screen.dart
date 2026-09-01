@@ -111,10 +111,10 @@ class _MemoryScreenState extends State<MemoryScreen> {
 
   Widget _buildArchivedView(String content) {
     if (content.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
-          'No long-term memories yet.',
-          style: TextStyle(color: Colors.grey),
+          UserStorage.l10n.memoryNoLongTermYet,
+          style: const TextStyle(color: Colors.grey),
         ),
       );
     }
@@ -146,10 +146,10 @@ class _MemoryScreenState extends State<MemoryScreen> {
 
   Widget _buildRecentView(List<Map<String, dynamic>> buffer) {
     if (buffer.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
-          'No recent memories in buffer.',
-          style: TextStyle(color: Colors.grey),
+          UserStorage.l10n.memoryNoRecentBuffer,
+          style: const TextStyle(color: Colors.grey),
         ),
       );
     }
@@ -182,7 +182,7 @@ class _MemoryScreenState extends State<MemoryScreen> {
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        item['subject'] ?? 'General',
+                        item['subject'] ?? UserStorage.l10n.memoryGeneralSubject,
                         style: const TextStyle(
                           fontSize: 12,
                           color: AppColors.primary,
