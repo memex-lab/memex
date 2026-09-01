@@ -115,6 +115,14 @@ const List<SupportedLanguage> supportedLanguages = <SupportedLanguage>[
     englishName: 'Vietnamese',
     shortLabel: 'VI',
   ),
+  // th was on the upstream i18n wishlist
+  SupportedLanguage(
+    locale: Locale('th'),
+    localeTag: 'th',
+    nativeName: 'ไทย',
+    englishName: 'Thai',
+    shortLabel: 'TH',
+  ),
   SupportedLanguage(
     locale: Locale('ru'),
     localeTag: 'ru',
@@ -139,6 +147,7 @@ const List<Locale> supportedLanguageLocales = <Locale>[
   Locale('id'),
   Locale('fa'),
   Locale('vi'),
+  Locale('th'),
   Locale('ru'),
 ];
 
@@ -157,6 +166,7 @@ const List<String> supportedLanguageTags = <String>[
   'id',
   'fa',
   'vi',
+  'th',
   'ru',
 ];
 
