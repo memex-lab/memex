@@ -17,6 +17,8 @@ import 'app_localizations_ja.dart';
 import 'app_localizations_ko.dart';
 import 'app_localizations_pt.dart';
 import 'app_localizations_ru.dart';
+import 'app_localizations_th.dart';
+import 'app_localizations_tr.dart';
 import 'app_localizations_vi.dart';
 import 'app_localizations_zh.dart';
 
@@ -75,7 +77,7 @@ import 'app_localizations_zh.dart';
 /// property.
 abstract class AppLocalizations {
   AppLocalizations(String locale)
-      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -98,11 +100,11 @@ abstract class AppLocalizations {
   /// of delegates is preferred or required.
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
       <LocalizationsDelegate<dynamic>>[
-    delegate,
-    GlobalMaterialLocalizations.delegate,
-    GlobalCupertinoLocalizations.delegate,
-    GlobalWidgetsLocalizations.delegate,
-  ];
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
@@ -118,9 +120,11 @@ abstract class AppLocalizations {
     Locale('ko'),
     Locale('pt'),
     Locale('ru'),
+    Locale('th'),
+    Locale('tr'),
     Locale('vi'),
     Locale('zh'),
-    Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant')
+    Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant'),
   ];
 
   /// No description provided for @timesLabel.
@@ -1023,6 +1027,12 @@ abstract class AppLocalizations {
   /// **'Load failed'**
   String get loadFailed;
 
+  /// No description provided for @loadHistoryFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load history: {error}'**
+  String loadHistoryFailed(Object error);
+
   /// No description provided for @reload.
   ///
   /// In en, this message translates to:
@@ -1352,7 +1362,10 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Running {running}, Pending {pending}, Retry {retrying}'**
   String agentBackgroundTaskSummary(
-      Object running, Object pending, Object retrying);
+    Object running,
+    Object pending,
+    Object retrying,
+  );
 
   /// No description provided for @agentBackgroundTaskDetail.
   ///
@@ -1917,6 +1930,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Authorized'**
   String get authorized;
+
+  /// No description provided for @authorizedAs.
+  ///
+  /// In en, this message translates to:
+  /// **'Authorized as {email}'**
+  String authorizedAs(Object email);
+
+  /// No description provided for @authorizedSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'Authorized successfully'**
+  String get authorizedSuccessfully;
+
+  /// No description provided for @reAuthorize.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-authorize'**
+  String get reAuthorize;
+
+  /// No description provided for @authorizeWithOpenAi.
+  ///
+  /// In en, this message translates to:
+  /// **'Authorize with OpenAI'**
+  String get authorizeWithOpenAi;
+
+  /// No description provided for @authorizeWithGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Authorize with Google'**
+  String get authorizeWithGoogle;
 
   /// No description provided for @config.
   ///
@@ -5914,21 +5957,23 @@ class _AppLocalizationsDelegate
 
   @override
   bool isSupported(Locale locale) => <String>[
-        'ar',
-        'de',
-        'en',
-        'es',
-        'fa',
-        'fr',
-        'hi',
-        'id',
-        'ja',
-        'ko',
-        'pt',
-        'ru',
-        'vi',
-        'zh'
-      ].contains(locale.languageCode);
+    'ar',
+    'de',
+    'en',
+    'es',
+    'fa',
+    'fr',
+    'hi',
+    'id',
+    'ja',
+    'ko',
+    'pt',
+    'ru',
+    'th',
+    'tr',
+    'vi',
+    'zh',
+  ].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -5973,6 +6018,10 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
       return AppLocalizationsPt();
     case 'ru':
       return AppLocalizationsRu();
+    case 'th':
+      return AppLocalizationsTh();
+    case 'tr':
+      return AppLocalizationsTr();
     case 'vi':
       return AppLocalizationsVi();
     case 'zh':
@@ -5980,8 +6029,9 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   }
 
   throw FlutterError(
-      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-      'an issue with the localizations generation tool. Please file an issue '
-      'on GitHub with a reproducible sample app and the gen-l10n configuration '
-      'that was used.');
+    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+    'an issue with the localizations generation tool. Please file an issue '
+    'on GitHub with a reproducible sample app and the gen-l10n configuration '
+    'that was used.',
+  );
 }

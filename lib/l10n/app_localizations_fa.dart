@@ -518,6 +518,11 @@ class AppLocalizationsFa extends AppLocalizations {
   String get loadFailed => 'بارگذاری ناموفق بود';
 
   @override
+  String loadHistoryFailed(Object error) {
+    return 'بارگذاری تاریخچه ناموفق بود: $error';
+  }
+
+  @override
   String get reload => 'بارگذاری مجدد';
 
   @override
@@ -1024,6 +1029,23 @@ class AppLocalizationsFa extends AppLocalizations {
 
   @override
   String get authorized => 'احراز هویت شده';
+
+  @override
+  String authorizedAs(Object email) {
+    return 'احراز هویت شده به عنوان $email';
+  }
+
+  @override
+  String get authorizedSuccessfully => 'احراز هویت با موفقیت انجام شد';
+
+  @override
+  String get reAuthorize => 'احراز هویت مجدد';
+
+  @override
+  String get authorizeWithOpenAi => 'احراز هویت با OpenAI';
+
+  @override
+  String get authorizeWithGoogle => 'احراز هویت با Google';
 
   @override
   String get config => 'پیکربندی';

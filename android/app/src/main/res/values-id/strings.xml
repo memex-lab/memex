@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App shortcut labels for Quick Note (home-screen shortcut). -->
+    <!-- Indonesian (id): duplicate for devices that resolve id rather than in. -->
+    <string name="shortcut_quick_note">Catatan cepat</string>
+    <string name="shortcut_quick_note_long">Catatan cepat</string>
+</resources>

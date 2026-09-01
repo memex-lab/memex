@@ -255,6 +255,13 @@
   },
   "loadDetailFailedRetry": "Échec du chargement des détails, veuillez réessayer plus tard.",
   "loadFailed": "Échec du chargement",
+  "@loadHistoryFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadHistoryFailed": "Échec du chargement de l'historique : {error}",
+
   "reload": "Recharger",
   "aiInsightDetail": "Détail de l'insight",
   "relatedRecordsCount": "Enregistrements liés ({count})",
@@ -462,6 +469,17 @@
     }
   },
   "authorized": "Autorisé",
+  "@authorizedAs": {
+    "placeholders": {
+      "email": {}
+    }
+  },
+  "authorizedAs": "Autorisé en tant que {email}",
+  "authorizedSuccessfully": "Autorisation réussie",
+  "reAuthorize": "Ré-autoriser",
+  "authorizeWithOpenAi": "Autoriser avec OpenAI",
+  "authorizeWithGoogle": "Autoriser avec Google",
+
   "config": "Configuration",
   "calendar": "Calendrier",
   "reminders": "Rappels",
