@@ -758,7 +758,24 @@ class ChatService {
     }
 
     // 3. Setup Listeners & Run
-    final artifactCollector = ChatTurnArtifactCollector(sourceRunId: turnId);
+    var persistedArtifacts = const <ChatArtifact>[];
+    try {
+      persistedArtifacts = await _chatStorage.loadArtifactsForTurn(
+        userId,
+        sessionId,
+        turnId,
+      );
+    } catch (e, st) {
+      _logger.warning(
+        'Failed to restore artifacts for turn $turnId in session $sessionId',
+        e,
+        st,
+      );
+    }
+    final artifactCollector = ChatTurnArtifactCollector(
+      sourceRunId: turnId,
+      initialArtifacts: persistedArtifacts,
+    );
     var artifactWriteQueue = Future<void>.value();
 
     void persistAndEmitArtifacts(List<ChatArtifact> artifacts) {

@@ -364,6 +364,39 @@ class ChatSessionStorage {
     });
   }
 
+  /// Loads the latest persisted revision of every artifact produced by a turn.
+  ///
+  /// Artifact messages are append-only, so this projection also repairs
+  /// legacy sessions that contain duplicate revisions when they are reopened.
+  Future<List<ChatArtifact>> loadArtifactsForTurn(
+    String userId,
+    String sessionId,
+    String turnId,
+  ) async {
+    await ensureMigrated(userId);
+    _validateSessionId(sessionId);
+    final lock = await _lockFor(userId, sessionId);
+    return lock.synchronized(() async {
+      final messages =
+          await _readMessagesFile(_messagesFile(userId, sessionId));
+      final latestByIdentity = <String, ChatArtifact>{};
+      for (final message in messages) {
+        if (message['turn_id']?.toString() != turnId) continue;
+        final rawArtifacts = message['artifacts'];
+        if (rawArtifacts is! List) continue;
+        for (final rawArtifact in rawArtifacts) {
+          if (rawArtifact is! Map) continue;
+          final artifact = ChatArtifact.fromJson(
+            Map<String, dynamic>.from(rawArtifact),
+          );
+          if (artifact == null) continue;
+          latestByIdentity[artifact.identityKey] = artifact;
+        }
+      }
+      return List<ChatArtifact>.unmodifiable(latestByIdentity.values);
+    });
+  }
+
   Future<String?> lastMessagePreview(String userId, String sessionId) async {
     _validateSessionId(sessionId);
     final lock = await _lockFor(userId, sessionId);
