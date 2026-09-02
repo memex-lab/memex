@@ -3,13 +3,18 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:memex/ui/settings/widgets/agent_state_viewer_page.dart';
+import 'package:memex/utils/user_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  setUp(() {
-    SharedPreferences.setMockInitialValues({'user_id': 'state-user'});
+  setUp(() async {
+    SharedPreferences.setMockInitialValues({
+      'user_id': 'state-user',
+      'language': 'en',
+    });
+    await UserStorage.initL10n();
   });
 
   testWidgets('renders parent state with linked child state ids',
@@ -165,7 +170,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(find.text('Agent States'), findsOneWidget);
+    expect(find.text(UserStorage.l10n.agentStates), findsOneWidget);
     expect(find.text('memex_agent_parent'), findsOneWidget);
     expect(find.textContaining('Linked Child States'), findsOneWidget);
     expect(find.textContaining('manage_card_child_1'), findsOneWidget);
