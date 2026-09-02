@@ -363,6 +363,7 @@ class _MemexOfficialServicePageState extends State<MemexOfficialServicePage> {
       iconColor: AppColors.primary,
       title: l10n.aiServiceMemexRouteTitle,
       description: l10n.aiServiceSettingsDescription,
+      showIntro: false,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -631,6 +632,7 @@ class _AiServiceOptionCard extends StatelessWidget {
     required this.description,
     required this.child,
     this.trailing,
+    this.showIntro = true,
   });
 
   final IconData icon;
@@ -639,6 +641,7 @@ class _AiServiceOptionCard extends StatelessWidget {
   final String description;
   final Widget child;
   final Widget? trailing;
+  final bool showIntro;
 
   @override
   Widget build(BuildContext context) {
@@ -661,48 +664,48 @@ class _AiServiceOptionCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: iconColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
+          if (showIntro) ...[
+            Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: iconColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, color: iconColor, size: 21),
                 ),
-                child: Icon(icon, color: iconColor, size: 21),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    height: 1.25,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      height: 1.25,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
                 ),
-              ),
-              if (trailing != null) ...[
-                const SizedBox(width: 8),
-                trailing!,
+                if (trailing != null) ...[
+                  const SizedBox(width: 8),
+                  trailing!,
+                ],
               ],
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            description,
-            style: const TextStyle(
-              fontSize: 14,
-              height: 1.55,
-              color: AppColors.textSecondary,
             ),
-          ),
-          if (hasChild) ...[
-            const SizedBox(height: 16),
-            child,
+            const SizedBox(height: 12),
+            Text(
+              description,
+              style: const TextStyle(
+                fontSize: 14,
+                height: 1.55,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            if (hasChild) const SizedBox(height: 16),
           ],
+          if (hasChild) child,
         ],
       ),
     );

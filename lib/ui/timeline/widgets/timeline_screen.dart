@@ -606,7 +606,7 @@ class TimelineScreenState extends State<TimelineScreen> {
 
   Widget _buildTimelineBody(TimelineViewModel vm) {
     if ((vm.isLoading || vm.load.running) && vm.cards.isEmpty) {
-      return const Center(child: AgentLogoLoading());
+      return const Center(child: AgentLogoLoading(size: 72));
     }
 
     return _buildTimelineContent(vm);
@@ -655,7 +655,7 @@ class TimelineScreenState extends State<TimelineScreen> {
     }
 
     if (vm.cards.isEmpty && (vm.isLoading || vm.load.running)) {
-      return const Center(child: AgentLogoLoading());
+      return const Center(child: AgentLogoLoading(size: 72));
     }
     return _buildTimelineList(vm);
   }

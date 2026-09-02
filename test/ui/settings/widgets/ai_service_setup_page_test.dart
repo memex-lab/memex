@@ -158,6 +158,10 @@ void main() {
 
     expect(find.byType(MemexOfficialServicePage), findsOneWidget);
     expect(find.text(UserStorage.l10n.aiServiceMemexRouteTitle), findsWidgets);
+    expect(
+      find.text(UserStorage.l10n.aiServiceSettingsDescription),
+      findsOneWidget,
+    );
     expect(find.text(UserStorage.l10n.modelRolesTitle), findsNothing);
 
     await tester.tap(find.text(UserStorage.l10n.enableAiService));

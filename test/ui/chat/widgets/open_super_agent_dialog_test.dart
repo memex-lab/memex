@@ -132,10 +132,18 @@ void main() {
     );
 
     expect(find.byType(AgentChatDialog), findsNothing);
+    expect(
+      find.byKey(const ValueKey('super-agent-session-loading')),
+      findsOneWidget,
+    );
 
     sessionId.complete('session-1');
     await tester.pump();
 
     expect(find.byType(AgentChatDialog), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('super-agent-session-loading')),
+      findsNothing,
+    );
   });
 }
