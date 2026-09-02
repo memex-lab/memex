@@ -1513,5 +1513,40 @@
   "eventCardDefaultTitle": "Etkinlik",
   "memoryNoLongTermYet": "Henüz uzun süreli anılar yok.",
   "memoryNoRecentBuffer": "Ara bellekte yeni anı yok.",
-  "memoryGeneralSubject": "Genel"
+  "memoryGeneralSubject": "Genel",
+  "debugging": "Hata Ayıklama",
+  "agentStates": "Ajan Durumları",
+  "logLevel": "Seviye: ",
+  "@taskIdLabel": {
+    "placeholders": {
+      "id": {}
+    }
+  },
+  "taskIdLabel": "ID: {id}",
+  "@taskBizIdLabel": {
+    "placeholders": {
+      "bizId": {}
+    }
+  },
+  "taskBizIdLabel": "BizID: {bizId}",
+  "@taskStatusLabel": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "taskStatusLabel": "Durum: {status}",
+  "@taskScheduledLabel": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "taskScheduledLabel": "Planlanan: {date}",
+  "@taskCompletedLabel": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "taskCompletedLabel": "Tamamlandı: {date}",
+  "oauthCouldNotLaunchBrowser": "OAuth için tarayıcı başlatılamadı",
+  "authorizationTimedOut": "Yetkilendirme zaman aşımına uğradı"
 }

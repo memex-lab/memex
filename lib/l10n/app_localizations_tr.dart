@@ -701,10 +701,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-    Object running,
-    Object pending,
-    Object retrying,
-  ) {
+      Object running, Object pending, Object retrying) {
     return 'Çalıştırılıyor $running, Beklemede $pending, Yeniden Dene $retrying';
   }
 
@@ -3319,4 +3316,44 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get memoryGeneralSubject => 'Genel';
+
+  @override
+  String get debugging => 'Hata Ayıklama';
+
+  @override
+  String get agentStates => 'Ajan Durumları';
+
+  @override
+  String get logLevel => 'Seviye: ';
+
+  @override
+  String taskIdLabel(Object id) {
+    return 'ID: $id';
+  }
+
+  @override
+  String taskBizIdLabel(Object bizId) {
+    return 'BizID: $bizId';
+  }
+
+  @override
+  String taskStatusLabel(Object status) {
+    return 'Durum: $status';
+  }
+
+  @override
+  String taskScheduledLabel(Object date) {
+    return 'Planlanan: $date';
+  }
+
+  @override
+  String taskCompletedLabel(Object date) {
+    return 'Tamamlandı: $date';
+  }
+
+  @override
+  String get oauthCouldNotLaunchBrowser => 'OAuth için tarayıcı başlatılamadı';
+
+  @override
+  String get authorizationTimedOut => 'Yetkilendirme zaman aşımına uğradı';
 }

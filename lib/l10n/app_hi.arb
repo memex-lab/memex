@@ -1511,6 +1511,41 @@
   "memoryNoLongTermYet": "अभी तक कोई दीर्घकालिक स्मृति नहीं है।",
   "memoryNoRecentBuffer": "बफ़र में कोई हाल की स्मृति नहीं है।",
   "memoryGeneralSubject": "सामान्य",
+  "debugging": "डीबगिंग",
+  "agentStates": "एजेंट स्थितियाँ",
+  "logLevel": "स्तर: ",
+  "@taskIdLabel": {
+    "placeholders": {
+      "id": {}
+    }
+  },
+  "taskIdLabel": "ID: {id}",
+  "@taskBizIdLabel": {
+    "placeholders": {
+      "bizId": {}
+    }
+  },
+  "taskBizIdLabel": "BizID: {bizId}",
+  "@taskStatusLabel": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "taskStatusLabel": "स्थिति: {status}",
+  "@taskScheduledLabel": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "taskScheduledLabel": "निर्धारित: {date}",
+  "@taskCompletedLabel": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "taskCompletedLabel": "पूर्ण: {date}",
+  "oauthCouldNotLaunchBrowser": "OAuth के लिए ब्राउज़र लॉन्च नहीं किया जा सका",
+  "authorizationTimedOut": "प्राधिकरण समय समाप्त",
   "@timelineWeekNumberLabel": {
     "placeholders": {
       "week": {}

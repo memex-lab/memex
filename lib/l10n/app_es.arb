@@ -1511,6 +1511,41 @@
   "memoryNoLongTermYet": "Aún no hay recuerdos a largo plazo.",
   "memoryNoRecentBuffer": "No hay recuerdos recientes en el búfer.",
   "memoryGeneralSubject": "General",
+  "debugging": "Depuración",
+  "agentStates": "Estados del agente",
+  "logLevel": "Nivel: ",
+  "@taskIdLabel": {
+    "placeholders": {
+      "id": {}
+    }
+  },
+  "taskIdLabel": "ID: {id}",
+  "@taskBizIdLabel": {
+    "placeholders": {
+      "bizId": {}
+    }
+  },
+  "taskBizIdLabel": "BizID: {bizId}",
+  "@taskStatusLabel": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "taskStatusLabel": "Estado: {status}",
+  "@taskScheduledLabel": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "taskScheduledLabel": "Programado: {date}",
+  "@taskCompletedLabel": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "taskCompletedLabel": "Completado: {date}",
+  "oauthCouldNotLaunchBrowser": "No se pudo abrir el navegador para OAuth",
+  "authorizationTimedOut": "La autorización expiró",
   "@timelineWeekNumberLabel": {
     "placeholders": {
       "week": {}

@@ -1513,5 +1513,40 @@
   "eventCardDefaultTitle": "กิจกรรม",
   "memoryNoLongTermYet": "ยังไม่มีความทรงจำระยะยาว",
   "memoryNoRecentBuffer": "ไม่มีความทรงจำล่าสุดในบัฟเฟอร์",
-  "memoryGeneralSubject": "ทั่วไป"
+  "memoryGeneralSubject": "ทั่วไป",
+  "debugging": "การดีบัก",
+  "agentStates": "สถานะเอเจนต์",
+  "logLevel": "ระดับ: ",
+  "@taskIdLabel": {
+    "placeholders": {
+      "id": {}
+    }
+  },
+  "taskIdLabel": "ID: {id}",
+  "@taskBizIdLabel": {
+    "placeholders": {
+      "bizId": {}
+    }
+  },
+  "taskBizIdLabel": "BizID: {bizId}",
+  "@taskStatusLabel": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "taskStatusLabel": "สถานะ: {status}",
+  "@taskScheduledLabel": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "taskScheduledLabel": "กำหนดเวลา: {date}",
+  "@taskCompletedLabel": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "taskCompletedLabel": "เสร็จสิ้น: {date}",
+  "oauthCouldNotLaunchBrowser": "ไม่สามารถเปิดเบราว์เซอร์สำหรับ OAuth",
+  "authorizationTimedOut": "การอนุญาตหมดเวลา"
 }

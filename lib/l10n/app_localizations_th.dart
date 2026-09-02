@@ -694,10 +694,7 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-    Object running,
-    Object pending,
-    Object retrying,
-  ) {
+      Object running, Object pending, Object retrying) {
     return 'กำลังทำงาน $running, รอดำเนินการ $pending, ลองใหม่ $retrying';
   }
 
@@ -3288,4 +3285,45 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get memoryGeneralSubject => 'ทั่วไป';
+
+  @override
+  String get debugging => 'การดีบัก';
+
+  @override
+  String get agentStates => 'สถานะเอเจนต์';
+
+  @override
+  String get logLevel => 'ระดับ: ';
+
+  @override
+  String taskIdLabel(Object id) {
+    return 'ID: $id';
+  }
+
+  @override
+  String taskBizIdLabel(Object bizId) {
+    return 'BizID: $bizId';
+  }
+
+  @override
+  String taskStatusLabel(Object status) {
+    return 'สถานะ: $status';
+  }
+
+  @override
+  String taskScheduledLabel(Object date) {
+    return 'กำหนดเวลา: $date';
+  }
+
+  @override
+  String taskCompletedLabel(Object date) {
+    return 'เสร็จสิ้น: $date';
+  }
+
+  @override
+  String get oauthCouldNotLaunchBrowser =>
+      'ไม่สามารถเปิดเบราว์เซอร์สำหรับ OAuth';
+
+  @override
+  String get authorizationTimedOut => 'การอนุญาตหมดเวลา';
 }

@@ -1511,6 +1511,41 @@
   "memoryNoLongTermYet": "لا توجد ذكريات طويلة المدى بعد.",
   "memoryNoRecentBuffer": "لا توجد ذكريات حديثة في المخزن المؤقت.",
   "memoryGeneralSubject": "عام",
+  "debugging": "تصحيح الأخطاء",
+  "agentStates": "حالات الوكيل",
+  "logLevel": "المستوى: ",
+  "@taskIdLabel": {
+    "placeholders": {
+      "id": {}
+    }
+  },
+  "taskIdLabel": "ID: {id}",
+  "@taskBizIdLabel": {
+    "placeholders": {
+      "bizId": {}
+    }
+  },
+  "taskBizIdLabel": "BizID: {bizId}",
+  "@taskStatusLabel": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "taskStatusLabel": "الحالة: {status}",
+  "@taskScheduledLabel": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "taskScheduledLabel": "المجدول: {date}",
+  "@taskCompletedLabel": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "taskCompletedLabel": "مكتمل: {date}",
+  "oauthCouldNotLaunchBrowser": "تعذر تشغيل المتصفح لـ OAuth",
+  "authorizationTimedOut": "انتهت صلاحية التفويض",
   "@timelineWeekNumberLabel": {
     "placeholders": {
       "week": {}

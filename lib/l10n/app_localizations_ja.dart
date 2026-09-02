@@ -686,10 +686,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-    Object running,
-    Object pending,
-    Object retrying,
-  ) {
+      Object running, Object pending, Object retrying) {
     return '実行中 $running、保留中 $pending、再試行 $retrying';
   }
 
@@ -3220,4 +3217,44 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get memoryGeneralSubject => '一般';
+
+  @override
+  String get debugging => 'デバッグ';
+
+  @override
+  String get agentStates => 'エージェント状態';
+
+  @override
+  String get logLevel => 'レベル: ';
+
+  @override
+  String taskIdLabel(Object id) {
+    return 'ID: $id';
+  }
+
+  @override
+  String taskBizIdLabel(Object bizId) {
+    return 'BizID: $bizId';
+  }
+
+  @override
+  String taskStatusLabel(Object status) {
+    return 'ステータス: $status';
+  }
+
+  @override
+  String taskScheduledLabel(Object date) {
+    return '予定: $date';
+  }
+
+  @override
+  String taskCompletedLabel(Object date) {
+    return '完了: $date';
+  }
+
+  @override
+  String get oauthCouldNotLaunchBrowser => 'OAuth用のブラウザを起動できませんでした';
+
+  @override
+  String get authorizationTimedOut => '認証がタイムアウトしました';
 }

@@ -1515,5 +1515,40 @@
   "eventCardDefaultTitle": "رویداد",
   "memoryNoLongTermYet": "هنوز هیچ خاطره بلندمدتی وجود ندارد.",
   "memoryNoRecentBuffer": "هیچ خاطره جدیدی در بافر وجود ندارد.",
-  "memoryGeneralSubject": "عمومی"
+  "memoryGeneralSubject": "عمومی",
+  "debugging": "اشکال‌زدایی",
+  "agentStates": "وضعیت‌های عامل",
+  "logLevel": "سطح: ",
+  "@taskIdLabel": {
+    "placeholders": {
+      "id": {}
+    }
+  },
+  "taskIdLabel": "ID: {id}",
+  "@taskBizIdLabel": {
+    "placeholders": {
+      "bizId": {}
+    }
+  },
+  "taskBizIdLabel": "BizID: {bizId}",
+  "@taskStatusLabel": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "taskStatusLabel": "وضعیت: {status}",
+  "@taskScheduledLabel": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "taskScheduledLabel": "زمان‌بندی‌شده: {date}",
+  "@taskCompletedLabel": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "taskCompletedLabel": "تکمیل‌شده: {date}",
+  "oauthCouldNotLaunchBrowser": "امکان راه‌اندازی مرورگر برای OAuth وجود ندارد",
+  "authorizationTimedOut": "مهلت مجوز به پایان رسید"
 }

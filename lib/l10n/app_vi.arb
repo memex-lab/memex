@@ -1515,5 +1515,40 @@
   "eventCardDefaultTitle": "Sự kiện",
   "memoryNoLongTermYet": "Chưa có ký ức dài hạn.",
   "memoryNoRecentBuffer": "Không có ký ức gần đây trong bộ đệm.",
-  "memoryGeneralSubject": "Chung"
+  "memoryGeneralSubject": "Chung",
+  "debugging": "Gỡ lỗi",
+  "agentStates": "Trạng thái tác nhân",
+  "logLevel": "Cấp độ: ",
+  "@taskIdLabel": {
+    "placeholders": {
+      "id": {}
+    }
+  },
+  "taskIdLabel": "ID: {id}",
+  "@taskBizIdLabel": {
+    "placeholders": {
+      "bizId": {}
+    }
+  },
+  "taskBizIdLabel": "BizID: {bizId}",
+  "@taskStatusLabel": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "taskStatusLabel": "Trạng thái: {status}",
+  "@taskScheduledLabel": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "taskScheduledLabel": "Đã lên lịch: {date}",
+  "@taskCompletedLabel": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "taskCompletedLabel": "Hoàn thành: {date}",
+  "oauthCouldNotLaunchBrowser": "Không thể mở trình duyệt cho OAuth",
+  "authorizationTimedOut": "Ủy quyền đã hết hạn"
 }
