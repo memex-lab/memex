@@ -13,11 +13,12 @@ void main() {
 
   setUpAll(() async {
     GoogleFonts.config.allowRuntimeFetching = false;
-    SharedPreferences.setMockInitialValues({
-      'language': 'en',
-    });
-    await UserStorage.initL10n();
   });
+
+  Future<void> initLocale(String languageCode) async {
+    SharedPreferences.setMockInitialValues({'language': languageCode});
+    await UserStorage.initL10n();
+  }
 
   Future<void> pumpCard(WidgetTester tester, Widget card) async {
     await tester.pumpWidget(
@@ -28,6 +29,10 @@ void main() {
       ),
     );
   }
+
+  setUp(() async {
+    await initLocale('en');
+  });
 
   testWidgets('GalleryCard with empty image_urls shows noImages', (
     tester,
@@ -60,5 +65,25 @@ void main() {
     );
 
     expect(find.text(UserStorage.l10n.sketchContent), findsOneWidget);
+  });
+
+  test('Spanish template gallery uses localized section titles', () async {
+    await initLocale('es');
+    final sections = UserStorage.l10n.timelineTemplateGallerySections;
+    expect(sections.first.title, isNot('General'));
+    expect(sections.first.items.first.label, contains('Clásica'));
+  });
+
+  test('Arabic template gallery uses localized section titles', () async {
+    await initLocale('ar');
+    final sections = UserStorage.l10n.timelineTemplateGallerySections;
+    expect(sections.first.title, 'عام');
+    expect(sections.first.items.first.label, contains('البطاقة'));
+  });
+
+  test('Japanese template gallery uses localized insight titles', () async {
+    await initLocale('ja');
+    final items = UserStorage.l10n.insightTemplateGalleryItems;
+    expect(items.first.data['title'], '今日のタイムライン');
   });
 }
