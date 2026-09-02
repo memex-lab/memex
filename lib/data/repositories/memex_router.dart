@@ -1462,7 +1462,7 @@ class MemexRouter {
         limit: limit,
       );
 
-      return hydrateCards(
+      return await hydrateCards(
         userId,
         ftsResults.map((r) => r['fact_id'] as String),
         onError: (factId, error) {

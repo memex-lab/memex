@@ -19,7 +19,7 @@ Future<List<TimelineCardModel>> getCardsByIds(List<String> ids) async {
       return [];
     }
 
-    return hydrateCards(
+    return await hydrateCards(
       userId,
       ids,
       onError: (factId, error) {
