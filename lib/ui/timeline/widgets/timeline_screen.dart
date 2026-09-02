@@ -307,9 +307,9 @@ class TimelineScreenState extends State<TimelineScreen> {
                                         ),
                                       ),
                                       if (pendingCount > 0)
-                                        Positioned(
+                                        PositionedDirectional(
                                           top: 6,
-                                          left: 22,
+                                          end: 6,
                                           child: Container(
                                             width: 8,
                                             height: 8,
@@ -833,7 +833,7 @@ class TimelineFilterBar extends StatelessWidget {
     return ListView.separated(
       controller: scrollController,
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.only(left: 20, right: 20),
+      padding: const EdgeInsetsDirectional.only(start: 20, end: 20),
       itemCount: totalCount,
       separatorBuilder: (_, __) => const SizedBox(width: 10),
       itemBuilder: (context, index) {
