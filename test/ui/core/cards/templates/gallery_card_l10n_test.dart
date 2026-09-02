@@ -67,11 +67,11 @@ void main() {
     expect(find.text(UserStorage.l10n.sketchContent), findsOneWidget);
   });
 
-  test('Spanish template gallery uses localized section titles', () async {
+  test('Spanish template gallery uses localized labels', () async {
     await initLocale('es');
     final sections = UserStorage.l10n.timelineTemplateGallerySections;
-    expect(sections.first.title, isNot('General'));
     expect(sections.first.items.first.label, contains('Clásica'));
+    expect(sections.first.items.first.label, isNot(contains('Classic Card')));
   });
 
   test('Arabic template gallery uses localized section titles', () async {
