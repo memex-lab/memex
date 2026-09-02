@@ -95,7 +95,7 @@ class DebugSettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Debugging'),
+        title: Text(UserStorage.l10n.debugging),
         backgroundColor: AppColors.background,
         surfaceTintColor: AppColors.background,
         foregroundColor: Colors.black,
@@ -274,7 +274,7 @@ class DebugSettingsPage extends StatelessWidget {
           _buildFunctionTab(
             context: context,
             icon: Icons.psychology_alt_outlined,
-            title: 'Agent States',
+            title: UserStorage.l10n.agentStates,
             onTap: () {
               Navigator.push(
                 context,
