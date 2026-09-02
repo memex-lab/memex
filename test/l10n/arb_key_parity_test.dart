@@ -12,7 +12,7 @@ void main() {
     expect(
       result.exitCode,
       0,
-      reason: String.fromCharCodes(result.stderr + result.stdout),
+      reason: '${result.stderr}${result.stdout}',
     );
   });
 }
