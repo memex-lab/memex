@@ -10,9 +10,7 @@ import 'package:memex/utils/user_storage.dart';
 
 /// ViewModel for the Insight page. Holds insight list, pin/delete/reorder state.
 class InsightViewModel extends ChangeNotifier {
-  InsightViewModel({
-    required MemexRouter router,
-  }) : _router = router {
+  InsightViewModel({required MemexRouter router}) : _router = router {
     EventBusService.instance.addHandler(
       EventBusMessageType.newInsight,
       _handleNewInsightEvent,
@@ -22,7 +20,8 @@ class InsightViewModel extends ChangeNotifier {
   final MemexRouter _router;
 
   List<KnowledgeInsightCard>? insights;
-  bool isLoading = true;
+  bool isLoading = false;
+  bool _hasLoaded = false;
   String? errorMessage;
   String? activeCardId;
   bool isDeleting = false;
@@ -35,6 +34,11 @@ class InsightViewModel extends ChangeNotifier {
   }
 
   Future<void> _reloadAfterInsightUpdated() async {
+    await loadData();
+  }
+
+  Future<void> ensureLoaded() async {
+    if (_hasLoaded || isLoading) return;
     await loadData();
   }
 
@@ -52,6 +56,7 @@ class InsightViewModel extends ChangeNotifier {
         errorMessage = UserStorage.l10n.dataLoadFailedRetry;
       },
     );
+    _hasLoaded = true;
     isLoading = false;
     notifyListeners();
   }

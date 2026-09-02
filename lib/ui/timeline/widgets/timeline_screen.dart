@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
@@ -207,6 +209,7 @@ class TimelineScreenState extends State<TimelineScreen> {
     _currentPageIndex = index;
     final filter = _pageIndexToFilter(index, vm);
     if (index == 1) {
+      unawaited(widget.insightViewModel.ensureLoaded());
       vm.setViewMode(TimelineViewMode.insight);
       vm.setActiveFilter('insight');
     } else {
@@ -536,6 +539,9 @@ class TimelineScreenState extends State<TimelineScreen> {
                     vm.setViewMode(action['tag'] == 'insight'
                         ? TimelineViewMode.insight
                         : TimelineViewMode.timeline);
+                    if (action['tag'] == 'insight') {
+                      unawaited(widget.insightViewModel.ensureLoaded());
+                    }
                     final toastContext = context;
                     vm.loadCards(refresh: true).catchError((e) {
                       if (toastContext.mounted) {
@@ -599,6 +605,7 @@ class TimelineScreenState extends State<TimelineScreen> {
       scrollController: _tagScrollController,
       onPageSelected: _jumpToPage,
       onInsightSelected: () {
+        unawaited(widget.insightViewModel.ensureLoaded());
         DemoService.instance.tryAdvance(DemoStep.tapInsightTab);
       },
     );

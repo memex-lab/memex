@@ -267,12 +267,10 @@ class RootShellState extends State<RootShell> {
               TimelineViewModel(router: c.read<MemexRouter>())..init(),
         ),
         ChangeNotifierProvider<InsightViewModel>(
-          create: (c) =>
-              InsightViewModel(router: c.read<MemexRouter>())..loadData(),
+          create: (c) => InsightViewModel(router: c.read<MemexRouter>()),
         ),
         ChangeNotifierProvider<KnowledgeBaseViewModel>(
-          create: (c) => KnowledgeBaseViewModel(router: c.read<MemexRouter>())
-            ..fetchData(),
+          create: (c) => KnowledgeBaseViewModel(router: c.read<MemexRouter>()),
         ),
         ChangeNotifierProvider<PersonaAvatarViewModel>(
           create: (c) =>
@@ -545,14 +543,18 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       }
     });
 
-    // Check and report all health data
-    _logger.info('initState: Starting comprehensive health check...');
-    _checkAndReportHealthData().catchError((error, stackTrace) {
-      _logger.severe(
-        '❌ Error in _checkAndReportHealthData: $error',
-        error,
-        stackTrace,
-      );
+    // Health reads compete with Timeline first paint. Wait until the
+    // home shell has had a chance to load cards.
+    Future.delayed(const Duration(seconds: 5), () {
+      if (!mounted) return;
+      _logger.info('initState: Starting comprehensive health check...');
+      _checkAndReportHealthData().catchError((error, stackTrace) {
+        _logger.severe(
+          '❌ Error in _checkAndReportHealthData: $error',
+          error,
+          stackTrace,
+        );
+      });
     });
 
     // Start auto input collection and quantity check
@@ -578,8 +580,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
           _openSuperAgentDialog(
             initialDraftText: data.text,
             initialImages: data.images,
-            initialImageOriginalFilenames:
-                _originalFilenamesFromImages(data.images),
+            initialImageOriginalFilenames: _originalFilenamesFromImages(
+              data.images,
+            ),
           );
         });
       },
@@ -1856,9 +1859,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
               bottom: 164,
               left: 0,
               right: 0,
-              child: Center(
-                child: AgentActivityWidget(),
-              ),
+              child: Center(child: AgentActivityWidget()),
             ),
 
             if (_isRadialMenuOpen)
@@ -1949,6 +1950,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     _knowledgeBaseButtonTapCount++;
     if (_knowledgeBaseButtonTapCount == 1) {
       setState(() => _currentTab = 1);
+      unawaited(context.read<KnowledgeBaseViewModel>().ensureLoaded());
       _knowledgeBaseButtonTapTimer?.cancel();
       _knowledgeBaseButtonTapTimer = Timer(
         const Duration(milliseconds: 300),
