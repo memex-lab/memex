@@ -197,7 +197,7 @@ class SummaryCard extends StatelessWidget {
 
                   return Expanded(
                     child: Container(
-                      margin: EdgeInsets.only(right: isLast ? 0 : 10),
+                      margin: EdgeInsetsDirectional.only(end: isLast ? 0 : 10),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF7F8FA),
