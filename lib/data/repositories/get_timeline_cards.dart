@@ -48,19 +48,21 @@ Future<List<TimelineCardModel>> getTimelineCards({
       dateTo: dateTo,
     );
 
-    // 3. Hydrate Cards
-    final timelineCards = <TimelineCardModel>[];
-    for (final cachedCard in cachedCards) {
-      try {
-        final card = await hydrateCard(userId, cachedCard.factId);
-        if (card != null) timelineCards.add(card);
-      } catch (e) {
-        _logger.warning('Failed to hydrate card ${cachedCard.factId}: $e');
-      }
-    }
+    // 3. Hydrate cards with bounded parallelism. Sequential YAML + render
+    // on the UI isolate made first paint wait on every card in the page.
+    final hydrateStarted = DateTime.now();
+    final timelineCards = await hydrateCards(
+      userId,
+      cachedCards.map((card) => card.factId),
+      onError: (factId, error) {
+        _logger.warning('Failed to hydrate card $factId: $error');
+      },
+    );
 
     _logger.info(
-        'Returned ${timelineCards.length} cards for page $page (cache hit)');
+      'Returned ${timelineCards.length} cards for page $page '
+      'in ${DateTime.now().difference(hydrateStarted).inMilliseconds}ms',
+    );
 
     return timelineCards;
   } catch (e) {

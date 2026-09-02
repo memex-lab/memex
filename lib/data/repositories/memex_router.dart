@@ -1462,17 +1462,13 @@ class MemexRouter {
         limit: limit,
       );
 
-      final cards = <TimelineCardModel>[];
-      for (final r in ftsResults) {
-        final factId = r['fact_id'] as String;
-        try {
-          final card = await hydrateCard(userId, factId);
-          if (card != null) cards.add(card);
-        } catch (e) {
-          _logger.warning('Failed to hydrate search result: $e');
-        }
-      }
-      return cards;
+      return hydrateCards(
+        userId,
+        ftsResults.map((r) => r['fact_id'] as String),
+        onError: (factId, error) {
+          _logger.warning('Failed to hydrate search result $factId: $error');
+        },
+      );
     });
   }
 
