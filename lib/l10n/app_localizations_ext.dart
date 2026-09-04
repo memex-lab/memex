@@ -19,6 +19,7 @@ import 'app_localizations_ext_pt.dart';
 import 'app_localizations_ext_ru.dart';
 import 'app_localizations_ext_zh.dart';
 import 'app_localizations_ext_zh_hant.dart';
+import 'gallery/template_gallery_lookup.dart';
 import 'template_gallery_l10n.dart' as gallery;
 import 'package:flutter/material.dart';
 
@@ -74,25 +75,11 @@ mixin AppLocalizationsExt on AppLocalizations {
   MemexDemoCopy get demoCopy;
   String timelineWeekdayLabel(String shortWeekday);
 
-  List<gallery.TemplateGallerySection> get timelineTemplateGallerySections {
-    switch (localeName) {
-      case 'zh':
-      case 'zh_Hant':
-        return gallery.timelineTemplateGallerySectionsZh;
-      default:
-        return gallery.timelineTemplateGallerySectionsEn;
-    }
-  }
+  List<gallery.TemplateGallerySection> get timelineTemplateGallerySections =>
+      lookupTemplateGallery(localeName).timelineSections;
 
-  List<gallery.TemplateGalleryItem> get insightTemplateGalleryItems {
-    switch (localeName) {
-      case 'zh':
-      case 'zh_Hant':
-        return gallery.insightTemplateGalleryItemsZh;
-      default:
-        return gallery.insightTemplateGalleryItemsEn;
-    }
-  }
+  List<gallery.TemplateGalleryItem> get insightTemplateGalleryItems =>
+      lookupTemplateGallery(localeName).insightItems;
 
   List<gallery.InsightPreviewSample> get insightPreviewSamples {
     const order = [
