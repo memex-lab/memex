@@ -55,6 +55,6 @@ Arabic is already shipped. Keep verifying layouts under `TextDirection.rtl`.
 - [x] Turkish (`tr`) ARB + Ext
 - [x] iOS `Info.plist` locales beyond `en` / `zh-Hans`
 - [x] Android `values-<locale>/strings.xml` per locale
-- [ ] Arabic RTL layout pass
+- [~] Arabic RTL layout pass — directional insets applied to timeline, chat header, bottom bar, personal center, and insight summary cards; smoke test added (`test/ui/rtl/arabic_layout_smoke_test.dart`); remaining screens still need audit
 - [ ] Missing-key CI lint (checked in PR Flutter Quality via `scripts/check_arb_key_parity.py`)
 - [ ] Native review per language

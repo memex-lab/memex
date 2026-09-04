@@ -98,9 +98,9 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
             return Container(
               decoration: const BoxDecoration(
                 color: Color(0xFFF7F8FA),
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
+                borderRadius: BorderRadiusDirectional.only(
+                  topStart: Radius.circular(20),
+                  topEnd: Radius.circular(20),
                 ),
               ),
               child: SafeArea(
@@ -108,7 +108,7 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
                   children: [
                     // Header
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 16, 12, 0),
+                      padding: const EdgeInsetsDirectional.fromSTEB(20, 16, 12, 0),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
@@ -188,8 +188,8 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
                                   size: 80,
                                 ),
                               ),
-                              Positioned(
-                                right: 0,
+                              PositionedDirectional(
+                                end: 0,
                                 bottom: 0,
                                 child: Container(
                                   width: 26,

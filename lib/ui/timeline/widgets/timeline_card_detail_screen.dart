@@ -502,7 +502,7 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
         children: [
           // Timestamp Header mimicking list view
           Padding(
-            padding: const EdgeInsets.only(left: 8, bottom: 12),
+            padding: const EdgeInsetsDirectional.only(start: 8, bottom: 12),
             child: Row(
               children: [
                 Text(
@@ -1241,7 +1241,7 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
       key: const ValueKey('demo_detail_hint'),
       color: Colors.transparent,
       child: Container(
-        padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
+        padding: const EdgeInsetsDirectional.fromSTEB(14, 12, 10, 12),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.96),
           borderRadius: BorderRadius.circular(16),
@@ -2196,9 +2196,9 @@ class _FullScreenGalleryState extends State<_FullScreenGallery> {
               });
             },
           ),
-          Positioned(
+          PositionedDirectional(
             top: 50,
-            left: 16,
+            start: 16,
             child: GestureDetector(
               onTap: () => Navigator.pop(context),
               child: Container(
