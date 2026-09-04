@@ -65,6 +65,12 @@ void main() {
       expect(locale.languageCode, 'ru');
     });
 
+    test('keeps supported Italian locale', () {
+      final locale = UserStorage.resolveToSupportedLocale(const Locale('it'));
+
+      expect(locale.languageCode, 'it');
+    });
+
     test('keeps supported Traditional Chinese locale', () {
       final locale = UserStorage.resolveToSupportedLocale(
         const Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant'),
@@ -90,7 +96,7 @@ void main() {
     });
 
     test('falls back unsupported locales to English', () {
-      final locale = UserStorage.resolveToSupportedLocale(const Locale('it'));
+      final locale = UserStorage.resolveToSupportedLocale(const Locale('nl'));
 
       expect(locale.languageCode, 'en');
     });
