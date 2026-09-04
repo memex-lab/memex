@@ -43,6 +43,7 @@
 			<string>vi</string><!-- Vietnamese -->
 			<string>th</string><!-- Thai (i18n wishlist) -->
 			<string>tr</string><!-- Turkish (extra UI locale) -->
+			<string>it</string><!-- Italian -->
 			<string>ru</string><!-- Russian -->
 		</array>
 		<key>CFBundleAllowMixedLocalizations</key>

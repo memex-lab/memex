@@ -1,0 +1,1552 @@
+{
+  "@@locale": "it",
+  "timesLabel": "Volte",
+  "@modelSetAsDefault": {
+    "placeholders": {
+      "modelId": {}
+    }
+  },
+  "modelSetAsDefault": "Imposta {modelId} come modello predefinito",
+  "retry": "Riprova",
+  "unknownModel": "Modello sconosciuto",
+  "notSet": "Non impostato",
+  "confirmClear": "Conferma chiaro",
+  "confirmClearTokenMessage": "Cancellare l'utente corrente? Dovrai inserire nuovamente l'ID utente.",
+  "cancel": "Cancellare",
+  "confirm": "Confermare",
+  "tokenCleared": "Utente cancellato",
+  "@clearTokenFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "clearTokenFailed": "Impossibile cancellare l'utente: {error}",
+  "selectDateRangeOptional": "Seleziona l'intervallo di date (facoltativo):",
+  "startDate": "Data di inizio",
+  "endDate": "Data di fine",
+  "select": "Selezionare",
+  "processLimitOptional": "Limite di processo (facoltativo)",
+  "leaveEmptyForAll": "Lascia vuoto per elaborare tutto",
+  "startProcessing": "Inizia l'elaborazione",
+  "userIdNotFound": "ID utente non trovato",
+  "@createTaskFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "createTaskFailed": "Impossibile creare l'attività: {error}",
+  "reprocessCards": "Rielaborare le carte",
+  "reprocessCardsTaskCreated": "Richiesta di rielaborazione in coda nel Super Agent",
+  "reprocessCardsDownstreamMode": "Ambito",
+  "reprocessCardsCardOnly": "Solo carte",
+  "reprocessCardsCardOnlyDesc": "Chiedi al Super Agent di rivedere e rigenerare le carte della sequenza temporale selezionate.",
+  "reprocessCardsRerunDownstream": "Schede e relativi seguiti",
+  "reprocessCardsRerunDownstreamDesc": "Chiedi a Super Agent di prendere in considerazione anche il PKM correlato e gli aggiornamenti approfonditi quando necessario.",
+  "reanalyzeMediaAssets": "Rileggere gli allegati multimediali",
+  "reanalyzeMediaAssetsDesc": "Chiedi al Super Agent di ispezionare nuovamente il supporto allegato durante la rigenerazione delle carte.",
+  "regenerateComments": "Rigenera i commenti",
+  "regenerateCommentsTaskCreated": "Rigenera l'attività di commenti creata, in esecuzione in background",
+  "rebuildSearchIndex": "Ricostruisci l'indice di ricerca",
+  "rebuildSearchIndexSuccess": "Indice di ricerca ricostruito correttamente",
+  "rebuildSearchIndexFailed": "Impossibile ricostruire l'indice di ricerca",
+  "clearData": "Cancella dati",
+  "confirmClearDataMessage": "Cancellare i dati?",
+  "confirmClearDataDeletesWorkspaceMessage": "Tutti i dati dell'area di lavoro locale per l'utente corrente verranno eliminati, inclusi schede, contenuti multimediali, file della conoscenza, approfondimenti, memoria, cronologia chat e stato del sistema.\n\nQuesta azione non può essere annullata!",
+  "clearFailedAgentContexts": "Cancella il contesto della conversazione non riuscita",
+  "confirmClearFailedAgentContextsMessage": "Cancellare il contesto della conversazione salvata per gli agenti Insight e Pianificazione? Ciò è utile dopo aver modificato i modelli quando i messaggi dell'agente precedenti non sono più compatibili. Fatti, carte, conoscenze, ricordi e impostazioni del modello non verranno cancellati.",
+  "@failedAgentContextsCleared": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "failedAgentContextsCleared": "Cancellato {count} contesto/i di conversazione salvato/i",
+  "@clearFailedAgentContextsFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "clearFailedAgentContextsFailed": "Impossibile cancellare il contesto della conversazione: {error}",
+  "cloneToTestUser": "Clona per testare l'utente",
+  "confirmCloneToTestUserMessage": "Copia l'area di lavoro corrente in un nuovo utente di prova locale e passa ad esso. Lo stato di runtime dell'agente non viene copiato. I tuoi attuali dati utente non verranno modificati.",
+  "testUserIdLabel": "Testare l'ID utente",
+  "testUserIdHelper": "Utilizza lettere, numeri, trattini o trattini bassi.",
+  "testUserIdInvalid": "Utilizza solo lettere, numeri, trattini o trattini bassi.",
+  "overwriteExistingTestUser": "Sostituisci l'utente di prova esistente con lo stesso ID",
+  "@testUserCloneSuccess": {
+    "placeholders": {
+      "userId": {}
+    }
+  },
+  "testUserCloneSuccess": "Passato all'utente di prova {userId}",
+  "@testUserCloneFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "testUserCloneFailed": "Impossibile clonare l'utente di prova: {error}",
+  "dataClearedSuccess": "Dati cancellati con successo",
+  "@clearDataFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "clearDataFailed": "Impossibile cancellare i dati: {error}",
+  "personalCenter": "Centro personale",
+  "viewLogs": "Visualizza i registri",
+  "systemAuthorization": "Autorizzazione del sistema",
+  "aiCharacterConfig": "Configurazione dei caratteri AI",
+  "modelConfig": "Configurazione del modello",
+  "agentConfig": "Configurazione dell'agente",
+  "experimentalLab": "Laboratori",
+  "experimentalLabDescription": "Funzionalità sperimentali che potrebbero cambiare o spostarsi in seguito.",
+  "modelUsageStats": "Statistiche sull'utilizzo del modello",
+  "asyncTaskList": "Elenco attività asincrone",
+  "clearLocalToken": "Cancella utente",
+  "insightCardTemplates": "Modelli di schede informative",
+  "timelineCardTemplates": "Modelli di carte della sequenza temporale",
+  "logViewer": "Visualizzatore di registro",
+  "autoRefresh": "Aggiornamento automatico",
+  "lineCount": "Conteggio righe:",
+  "all": "Tutto",
+  "schedule": "Programma",
+  "appLockConfig": "Configurazione del blocco dell'app",
+  "@loadStatsFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadStatsFailed": "Impossibile caricare le statistiche: {error}",
+  "overview": "Panoramica",
+  "daily": "Quotidiano",
+  "modelStatsByAgent": "Per agente",
+  "detail": "Dettaglio",
+  "date": "Data",
+  "agent": "Agente",
+  "noData": "Nessun dato",
+  "totalCalls": "Chiamate totali",
+  "calls": "Chiamate",
+  "@callsCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "callsCount": "{count} chiama",
+  "selectDateRange": "Seleziona l'intervallo di date",
+  "totalTokens": "Gettoni totali",
+  "cacheRate": "Tasso di cache",
+  "promptTokens": "Gettoni di richiesta",
+  "completionTokens": "Gettoni di completamento",
+  "cachedTokens": "Token memorizzati nella cache",
+  "thoughtTokens": "Gettoni di pensiero",
+  "prompt": "Richiesta",
+  "completion": "Completamento",
+  "cached": "Memorizzato nella cache",
+  "thought": "Pensiero",
+  "model": "Modello",
+  "scene": "Scena",
+  "sceneId": "Identificativo della scena",
+  "tokenUsage": "Utilizzo dei gettoni",
+  "handler": "Gestore",
+  "modelBreakdown": "Ripartizione del modello",
+  "callDetails": "Dettagli della chiamata",
+  "@recordDetailsTitle": {
+    "placeholders": {
+      "scene": {}
+    }
+  },
+  "recordDetailsTitle": "Dettagli registrazione: {scene}",
+  "@saveLlmConfigFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "saveLlmConfigFailed": "Impossibile salvare la configurazione LLM: {error}",
+  "webHtmlPreviewUnavailable": "L'anteprima HTML non è disponibile sul Web. Si prega di visualizzare sul cellulare.",
+  "@saveUserInfoFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "saveUserInfoFailed": "Impossibile salvare le informazioni dell'utente: {error}",
+  "totalEstimatedCost": "Costo totale stimato",
+  "close": "Vicino",
+  "totalTokenConsumption": "Consumo totale di token",
+  "dataLoadFailedRetry": "Caricamento dati non riuscito, riprova più tardi.",
+  "timelineLoadFailedRetry": "Caricamento della sequenza temporale non riuscito, riprova più tardi.",
+  "newPerspective": "Nuova prospettiva",
+  "startPoint": "Inizio",
+  "endPoint": "FINE",
+  "originalInput": "Ingresso originale",
+  "referenceContent": "Contenuto di riferimento",
+  "@referenceWithTitle": {
+    "placeholders": {
+      "title": {}
+    }
+  },
+  "referenceWithTitle": "Riferimento: {title}",
+  "actionCenterTitle": "Azioni in sospeso",
+  "noPendingActions": "Nessuna azione in sospeso",
+  "clarificationNeeded": "Memex vuole confermare",
+  "clarificationTextHint": "Digita una risposta breve",
+  "clarificationTextRequired": "Aggiungi prima una risposta breve",
+  "clarificationAnswered": "Risposto",
+  "@clarificationAnswerPrefix": {
+    "placeholders": {
+      "answer": {}
+    }
+  },
+  "clarificationAnswerPrefix": "Risposta: {answer}",
+  "answerSaved": "Risposta salvata",
+  "clarificationOtherAnswer": "Inserimento manuale",
+  "clarificationNotSure": "Non sono sicuro/preferisco non dirlo",
+  "yes": "SÌ",
+  "no": "NO",
+  "footprintMap": "Mappa delle impronte",
+  "waypointPlaces": "Luoghi di passaggio",
+  "unknownPlace": "Luogo sconosciuto",
+  "releaseToSend": "Rilascia per inviare",
+  "selectFromAlbum": "Seleziona dall'album",
+  "clipboardPreviewTitle": "Nuovi appunti",
+  "clipboardPreviewImageTitle": "Immagine negli appunti",
+  "clipboardPreviewImageDescription": "Immagine pronta per essere aggiunta",
+  "clipboardPreviewUnprocessed": "Non ancora incollato",
+  "clipboardPreviewPasteToInput": "Incolla nell'input",
+  "clipboardPreviewAddImageToInput": "Aggiungi immagine",
+  "clipboardPreviewImageFailed": "Impossibile leggere l'immagine negli appunti",
+  "tellAiWhatHappened": "Racconta all'IA cosa è successo...",
+  "@recordingWithDuration": {
+    "placeholders": {
+      "duration": {}
+    }
+  },
+  "recordingWithDuration": "Registrazione: {duration}",
+  "playing": "Giocando...",
+  "sendLabel": "Inviare",
+  "@attachedImagesMessage": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "attachedImagesMessage": "Inviato/i immagini {count}",
+  "noTaskData": "Nessun dato sull'attività",
+  "@createdAtDate": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "createdAtDate": "Creato: {date}",
+  "@updatedAtDate": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "updatedAtDate": "Aggiornato: {date}",
+  "@durationLabel": {
+    "placeholders": {
+      "duration": {}
+    }
+  },
+  "durationLabel": "Durata: {duration}",
+  "@retryCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "retryCount": "Riprova: {count}",
+  "loadDetailFailedRetry": "Caricamento dettagli non riuscito, riprova più tardi.",
+  "loadFailed": "Caricamento non riuscito",
+  "@loadHistoryFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadHistoryFailed": "Impossibile caricare la cronologia: {error}",
+  "reload": "Ricaricare",
+  "aiInsightDetail": "Dettaglio approfondimento",
+  "@relatedRecordsCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "relatedRecordsCount": "Record correlati ({count})",
+  "noRelatedRecords": "Nessun record correlato",
+  "useFingerprintToUnlock": "Usa l'impronta digitale per sbloccare",
+  "locked": "Bloccato",
+  "wrongPassword": "Password errata",
+  "enterPassword": "Inserisci la password",
+  "memexLocked": "Memex è bloccato",
+  "calendarShortSun": "Sole",
+  "calendarShortMon": "Lun",
+  "calendarShortTue": "Mar",
+  "calendarShortWed": "Mercoledì",
+  "calendarShortThu": "Gio",
+  "calendarShortFri": "Ven",
+  "calendarShortSat": "Sab",
+  "@noRecordsOnDate": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "noRecordsOnDate": "Nessun record su {date}",
+  "footprintPath": "Percorso dell'impronta",
+  "lifeCompositionTable": "Composizione della vita",
+  "emotionReframe": "Riformulazione delle emozioni",
+  "chronicleOfThings": "Cronaca delle cose",
+  "goalProgress": "Progresso dell'obiettivo",
+  "trendChart": "Grafico delle tendenze",
+  "comparisonChart": "Grafico comparativo",
+  "todayTimeFlow": "Il flusso del tempo di oggi",
+  "aiInputHint": "Che si tratti di ricordi o del presente, sono qui...",
+  "refreshSuperAgentStateTooltip": "Cancella il contesto dell'agente Memex",
+  "refreshSuperAgentStateTitle": "Cancellare il contesto della cronologia dell'agente Memex?",
+  "refreshSuperAgentStateMessage": "La cronologia chat visibile rimarrà, ma il contesto storico di runtime di Memex Agent verrà cancellato e le risposte future inizieranno da un nuovo contesto. La memoria persistente, i file della knowledge base, le schede e gli altri dati salvati non sono interessati. Utilizzare questo quando Memex Agent continua a comportarsi in modo anomalo. Continuare?",
+  "refreshSuperAgentStateActiveRunMessage": "Attendere fino al termine del messaggio corrente di Memex Agent prima di cancellare il contesto.",
+  "refreshSuperAgentStateSuccess": "Il contesto dell'agente Memex è stato cancellato",
+  "@refreshSuperAgentStateFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "refreshSuperAgentStateFailed": "Impossibile cancellare il contesto dell'agente Memex: {error}",
+  "nothingHere": "Niente qui ancora",
+  "nothingHereHint": "Tocca il pulsante qui sotto per creare la tua prima carta",
+  "agentProcessing": "L'intelligenza artificiale sta elaborando...",
+  "keepAppOpen": "Non chiudere l'app",
+  "activityDetail": "Dettaglio attività",
+  "noAgentActivityYet": "Nessuna attività dell'agente ancora",
+  "processingEllipsis": "Elaborazione...",
+  "agentBackgroundTitle": "Agente Memex",
+  "agentBackgroundPausedTitle": "L'agente Memex è stato messo in pausa",
+  "agentBackgroundNeedsAttentionTitle": "L'agente Memex ha bisogno di attenzione",
+  "agentBackgroundStageIdle": "Oziare",
+  "agentBackgroundStageProcessing": "Elaborazione",
+  "agentBackgroundStageQueued": "In coda",
+  "agentBackgroundStageRetrying": "In attesa di riprovare",
+  "agentBackgroundStagePaused": "In pausa",
+  "agentBackgroundStageCompleted": "Completato",
+  "agentBackgroundStageNeedsAttention": "Ha bisogno di attenzione",
+  "agentBackgroundStageAnalyzingMedia": "Analisi dei media",
+  "agentBackgroundStageGeneratingCard": "Scheda generatrice",
+  "agentBackgroundStageUpdatingKnowledge": "Aggiornamento della conoscenza",
+  "agentBackgroundStagePreparingComment": "Preparazione del commento",
+  "agentBackgroundStageRoutingFollowUps": "Follow-up del percorso",
+  "@agentBackgroundTaskSummary": {
+    "placeholders": {
+      "running": {},
+      "pending": {},
+      "retrying": {}
+    }
+  },
+  "agentBackgroundTaskSummary": "In esecuzione {running}, In sospeso {pending}, Riprova {retrying}",
+  "@agentBackgroundTaskDetail": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "agentBackgroundTaskDetail": "Elaborazione delle attività in coda {count}.",
+  "agentBackgroundNoTasks": "Nessuna attività in background.",
+  "agentBackgroundStarting": "L'elaborazione è in corso.",
+  "agentBackgroundCompletedDetail": "Tutte le attività in background sono state completate.",
+  "agentBackgroundFailedDetail": "L'elaborazione è stata interrotta con un errore.",
+  "agentBackgroundPausedDetail": "L'elaborazione è sospesa e continuerà più tardi.",
+  "agentBackgroundQueuedDetail": "In attesa della fase di lavorazione successiva.",
+  "agentBackgroundRetryingDetail": "Il passaggio corrente verrà riprovato automaticamente.",
+  "agentBackgroundAnalyzeMediaDetail": "Lettura degli allegati e contesto locale.",
+  "agentBackgroundGeneratingCardDetail": "Trasformare il record in una scheda della sequenza temporale.",
+  "agentBackgroundUpdatingKnowledgeDetail": "Aggiornamento della conoscenza e della memoria locale.",
+  "agentBackgroundPreparingCommentDetail": "Preparazione di un follow-up dell'assistente.",
+  "agentBackgroundRoutingFollowUpsDetail": "Controllo delle azioni successive per questa carta.",
+  "@agentBackgroundPausedStatus": {
+    "placeholders": {
+      "summary": {}
+    }
+  },
+  "agentBackgroundPausedStatus": "In pausa - {summary}",
+  "@agentBackgroundNeedsAttentionStatus": {
+    "placeholders": {
+      "summary": {}
+    }
+  },
+  "agentBackgroundNeedsAttentionStatus": "Ha bisogno di attenzione - {summary}",
+  "settings": "Impostazioni",
+  "languageSettings": "Lingua",
+  "languageSettingsDesc": "Cambia la lingua di visualizzazione dell'app",
+  "noPendingActionsToast": "Nessuna azione in sospeso",
+  "knowledgeNewDiscovery": "Conoscenza nuova scoperta",
+  "@discoveredNewInsightsCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "discoveredNewInsightsCount": "Scoperto/i {count} nuovi approfondimenti",
+  "@updatedExistingInsightsCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "updatedExistingInsightsCount": "Aggiornati {count} approfondimenti esistenti",
+  "sectionNewInsights": "Nuovi approfondimenti",
+  "sectionUpdatedInsights": "Approfondimenti aggiornati",
+  "unnamedInsight": "Intuizione senza nome",
+  "copiedToClipboard": "Copiato negli appunti",
+  "copy": "Copia",
+  "selectedLocation": "Località selezionata",
+  "confirmLocationName": "Conferma il nome della posizione",
+  "confirmLocationNameHint": "Puoi modificare il nome (le coordinate rimangono le stesse)",
+  "nameLabel": "Nome",
+  "inputPlaceNameHint": "Inserisci il nome del luogo...",
+  "@currentCoordinates": {
+    "placeholders": {
+      "lat": {},
+      "lng": {}
+    }
+  },
+  "currentCoordinates": "Coordinate: {lat}, {lng}",
+  "confirmLocation": "Conferma la posizione",
+  "welcomeToMemex": "Benvenuti in Memex",
+  "createUserIdToStart": "Crea il tuo profilo",
+  "userIdLabel": "Il tuo nome/soprannome",
+  "userIdHint": "Inserisci il tuo nome o soprannome",
+  "pleaseEnterUserId": "Per favore inserisci il tuo nome",
+  "userIdMaxLength": "Il nome non deve superare i 50 caratteri",
+  "startUsing": "Continuare",
+  "userIdTip": "Questo verrà utilizzato per personalizzare la tua esperienza.",
+  "setupModelConfigTitle": "Configura un modello di intelligenza artificiale",
+  "setupModelConfigSubtitle": "Memex ha bisogno di un modello di intelligenza artificiale di frontiera per organizzare record, analizzare immagini e generare approfondimenti. Scegli un metodo di connessione.",
+  "setupModelConfigComplete": "Completa e vai",
+  "aiService": "Servizio modelli Memex",
+  "aiModelHubTitle": "Modelli e servizi di intelligenza artificiale",
+  "aiModelHubSubtitle": "Scegli il servizio ufficiale di Memex o porta il tuo fornitore. Il routing avanzato dei modelli rimane disponibile quando ne hai bisogno.",
+  "aiSetupCurrentStatusTitle": "Configurazione attuale",
+  "aiSetupStatusNotConfiguredTitle": "Il servizio AI non è configurato",
+  "aiSetupStatusNotConfiguredDescription": "Scegli un metodo di connessione per abilitare l'organizzazione AI per record, contenuti multimediali e approfondimenti.",
+  "aiSetupStatusMemexTitle": "Utilizzando il servizio ufficiale Memex",
+  "aiSetupStatusMemexDescription": "Memex utilizzerà la connessione ufficiale e le credenziali API gestite dal tuo account Memex.",
+  "aiSetupStatusCustomTitle": "Utilizzo delle impostazioni personalizzate del provider",
+  "aiSetupStatusCustomDescription": "Memex utilizzerà le credenziali del fornitore configurato e le selezioni del ruolo del modello.",
+  "aiSetupChooseConnectionTitle": "Scegli un metodo di connessione",
+  "aiSetupChooseConnectionDescription": "Inizia con il percorso che corrisponde al modo in cui desideri che Memex acceda ai modelli IA.",
+  "aiSetupOfficialRouteDescription": "Accedi a Memex per utilizzare il servizio AI ufficiale.",
+  "aiSetupCustomRouteDescription": "Aggiungi il tuo provider e la chiave API.",
+  "aiSetupCustomPageTitle": "Servizio IA personalizzato",
+  "aiSetupCustomPageSubtitle": "Configura prima le credenziali del provider, quindi scegli il modello che Memex dovrà utilizzare.",
+  "aiSetupProviderCredentialsTitle": "Provider e chiavi API",
+  "aiSetupProviderCredentialsDescription": "Aggiungi o modifica OpenAI, Anthropic, DeepSeek, Gemini, OpenRouter, Ollama o un altro provider compatibile.",
+  "modelRolesTitle": "Scegli il modello principale",
+  "modelRolesDescription": "Super Agent utilizza un modello per gli input di testo e immagini. Le sostituzioni avanzate dell'agente rimangono disponibili di seguito.",
+  "textModelRoleTitle": "Modello primario",
+  "textModelRoleDescription": "Utilizzato da Super Agent per testo, immagini, schede, conoscenza, approfondimenti, chat, commenti e memoria.",
+  "modelConnectionsTitle": "Provider di modelli e chiavi API",
+  "modelConnectionsDescription": "Connetti il ​​servizio ufficiale di Memex o aggiungi le credenziali del tuo fornitore.",
+  "relatedAiCapabilitiesTitle": "Funzionalità avanzate e correlate",
+  "relatedAiCapabilitiesDescription": "Ottimizza le assegnazioni degli agenti, il provider di posizione e il comportamento di trascrizione vocale.",
+  "aiSetupServiceCapabilitiesTitle": "Capacità di servizio",
+  "aiSetupServiceCapabilitiesDescription": "Scegli i fornitori utilizzati da Memex per le funzionalità adiacenti basate sull'intelligenza artificiale come il parlato e la geocodifica inversa.",
+  "aiSetupAdvancedCustomizationTitle": "Routing avanzato del modello",
+  "aiSetupAdvancedCustomizationDescription": "Per utenti esperti che desiderano che i singoli agenti utilizzino provider o configurazioni di modelli diversi.",
+  "locationProviderSettings": "Fornitore di posizione",
+  "speechProviderSettings": "Trascrizione del discorso",
+  "advancedAgentModelAssignments": "Assegnazioni del modello di agente",
+  "openAdvancedAgentModelAssignments": "Sostituisci i singoli agenti",
+  "noConfiguredModelOptions": "Aggiungi un provider o una chiave API prima di scegliere i ruoli del modello.",
+  "modelSlotUpdated": "Ruolo del modello aggiornato",
+  "aiServiceMemexRouteTitle": "Connettiti tramite Memex",
+  "aiServiceLongDescription": "Memex utilizza un sistema multi-agente per organizzare documenti di vita, note di conoscenza e contesto sociale, scoprire approfondimenti più profondi e fornire compagnia all'intelligenza artificiale con memoria persistente. I tuoi dati vengono archiviati come Markdown in testo semplice, preservando la libertà e la portabilità dei dati.",
+  "aiServiceCustomApiRouteTitle": "Ho una chiave API",
+  "aiServiceCustomModelDescription": "Scegli prima questa se disponi già di una chiave API di OpenAI, Anthropic, DeepSeek, Gemini o un altro provider.",
+  "enableAiService": "Connettiti con Memex",
+  "aiServiceReadyToast": "L'organizzazione dell'intelligenza artificiale è attiva",
+  "aiServiceSettingsDescription": "Se non disponi di una chiave API, utilizza un account Memex per connetterti ai servizi del modello tradizionale.",
+  "advancedModelConfiguration": "Configura la chiave API",
+  "skipForNow": "Salta per ora",
+  "clearAuth": "Cancella autenticazione",
+  "authorizing": "Autorizzando...",
+  "@authFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "authFailed": "Autenticazione non riuscita: {error}",
+  "authorized": "Autorizzato",
+  "@authorizedAs": {
+    "placeholders": {
+      "email": {}
+    }
+  },
+  "authorizedAs": "Autorizzato come {email}",
+  "authorizedSuccessfully": "Autorizzato con successo",
+  "reAuthorize": "Riautorizza",
+  "authorizeWithOpenAi": "Autorizza con OpenAI",
+  "authorizeWithGoogle": "Autorizza con Google",
+  "config": "Configurazione",
+  "calendar": "Calendario",
+  "reminders": "Promemoria",
+  "writeToSystemFailed": "Impossibile scrivere sul sistema",
+  "@permissionRequired": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "permissionRequired": "È richiesta l'autorizzazione {name}",
+  "@permissionRationale": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "permissionRationale": "Consenti all'app di accedere al tuo {name} nelle Impostazioni in modo che possiamo crearlo per te.",
+  "goToSettings": "Vai su Impostazioni",
+  "unknownAction": "Azione sconosciuta",
+  "discoveredCalendarEvent": "Evento in calendario in attesa di conferma",
+  "discoveredReminder": "Promemoria in attesa di conferma",
+  "addToCalendar": "Aggiungi al calendario",
+  "addToReminders": "Aggiungi ai promemoria",
+  "systemActionPendingExplanation": "Non ancora aggiunto. Tocca di seguito per richiedere l'autorizzazione e aggiungerla al tuo dispositivo.",
+  "@addedToSuccess": {
+    "placeholders": {
+      "target": {}
+    }
+  },
+  "addedToSuccess": "Aggiunto con successo a {target}",
+  "ignore": "Ignorare",
+  "confirmDelete": "Conferma l'eliminazione",
+  "confirmDeleteSessionMessage": "Eliminare questa conversazione? Questa operazione non può essere annullata.",
+  "delete": "Eliminare",
+  "deleteSuccess": "Eliminato con successo",
+  "@deleteFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "deleteFailed": "Eliminazione non riuscita: {error}",
+  "daysAgo": "{count} giorni fa",
+  "chatHistory": "Cronologia chat",
+  "enterFullScreenTooltip": "Entra a schermo intero",
+  "exitFullScreenTooltip": "Esci dallo schermo intero",
+  "noConversations": "Nessuna conversazione",
+  "@loadSessionListFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadSessionListFailed": "Impossibile caricare l'elenco delle sessioni: {error}",
+  "@yesterdayAt": {
+    "placeholders": {
+      "time": {}
+    }
+  },
+  "yesterdayAt": "Ieri {time}",
+  "newChat": "Nuova chiacchierata",
+  "@messageCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "messageCount": "{count} messaggi",
+  "organize": "Organizzare",
+  "pkmCategoryProject": "Progetto",
+  "pkmCategoryProjectSubtitle": "A breve termine · Obiettivi · Scadenze",
+  "pkmCategoryArea": "Zona",
+  "pkmCategoryAreaSubtitle": "A lungo termine · Responsabilità · Standard",
+  "pkmCategoryResource": "Risorsa",
+  "pkmCategoryResourceSubtitle": "Interessi · Ispirazione · Riserva",
+  "pkmCategoryArchive": "Archivio",
+  "pkmCategoryArchiveSubtitle": "Fatto · Inattivo · Riferimento",
+  "recentChanges": "Cambiamenti recenti",
+  "noRecentChangesInThreeDays": "Nessun cambiamento negli ultimi 3 giorni",
+  "unpinned": "Sbloccato",
+  "pinnedStyle": "Stile appuntato",
+  "@operationFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "operationFailed": "Operazione non riuscita: {error}",
+  "refreshingInsightData": "Aggiornamento dei dati approfonditi. L'operazione potrebbe richiedere qualche istante...",
+  "@refreshFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "refreshFailed": "Aggiornamento non riuscito: {error}",
+  "sortUpdated": "Ordinamento aggiornato",
+  "@sortSaveFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "sortSaveFailed": "Impossibile salvare l'ordinamento: {error}",
+  "insightCardDeleted": "Scheda informativa eliminata",
+  "@deleteFailedShort": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "deleteFailedShort": "Eliminazione non riuscita: {error}",
+  "knowledgeInsight": "Approfondimento della conoscenza",
+  "completeSort": "Ordinamento completo",
+  "noKnowledgeInsight": "Nessuna conoscenza approfondita",
+  "@insightProcessingBacklogMessage": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "insightProcessingBacklogMessage": "Le attività in background {count} sono ancora in fase di elaborazione.",
+  "insightUnavailableMessage": "Questo insight è ancora in fase di generazione o è stato aggiornato. Aggiorna gli approfondimenti e riprova più tardi.",
+  "artifactOpen": "Aprire",
+  "updating": "Aggiornamento...",
+  "update": "Aggiornamento",
+  "enabled": "Abilitato",
+  "disabled": "Disabilitato",
+  "appLockOn": "Blocco app abilitato",
+  "appLockOff": "Blocco app disabilitato",
+  "enableAppLockFirst": "Abilita prima il blocco dell'app",
+  "enterFourDigitPassword": "Inserisci la password di 4 cifre",
+  "passwordSetAndLockOn": "Password impostata e blocco app abilitato",
+  "appLockSettings": "Impostazioni di blocco dell'app",
+  "enableAppLock": "Abilita il blocco dell'app",
+  "enableAppLockSubtitle": "Password richiesta all'avvio dell'app",
+  "enableBiometrics": "Abilita la biometria",
+  "biometricsSubtitle": "Utilizza Face ID o Touch ID per sbloccare",
+  "changePassword": "Cambiare la password",
+  "setFourDigitPassword": "Imposta una password di 4 cifre",
+  "reenterPasswordToConfirm": "Reinserire la password per confermare",
+  "passwordMismatch": "Le password non corrispondono. Per favore riprova.",
+  "@confirmDeleteCharacter": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "confirmDeleteCharacter": "Eliminare il carattere \"{name}\"? Questa operazione non può essere annullata.",
+  "configureAiCharacter": "Configura il personaggio AI",
+  "addCharacter": "Aggiungi carattere",
+  "addCharacterSubtitle": "Scegli i personaggi IA per unirti al tuo team di intuizione. Analizzeranno i dati della tua vita da diverse angolazioni.",
+  "noCharacters": "Nessun personaggio",
+  "@loadCharacterFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadCharacterFailed": "Impossibile caricare i caratteri: {error}",
+  "noTags": "Nessun tag",
+  "createSuccess": "Creato con successo",
+  "updateSuccess": "Aggiornato con successo",
+  "@saveFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "saveFailed": "Salvataggio non riuscito: {error}",
+  "newCharacter": "Nuovo personaggio",
+  "editCharacter": "Modifica personaggio",
+  "save": "Salva",
+  "characterName": "Nome del personaggio",
+  "characterNameHint": "Dai un nome al tuo personaggio",
+  "pleaseEnterCharacterName": "Inserisci il nome del personaggio",
+  "tagsLabel": "Tag",
+  "tagsHint": "per esempio. saggezza, riconoscimento, macro\nSepara più tag con virgole",
+  "characterPersonaLabel": "Persona di carattere",
+  "characterPersonaHint": "Includi persona, guida di stile, dialogo di esempio, filtri di conoscenza, ecc.\nUtilizzare ## per le intestazioni delle sezioni.",
+  "pleaseEnterCharacterPersona": "Inserisci il personaggio del personaggio",
+  "@permissionRequestError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "permissionRequestError": "Errore nella richiesta di autorizzazione: {error}",
+  "permissionRequiredTitle": "Permesso richiesto",
+  "permissionPermanentlyDeniedMessage": "Hai negato permanentemente questa autorizzazione oppure il sistema la richiede. Si prega di abilitarlo nelle impostazioni di sistema.",
+  "getting": "Ottenere...",
+  "unauthorized": "Non autorizzato",
+  "authorizedGoToSettings": "Autorizzato. Vai alle impostazioni di sistema per modificare.",
+  "location": "Posizione",
+  "locationPermissionReason": "Per registrare luoghi e caratteristiche relative alla posizione",
+  "photos": "Foto",
+  "photosPermissionReason": "Per selezionare foto, salvare immagini generate, ecc.",
+  "camera": "Telecamera",
+  "cameraPermissionReason": "Per scattare foto e video",
+  "microphone": "Microfono",
+  "microphonePermissionReason": "Per il riconoscimento vocale, la registrazione, ecc.",
+  "calendarPermissionReason": "Per registrare il programma e leggere gli eventi del calendario",
+  "remindersPermissionReason": "Per registrare e leggere i tuoi promemoria",
+  "fitnessAndMotion": "Fitness e movimento",
+  "fitnessPermissionReason": "Per la registrazione di dati sulla salute e sul movimento",
+  "notification": "Notifica",
+  "notificationPermissionReason": "Per inviare programmi e promemoria importanti",
+  "memexAgentNotificationPermissionTitle": "Mantieni Memex Agent in esecuzione in background",
+  "memexAgentNotificationPermissionMessage": "Memex Agent viene eseguito localmente sul tuo dispositivo. Le notifiche consentono a Memex di mostrare i progressi e di continuare l'elaborazione dopo aver lasciato l'app o spento lo schermo. Se le notifiche sono disattivate, mantieni Memex aperto in primo piano fino al termine dell'attività.",
+  "loadDetailFailedRetryShort": "Caricamento dettagli non riuscito, riprova più tardi.",
+  "total": "Totale",
+  "estimatedCost": "Costo stimato",
+  "byAgent": "Per Agente",
+  "timeUpdated": "Ora aggiornata",
+  "@updateFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "updateFailed": "Aggiornamento non riuscito: {error}",
+  "locationUpdated": "Posizione aggiornata",
+  "confirmDeleteCardMessage": "Eliminare questa carta? Questa operazione non può essere annullata.",
+  "cardDetailNotFound": "Dettagli della carta non trovati",
+  "saySomething": "Di 'qualcosa...",
+  "relatedMemories": "Ricordi correlati",
+  "viewMore": "Visualizza altro",
+  "relatedRecords": "Record correlati",
+  "reply": "Rispondere",
+  "replySent": "Risposta inviata",
+  "insightTemplateGalleryTitle": "Modelli di schede informative",
+  "timelineTemplateGalleryTitle": "Modelli di carte della sequenza temporale",
+  "categoryTextual": "Testuale",
+  "timelineFilterAll": "TUTTO",
+  "insights": "Approfondimenti",
+  "memoryTitle": "Memoria",
+  "longTermProfile": "Profilo a lungo termine",
+  "recentBuffer": "Buffer recente",
+  "@errorLoadingMemory": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "errorLoadingMemory": "Errore durante il caricamento della memoria: {error}",
+  "agentConfiguration": "Configurazione dell'agente",
+  "resetToDefaults": "Ripristina le impostazioni predefinite",
+  "resetAllAgentConfigurationsTitle": "Reimposta tutte le configurazioni dell'agente",
+  "resetAllAgentConfigurationsMessage": "Sei sicuro di voler reimpostare tutte le configurazioni dell'agente sui valori predefiniti? Questa azione non può essere annullata.",
+  "resetButton": "Reset",
+  "@loadDataFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "loadDataFailed": "Impossibile caricare i dati: {error}",
+  "@saveConfigFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "saveConfigFailed": "Impossibile salvare la configurazione: {error}",
+  "selectLlmClient": "Seleziona cliente LLM:",
+  "agentConfigurationsReset": "Ripristino delle configurazioni dell'agente",
+  "@resetFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "resetFailed": "Impossibile reimpostare: {error}",
+  "modelConfiguration": "Configurazione del modello",
+  "resetAllConfigurationsTitle": "Ripristina tutte le configurazioni",
+  "resetAllModelConfigurationsMessage": "Sei sicuro di voler reimpostare tutte le configurazioni del modello sui valori predefiniti? Questa azione non può essere annullata.",
+  "modelConfigurationsReset": "Ripristino delle configurazioni del modello",
+  "cannotDeleteDefaultConfiguration": "Impossibile eliminare la configurazione predefinita",
+  "cannotDeleteConfigurationTitle": "Impossibile eliminare la configurazione",
+  "@configUsedByAgentsMessage": {
+    "placeholders": {
+      "agentList": {}
+    }
+  },
+  "configUsedByAgentsMessage": "Questa configurazione è attualmente utilizzata dai seguenti agenti:\n\n{agentList}\n\nRiassegna questi agenti prima di eliminarli.",
+  "ok": "OK",
+  "deleteConfigurationTitle": "Elimina configurazione",
+  "@confirmDeleteConfigMessage": {
+    "placeholders": {
+      "key": {}
+    }
+  },
+  "confirmDeleteConfigMessage": "Sei sicuro di voler eliminare \"{key}\"?",
+  "defaultLabel": "Predefinito",
+  "setAsDefault": "Imposta come predefinito",
+  "invalidJsonInExtraField": "JSON non valido nel campo Extra",
+  "keyAlreadyExists": "La chiave esiste già",
+  "resetConfigurationTitle": "Ripristina configurazione",
+  "resetConfigurationMessage": "Ripristinare questa configurazione ai valori predefiniti iniziali? Le modifiche attuali andranno perse.",
+  "configurationResetPressSave": "Ripristino della configurazione. Premi Salva per applicare.",
+  "addConfiguration": "Aggiungi configurazione",
+  "editConfiguration": "Modifica configurazione",
+  "duplicateConfiguration": "Configurazione duplicata",
+  "duplicate": "Duplicato",
+  "keyIdLabel": "ID di configurazione",
+  "keyIdHelper": "Assegna un nome a questa configurazione, ad esempio deepseek o work-gpt.",
+  "required": "Necessario",
+  "clientLabel": "Fornitore di modelli",
+  "providerGroupOpenAi": "OpenAI",
+  "providerGroupAnthropic": "Antropico",
+  "providerGroupGoogle": "Google",
+  "providerGroupOthers": "Popolare",
+  "providerOpenAiApiKey": "Chiave API",
+  "providerOpenAiResponses": "Chiave API (risposte)",
+  "providerChatGptOauth": "ChatGPT Pro/Plus",
+  "providerClaudeApiKey": "Chiave API",
+  "providerBedrockSecret": "Segreto del fondamento roccioso",
+  "providerGemini": "Gemelli",
+  "providerGeminiOauth": "Gemelli (Google OAuth)",
+  "providerKimi": "Kimi (Moonshot)",
+  "providerQwen": "Aliyun",
+  "providerSeed": "Volcengine",
+  "providerZhipu": "ZhipuGLM",
+  "providerDeepSeek": "DeepSeek",
+  "providerMinimax": "MiniMax",
+  "providerOpenRouter": "OpenRouter",
+  "providerOllama": "Ollama (locale)",
+  "providerMimo": "Xiaomi MIMO",
+  "providerMemex": "Servizio proxy Memex",
+  "memexSignIn": "Registrazione",
+  "memexCreateAccount": "Creare un account",
+  "memexUsername": "Nome utente",
+  "memexPassword": "Password",
+  "memexCreateAccountLink": "Creare un account",
+  "memexSignInLink": "Accedi invece",
+  "memexTopUp": "Ricarica per iniziare a utilizzare Memex AI",
+  "memexTopUpSuccess": "Ricarica riuscita!",
+  "memexFillAllFields": "Si prega di compilare tutti i campi",
+  "memexUsernameTooShort": "Il nome utente deve contenere almeno 6 caratteri",
+  "memexAuthFailed": "Autenticazione non riuscita",
+  "memexPaymentFailed": "Impossibile creare il pagamento",
+  "memexLogout": "Esci",
+  "memexTopUpButton": "Ricaricare",
+  "memexTopUpChooseAmount": "Scegli un importo",
+  "@memexTopUpEstimatedRecords": {
+    "placeholders": {
+      "range": {}
+    }
+  },
+  "memexTopUpEstimatedRecords": "Informazioni sui record {range}",
+  "memexTopUpPlanStarter": "Antipasto",
+  "memexTopUpPlanEveryday": "Ogni giorno",
+  "memexTopUpPlanHighVolume": "Alto volume",
+  "memexTopUpPlanCustom": "Crediti personalizzati",
+  "memexTopUpPlanStarterSubtitle": "Buono per provare Memex AI",
+  "memexTopUpPlanEverydaySubtitle": "Buono per l'organizzazione regolare",
+  "memexTopUpPlanHighVolumeSubtitle": "Buono per lotti più grandi",
+  "memexTopUpPlanCustomSubtitle": "Inserisci un valore compreso tra 1 e 10.000 USD",
+  "memexTopUpCustomEstimate": "La stima si basa sull'importo inserito",
+  "memexCustomAmount": "Importo personalizzato",
+  "memexViewHistory": "Cronologia dell'utilizzo",
+  "@memexBalanceLabel": {
+    "placeholders": {
+      "amount": {}
+    }
+  },
+  "memexBalanceLabel": "Saldo: {amount}",
+  "memexConfirmPassword": "Conferma password",
+  "memexPasswordMismatch": "Le password non corrispondono",
+  "@memexPayAmount": {
+    "placeholders": {
+      "amount": {}
+    }
+  },
+  "memexPayAmount": "Ricarica {amount}",
+  "modelIdLabel": "Modello",
+  "modelIdHelper": "per esempio. gemini-3.1-pro-anteprima, gpt-4o",
+  "fetchingModels": "Recupero modelli in corso...",
+  "fetchModelsButton": "Recupera modelli",
+  "enterApiKeyFirst": "Inserisci prima la chiave API per recuperare i modelli",
+  "apiKeyLabel": "Chiave API",
+  "baseUrlLabel": "Endpoint API",
+  "advancedSettings": "Impostazioni avanzate",
+  "testConnectionSuccess": "Connessione riuscita",
+  "testConnectionFailed": "Connessione non riuscita",
+  "testTypeText": "Testo",
+  "testTypeVision": "Visione",
+  "testButton": "Test",
+  "testing": "Prova...",
+  "proxyUrlOptional": "URL proxy (facoltativo)",
+  "proxyUrlHelper": "per esempio. http://127.0.0.1:7890",
+  "temperatureLabel": "Temperatura",
+  "topPLabel": "Superiore P",
+  "maxTokensLabel": "Gettoni massimi",
+  "extraParamsJson": "Parametri aggiuntivi (JSON)",
+  "invalidJson": "JSON non valido",
+  "warning": "Configurazione incompleta",
+  "invalidConfigurationWarning": "La configurazione non è ancora completa (ad esempio, manca la chiave API o l'ID modello). Puoi comunque salvarlo e configurarlo in seguito. Continuare?",
+  "invalidModelConfigDetailed": "L'agente AI \"{agentId}\" necessita di una configurazione del modello valida (chiave: \"{configKey}\") per funzionare. Si prega di verificare le impostazioni del modello.",
+  "discardChangesTitle": "Lasciare questa pagina?",
+  "discardChangesMessage": "Se hai apportato modifiche, salvale prima di uscire.",
+  "discardButton": "Scartare",
+  "chooseLanguage": "Scegli la lingua",
+  "chooseAvatar": "Scegli Avatar",
+  "configureNow": "Configura ora",
+  "modelNotConfiguredBanner": "Modello AI non ancora configurato. Configuralo per sbloccare tutte le funzionalità.",
+  "modelNotConfiguredSubmitHint": "Configura un modello AI prima della pubblicazione",
+  "processingStatus": "Elaborazione",
+  "failedStatus": "Fallito",
+  "failureReason": "Motivo del fallimento",
+  "unknownError": "Si è verificato un errore sconosciuto",
+  "enableFitness": "Abilita Fitness",
+  "fitnessBannerMessage": "Consenti l'accesso al fitness per monitorare i dati relativi alla tua salute e alle tue attività.",
+  "fitnessDismissTitle": "Saltare l'accesso al fitness?",
+  "fitnessDismissMessage": "Senza l'autorizzazione per l'attività fisica, l'app non sarà in grado di raccogliere automaticamente i tuoi dati sanitari per approfondimenti e registrazioni automatiche.",
+  "skipAnyway": "Salta comunque",
+  "proModelHint": "Questo modello richiede un abbonamento ChatGPT Pro/Plus.",
+  "searchKnowledgeBase": "Cerca nella base di conoscenza...",
+  "searchKnowledgeHint": "Inserisci la parola chiave per cercare nomi di file o contenuti",
+  "@noSearchResults": {
+    "placeholders": {
+      "query": {}
+    }
+  },
+  "noSearchResults": "Nessun risultato trovato per \"{query}\"",
+  "onlyMarkdownPreview": "È supportata solo l'anteprima Markdown",
+  "backupAndRestore": "Backup e ripristino",
+  "createBackup": "Crea backup",
+  "restoreBackup": "Ripristina backup",
+  "backupDescription": "Raccogli tutti i tuoi dati (schede, knowledge base, approfondimenti, impostazioni) in un file .memex. Salvalo su iCloud Drive, Google Drive o qualsiasi posizione tramite il foglio di condivisione.",
+  "restoreDescription": "Seleziona un file di backup .memex per ripristinare tutti i dati. Ciò sovrascriverà i dati correnti.",
+  "selectBackupFile": "Seleziona File di backup",
+  "estimatedSize": "Dimensioni stimate",
+  "backupComplete": "Backup creato",
+  "@backupFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "backupFailed": "Backup non riuscito: {error}",
+  "confirmRestore": "Conferma ripristino",
+  "confirmRestoreMessage": "Il ripristino sovrascriverà tutti i dati correnti, incluse schede, knowledge base, approfondimenti e impostazioni. Questa operazione non può essere annullata. Continuare?",
+  "restoreComplete": "Ripristino completato",
+  "restoreRestartHint": "I dati sono stati ripristinati. Riavvia l'app affinché tutte le modifiche abbiano effetto.",
+  "@restoreFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "restoreFailed": "Ripristino non riuscito: {error}",
+  "invalidBackupFile": "File di backup non valido. Seleziona un file .memex.",
+  "automaticBackup": "Backup automatico",
+  "autoBackupDescription": "Se abilitato, Memex crea al massimo uno snapshot locale al giorno dopo l'avvio o quando torna in primo piano.",
+  "backupSensitiveSettingsHint": "I backup includono le impostazioni e le chiavi del provider del modello. Conserva i file di backup in un posto di cui ti fidi.",
+  "backupLocation": "Posizione",
+  "backupLocationDetails": "Dettagli sulla posizione",
+  "backupLocationSummary": "Mostrato nell'app",
+  "backupLocationFullPath": "Percorso completo",
+  "backupLocationUri": "URI di accesso alla cartella",
+  "copyBackupLocationPath": "Copia percorso",
+  "backupLocationCopied": "Posizione del backup copiata",
+  "@androidBackupLocationSelected": {
+    "placeholders": {
+      "folderName": {}
+    }
+  },
+  "androidBackupLocationSelected": "Cartella selezionata: {folderName}",
+  "iosICloudBackupLocation": "iCloud Drive > Memex > Backup",
+  "iosAppDocumentsBackupLocation": "File > Sul mio iPhone > Memex > Backup",
+  "autoBackupStatus": "Stato",
+  "noAutoBackupYet": "Nessun backup automatico ancora",
+  "@lastBackupAt": {
+    "placeholders": {
+      "time": {}
+    }
+  },
+  "lastBackupAt": "Ultimo backup: {time}",
+  "autoBackupRetention": "Conservazione",
+  "@autoBackupRetentionDays": {
+    "placeholders": {
+      "days": {}
+    }
+  },
+  "autoBackupRetentionDays": "{days} giorni",
+  "autoBackupRetentionForever": "Conserva per sempre",
+  "autoBackupMaxSize": "Tappo di stoccaggio",
+  "@autoBackupRetentionLimitHint": {
+    "placeholders": {
+      "size": {}
+    }
+  },
+  "autoBackupRetentionLimitHint": "La pulizia automatica mantiene gli snapshot automatici in {size}. Le istantanee di sicurezza e le esportazioni manuali vengono conservate separatamente.",
+  "createSnapshotNow": "Esegui il backup adesso",
+  "backupLocationMenu": "Cambia posizione",
+  "defaultBackupLocation": "Cartella di backup predefinita",
+  "defaultBackupLocationAndroidDesc": "Utilizza la cartella dei file esterni specifica dell'app di Memex. Non è necessaria alcuna autorizzazione di archiviazione.",
+  "chooseBackupLocation": "Scegli la cartella di backup",
+  "chooseBackupLocationAndroidDesc": "Scegli una cartella con il selettore di sistema di Android e concedi l'accesso permanente a Memex.",
+  "storedBackups": "Backup archiviati",
+  "noStoredBackups": "I backup automatici verranno visualizzati qui dopo la prima istantanea.",
+  "backupTypeAutoSnapshot": "Istantanea automatica",
+  "backupTypeSafetySnapshot": "Istantanea sulla sicurezza",
+  "backupTypeManualBackup": "Backup manuale",
+  "refresh": "Aggiorna",
+  "restoreThisBackup": "Ripristina questo backup",
+  "deleteThisBackup": "Elimina questo backup",
+  "confirmDeleteBackup": "Eliminare il backup?",
+  "@confirmDeleteBackupMessage": {
+    "placeholders": {
+      "fileName": {}
+    }
+  },
+  "confirmDeleteBackupMessage": "Eliminare {fileName}? Questa operazione rimuove il file di backup archiviato e non può essere annullata.",
+  "@backupDeleted": {
+    "placeholders": {
+      "fileName": {}
+    }
+  },
+  "backupDeleted": "Backup eliminato: {fileName}",
+  "@backupDeleteFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "backupDeleteFailed": "Impossibile eliminare il backup: {error}",
+  "creatingSafetySnapshot": "Creazione istantanea di sicurezza...",
+  "@autoBackupCreated": {
+    "placeholders": {
+      "fileName": {}
+    }
+  },
+  "autoBackupCreated": "Istantanea creata: {fileName}",
+  "@backupLocationFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "backupLocationFailed": "Impossibile aggiornare la posizione del backup: {error}",
+  "backupImportCreatedAt": "Creato",
+  "backupImportSourceVersion": "Versione sorgente",
+  "backupImportFlavor": "Costruire",
+  "backupLegacyFormat": "Backup legacy (nessun manifest)",
+  "restoreInProgress": "Ripristino del backup...",
+  "dataStorage": "Archiviazione dei dati",
+  "dataStorageDescriptionAndroid": "Scegli una cartella personalizzata in cui archiviare il tuo spazio di lavoro. I dati vengono conservati quando reinstalli l'app.",
+  "dataStorageDescriptionIOS": "Attiva iCloud per sincronizzare il tuo spazio di lavoro su tutti i dispositivi e conservare i dati quando reinstalli l'app.",
+  "storageLocationApp": "Archiviazione dell'app",
+  "storageLocationAppDesc": "I dati vengono archiviati all'interno dell'app e verranno rimossi durante la disinstallazione.",
+  "storageLocationCustom": "Archiviazione del dispositivo (cartella personalizzata)",
+  "storageLocationCustomDesc": "Memorizza i dati in una cartella di tua scelta. I dati persistono durante la reinstallazione se la cartella rimane.",
+  "storageLocationICloud": "Archivia su iCloud",
+  "storageLocationICloudDesc": "Sincronizza il tuo spazio di lavoro su tutti i dispositivi Apple. I dati rimangono dopo la reinstallazione.",
+  "@storageLocationCurrent": {
+    "placeholders": {
+      "location": {}
+    }
+  },
+  "storageLocationCurrent": "Attuale: {location}",
+  "icloudRequiresCapability": "Accedi a iCloud e attiva iCloud Drive per utilizzare lo spazio di archiviazione di iCloud.",
+  "loadingFromICloud": "Ripristino dei dati da iCloud…",
+  "switchingToICloud": "Passaggio allo spazio di archiviazione iCloud…",
+  "switchingStorage": "Cambio di spazio di archiviazione…",
+  "customFolderAccessDenied": "Impossibile leggere o scrivere in questa cartella. Concedi l'autorizzazione di archiviazione o scegli un'altra posizione.",
+  "configured": "Configurato",
+  "apiKeyNotSet": "Chiave API non impostata: tocca per configurare",
+  "bottomNavTimeline": "Cronologia",
+  "bottomNavLibrary": "Biblioteca",
+  "aiGeneratedLabel": "Generato dall'intelligenza artificiale",
+  "@sourceTraceWithCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "sourceTraceWithCount": "TRACCIA ORIGINE ({count})",
+  "deleteAccount": "Elimina account",
+  "deleteAccountDesc": "Elimina definitivamente tutti i dati locali e ripristina l'app.",
+  "deleteAccountConfirmTitle": "Eliminare l'account?",
+  "deleteAccountConfirmMessage": "Ciò eliminerà definitivamente tutti i tuoi dati, comprese le schede della sequenza temporale, la knowledge base, le registrazioni e le impostazioni. Questa azione non può essere annullata.",
+  "@deleteAccountTypeName": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "deleteAccountTypeName": "Digita \"{name}\" per confermare",
+  "deleteAccountTypeHint": "Inserisci il tuo nome utente per confermare",
+  "llmConsentTitle": "Consenso alla condivisione dei dati",
+  "@llmConsentMessage": {
+    "placeholders": {
+      "provider": {}
+    }
+  },
+  "llmConsentMessage": "Per abilitare le funzionalità AI, Memex deve inviare i tuoi dati a {provider} per l'elaborazione. Ciò include:\n\n• Testo inserito (note, trascrizioni vocali)\n• Metadati delle foto e testo estratto (OCR)\n• Riepiloghi di salute e forma fisica\n• Contenuto della scheda Cronologia\n\nI tuoi dati vengono inviati direttamente dal tuo dispositivo a {provider}. Memex non memorizza né trasmette i tuoi dati attraverso nessun altro server.\n\nConsulta l'informativa sulla privacy di {provider} per sapere come gestiscono i tuoi dati.\n\nAccetti di inviare i tuoi dati a {provider} per l'elaborazione AI?",
+  "llmConsentAgree": "Sono d'accordo",
+  "llmConsentDecline": "Declino",
+  "customAgents": "Agenti personalizzati",
+  "noCustomAgents": "Nessun agente personalizzato configurato.",
+  "deleteAgent": "Elimina agente",
+  "@deleteAgentConfirm": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "deleteAgentConfirm": "Eliminare l'agente personalizzato \"{name}\"?",
+  "deleted": "Eliminato",
+  "saved": "Salvato",
+  "newAgent": "Nuovo agente",
+  "editAgent": "Modifica agente",
+  "agentName": "Nome dell'agente",
+  "agentNameHint": "il mio agente personalizzato",
+  "agentNameRequired": "Necessario",
+  "agentNameInvalid": "Solo lettere, cifre e trattini",
+  "agentNameExists": "Il nome esiste già",
+  "hostAgentType": "Tipo di agente host",
+  "skillDirectory": "Elenco delle competenze",
+  "skillDirInvalid": "Deve essere un percorso relativo (non iniziale / o ..)",
+  "workingDirectory": "Directory di lavoro (facoltativo)",
+  "workingDirectoryHint": "Lasciare vuoto per impostazione predefinita dell'area di lavoro",
+  "llmConfig": "Configurazione LLM",
+  "eventType": "Tipo di evento",
+  "executionMode": "Modalità di esecuzione",
+  "executionModeAsync": "Asincrono",
+  "executionModeSync": "Sincronizzazione",
+  "dependsOn": "Dipende",
+  "dependsOnHint": "Seleziona dipendenze",
+  "priority": "Priorità",
+  "maxRetries": "Numero massimo di tentativi",
+  "systemPromptLabel": "Prompt del sistema (facoltativo)",
+  "systemPromptHint": "Ulteriori istruzioni aggiunte al prompt dell'agente host",
+  "eventSerializer": "Serializzatore di eventi",
+  "eventSerializerDefault": "Predefinito (XML)",
+  "enabledLabel": "Abilitato",
+  "skillsManagement": "Gestione delle competenze",
+  "skillsManagementEmpty": "Nessuna competenza ancora",
+  "downloadSkill": "Scarica Abilità",
+  "downloadFile": "Scarica file",
+  "downloading": "Download in corso...",
+  "downloadSuccess": "Abilità scaricata correttamente",
+  "@downloadFailed": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "downloadFailed": "Download non riuscito: {error}",
+  "deleteConfirm": "Conferma eliminazione",
+  "@deleteConfirmMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteConfirmMessage": "Sei sicuro di voler eliminare \"{name}\"?",
+  "invalidUrl": "Inserisci un URL valido",
+  "urlHint": "https://example.com/skill.zip",
+  "newFolder": "Nuova cartella",
+  "newFile": "Nuovo fascicolo",
+  "folderName": "Nome della cartella",
+  "fileName": "Nome del file",
+  "nameRequired": "Il nome è obbligatorio",
+  "nameInvalid": "Il nome non può contenere / o ..",
+  "@createFailed": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "createFailed": "Creazione non riuscita: {error}",
+  "fileContent": "Contenuto del file",
+  "saveSuccess": "Salvato con successo",
+  "@downloadToCurrentDir": {
+    "placeholders": {
+      "dir": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadToCurrentDir": "Lo zip verrà estratto nella directory corrente: {dir}",
+  "privacyPolicy": "politica sulla riservatezza",
+  "privacyPolicyDesc": "Come Memex gestisce i tuoi dati",
+  "llmAuthError": "Autenticazione API non riuscita. Controlla la configurazione LLM in Impostazioni.",
+  "llmBadRequestError": "La richiesta è stata respinta dal fornitore LLM. Il formato di input potrebbe non essere supportato dal modello attuale.",
+  "llmRateLimitError": "Limite di velocità API superato. Per favore riprova più tardi.",
+  "llmServerError": "Il servizio LLM è temporaneamente non disponibile. Per favore riprova più tardi.",
+  "llmNetworkError": "Connessione di rete non riuscita. Controlla la tua connessione Internet.",
+  "llmUnknownError": "Si è verificato un errore imprevisto durante l'elaborazione del contenuto.",
+  "llmErrorDialogTitle": "Elaborazione non riuscita",
+  "goToModelConfig": "Vai su Impostazioni",
+  "speechModelDownloadTitle": "Scarica il modello vocale",
+  "@speechModelDownloadDesc": {
+    "placeholders": {
+      "sizeMB": {}
+    }
+  },
+  "speechModelDownloadDesc": "È richiesto un download del modello una tantum (~{sizeMB}MB).\n\nUna volta scaricata, la trascrizione viene eseguita interamente sul dispositivo.",
+  "speechModelStartDownload": "Avvia il download",
+  "speechModelChooseSource": "Scegli la fonte di download:",
+  "speechModelChinaMirror": "🇨🇳 China Mirror (più veloce in CN)",
+  "speechModelGithub": "🌐 GitHub (globale)",
+  "speechModelDownloading": "Download del modello...",
+  "speechModelConnecting": "Connessione...",
+  "deleteSpeechModel": "Elimina modello vocale",
+  "confirmDeleteSpeechModelMessage": "Eliminare i file del modello di riconoscimento vocale locale scaricati? Verranno scaricati di nuovo la prossima volta che verrà utilizzata la sintesi vocale locale.",
+  "speechModelDeletedSuccess": "File del modello vocale eliminati",
+  "speechModelNotDownloaded": "Nessun file del modello vocale scaricato trovato",
+  "@speechModelDeleteFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "speechModelDeleteFailed": "Impossibile eliminare i file del modello vocale: {error}",
+  "speechTranscribing": "Riconoscere...",
+  "speechNoResult": "Nessun parlato rilevato",
+  "useLocalSpeechToTextTitle": "Utilizza la parlata locale per inviare messaggi di testo",
+  "useLocalSpeechToTextDesc": "Se abilitato, l'audio viene trascritto sul dispositivo prima dell'invio, utile per i modelli che non supportano l'input audio. Quando disabilitato, l'audio originale viene inviato direttamente al modello.",
+  "pendingAiProcessingHint": "Configura il modello AI da elaborare",
+  "demoWelcome": "Benvenuti in Memex!\nFacciamo un breve tour di ciò che l'intelligenza artificiale può fare per i tuoi record.",
+  "demoTapAdd": "Tocca qui per creare il tuo primo record",
+  "demoTapSend": "Tocca per inviare il tuo primo record",
+  "demoTapCard": "Tocca per vedere come l'IA ha organizzato il tuo record",
+  "demoDetailHint": "Questo è il dettaglio del tuo record organizzato dall'intelligenza artificiale. Scorri intorno, quindi torna indietro per continuare il tour.",
+  "demoTapInsight": "Tocca per visualizzare gli approfondimenti generati dall'intelligenza artificiale",
+  "demoTapInsightUpdate": "Tocca per generare approfondimenti dai tuoi record",
+  "demoTapKnowledge": "Controlla i tuoi file di conoscenza organizzati automaticamente",
+  "demoDone": "Inizia a registrare la tua vita.",
+  "demoStartTour": "Inizia il giro",
+  "demoGetStarted": "Inizia",
+  "demoSkip": "Saltare",
+  "demoPrefillText": "Ciao Memex! Questo è il mio primo disco 🎉",
+  "visionBadge": "Visione",
+  "notMultimodalHint": "Memex si affida alle capacità del modello multimodale per l'analisi dei media. Se i tuoi record contengono immagini, assicurati che il modello configurato supporti l'input di immagini.",
+  "defaultModelPrefix": "Predefinito",
+  "recommendedBadge": "Raccomandato",
+  "readOnlyBadge": "CHIACCHIERATA",
+  "switchCompanion": "Cambia compagno",
+  "personaChatInputHint": "Digita un messaggio...",
+  "today": "Oggi",
+  "tomorrow": "Domani",
+  "yesterday": "Ieri",
+  "showInsightTextTitle": "Mostra il commento di approfondimento Memex",
+  "showInsightTextDesc": "Se mostrare l'approfondimento Memex come commento appuntato nella sezione dei commenti sui dettagli della carta.",
+  "enableCharacterCommentTitle": "Commento automatico dei caratteri",
+  "enableCharacterCommentDesc": "I personaggi commentano automaticamente i nuovi record.",
+  "maxCommentCharactersTitle": "Numero massimo di caratteri di commento",
+  "maxCommentCharactersDesc": "Quanti caratteri possono commentare ciascun record.",
+  "@replyTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "replyTo": "Rispondi a {name}",
+  "cdnSignalsComments": "Nuova risposta ricevuta",
+  "cdnSignalsInsight": "Nuove informazioni generate",
+  "cdnSignalsBoth": "Nuova risposta e approfondimento",
+  "untitledCard": "Carta senza titolo",
+  "locationContextTitle": "Contesto della posizione",
+  "locationContextDescription": "Contesto attuale della città e del quartiere per la chat dell'agente",
+  "locationContextAttachTitle": "Allega la posizione corrente alla chat",
+  "locationContextAttachDesc": "Utilizza il GPS del dispositivo e la geocodificazione inversa per fornire all'agente il contesto di città, distretto e quartiere.",
+  "reverseGeocodingProvider": "Provider di geocodifica inversa",
+  "amapProviderName": "Una mappa",
+  "amapApiKey": "Chiave API Amap",
+  "amapGcj02Note": "Amap utilizza le coordinate GCJ-02. Il GPS del dispositivo viene convertito prima della geocodifica inversa.",
+  "contextGranularity": "Granularità del contesto",
+  "granularityCity": "Città",
+  "granularityDistrict": "Quartiere",
+  "granularityNeighborhood": "Quartiere",
+  "granularityStreet": "Strada",
+  "granularityFullAddress": "Candidato con indirizzo completo",
+  "locationFreshness": "Freschezza della posizione",
+  "@minutesShort": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "minutesShort": "{minutes} minuti",
+  "oneHour": "1 ora",
+  "testCurrentLocation": "Testare la posizione attuale",
+  "@locationTestFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "locationTestFailed": "Non riuscito: {error}",
+  "locationDebugGps": "GPS",
+  "locationDebugReverseGeocode": "Geocodifica inversa",
+  "locationDebugProvider": "Fornitore",
+  "locationDebugAgentContext": "Contesto dell'agente",
+  "locationDebugSource": "Fonte",
+  "locationDebugAddressSummary": "Riepilogo degli indirizzi",
+  "locationDebugFullAddress": "Indirizzo completo",
+  "locationDebugCoordinates": "Coordinate",
+  "locationDebugAccuracy": "Precisione",
+  "locationDebugReason": "Motivo",
+  "locationDebugOk": "OK",
+  "locationDebugUnavailable": "non disponibile",
+  "locationDebugInjected": "iniettato",
+  "locationDebugNotInjected": "non iniettato",
+  "locationStatusUpdatedAt": "Aggiornato",
+  "locationStatusSuccessTitle": "La posizione attuale è pronta",
+  "locationStatusSuccessBody": "Memex può allegare questo riepilogo della posizione quando il contesto della posizione è rilevante.",
+  "locationStatusApproximateTitle": "Posizione solo approssimativa",
+  "locationStatusApproximateBody": "La precisione sembra a livello di città o area. Puoi continuare a usarlo o abilitare Posizione precisa nelle impostazioni di sistema per un contesto più ristretto.",
+  "locationStatusServiceDisabledTitle": "La posizione del sistema è disattivata",
+  "locationStatusServiceDisabledBody": "Memex utilizza solo il GPS del dispositivo e non deduce la posizione dalla rete o dall'IP. Su Android, apri le impostazioni di Posizione; su iOS, abilita Impostazioni > Privacy e sicurezza > Servizi di localizzazione.",
+  "locationStatusPermissionDeniedTitle": "È necessaria l'autorizzazione alla posizione",
+  "locationStatusPermissionDeniedBody": "Consenti a Memex di utilizzare la posizione durante i test o quando è necessario il contesto della posizione. Non è sempre richiesto l'accesso.",
+  "locationStatusPermissionForeverTitle": "L'autorizzazione alla posizione è bloccata",
+  "locationStatusPermissionForeverBody": "Apri le impostazioni dell'app e consenti la posizione per Memex. Su iOS, è sufficiente utilizzare l'app.",
+  "locationStatusDisabledTitle": "Il contesto della posizione è disattivato",
+  "locationStatusDisabledBody": "Attiva l'interruttore in alto e salva quando desideri che Memex alleghi la posizione del dispositivo al contesto dell'agente.",
+  "locationStatusGeocodeUnavailableTitle": "Il GPS funziona, la ricerca dell'indirizzo non è riuscita",
+  "locationStatusGeocodeUnavailableBody": "Memex ha le coordinate ma non inserirà nell'agente il contesto solo GPS. Controlla il provider di geocodifica inversa e riprova.",
+  "locationStatusUnavailableTitle": "Posizione non disponibile",
+  "locationStatusUnavailableBody": "Controlla i servizi di localizzazione del sistema e l'autorizzazione dell'app, quindi prova di nuovo.",
+  "allowLocationPermissionButton": "Consenti l'autorizzazione alla posizione",
+  "openAppSettingsButton": "Apri le impostazioni dell'app",
+  "openLocationSettingsButton": "Apri le impostazioni di posizione",
+  "locationSettingsOpenFailed": "Impossibile aprire le impostazioni di sistema.",
+  "@locationActionFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "locationActionFailed": "Azione sulla posizione non riuscita: {error}",
+  "settingsSearchPlaceholder": "Cerca impostazioni...",
+  "settingsSearchEmpty": "Nessuna impostazione corrispondente trovata",
+  "importCharacterCard": "Importa scheda personaggio",
+  "firstMessageLabel": "Primo messaggio",
+  "firstMessageHint": "Saluto inviato alla prima conversazione (facoltativo)",
+  "systemPromptOverrideLabel": "Ignora la richiesta di sistema",
+  "systemPromptOverrideHint": "Sostituisci il prompt di sistema predefinito (avanzato, facoltativo)",
+  "postHistoryInstructionsLabel": "Istruzioni post-storia",
+  "postHistoryInstructionsHint": "Istruzioni inserite dopo la cronologia della chat, prima della risposta (facoltativo)",
+  "mesExampleLabel": "Esempi di messaggi",
+  "mesExampleHint": "Dialoghi di esempio che mostrano lo stile del carattere (facoltativo)",
+  "worldBookTitle": "Libro del mondo",
+  "worldBookSubtitle": "Conoscenza di base inserita quando vengono attivate le parole chiave",
+  "characterMemoryTitle": "Memoria dei personaggi",
+  "characterMemorySubtitle": "Dinamiche di relazione e ricordi di interazione tra personaggio e utente",
+  "addTooltip": "Aggiungere",
+  "constantBadge": "Costante",
+  "@worldEntryFallbackName": {
+    "placeholders": {
+      "index": {}
+    }
+  },
+  "worldEntryFallbackName": "Voce {index}",
+  "@keywordsPrefix": {
+    "placeholders": {
+      "keys": {}
+    }
+  },
+  "keywordsPrefix": "Parole chiave: {keys}",
+  "@memoryFallbackName": {
+    "placeholders": {
+      "index": {}
+    }
+  },
+  "memoryFallbackName": "Memoria {index}",
+  "addWorldEntry": "Aggiungi voce di libro mondiale",
+  "editWorldEntry": "Modifica la voce del libro mondiale",
+  "commentTitleLabel": "Commento/Titolo",
+  "entryDescriptionHint": "Descrizione della voce (facoltativa)",
+  "triggerKeywordsLabel": "Parole chiave attivatrici",
+  "triggerKeywordsHint": "Separati da virgole, ad esempio: magia, incantesimo",
+  "contentLabel": "Contenuto",
+  "worldEntryContentHint": "Conoscenza di base inserita quando si attivano le parole chiave",
+  "enabledCheckbox": "Abilitato",
+  "addMemory": "Aggiungi memoria",
+  "editMemory": "Modifica memoria",
+  "memoryLabelField": "Etichetta",
+  "memoryLabelHint": "Identificatore univoco, ad esempio: preferenza del nome",
+  "memoryContentHint": "Contenuto della memoria",
+  "salienceLabel": "Salienza:",
+  "labelCannotBeEmpty": "L'etichetta non può essere vuota",
+  "@importSuccess": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "importSuccess": "{name} importato correttamente",
+  "@importFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "importFailed": "Importazione non riuscita: {error}",
+  "supportedFormats": "Formati supportati",
+  "tavernImportDescription": "• Carte personaggio SillyTavern V2 (.json)\n• Immagini PNG con schede incorporate (.png)\n\nCampi come persona, libro mondiale, ecc. verranno automaticamente mappati sul formato carattere Memex.",
+  "pickCharacterFile": "Scegli File di caratteri",
+  "repickFile": "Scegli un altro file",
+  "personaSettingSection": "Persona",
+  "systemPromptSection": "Richiesta di sistema",
+  "@worldEntriesCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "worldEntriesCount": "Libro del mondo: {count} voci",
+  "@fileLabel": {
+    "placeholders": {
+      "filename": {}
+    }
+  },
+  "fileLabel": "File: {filename}",
+  "@conflictWarning": {
+    "placeholders": {
+      "names": {}
+    }
+  },
+  "conflictWarning": "Esiste già un carattere con lo stesso nome: {names}. L'importazione creerà un nuovo carattere senza sovrascrivere quelli esistenti.",
+  "setPrimaryCompanionTitle": "Imposta come compagno principale",
+  "setPrimaryCompanionSubtitle": "Impostato automaticamente come compagno principale dopo l'importazione",
+  "confirmImport": "Conferma l'importazione",
+  "chatBackground": "Sfondo della chat",
+  "chooseChatBackgroundImage": "Scegli l'immagine di sfondo",
+  "earlyUpdateSettingsTitle": "Aggiornamenti in accesso anticipato",
+  "earlyUpdateSettingsDesc": "Controlla le pre-release di GitHub per l'APK iniziale corrispondente, scaricalo e consegnalo al programma di installazione di Android.",
+  "earlyUpdateUnsupported": "I primi aggiornamenti sono disponibili solo nella build Android Early.",
+  "earlyUpdateAutoCheckTitle": "Controllo automatico degli aggiornamenti",
+  "earlyUpdateAutoCheckDesc": "Controllare all'avvio al massimo una volta ogni 12 ore.",
+  "earlyUpdateWifiOnlyTitle": "Scarica solo tramite Wi-Fi",
+  "earlyUpdateWifiOnlyDesc": "Salta i download degli aggiornamenti durante l'utilizzo dei dati mobili.",
+  "earlyUpdateAutoInstallTitle": "Download e installazione automatici",
+  "earlyUpdateAutoInstallDesc": "Quando viene trovata una nuova build, scaricala e apri automaticamente il programma di installazione Android.",
+  "earlyUpdateCheckNow": "Controlla ora",
+  "earlyUpdateChecking": "Controllo delle pre-release di GitHub...",
+  "earlyUpdateSkippedMobile": "Saltato perché i download solo Wi-Fi sono abilitati.",
+  "earlyUpdateNoUpdate": "Sei già sull'ultima versione Early.",
+  "@earlyUpdateFound": {
+    "placeholders": {
+      "version": {},
+      "build": {}
+    }
+  },
+  "earlyUpdateFound": "La versione iniziale {version}+{build} è disponibile.",
+  "earlyUpdateDownloadAndInstall": "Scarica e installa",
+  "earlyUpdateDownloadInProgress": "Download dell'aggiornamento in corso...",
+  "@earlyUpdateDownloadingPercent": {
+    "placeholders": {
+      "percent": {}
+    }
+  },
+  "earlyUpdateDownloadingPercent": "Download aggiornamento: {percent}%",
+  "earlyUpdateDownloadReadyToInstall": "Pacchetto di aggiornamento scaricato. Pronto per l'installazione.",
+  "earlyUpdateInstallDownloadedPackage": "Installa il pacchetto scaricato",
+  "earlyUpdateClearDownloadedPackage": "Cancella il pacchetto scaricato",
+  "earlyUpdateClearDownloadedPackageSuccess": "Pacchetto di aggiornamento scaricato cancellato.",
+  "earlyUpdateInstallStarted": "È stato aperto il programma di installazione di Android.",
+  "earlyUpdateInstallPermissionRequired": "Consenti a Memex di installare app sconosciute, quindi tocca Scarica e installa di nuovo.",
+  "@earlyUpdateLastChecked": {
+    "placeholders": {
+      "time": {}
+    }
+  },
+  "earlyUpdateLastChecked": "Ultimo controllo: {time}",
+  "@earlyUpdateCheckFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "earlyUpdateCheckFailed": "Controllo aggiornamento non riuscito: {error}",
+  "earlyUpdateDialogTitle": "Aggiornamento anticipato disponibile",
+  "earlyUpdateReleaseNotes": "Note sulla versione",
+  "dismissAllNotifications": "Cancella tutto",
+  "dismissByType": "Cancella per tipo",
+  "dismissTypeSystemAction": "Promemoria ed eventi",
+  "dismissTypeClarification": "Chiarimenti",
+  "dismissTypeCardUpdate": "Aggiornamenti della carta",
+  "@dismissedCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dismissedCount": "{count} cancellato",
+  "dataImportTitle": "Importa file",
+  "dataImportSettingsDescription": "Porta i vecchi file in Memex, poi decidi se organizzarli.",
+  "dataImportDescription": "Scegli vecchie note, record esportati, documenti o archivi ZIP. Memex salva prima una copia e lascia intatti i file originali. Dopo l'importazione, puoi decidere se Memex deve aiutarti a organizzarli.",
+  "dataImportSelectFiles": "Scegli i file da importare",
+  "dataImportImporting": "Salvataggio file...",
+  "dataImportSuccess": "File salvati in Memex",
+  "dataImportOnlyStored": "File salvati. Nessuna organizzazione è iniziata.",
+  "dataImportQueued": "Memex organizzerà questa importazione in background.",
+  "dataImportResultTitle": "Importazione completata",
+  "@dataImportResultSummary": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportResultSummary": "I file {count} sono stati salvati. Puoi organizzarli ora o lasciarli come materiale originale.",
+  "@dataImportRenamedConflicts": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportRenamedConflicts": "Gli elementi {count} avevano lo stesso nome e sono stati rinominati per evitare di sovrascrivere nulla.",
+  "@dataImportSkippedUnsafeEntries": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportSkippedUnsafeEntries": "{count} elementi di archivio insoliti sono stati saltati; il resto è stato importato normalmente.",
+  "dataImportChooseProcessing": "Organizza questi file",
+  "dataImportProcessTitle": "Organizzare questa importazione?",
+  "@dataImportProcessPrompt": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "dataImportProcessPrompt": "Hai importato file {count}. Scegli se Memex deve organizzarli adesso o conservare solo gli originali.",
+  "dataImportProcessKnowledgeBase": "Organizzare in una base di conoscenza",
+  "dataImportProcessKnowledgeBaseDesc": "Ideale per documenti, note, materiale di progetto e riferimenti. Memex estrarrà le informazioni utili e le raggrupperà per un uso successivo.",
+  "dataImportProcessTimelineCards": "Crea record della sequenza temporale",
+  "dataImportProcessTimelineCardsDesc": "Ideale per diari, registri di chat, cronologia delle attività e vecchie esportazioni. Memex trasformerà i contenuti basati sul tempo in record quando avrà senso.",
+  "dataImportImpactNone": "Memex conserverà solo questi file originali. Nessuna organizzazione AI verrà avviata.",
+  "dataImportImpactKnowledgeBase": "Memex leggerà questi file e organizzerà informazioni utili a lungo termine nella base di conoscenza. Non creerà in modo proattivo record della sequenza temporale.",
+  "dataImportImpactTimelineCards": "Memex leggerà questi file e creerà registrazioni della sequenza temporale per eventi della vita o cronologia datata, quando appropriato. Non organizzerà in modo proattivo la base di conoscenza.",
+  "dataImportImpactBoth": "Memex proverà a creare record di sequenza temporale e organizzare le informazioni riutilizzabili nella base di conoscenza. Questo è l'ideale per un archivio personale completo.",
+  "dataImportFinish": "Salvateli e basta",
+  "noImages": "Nessuna immagine",
+  "noMessages": "Nessun messaggio",
+  "sketchContent": "Contenuto dello schizzo",
+  "emptyFolder": "Cartella vuota",
+  "usernameAlreadyTaken": "Nome utente già preso",
+  "registrationFailed": "La registrazione non è riuscita",
+  "loginFailed": "Accesso non riuscito",
+  "paymentCreationFailed": "Impossibile avviare il pagamento",
+  "completePayment": "Pagamento completo",
+  "commentReplyToYou": "Voi",
+  "commentAuthorUser": "Utente",
+  "commentAuthorAi": "AI",
+  "authorizationCancelled": "Autorizzazione annullata",
+  "@timelineWeekNumberLabel": {
+    "placeholders": {
+      "week": {}
+    }
+  },
+  "timelineWeekNumberLabel": "Settimana {week}",
+  "timelineWeekLabel": "Settimana",
+  "eventCardDefaultTitle": "Evento",
+  "memoryNoLongTermYet": "Ancora nessun ricordo a lungo termine.",
+  "memoryNoRecentBuffer": "Nessun ricordo recente nel buffer.",
+  "memoryGeneralSubject": "Generale",
+  "debugging": "Debug",
+  "agentStates": "Stati degli agenti",
+  "logLevel": "Livello: ",
+  "@taskIdLabel": {
+    "placeholders": {
+      "id": {}
+    }
+  },
+  "taskIdLabel": "ID: {id}",
+  "@taskBizIdLabel": {
+    "placeholders": {
+      "bizId": {}
+    }
+  },
+  "taskBizIdLabel": "BizID: {bizId}",
+  "@taskStatusLabel": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "taskStatusLabel": "Stato: {status}",
+  "@taskScheduledLabel": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "taskScheduledLabel": "Pianificato: {date}",
+  "@taskCompletedLabel": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "taskCompletedLabel": "Completato: {date}",
+  "oauthCouldNotLaunchBrowser": "Impossibile aprire il browser per OAuth",
+  "authorizationTimedOut": "Autorizzazione scaduta"
+}
