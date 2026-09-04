@@ -65,21 +65,24 @@ class MainBottomBar extends StatelessWidget {
                   right: 0,
                   child: ColoredBox(color: Colors.white),
                 ),
-                Positioned(
+                PositionedDirectional(
                   top: -16.0,
-                  left: 156.0,
-                  child: AICoreButton(
-                    key: centerButtonKey,
-                    onTap: onCenterTap,
-                    onLongPress: onCenterLongPress,
-                    onLongPressMoveUpdate: onCenterLongPressMoveUpdate,
-                    onLongPressEnd: onCenterLongPressEnd,
+                  start: 0,
+                  end: 0,
+                  child: Center(
+                    child: AICoreButton(
+                      key: centerButtonKey,
+                      onTap: onCenterTap,
+                      onLongPress: onCenterLongPress,
+                      onLongPressMoveUpdate: onCenterLongPressMoveUpdate,
+                      onLongPressEnd: onCenterLongPressEnd,
+                    ),
                   ),
                 ),
                 _NavTab(
                   key: timelineTabKey,
                   top: 40,
-                  left: 16,
+                  start: 16,
                   width: 118,
                   height: 56,
                   selected: currentTab == 0,
@@ -98,7 +101,7 @@ class MainBottomBar extends StatelessWidget {
                 _NavTab(
                   key: libraryTabKey,
                   top: 40,
-                  left: 259,
+                  end: 16,
                   width: 118,
                   height: 56,
                   selected: currentTab == 1,
@@ -132,17 +135,19 @@ class _NavTab extends StatelessWidget {
   const _NavTab({
     super.key,
     required this.top,
-    required this.left,
+    this.start,
+    this.end,
     required this.width,
     required this.height,
     required this.icon,
     required this.label,
     required this.selected,
     required this.onTap,
-  });
+  }) : assert(start != null || end != null);
 
   final double top;
-  final double left;
+  final double? start;
+  final double? end;
   final double width;
   final double height;
   final Widget icon;
@@ -152,9 +157,10 @@ class _NavTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Positioned(
+    return PositionedDirectional(
       top: top,
-      left: left,
+      start: start,
+      end: end,
       width: width,
       height: height,
       child: Semantics(

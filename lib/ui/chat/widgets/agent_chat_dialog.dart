@@ -2035,7 +2035,12 @@ class _AgentChatDialogState extends State<AgentChatDialog>
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.only(left: 24, right: 4, top: 16, bottom: 16),
+      padding: const EdgeInsetsDirectional.only(
+        start: 24,
+        end: 4,
+        top: 16,
+        bottom: 16,
+      ),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.8),
         border: const Border(bottom: BorderSide(color: Color(0xFFF7F8FA))),
@@ -2044,8 +2049,11 @@ class _AgentChatDialogState extends State<AgentChatDialog>
         height: 36,
         child: Stack(
           children: [
-            Positioned.fill(
-              right: reservedActionWidth,
+            PositionedDirectional(
+              start: 0,
+              end: reservedActionWidth,
+              top: 0,
+              bottom: 0,
               child: Row(
                 children: [
                   _buildAgentMark(size: 22),
@@ -2065,9 +2073,9 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                 ],
               ),
             ),
-            Positioned(
+            PositionedDirectional(
               top: 0,
-              right: 0,
+              end: 0,
               bottom: 0,
               child: Row(mainAxisSize: MainAxisSize.min, children: actions),
             ),
@@ -2196,7 +2204,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
           children: [
             ...cluster.take(5).map(
                   (photo) => Padding(
-                    padding: const EdgeInsets.only(right: 6),
+                    padding: const EdgeInsetsDirectional.only(end: 6),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(8),
                       child: SizedBox(
@@ -2215,7 +2223,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                 ),
             if (cluster.length > 5)
               Padding(
-                padding: const EdgeInsets.only(right: 6),
+                padding: const EdgeInsetsDirectional.only(end: 6),
                 child: Text(
                   '+${cluster.length - 5}',
                   style: const TextStyle(
@@ -2685,7 +2693,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.only(left: 2, bottom: 2),
+              padding: const EdgeInsetsDirectional.only(start: 2, bottom: 2),
               child: Text(
                 _artifactSectionTitle(artifacts.length),
                 style: const TextStyle(
@@ -2901,7 +2909,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                     _buildAssistantArtifactSection(item.artifacts),
                   if (!item.isStreaming && item.text.trim().isNotEmpty)
                     Padding(
-                      padding: const EdgeInsets.only(left: 2, top: 6),
+                      padding: const EdgeInsetsDirectional.only(start: 2, top: 6),
                       child: _CopyMessageButton(
                         text: item.text,
                         onCopied: () {
@@ -3483,7 +3491,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
               ),
               if (tappable)
                 Container(
-                  padding: const EdgeInsets.only(left: 8),
+                  padding: const EdgeInsetsDirectional.only(start: 8),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
