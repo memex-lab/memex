@@ -1511,6 +1511,41 @@
   "memoryNoLongTermYet": "Belum ada memori jangka panjang.",
   "memoryNoRecentBuffer": "Tidak ada memori terbaru di buffer.",
   "memoryGeneralSubject": "Umum",
+  "debugging": "Debugging",
+  "agentStates": "Status agen",
+  "logLevel": "Level: ",
+  "@taskIdLabel": {
+    "placeholders": {
+      "id": {}
+    }
+  },
+  "taskIdLabel": "ID: {id}",
+  "@taskBizIdLabel": {
+    "placeholders": {
+      "bizId": {}
+    }
+  },
+  "taskBizIdLabel": "BizID: {bizId}",
+  "@taskStatusLabel": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "taskStatusLabel": "Status: {status}",
+  "@taskScheduledLabel": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "taskScheduledLabel": "Dijadwalkan: {date}",
+  "@taskCompletedLabel": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "taskCompletedLabel": "Selesai: {date}",
+  "oauthCouldNotLaunchBrowser": "Tidak dapat membuka browser untuk OAuth",
+  "authorizationTimedOut": "Otorisasi habis waktu",
   "@timelineWeekNumberLabel": {
     "placeholders": {
       "week": {}

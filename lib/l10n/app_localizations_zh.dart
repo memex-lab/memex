@@ -681,10 +681,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-    Object running,
-    Object pending,
-    Object retrying,
-  ) {
+      Object running, Object pending, Object retrying) {
     return '执行中 $running，排队中 $pending，重试中 $retrying';
   }
 
@@ -3181,6 +3178,46 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get memoryGeneralSubject => '通用';
+
+  @override
+  String get debugging => '调试';
+
+  @override
+  String get agentStates => '代理状态';
+
+  @override
+  String get logLevel => '级别：';
+
+  @override
+  String taskIdLabel(Object id) {
+    return 'ID：$id';
+  }
+
+  @override
+  String taskBizIdLabel(Object bizId) {
+    return 'BizID：$bizId';
+  }
+
+  @override
+  String taskStatusLabel(Object status) {
+    return '状态：$status';
+  }
+
+  @override
+  String taskScheduledLabel(Object date) {
+    return '计划时间：$date';
+  }
+
+  @override
+  String taskCompletedLabel(Object date) {
+    return '完成时间：$date';
+  }
+
+  @override
+  String get oauthCouldNotLaunchBrowser => '无法启动浏览器进行 OAuth 授权';
+
+  @override
+  String get authorizationTimedOut => '授权超时';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -3860,10 +3897,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String agentBackgroundTaskSummary(
-    Object running,
-    Object pending,
-    Object retrying,
-  ) {
+      Object running, Object pending, Object retrying) {
     return '執行中 $running，排隊中 $pending，重試中 $retrying';
   }
 
@@ -6364,4 +6398,44 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get memoryGeneralSubject => '通用';
+
+  @override
+  String get debugging => '偵錯';
+
+  @override
+  String get agentStates => '代理狀態';
+
+  @override
+  String get logLevel => '層級：';
+
+  @override
+  String taskIdLabel(Object id) {
+    return 'ID：$id';
+  }
+
+  @override
+  String taskBizIdLabel(Object bizId) {
+    return 'BizID：$bizId';
+  }
+
+  @override
+  String taskStatusLabel(Object status) {
+    return '狀態：$status';
+  }
+
+  @override
+  String taskScheduledLabel(Object date) {
+    return '排程：$date';
+  }
+
+  @override
+  String taskCompletedLabel(Object date) {
+    return '完成：$date';
+  }
+
+  @override
+  String get oauthCouldNotLaunchBrowser => '無法啟動瀏覽器進行 OAuth 授權';
+
+  @override
+  String get authorizationTimedOut => '授權逾時';
 }

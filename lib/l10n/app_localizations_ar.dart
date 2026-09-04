@@ -694,10 +694,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-    Object running,
-    Object pending,
-    Object retrying,
-  ) {
+      Object running, Object pending, Object retrying) {
     return 'قيد التشغيل $running، معلق $pending، إعادة محاولة $retrying';
   }
 
@@ -3277,4 +3274,44 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get memoryGeneralSubject => 'عام';
+
+  @override
+  String get debugging => 'تصحيح الأخطاء';
+
+  @override
+  String get agentStates => 'حالات الوكيل';
+
+  @override
+  String get logLevel => 'المستوى: ';
+
+  @override
+  String taskIdLabel(Object id) {
+    return 'ID: $id';
+  }
+
+  @override
+  String taskBizIdLabel(Object bizId) {
+    return 'BizID: $bizId';
+  }
+
+  @override
+  String taskStatusLabel(Object status) {
+    return 'الحالة: $status';
+  }
+
+  @override
+  String taskScheduledLabel(Object date) {
+    return 'المجدول: $date';
+  }
+
+  @override
+  String taskCompletedLabel(Object date) {
+    return 'مكتمل: $date';
+  }
+
+  @override
+  String get oauthCouldNotLaunchBrowser => 'تعذر تشغيل المتصفح لـ OAuth';
+
+  @override
+  String get authorizationTimedOut => 'انتهت صلاحية التفويض';
 }

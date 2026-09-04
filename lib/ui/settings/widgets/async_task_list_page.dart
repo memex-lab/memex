@@ -219,7 +219,7 @@ class _AsyncTaskListPageState extends State<AsyncTaskListPage> {
                           const SizedBox(height: 8),
                           if (task.bizId != null) ...[
                             Text(
-                              'BizID: ${task.bizId}',
+                              UserStorage.l10n.taskBizIdLabel(task.bizId!),
                               style: TextStyle(
                                 fontSize: 13,
                                 color: Colors.grey[600],
@@ -228,7 +228,7 @@ class _AsyncTaskListPageState extends State<AsyncTaskListPage> {
                             const SizedBox(height: 4),
                           ],
                           Text(
-                            'ID: ${task.id}',
+                            UserStorage.l10n.taskIdLabel(task.id),
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.grey[500],
@@ -360,16 +360,26 @@ class AsyncTaskDetailDialog extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            SelectableText('ID: ${task.id}'),
+            SelectableText(UserStorage.l10n.taskIdLabel(task.id)),
             const SizedBox(height: 8),
-            SelectableText('BizID: ${task.bizId ?? "N/A"}'),
+            SelectableText(
+              UserStorage.l10n.taskBizIdLabel(task.bizId ?? 'N/A'),
+            ),
             const SizedBox(height: 8),
-            SelectableText('Status: ${task.status}'),
+            SelectableText(UserStorage.l10n.taskStatusLabel(task.status)),
             const SizedBox(height: 8),
-            SelectableText('Created: ${_formatDate(task.createdAt)}'),
-            SelectableText('Scheduled: ${_formatDate(task.scheduledAt)}'),
-            SelectableText('Updated: ${_formatDate(task.updatedAt)}'),
-            SelectableText('Completed: ${_formatDate(task.completedAt)}'),
+            SelectableText(
+              UserStorage.l10n.createdAtDate(_formatDate(task.createdAt)),
+            ),
+            SelectableText(
+              UserStorage.l10n.taskScheduledLabel(_formatDate(task.scheduledAt)),
+            ),
+            SelectableText(
+              UserStorage.l10n.updatedAtDate(_formatDate(task.updatedAt)),
+            ),
+            SelectableText(
+              UserStorage.l10n.taskCompletedLabel(_formatDate(task.completedAt)),
+            ),
             const SizedBox(height: 12),
             const Text(
               'Payload:',
@@ -419,7 +429,7 @@ class AsyncTaskDetailDialog extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Close'),
+          child: Text(UserStorage.l10n.close),
         ),
       ],
     );

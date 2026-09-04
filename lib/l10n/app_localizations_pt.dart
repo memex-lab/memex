@@ -704,10 +704,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-    Object running,
-    Object pending,
-    Object retrying,
-  ) {
+      Object running, Object pending, Object retrying) {
     return 'Executando $running, pendentes $pending, nova tentativa $retrying';
   }
 
@@ -3326,4 +3323,45 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get memoryGeneralSubject => 'Geral';
+
+  @override
+  String get debugging => 'Depuração';
+
+  @override
+  String get agentStates => 'Estados do agente';
+
+  @override
+  String get logLevel => 'Nível: ';
+
+  @override
+  String taskIdLabel(Object id) {
+    return 'ID: $id';
+  }
+
+  @override
+  String taskBizIdLabel(Object bizId) {
+    return 'BizID: $bizId';
+  }
+
+  @override
+  String taskStatusLabel(Object status) {
+    return 'Status: $status';
+  }
+
+  @override
+  String taskScheduledLabel(Object date) {
+    return 'Agendado: $date';
+  }
+
+  @override
+  String taskCompletedLabel(Object date) {
+    return 'Concluído: $date';
+  }
+
+  @override
+  String get oauthCouldNotLaunchBrowser =>
+      'Não foi possível abrir o navegador para OAuth';
+
+  @override
+  String get authorizationTimedOut => 'Autorização expirada';
 }

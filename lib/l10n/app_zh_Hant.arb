@@ -1511,6 +1511,41 @@
   "memoryNoLongTermYet": "還沒有長期記憶。",
   "memoryNoRecentBuffer": "緩衝區中還沒有近期記憶。",
   "memoryGeneralSubject": "通用",
+  "debugging": "偵錯",
+  "agentStates": "代理狀態",
+  "logLevel": "層級：",
+  "@taskIdLabel": {
+    "placeholders": {
+      "id": {}
+    }
+  },
+  "taskIdLabel": "ID：{id}",
+  "@taskBizIdLabel": {
+    "placeholders": {
+      "bizId": {}
+    }
+  },
+  "taskBizIdLabel": "BizID：{bizId}",
+  "@taskStatusLabel": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "taskStatusLabel": "狀態：{status}",
+  "@taskScheduledLabel": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "taskScheduledLabel": "排程：{date}",
+  "@taskCompletedLabel": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "taskCompletedLabel": "完成：{date}",
+  "oauthCouldNotLaunchBrowser": "無法啟動瀏覽器進行 OAuth 授權",
+  "authorizationTimedOut": "授權逾時",
   "@timelineWeekNumberLabel": {
     "placeholders": {
       "week": {}

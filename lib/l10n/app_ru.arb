@@ -1511,6 +1511,41 @@
   "memoryNoLongTermYet": "Долговременных воспоминаний пока нет.",
   "memoryNoRecentBuffer": "В буфере пока нет недавних воспоминаний.",
   "memoryGeneralSubject": "Общее",
+  "debugging": "Отладка",
+  "agentStates": "Состояния агента",
+  "logLevel": "Уровень: ",
+  "@taskIdLabel": {
+    "placeholders": {
+      "id": {}
+    }
+  },
+  "taskIdLabel": "ID: {id}",
+  "@taskBizIdLabel": {
+    "placeholders": {
+      "bizId": {}
+    }
+  },
+  "taskBizIdLabel": "BizID: {bizId}",
+  "@taskStatusLabel": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "taskStatusLabel": "Статус: {status}",
+  "@taskScheduledLabel": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "taskScheduledLabel": "Запланировано: {date}",
+  "@taskCompletedLabel": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "taskCompletedLabel": "Завершено: {date}",
+  "oauthCouldNotLaunchBrowser": "Не удалось запустить браузер для OAuth",
+  "authorizationTimedOut": "Время авторизации истекло",
   "@timelineWeekNumberLabel": {
     "placeholders": {
       "week": {}

@@ -686,10 +686,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-    Object running,
-    Object pending,
-    Object retrying,
-  ) {
+      Object running, Object pending, Object retrying) {
     return '실행 중 $running, 대기 중 $pending, 재시도 $retrying';
   }
 
@@ -3219,4 +3216,44 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get memoryGeneralSubject => '일반';
+
+  @override
+  String get debugging => '디버깅';
+
+  @override
+  String get agentStates => '에이전트 상태';
+
+  @override
+  String get logLevel => '레벨: ';
+
+  @override
+  String taskIdLabel(Object id) {
+    return 'ID: $id';
+  }
+
+  @override
+  String taskBizIdLabel(Object bizId) {
+    return 'BizID: $bizId';
+  }
+
+  @override
+  String taskStatusLabel(Object status) {
+    return '상태: $status';
+  }
+
+  @override
+  String taskScheduledLabel(Object date) {
+    return '예정: $date';
+  }
+
+  @override
+  String taskCompletedLabel(Object date) {
+    return '완료: $date';
+  }
+
+  @override
+  String get oauthCouldNotLaunchBrowser => 'OAuth용 브라우저를 실행할 수 없습니다';
+
+  @override
+  String get authorizationTimedOut => '인증 시간이 초과되었습니다';
 }

@@ -697,10 +697,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-    Object running,
-    Object pending,
-    Object retrying,
-  ) {
+      Object running, Object pending, Object retrying) {
     return 'चल रहे $running, लंबित $pending, पुनः प्रयास $retrying';
   }
 
@@ -3306,4 +3303,45 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get memoryGeneralSubject => 'सामान्य';
+
+  @override
+  String get debugging => 'डीबगिंग';
+
+  @override
+  String get agentStates => 'एजेंट स्थितियाँ';
+
+  @override
+  String get logLevel => 'स्तर: ';
+
+  @override
+  String taskIdLabel(Object id) {
+    return 'ID: $id';
+  }
+
+  @override
+  String taskBizIdLabel(Object bizId) {
+    return 'BizID: $bizId';
+  }
+
+  @override
+  String taskStatusLabel(Object status) {
+    return 'स्थिति: $status';
+  }
+
+  @override
+  String taskScheduledLabel(Object date) {
+    return 'निर्धारित: $date';
+  }
+
+  @override
+  String taskCompletedLabel(Object date) {
+    return 'पूर्ण: $date';
+  }
+
+  @override
+  String get oauthCouldNotLaunchBrowser =>
+      'OAuth के लिए ब्राउज़र लॉन्च नहीं किया जा सका';
+
+  @override
+  String get authorizationTimedOut => 'प्राधिकरण समय समाप्त';
 }

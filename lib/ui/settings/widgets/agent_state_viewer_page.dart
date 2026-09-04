@@ -159,7 +159,7 @@ class _AgentStateViewerPageState extends State<AgentStateViewerPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FA),
       appBar: AppBar(
-        title: const Text('Agent States'),
+        title: Text(UserStorage.l10n.agentStates),
         backgroundColor: AppColors.background,
         surfaceTintColor: AppColors.background,
         foregroundColor: Colors.black,

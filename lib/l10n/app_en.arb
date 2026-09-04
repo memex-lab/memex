@@ -1515,5 +1515,40 @@
   "eventCardDefaultTitle": "Event",
   "memoryNoLongTermYet": "No long-term memories yet.",
   "memoryNoRecentBuffer": "No recent memories in buffer.",
-  "memoryGeneralSubject": "General"
+  "memoryGeneralSubject": "General",
+  "debugging": "Debugging",
+  "agentStates": "Agent States",
+  "logLevel": "Level: ",
+  "@taskIdLabel": {
+    "placeholders": {
+      "id": {}
+    }
+  },
+  "taskIdLabel": "ID: {id}",
+  "@taskBizIdLabel": {
+    "placeholders": {
+      "bizId": {}
+    }
+  },
+  "taskBizIdLabel": "BizID: {bizId}",
+  "@taskStatusLabel": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "taskStatusLabel": "Status: {status}",
+  "@taskScheduledLabel": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "taskScheduledLabel": "Scheduled: {date}",
+  "@taskCompletedLabel": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "taskCompletedLabel": "Completed: {date}",
+  "oauthCouldNotLaunchBrowser": "Could not launch browser for OAuth",
+  "authorizationTimedOut": "Authorization timed out"
 }

@@ -1465,6 +1465,41 @@
   "memoryNoLongTermYet": "还没有长期记忆。",
   "memoryNoRecentBuffer": "缓冲区中还没有近期记忆。",
   "memoryGeneralSubject": "通用",
+  "debugging": "调试",
+  "agentStates": "代理状态",
+  "logLevel": "级别：",
+  "@taskIdLabel": {
+    "placeholders": {
+      "id": {}
+    }
+  },
+  "taskIdLabel": "ID：{id}",
+  "@taskBizIdLabel": {
+    "placeholders": {
+      "bizId": {}
+    }
+  },
+  "taskBizIdLabel": "BizID：{bizId}",
+  "@taskStatusLabel": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "taskStatusLabel": "状态：{status}",
+  "@taskScheduledLabel": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "taskScheduledLabel": "计划时间：{date}",
+  "@taskCompletedLabel": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "taskCompletedLabel": "完成时间：{date}",
+  "oauthCouldNotLaunchBrowser": "无法启动浏览器进行 OAuth 授权",
+  "authorizationTimedOut": "授权超时",
   "@timelineWeekNumberLabel": {
     "placeholders": {
       "week": {}

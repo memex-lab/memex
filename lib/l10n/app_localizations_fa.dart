@@ -696,10 +696,7 @@ class AppLocalizationsFa extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-    Object running,
-    Object pending,
-    Object retrying,
-  ) {
+      Object running, Object pending, Object retrying) {
     return 'در حال اجرا $running، در انتظار $pending، تلاش مجدد $retrying';
   }
 
@@ -3301,4 +3298,45 @@ class AppLocalizationsFa extends AppLocalizations {
 
   @override
   String get memoryGeneralSubject => 'عمومی';
+
+  @override
+  String get debugging => 'اشکال‌زدایی';
+
+  @override
+  String get agentStates => 'وضعیت‌های عامل';
+
+  @override
+  String get logLevel => 'سطح: ';
+
+  @override
+  String taskIdLabel(Object id) {
+    return 'ID: $id';
+  }
+
+  @override
+  String taskBizIdLabel(Object bizId) {
+    return 'BizID: $bizId';
+  }
+
+  @override
+  String taskStatusLabel(Object status) {
+    return 'وضعیت: $status';
+  }
+
+  @override
+  String taskScheduledLabel(Object date) {
+    return 'زمان‌بندی‌شده: $date';
+  }
+
+  @override
+  String taskCompletedLabel(Object date) {
+    return 'تکمیل‌شده: $date';
+  }
+
+  @override
+  String get oauthCouldNotLaunchBrowser =>
+      'امکان راه‌اندازی مرورگر برای OAuth وجود ندارد';
+
+  @override
+  String get authorizationTimedOut => 'مهلت مجوز به پایان رسید';
 }

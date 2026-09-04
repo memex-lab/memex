@@ -696,10 +696,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-    Object running,
-    Object pending,
-    Object retrying,
-  ) {
+      Object running, Object pending, Object retrying) {
     return 'Đang chạy $running, Chờ $pending, Thử lại $retrying';
   }
 
@@ -3288,4 +3285,44 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get memoryGeneralSubject => 'Chung';
+
+  @override
+  String get debugging => 'Gỡ lỗi';
+
+  @override
+  String get agentStates => 'Trạng thái tác nhân';
+
+  @override
+  String get logLevel => 'Cấp độ: ';
+
+  @override
+  String taskIdLabel(Object id) {
+    return 'ID: $id';
+  }
+
+  @override
+  String taskBizIdLabel(Object bizId) {
+    return 'BizID: $bizId';
+  }
+
+  @override
+  String taskStatusLabel(Object status) {
+    return 'Trạng thái: $status';
+  }
+
+  @override
+  String taskScheduledLabel(Object date) {
+    return 'Đã lên lịch: $date';
+  }
+
+  @override
+  String taskCompletedLabel(Object date) {
+    return 'Hoàn thành: $date';
+  }
+
+  @override
+  String get oauthCouldNotLaunchBrowser => 'Không thể mở trình duyệt cho OAuth';
+
+  @override
+  String get authorizationTimedOut => 'Ủy quyền đã hết hạn';
 }

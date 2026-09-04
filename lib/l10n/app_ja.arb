@@ -1511,6 +1511,41 @@
   "memoryNoLongTermYet": "長期記憶はまだありません。",
   "memoryNoRecentBuffer": "バッファに最近の記憶はありません。",
   "memoryGeneralSubject": "一般",
+  "debugging": "デバッグ",
+  "agentStates": "エージェント状態",
+  "logLevel": "レベル: ",
+  "@taskIdLabel": {
+    "placeholders": {
+      "id": {}
+    }
+  },
+  "taskIdLabel": "ID: {id}",
+  "@taskBizIdLabel": {
+    "placeholders": {
+      "bizId": {}
+    }
+  },
+  "taskBizIdLabel": "BizID: {bizId}",
+  "@taskStatusLabel": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "taskStatusLabel": "ステータス: {status}",
+  "@taskScheduledLabel": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "taskScheduledLabel": "予定: {date}",
+  "@taskCompletedLabel": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "taskCompletedLabel": "完了: {date}",
+  "oauthCouldNotLaunchBrowser": "OAuth用のブラウザを起動できませんでした",
+  "authorizationTimedOut": "認証がタイムアウトしました",
   "@timelineWeekNumberLabel": {
     "placeholders": {
       "week": {}

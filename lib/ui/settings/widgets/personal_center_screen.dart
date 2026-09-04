@@ -321,7 +321,7 @@ class _PersonalCenterScreenState extends State<PersonalCenterScreen> {
                           const SizedBox(height: 12),
                           _buildFunctionTab(
                             icon: Icons.bug_report_outlined,
-                            title: 'Debugging',
+                            title: UserStorage.l10n.debugging,
                             onTap: () {
                               Navigator.push(
                                 context,

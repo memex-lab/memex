@@ -703,10 +703,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-    Object running,
-    Object pending,
-    Object retrying,
-  ) {
+      Object running, Object pending, Object retrying) {
     return 'Выполняется $running, ожидает $pending, повтор $retrying';
   }
 
@@ -3324,4 +3321,45 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get memoryGeneralSubject => 'Общее';
+
+  @override
+  String get debugging => 'Отладка';
+
+  @override
+  String get agentStates => 'Состояния агента';
+
+  @override
+  String get logLevel => 'Уровень: ';
+
+  @override
+  String taskIdLabel(Object id) {
+    return 'ID: $id';
+  }
+
+  @override
+  String taskBizIdLabel(Object bizId) {
+    return 'BizID: $bizId';
+  }
+
+  @override
+  String taskStatusLabel(Object status) {
+    return 'Статус: $status';
+  }
+
+  @override
+  String taskScheduledLabel(Object date) {
+    return 'Запланировано: $date';
+  }
+
+  @override
+  String taskCompletedLabel(Object date) {
+    return 'Завершено: $date';
+  }
+
+  @override
+  String get oauthCouldNotLaunchBrowser =>
+      'Не удалось запустить браузер для OAuth';
+
+  @override
+  String get authorizationTimedOut => 'Время авторизации истекло';
 }

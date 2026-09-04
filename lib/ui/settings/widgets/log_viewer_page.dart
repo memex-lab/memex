@@ -397,7 +397,7 @@ class _LogViewerPageState extends State<LogViewerPage> {
             // Level
             Row(
               children: [
-                const Text('Level: ', style: TextStyle(fontSize: 12)),
+                Text(UserStorage.l10n.logLevel, style: const TextStyle(fontSize: 12)),
                 DropdownButton<String>(
                   value: _levelFilter,
                   isDense: true,

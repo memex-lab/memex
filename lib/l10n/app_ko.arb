@@ -1511,6 +1511,41 @@
   "memoryNoLongTermYet": "아직 장기 기억이 없습니다.",
   "memoryNoRecentBuffer": "버퍼에 최근 기억이 없습니다.",
   "memoryGeneralSubject": "일반",
+  "debugging": "디버깅",
+  "agentStates": "에이전트 상태",
+  "logLevel": "레벨: ",
+  "@taskIdLabel": {
+    "placeholders": {
+      "id": {}
+    }
+  },
+  "taskIdLabel": "ID: {id}",
+  "@taskBizIdLabel": {
+    "placeholders": {
+      "bizId": {}
+    }
+  },
+  "taskBizIdLabel": "BizID: {bizId}",
+  "@taskStatusLabel": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "taskStatusLabel": "상태: {status}",
+  "@taskScheduledLabel": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "taskScheduledLabel": "예정: {date}",
+  "@taskCompletedLabel": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "taskCompletedLabel": "완료: {date}",
+  "oauthCouldNotLaunchBrowser": "OAuth용 브라우저를 실행할 수 없습니다",
+  "authorizationTimedOut": "인증 시간이 초과되었습니다",
   "@timelineWeekNumberLabel": {
     "placeholders": {
       "week": {}
