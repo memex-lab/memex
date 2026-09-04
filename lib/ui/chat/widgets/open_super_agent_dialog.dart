@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/ui/chat/widgets/agent_chat_dialog.dart';
+import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:memex/utils/result.dart';
 import 'package:memex/utils/user_storage.dart';
 
@@ -139,7 +140,15 @@ Widget buildSuperAgentDialogSessionGate({
     future: sessionIdFuture,
     builder: (context, snapshot) {
       if (snapshot.connectionState != ConnectionState.done) {
-        return const SizedBox.shrink();
+        return const Material(
+          color: Colors.transparent,
+          child: Center(
+            child: AgentLogoLoading(
+              key: ValueKey('super-agent-session-loading'),
+              size: 72,
+            ),
+          ),
+        );
       }
 
       final sessionId = snapshot.data;
