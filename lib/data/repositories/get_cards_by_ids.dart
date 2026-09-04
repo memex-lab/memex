@@ -19,18 +19,13 @@ Future<List<TimelineCardModel>> getCardsByIds(List<String> ids) async {
       return [];
     }
 
-    final cards = <TimelineCardModel>[];
-
-    for (final id in ids) {
-      try {
-        final card = await hydrateCard(userId, id);
-        if (card != null) cards.add(card);
-      } catch (e) {
-        _logger.warning('Failed to process card id $id: $e');
-      }
-    }
-
-    return cards;
+    return await hydrateCards(
+      userId,
+      ids,
+      onError: (factId, error) {
+        _logger.warning('Failed to process card id $factId: $error');
+      },
+    );
   } catch (e) {
     _logger.severe('Failed to get cards by ids: $e');
     return [];

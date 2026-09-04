@@ -2,6 +2,7 @@ import 'package:memex/domain/models/timeline_card_model.dart';
 import 'package:memex/domain/models/card_detail_model.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/card_renderer.dart';
+import 'package:memex/utils/async_pool.dart';
 import 'package:memex/utils/logger.dart';
 
 final _logger = getLogger('HydrateCard');
@@ -50,4 +51,30 @@ Future<TimelineCardModel?> hydrateCard(String userId, String factId) async {
     address: cardData.address,
     failureReason: cardData.failureReason,
   );
+}
+
+/// Hydrate many cards with bounded parallelism. Failed ids are skipped.
+/// Result order matches [factIds], minus nulls.
+Future<List<TimelineCardModel>> hydrateCards(
+  String userId,
+  Iterable<String> factIds, {
+  int concurrency = 6,
+  void Function(String factId, Object error)? onError,
+}) async {
+  final results = await mapWithLimit<String, TimelineCardModel?>(
+    factIds,
+    (factId) async {
+      try {
+        return await hydrateCard(userId, factId);
+      } catch (e) {
+        onError?.call(factId, e);
+        return null;
+      }
+    },
+    limit: concurrency,
+  );
+  return [
+    for (final card in results)
+      if (card != null) card,
+  ];
 }
