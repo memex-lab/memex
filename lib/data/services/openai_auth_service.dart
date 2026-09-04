@@ -151,13 +151,13 @@ class OpenAiAuthService {
 
       // 4. Launch In-App Browser (prevents the app from going to the background and being killed by the OS)
       if (!await launchUrl(authUrl, mode: LaunchMode.inAppBrowserView)) {
-        throw Exception('Could not launch browser for OAuth');
+        throw Exception(UserStorage.l10n.oauthCouldNotLaunchBrowser);
       }
 
       // 5. Wait for the Callback (with timeout)
       final result = await completer.future.timeout(const Duration(minutes: 5),
           onTimeout: () {
-        throw TimeoutException('Authorization timed out');
+        throw TimeoutException(UserStorage.l10n.authorizationTimedOut);
       });
 
       // Cleanup listener
