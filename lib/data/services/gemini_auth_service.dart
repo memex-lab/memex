@@ -151,12 +151,13 @@ class GeminiAuthService {
       });
 
       if (!await launchUrl(authUrl, mode: LaunchMode.inAppBrowserView)) {
-        throw Exception('Could not launch browser for OAuth');
+        throw Exception(UserStorage.l10n.oauthCouldNotLaunchBrowser);
       }
 
       final result = await completer.future.timeout(
         const Duration(minutes: 5),
-        onTimeout: () => throw TimeoutException('Authorization timed out'),
+        onTimeout: () =>
+            throw TimeoutException(UserStorage.l10n.authorizationTimedOut),
       );
 
       LocalServerService.clearGeminiAuthCallback();
