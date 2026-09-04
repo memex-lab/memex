@@ -72,12 +72,18 @@ class KnowledgeBaseViewModel extends ChangeNotifier {
   final MemexRouter _router;
 
   bool isLoading = false;
+  bool _hasLoaded = false;
   List<Map<String, dynamic>> recentFiles = [];
   List<Map<String, dynamic>> additionalRootFolders = [];
   List<Map<String, dynamic>> rootLevelFiles = [];
   Map<String, int> categoryCounts = {};
 
   int countItems(String category) => categoryCounts[category] ?? 0;
+
+  Future<void> ensureLoaded() async {
+    if (_hasLoaded || isLoading) return;
+    await fetchData();
+  }
 
   Future<void> fetchData() async {
     isLoading = true;
@@ -95,15 +101,20 @@ class KnowledgeBaseViewModel extends ChangeNotifier {
       ...additionalRootFolders.map((folder) => folder['path'] as String),
     ];
     final countResult = await _router.countPkmItems(countPaths);
-    categoryCounts =
-        countResult.when(onOk: (c) => c, onError: (_, __) => <String, int>{});
+    categoryCounts = countResult.when(
+      onOk: (c) => c,
+      onError: (_, __) => <String, int>{},
+    );
     for (final folder in additionalRootFolders) {
       final path = folder['path'] as String;
       folder['item_count'] = categoryCounts[path] ?? 0;
     }
     final recentResult = await _router.getRecentPkmFiles();
     recentFiles = recentResult.when(
-        onOk: (r) => r, onError: (_, __) => <Map<String, dynamic>>[]);
+      onOk: (r) => r,
+      onError: (_, __) => <Map<String, dynamic>>[],
+    );
+    _hasLoaded = true;
     isLoading = false;
     notifyListeners();
   }
