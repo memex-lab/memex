@@ -56,5 +56,5 @@ Arabic is already shipped. Keep verifying layouts under `TextDirection.rtl`.
 - [x] iOS `Info.plist` locales beyond `en` / `zh-Hans`
 - [x] Android `values-<locale>/strings.xml` per locale
 - [ ] Arabic RTL layout pass
-- [ ] Missing-key CI lint
+- [ ] Missing-key CI lint (checked in PR Flutter Quality via `scripts/check_arb_key_parity.py`)
 - [ ] Native review per language

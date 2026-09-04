@@ -58,6 +58,9 @@ jobs:
       - name: Run preflight script unit tests
         run: python3 scripts/compare_flutter_analyze_test.py
 
+      - name: Check ARB key parity across locales
+        run: python3 scripts/check_arb_key_parity.py
+
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
