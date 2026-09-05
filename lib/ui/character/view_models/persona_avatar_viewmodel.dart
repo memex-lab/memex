@@ -23,6 +23,10 @@ class PersonaAvatarViewModel extends ChangeNotifier {
   bool _disposed = false;
   int _refreshGeneration = 0;
 
+  /// Loads the companion summary after the first Timeline frame.
+  /// Safe to call more than once; later calls are no-ops until dispose.
+  Future<void> ensureLoaded() => init();
+
   Future<void> init() async {
     if (_initialized) return;
     _initialized = true;
