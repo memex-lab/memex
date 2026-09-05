@@ -13,6 +13,32 @@ void main() {
 
   setUpAll(eventBus.connect);
 
+  test('ensureLoaded is a no-op until first call and stays idempotent',
+      () async {
+    final character = CharacterModel(
+      id: 'friend',
+      name: '小安',
+      tags: const [],
+      persona: '温柔的朋友',
+      enabled: true,
+    );
+    final router = _FakeMemexRouter([
+      PersonaAvatarSummary(character: character, unreadCount: 2),
+    ]);
+    final viewModel = PersonaAvatarViewModel(router: router);
+    addTearDown(viewModel.dispose);
+
+    expect(viewModel.character, isNull);
+    expect(router.loadCount, 0);
+
+    await viewModel.ensureLoaded();
+    await viewModel.ensureLoaded();
+
+    expect(viewModel.character?.id, 'friend');
+    expect(viewModel.unreadCount, 2);
+    expect(router.loadCount, 1);
+  });
+
   test('loads avatar summary and refreshes when chat unread state changes',
       () async {
     final character = CharacterModel(

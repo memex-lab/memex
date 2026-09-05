@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:memex/domain/models/character_model.dart';
 import 'package:memex/ui/character/view_models/persona_avatar_viewmodel.dart';
@@ -7,7 +9,7 @@ import 'package:memex/ui/core/widgets/character_avatar.dart';
 /// Small avatar button in the timeline header.
 /// Shows the user's primary companion character with an unread badge.
 /// Tap to open chat.
-class PersonaAvatarButton extends StatelessWidget {
+class PersonaAvatarButton extends StatefulWidget {
   const PersonaAvatarButton({
     super.key,
     required this.viewModel,
@@ -18,17 +20,39 @@ class PersonaAvatarButton extends StatelessWidget {
   final ValueChanged<CharacterModel> onTap;
 
   @override
+  State<PersonaAvatarButton> createState() => _PersonaAvatarButtonState();
+}
+
+class _PersonaAvatarButtonState extends State<PersonaAvatarButton> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      unawaited(widget.viewModel.ensureLoaded());
+    });
+  }
+
+  @override
+  void didUpdateWidget(PersonaAvatarButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.viewModel != widget.viewModel) {
+      unawaited(widget.viewModel.ensureLoaded());
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: viewModel,
+      listenable: widget.viewModel,
       builder: (context, _) {
-        final character = viewModel.character;
+        final character = widget.viewModel.character;
         if (character == null) {
           return const SizedBox(width: 36, height: 36);
         }
 
         return GestureDetector(
-          onTap: () => onTap(character),
+          onTap: () => widget.onTap(character),
           child: SizedBox(
             width: 36,
             height: 36,
@@ -38,8 +62,8 @@ class PersonaAvatarButton extends StatelessWidget {
                 Center(
                   child: _CompanionAvatarFrame(character: character),
                 ),
-                if (viewModel.unreadCount > 0)
-                  _UnreadBadge(count: viewModel.unreadCount),
+                if (widget.viewModel.unreadCount > 0)
+                  _UnreadBadge(count: widget.viewModel.unreadCount),
               ],
             ),
           ),
