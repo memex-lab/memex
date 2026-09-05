@@ -21,6 +21,7 @@ import 'package:memex/ui/user_setup/widgets/user_setup_screen.dart';
 import 'package:memex/ui/app_lock/widgets/lock_screen_page.dart';
 import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:memex/ui/core/themes/app_theme.dart';
+import 'package:memex/ui/core/themes/bundled_google_fonts.dart';
 import 'dart:io';
 import 'package:memex/ui/main_screen/widgets/radial_menu.dart';
 import 'package:memex/domain/models/shortcut_item.dart' as app_shortcut;
@@ -77,6 +78,7 @@ final GlobalKey<RootShellState> rootShellKey = GlobalKey<RootShellState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  configureBundledGoogleFonts();
 
   // Initialize flavor from platform (set by --flavor flag)
   AppFlavor.init(appFlavor);
