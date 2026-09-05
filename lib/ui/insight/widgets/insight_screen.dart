@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'package:memex/domain/models/knowledge_insight_card.dart';
@@ -5,6 +7,7 @@ import 'package:memex/ui/insight/view_models/insight_viewmodel.dart';
 import 'insight_detail_page.dart';
 import 'package:memex/utils/toast_helper.dart';
 import 'package:memex/ui/core/cards/native_widget_factory.dart';
+import 'package:memex/ui/core/widgets/html_webview_card.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/ui/insight/widgets/insight_preview_data.dart';
 
@@ -214,6 +217,126 @@ class _InsightScreenState extends State<InsightScreen> {
     );
   }
 
+  int _insightListHeaderCount(InsightViewModel vm) {
+    var count = 0;
+    if (widget.isEmbedded) count += 1;
+    if (!widget.isEmbedded || vm.isReordering) count += 2;
+    return count;
+  }
+
+  int _insightListItemCount(InsightViewModel vm) {
+    final headerCount = _insightListHeaderCount(vm);
+    if (vm.isLoading || vm.errorMessage != null) return headerCount + 1;
+    final insights = vm.insights;
+    if (insights == null || insights.isEmpty) return headerCount + 1;
+    return headerCount + insights.length;
+  }
+
+  Widget _buildInsightListItem(
+    BuildContext context,
+    InsightViewModel vm,
+    int index,
+  ) {
+    final headerCount = _insightListHeaderCount(vm);
+    var cursor = 0;
+    if (widget.isEmbedded) {
+      if (index == cursor) return const SizedBox(height: 16);
+      cursor += 1;
+    }
+    if (!widget.isEmbedded || vm.isReordering) {
+      if (index == cursor) {
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            if (!widget.isEmbedded)
+              Text(
+                UserStorage.l10n.knowledgeInsight,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF0A0A0A),
+                ),
+              )
+            else if (vm.isReordering)
+              const Spacer(),
+            if (vm.isReordering)
+              TextButton.icon(
+                onPressed: () => _saveSortOrder(vm),
+                icon: const Icon(Icons.check),
+                label: Text(UserStorage.l10n.completeSort),
+              ),
+          ],
+        );
+      }
+      cursor += 1;
+      if (index == cursor) return const SizedBox(height: 16);
+      cursor += 1;
+    }
+
+    if (vm.isLoading) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32.0),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+    if (vm.errorMessage != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32.0),
+          child: Column(
+            children: [
+              Text(
+                vm.errorMessage!,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF99A1AF),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => vm.loadData(),
+                child: Text(UserStorage.l10n.reload),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    final insights = vm.insights;
+    if (insights == null || insights.isEmpty) {
+      return _buildPreviewCards();
+    }
+    final item = insights[index - headerCount];
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: GestureDetector(
+        onLongPress: () => vm.setActiveCardId(item.id),
+        child: Stack(
+          children: [
+            _buildItemCard(vm, item, onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => InsightDetailPage.insight(
+                    insightId: item.id,
+                  ),
+                ),
+              );
+            }),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: _buildPinButton(vm, item),
+            ),
+            if (vm.activeCardId == item.id) _buildActionOverlay(vm, item),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildItemCard(InsightViewModel vm, KnowledgeInsightCard item,
       {VoidCallback? onTap}) {
     if (item.widgetType == 'native' && item.widgetTemplate != null) {
@@ -230,6 +353,20 @@ class _InsightScreenState extends State<InsightScreen> {
           ),
         );
       }
+    }
+    if (item.widgetType == 'html') {
+      if (item.html.isEmpty) {
+        unawaited(vm.ensureHtmlRendered(item));
+        return const SizedBox(
+          height: 160,
+          child: Center(child: CircularProgressIndicator()),
+        );
+      }
+      return HtmlWebViewCard(
+        html: item.html,
+        config: const HtmlWebViewConfig.timeline(),
+        onContentTap: onTap,
+      );
     }
     return const SizedBox.shrink();
   }
@@ -293,103 +430,11 @@ class _InsightScreenState extends State<InsightScreen> {
                                   ))
                               .toList(),
                         )
-                      : ListView(
+                      : ListView.builder(
                           padding: const EdgeInsets.fromLTRB(20, 0, 20, 160),
-                          children: [
-                            if (widget.isEmbedded) const SizedBox(height: 16),
-                            if (!widget.isEmbedded || vm.isReordering)
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  if (!widget.isEmbedded)
-                                    Text(
-                                      UserStorage.l10n.knowledgeInsight,
-                                      style: const TextStyle(
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFF0A0A0A),
-                                      ),
-                                    )
-                                  else if (vm.isReordering)
-                                    const Spacer(),
-                                  if (vm.isReordering)
-                                    TextButton.icon(
-                                      onPressed: () => _saveSortOrder(vm),
-                                      icon: const Icon(Icons.check),
-                                      label:
-                                          Text(UserStorage.l10n.completeSort),
-                                    ),
-                                ],
-                              ),
-                            if (!widget.isEmbedded || vm.isReordering)
-                              const SizedBox(height: 16),
-                            if (vm.isLoading)
-                              const Center(
-                                child: Padding(
-                                  padding: EdgeInsets.all(32.0),
-                                  child: CircularProgressIndicator(),
-                                ),
-                              )
-                            else if (vm.errorMessage != null)
-                              Center(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(32.0),
-                                  child: Column(
-                                    children: [
-                                      Text(
-                                        vm.errorMessage!,
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          color: Color(0xFF99A1AF),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 16),
-                                      ElevatedButton(
-                                        onPressed: () => vm.loadData(),
-                                        child: Text(UserStorage.l10n.reload),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              )
-                            else ...[
-                              if (vm.insights != null &&
-                                  vm.insights!.isNotEmpty)
-                                ...(vm.insights!.map((item) => Padding(
-                                      padding:
-                                          const EdgeInsets.only(bottom: 16),
-                                      child: GestureDetector(
-                                        onLongPress: () =>
-                                            vm.setActiveCardId(item.id),
-                                        child: Stack(
-                                          children: [
-                                            _buildItemCard(vm, item, onTap: () {
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder: (_) =>
-                                                      InsightDetailPage.insight(
-                                                    insightId: item.id,
-                                                  ),
-                                                ),
-                                              );
-                                            }),
-                                            Positioned(
-                                              top: 8,
-                                              right: 8,
-                                              child: _buildPinButton(vm, item),
-                                            ),
-                                            if (vm.activeCardId == item.id)
-                                              _buildActionOverlay(vm, item),
-                                          ],
-                                        ),
-                                      ),
-                                    )))
-                              else
-                                _buildPreviewCards(),
-                            ],
-                          ],
+                          itemCount: _insightListItemCount(vm),
+                          itemBuilder: (context, index) =>
+                              _buildInsightListItem(context, vm, index),
                         ),
                 ),
               ],
