@@ -80,6 +80,16 @@ Future<_TimelineCardEventPayload> _buildTimelineCardEventPayload({
   required String userId,
   required CardData cardData,
 }) async {
+  if (cardData.status == 'processing') {
+    return _TimelineCardEventPayload(
+      html: '',
+      status: cardData.status,
+      uiConfigs: cardData.uiConfigs,
+      assets: null,
+      rawText: cardData.fact,
+    );
+  }
+
   final renderResult = await renderCard(
     userId: userId,
     cardData: cardData,

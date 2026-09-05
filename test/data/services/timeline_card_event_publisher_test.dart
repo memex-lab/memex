@@ -27,6 +27,38 @@ void main() {
     }
   });
 
+  test('emits a processing placeholder without rendering templates', () async {
+    final messages = <EventBusMessage>[];
+    EventBusService.instance.addHandler(
+      EventBusMessageType.cardAdded,
+      messages.add,
+    );
+
+    await emitTimelineCardAdded(
+      userId: userId,
+      cardId: cardId,
+      cardData: const CardData(
+        factId: cardId,
+        timestamp: 1781971200,
+        status: 'processing',
+        tags: [],
+        title: null,
+        fact: 'Just captured.',
+        uiConfigs: [
+          UiConfig(templateId: 'classic_card', data: {'content': ''}),
+        ],
+      ),
+    );
+    await Future<void>.delayed(Duration.zero);
+
+    expect(messages, hasLength(1));
+    final message = messages.single as CardAddedMessage;
+    expect(message.status, 'processing');
+    expect(message.html, isEmpty);
+    expect(message.uiConfigs.single.templateId, 'classic_card');
+    expect(message.rawText, 'Just captured.');
+  });
+
   test('emits card added with rendered card fields', () async {
     final messages = <EventBusMessage>[];
     EventBusService.instance.addHandler(

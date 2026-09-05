@@ -2,6 +2,7 @@ import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:logging/logging.dart';
 import 'package:memex/data/services/file_system_service.dart';
+import 'package:memex/data/services/timeline_card_event_publisher.dart';
 import 'package:memex/domain/models/card_model.dart';
 import 'package:memex/utils/logger.dart';
 
@@ -48,6 +49,17 @@ class SuperAgentPreMintedRecordHook extends AgentHook {
     await _clearDifferentTurnPlaceholderIfNeeded(state);
     _factId = await FileSystemService.instance.allocateCardFactId(userId);
     _writeToState(state);
+    final placeholder = await FileSystemService.instance.readCardFile(
+      userId,
+      _factId!,
+    );
+    if (placeholder != null) {
+      await emitTimelineCardAdded(
+        userId: userId,
+        cardId: _factId!,
+        cardData: placeholder,
+      );
+    }
   }
 
   @visibleForTesting
