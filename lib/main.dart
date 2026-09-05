@@ -69,6 +69,7 @@ import 'package:memex/utils/wakelock_manager.dart';
 import 'package:memex/data/services/clipboard_preview_service.dart';
 import 'package:memex/ui/main_screen/widgets/clipboard_preview_card.dart';
 import 'package:memex/utils/result.dart';
+import 'package:memex/app_startup.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey =
@@ -87,11 +88,12 @@ void main() async {
     await WakelockManager.acquire('debug_session');
   }
 
-  // Initialize l10n
-  await UserStorage.initL10n();
-
-  // Initialize Workmanager (for background tasks)
-  await Workmanager().initialize(callbackDispatcher);
+  await initializeIndependentStartupServices(
+    initL10n: UserStorage.initL10n,
+    initWorkmanager: () => Workmanager().initialize(callbackDispatcher),
+    initAgentBridge: AgentBackgroundTaskService.instance.initializeNativeBridge,
+    startLocalServer: LocalServerService.start,
+  );
 
   // Cancel legacy pedometer background tasks on iOS without wiping newer
   // background registrations such as agent queue processing.
@@ -99,12 +101,6 @@ void main() async {
     await Workmanager().cancelByUniqueName('workmanager.background.task');
     await Workmanager().cancelByUniqueName('dailyStepSnapshotTask');
   }
-  await AgentBackgroundTaskService.instance.initializeNativeBridge();
-
-  // MemexRouter is provided via config/dependencies.dart and created on first read
-
-  // Start local HTTP server
-  await LocalServerService.start();
 
   // Set status bar style & enable edge-to-edge
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
