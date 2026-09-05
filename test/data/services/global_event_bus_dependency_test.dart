@@ -94,6 +94,34 @@ void main() {
       },
     );
   });
+
+  test('honors scheduleDelaySeconds when enqueueing async subscribers',
+      () async {
+    final before = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    eventBus.subscribe(
+      eventType: 'delay-test',
+      subscription: EventTaskSubscription(
+        subscriptionId: 'delayed',
+        taskType: 'delayed-task',
+        scheduleDelaySeconds: 20,
+        payloadBuilder: (_, __) async => const {},
+      ),
+    );
+
+    await eventBus.publish(
+      userId: 'user-a',
+      event: SystemEvent<void>(
+        type: 'delay-test',
+        payload: null,
+        source: 'test',
+        eventId: 'event-delay',
+      ),
+    );
+
+    final task = (await db.select(db.tasks).get()).single;
+    expect(task.scheduledAt, isNotNull);
+    expect(task.scheduledAt! >= before + 20, isTrue);
+  });
 }
 
 Map<String, String> _dependencyConditions(String? encoded) {
