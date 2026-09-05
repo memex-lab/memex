@@ -91,6 +91,7 @@ class MemexRouter {
       CharacterEditorRepository();
 
   Future<void>? _initFuture;
+  Future<void>? _deferredInitFuture;
 
   FileSystemService get fileSystemService => FileSystemService.instance;
 
@@ -101,46 +102,55 @@ class MemexRouter {
 
   Future<void> _init() async {
     try {
-      // 1. Resolve data root for current user (per-user workspace storage; logs/DB stay in app dir)
-      final userId = await UserStorage.getUserId();
-      final dataRoot = await UserStorage.resolveDataRoot(userId);
-      await FileSystemService.init(dataRoot);
+      final userId = await _initCore();
+      if (userId == null) return;
+      _deferredInitFuture ??= _initDeferred(userId);
+    } catch (e) {
+      _logger.severe('Failed to initialize MemexRouter: $e');
+      rethrow;
+    }
+  }
 
-      if (userId == null) {
-        _logger.warning(
-          'No user ID found during initialization. Local DB will NOT be initialized until login.',
-        );
-        return; // Do not initialize DB yet.
-      }
+  /// Workspace, DB, task queue, and search. Timeline first paint waits here.
+  Future<String?> _initCore() async {
+    final userId = await UserStorage.getUserId();
+    final dataRoot = await UserStorage.resolveDataRoot(userId);
+    await FileSystemService.init(dataRoot);
 
-      // Use userId to init DB (drift_flutter handles path isolation via name)
-      _logger.info('Initializing Local DB for user: $userId');
-      await ChatSessionStorage.instance.ensureMigrated(userId);
-      await AppDatabase.init(userId);
-      await PersonaChatService.instance
-          .initialize(userId, AppDatabase.instance);
+    if (userId == null) {
+      _logger.warning(
+        'No user ID found during initialization. Local DB will NOT be initialized until login.',
+      );
+      return null;
+    }
 
-      _registerTaskHandlers(LocalTaskExecutor.instance);
-      await LocalTaskExecutor.instance.start(userId: userId);
+    _logger.info('Initializing Local DB for user: $userId');
+    await ChatSessionStorage.instance.ensureMigrated(userId);
+    await AppDatabase.init(userId);
+    await PersonaChatService.instance.initialize(userId, AppDatabase.instance);
+
+    _registerTaskHandlers(LocalTaskExecutor.instance);
+    await LocalTaskExecutor.instance.start(userId: userId);
+
+    TableChangeNotifier.instance.init();
+    CardAttachmentService.instance.init();
+    UserNotificationService.instance.init();
+    CardDetailNotifier.instance.init();
+
+    _registerEventSubscriptions();
+    initCustomAgentHandler();
+    registerBuiltInEventSerializers();
+    SearchService.instance.init(userId);
+    await migrateCardsToFactAssets(userId);
+    return userId;
+  }
+
+  /// Companion wake, custom agents, and background surfaces. Chat waits here.
+  Future<void> _initDeferred(String userId) async {
+    try {
       await CharacterConversationService.instance.reconcilePendingReplies(
         userId: userId,
       );
-
-      // Start table change notifier (binlog-style listener for Drift tables)
-      TableChangeNotifier.instance.init();
-      // Register attachment table watchers
-      CardAttachmentService.instance.init();
-      // Register user notification table watch (must precede CardDetailNotifier)
-      UserNotificationService.instance.init();
-      // Register card-detail change notifier (subscribes to GlobalEventBus)
-      CardDetailNotifier.instance.init();
-
-      // Register event subscriptions after task handlers are ready.
-      _registerEventSubscriptions();
-
-      // Initialize custom agent handler and register user-defined agents.
-      initCustomAgentHandler();
-      registerBuiltInEventSerializers();
       await CustomAgentConfigService.instance.registerAll(userId);
       await AgentBackgroundTaskService.instance.startMonitoring();
       AgentBackgroundCoordinator.instance.start(
@@ -148,18 +158,6 @@ class MemexRouter {
         activityService: LocalAgentActivityService.instance,
       );
 
-      // Register file change callback and FTS event subscriptions.
-      // Also triggers a one-time full rebuild when FTS tables were just created
-      // via migration (existing users upgrading to schema v10).
-      SearchService.instance.init(userId);
-
-      // One-time migration: backfill legacy cards' fact/assets/created_at
-      // fields from their Facts files. Runs after SearchService subscribes so
-      // migrated card facts are incrementally reflected in FTS.
-      await migrateCardsToFactAssets(userId);
-
-      // Existing records must be fully readable before a companion privately
-      // explores them for the first time.
       final primaryCompanion =
           await CharacterService.instance.getPrimaryCompanion(userId);
       if (primaryCompanion?.enabled == true) {
@@ -174,10 +172,7 @@ class MemexRouter {
 
       scheduleAutoBackupCheck(trigger: 'app_start');
     } catch (e) {
-      _logger.severe('Failed to initialize MemexRouter: $e');
-      // Reset future to allow retry if needed, or keep failed state
-      // _initFuture = null;
-      rethrow;
+      _logger.severe('Failed deferred MemexRouter init: $e');
     }
   }
 
@@ -280,8 +275,17 @@ class MemexRouter {
     );
 
     _targetUserIdForInit = currentUser;
+    _deferredInitFuture = null;
     _initFuture = _init();
     return _initFuture!;
+  }
+
+  Future<void> _ensureFullyInitialized() async {
+    await _ensureInitialized();
+    final deferred = _deferredInitFuture;
+    if (deferred != null) {
+      await deferred;
+    }
   }
 
   Future<void> ensureInitialized() => _ensureInitialized();
@@ -390,6 +394,7 @@ class MemexRouter {
     _logger.info('Switching user to $userId');
     _targetUserIdForInit = null;
     _initFuture = null;
+    _deferredInitFuture = null;
     await _ensureInitialized();
   }
 
@@ -1103,7 +1108,7 @@ class MemexRouter {
     CharacterDraft draft,
   ) {
     return runResult(() async {
-      await _ensureInitialized();
+      await _ensureFullyInitialized();
       final userId = await UserStorage.getUserId();
       if (userId == null) throw StateError('No active user.');
       return _characterEditorRepository.save(userId: userId, draft: draft);
@@ -1311,7 +1316,7 @@ class MemexRouter {
     bool enabled,
   ) async {
     return runResult(() async {
-      await _ensureInitialized();
+      await _ensureFullyInitialized();
       _logger.info(
         'LocalMode: setCharacterEnabled called: characterId=$characterId, enabled=$enabled',
       );
@@ -1331,7 +1336,7 @@ class MemexRouter {
     bool isQuickQuery = false,
     String runMode = 'auto',
   }) async* {
-    await _ensureInitialized();
+    await _ensureFullyInitialized();
     yield* ChatService.instance.sendMessage(
       message,
       sessionId: sessionId,
