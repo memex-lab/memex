@@ -13,6 +13,19 @@ import 'package:memex/utils/logger.dart';
 
 final Logger _logger = getLogger('LocalImage');
 
+/// Decode size for [Image.file]/[Image.network] so Timeline thumbnails do not
+/// upload a full-resolution bitmap to the GPU.
+@visibleForTesting
+int? localImageDecodePixels(double? logicalSize, double devicePixelRatio) {
+  if (logicalSize == null || !logicalSize.isFinite || logicalSize <= 0) {
+    return null;
+  }
+  final pixels = (logicalSize * devicePixelRatio).round();
+  if (pixels < 1) return 1;
+  if (pixels > 4096) return 4096;
+  return pixels;
+}
+
 final Uint8List _transparentPng = Uint8List.fromList(const [
   0x89,
   0x50,
@@ -481,6 +494,7 @@ class _LocalImageState extends State<LocalImage> {
           'File not found when loading with Image.file: ${_imageFile!.path}',
         );
       }
+      final dpr = MediaQuery.maybeDevicePixelRatioOf(context) ?? 1;
       return Image.file(
         _imageFile!,
         fit: widget.fit,
@@ -509,14 +523,17 @@ class _LocalImageState extends State<LocalImage> {
         frameBuilder: _getFrameBuilder(),
         semanticLabel: widget.semanticLabel,
         excludeFromSemantics: widget.excludeFromSemantics,
-        cacheWidth: widget.cacheWidth,
-        cacheHeight: widget.cacheHeight,
+        cacheWidth:
+            widget.cacheWidth ?? localImageDecodePixels(widget.width, dpr),
+        cacheHeight:
+            widget.cacheHeight ?? localImageDecodePixels(widget.height, dpr),
         color: widget.color,
         colorBlendMode: widget.colorBlendMode,
       );
     }
 
     // network image mode
+    final dpr = MediaQuery.maybeDevicePixelRatioOf(context) ?? 1;
     return Image.network(
       widget.url,
       fit: widget.fit,
@@ -533,8 +550,9 @@ class _LocalImageState extends State<LocalImage> {
       frameBuilder: _getFrameBuilder(),
       semanticLabel: widget.semanticLabel,
       excludeFromSemantics: widget.excludeFromSemantics,
-      cacheWidth: widget.cacheWidth,
-      cacheHeight: widget.cacheHeight,
+      cacheWidth: widget.cacheWidth ?? localImageDecodePixels(widget.width, dpr),
+      cacheHeight:
+          widget.cacheHeight ?? localImageDecodePixels(widget.height, dpr),
       color: widget.color,
       colorBlendMode: widget.colorBlendMode,
     );
