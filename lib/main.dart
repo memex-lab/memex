@@ -1830,8 +1830,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                       children: [
                         TimelineScreen(
                           key: _timelineKey,
-                          viewModel: context.watch<TimelineViewModel>(),
-                          insightViewModel: context.watch<InsightViewModel>(),
+                          viewModel: context.read<TimelineViewModel>(),
+                          insightViewModel: context.read<InsightViewModel>(),
                           personaAvatarViewModel:
                               context.read<PersonaAvatarViewModel>(),
                           onInputTap: () {
@@ -1841,7 +1841,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                         ),
                         KnowledgeBaseScreen(
                           key: _knowledgeBaseKey,
-                          viewModel: context.watch<KnowledgeBaseViewModel>(),
+                          viewModel: context.read<KnowledgeBaseViewModel>(),
                         ),
                       ],
                     ),
