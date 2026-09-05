@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:memex/domain/models/tag_model.dart';
 import 'package:memex/domain/models/timeline_card_model.dart';
 import 'package:memex/ui/timeline/view_models/timeline_viewmodel.dart';
+import 'package:memex/utils/result.dart';
 
 void main() {
   group('timeline card idempotency helpers', () {
@@ -191,6 +193,48 @@ void main() {
       );
 
       expect(viewModel.cards, isEmpty);
+    });
+  });
+
+  group('timeline tag refresh', () {
+    test('sameTimelineTags compares name icon and type', () {
+      expect(
+        sameTimelineTags(
+          [TagModel(name: 'Work', icon: '💼', iconType: TagIconType.emoji)],
+          [TagModel(name: 'Work', icon: '💼', iconType: TagIconType.emoji)],
+        ),
+        isTrue,
+      );
+      expect(
+        sameTimelineTags(
+          [TagModel(name: 'Work')],
+          [TagModel(name: 'Life')],
+        ),
+        isFalse,
+      );
+    });
+
+    test('fetchTags does not notify when the tag list is unchanged', () async {
+      var fetches = 0;
+      final viewModel = TimelineViewModel.forTest(
+        fetchTags: () async {
+          fetches += 1;
+          return Ok([TagModel(name: 'Work')]);
+        },
+      );
+      addTearDown(viewModel.dispose);
+
+      var notifications = 0;
+      viewModel.addListener(() => notifications += 1);
+
+      await viewModel.fetchTags();
+      expect(fetches, 1);
+      expect(notifications, 1);
+      expect(viewModel.tags.single.name, 'Work');
+
+      await viewModel.fetchTags();
+      expect(fetches, 2);
+      expect(notifications, 1);
     });
   });
 }
