@@ -27,6 +27,7 @@ class InsightViewModel extends ChangeNotifier {
   bool isDeleting = false;
   bool isReordering = false;
   final Set<String> pinningIds = {};
+  final Set<String> _htmlLoadingIds = {};
 
   void _handleNewInsightEvent(EventBusMessage message) {
     if (message is! NewInsightMessage) return;
@@ -35,6 +36,23 @@ class InsightViewModel extends ChangeNotifier {
 
   Future<void> _reloadAfterInsightUpdated() async {
     await loadData();
+  }
+
+  Future<void> ensureHtmlRendered(KnowledgeInsightCard item) async {
+    if (item.widgetType != 'html' || item.html.isNotEmpty) return;
+    if (!_htmlLoadingIds.add(item.id)) return;
+    final result = await _router.renderInsightCardHtml(item.id);
+    final index = insights?.indexWhere((card) => card.id == item.id) ?? -1;
+    result.when(
+      onOk: (html) {
+        if (index != -1 && insights != null && html.isNotEmpty) {
+          insights![index] = insights![index].copyWith(html: html);
+        }
+      },
+      onError: (_, __) {},
+    );
+    _htmlLoadingIds.remove(item.id);
+    notifyListeners();
   }
 
   Future<void> ensureLoaded() async {

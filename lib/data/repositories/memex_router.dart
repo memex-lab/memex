@@ -764,10 +764,8 @@ class MemexRouter {
           createdAt = DateTime.parse(card['updated_at']).millisecondsSinceEpoch;
         }
 
-        String? chartHtml;
-        if (!isNative) {
-          chartHtml = await _renderInsightCardHtml(userId, card);
-        }
+        // HTML templates are rendered when the row is first built.
+        const chartHtml = '';
 
         Map<String, dynamic>? widgetData;
         if (isNative) {
@@ -783,7 +781,7 @@ class MemexRouter {
           KnowledgeInsightCard(
             id: id,
             title: title,
-            html: chartHtml ?? '',
+            html: chartHtml,
             createdAt: createdAt,
             isPinned: card['pinned'] == true,
             sortOrder: (card['sort_order'] as num? ?? 0).toInt(),
@@ -802,6 +800,23 @@ class MemexRouter {
       });
 
       return insights;
+    });
+  }
+
+  Future<Result<String>> renderInsightCardHtml(String insightId) async {
+    return runResult(() async {
+      await _ensureInitialized();
+      final userId = await UserStorage.getUserId();
+      if (userId == null) return '';
+      final cardsData = await fileSystemService.listKnowledgeInsightCards(
+        userId,
+      );
+      for (final card in cardsData) {
+        final id = card['id'] as String? ?? '';
+        if (id != insightId) continue;
+        return _renderInsightCardHtml(userId, card);
+      }
+      return '';
     });
   }
 
