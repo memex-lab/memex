@@ -36,6 +36,7 @@ import 'package:memex/utils/user_storage.dart';
 import 'package:memex/ui/core/themes/app_colors.dart';
 import 'package:memex/utils/token_usage_utils.dart';
 import 'package:memex/utils/time_context.dart';
+import 'package:memex/ui/chat/chat_event_batcher.dart';
 
 // --- Display Models ---
 
@@ -522,6 +523,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   final Map<String, Future<String?>> _timelineCardArtifactImageSourceFutures =
       {};
   final Map<String, List<ArtifactItem>> _pendingReplyArtifactsByTurn = {};
+  late final ChatEventBatcher _chatEventBatcher;
 
   late AnimationController _controller;
   late Animation<Offset> _slideAnimation;
@@ -531,6 +533,14 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   @override
   void initState() {
     super.initState();
+    _chatEventBatcher = ChatEventBatcher(
+      apply: _applyChatEvent,
+      onFlush: () {
+        if (!mounted) return;
+        setState(() {});
+        _scrollToBottom();
+      },
+    );
     _currentSessionId = widget.initialSessionId;
     _items = List<ChatDisplayItem>.from(widget.initialItems);
     _isLoadingAgent = widget.initialIsLoadingAgent;
@@ -590,6 +600,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
 
   @override
   void dispose() {
+    _chatEventBatcher.dispose();
     _photoSuggestionCancellationToken?.cancel();
     _photoSuggestionCancellationToken = null;
     _chatSubscription?.cancel();
@@ -1519,8 +1530,11 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   }
 
   void _handleChatEvent(ChatEvent event) {
-    setState(() {
-      if (event is ChatAgentStartedEvent) {
+    _chatEventBatcher.add(event);
+  }
+
+  void _applyChatEvent(ChatEvent event) {
+    if (event is ChatAgentStartedEvent) {
         _messageFocusNode.unfocus();
         _isStreaming = true;
         _isLoadingAgent = true;
@@ -1628,8 +1642,6 @@ class _AgentChatDialogState extends State<AgentChatDialog>
         }
         _items.add(ErrorItem(event.error));
       }
-    });
-    _scrollToBottom();
   }
 
   void _attachArtifactsToCurrentReply(
