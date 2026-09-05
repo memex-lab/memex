@@ -245,19 +245,10 @@ class TimelineScreenState extends State<TimelineScreen> {
     _scrollTagIntoView(index, widget.viewModel);
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: Listenable.merge([widget.viewModel, widget.viewModel.load]),
-      builder: (context, _) {
-        final vm = widget.viewModel;
-        return Column(
-          children: [
-            // Header: Memex title + action icons
-            // Figma: title top=73, left=20; buttons top=68, left=253, w=120, h=36
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-              child: Row(
+  Widget _buildChromeHeader() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+      child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -279,9 +270,11 @@ class TimelineScreenState extends State<TimelineScreen> {
                       children: [
                         // Notification button
                         if (AppDatabase.isInitialized)
-                          Builder(
-                            builder: (context) {
-                              final pendingCount = vm.pendingAttachmentCount;
+                          ListenableBuilder(
+                            listenable: widget.viewModel,
+                            builder: (context, _) {
+                              final pendingCount =
+                                  widget.viewModel.pendingAttachmentCount;
                               return GestureDetector(
                                 onTap: () {
                                   if (pendingCount > 0) {
@@ -378,10 +371,23 @@ class TimelineScreenState extends State<TimelineScreen> {
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 16),
+            );
+  }
 
-            // Tag Chips (All + Insight + user tags)
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        _buildChromeHeader(),
+        const SizedBox(height: 16),
+        Expanded(
+          child: ListenableBuilder(
+            listenable:
+                Listenable.merge([widget.viewModel, widget.viewModel.load]),
+            builder: (context, _) {
+              final vm = widget.viewModel;
+              return Column(
+                children: [
             TimelineModelConfigBanner(
               onConfigureTap: () async {
                 await Navigator.push(
@@ -593,9 +599,12 @@ class TimelineScreenState extends State<TimelineScreen> {
                 ),
               ),
             ),
-          ],
-        );
-      },
+                ],
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
