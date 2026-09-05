@@ -2,6 +2,7 @@ import 'package:memex/domain/models/timeline_card_model.dart';
 import 'package:memex/domain/models/card_detail_model.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/card_renderer.dart';
+import 'package:memex/data/services/hydrated_card_cache.dart';
 import 'package:memex/utils/async_pool.dart';
 import 'package:memex/utils/logger.dart';
 
@@ -23,6 +24,10 @@ Future<TimelineCardModel?> hydrateCard(String userId, String factId) async {
 
   if (cardData.deleted == true) return null;
 
+  final contentHash = hydratedCardContentHash(cardData);
+  final cached = HydratedCardCache.instance.get(factId, contentHash);
+  if (cached != null) return cached;
+
   final timestamp = cardData.timestamp;
 
   final renderResult = await renderCard(
@@ -35,7 +40,7 @@ Future<TimelineCardModel?> hydrateCard(String userId, String factId) async {
   final assets = assetsAndText['assets'] as List<AssetData>;
   final rawText = assetsAndText['rawText'] as String?;
 
-  return TimelineCardModel(
+  final card = TimelineCardModel(
     id: factId,
     html: renderResult.html,
     timestamp: DateTime.fromMillisecondsSinceEpoch(
@@ -51,6 +56,8 @@ Future<TimelineCardModel?> hydrateCard(String userId, String factId) async {
     address: cardData.address,
     failureReason: cardData.failureReason,
   );
+  HydratedCardCache.instance.put(factId, contentHash, card);
+  return card;
 }
 
 /// Hydrate many cards with bounded parallelism. Failed ids are skipped.
