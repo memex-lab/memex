@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'package:memex/domain/models/knowledge_insight_card.dart';
@@ -5,6 +7,7 @@ import 'package:memex/ui/insight/view_models/insight_viewmodel.dart';
 import 'insight_detail_page.dart';
 import 'package:memex/utils/toast_helper.dart';
 import 'package:memex/ui/core/cards/native_widget_factory.dart';
+import 'package:memex/ui/core/widgets/html_webview_card.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/ui/insight/widgets/insight_preview_data.dart';
 
@@ -25,20 +28,25 @@ class InsightScreen extends StatefulWidget {
 
 class _InsightScreenState extends State<InsightScreen> {
   Future<void> _onTogglePin(
-      InsightViewModel vm, KnowledgeInsightCard item) async {
+    InsightViewModel vm,
+    KnowledgeInsightCard item,
+  ) async {
     try {
       await vm.togglePin(item);
       if (mounted) {
         ToastHelper.showSuccess(
-            context,
-            item.isPinned
-                ? UserStorage.l10n.unpinned
-                : UserStorage.l10n.pinnedStyle);
+          context,
+          item.isPinned
+              ? UserStorage.l10n.unpinned
+              : UserStorage.l10n.pinnedStyle,
+        );
       }
     } catch (e) {
       if (mounted) {
         ToastHelper.showError(
-            context, UserStorage.l10n.operationFailed(e.toString()));
+          context,
+          UserStorage.l10n.operationFailed(e.toString()),
+        );
       }
     }
   }
@@ -52,13 +60,17 @@ class _InsightScreenState extends State<InsightScreen> {
     } catch (e) {
       if (mounted) {
         ToastHelper.showError(
-            context, UserStorage.l10n.sortSaveFailed(e.toString()));
+          context,
+          UserStorage.l10n.sortSaveFailed(e.toString()),
+        );
       }
     }
   }
 
   Future<void> _onDeleteCard(
-      InsightViewModel vm, KnowledgeInsightCard item) async {
+    InsightViewModel vm,
+    KnowledgeInsightCard item,
+  ) async {
     try {
       await vm.deleteCard(item);
       if (mounted) {
@@ -67,7 +79,9 @@ class _InsightScreenState extends State<InsightScreen> {
     } catch (e) {
       if (mounted) {
         ToastHelper.showError(
-            context, UserStorage.l10n.deleteFailedShort(e.toString()));
+          context,
+          UserStorage.l10n.deleteFailedShort(e.toString()),
+        );
       }
     }
   }
@@ -135,8 +149,9 @@ class _InsightScreenState extends State<InsightScreen> {
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFFF59E0B)
-                                  .withValues(alpha: 0.3),
+                              color: const Color(
+                                0xFFF59E0B,
+                              ).withValues(alpha: 0.3),
                               blurRadius: 12,
                               spreadRadius: 2,
                             ),
@@ -160,8 +175,9 @@ class _InsightScreenState extends State<InsightScreen> {
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFFEF4444)
-                                  .withValues(alpha: 0.3),
+                              color: const Color(
+                                0xFFEF4444,
+                              ).withValues(alpha: 0.3),
                               blurRadius: 12,
                               spreadRadius: 2,
                             ),
@@ -174,7 +190,8 @@ class _InsightScreenState extends State<InsightScreen> {
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
                                   valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.white),
+                                    Colors.white,
+                                  ),
                                 ),
                               )
                             : const Icon(
@@ -214,8 +231,127 @@ class _InsightScreenState extends State<InsightScreen> {
     );
   }
 
-  Widget _buildItemCard(InsightViewModel vm, KnowledgeInsightCard item,
-      {VoidCallback? onTap}) {
+  int _insightListHeaderCount(InsightViewModel vm) {
+    var count = 0;
+    if (widget.isEmbedded) count += 1;
+    if (!widget.isEmbedded || vm.isReordering) count += 2;
+    return count;
+  }
+
+  int _insightListItemCount(InsightViewModel vm) {
+    final headerCount = _insightListHeaderCount(vm);
+    if (vm.isLoading || vm.errorMessage != null) return headerCount + 1;
+    final insights = vm.insights;
+    if (insights == null || insights.isEmpty) return headerCount + 1;
+    return headerCount + insights.length;
+  }
+
+  Widget _buildInsightListItem(
+    BuildContext context,
+    InsightViewModel vm,
+    int index,
+  ) {
+    final headerCount = _insightListHeaderCount(vm);
+    var cursor = 0;
+    if (widget.isEmbedded) {
+      if (index == cursor) return const SizedBox(height: 16);
+      cursor += 1;
+    }
+    if (!widget.isEmbedded || vm.isReordering) {
+      if (index == cursor) {
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            if (!widget.isEmbedded)
+              Text(
+                UserStorage.l10n.knowledgeInsight,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF0A0A0A),
+                ),
+              )
+            else if (vm.isReordering)
+              const Spacer(),
+            if (vm.isReordering)
+              TextButton.icon(
+                onPressed: () => _saveSortOrder(vm),
+                icon: const Icon(Icons.check),
+                label: Text(UserStorage.l10n.completeSort),
+              ),
+          ],
+        );
+      }
+      cursor += 1;
+      if (index == cursor) return const SizedBox(height: 16);
+      cursor += 1;
+    }
+
+    if (vm.isLoading) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32.0),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+    if (vm.errorMessage != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32.0),
+          child: Column(
+            children: [
+              Text(
+                vm.errorMessage!,
+                style: const TextStyle(fontSize: 14, color: Color(0xFF99A1AF)),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => vm.loadData(),
+                child: Text(UserStorage.l10n.reload),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    final insights = vm.insights;
+    if (insights == null || insights.isEmpty) {
+      return _buildPreviewCards();
+    }
+    final item = insights[index - headerCount];
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: GestureDetector(
+        onLongPress: () => vm.setActiveCardId(item.id),
+        child: Stack(
+          children: [
+            _buildItemCard(
+              vm,
+              item,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        InsightDetailPage.insight(insightId: item.id),
+                  ),
+                );
+              },
+            ),
+            Positioned(top: 8, right: 8, child: _buildPinButton(vm, item)),
+            if (vm.activeCardId == item.id) _buildActionOverlay(vm, item),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildItemCard(
+    InsightViewModel vm,
+    KnowledgeInsightCard item, {
+    VoidCallback? onTap,
+  }) {
     if (item.widgetType == 'native' && item.widgetTemplate != null) {
       final widget = NativeWidgetFactory.build(
         item.widgetTemplate!,
@@ -224,12 +360,35 @@ class _InsightScreenState extends State<InsightScreen> {
       if (widget != null) {
         return GestureDetector(
           onTap: onTap,
-          child: AbsorbPointer(
-            absorbing: vm.isReordering,
-            child: widget,
-          ),
+          child: AbsorbPointer(absorbing: vm.isReordering, child: widget),
         );
       }
+    }
+    if (item.widgetType == 'html') {
+      if (item.html.isEmpty) {
+        if (vm.hasHtmlRenderFailed(item.id)) {
+          return SizedBox(
+            height: 160,
+            child: Center(
+              child: TextButton.icon(
+                onPressed: () => vm.retryHtmlRendered(item),
+                icon: const Icon(Icons.refresh),
+                label: Text(UserStorage.l10n.reload),
+              ),
+            ),
+          );
+        }
+        unawaited(vm.ensureHtmlRendered(item));
+        return const SizedBox(
+          height: 160,
+          child: Center(child: CircularProgressIndicator()),
+        );
+      }
+      return HtmlWebViewCard(
+        html: item.html,
+        config: const HtmlWebViewConfig.timeline(),
+        onContentTap: onTap,
+      );
     }
     return const SizedBox.shrink();
   }
@@ -252,52 +411,8 @@ class _InsightScreenState extends State<InsightScreen> {
                           onReorder: (oldIndex, newIndex) =>
                               vm.moveItem(oldIndex, newIndex),
                           header: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    if (!widget.isEmbedded)
-                                      Text(
-                                        UserStorage.l10n.knowledgeInsight,
-                                        style: const TextStyle(
-                                          fontSize: 24,
-                                          fontWeight: FontWeight.bold,
-                                          color: Color(0xFF0A0A0A),
-                                        ),
-                                      )
-                                    else
-                                      const SizedBox.shrink(),
-                                    TextButton.icon(
-                                      onPressed: () => _saveSortOrder(vm),
-                                      icon: const Icon(Icons.check),
-                                      label:
-                                          Text(UserStorage.l10n.completeSort),
-                                    )
-                                  ],
-                                ),
-                                const SizedBox(height: 24),
-                              ]),
-                          children: (vm.insights ?? [])
-                              .map((item) => Container(
-                                    key: ValueKey(item.id),
-                                    margin: const EdgeInsets.only(bottom: 16),
-                                    child: Stack(
-                                      children: [
-                                        _buildItemCard(vm, item),
-                                        // Maybe drag handle?
-                                        // ReorderableListView provides drag handle by default on long press or handle.
-                                      ],
-                                    ),
-                                  ))
-                              .toList(),
-                        )
-                      : ListView(
-                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 160),
-                          children: [
-                            if (widget.isEmbedded) const SizedBox(height: 16),
-                            if (!widget.isEmbedded || vm.isReordering)
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                               Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
@@ -311,85 +426,39 @@ class _InsightScreenState extends State<InsightScreen> {
                                         color: Color(0xFF0A0A0A),
                                       ),
                                     )
-                                  else if (vm.isReordering)
-                                    const Spacer(),
-                                  if (vm.isReordering)
-                                    TextButton.icon(
-                                      onPressed: () => _saveSortOrder(vm),
-                                      icon: const Icon(Icons.check),
-                                      label:
-                                          Text(UserStorage.l10n.completeSort),
-                                    ),
+                                  else
+                                    const SizedBox.shrink(),
+                                  TextButton.icon(
+                                    onPressed: () => _saveSortOrder(vm),
+                                    icon: const Icon(Icons.check),
+                                    label: Text(UserStorage.l10n.completeSort),
+                                  ),
                                 ],
                               ),
-                            if (!widget.isEmbedded || vm.isReordering)
-                              const SizedBox(height: 16),
-                            if (vm.isLoading)
-                              const Center(
-                                child: Padding(
-                                  padding: EdgeInsets.all(32.0),
-                                  child: CircularProgressIndicator(),
-                                ),
-                              )
-                            else if (vm.errorMessage != null)
-                              Center(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(32.0),
-                                  child: Column(
+                              const SizedBox(height: 24),
+                            ],
+                          ),
+                          children: (vm.insights ?? [])
+                              .map(
+                                (item) => Container(
+                                  key: ValueKey(item.id),
+                                  margin: const EdgeInsets.only(bottom: 16),
+                                  child: Stack(
                                     children: [
-                                      Text(
-                                        vm.errorMessage!,
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          color: Color(0xFF99A1AF),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 16),
-                                      ElevatedButton(
-                                        onPressed: () => vm.loadData(),
-                                        child: Text(UserStorage.l10n.reload),
-                                      ),
+                                      _buildItemCard(vm, item),
+                                      // Maybe drag handle?
+                                      // ReorderableListView provides drag handle by default on long press or handle.
                                     ],
                                   ),
                                 ),
                               )
-                            else ...[
-                              if (vm.insights != null &&
-                                  vm.insights!.isNotEmpty)
-                                ...(vm.insights!.map((item) => Padding(
-                                      padding:
-                                          const EdgeInsets.only(bottom: 16),
-                                      child: GestureDetector(
-                                        onLongPress: () =>
-                                            vm.setActiveCardId(item.id),
-                                        child: Stack(
-                                          children: [
-                                            _buildItemCard(vm, item, onTap: () {
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder: (_) =>
-                                                      InsightDetailPage.insight(
-                                                    insightId: item.id,
-                                                  ),
-                                                ),
-                                              );
-                                            }),
-                                            Positioned(
-                                              top: 8,
-                                              right: 8,
-                                              child: _buildPinButton(vm, item),
-                                            ),
-                                            if (vm.activeCardId == item.id)
-                                              _buildActionOverlay(vm, item),
-                                          ],
-                                        ),
-                                      ),
-                                    )))
-                              else
-                                _buildPreviewCards(),
-                            ],
-                          ],
+                              .toList(),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 160),
+                          itemCount: _insightListItemCount(vm),
+                          itemBuilder: (context, index) =>
+                              _buildInsightListItem(context, vm, index),
                         ),
                 ),
               ],
@@ -400,9 +469,7 @@ class _InsightScreenState extends State<InsightScreen> {
                 ? content
                 : Scaffold(
                     backgroundColor: const Color(0xFFF7F8FA),
-                    body: SafeArea(
-                      child: content,
-                    ),
+                    body: SafeArea(child: content),
                   );
 
             return wrappedContent;
@@ -432,8 +499,11 @@ class _InsightScreenState extends State<InsightScreen> {
           ),
           child: Row(
             children: [
-              const Icon(Icons.auto_awesome,
-                  size: 18, color: Color(0xFF6366F1)),
+              const Icon(
+                Icons.auto_awesome,
+                size: 18,
+                color: Color(0xFF6366F1),
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -456,10 +526,7 @@ class _InsightScreenState extends State<InsightScreen> {
           if (card == null) return const SizedBox.shrink();
           return Padding(
             padding: const EdgeInsets.only(bottom: 16),
-            child: Opacity(
-              opacity: 0.55,
-              child: IgnorePointer(child: card),
-            ),
+            child: Opacity(opacity: 0.55, child: IgnorePointer(child: card)),
           );
         }),
       ],

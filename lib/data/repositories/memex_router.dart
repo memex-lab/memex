@@ -205,7 +205,7 @@ class MemexRouter {
   }
 
   String?
-      _targetUserIdForInit; // Track the user ID we are currently initializing for
+  _targetUserIdForInit; // Track the user ID we are currently initializing for
 
   void _registerEventSubscriptions() {
     final eventBus = GlobalEventBus.instance;
@@ -800,10 +800,8 @@ class MemexRouter {
           createdAt = DateTime.parse(card['updated_at']).millisecondsSinceEpoch;
         }
 
-        String? chartHtml;
-        if (!isNative) {
-          chartHtml = await _renderInsightCardHtml(userId, card);
-        }
+        // HTML templates are rendered when the row is first built.
+        const chartHtml = '';
 
         Map<String, dynamic>? widgetData;
         if (isNative) {
@@ -819,7 +817,7 @@ class MemexRouter {
           KnowledgeInsightCard(
             id: id,
             title: title,
-            html: chartHtml ?? '',
+            html: chartHtml,
             createdAt: createdAt,
             isPinned: card['pinned'] == true,
             sortOrder: (card['sort_order'] as num? ?? 0).toInt(),
@@ -838,6 +836,37 @@ class MemexRouter {
       });
 
       return insights;
+    });
+  }
+
+  Future<Result<String>> renderInsightCardHtml(String insightId) async {
+    return runResult(() async {
+      await _ensureInitialized();
+      final userId = await UserStorage.getUserId();
+      if (userId == null) throw StateError('No active user.');
+      var card = await fileSystemService.readKnowledgeInsightCard(
+        userId,
+        insightId,
+      );
+      if (card == null) {
+        // Keep legacy cards whose YAML id differs from the filename readable,
+        // without penalizing the normal direct lookup path.
+        final cards = await fileSystemService.listKnowledgeInsightCards(userId);
+        for (final candidate in cards) {
+          if (candidate['id'] == insightId) {
+            card = candidate;
+            break;
+          }
+        }
+      }
+      if (card == null) {
+        throw StateError('Insight card not found: $insightId');
+      }
+      final html = await _renderInsightCardHtml(userId, card);
+      if (html.isEmpty) {
+        throw StateError('Insight card HTML is unavailable: $insightId');
+      }
+      return html;
     });
   }
 
@@ -942,8 +971,8 @@ class MemexRouter {
             id,
           );
           if (cardData != null) {
-            final currentSortOrder =
-                (cardData['sort_order'] as num? ?? 0).toInt();
+            final currentSortOrder = (cardData['sort_order'] as num? ?? 0)
+                .toInt();
             if (currentSortOrder != i) {
               cardData['sort_order'] = i;
               await fileSystemService.writeKnowledgeInsightCard(
