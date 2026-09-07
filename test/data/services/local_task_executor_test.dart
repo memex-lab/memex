@@ -308,6 +308,42 @@ void main() {
       executor.stop();
     });
 
+    test('caps concurrent agent-family tasks while other work can start',
+        () async {
+      final release = Completer<void>();
+      var agentStarted = 0;
+      var otherStarted = 0;
+      executor.registerHandler('super_agent_chat_turn_task', (_, __, ___) async {
+        agentStarted++;
+        await release.future;
+      });
+      executor.registerHandler('fts_index_update', (_, __, ___) async {
+        otherStarted++;
+      });
+
+      await executor.start(userId: 'user-a');
+      for (var i = 0; i < 4; i++) {
+        await executor.enqueueTask(
+          userId: 'user-a',
+          taskType: 'super_agent_chat_turn_task',
+          payload: {'i': i},
+        );
+      }
+      await executor.enqueueTask(
+        userId: 'user-a',
+        taskType: 'fts_index_update',
+        payload: const {},
+      );
+
+      await _waitUntil(() => agentStarted == 2 && otherStarted == 1);
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+      expect(agentStarted, 2);
+      expect(otherStarted, 1);
+
+      release.complete();
+      await executor.stop();
+    });
+
     test('serializes tasks that share a concurrency policy key', () async {
       final firstStarted = Completer<void>();
       final releaseFirst = Completer<void>();
