@@ -25,7 +25,7 @@ Future<TimelineCardModel?> hydrateCard(String userId, String factId) async {
   if (cardData.deleted == true) return null;
 
   final contentHash = hydratedCardContentHash(cardData);
-  final cached = HydratedCardCache.instance.get(factId, contentHash);
+  final cached = HydratedCardCache.instance.get(userId, factId, contentHash);
   if (cached != null) return cached;
 
   final timestamp = cardData.timestamp;
@@ -56,7 +56,7 @@ Future<TimelineCardModel?> hydrateCard(String userId, String factId) async {
     address: cardData.address,
     failureReason: cardData.failureReason,
   );
-  HydratedCardCache.instance.put(factId, contentHash, card);
+  HydratedCardCache.instance.put(userId, factId, contentHash, card);
   return card;
 }
 
@@ -68,18 +68,16 @@ Future<List<TimelineCardModel>> hydrateCards(
   int concurrency = 6,
   void Function(String factId, Object error)? onError,
 }) async {
-  final results = await mapWithLimit<String, TimelineCardModel?>(
-    factIds,
-    (factId) async {
-      try {
-        return await hydrateCard(userId, factId);
-      } catch (e) {
-        onError?.call(factId, e);
-        return null;
-      }
-    },
-    limit: concurrency,
-  );
+  final results = await mapWithLimit<String, TimelineCardModel?>(factIds, (
+    factId,
+  ) async {
+    try {
+      return await hydrateCard(userId, factId);
+    } catch (e) {
+      onError?.call(factId, e);
+      return null;
+    }
+  }, limit: concurrency);
   return [
     for (final card in results)
       if (card != null) card,

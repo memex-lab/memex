@@ -73,6 +73,7 @@ import 'package:memex/data/repositories/chat.dart' as chat_endpoint;
 import 'package:memex/data/services/llm_call_record_service.dart';
 import 'package:memex/data/services/agent_activity_service.dart';
 import 'package:memex/data/services/avatar_media_service.dart';
+import 'package:memex/data/services/hydrated_card_cache.dart';
 import 'package:memex/agent/state_util.dart';
 import 'package:memex/agent/skills/knowledge_insight/native_widgets.dart';
 import 'package:memex/utils/result.dart';
@@ -397,6 +398,7 @@ class MemexRouter {
   /// Rebuilds card cache for current user so reads reflect new workspace root.
   Future<void> applyWorkspaceStorageChange() async {
     final userId = await UserStorage.getUserId();
+    if (userId != null) HydratedCardCache.instance.clearUser(userId);
     final dataRoot = await UserStorage.resolveDataRoot(userId);
     await FileSystemService.init(dataRoot);
     if (userId != null && userId.isNotEmpty) {
@@ -432,6 +434,7 @@ class MemexRouter {
   /// Clear init state and stop executor on logout so next login re-inits for new user.
   void resetForLogout() {
     _logger.info('Resetting MemexRouter for logout');
+    HydratedCardCache.instance.clearAll();
     _targetUserIdForInit = null;
     _initFuture = null;
     unawaited(AgentBackgroundCoordinator.instance.stop());
