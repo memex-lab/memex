@@ -1231,7 +1231,9 @@ class _TimelineEntryItemState extends State<TimelineEntryItem> {
               mainAxisAlignment: MainAxisAlignment.end,
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (card.status == 'processing') ...[
+                if (card.status == 'processing' &&
+                    card.uiConfigs.isNotEmpty &&
+                    card.uiConfigs.first.templateId != 'classic_card') ...[
                   const Icon(Icons.auto_awesome_outlined,
                       size: 11, color: Color(0xFF99A1AF)),
                   const SizedBox(width: 3),
