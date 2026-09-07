@@ -186,6 +186,7 @@ class TimelineViewModel extends ChangeNotifier {
   static const int pageLimit = 20;
   static const Duration pollingInterval = Duration(seconds: 5);
   static const Duration defaultAuxiliaryQueryTimeout = Duration(seconds: 2);
+  static const Duration tagsRefreshDelay = Duration(milliseconds: 300);
 
   // Timeline list state
   List<TimelineCardModel> cards = [];
@@ -196,6 +197,7 @@ class TimelineViewModel extends ChangeNotifier {
   int _loadGeneration = 0;
   int? _visibleLoadGeneration;
   String? errorMessage;
+  Timer? _tagsRefreshTimer;
 
   // Card attachments (system actions, clarification requests, etc.)
   // Keyed by factId.
@@ -304,7 +306,7 @@ class TimelineViewModel extends ChangeNotifier {
         address: message.address,
       );
       addCard(newCard);
-      fetchTags();
+      _scheduleFetchTags();
     }
   }
 
@@ -332,7 +334,7 @@ class TimelineViewModel extends ChangeNotifier {
       );
       updateCard(updatedCard);
       unawaited(_refreshPendingCount());
-      fetchTags();
+      _scheduleFetchTags();
     }
   }
 
@@ -626,12 +628,22 @@ class TimelineViewModel extends ChangeNotifier {
     return generation != _loadGeneration || filter != activeFilter;
   }
 
+  void _scheduleFetchTags() {
+    _tagsRefreshTimer?.cancel();
+    _tagsRefreshTimer = Timer(tagsRefreshDelay, () {
+      unawaited(fetchTags());
+    });
+  }
+
   Future<void> fetchTags() async {
     try {
       final result = await _fetchTags();
-      tags = result.when(onOk: (t) => t, onError: (_, __) => <TagModel>[]);
+      final next = result.when(onOk: (t) => t, onError: (_, __) => <TagModel>[]);
+      if (_sameTimelineTags(tags, next)) return;
+      tags = next;
     } catch (e, stackTrace) {
       _logger.warning('Failed to fetch timeline tags: $e', e, stackTrace);
+      if (tags.isEmpty) return;
       tags = <TagModel>[];
     }
     notifyListeners();
@@ -652,6 +664,7 @@ class TimelineViewModel extends ChangeNotifier {
 
   @override
   void dispose() {
+    _tagsRefreshTimer?.cancel();
     _stopPolling();
     if (_eventBusSetup) {
       final eventBus = EventBusService.instance;
@@ -667,4 +680,21 @@ class TimelineViewModel extends ChangeNotifier {
     }
     super.dispose();
   }
+}
+
+@visibleForTesting
+bool sameTimelineTags(List<TagModel> current, List<TagModel> next) =>
+    _sameTimelineTags(current, next);
+
+bool _sameTimelineTags(List<TagModel> current, List<TagModel> next) {
+  if (identical(current, next)) return true;
+  if (current.length != next.length) return false;
+  for (var i = 0; i < current.length; i++) {
+    if (current[i].name != next[i].name ||
+        current[i].icon != next[i].icon ||
+        current[i].iconType != next[i].iconType) {
+      return false;
+    }
+  }
+  return true;
 }

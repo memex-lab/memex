@@ -110,23 +110,10 @@ class _KnowledgeDirectoryPageState extends State<KnowledgeDirectoryPage> {
       ),
       body: _isLoading
           ? Center(child: AgentLogoLoading())
-          : ListView(
-              padding: const EdgeInsets.all(20),
-              children: [
-                if (_folders.isNotEmpty) ...[
-                  ..._folders.map((f) => _buildFolderCard(f)),
-                ],
-                if (_files.isNotEmpty) ...[
-                  ..._files.map((f) => KnowledgeFileCard(item: f)),
-                ],
-                if (_folders.isEmpty && _files.isEmpty)
-                  Container(
-                    padding: const EdgeInsets.all(40),
-                    alignment: Alignment.center,
-                    child: Text(UserStorage.l10n.emptyFolder,
-                        style: const TextStyle(color: Color(0xFFCBD5E1))),
-                  ),
-              ],
+          : KnowledgeDirectoryBody(
+              folders: _folders,
+              files: _files,
+              folderBuilder: _buildFolderCard,
             ),
     );
   }
@@ -187,6 +174,46 @@ class _KnowledgeDirectoryPageState extends State<KnowledgeDirectoryPage> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class KnowledgeDirectoryBody extends StatelessWidget {
+  const KnowledgeDirectoryBody({
+    super.key,
+    required this.folders,
+    required this.files,
+    required this.folderBuilder,
+  });
+
+  final List<Map<String, dynamic>> folders;
+  final List<Map<String, dynamic>> files;
+  final Widget Function(Map<String, dynamic> item) folderBuilder;
+
+  @override
+  Widget build(BuildContext context) {
+    if (folders.isEmpty && files.isEmpty) {
+      return ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          Container(
+            padding: const EdgeInsets.all(40),
+            alignment: Alignment.center,
+            child: Text(UserStorage.l10n.emptyFolder,
+                style: const TextStyle(color: Color(0xFFCBD5E1))),
+          ),
+        ],
+      );
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.all(20),
+      itemCount: folders.length + files.length,
+      itemBuilder: (context, index) {
+        if (index < folders.length) {
+          return folderBuilder(folders[index]);
+        }
+        return KnowledgeFileCard(item: files[index - folders.length]);
+      },
     );
   }
 }

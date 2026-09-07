@@ -11,6 +11,41 @@ import 'package:memex/utils/result.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  testWidgets('loads the companion after the first frame', (tester) async {
+    final character = CharacterModel(
+      id: 'friend',
+      name: '小安',
+      tags: const [],
+      persona: '温柔的朋友',
+      enabled: true,
+    );
+    final router = _FakeMemexRouter(PersonaAvatarSummary(
+      character: character,
+      unreadCount: 1,
+    ));
+    final viewModel = PersonaAvatarViewModel(router: router);
+    addTearDown(viewModel.dispose);
+
+    expect(router.loadCount, 0);
+    expect(viewModel.character, isNull);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Center(
+          child: PersonaAvatarButton(
+            viewModel: viewModel,
+            onTap: (_) {},
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(router.loadCount, 1);
+    expect(find.byType(CharacterAvatar), findsOneWidget);
+    expect(find.text('1'), findsOneWidget);
+  });
+
   testWidgets('renders an empty slot when no companion is available',
       (tester) async {
     final viewModel = PersonaAvatarViewModel(
@@ -73,9 +108,11 @@ class _FakeMemexRouter implements MemexRouter {
   _FakeMemexRouter(this.summary);
 
   final PersonaAvatarSummary summary;
+  int loadCount = 0;
 
   @override
   Future<Result<PersonaAvatarSummary>> loadPersonaAvatarSummary() async {
+    loadCount += 1;
     return Ok(summary);
   }
 
