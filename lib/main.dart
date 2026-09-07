@@ -90,7 +90,7 @@ void main() async {
     await WakelockManager.acquire('debug_session');
   }
 
-  await initializeIndependentStartupServices(
+  await initializeStartupServices(
     initL10n: UserStorage.initL10n,
     initWorkmanager: () => Workmanager().initialize(callbackDispatcher),
     initAgentBridge: AgentBackgroundTaskService.instance.initializeNativeBridge,

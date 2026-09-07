@@ -1,13 +1,13 @@
-/// Runs independent first-launch I/O together so l10n, Workmanager, the
-/// agent bridge, and the local asset server do not wait on each other.
-Future<void> initializeIndependentStartupServices({
+/// Initializes localization before native callbacks can observe it, then runs
+/// the remaining independent first-launch I/O concurrently.
+Future<void> initializeStartupServices({
   required Future<void> Function() initL10n,
   required Future<void> Function() initWorkmanager,
   required Future<void> Function() initAgentBridge,
   required Future<void> Function() startLocalServer,
-}) {
-  return Future.wait<void>([
-    initL10n(),
+}) async {
+  await initL10n();
+  await Future.wait<void>([
     initWorkmanager(),
     initAgentBridge(),
     startLocalServer(),
