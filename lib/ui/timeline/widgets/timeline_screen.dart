@@ -10,6 +10,7 @@ import 'package:memex/db/app_database.dart';
 import 'package:memex/ui/card_attachments/card_attachment_data.dart';
 import 'package:memex/ui/card_attachments/card_attachment_factory.dart';
 import 'package:memex/ui/core/widgets/html_webview_card.dart';
+import 'package:memex/ui/core/widgets/viewport_gated.dart';
 import 'package:memex/ui/main_screen/widgets/action_center_sheet.dart';
 
 import 'package:memex/ui/core/cards/native_card_factory.dart';
@@ -245,19 +246,10 @@ class TimelineScreenState extends State<TimelineScreen> {
     _scrollTagIntoView(index, widget.viewModel);
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: Listenable.merge([widget.viewModel, widget.viewModel.load]),
-      builder: (context, _) {
-        final vm = widget.viewModel;
-        return Column(
-          children: [
-            // Header: Memex title + action icons
-            // Figma: title top=73, left=20; buttons top=68, left=253, w=120, h=36
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-              child: Row(
+  Widget _buildChromeHeader() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+      child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -279,9 +271,11 @@ class TimelineScreenState extends State<TimelineScreen> {
                       children: [
                         // Notification button
                         if (AppDatabase.isInitialized)
-                          Builder(
-                            builder: (context) {
-                              final pendingCount = vm.pendingAttachmentCount;
+                          ListenableBuilder(
+                            listenable: widget.viewModel,
+                            builder: (context, _) {
+                              final pendingCount =
+                                  widget.viewModel.pendingAttachmentCount;
                               return GestureDetector(
                                 onTap: () {
                                   if (pendingCount > 0) {
@@ -378,10 +372,23 @@ class TimelineScreenState extends State<TimelineScreen> {
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 16),
+            );
+  }
 
-            // Tag Chips (All + Insight + user tags)
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        _buildChromeHeader(),
+        const SizedBox(height: 16),
+        Expanded(
+          child: ListenableBuilder(
+            listenable:
+                Listenable.merge([widget.viewModel, widget.viewModel.load]),
+            builder: (context, _) {
+              final vm = widget.viewModel;
+              return Column(
+                children: [
             TimelineModelConfigBanner(
               onConfigureTap: () async {
                 await Navigator.push(
@@ -593,9 +600,12 @@ class TimelineScreenState extends State<TimelineScreen> {
                 ),
               ),
             ),
-          ],
-        );
-      },
+                ],
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -1109,10 +1119,13 @@ class _TimelineEntryItemState extends State<TimelineEntryItem> {
           children: [
             // Card Content Loop
             if (card.html != null && !_isClassicMode)
-              HtmlWebViewCard(
-                html: card.html!,
-                config: const HtmlWebViewConfig.timeline(),
-                onContentTap: onTap,
+              ViewportGated(
+                placeholder: const SizedBox(height: 160),
+                builder: (context) => HtmlWebViewCard(
+                  html: card.html!,
+                  config: const HtmlWebViewConfig.timeline(),
+                  onContentTap: onTap,
+                ),
               )
             else if (displayConfigs.isNotEmpty)
               ...displayConfigs.asMap().entries.map((entry) {
@@ -1125,10 +1138,13 @@ class _TimelineEntryItemState extends State<TimelineEntryItem> {
                   if (html != null && html.isNotEmpty) {
                     return Padding(
                       padding: EdgeInsets.only(bottom: isLast ? 0 : 8.0),
-                      child: HtmlWebViewCard(
-                        html: html,
-                        config: const HtmlWebViewConfig.timeline(),
-                        onContentTap: onTap,
+                      child: ViewportGated(
+                        placeholder: const SizedBox(height: 160),
+                        builder: (context) => HtmlWebViewCard(
+                          html: html,
+                          config: const HtmlWebViewConfig.timeline(),
+                          onContentTap: onTap,
+                        ),
                       ),
                     );
                   }
