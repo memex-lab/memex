@@ -77,6 +77,53 @@ void main() {
     expect(find.text('processing copy A'), findsNothing);
     expect(find.text('processing copy B'), findsNothing);
   });
+
+  testWidgets(
+    'classic processing placeholder does not show model setup hint',
+    (tester) async {
+      await tester.pumpWidget(
+        _FeedHost(
+          cards: [
+            _card(
+              '2026/05/18.md#ts_1',
+              content: '',
+              status: 'processing',
+            ),
+          ],
+        ),
+      );
+      await tester.pump();
+
+      expect(
+        find.text(UserStorage.l10n.pendingAiProcessingHint),
+        findsNothing,
+      );
+      expect(find.text(UserStorage.l10n.processingStatus), findsOneWidget);
+    },
+  );
+
+  testWidgets('non-classic processing card keeps model setup hint', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _FeedHost(
+        cards: [
+          _card(
+            '2026/05/18.md#ts_1',
+            content: 'pending input',
+            status: 'processing',
+            templateId: 'compact_card',
+          ),
+        ],
+      ),
+    );
+    await tester.pump();
+
+    expect(
+      find.text(UserStorage.l10n.pendingAiProcessingHint),
+      findsOneWidget,
+    );
+  });
 }
 
 class _FeedHost extends StatelessWidget {
@@ -110,6 +157,7 @@ TimelineCardModel _card(
   String id, {
   required String content,
   String status = 'completed',
+  String templateId = 'classic_card',
 }) {
   return TimelineCardModel(
     id: id,
@@ -118,7 +166,7 @@ TimelineCardModel _card(
     status: status,
     title: content,
     uiConfigs: [
-      UiConfig(templateId: 'classic_card', data: {'content': content}),
+      UiConfig(templateId: templateId, data: {'content': content}),
     ],
   );
 }

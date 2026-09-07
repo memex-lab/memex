@@ -2,6 +2,7 @@ import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:logging/logging.dart';
 import 'package:memex/data/services/file_system_service.dart';
+import 'package:memex/data/services/timeline_card_event_publisher.dart';
 import 'package:memex/domain/models/card_model.dart';
 import 'package:memex/utils/logger.dart';
 
@@ -11,10 +12,7 @@ const _userMessageTimestampMetadataKey =
     'super_agent_pre_minted_record_user_message_timestamp';
 
 class SuperAgentPreMintedRecordHook extends AgentHook {
-  SuperAgentPreMintedRecordHook({
-    required this.userId,
-    required this.turnId,
-  });
+  SuperAgentPreMintedRecordHook({required this.userId, required this.turnId});
 
   @visibleForTesting
   SuperAgentPreMintedRecordHook.forTesting({
@@ -48,6 +46,17 @@ class SuperAgentPreMintedRecordHook extends AgentHook {
     await _clearDifferentTurnPlaceholderIfNeeded(state);
     _factId = await FileSystemService.instance.allocateCardFactId(userId);
     _writeToState(state);
+    final placeholder = await FileSystemService.instance.readCardFile(
+      userId,
+      _factId!,
+    );
+    if (placeholder != null) {
+      await emitTimelineCardAdded(
+        userId: userId,
+        cardId: _factId!,
+        cardData: placeholder,
+      );
+    }
   }
 
   @visibleForTesting
@@ -77,10 +86,7 @@ class SuperAgentPreMintedRecordHook extends AgentHook {
     );
     return ModelCallHookResult.proceed(
       request: context.request.copyWith(requestMessages: nextRequestMessages),
-      changed: !identical(
-        nextRequestMessages,
-        context.request.requestMessages,
-      ),
+      changed: !identical(nextRequestMessages, context.request.requestMessages),
     );
   }
 
@@ -94,10 +100,16 @@ class SuperAgentPreMintedRecordHook extends AgentHook {
     }
 
     try {
-      final card =
-          await FileSystemService.instance.readCardFile(userId, factId);
+      final card = await FileSystemService.instance.readCardFile(
+        userId,
+        factId,
+      );
       if (isUnusedPreallocatedRecordPlaceholder(card, factId)) {
-        await FileSystemService.instance.deleteCard(userId, factId);
+        final deleted = await FileSystemService.instance.deleteCard(
+          userId,
+          factId,
+        );
+        if (deleted) emitTimelineCardRemoved(cardId: factId);
         return;
       }
       final userMessageTimestamp = _userMessageTimestamp;
@@ -127,8 +139,10 @@ class SuperAgentPreMintedRecordHook extends AgentHook {
     if (metadataTurnId != turnId) return;
 
     _factId ??= _metadataString(state, _factIdMetadataKey);
-    _userMessageTimestamp ??=
-        _metadataInt(state, _userMessageTimestampMetadataKey);
+    _userMessageTimestamp ??= _metadataInt(
+      state,
+      _userMessageTimestampMetadataKey,
+    );
   }
 
   void _writeToState(AgentState state) {
@@ -156,10 +170,16 @@ class SuperAgentPreMintedRecordHook extends AgentHook {
     if (metadataTurnId == turnId) return;
 
     try {
-      final card =
-          await FileSystemService.instance.readCardFile(userId, metadataFactId);
+      final card = await FileSystemService.instance.readCardFile(
+        userId,
+        metadataFactId,
+      );
       if (isUnusedPreallocatedRecordPlaceholder(card, metadataFactId)) {
-        await FileSystemService.instance.deleteCard(userId, metadataFactId);
+        final deleted = await FileSystemService.instance.deleteCard(
+          userId,
+          metadataFactId,
+        );
+        if (deleted) emitTimelineCardRemoved(cardId: metadataFactId);
       }
     } catch (e) {
       _logger.warning(
