@@ -117,13 +117,14 @@ void main() {
       expect(acquaintance, lessThan(initiative));
     });
 
-    test('sendMessage waits for router initialization before delegating', () {
+    test('sendMessage waits for full router initialization before delegating',
+        () {
       final source =
           File('lib/data/repositories/memex_router.dart').readAsStringSync();
 
       final sendMessage = source.indexOf('Stream<ChatEvent> sendMessage(');
       final ensureInitialized = source.indexOf(
-        'await _ensureInitialized();',
+        'await _ensureFullyInitialized();',
         sendMessage,
       );
       final delegate = source.indexOf(
@@ -135,6 +136,67 @@ void main() {
       expect(ensureInitialized, isNonNegative);
       expect(delegate, isNonNegative);
       expect(ensureInitialized, lessThan(delegate));
+    });
+
+    test('timeline init completes core before awaiting deferred work', () {
+      final source =
+          File('lib/data/repositories/memex_router.dart').readAsStringSync();
+
+      final initCore = source.indexOf('Future<String?> _initCore() async {');
+      final completeCore = source.indexOf('coreCompleter.complete();');
+      final awaitDeferred = source.indexOf('await _initDeferred(');
+      final customAgents = source.indexOf(
+        'await CustomAgentConfigService.instance.registerAll(userId);',
+      );
+      final migrate = source.indexOf('await migrateCardsToFactAssets(userId);');
+
+      expect(initCore, isNonNegative);
+      expect(completeCore, isNonNegative);
+      expect(awaitDeferred, isNonNegative);
+      expect(completeCore, lessThan(awaitDeferred));
+      expect(migrate, greaterThan(initCore));
+      expect(customAgents, greaterThan(awaitDeferred));
+    });
+
+    test('user changes serialize and invalidate deferred initialization', () {
+      final source =
+          File('lib/data/repositories/memex_router.dart').readAsStringSync();
+
+      expect(source, contains('await previousLifecycle;'));
+      expect(source, contains('generation != _initGeneration'));
+      expect(source, contains('_initGeneration += 1;'));
+      expect(
+        source,
+        contains(
+          "_logger.severe('Failed deferred MemexRouter init: \$e');\n      rethrow;",
+        ),
+      );
+    });
+
+    test('fetchTimelineCards waits only for core initialization', () {
+      final source =
+          File('lib/data/repositories/memex_router.dart').readAsStringSync();
+
+      final fetch = source.indexOf(
+        'Future<Result<List<TimelineCardModel>>> fetchTimelineCards(',
+      );
+      final ensureCore = source.indexOf(
+        'await _ensureInitialized();',
+        fetch,
+      );
+      final ensureFull = source.indexOf(
+        'await _ensureFullyInitialized();',
+        fetch,
+      );
+      final nextMethod = source.indexOf(
+        'Future<Result<Map<String, dynamic>>> fetchAggregatedTimeline(',
+        fetch,
+      );
+
+      expect(fetch, isNonNegative);
+      expect(ensureCore, isNonNegative);
+      expect(ensureCore, lessThan(nextMethod));
+      expect(ensureFull == -1 || ensureFull > nextMethod, isTrue);
     });
   });
 }
