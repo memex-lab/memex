@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/domain/models/tag_model.dart';
 import 'package:memex/domain/models/timeline_card_model.dart';
 import 'package:memex/ui/timeline/view_models/timeline_viewmodel.dart';
@@ -194,6 +195,28 @@ void main() {
 
       expect(viewModel.cards, isEmpty);
     });
+
+    test(
+      'card removed event clears an emitted processing placeholder',
+      () async {
+        final viewModel = TimelineViewModel.forTest()..init();
+        addTearDown(viewModel.dispose);
+        viewModel.addCard(
+          _card(
+            '2026/05/18.md#ts_10',
+            title: 'Processing',
+            status: 'processing',
+          ),
+        );
+
+        EventBusService.instance.emitEvent(
+          CardRemovedMessage(id: '2026/05/18.md#ts_10'),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        expect(viewModel.cards, isEmpty);
+      },
+    );
   });
 
   group('timeline tag refresh', () {
@@ -206,10 +229,7 @@ void main() {
         isTrue,
       );
       expect(
-        sameTimelineTags(
-          [TagModel(name: 'Work')],
-          [TagModel(name: 'Life')],
-        ),
+        sameTimelineTags([TagModel(name: 'Work')], [TagModel(name: 'Life')]),
         isFalse,
       );
     });

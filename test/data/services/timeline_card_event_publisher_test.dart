@@ -59,6 +59,20 @@ void main() {
     expect(message.rawText, 'Just captured.');
   });
 
+  test('emits removal for an unused processing placeholder', () async {
+    final messages = <EventBusMessage>[];
+    EventBusService.instance.addHandler(
+      EventBusMessageType.cardRemoved,
+      messages.add,
+    );
+
+    emitTimelineCardRemoved(cardId: cardId);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(messages, hasLength(1));
+    expect((messages.single as CardRemovedMessage).id, cardId);
+  });
+
   test('emits card added with rendered card fields', () async {
     final messages = <EventBusMessage>[];
     EventBusService.instance.addHandler(

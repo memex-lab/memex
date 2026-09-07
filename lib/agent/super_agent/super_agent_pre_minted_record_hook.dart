@@ -12,10 +12,7 @@ const _userMessageTimestampMetadataKey =
     'super_agent_pre_minted_record_user_message_timestamp';
 
 class SuperAgentPreMintedRecordHook extends AgentHook {
-  SuperAgentPreMintedRecordHook({
-    required this.userId,
-    required this.turnId,
-  });
+  SuperAgentPreMintedRecordHook({required this.userId, required this.turnId});
 
   @visibleForTesting
   SuperAgentPreMintedRecordHook.forTesting({
@@ -89,10 +86,7 @@ class SuperAgentPreMintedRecordHook extends AgentHook {
     );
     return ModelCallHookResult.proceed(
       request: context.request.copyWith(requestMessages: nextRequestMessages),
-      changed: !identical(
-        nextRequestMessages,
-        context.request.requestMessages,
-      ),
+      changed: !identical(nextRequestMessages, context.request.requestMessages),
     );
   }
 
@@ -106,10 +100,16 @@ class SuperAgentPreMintedRecordHook extends AgentHook {
     }
 
     try {
-      final card =
-          await FileSystemService.instance.readCardFile(userId, factId);
+      final card = await FileSystemService.instance.readCardFile(
+        userId,
+        factId,
+      );
       if (isUnusedPreallocatedRecordPlaceholder(card, factId)) {
-        await FileSystemService.instance.deleteCard(userId, factId);
+        final deleted = await FileSystemService.instance.deleteCard(
+          userId,
+          factId,
+        );
+        if (deleted) emitTimelineCardRemoved(cardId: factId);
         return;
       }
       final userMessageTimestamp = _userMessageTimestamp;
@@ -139,8 +139,10 @@ class SuperAgentPreMintedRecordHook extends AgentHook {
     if (metadataTurnId != turnId) return;
 
     _factId ??= _metadataString(state, _factIdMetadataKey);
-    _userMessageTimestamp ??=
-        _metadataInt(state, _userMessageTimestampMetadataKey);
+    _userMessageTimestamp ??= _metadataInt(
+      state,
+      _userMessageTimestampMetadataKey,
+    );
   }
 
   void _writeToState(AgentState state) {
@@ -168,10 +170,16 @@ class SuperAgentPreMintedRecordHook extends AgentHook {
     if (metadataTurnId == turnId) return;
 
     try {
-      final card =
-          await FileSystemService.instance.readCardFile(userId, metadataFactId);
+      final card = await FileSystemService.instance.readCardFile(
+        userId,
+        metadataFactId,
+      );
       if (isUnusedPreallocatedRecordPlaceholder(card, metadataFactId)) {
-        await FileSystemService.instance.deleteCard(userId, metadataFactId);
+        final deleted = await FileSystemService.instance.deleteCard(
+          userId,
+          metadataFactId,
+        );
+        if (deleted) emitTimelineCardRemoved(cardId: metadataFactId);
       }
     } catch (e) {
       _logger.warning(

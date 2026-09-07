@@ -17,18 +17,18 @@ import 'package:memex/utils/command.dart';
 
 enum TimelineViewMode { timeline, insight }
 
-typedef TimelineCardsFetcher = Future<Result<List<TimelineCardModel>>>
-    Function({
-  int page,
-  int limit,
-  List<String>? tags,
-  DateTime? dateFrom,
-  DateTime? dateTo,
-});
+typedef TimelineCardsFetcher =
+    Future<Result<List<TimelineCardModel>>> Function({
+      int page,
+      int limit,
+      List<String>? tags,
+      DateTime? dateFrom,
+      DateTime? dateTo,
+    });
 
 typedef TimelineTagsFetcher = Future<Result<List<TagModel>>> Function();
-typedef TimelineAttachmentFetcher = Future<List<CardAttachmentData>> Function(
-    String factId);
+typedef TimelineAttachmentFetcher =
+    Future<List<CardAttachmentData>> Function(String factId);
 typedef PendingAttachmentsFetcher = Future<List<CardAttachmentData>> Function();
 
 /// Upserts a card into a timeline list by stable card id.
@@ -88,9 +88,9 @@ List<TimelineCardModel> dedupeTimelineCardsById(List<TimelineCardModel> cards) {
 /// Removes retired synthetic cards while preserving normal Timeline order.
 @visibleForTesting
 List<TimelineCardModel> prepareTimelineCards(List<TimelineCardModel> cards) {
-  return dedupeTimelineCardsById(cards)
-      .where((card) => !isRetiredTimelineCard(card))
-      .toList();
+  return dedupeTimelineCardsById(
+    cards,
+  ).where((card) => !isRetiredTimelineCard(card)).toList();
 }
 
 /// ViewModel for the Timeline page. Holds cards, tags, loading state, and
@@ -105,29 +105,31 @@ class TimelineViewModel extends ChangeNotifier {
     Duration auxiliaryQueryTimeout = defaultAuxiliaryQueryTimeout,
     bool autoLoad = true,
   }) : this._(
-          fetchTimelineCards: fetchTimelineCards ??
-              (({
-                int page = 1,
-                int limit = pageLimit,
-                List<String>? tags,
-                DateTime? dateFrom,
-                DateTime? dateTo,
-              }) =>
-                  router.fetchTimelineCards(
-                    page: page,
-                    limit: limit,
-                    tags: tags,
-                    dateFrom: dateFrom,
-                    dateTo: dateTo,
-                  )),
-          fetchTags: fetchTags ?? router.fetchTags,
-          fetchAttachmentForCard: fetchAttachmentForCard ??
-              CardAttachmentService.instance.getAttachments,
-          fetchPendingAttachments: fetchPendingAttachments ??
-              CardAttachmentService.instance.getPendingAttachments,
-          auxiliaryQueryTimeout: auxiliaryQueryTimeout,
-          autoLoad: autoLoad,
-        );
+         fetchTimelineCards:
+             fetchTimelineCards ??
+             (({
+               int page = 1,
+               int limit = pageLimit,
+               List<String>? tags,
+               DateTime? dateFrom,
+               DateTime? dateTo,
+             }) => router.fetchTimelineCards(
+               page: page,
+               limit: limit,
+               tags: tags,
+               dateFrom: dateFrom,
+               dateTo: dateTo,
+             )),
+         fetchTags: fetchTags ?? router.fetchTags,
+         fetchAttachmentForCard:
+             fetchAttachmentForCard ??
+             CardAttachmentService.instance.getAttachments,
+         fetchPendingAttachments:
+             fetchPendingAttachments ??
+             CardAttachmentService.instance.getPendingAttachments,
+         auxiliaryQueryTimeout: auxiliaryQueryTimeout,
+         autoLoad: autoLoad,
+       );
 
   @visibleForTesting
   factory TimelineViewModel.forTest({
@@ -139,15 +141,15 @@ class TimelineViewModel extends ChangeNotifier {
     bool autoLoad = false,
   }) {
     return TimelineViewModel._(
-      fetchTimelineCards: fetchTimelineCards ??
+      fetchTimelineCards:
+          fetchTimelineCards ??
           ({
             int page = 1,
             int limit = pageLimit,
             List<String>? tags,
             DateTime? dateFrom,
             DateTime? dateTo,
-          }) async =>
-              const Ok(<TimelineCardModel>[]),
+          }) async => const Ok(<TimelineCardModel>[]),
       fetchTags: fetchTags ?? () async => const Ok(<TagModel>[]),
       fetchAttachmentForCard:
           fetchAttachmentForCard ?? (_) async => const <CardAttachmentData>[],
@@ -165,11 +167,11 @@ class TimelineViewModel extends ChangeNotifier {
     required PendingAttachmentsFetcher fetchPendingAttachments,
     required Duration auxiliaryQueryTimeout,
     required bool autoLoad,
-  })  : _fetchTimelineCards = fetchTimelineCards,
-        _fetchTags = fetchTags,
-        _fetchAttachmentForCard = fetchAttachmentForCard,
-        _fetchPendingAttachments = fetchPendingAttachments,
-        _auxiliaryQueryTimeout = auxiliaryQueryTimeout {
+  }) : _fetchTimelineCards = fetchTimelineCards,
+       _fetchTags = fetchTags,
+       _fetchAttachmentForCard = fetchAttachmentForCard,
+       _fetchPendingAttachments = fetchPendingAttachments,
+       _auxiliaryQueryTimeout = auxiliaryQueryTimeout {
     load = Command0<void>(_loadInitial);
     if (autoLoad) {
       unawaited(load.execute());
@@ -277,6 +279,7 @@ class TimelineViewModel extends ChangeNotifier {
     final eventBus = EventBusService.instance;
     eventBus.addHandler(EventBusMessageType.cardUpdated, _handleCardUpdated);
     eventBus.addHandler(EventBusMessageType.cardAdded, _handleCardAdded);
+    eventBus.addHandler(EventBusMessageType.cardRemoved, _handleCardRemoved);
     eventBus.addHandler(
       EventBusMessageType.attachmentsChanged,
       _handleAttachmentsChanged,
@@ -335,6 +338,12 @@ class TimelineViewModel extends ChangeNotifier {
       updateCard(updatedCard);
       unawaited(_refreshPendingCount());
       _scheduleFetchTags();
+    }
+  }
+
+  void _handleCardRemoved(EventBusMessage message) {
+    if (message is CardRemovedMessage) {
+      removeCardById(message.id);
     }
   }
 
@@ -467,8 +476,10 @@ class TimelineViewModel extends ChangeNotifier {
   }
 
   void _pollProcessingCards() {
-    final processingIds =
-        cards.where((c) => c.status == 'processing').map((c) => c.id).toList();
+    final processingIds = cards
+        .where((c) => c.status == 'processing')
+        .map((c) => c.id)
+        .toList();
     if (processingIds.isEmpty) {
       _stopPolling();
       return;
@@ -638,7 +649,10 @@ class TimelineViewModel extends ChangeNotifier {
   Future<void> fetchTags() async {
     try {
       final result = await _fetchTags();
-      final next = result.when(onOk: (t) => t, onError: (_, __) => <TagModel>[]);
+      final next = result.when(
+        onOk: (t) => t,
+        onError: (_, __) => <TagModel>[],
+      );
       if (_sameTimelineTags(tags, next)) return;
       tags = next;
     } catch (e, stackTrace) {
@@ -673,6 +687,10 @@ class TimelineViewModel extends ChangeNotifier {
         _handleCardUpdated,
       );
       eventBus.removeHandler(EventBusMessageType.cardAdded, _handleCardAdded);
+      eventBus.removeHandler(
+        EventBusMessageType.cardRemoved,
+        _handleCardRemoved,
+      );
       eventBus.removeHandler(
         EventBusMessageType.attachmentsChanged,
         _handleAttachmentsChanged,

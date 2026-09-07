@@ -29,6 +29,10 @@ Future<void> emitTimelineCardUpdated({
   EventBusService.instance.emitEvent(event);
 }
 
+void emitTimelineCardRemoved({required String cardId}) {
+  EventBusService.instance.emitEvent(CardRemovedMessage(id: cardId));
+}
+
 Future<CardAddedMessage> _buildCardAddedMessage({
   required String userId,
   required String cardId,
