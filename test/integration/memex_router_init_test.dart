@@ -138,30 +138,39 @@ void main() {
       expect(ensureInitialized, lessThan(delegate));
     });
 
-    test('timeline init awaits core work and starts deferred work separately',
-        () {
+    test('timeline init completes core before awaiting deferred work', () {
       final source =
           File('lib/data/repositories/memex_router.dart').readAsStringSync();
 
       final initCore = source.indexOf('Future<String?> _initCore() async {');
-      final initDeferred =
-          source.indexOf('Future<void> _initDeferred(String userId) async {');
-      final kickDeferred =
-          source.indexOf('_deferredInitFuture ??= _initDeferred(userId);');
-      final awaitDeferred =
-          source.indexOf('await _deferredInitFuture ??= _initDeferred(userId);');
+      final completeCore = source.indexOf('coreCompleter.complete();');
+      final awaitDeferred = source.indexOf('await _initDeferred(');
       final customAgents = source.indexOf(
         'await CustomAgentConfigService.instance.registerAll(userId);',
       );
       final migrate = source.indexOf('await migrateCardsToFactAssets(userId);');
 
       expect(initCore, isNonNegative);
-      expect(initDeferred, isNonNegative);
-      expect(kickDeferred, isNonNegative);
-      expect(awaitDeferred, -1);
+      expect(completeCore, isNonNegative);
+      expect(awaitDeferred, isNonNegative);
+      expect(completeCore, lessThan(awaitDeferred));
       expect(migrate, greaterThan(initCore));
-      expect(migrate, lessThan(initDeferred));
-      expect(customAgents, greaterThan(initDeferred));
+      expect(customAgents, greaterThan(awaitDeferred));
+    });
+
+    test('user changes serialize and invalidate deferred initialization', () {
+      final source =
+          File('lib/data/repositories/memex_router.dart').readAsStringSync();
+
+      expect(source, contains('await previousLifecycle;'));
+      expect(source, contains('generation != _initGeneration'));
+      expect(source, contains('_initGeneration += 1;'));
+      expect(
+        source,
+        contains(
+          "_logger.severe('Failed deferred MemexRouter init: \$e');\n      rethrow;",
+        ),
+      );
     });
 
     test('fetchTimelineCards waits only for core initialization', () {

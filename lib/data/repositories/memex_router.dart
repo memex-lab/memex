@@ -91,7 +91,8 @@ class MemexRouter {
       CharacterEditorRepository();
 
   Future<void>? _initFuture;
-  Future<void>? _deferredInitFuture;
+  Future<void>? _fullInitFuture;
+  int _initGeneration = 0;
 
   FileSystemService get fileSystemService => FileSystemService.instance;
 
@@ -100,12 +101,32 @@ class MemexRouter {
     _ensureInitialized();
   }
 
-  Future<void> _init() async {
+  Future<void> _runInitLifecycle({
+    required int generation,
+    required Completer<void> coreCompleter,
+    Future<void>? previousLifecycle,
+  }) async {
     try {
+      if (previousLifecycle != null) {
+        try {
+          await previousLifecycle;
+        } catch (e, st) {
+          _logger.warning('Previous MemexRouter init failed', e, st);
+        }
+      }
+      if (generation != _initGeneration) {
+        coreCompleter.complete();
+        return;
+      }
+
       final userId = await _initCore();
-      if (userId == null) return;
-      _deferredInitFuture ??= _initDeferred(userId);
-    } catch (e) {
+      if (!coreCompleter.isCompleted) coreCompleter.complete();
+      if (userId == null || generation != _initGeneration) return;
+      await _initDeferred(userId, generation: generation);
+    } catch (e, st) {
+      if (!coreCompleter.isCompleted) {
+        coreCompleter.completeError(e, st);
+      }
       _logger.severe('Failed to initialize MemexRouter: $e');
       rethrow;
     }
@@ -146,13 +167,16 @@ class MemexRouter {
   }
 
   /// Companion wake, custom agents, and background surfaces. Chat waits here.
-  Future<void> _initDeferred(String userId) async {
+  Future<void> _initDeferred(String userId, {required int generation}) async {
     try {
       await CharacterConversationService.instance.reconcilePendingReplies(
         userId: userId,
       );
+      if (generation != _initGeneration) return;
       await CustomAgentConfigService.instance.registerAll(userId);
+      if (generation != _initGeneration) return;
       await AgentBackgroundTaskService.instance.startMonitoring();
+      if (generation != _initGeneration) return;
       AgentBackgroundCoordinator.instance.start(
         executor: LocalTaskExecutor.instance,
         activityService: LocalAgentActivityService.instance,
@@ -160,19 +184,23 @@ class MemexRouter {
 
       final primaryCompanion =
           await CharacterService.instance.getPrimaryCompanion(userId);
+      if (generation != _initGeneration) return;
       if (primaryCompanion?.enabled == true) {
         await CharacterHistoryAcquaintanceService.instance.ensureScheduled(
           userId: userId,
           character: primaryCompanion!,
         );
+        if (generation != _initGeneration) return;
         await CharacterInitiativeService.instance.ensureScheduled(
           userId: userId,
         );
       }
 
+      if (generation != _initGeneration) return;
       scheduleAutoBackupCheck(trigger: 'app_start');
     } catch (e) {
       _logger.severe('Failed deferred MemexRouter init: $e');
+      rethrow;
     }
   }
 
@@ -274,17 +302,26 @@ class MemexRouter {
       'Re-initializing MemexRouter. Previous Target: $_targetUserIdForInit, New Target: $currentUser',
     );
 
+    final previousLifecycle = _fullInitFuture;
+    final generation = ++_initGeneration;
+    final coreCompleter = Completer<void>();
     _targetUserIdForInit = currentUser;
-    _deferredInitFuture = null;
-    _initFuture = _init();
+    _initFuture = coreCompleter.future;
+    final lifecycle = _runInitLifecycle(
+      generation: generation,
+      coreCompleter: coreCompleter,
+      previousLifecycle: previousLifecycle,
+    );
+    _fullInitFuture = lifecycle;
+    unawaited(lifecycle.catchError((Object _, StackTrace __) {}));
     return _initFuture!;
   }
 
   Future<void> _ensureFullyInitialized() async {
     await _ensureInitialized();
-    final deferred = _deferredInitFuture;
-    if (deferred != null) {
-      await deferred;
+    final fullInit = _fullInitFuture;
+    if (fullInit != null) {
+      await fullInit;
     }
   }
 
@@ -322,10 +359,7 @@ class MemexRouter {
       ChatService.instance.handleSuperAgentChatTurnTask,
       concurrencyPolicy: TaskConcurrencyPolicy.byUser(),
     );
-    executor.registerHandler(
-      'fts_index_update',
-      handleFtsIndexUpdateImpl,
-    );
+    executor.registerHandler('fts_index_update', handleFtsIndexUpdateImpl);
     executor.registerHandler(
       'comment_agent_task',
       handleCommentAgentImpl,
@@ -357,19 +391,13 @@ class MemexRouter {
       handleReprocessCommentsImpl,
       concurrencyPolicy: TaskConcurrencyPolicy.byUser(),
     );
-    executor.registerHandler(
-      'process_ai_reply',
-      handleProcessAiReplyImpl,
-    );
+    executor.registerHandler('process_ai_reply', handleProcessAiReplyImpl);
     for (final taskType in [
       'comment_agent_task',
       'reprocess_comments_task',
       'process_ai_reply',
     ]) {
-      executor.registerFailureHandler(
-        taskType,
-        handleGenericAgentFailure,
-      );
+      executor.registerFailureHandler(taskType, handleGenericAgentFailure);
     }
     executor.registerFailureHandler(
       'character_perception_task',
@@ -392,9 +420,9 @@ class MemexRouter {
   /// External hook to force switch user (e.g. on login)
   Future<void> switchUser(String userId) async {
     _logger.info('Switching user to $userId');
+    _initGeneration += 1;
     _targetUserIdForInit = null;
     _initFuture = null;
-    _deferredInitFuture = null;
     await _ensureInitialized();
   }
 
@@ -437,21 +465,24 @@ class MemexRouter {
   /// Clear init state and stop executor on logout so next login re-inits for new user.
   void resetForLogout() {
     _logger.info('Resetting MemexRouter for logout');
+    _initGeneration += 1;
     _targetUserIdForInit = null;
     _initFuture = null;
     unawaited(AgentBackgroundCoordinator.instance.stop());
-    unawaited(AgentBackgroundTaskService.instance.stopMonitoring(
-      reason: 'logout',
-    ));
+    unawaited(
+      AgentBackgroundTaskService.instance.stopMonitoring(reason: 'logout'),
+    );
     LocalTaskExecutor.instance.stop();
     SearchService.instance.reset();
   }
 
   void dispose() {
     unawaited(AgentBackgroundCoordinator.instance.stop());
-    unawaited(AgentBackgroundTaskService.instance.stopMonitoring(
-      reason: 'router_dispose',
-    ));
+    unawaited(
+      AgentBackgroundTaskService.instance.stopMonitoring(
+        reason: 'router_dispose',
+      ),
+    );
     LocalTaskExecutor.instance.stop();
   }
 
@@ -1041,9 +1072,7 @@ class MemexRouter {
   Future<Result<bool>> chatSessionExists(String sessionId) {
     return runResult(() async {
       await _ensureInitialized();
-      _logger.info(
-        'LocalMode: chatSessionExists called: sessionId=$sessionId',
-      );
+      _logger.info('LocalMode: chatSessionExists called: sessionId=$sessionId');
       return chat_endpoint.chatSessionExistsEndpoint(sessionId);
     });
   }
@@ -1104,9 +1133,7 @@ class MemexRouter {
     });
   }
 
-  Future<Result<CharacterModel>> saveCharacterDraft(
-    CharacterDraft draft,
-  ) {
+  Future<Result<CharacterModel>> saveCharacterDraft(CharacterDraft draft) {
     return runResult(() async {
       await _ensureFullyInitialized();
       final userId = await UserStorage.getUserId();
@@ -1305,8 +1332,9 @@ class MemexRouter {
   Future<Result<bool>> deleteCharacter(String characterId) {
     return runResult(() async {
       await _ensureInitialized();
-      _logger
-          .info('LocalMode: deleteCharacter called: characterId=$characterId');
+      _logger.info(
+        'LocalMode: deleteCharacter called: characterId=$characterId',
+      );
       return await deleteCharacterEndpoint(characterId);
     });
   }
