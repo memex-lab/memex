@@ -275,8 +275,7 @@ class RootShellState extends State<RootShell> {
           create: (c) => KnowledgeBaseViewModel(router: c.read<MemexRouter>()),
         ),
         ChangeNotifierProvider<PersonaAvatarViewModel>(
-          create: (c) =>
-              PersonaAvatarViewModel(router: c.read<MemexRouter>())..init(),
+          create: (c) => PersonaAvatarViewModel(router: c.read<MemexRouter>()),
         ),
       ],
       child: const MainScreen(),
