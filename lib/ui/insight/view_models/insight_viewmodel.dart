@@ -28,6 +28,13 @@ class InsightViewModel extends ChangeNotifier {
   bool isReordering = false;
   final Set<String> pinningIds = {};
   final Set<String> _htmlLoadingIds = {};
+  final Set<String> _htmlFailedIds = {};
+  int _insightsGeneration = 0;
+
+  bool isHtmlLoading(String insightId) => _htmlLoadingIds.contains(insightId);
+
+  bool hasHtmlRenderFailed(String insightId) =>
+      _htmlFailedIds.contains(insightId);
 
   void _handleNewInsightEvent(EventBusMessage message) {
     if (message is! NewInsightMessage) return;
@@ -40,19 +47,34 @@ class InsightViewModel extends ChangeNotifier {
 
   Future<void> ensureHtmlRendered(KnowledgeInsightCard item) async {
     if (item.widgetType != 'html' || item.html.isNotEmpty) return;
+    if (_htmlFailedIds.contains(item.id)) return;
     if (!_htmlLoadingIds.add(item.id)) return;
-    final result = await _router.renderInsightCardHtml(item.id);
-    final index = insights?.indexWhere((card) => card.id == item.id) ?? -1;
-    result.when(
-      onOk: (html) {
-        if (index != -1 && insights != null && html.isNotEmpty) {
-          insights![index] = insights![index].copyWith(html: html);
-        }
-      },
-      onError: (_, __) {},
-    );
-    _htmlLoadingIds.remove(item.id);
-    notifyListeners();
+    final generation = _insightsGeneration;
+    var failed = false;
+    try {
+      final result = await _router.renderInsightCardHtml(item.id);
+      if (generation != _insightsGeneration) return;
+      final index = insights?.indexWhere((card) => card.id == item.id) ?? -1;
+      result.when(
+        onOk: (html) {
+          if (index != -1 && insights != null && html.isNotEmpty) {
+            insights![index] = insights![index].copyWith(html: html);
+          } else {
+            failed = true;
+          }
+        },
+        onError: (_, __) => failed = true,
+      );
+      if (failed) _htmlFailedIds.add(item.id);
+    } finally {
+      _htmlLoadingIds.remove(item.id);
+      notifyListeners();
+    }
+  }
+
+  Future<void> retryHtmlRendered(KnowledgeInsightCard item) async {
+    _htmlFailedIds.remove(item.id);
+    await ensureHtmlRendered(item);
   }
 
   Future<void> ensureLoaded() async {
@@ -61,6 +83,8 @@ class InsightViewModel extends ChangeNotifier {
   }
 
   Future<void> loadData() async {
+    _insightsGeneration += 1;
+    _htmlFailedIds.clear();
     isLoading = true;
     errorMessage = null;
     notifyListeners();

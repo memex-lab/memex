@@ -117,8 +117,10 @@ class MemexRouter {
       _logger.info('Initializing Local DB for user: $userId');
       await ChatSessionStorage.instance.ensureMigrated(userId);
       await AppDatabase.init(userId);
-      await PersonaChatService.instance
-          .initialize(userId, AppDatabase.instance);
+      await PersonaChatService.instance.initialize(
+        userId,
+        AppDatabase.instance,
+      );
 
       _registerTaskHandlers(LocalTaskExecutor.instance);
       await LocalTaskExecutor.instance.start(userId: userId);
@@ -160,8 +162,8 @@ class MemexRouter {
 
       // Existing records must be fully readable before a companion privately
       // explores them for the first time.
-      final primaryCompanion =
-          await CharacterService.instance.getPrimaryCompanion(userId);
+      final primaryCompanion = await CharacterService.instance
+          .getPrimaryCompanion(userId);
       if (primaryCompanion?.enabled == true) {
         await CharacterHistoryAcquaintanceService.instance.ensureScheduled(
           userId: userId,
@@ -182,7 +184,7 @@ class MemexRouter {
   }
 
   String?
-      _targetUserIdForInit; // Track the user ID we are currently initializing for
+  _targetUserIdForInit; // Track the user ID we are currently initializing for
 
   void _registerEventSubscriptions() {
     final eventBus = GlobalEventBus.instance;
@@ -318,10 +320,7 @@ class MemexRouter {
       ChatService.instance.handleSuperAgentChatTurnTask,
       concurrencyPolicy: TaskConcurrencyPolicy.byUser(),
     );
-    executor.registerHandler(
-      'fts_index_update',
-      handleFtsIndexUpdateImpl,
-    );
+    executor.registerHandler('fts_index_update', handleFtsIndexUpdateImpl);
     executor.registerHandler(
       'comment_agent_task',
       handleCommentAgentImpl,
@@ -353,19 +352,13 @@ class MemexRouter {
       handleReprocessCommentsImpl,
       concurrencyPolicy: TaskConcurrencyPolicy.byUser(),
     );
-    executor.registerHandler(
-      'process_ai_reply',
-      handleProcessAiReplyImpl,
-    );
+    executor.registerHandler('process_ai_reply', handleProcessAiReplyImpl);
     for (final taskType in [
       'comment_agent_task',
       'reprocess_comments_task',
       'process_ai_reply',
     ]) {
-      executor.registerFailureHandler(
-        taskType,
-        handleGenericAgentFailure,
-      );
+      executor.registerFailureHandler(taskType, handleGenericAgentFailure);
     }
     executor.registerFailureHandler(
       'character_perception_task',
@@ -435,18 +428,20 @@ class MemexRouter {
     _targetUserIdForInit = null;
     _initFuture = null;
     unawaited(AgentBackgroundCoordinator.instance.stop());
-    unawaited(AgentBackgroundTaskService.instance.stopMonitoring(
-      reason: 'logout',
-    ));
+    unawaited(
+      AgentBackgroundTaskService.instance.stopMonitoring(reason: 'logout'),
+    );
     LocalTaskExecutor.instance.stop();
     SearchService.instance.reset();
   }
 
   void dispose() {
     unawaited(AgentBackgroundCoordinator.instance.stop());
-    unawaited(AgentBackgroundTaskService.instance.stopMonitoring(
-      reason: 'router_dispose',
-    ));
+    unawaited(
+      AgentBackgroundTaskService.instance.stopMonitoring(
+        reason: 'router_dispose',
+      ),
+    );
     LocalTaskExecutor.instance.stop();
   }
 
@@ -807,16 +802,30 @@ class MemexRouter {
     return runResult(() async {
       await _ensureInitialized();
       final userId = await UserStorage.getUserId();
-      if (userId == null) return '';
-      final cardsData = await fileSystemService.listKnowledgeInsightCards(
+      if (userId == null) throw StateError('No active user.');
+      var card = await fileSystemService.readKnowledgeInsightCard(
         userId,
+        insightId,
       );
-      for (final card in cardsData) {
-        final id = card['id'] as String? ?? '';
-        if (id != insightId) continue;
-        return _renderInsightCardHtml(userId, card);
+      if (card == null) {
+        // Keep legacy cards whose YAML id differs from the filename readable,
+        // without penalizing the normal direct lookup path.
+        final cards = await fileSystemService.listKnowledgeInsightCards(userId);
+        for (final candidate in cards) {
+          if (candidate['id'] == insightId) {
+            card = candidate;
+            break;
+          }
+        }
       }
-      return '';
+      if (card == null) {
+        throw StateError('Insight card not found: $insightId');
+      }
+      final html = await _renderInsightCardHtml(userId, card);
+      if (html.isEmpty) {
+        throw StateError('Insight card HTML is unavailable: $insightId');
+      }
+      return html;
     });
   }
 
@@ -921,8 +930,8 @@ class MemexRouter {
             id,
           );
           if (cardData != null) {
-            final currentSortOrder =
-                (cardData['sort_order'] as num? ?? 0).toInt();
+            final currentSortOrder = (cardData['sort_order'] as num? ?? 0)
+                .toInt();
             if (currentSortOrder != i) {
               cardData['sort_order'] = i;
               await fileSystemService.writeKnowledgeInsightCard(
@@ -1051,9 +1060,7 @@ class MemexRouter {
   Future<Result<bool>> chatSessionExists(String sessionId) {
     return runResult(() async {
       await _ensureInitialized();
-      _logger.info(
-        'LocalMode: chatSessionExists called: sessionId=$sessionId',
-      );
+      _logger.info('LocalMode: chatSessionExists called: sessionId=$sessionId');
       return chat_endpoint.chatSessionExistsEndpoint(sessionId);
     });
   }
@@ -1114,9 +1121,7 @@ class MemexRouter {
     });
   }
 
-  Future<Result<CharacterModel>> saveCharacterDraft(
-    CharacterDraft draft,
-  ) {
+  Future<Result<CharacterModel>> saveCharacterDraft(CharacterDraft draft) {
     return runResult(() async {
       await _ensureInitialized();
       final userId = await UserStorage.getUserId();
@@ -1315,8 +1320,9 @@ class MemexRouter {
   Future<Result<bool>> deleteCharacter(String characterId) {
     return runResult(() async {
       await _ensureInitialized();
-      _logger
-          .info('LocalMode: deleteCharacter called: characterId=$characterId');
+      _logger.info(
+        'LocalMode: deleteCharacter called: characterId=$characterId',
+      );
       return await deleteCharacterEndpoint(characterId);
     });
   }

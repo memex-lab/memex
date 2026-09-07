@@ -46,15 +46,44 @@ void main() {
     await viewModel.ensureHtmlRendered(item);
     expect(router.renderCount, 0);
   });
+
+  test('failed HTML render waits for an explicit retry', () async {
+    final router = _FakeInsightRouter()
+      ..results = [Error<String>(Exception('missing')), const Ok('<p>ok</p>')];
+    final viewModel = InsightViewModel(router: router);
+    addTearDown(viewModel.dispose);
+    viewModel.insights = [
+      KnowledgeInsightCard(
+        id: 'html-1',
+        title: 'Chart',
+        html: '',
+        createdAt: 0,
+        widgetType: 'html',
+      ),
+    ];
+
+    final item = viewModel.insights!.first;
+    await viewModel.ensureHtmlRendered(item);
+    await viewModel.ensureHtmlRendered(item);
+
+    expect(router.renderCount, 1);
+    expect(viewModel.hasHtmlRenderFailed(item.id), isTrue);
+
+    await viewModel.retryHtmlRendered(item);
+    expect(router.renderCount, 2);
+    expect(viewModel.insights!.single.html, '<p>ok</p>');
+    expect(viewModel.hasHtmlRenderFailed(item.id), isFalse);
+  });
 }
 
 class _FakeInsightRouter implements MemexRouter {
   int renderCount = 0;
+  List<Result<String>> results = [const Ok('<div>chart</div>')];
 
   @override
   Future<Result<String>> renderInsightCardHtml(String insightId) async {
     renderCount += 1;
-    return const Ok('<div>chart</div>');
+    return results.removeAt(0);
   }
 
   @override
