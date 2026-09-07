@@ -10,6 +10,7 @@ import 'package:memex/db/app_database.dart';
 import 'package:memex/ui/card_attachments/card_attachment_data.dart';
 import 'package:memex/ui/card_attachments/card_attachment_factory.dart';
 import 'package:memex/ui/core/widgets/html_webview_card.dart';
+import 'package:memex/ui/core/widgets/viewport_gated.dart';
 import 'package:memex/ui/main_screen/widgets/action_center_sheet.dart';
 
 import 'package:memex/ui/core/cards/native_card_factory.dart';
@@ -1109,10 +1110,13 @@ class _TimelineEntryItemState extends State<TimelineEntryItem> {
           children: [
             // Card Content Loop
             if (card.html != null && !_isClassicMode)
-              HtmlWebViewCard(
-                html: card.html!,
-                config: const HtmlWebViewConfig.timeline(),
-                onContentTap: onTap,
+              ViewportGated(
+                placeholder: const SizedBox(height: 160),
+                builder: (context) => HtmlWebViewCard(
+                  html: card.html!,
+                  config: const HtmlWebViewConfig.timeline(),
+                  onContentTap: onTap,
+                ),
               )
             else if (displayConfigs.isNotEmpty)
               ...displayConfigs.asMap().entries.map((entry) {
@@ -1125,10 +1129,13 @@ class _TimelineEntryItemState extends State<TimelineEntryItem> {
                   if (html != null && html.isNotEmpty) {
                     return Padding(
                       padding: EdgeInsets.only(bottom: isLast ? 0 : 8.0),
-                      child: HtmlWebViewCard(
-                        html: html,
-                        config: const HtmlWebViewConfig.timeline(),
-                        onContentTap: onTap,
+                      child: ViewportGated(
+                        placeholder: const SizedBox(height: 160),
+                        builder: (context) => HtmlWebViewCard(
+                          html: html,
+                          config: const HtmlWebViewConfig.timeline(),
+                          onContentTap: onTap,
+                        ),
                       ),
                     );
                   }
