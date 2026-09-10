@@ -13,6 +13,7 @@ import 'base_file_service.dart';
 import 'api_exception.dart';
 import 'local_asset_server.dart';
 import 'event_log_service.dart';
+import 'package:memex/data/services/pkm_recent_listing.dart';
 import 'package:memex/db/app_database.dart';
 import 'package:memex/domain/models/card_model.dart';
 import 'package:memex/domain/models/system_event.dart';
@@ -164,6 +165,7 @@ class FileSystemService {
 
   /// Flag to indicate if a rebuild is in progress to prevent recursion
   bool _isRebuilding = false;
+  RecentPkmCacheEntry? _recentPkmCache;
 
   static DateTime? _lastServerCheckTime;
   static FileSystemService? _instance;
@@ -2474,6 +2476,16 @@ class FileSystemService {
   /// Get recently modified PKM files
   Future<List<Map<String, dynamic>>> getRecentPkmFiles(String userId,
       {int limit = 10}) async {
+    final now = DateTime.now();
+    final cache = _recentPkmCache;
+    if (shouldReuseRecentPkmCache(
+      cache: cache,
+      userId: userId,
+      now: now,
+    )) {
+      return cache!.files.take(limit).toList();
+    }
+
     final pkmPath = getPkmPath(userId);
     final dir = Directory(pkmPath);
 
@@ -2483,48 +2495,44 @@ class FileSystemService {
 
     List<FileSystemEntity> entities = [];
     try {
-      // Recursively get all files
       entities = await dir.list(recursive: true, followLinks: false).toList();
     } catch (e) {
       _logger.warning('Error listing PKM directory: $e');
       return [];
     }
 
-    // Filter for files only, and .md extension
     final files = entities.whereType<File>().where((f) {
       final ext = path.extension(f.path).toLowerCase();
-      // Exclude hidden files
       final name = path.basename(f.path);
       if (name.startsWith('.')) return false;
       return ext == '.md';
     }).toList();
 
-    // Get stat for each file (async map)
-    final List<Map<String, dynamic>> fileList = [];
-    for (final file in files) {
+    final stats = await Future.wait(files.map((file) async {
       try {
         final stat = await file.stat();
-        // Calculate relative path
-        final relativePath = path.relative(file.path, from: pkmPath);
-
-        fileList.add({
+        return <String, dynamic>{
           'name': path.basename(file.path),
-          'path': relativePath, // API expects relative path usually
+          'path': path.relative(file.path, from: pkmPath),
           'modified': stat.modified.millisecondsSinceEpoch,
           'size': stat.size,
-          // 'isAiGenerated': check content? too slow? Default false.
-          'isAiGenerated': false, // TODO: Check metadata if needed
-        });
-      } catch (e) {
-        // Ignore file error
+          'isAiGenerated': false,
+        };
+      } catch (_) {
+        return null;
       }
-    }
+    }));
 
-    // Sort by modified desc
-    fileList
-        .sort((a, b) => (b['modified'] as int).compareTo(a['modified'] as int));
+    final fileList = stats.whereType<Map<String, dynamic>>().toList()
+      ..sort(
+          (a, b) => (b['modified'] as int).compareTo(a['modified'] as int));
 
-    // Take limit
+    _recentPkmCache = RecentPkmCacheEntry(
+      userId: userId,
+      cachedAt: now,
+      files: fileList,
+    );
+
     return fileList.take(limit).toList();
   }
 
