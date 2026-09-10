@@ -83,6 +83,27 @@ class UserStorage {
   static const MethodChannel _storageChannel =
       MethodChannel('com.memexlab.memex/storage');
 
+  static Future<SharedPreferences>? _prefsFuture;
+
+  /// Override in tests. Production uses [SharedPreferences.getInstance].
+  static Future<SharedPreferences> Function() prefsLoader =
+      SharedPreferences.getInstance;
+
+  @visibleForTesting
+  static void resetPrefsCache() {
+    _prefsFuture = null;
+    prefsLoader = SharedPreferences.getInstance;
+  }
+
+  /// One SharedPreferences load per process on device. Tests skip the cache
+  /// so [SharedPreferences.setMockInitialValues] keeps working.
+  static Future<SharedPreferences> sharedPrefs() {
+    if (Platform.environment.containsKey('FLUTTER_TEST')) {
+      return prefsLoader();
+    }
+    return _prefsFuture ??= prefsLoader();
+  }
+
   /// Get the global l10n instance
   /// Throws an exception if not initialized (should be initialized in main())
   static AppLocalizationsExt get l10n {
@@ -191,7 +212,7 @@ class UserStorage {
   /// Get stored userId
   static Future<String?> getUserId() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await sharedPrefs();
       return prefs.getString(_keyUserId);
     } catch (e) {
       return null;
@@ -203,7 +224,7 @@ class UserStorage {
   /// [userId] user-entered ID
   static Future<void> saveUser(String userId) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await sharedPrefs();
       await prefs.setString(_keyUserId, userId);
     } catch (e) {
       throw Exception(UserStorage.l10n.saveUserInfoFailed(e));
@@ -213,7 +234,7 @@ class UserStorage {
   /// Clear user info (used on logout)
   static Future<void> clearUser() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await sharedPrefs();
       await prefs.remove(_keyUserId);
     } catch (e) {
       // ignore error
@@ -246,7 +267,7 @@ class UserStorage {
       final userId = await getUserId();
       if (userId == null || userId.isEmpty) return null;
 
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await sharedPrefs();
       final sessionId =
           prefs.getString(_latestSuperAgentHomeSessionIdKey(userId))?.trim();
       return sessionId == null || sessionId.isEmpty ? null : sessionId;
@@ -263,7 +284,7 @@ class UserStorage {
       final userId = await getUserId();
       if (userId == null || userId.isEmpty) return;
 
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await sharedPrefs();
       await prefs.setString(
         _latestSuperAgentHomeSessionIdKey(userId),
         normalized,
@@ -278,7 +299,7 @@ class UserStorage {
       final userId = await getUserId();
       if (userId == null || userId.isEmpty) return;
 
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await sharedPrefs();
       await prefs.remove(_latestSuperAgentHomeSessionIdKey(userId));
     } catch (e) {
       // Cache misses are non-fatal.
@@ -290,7 +311,7 @@ class UserStorage {
       final userId = await getUserId();
       if (userId == null || userId.isEmpty) return false;
 
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await sharedPrefs();
       return prefs.getBool(
             _memexAgentNotificationPermissionPromptedKey(userId),
           ) ??
@@ -305,7 +326,7 @@ class UserStorage {
       final userId = await getUserId();
       if (userId == null || userId.isEmpty) return;
 
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await sharedPrefs();
       await prefs.setBool(
         _memexAgentNotificationPermissionPromptedKey(userId),
         true,
@@ -327,7 +348,7 @@ class UserStorage {
   /// Get stored LLM config list. Creates default config if none.
   static Future<List<LLMConfig>> getLLMConfigs() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await sharedPrefs();
       final jsonString = prefs.getString(_keyLLMConfigs);
 
       List<LLMConfig> configs = [];
@@ -358,7 +379,7 @@ class UserStorage {
   /// Save LLM config list
   static Future<void> saveLLMConfigs(List<LLMConfig> configs) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await sharedPrefs();
       final jsonString = jsonEncode(configs.map((c) => c.toJson()).toList());
       await prefs.setString(_keyLLMConfigs, jsonString);
 
@@ -382,7 +403,7 @@ class UserStorage {
   /// `default` config remains the fallback so existing installs keep working.
   static Future<String> getDefaultLLMConfigKey() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await sharedPrefs();
       final configs = await getLLMConfigs();
       final storedKey = prefs.getString(_keyDefaultLLMConfigKey);
 
@@ -416,7 +437,7 @@ class UserStorage {
           'Invalid default LLM Config Key: $configKey. Available keys: $availableKeys');
     }
 
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await sharedPrefs();
     await prefs.setString(_keyDefaultLLMConfigKey, configKey);
   }
 
@@ -428,7 +449,7 @@ class UserStorage {
   /// system locale if not set.
   static Future<Locale> getLocale() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await sharedPrefs();
       final languageString = prefs.getString(_keyLanguage);
       if (languageString == null) {
         return PlatformDispatcher.instance.locale;
@@ -448,7 +469,7 @@ class UserStorage {
   static Future<void> setLocale(Locale locale) async {
     try {
       final resolved = resolveToSupportedLocale(locale);
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await sharedPrefs();
       await prefs.setString(_keyLanguage, localeTag(resolved));
       _applyResolvedLocale(resolved);
     } catch (e) {
@@ -464,7 +485,7 @@ class UserStorage {
   /// 'read_only'). Defaults to 'auto'.
   static Future<String> getSuperAgentRunMode() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await sharedPrefs();
       return prefs.getString(_keySuperAgentRunMode) ?? 'auto';
     } catch (e) {
       return 'auto';
@@ -473,7 +494,7 @@ class UserStorage {
 
   static Future<void> setSuperAgentRunMode(String value) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await sharedPrefs();
       await prefs.setString(_keySuperAgentRunMode, value);
     } catch (e) {
       // Non-fatal: mode falls back to in-memory state for this session.
@@ -483,7 +504,7 @@ class UserStorage {
   /// Get specified agent config
   static Future<AgentConfig> getAgentConfig(String agentId) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await sharedPrefs();
       final jsonString = prefs.getString('${_keyAgentConfigs}_$agentId');
 
       if (jsonString != null) {
@@ -512,7 +533,7 @@ class UserStorage {
     }
 
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await sharedPrefs();
       final jsonString = jsonEncode(config.toJson());
       await prefs.setString('${_keyAgentConfigs}_$agentId', jsonString);
     } catch (e) {
@@ -525,7 +546,7 @@ class UserStorage {
 
   static Future<bool> getUseLocalSpeechToText() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await sharedPrefs();
       return prefs.getBool(_keyUseLocalSpeechToText) ?? true;
     } catch (e) {
       return false;
@@ -534,7 +555,7 @@ class UserStorage {
 
   static Future<void> setUseLocalSpeechToText(bool value) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await sharedPrefs();
       await prefs.setBool(_keyUseLocalSpeechToText, value);
     } catch (e) {
       throw Exception('Failed to save speech preference: $e');
@@ -543,7 +564,7 @@ class UserStorage {
 
   static Future<void> resetUseLocalSpeechToText() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await sharedPrefs();
       await prefs.remove(_keyUseLocalSpeechToText);
     } catch (e) {
       throw Exception('Failed to reset speech preference: $e');
@@ -552,7 +573,7 @@ class UserStorage {
 
   static Future<LocationContextConfig> getLocationContextConfig() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await sharedPrefs();
       final jsonString = prefs.getString(_keyLocationContextConfig);
       if (jsonString == null || jsonString.isEmpty) {
         return const LocationContextConfig();
@@ -570,7 +591,7 @@ class UserStorage {
     LocationContextConfig config,
   ) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await sharedPrefs();
       await prefs.setString(
         _keyLocationContextConfig,
         jsonEncode(config.toJson()),
@@ -582,7 +603,7 @@ class UserStorage {
 
   static Future<Map<String, dynamic>> getGeocodingCache() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await sharedPrefs();
       final jsonString = prefs.getString(_keyGeocodingCache);
       if (jsonString == null || jsonString.isEmpty) return {};
       return jsonDecode(jsonString) as Map<String, dynamic>;
@@ -594,7 +615,7 @@ class UserStorage {
 
   static Future<void> saveGeocodingCache(Map<String, dynamic> cache) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await sharedPrefs();
       await prefs.setString(_keyGeocodingCache, jsonEncode(cache));
     } catch (e) {
       _logger.warning('Failed to save geocoding cache: $e');
@@ -604,7 +625,7 @@ class UserStorage {
   /// Reset LLM config to default
   static Future<void> resetLLMConfigs() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await sharedPrefs();
       await prefs.remove(_keyLLMConfigs);
       await prefs.remove(_keyDefaultLLMConfigKey);
       // Force reload to ensure defaults are re-populated
@@ -617,7 +638,7 @@ class UserStorage {
   /// Reset all agent configs to default
   static Future<void> resetAllAgentConfigs() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await sharedPrefs();
       final keys = prefs.getKeys();
       for (final key in keys) {
         if (key.startsWith('${_keyAgentConfigs}_')) {
@@ -830,7 +851,7 @@ class UserStorage {
   /// Get photo suggestion cache
   static Future<Map<String, dynamic>> getPhotoSuggestionCache() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await sharedPrefs();
       final jsonString = prefs.getString(_keyPhotoSuggestionCache);
       if (jsonString == null) return {};
       return jsonDecode(jsonString) as Map<String, dynamic>;
@@ -843,7 +864,7 @@ class UserStorage {
   static Future<void> savePhotoSuggestionCache(
       Map<String, dynamic> cache) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await sharedPrefs();
       await prefs.setString(_keyPhotoSuggestionCache, jsonEncode(cache));
     } catch (e) {
       // ignore error
@@ -860,7 +881,7 @@ class UserStorage {
   /// Automatically migrates legacy emoji avatars to DiceBear seeds.
   static Future<String?> getUserAvatar() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await sharedPrefs();
       final avatar = prefs.getString(_keyUserAvatar);
       if (avatar != null && _isLegacyEmoji(avatar)) {
         // Migrate: replace emoji with user's nickname as seed
@@ -887,7 +908,7 @@ class UserStorage {
   /// Save user avatar selection and cache the SVG locally.
   static Future<void> saveUserAvatar(String avatar) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await sharedPrefs();
       await prefs.setString(_keyUserAvatar, avatar);
       AvatarMediaService.precacheDiceBearAvatar(avatar);
     } catch (e) {
@@ -904,7 +925,7 @@ class UserStorage {
       final dir = await getApplicationDocumentsDirectory();
       return dir.path;
     }
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await sharedPrefs();
     final locationIndex = prefs.getInt(_keyStorageLocationPrefix + userId);
     final location = locationIndex != null
         ? StorageLocation
@@ -970,7 +991,7 @@ class UserStorage {
   /// Get storage location preference for [userId].
   static Future<StorageLocation> getWorkspaceStorageLocation(
       String userId) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await sharedPrefs();
     final index = prefs.getInt(_keyStorageLocationPrefix + userId);
     if (index == null) return StorageLocation.app;
     return StorageLocation
@@ -979,13 +1000,13 @@ class UserStorage {
 
   /// Get custom data root path for [userId] if set; otherwise null.
   static Future<String?> getCustomDataRootPath(String userId) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await sharedPrefs();
     return prefs.getString(_keyCustomDataRootPathPrefix + userId);
   }
 
   /// Set workspace storage to app (default) for [userId].
   static Future<void> setWorkspaceStorageToApp(String userId) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await sharedPrefs();
     await prefs.setInt(
         _keyStorageLocationPrefix + userId, StorageLocation.app.index);
   }
@@ -997,7 +1018,7 @@ class UserStorage {
       throw UnsupportedError(
           'Custom device folder is not supported on iOS. Use app storage or iCloud.');
     }
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await sharedPrefs();
     await prefs.setString(_keyCustomDataRootPathPrefix + userId, absolutePath);
     await prefs.setInt(
         _keyStorageLocationPrefix + userId, StorageLocation.custom.index);
@@ -1006,19 +1027,19 @@ class UserStorage {
   /// Set workspace storage to iCloud for [userId] (iOS only). No-op on other platforms.
   static Future<void> setWorkspaceStorageToICloud(String userId) async {
     if (!Platform.isIOS) return;
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await sharedPrefs();
     await prefs.setInt(
         _keyStorageLocationPrefix + userId, StorageLocation.icloud.index);
   }
 
   /// Whether automatic local snapshots are enabled for [userId].
   static Future<bool> isAutoBackupEnabled(String userId) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await sharedPrefs();
     return prefs.getBool(_keyAutoBackupEnabledPrefix + userId) ?? false;
   }
 
   static Future<void> setAutoBackupEnabled(String userId, bool enabled) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await sharedPrefs();
     await prefs.setBool(_keyAutoBackupEnabledPrefix + userId, enabled);
   }
 
@@ -1027,7 +1048,7 @@ class UserStorage {
   /// Returns `null` when the user explicitly chooses to keep automatic backups
   /// forever. Missing or invalid values fall back to 30 days.
   static Future<int?> getAutoBackupRetentionDays(String userId) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await sharedPrefs();
     final value = prefs.getInt(_keyAutoBackupRetentionDaysPrefix + userId);
     if (value == autoBackupRetentionForever) return null;
     if (value == null || value <= 0) return defaultAutoBackupRetentionDays;
@@ -1042,7 +1063,7 @@ class UserStorage {
       throw ArgumentError.value(days, 'days', 'must be positive or null');
     }
 
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await sharedPrefs();
     await prefs.setInt(
       _keyAutoBackupRetentionDaysPrefix + userId,
       days ?? autoBackupRetentionForever,
@@ -1051,7 +1072,7 @@ class UserStorage {
 
   /// Total size cap for automatic backups. Invalid values fall back to 2 GB.
   static Future<int> getAutoBackupMaxBytes(String userId) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await sharedPrefs();
     final value = prefs.getInt(_keyAutoBackupMaxBytesPrefix + userId);
     if (value == null || value <= 0) return defaultAutoBackupMaxBytes;
     return value;
@@ -1065,19 +1086,19 @@ class UserStorage {
       throw ArgumentError.value(bytes, 'bytes', 'must be positive');
     }
 
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await sharedPrefs();
     await prefs.setInt(_keyAutoBackupMaxBytesPrefix + userId, bytes);
   }
 
   static Future<DateTime?> getLastAutoBackupAt(String userId) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await sharedPrefs();
     final value = prefs.getString(_keyLastAutoBackupAtPrefix + userId);
     if (value == null || value.isEmpty) return null;
     return DateTime.tryParse(value);
   }
 
   static Future<String?> getLastAutoBackupFingerprint(String userId) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await sharedPrefs();
     return prefs.getString(_keyLastAutoBackupFingerprintPrefix + userId);
   }
 
@@ -1086,7 +1107,7 @@ class UserStorage {
     required DateTime createdAt,
     required String fingerprint,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await sharedPrefs();
     await prefs.setString(
         _keyLastAutoBackupAtPrefix + userId, createdAt.toIso8601String());
     await prefs.setString(
@@ -1094,12 +1115,12 @@ class UserStorage {
   }
 
   static Future<String?> getAndroidBackupTreeUri(String userId) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await sharedPrefs();
     return prefs.getString(_keyAndroidBackupTreeUriPrefix + userId);
   }
 
   static Future<String?> getAndroidBackupTreeName(String userId) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await sharedPrefs();
     return prefs.getString(_keyAndroidBackupTreeNamePrefix + userId);
   }
 
@@ -1108,14 +1129,14 @@ class UserStorage {
     required String treeUri,
     required String displayName,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await sharedPrefs();
     await prefs.setString(_keyAndroidBackupTreeUriPrefix + userId, treeUri);
     await prefs.setString(
         _keyAndroidBackupTreeNamePrefix + userId, displayName);
   }
 
   static Future<void> clearAndroidBackupTree(String userId) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await sharedPrefs();
     await prefs.remove(_keyAndroidBackupTreeUriPrefix + userId);
     await prefs.remove(_keyAndroidBackupTreeNamePrefix + userId);
   }
@@ -1164,7 +1185,7 @@ class UserStorage {
   static Future<void> migrateICloudToDocumentsIfNeeded(
       String containerPath) async {
     const migrationFlag = 'icloud_documents_migration_done';
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await sharedPrefs();
     if (prefs.getBool(migrationFlag) == true) return;
 
     final documentsPath = '$containerPath/Documents';
@@ -1216,7 +1237,7 @@ class UserStorage {
   /// Clear all SharedPreferences data (used for account deletion).
   static Future<void> clearAllData() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await sharedPrefs();
       await prefs.clear();
     } catch (e) {
       _logger.warning('Failed to clear SharedPreferences: $e');
@@ -1226,7 +1247,7 @@ class UserStorage {
   /// Check if user has given consent for LLM data sharing with a specific provider.
   static Future<bool> hasLLMConsent({String? providerType}) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await sharedPrefs();
       // Check global consent first (legacy)
       if (prefs.getBool('llm_data_sharing_consent') == true &&
           providerType == null) {
@@ -1246,7 +1267,7 @@ class UserStorage {
   static Future<void> saveLLMConsent(bool consent,
       {String? providerType}) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await sharedPrefs();
       await prefs.setBool('llm_data_sharing_consent', consent);
       if (providerType != null) {
         await prefs.setBool('llm_consent_$providerType', consent);
