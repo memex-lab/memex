@@ -18,6 +18,48 @@ import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  group('shouldEmitChatTurnStartedBeforeIo', () {
+    test('announces a text turn before image and session I/O', () {
+      expect(
+        shouldEmitChatTurnStartedBeforeIo(
+          trimmedMessage: 'hello',
+          hasImages: false,
+        ),
+        isTrue,
+      );
+    });
+
+    test('announces an image-only turn before attachment persistence', () {
+      expect(
+        shouldEmitChatTurnStartedBeforeIo(
+          trimmedMessage: '',
+          hasImages: true,
+        ),
+        isTrue,
+      );
+    });
+
+    test('does not announce an empty turn', () {
+      expect(
+        shouldEmitChatTurnStartedBeforeIo(
+          trimmedMessage: '',
+          hasImages: false,
+        ),
+        isFalse,
+      );
+    });
+
+    test('does not announce a whitespace-only turn', () {
+      expect(
+        shouldEmitChatTurnStartedBeforeIo(
+          trimmedMessage: '   ',
+          hasImages: false,
+        ),
+        isFalse,
+      );
+    });
+  });
+
   group('isActiveChatTurnTaskForSession', () {
     test('matches only active chat turn tasks for the requested session', () {
       const taskType = 'super_agent_chat_turn_task';

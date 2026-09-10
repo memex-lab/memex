@@ -36,6 +36,14 @@ import 'package:memex/data/model/chat_events.dart';
 export 'package:memex/data/model/chat_events.dart';
 
 @visibleForTesting
+bool shouldEmitChatTurnStartedBeforeIo({
+  required String trimmedMessage,
+  required bool hasImages,
+}) {
+  return trimmedMessage.trim().isNotEmpty || hasImages;
+}
+
+@visibleForTesting
 String chatErrorUserNotLoggedIn() => UserStorage.l10n.userIdNotFound;
 
 @visibleForTesting
@@ -393,6 +401,17 @@ class ChatService {
     String finalSessionId = sessionId ?? '';
     final userMessageTime = DateTime.now();
     final trimmedMessage = message.trim();
+    if (trimmedMessage.isEmpty && images.isEmpty) {
+      yield ChatErrorEvent(turnId, chatErrorEmptyMessage());
+      return;
+    }
+    if (shouldEmitChatTurnStartedBeforeIo(
+      trimmedMessage: trimmedMessage,
+      hasImages: images.isNotEmpty,
+    )) {
+      yield ChatAgentStartedEvent(turnId);
+    }
+
     final preparedImages = <AgentImageAttachment>[];
     String agentStateSessionId = '';
 
@@ -409,11 +428,6 @@ class ChatService {
     } catch (e) {
       _logger.severe('Failed to prepare chat image attachment', e);
       yield ChatErrorEvent(turnId, chatErrorOperationFailed(e));
-      return;
-    }
-
-    if (trimmedMessage.isEmpty && preparedImages.isEmpty) {
-      yield ChatErrorEvent(turnId, chatErrorEmptyMessage());
       return;
     }
 
