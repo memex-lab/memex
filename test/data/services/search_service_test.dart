@@ -77,4 +77,13 @@ void main() {
       );
     });
   });
+
+  group('FTS rebuild yielding', () {
+    test('yields every eight indexed documents', () {
+      expect(SearchService.instance.shouldYieldFtsRebuild(0), isFalse);
+      expect(SearchService.instance.shouldYieldFtsRebuild(7), isFalse);
+      expect(SearchService.instance.shouldYieldFtsRebuild(8), isTrue);
+      expect(SearchService.instance.shouldYieldFtsRebuild(16), isTrue);
+    });
+  });
 }

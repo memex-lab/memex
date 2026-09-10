@@ -60,8 +60,8 @@ class SearchService {
       AppDatabase.instance.clearFtsRebuildFlag();
       _logger.info(
           'FTS tables newly created via migration — scheduling full rebuild');
-      // Fire-and-forget so app startup is not blocked.
-      Future(() async {
+      // Defer so first Timeline paint is not competing with jieba + full scans.
+      Future<void>.delayed(const Duration(seconds: 3), () async {
         try {
           await rebuildAll(userId);
           _logger.info('Post-migration FTS rebuild completed');
@@ -323,6 +323,9 @@ class SearchService {
           insight: cardData.insight?.text ?? '',
         );
         count++;
+        if (shouldYieldFtsRebuild(count)) {
+          await Future<void>.delayed(Duration.zero);
+        }
       } catch (e) {
         _logger.warning('Error indexing card file $cardFile: $e');
       }
@@ -371,6 +374,9 @@ class SearchService {
           content: content,
         );
         count++;
+        if (shouldYieldFtsRebuild(count)) {
+          await Future<void>.delayed(Duration.zero);
+        }
       } catch (e) {
         _logger.warning('Error indexing PKM file ${file.path}: $e');
       }
@@ -429,6 +435,14 @@ class SearchService {
         _stringValue(before['fact']) != _stringValue(after['fact']) ||
         _stringListValue(before['tags']) != _stringListValue(after['tags']) ||
         _insightText(before['insight']) != _insightText(after['insight']);
+  }
+
+  @visibleForTesting
+  static const int ftsRebuildYieldEvery = 8;
+
+  @visibleForTesting
+  bool shouldYieldFtsRebuild(int indexedCount) {
+    return indexedCount > 0 && indexedCount % ftsRebuildYieldEvery == 0;
   }
 
   @visibleForTesting
