@@ -13,6 +13,7 @@ import 'base_file_service.dart';
 import 'api_exception.dart';
 import 'local_asset_server.dart';
 import 'event_log_service.dart';
+import 'package:memex/data/services/card_cache_rebuild.dart';
 import 'package:memex/db/app_database.dart';
 import 'package:memex/domain/models/card_model.dart';
 import 'package:memex/domain/models/system_event.dart';
@@ -164,6 +165,7 @@ class FileSystemService {
 
   /// Flag to indicate if a rebuild is in progress to prevent recursion
   bool _isRebuilding = false;
+  Completer<void>? _rebuildVisibleReady;
 
   static DateTime? _lastServerCheckTime;
   static FileSystemService? _instance;
@@ -617,34 +619,60 @@ class FileSystemService {
     });
   }
 
-  /// Rebuild the entire card cache for a user
-  Future<void> rebuildCardCache(String userId) async {
+  /// Rebuild the entire card cache for a user.
+  ///
+  /// When [waitUntilIndexed] is set, returns after that many cards are indexed
+  /// (newest files first) so Timeline can paint, then finishes in the background.
+  Future<void> rebuildCardCache(
+    String userId, {
+    int? waitUntilIndexed,
+  }) async {
     if (_isRebuilding) {
-      _logger.info('Card cache rebuild already in progress, skipping...');
+      final gate = _rebuildVisibleReady;
+      if (gate != null) await gate.future;
       return;
     }
 
     _isRebuilding = true;
+    _rebuildVisibleReady = Completer<void>();
     _logger.info('Starting card cache rebuild for user $userId');
+
+    final body = _rebuildCardCacheBody(
+      userId,
+      waitUntilIndexed: waitUntilIndexed,
+    );
+    if (waitUntilIndexed == null) {
+      await body;
+      return;
+    }
+    unawaited(body);
+    await _rebuildVisibleReady!.future;
+  }
+
+  Future<void> _rebuildCardCacheBody(
+    String userId, {
+    int? waitUntilIndexed,
+  }) async {
+    void markVisibleReady() {
+      final gate = _rebuildVisibleReady;
+      if (gate != null && !gate.isCompleted) {
+        gate.complete();
+      }
+    }
+
     try {
-      // 1. Clear existing cache
       await AppDatabase.instance.delete(AppDatabase.instance.cardCache).go();
 
-      // 2. List all card files
-      final cardFiles = await listAllCardFiles(userId);
+      final cardFiles =
+          sortCardFilesNewestFirst(await listAllCardFiles(userId));
       _logger.info('Found ${cardFiles.length} card files to index');
 
-      // 3. Process in batches to avoid locking UI too long
-      // Note: reading all files might take time.
       int count = 0;
       for (final cardFile in cardFiles) {
         try {
-          // Parse factId from path
-          // Path: .../Cards/YYYY/MM/DD_ts_X.yaml
           final factId = factIdFromCardPath(cardFile);
           if (factId == null) continue;
 
-          // Read card data
           final cardData = await readCardFile(userId, factId);
           if (cardData == null) continue;
 
@@ -652,6 +680,13 @@ class FileSystemService {
 
           await updateCardCache(userId, factId, cardData);
           count++;
+          if (waitUntilIndexed != null &&
+              count >= waitUntilIndexed) {
+            markVisibleReady();
+          }
+          if (shouldYieldCardCacheRebuild(count)) {
+            await Future<void>.delayed(Duration.zero);
+          }
         } catch (e) {
           _logger.warning('Error indexing card file $cardFile: $e');
         }
@@ -660,6 +695,7 @@ class FileSystemService {
     } catch (e) {
       _logger.severe('Failed to rebuild card cache: $e');
     } finally {
+      markVisibleReady();
       _isRebuilding = false;
     }
   }

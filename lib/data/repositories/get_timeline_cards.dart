@@ -36,7 +36,10 @@ Future<List<TimelineCardModel>> getTimelineCards({
     if (await db.cardDao.isCacheEmpty()) {
       _logger.info('Card cache is empty, triggering rebuild...');
       // Synchronous rebuild for first run to ensure data is available
-      await fileSystemService.rebuildCardCache(userId);
+      await fileSystemService.rebuildCardCache(
+        userId,
+        waitUntilIndexed: limit,
+      );
     }
 
     // 2. Query Cards using DAO
