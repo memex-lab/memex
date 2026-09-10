@@ -276,6 +276,20 @@ double resolveSuperAgentInputBottomInset({
 }
 
 @visibleForTesting
+@visibleForTesting
+bool shouldScrollChatToBottom({
+  required DateTime now,
+  required DateTime? lastScrollAt,
+  required Duration minInterval,
+  required bool force,
+}) {
+  if (force) return true;
+  if (lastScrollAt == null) return true;
+  if (now.isBefore(lastScrollAt)) return true;
+  return now.difference(lastScrollAt) >= minInterval;
+}
+
+@visibleForTesting
 bool shouldCreateAIMessageForResponseChunk({
   required String text,
   required bool isDone,
@@ -503,6 +517,8 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   // Controllers
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  DateTime? _lastChatScrollAt;
+  bool _forceNextChatScroll = false;
   final FocusNode _messageFocusNode = FocusNode();
   final ImagePicker _imagePicker = ImagePicker();
   final List<XFile> _selectedImages = [];
@@ -538,7 +554,9 @@ class _AgentChatDialogState extends State<AgentChatDialog>
       onFlush: () {
         if (!mounted) return;
         setState(() {});
-        _scrollToBottom();
+        final force = _forceNextChatScroll;
+        _forceNextChatScroll = false;
+        _scrollToBottom(force: force);
       },
     );
     _currentSessionId = widget.initialSessionId;
@@ -1544,6 +1562,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
       }
       if (event is ChatAgentStoppedEvent) {
         _isLoadingAgent = false;
+        _forceNextChatScroll = true;
         return;
       }
       if (event is ChatTokenUsageEvent) {
@@ -1630,6 +1649,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
         }
         if (event.isDone) {
           _nextResponseStartsNewMessage = true;
+          _forceNextChatScroll = true;
         } else {
           _nextResponseStartsNewMessage = false;
         }
@@ -1641,6 +1661,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
           primary.isExpanded = false;
         }
         _items.add(ErrorItem(event.error));
+        _forceNextChatScroll = true;
       }
   }
 
@@ -1703,7 +1724,17 @@ class _AgentChatDialogState extends State<AgentChatDialog>
     return processItem;
   }
 
-  void _scrollToBottom() {
+  void _scrollToBottom({bool force = false}) {
+    final now = DateTime.now();
+    if (!shouldScrollChatToBottom(
+      now: now,
+      lastScrollAt: _lastChatScrollAt,
+      minInterval: const Duration(milliseconds: 250),
+      force: force,
+    )) {
+      return;
+    }
+    _lastChatScrollAt = now;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
