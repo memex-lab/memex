@@ -201,6 +201,13 @@ class ClarificationRequestService {
   }
 
   Future<List<ClarificationRequest>> getVisibleForFact(String factId) async {
+    return getVisibleForFacts([factId]);
+  }
+
+  Future<List<ClarificationRequest>> getVisibleForFacts(
+    List<String> factIds,
+  ) async {
+    if (factIds.isEmpty) return [];
     final query = _db.select(_db.clarificationRequests)
       ..where((t) =>
           t.status.isIn([
@@ -209,7 +216,7 @@ class ClarificationRequestService {
             ClarificationRequestStatus.completed,
             ClarificationRequestStatus.failed,
           ]) &
-          t.factId.equals(factId))
+          t.factId.isIn(factIds))
       ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]);
     return query.get();
   }
