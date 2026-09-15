@@ -5,6 +5,16 @@ on:
     # 02:42 Asia/Shanghai. Scheduled workflows run on the default branch.
     - cron: "42 18 * * *"
   workflow_dispatch:
+    inputs:
+      force_build:
+        description: "Build even when this commit already has an Early release"
+        type: boolean
+        default: false
+
+# Serialize publication so overlapping runs cannot build the same commit twice.
+concurrency:
+  group: android-daily-early
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -13,8 +23,65 @@ env:
   EARLY_RELEASES_TO_KEEP: "14"
 
 jobs:
+  check-release:
+    name: Check whether an Early build is needed
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      should_build: ${{ steps.check.outputs.should_build }}
+    steps:
+      - name: Compare commit with latest complete Early release
+        id: check
+        uses: actions/github-script@v7
+        env:
+          FORCE_BUILD: ${{ github.event_name == 'workflow_dispatch' && inputs.force_build }}
+        with:
+          script: |
+            if (process.env.FORCE_BUILD === 'true') {
+              core.setOutput('should_build', 'true');
+              core.info('Manual forced build requested.');
+              return;
+            }
+
+            // Use published releases with both APKs, not successful workflow runs:
+            // a skipped run or a partially uploaded release is not a build baseline.
+            const releases = await github.paginate(github.rest.repos.listReleases, {
+              ...context.repo, per_page: 100,
+            });
+            const previous = releases
+              .filter(release => release.prerelease && !release.draft &&
+                release.tag_name.startsWith('android-early-') &&
+                ['cnearly', 'globalearly'].every(flavor =>
+                  release.assets.some(asset => asset.state === 'uploaded' &&
+                    asset.size > 0 && (
+                      asset.name.toLowerCase() === `app-${flavor}-release.apk` ||
+                      (asset.name.toLowerCase().startsWith(`memex_${flavor}_`) &&
+                        asset.name.toLowerCase().endsWith('.apk'))))))
+              .sort((a, b) => Date.parse(b.published_at) - Date.parse(a.published_at))[0];
+
+            if (!previous) {
+              core.setOutput('should_build', 'true');
+              core.info('No complete Early release found.');
+              return;
+            }
+
+            // Resolve the tag to its full commit SHA, including annotated tags.
+            // target_commitish may be a moving branch name rather than a SHA.
+            const { data: commit } = await github.rest.repos.getCommit({
+              ...context.repo, ref: previous.tag_name,
+            });
+            const shouldBuild = commit.sha !== context.sha;
+            core.setOutput('should_build', String(shouldBuild));
+            core.info(shouldBuild
+              ? `Commit changed since ${previous.tag_name}; building ${context.sha}.`
+              : `Commit ${context.sha} already published as ${previous.tag_name}; skipping.`);
+
   build-android-early:
     name: Build Android Early APKs
+    needs: check-release
+    if: needs.check-release.outputs.should_build == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 45
 

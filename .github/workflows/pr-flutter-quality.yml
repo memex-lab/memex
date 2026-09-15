@@ -2,7 +2,7 @@ name: PR Flutter Quality
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
 
 permissions:
   contents: read
@@ -13,6 +13,7 @@ concurrency:
 
 jobs:
   flutter-quality:
+    if: ${{ !github.event.pull_request.draft }}
     name: Flutter Analyze and Test
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -54,6 +55,9 @@ jobs:
         run: |
           git fetch --no-tags origin "${{ github.event.pull_request.base.sha }}"
           git worktree add ../memex-base "${{ github.event.pull_request.base.sha }}"
+
+      - name: Test Actions build and draft guards
+        run: node --test .github/scripts/test_actions_savings.cjs
 
       - name: Run preflight script unit tests
         run: python3 scripts/compare_flutter_analyze_test.py

@@ -2,8 +2,8 @@ name: Update Star History
 
 on:
   schedule:
-    # 03:17 Asia/Shanghai. Scheduled workflows run on the default branch.
-    - cron: "17 19 * * *"
+    # Monday 03:17 Asia/Shanghai (Sunday UTC). Scheduled workflows run on the default branch.
+    - cron: "17 19 * * 0"
   workflow_dispatch:
 
 permissions:
