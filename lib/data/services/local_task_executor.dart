@@ -1007,21 +1007,15 @@ class LocalTaskExecutor {
       final agentFamilyActive = activeTasks
           .where((task) => isAgentFamilyTaskType(task.type))
           .length;
-      var remainingAgentSlots =
+      final remainingAgentSlots =
           maxAgentFamilyConcurrency - agentFamilyActive;
 
       final candidates = await _findRunnableTasks(
         slotsAvailable: slotsAvailable,
         now: now,
+        remainingAgentSlots: remainingAgentSlots,
       );
-      final tasksToRun = <Task>[];
-      for (final task in candidates) {
-        if (isAgentFamilyTaskType(task.type)) {
-          if (remainingAgentSlots <= 0) continue;
-          remainingAgentSlots -= 1;
-        }
-        tasksToRun.add(task);
-      }
+      final tasksToRun = candidates;
 
       if (tasksToRun.isEmpty) {
         // No runnable tasks found in top candidates
@@ -1125,11 +1119,13 @@ class LocalTaskExecutor {
   Future<List<Task>> _findRunnableTasks({
     required int slotsAvailable,
     required int now,
+    int? remainingAgentSlots,
   }) async {
     final tasksToRun = <Task>[];
     final reservedConcurrencyKeys = <String>{};
     var offset = 0;
     var scanned = 0;
+    var agentSlotsLeft = remainingAgentSlots;
 
     while (tasksToRun.length < slotsAvailable && scanned < _maxCandidateScan) {
       final remainingScan = _maxCandidateScan - scanned;
@@ -1157,6 +1153,11 @@ class LocalTaskExecutor {
 
       for (final task in candidates) {
         if (tasksToRun.length >= slotsAvailable) break;
+        if (agentSlotsLeft != null &&
+            isAgentFamilyTaskType(task.type) &&
+            agentSlotsLeft <= 0) {
+          continue;
+        }
         if (await _dependenciesMet(task)) {
           final concurrencyKey = _concurrencyKeyForTask(task);
           if (concurrencyKey != null) {
@@ -1168,6 +1169,9 @@ class LocalTaskExecutor {
             reservedConcurrencyKeys.add(concurrencyKey);
           }
           tasksToRun.add(task);
+          if (agentSlotsLeft != null && isAgentFamilyTaskType(task.type)) {
+            agentSlotsLeft -= 1;
+          }
         }
       }
     }
