@@ -36,6 +36,8 @@ Future<Map<String, dynamic>> getAggregatedTimeline({
     if (await db.cardDao.isCacheEmpty()) {
       _logger.info('Card cache is empty, triggering rebuild...');
       await fileSystemService.rebuildCardCache(userId);
+    } else if (fileSystemService.isCardCacheRebuilding) {
+      await fileSystemService.waitForCardCacheRebuild();
     }
 
     // Fetch ALL cards matching tag filter (no pagination here, we group locally)
