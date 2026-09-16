@@ -31,6 +31,27 @@ void main() {
     await UserStorage.initL10n();
   });
 
+  group('queued send subscription', () {
+    test('does not promote early AgentStarted or session events', () {
+      expect(
+        shouldPromoteQueuedChatSend(ChatAgentStartedEvent('turn-2')),
+        isFalse,
+      );
+      expect(
+        shouldPromoteQueuedChatSend(ChatSessionCreatedEvent('session-1')),
+        isFalse,
+      );
+      expect(shouldPromoteQueuedChatSend(ChatErrorEvent('turn-2', 'nope')), isFalse);
+    });
+
+    test('promotes later live progress onto the main subscription', () {
+      expect(
+        shouldPromoteQueuedChatSend(ChatThoughtChunkEvent('thinking')),
+        isTrue,
+      );
+    });
+  });
+
   group('AgentChatDialog layout metrics', () {
     test('resolves default sheet and full-screen heights', () {
       const viewport = Size(390, 800);

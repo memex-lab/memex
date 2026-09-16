@@ -296,6 +296,20 @@ bool shouldCreateAIMessageForResponseChunk({
   return !(isDone && text.isEmpty);
 }
 
+/// Queued sends may emit session/error/early-start events while the live
+/// subscription still owns the executing turn. Only promote on later
+/// progress that means this send became the active stream.
+@visibleForTesting
+bool shouldPromoteQueuedChatSend(ChatEvent event) {
+  if (event is ChatSessionCreatedEvent || event is ChatErrorEvent) {
+    return false;
+  }
+  if (event is ChatAgentStartedEvent) {
+    return false;
+  }
+  return true;
+}
+
 @visibleForTesting
 bool shouldRequestOlderSuperAgentHistory({
   required bool hasMoreHistory,
@@ -1227,8 +1241,8 @@ class _AgentChatDialogState extends State<AgentChatDialog>
     subscription = stream.listen(
       (event) {
         if (!mounted) return;
-        if (!promotedToChatStream &&
-            (event is ChatSessionCreatedEvent || event is ChatErrorEvent)) {
+        if (!promotedToChatStream && !shouldPromoteQueuedChatSend(event)) {
+          if (event is ChatAgentStartedEvent) return;
           _handleChatEvent(event);
           return;
         }

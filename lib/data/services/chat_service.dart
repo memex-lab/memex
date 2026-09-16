@@ -36,6 +36,16 @@ import 'package:memex/data/model/chat_events.dart';
 export 'package:memex/data/model/chat_events.dart';
 
 @visibleForTesting
+bool shouldEmitChatTurnStartedBeforeIo({
+  required String trimmedMessage,
+  required bool hasImages,
+  bool runAlreadyActive = false,
+}) {
+  if (runAlreadyActive) return false;
+  return trimmedMessage.trim().isNotEmpty || hasImages;
+}
+
+@visibleForTesting
 String chatErrorUserNotLoggedIn() => UserStorage.l10n.userIdNotFound;
 
 @visibleForTesting
@@ -393,6 +403,21 @@ class ChatService {
     String finalSessionId = sessionId ?? '';
     final userMessageTime = DateTime.now();
     final trimmedMessage = message.trim();
+    if (trimmedMessage.isEmpty && images.isEmpty) {
+      yield ChatErrorEvent(turnId, chatErrorEmptyMessage());
+      return;
+    }
+    final liveSessionId = sessionId?.trim() ?? '';
+    final liveRunAlreadyActive =
+        liveSessionId.isNotEmpty && _runRegistry.isActive(liveSessionId);
+    if (shouldEmitChatTurnStartedBeforeIo(
+      trimmedMessage: trimmedMessage,
+      hasImages: images.isNotEmpty,
+      runAlreadyActive: liveRunAlreadyActive,
+    )) {
+      yield ChatAgentStartedEvent(turnId);
+    }
+
     final preparedImages = <AgentImageAttachment>[];
     String agentStateSessionId = '';
 
@@ -409,11 +434,6 @@ class ChatService {
     } catch (e) {
       _logger.severe('Failed to prepare chat image attachment', e);
       yield ChatErrorEvent(turnId, chatErrorOperationFailed(e));
-      return;
-    }
-
-    if (trimmedMessage.isEmpty && preparedImages.isEmpty) {
-      yield ChatErrorEvent(turnId, chatErrorEmptyMessage());
       return;
     }
 
