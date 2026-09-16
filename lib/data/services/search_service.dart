@@ -59,21 +59,30 @@ class SearchService {
 
     // Check if a post-migration FTS rebuild is needed.
     if (AppDatabase.isInitialized && AppDatabase.instance.needsFtsRebuild) {
-      AppDatabase.instance.clearFtsRebuildFlag();
       final scheduledGeneration = _initGeneration;
       _logger.info(
           'FTS tables newly created via migration — scheduling full rebuild');
       // Defer so first Timeline paint is not competing with jieba + full scans.
+      // Keep the pending flag until this callback actually rebuilds, so logout
+      // or process death can retry on the next init.
       Future<void>.delayed(const Duration(seconds: 3), () async {
-        if (!shouldRunDeferredFtsRebuild(
+        final stillValid = shouldRunDeferredFtsRebuild(
           scheduledGeneration: scheduledGeneration,
           currentGeneration: _initGeneration,
           initialized: _initialized,
-        )) {
+        );
+        if (!stillValid) {
           return;
         }
         try {
           await rebuildAll(userId);
+          if (shouldRunDeferredFtsRebuild(
+            scheduledGeneration: scheduledGeneration,
+            currentGeneration: _initGeneration,
+            initialized: _initialized,
+          )) {
+            AppDatabase.instance.clearFtsRebuildFlag();
+          }
           _logger.info('Post-migration FTS rebuild completed');
         } catch (e) {
           _logger.warning('Post-migration FTS rebuild failed: $e');
@@ -463,6 +472,14 @@ class SearchService {
     required bool initialized,
   }) {
     return initialized && scheduledGeneration == currentGeneration;
+  }
+
+  @visibleForTesting
+  bool shouldKeepPendingFtsRebuild({
+    required bool deferredCallbackStillValid,
+    required bool rebuildSucceeded,
+  }) {
+    return !deferredCallbackStillValid || !rebuildSucceeded;
   }
 
   @visibleForTesting

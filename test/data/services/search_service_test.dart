@@ -104,5 +104,23 @@ void main() {
         isFalse,
       );
     });
+
+    test('keeps the pending rebuild when the deferred callback is cancelled',
+        () {
+      expect(
+        SearchService.instance.shouldKeepPendingFtsRebuild(
+          deferredCallbackStillValid: false,
+          rebuildSucceeded: false,
+        ),
+        isTrue,
+      );
+      expect(
+        SearchService.instance.shouldKeepPendingFtsRebuild(
+          deferredCallbackStillValid: true,
+          rebuildSucceeded: true,
+        ),
+        isFalse,
+      );
+    });
   });
 }
