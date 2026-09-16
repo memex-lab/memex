@@ -89,19 +89,41 @@ class UserStorage {
   static Future<SharedPreferences> Function() prefsLoader =
       SharedPreferences.getInstance;
 
+  /// When true, tests exercise the production cache (including error retry).
+  @visibleForTesting
+  static bool cachePrefsInTests = false;
+
   @visibleForTesting
   static void resetPrefsCache() {
     _prefsFuture = null;
+    cachePrefsInTests = false;
     prefsLoader = SharedPreferences.getInstance;
   }
 
   /// One SharedPreferences load per process on device. Tests skip the cache
-  /// so [SharedPreferences.setMockInitialValues] keeps working.
+  /// so [SharedPreferences.setMockInitialValues] keeps working, unless
+  /// [cachePrefsInTests] is set.
   static Future<SharedPreferences> sharedPrefs() {
-    if (Platform.environment.containsKey('FLUTTER_TEST')) {
+    final useCache = cachePrefsInTests ||
+        !Platform.environment.containsKey('FLUTTER_TEST');
+    if (!useCache) {
       return prefsLoader();
     }
-    return _prefsFuture ??= prefsLoader();
+    final existing = _prefsFuture;
+    if (existing != null) return existing;
+
+    late final Future<SharedPreferences> created;
+    created = prefsLoader().then(
+      (prefs) => prefs,
+      onError: (Object error, StackTrace stackTrace) {
+        if (identical(_prefsFuture, created)) {
+          _prefsFuture = null;
+        }
+        Error.throwWithStackTrace(error, stackTrace);
+      },
+    );
+    _prefsFuture = created;
+    return created;
   }
 
   /// Get the global l10n instance

@@ -25,4 +25,20 @@ void main() {
     SharedPreferences.setMockInitialValues({'user_id': '   '});
     expect(await UserStorage.getUserId(), isNull);
   });
+
+  test('sharedPrefs retries after a failed cached initialization', () async {
+    UserStorage.cachePrefsInTests = true;
+    var loads = 0;
+    UserStorage.prefsLoader = () async {
+      loads++;
+      if (loads == 1) {
+        throw StateError('prefs unavailable');
+      }
+      return SharedPreferences.getInstance();
+    };
+
+    await expectLater(UserStorage.sharedPrefs(), throwsStateError);
+    expect(await UserStorage.getUserId(), 'cached-user');
+    expect(loads, 2);
+  });
 }
