@@ -58,6 +58,17 @@ void main() {
         isFalse,
       );
     });
+
+    test('does not announce an early start when the session run is live', () {
+      expect(
+        shouldEmitChatTurnStartedBeforeIo(
+          trimmedMessage: 'hello',
+          hasImages: true,
+          runAlreadyActive: true,
+        ),
+        isFalse,
+      );
+    });
   });
 
   group('isActiveChatTurnTaskForSession', () {

@@ -39,7 +39,9 @@ export 'package:memex/data/model/chat_events.dart';
 bool shouldEmitChatTurnStartedBeforeIo({
   required String trimmedMessage,
   required bool hasImages,
+  bool runAlreadyActive = false,
 }) {
+  if (runAlreadyActive) return false;
   return trimmedMessage.trim().isNotEmpty || hasImages;
 }
 
@@ -405,9 +407,13 @@ class ChatService {
       yield ChatErrorEvent(turnId, chatErrorEmptyMessage());
       return;
     }
+    final liveSessionId = sessionId?.trim() ?? '';
+    final liveRunAlreadyActive =
+        liveSessionId.isNotEmpty && _runRegistry.isActive(liveSessionId);
     if (shouldEmitChatTurnStartedBeforeIo(
       trimmedMessage: trimmedMessage,
       hasImages: images.isNotEmpty,
+      runAlreadyActive: liveRunAlreadyActive,
     )) {
       yield ChatAgentStartedEvent(turnId);
     }
