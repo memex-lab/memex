@@ -85,7 +85,7 @@ class KnowledgeBaseViewModel extends ChangeNotifier {
     await fetchData();
   }
 
-  Future<void> fetchData() async {
+  Future<void> fetchData({bool forceRefresh = false}) async {
     isLoading = true;
     notifyListeners();
     final listResult = await _router.listPkmDirectory();
@@ -109,7 +109,9 @@ class KnowledgeBaseViewModel extends ChangeNotifier {
       final path = folder['path'] as String;
       folder['item_count'] = categoryCounts[path] ?? 0;
     }
-    final recentResult = await _router.getRecentPkmFiles();
+    final recentResult = await _router.getRecentPkmFiles(
+      forceRefresh: forceRefresh,
+    );
     recentFiles = recentResult.when(
       onOk: (r) => r,
       onError: (_, __) => <Map<String, dynamic>>[],

@@ -71,7 +71,7 @@ class KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
             ],
           ),
           body: RefreshIndicator(
-            onRefresh: () => vm.fetchData(),
+            onRefresh: () => vm.fetchData(forceRefresh: true),
             child: vm.isLoading
                 ? SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),

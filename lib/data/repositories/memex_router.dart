@@ -1472,13 +1472,18 @@ class MemexRouter {
 
   Future<Result<List<Map<String, dynamic>>>> getRecentPkmFiles({
     int limit = 10,
+    bool forceRefresh = false,
   }) async {
     return runResult(() async {
       await _ensureInitialized();
       _logger.info('LocalMode: getRecentPkmFiles called: limit=$limit');
       final userId = await UserStorage.getUserId();
       if (userId == null) return <Map<String, dynamic>>[];
-      return await fileSystemService.getRecentPkmFiles(userId, limit: limit);
+      return await fileSystemService.getRecentPkmFiles(
+        userId,
+        limit: limit,
+        forceRefresh: forceRefresh,
+      );
     });
   }
 
