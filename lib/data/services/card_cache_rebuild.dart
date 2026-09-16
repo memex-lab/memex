@@ -12,3 +12,14 @@ bool shouldYieldCardCacheRebuild(
 }) {
   return every > 0 && indexedCount > 0 && indexedCount % every == 0;
 }
+
+bool timelineQueryNeedsFullCardCache({
+  int page = 1,
+  List<String>? tags,
+  DateTime? dateFrom,
+  DateTime? dateTo,
+}) {
+  if (page > 1) return true;
+  if (tags != null && tags.isNotEmpty) return true;
+  return dateFrom != null || dateTo != null;
+}

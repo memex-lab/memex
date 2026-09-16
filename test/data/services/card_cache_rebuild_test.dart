@@ -36,4 +36,14 @@ void main() {
     expect(shouldYieldCardCacheRebuild(8), isTrue);
     expect(shouldYieldCardCacheRebuild(16), isTrue);
   });
+
+  test('waits for a full index on filtered or later pages', () {
+    expect(timelineQueryNeedsFullCardCache(), isFalse);
+    expect(timelineQueryNeedsFullCardCache(page: 2), isTrue);
+    expect(timelineQueryNeedsFullCardCache(tags: ['work']), isTrue);
+    expect(
+      timelineQueryNeedsFullCardCache(dateFrom: DateTime.utc(2026, 1, 1)),
+      isTrue,
+    );
+  });
 }

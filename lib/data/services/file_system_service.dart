@@ -166,6 +166,7 @@ class FileSystemService {
   /// Flag to indicate if a rebuild is in progress to prevent recursion
   bool _isRebuilding = false;
   Completer<void>? _rebuildVisibleReady;
+  Completer<void>? _rebuildComplete;
 
   static DateTime? _lastServerCheckTime;
   static FileSystemService? _instance;
@@ -619,6 +620,13 @@ class FileSystemService {
     });
   }
 
+  bool get isCardCacheRebuilding => _isRebuilding;
+
+  Future<void> waitForCardCacheRebuild() async {
+    final complete = _rebuildComplete;
+    if (complete != null) await complete.future;
+  }
+
   /// Rebuild the entire card cache for a user.
   ///
   /// When [waitUntilIndexed] is set, returns after that many cards are indexed
@@ -628,13 +636,19 @@ class FileSystemService {
     int? waitUntilIndexed,
   }) async {
     if (_isRebuilding) {
-      final gate = _rebuildVisibleReady;
-      if (gate != null) await gate.future;
+      if (waitUntilIndexed == null) {
+        final complete = _rebuildComplete;
+        if (complete != null) await complete.future;
+      } else {
+        final gate = _rebuildVisibleReady;
+        if (gate != null) await gate.future;
+      }
       return;
     }
 
     _isRebuilding = true;
     _rebuildVisibleReady = Completer<void>();
+    _rebuildComplete = Completer<void>();
     _logger.info('Starting card cache rebuild for user $userId');
 
     final body = _rebuildCardCacheBody(
@@ -696,6 +710,10 @@ class FileSystemService {
       _logger.severe('Failed to rebuild card cache: $e');
     } finally {
       markVisibleReady();
+      final complete = _rebuildComplete;
+      if (complete != null && !complete.isCompleted) {
+        complete.complete();
+      }
       _isRebuilding = false;
     }
   }

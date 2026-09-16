@@ -2,6 +2,7 @@ import 'package:memex/db/app_database.dart';
 import 'package:memex/domain/models/timeline_card_model.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/user_storage.dart';
+import 'package:memex/data/services/card_cache_rebuild.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/repositories/hydrate_card.dart';
 
@@ -31,15 +32,26 @@ Future<List<TimelineCardModel>> getTimelineCards({
 
     final fileSystemService = FileSystemService.instance;
     final db = AppDatabase.instance;
+    final needsFullIndex = timelineQueryNeedsFullCardCache(
+      page: page,
+      tags: tags,
+      dateFrom: dateFrom,
+      dateTo: dateTo,
+    );
 
     // 1. Check if cache needs initialization (if empty)
     if (await db.cardDao.isCacheEmpty()) {
       _logger.info('Card cache is empty, triggering rebuild...');
-      // Synchronous rebuild for first run to ensure data is available
-      await fileSystemService.rebuildCardCache(
-        userId,
-        waitUntilIndexed: limit,
-      );
+      if (needsFullIndex) {
+        await fileSystemService.rebuildCardCache(userId);
+      } else {
+        await fileSystemService.rebuildCardCache(
+          userId,
+          waitUntilIndexed: limit,
+        );
+      }
+    } else if (needsFullIndex && fileSystemService.isCardCacheRebuilding) {
+      await fileSystemService.waitForCardCacheRebuild();
     }
 
     // 2. Query Cards using DAO
