@@ -17,8 +17,15 @@ bool shouldReuseRecentPkmCache({
   required String userId,
   required DateTime now,
   Duration ttl = recentPkmCacheTtl,
+  bool forceRefresh = false,
 }) {
+  if (forceRefresh) return false;
   if (cache == null) return false;
   if (cache.userId != userId) return false;
   return now.difference(cache.cachedAt) < ttl;
+}
+
+bool isPkmWorkspaceFile(String filePath) {
+  final normalized = filePath.replaceAll('\\', '/');
+  return normalized.contains('/PKM/') || normalized.endsWith('/PKM');
 }

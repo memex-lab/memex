@@ -167,6 +167,10 @@ class FileSystemService {
   bool _isRebuilding = false;
   RecentPkmCacheEntry? _recentPkmCache;
 
+  void invalidateRecentPkmCache() {
+    _recentPkmCache = null;
+  }
+
   static DateTime? _lastServerCheckTime;
   static FileSystemService? _instance;
 
@@ -2475,13 +2479,14 @@ class FileSystemService {
 
   /// Get recently modified PKM files
   Future<List<Map<String, dynamic>>> getRecentPkmFiles(String userId,
-      {int limit = 10}) async {
+      {int limit = 10, bool forceRefresh = false}) async {
     final now = DateTime.now();
     final cache = _recentPkmCache;
     if (shouldReuseRecentPkmCache(
       cache: cache,
       userId: userId,
       now: now,
+      forceRefresh: forceRefresh,
     )) {
       return cache!.files.take(limit).toList();
     }

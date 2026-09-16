@@ -44,5 +44,22 @@ void main() {
       ),
       isFalse,
     );
+    expect(
+      shouldReuseRecentPkmCache(
+        cache: cache,
+        userId: 'u1',
+        now: cachedAt.add(const Duration(seconds: 1)),
+        forceRefresh: true,
+      ),
+      isFalse,
+    );
+  });
+
+  test('detects PKM workspace files for cache invalidation', () {
+    expect(
+      isPkmWorkspaceFile('/workspace/_u1/PKM/Projects/note.md'),
+      isTrue,
+    );
+    expect(isPkmWorkspaceFile('/workspace/_u1/Cards/2026/01/01.yaml'), isFalse);
   });
 }
