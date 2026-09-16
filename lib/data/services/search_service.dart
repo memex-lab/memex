@@ -34,6 +34,7 @@ class SearchService {
   final Logger _logger = getLogger('SearchService');
 
   bool _initialized = false;
+  int _initGeneration = 0;
 
   // ---------------------------------------------------------------------------
   // Initialization
@@ -48,6 +49,7 @@ class SearchService {
   void init(String userId) {
     if (_initialized) return;
     _initialized = true;
+    _initGeneration++;
 
     // Jieba segmenter loads lazily on first use and auto-releases after idle.
     // No explicit initialization needed here.
@@ -57,13 +59,30 @@ class SearchService {
 
     // Check if a post-migration FTS rebuild is needed.
     if (AppDatabase.isInitialized && AppDatabase.instance.needsFtsRebuild) {
-      AppDatabase.instance.clearFtsRebuildFlag();
+      final scheduledGeneration = _initGeneration;
       _logger.info(
           'FTS tables newly created via migration — scheduling full rebuild');
-      // Fire-and-forget so app startup is not blocked.
-      Future(() async {
+      // Defer so first Timeline paint is not competing with jieba + full scans.
+      // Keep the pending flag until this callback actually rebuilds, so logout
+      // or process death can retry on the next init.
+      Future<void>.delayed(const Duration(seconds: 3), () async {
+        final stillValid = shouldRunDeferredFtsRebuild(
+          scheduledGeneration: scheduledGeneration,
+          currentGeneration: _initGeneration,
+          initialized: _initialized,
+        );
+        if (!stillValid) {
+          return;
+        }
         try {
           await rebuildAll(userId);
+          if (shouldRunDeferredFtsRebuild(
+            scheduledGeneration: scheduledGeneration,
+            currentGeneration: _initGeneration,
+            initialized: _initialized,
+          )) {
+            AppDatabase.instance.clearFtsRebuildFlag();
+          }
           _logger.info('Post-migration FTS rebuild completed');
         } catch (e) {
           _logger.warning('Post-migration FTS rebuild failed: $e');
@@ -75,6 +94,7 @@ class SearchService {
   /// Reset state on logout so the next login re-initializes.
   void reset() {
     _initialized = false;
+    _initGeneration++;
     FileOperationService.instance.onFileChanged = null;
     JiebaSegmenter.instance.dispose();
   }
@@ -323,6 +343,9 @@ class SearchService {
           insight: cardData.insight?.text ?? '',
         );
         count++;
+        if (shouldYieldFtsRebuild(count)) {
+          await Future<void>.delayed(Duration.zero);
+        }
       } catch (e) {
         _logger.warning('Error indexing card file $cardFile: $e');
       }
@@ -371,6 +394,9 @@ class SearchService {
           content: content,
         );
         count++;
+        if (shouldYieldFtsRebuild(count)) {
+          await Future<void>.delayed(Duration.zero);
+        }
       } catch (e) {
         _logger.warning('Error indexing PKM file ${file.path}: $e');
       }
@@ -429,6 +455,31 @@ class SearchService {
         _stringValue(before['fact']) != _stringValue(after['fact']) ||
         _stringListValue(before['tags']) != _stringListValue(after['tags']) ||
         _insightText(before['insight']) != _insightText(after['insight']);
+  }
+
+  @visibleForTesting
+  static const int ftsRebuildYieldEvery = 8;
+
+  @visibleForTesting
+  bool shouldYieldFtsRebuild(int indexedCount) {
+    return indexedCount > 0 && indexedCount % ftsRebuildYieldEvery == 0;
+  }
+
+  @visibleForTesting
+  bool shouldRunDeferredFtsRebuild({
+    required int scheduledGeneration,
+    required int currentGeneration,
+    required bool initialized,
+  }) {
+    return initialized && scheduledGeneration == currentGeneration;
+  }
+
+  @visibleForTesting
+  bool shouldKeepPendingFtsRebuild({
+    required bool deferredCallbackStillValid,
+    required bool rebuildSucceeded,
+  }) {
+    return !deferredCallbackStillValid || !rebuildSucceeded;
   }
 
   @visibleForTesting
