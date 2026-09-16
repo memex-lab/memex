@@ -801,6 +801,22 @@ class LocalTaskExecutor {
 
   // Max concurrent tasks
   static const int _maxConcurrency = 5;
+  static const int maxAgentFamilyConcurrency = 2;
+
+  /// LLM-heavy task types that should not all run at once after a capture.
+  static const Set<String> agentFamilyTaskTypes = {
+    'super_agent_chat_turn_task',
+    'comment_agent_task',
+    'character_perception_task',
+    'character_initiative_task',
+    'character_conversation_task',
+    'character_history_acquaintance_task',
+    'reprocess_comments_task',
+    'process_ai_reply',
+  };
+
+  static bool isAgentFamilyTaskType(String taskType) =>
+      agentFamilyTaskTypes.contains(taskType);
   static const int _candidatePageSize = 50;
   static const int _maxCandidateScan = 500;
 
@@ -988,10 +1004,18 @@ class LocalTaskExecutor {
 
       // 2. Fetch runnable tasks. Dependency-blocked tasks at the front of the
       // queue should not starve later tasks that can safely run now.
-      final tasksToRun = await _findRunnableTasks(
+      final agentFamilyActive = activeTasks
+          .where((task) => isAgentFamilyTaskType(task.type))
+          .length;
+      final remainingAgentSlots =
+          maxAgentFamilyConcurrency - agentFamilyActive;
+
+      final candidates = await _findRunnableTasks(
         slotsAvailable: slotsAvailable,
         now: now,
+        remainingAgentSlots: remainingAgentSlots,
       );
+      final tasksToRun = candidates;
 
       if (tasksToRun.isEmpty) {
         // No runnable tasks found in top candidates
@@ -1095,11 +1119,13 @@ class LocalTaskExecutor {
   Future<List<Task>> _findRunnableTasks({
     required int slotsAvailable,
     required int now,
+    int? remainingAgentSlots,
   }) async {
     final tasksToRun = <Task>[];
     final reservedConcurrencyKeys = <String>{};
     var offset = 0;
     var scanned = 0;
+    var agentSlotsLeft = remainingAgentSlots;
 
     while (tasksToRun.length < slotsAvailable && scanned < _maxCandidateScan) {
       final remainingScan = _maxCandidateScan - scanned;
@@ -1127,6 +1153,11 @@ class LocalTaskExecutor {
 
       for (final task in candidates) {
         if (tasksToRun.length >= slotsAvailable) break;
+        if (agentSlotsLeft != null &&
+            isAgentFamilyTaskType(task.type) &&
+            agentSlotsLeft <= 0) {
+          continue;
+        }
         if (await _dependenciesMet(task)) {
           final concurrencyKey = _concurrencyKeyForTask(task);
           if (concurrencyKey != null) {
@@ -1138,6 +1169,9 @@ class LocalTaskExecutor {
             reservedConcurrencyKeys.add(concurrencyKey);
           }
           tasksToRun.add(task);
+          if (agentSlotsLeft != null && isAgentFamilyTaskType(task.type)) {
+            agentSlotsLeft -= 1;
+          }
         }
       }
     }
