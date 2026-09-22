@@ -1079,6 +1079,13 @@ class AppLocalizationsHi extends AppLocalizations {
   String get discoveredReminder => 'रिमाइंडर मिला';
 
   @override
+  String get reviewInCalendar => 'Review in calendar';
+
+  @override
+  String get calendarEditorExplanation =>
+      'Review and edit the prefilled event in the system calendar editor. It is added only when you save there.';
+
+  @override
   String get addToCalendar => 'कैलेंडर में जोड़ें';
 
   @override

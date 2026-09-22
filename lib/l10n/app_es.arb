@@ -500,6 +500,8 @@
   "unknownAction": "Acción desconocida",
   "discoveredCalendarEvent": "Evento de calendario encontrado",
   "discoveredReminder": "Recordatorio encontrado",
+  "reviewInCalendar": "Review in calendar",
+  "calendarEditorExplanation": "Review and edit the prefilled event in the system calendar editor. It is added only when you save there.",
   "addToCalendar": "Añadir al calendario",
   "addToReminders": "Añadir a recordatorios",
   "systemActionPendingExplanation": "Aún no se ha añadido. Toca abajo para solicitar permiso y añadirlo a tu dispositivo.",

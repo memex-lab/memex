@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/native.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -104,6 +106,46 @@ void main() {
         'completed',
       );
       expect(await SystemActionService.instance.getPending(), isEmpty);
+    });
+
+    test('concurrent confirmation and stale completed cards write only once',
+        () async {
+      var writes = 0;
+      final release = Completer<bool>();
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(nativeChannel, (call) async {
+        writes++;
+        return release.future;
+      });
+      await SystemActionService.instance.createAction(
+          id: 'once',
+          type: 'calendar',
+          data: {'title': '复查', 'start_time': '2099-09-18 15:00:00'});
+      final action = (await SystemActionService.instance.getAction('once'))!;
+      final first = SystemActionService.instance.applyToDevice(action);
+      final second = SystemActionService.instance.applyToDevice(action);
+      release.complete(true);
+      expect(await Future.wait([first, second]), [true, true]);
+      expect(await SystemActionService.instance.applyToDevice(action), isTrue);
+      expect(writes, 1);
+    });
+
+    test('stale rejected card cannot write to the device', () async {
+      var writes = 0;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(nativeChannel, (call) async {
+        writes++;
+        return true;
+      });
+      await SystemActionService.instance.createAction(
+          id: 'reject',
+          type: 'calendar',
+          data: {'title': '复查', 'start_time': '2099-09-18 15:00:00'});
+      final stale = (await SystemActionService.instance.getAction('reject'))!;
+      await SystemActionService.instance
+          .updateActionStatus('reject', 'rejected');
+      expect(await SystemActionService.instance.applyToDevice(stale), isFalse);
+      expect(writes, 0);
     });
 
     test('rejects malformed action data before calling the native bridge',

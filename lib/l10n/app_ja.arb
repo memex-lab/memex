@@ -500,6 +500,8 @@
   "unknownAction": "不明なアクション",
   "discoveredCalendarEvent": "カレンダーイベントが見つかりました",
   "discoveredReminder": "リマインダーが見つかりました",
+  "reviewInCalendar": "Review in calendar",
+  "calendarEditorExplanation": "Review and edit the prefilled event in the system calendar editor. It is added only when you save there.",
   "addToCalendar": "カレンダーに追加",
   "addToReminders": "リマインダーに追加",
   "systemActionPendingExplanation": "まだ追加されていません。下のボタンをタップすると、権限をリクエストしてデバイスに追加します。",

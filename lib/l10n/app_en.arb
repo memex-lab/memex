@@ -500,6 +500,8 @@
   "unknownAction": "Unknown action",
   "discoveredCalendarEvent": "Calendar event awaiting confirmation",
   "discoveredReminder": "Reminder awaiting confirmation",
+  "reviewInCalendar": "Review in calendar",
+  "calendarEditorExplanation": "Review and edit the prefilled event in the system calendar editor. It is added only when you save there.",
   "addToCalendar": "Add to calendar",
   "addToReminders": "Add to reminders",
   "systemActionPendingExplanation": "Not added yet. Tap below to request permission and add it to your device.",

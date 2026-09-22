@@ -500,6 +500,8 @@
   "unknownAction": "알 수 없는 작업",
   "discoveredCalendarEvent": "캘린더 이벤트를 찾았습니다",
   "discoveredReminder": "미리 알림을 찾았습니다",
+  "reviewInCalendar": "Review in calendar",
+  "calendarEditorExplanation": "Review and edit the prefilled event in the system calendar editor. It is added only when you save there.",
   "addToCalendar": "캘린더에 추가",
   "addToReminders": "미리 알림에 추가",
   "systemActionPendingExplanation": "아직 추가되지 않았습니다. 아래 버튼을 눌러 권한을 요청하고 기기에 추가하세요.",

@@ -500,6 +500,8 @@
   "unknownAction": "未知操作",
   "discoveredCalendarEvent": "發現行事曆日程",
   "discoveredReminder": "發現提醒事項",
+  "reviewInCalendar": "在行事曆中確認",
+  "calendarEditorExplanation": "開啟系統行事曆編輯頁，查看或修改已填好的資訊。只有在系統介面儲存後才會加入。",
   "addToCalendar": "加入行事曆",
   "addToReminders": "加入提醒事項",
   "systemActionPendingExplanation": "尚未加入。點擊下方按鈕後，系統會要求權限並寫入你的裝置。",

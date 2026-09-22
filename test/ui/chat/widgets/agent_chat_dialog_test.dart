@@ -807,6 +807,28 @@ void main() {
       expect(find.text(UserStorage.l10n.sendLabel), findsOneWidget);
     });
 
+    testWidgets('recalled source is openable and never labelled newly created',
+        (tester) async {
+      await _pumpDialog(tester,
+          dialog: AgentChatDialog(initialItems: [
+            AIMessageItem('上次的记录提到带报告。', artifacts: [
+              ArtifactItem(ChatArtifact(
+                artifactId: 'record_reference:1',
+                kind: ChatArtifact.kindTimelineCard,
+                operation: ChatArtifact.operationReference,
+                title: '上次复查',
+                targetUri:
+                    ChatArtifact.timelineCardTargetUri('2026/09/17.md#ts_1'),
+              ))
+            ]),
+          ]));
+      expect(
+          find.text(UserStorage.l10n.sourceTraceWithCount(1)), findsOneWidget);
+      expect(find.text(UserStorage.l10n.agentChat.cardCreated), findsNothing);
+      expect(find.text('上次复查'), findsOneWidget);
+      expect(find.text(UserStorage.l10n.artifactOpen), findsOneWidget);
+    });
+
     testWidgets('renders a legacy schedule artifact without a dead link', (
       tester,
     ) async {

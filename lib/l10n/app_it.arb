@@ -498,6 +498,8 @@
   "unknownAction": "Azione sconosciuta",
   "discoveredCalendarEvent": "Evento in calendario in attesa di conferma",
   "discoveredReminder": "Promemoria in attesa di conferma",
+  "reviewInCalendar": "Review in calendar",
+  "calendarEditorExplanation": "Review and edit the prefilled event in the system calendar editor. It is added only when you save there.",
   "addToCalendar": "Aggiungi al calendario",
   "addToReminders": "Aggiungi ai promemoria",
   "systemActionPendingExplanation": "Non ancora aggiunto. Tocca di seguito per richiedere l'autorizzazione e aggiungerla al tuo dispositivo.",

@@ -498,6 +498,8 @@
   "unknownAction": "การดำเนินการที่ไม่รู้จัก",
   "discoveredCalendarEvent": "กิจกรรมในปฏิทินรอการยืนยัน",
   "discoveredReminder": "การเตือนความจำรอการยืนยัน",
+  "reviewInCalendar": "Review in calendar",
+  "calendarEditorExplanation": "Review and edit the prefilled event in the system calendar editor. It is added only when you save there.",
   "addToCalendar": "เพิ่มในปฏิทิน",
   "addToReminders": "เพิ่มในการเตือนความจำ",
   "systemActionPendingExplanation": "ยังไม่ได้เพิ่ม แตะด้านล่างเพื่อขอสิทธิ์และเพิ่มในอุปกรณ์ของคุณ",

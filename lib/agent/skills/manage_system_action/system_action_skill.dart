@@ -1,5 +1,5 @@
 import 'package:dart_agent_core/dart_agent_core.dart';
-import 'package:memex/agent/run_mode/agent_action_approval_service.dart';
+import 'package:memex/agent/run_mode/agent_run_mode.dart';
 import 'package:memex/data/model/chat_artifact.dart';
 import 'package:memex/data/services/system_action_service.dart';
 import 'package:memex/utils/date_util.dart';
@@ -14,23 +14,26 @@ final _logger = getLogger('SystemActionSkill');
 /// must still confirm the action in the UI before Memex requests OS permission
 /// and writes to the device's native Calendar or Reminders store.
 class SystemActionSkill extends Skill {
-  SystemActionSkill({super.forceActivate})
+  SystemActionSkill({String? userId, super.forceActivate})
       : super(
           name: 'manage_calendar_and_reminders',
           description:
               'Prepares a calendar event or reminder for the user to review '
               'and add with the device native Calendar or Reminders app. Use '
-              'only when the user explicitly asks to schedule or be reminded.',
+              'for explicit requests or a clear future commitment in a saved record.',
           systemPrompt: _systemPrompt,
-          tools: _buildTools(),
+          tools: _buildTools(userId),
         );
 
   static const _systemPrompt = '''
 ## Calendar and reminder actions
 
-Use this skill only when the user explicitly asks you to create a calendar
-event or reminder. A mention of a date, a plan, a historical event, or a bug
-report is not permission to create one.
+Use this skill for explicit scheduling requests, or to offer a pending proposal
+for a clear future personal commitment in a saved record. A proposal is not
+permission to write to the device. Historical events, quotations, cancelled or
+hypothetical plans, bug reports and vague wishes do not warrant proposals.
+For record-derived proposals, wait for verified card completion and provide the
+exact fact_id. Never invent an ID or a date/time. Respect rejected proposals.
 
 - Resolve relative dates from the Current Local Time supplied in context.
 - Pass local date-times as `YYYY-MM-DD HH:MM:SS`.
@@ -38,6 +41,8 @@ report is not permission to create one.
 - Use `create_reminder` for a task or prompt with a specific due time. If the
   user did not provide enough information to resolve that time, ask instead of
   guessing.
+- For iOS calendar events, the card opens the prefilled system calendar editor.
+  The user can edit and save there, or cancel without adding anything.
 - Each tool creates a pending proposal. The user must review it and press the
   add button before Memex requests system permission and writes to the device.
 - Never claim the event or reminder is already in the device app after this
@@ -46,7 +51,7 @@ report is not permission to create one.
   the information as a record.
 ''';
 
-  static List<Tool> _buildTools() {
+  static List<Tool> _buildTools(String? userId) {
     return [
       Tool(
         name: 'create_calendar_event',
@@ -78,6 +83,11 @@ report is not permission to create one.
               'type': 'string',
               'description': 'Optional event location.',
             },
+            'fact_id': {
+              'type': 'string',
+              'description':
+                  'Optional verified saved record ID. Required when offering help derived from a record; omit for scheduling-only requests.',
+            },
           },
           'required': ['title', 'start_time'],
         },
@@ -87,6 +97,7 @@ report is not permission to create one.
           String? endTime,
           String? notes,
           String? location,
+          String? factId,
         ) async {
           try {
             final normalizedTitle = _requiredText(title, field: 'title');
@@ -103,15 +114,11 @@ report is not permission to create one.
               );
             }
 
-            final denied = await gateMutatingToolCall(
-              toolName: 'create_calendar_event',
-              summary: '$normalizedTitle · ${_wireDateTime(start)}',
-            );
-            if (denied != null) return denied;
+            _checkWritableMode();
 
-            final actionId = const Uuid().v4();
-            await SystemActionService.instance.createAction(
-              id: actionId,
+            final actionId = await _prepare(
+              userId: userId,
+              factId: factId,
               type: 'calendar',
               data: {
                 'title': normalizedTitle,
@@ -123,6 +130,15 @@ report is not permission to create one.
               },
             );
 
+            final existing =
+                await SystemActionService.instance.getAction(actionId);
+            if (existing != null && existing.status != 'pending') {
+              return AgentToolResult(
+                  content: TextPart(
+                'Existing device proposal $actionId has status ${existing.status}. '
+                'Do not create a duplicate or ask again. No new device write occurred.',
+              ));
+            }
             final artifact = ChatArtifact.systemAction(
               actionId: actionId,
               systemActionKind: 'calendar',
@@ -169,6 +185,11 @@ report is not permission to create one.
               'type': 'string',
               'description': 'Optional reminder details.',
             },
+            'fact_id': {
+              'type': 'string',
+              'description':
+                  'Optional verified saved record ID. Required when offering help derived from a record; omit for scheduling-only requests.',
+            },
           },
           'required': ['title', 'due_date'],
         },
@@ -176,6 +197,7 @@ report is not permission to create one.
           String title,
           String? dueDate,
           String? notes,
+          String? factId,
         ) async {
           try {
             final normalizedTitle = _requiredText(title, field: 'title');
@@ -184,15 +206,11 @@ report is not permission to create one.
               field: 'due_date',
             );
 
-            final denied = await gateMutatingToolCall(
-              toolName: 'create_reminder',
-              summary: '$normalizedTitle · ${_wireDateTime(due)}',
-            );
-            if (denied != null) return denied;
+            _checkWritableMode();
 
-            final actionId = const Uuid().v4();
-            await SystemActionService.instance.createAction(
-              id: actionId,
+            final actionId = await _prepare(
+              userId: userId,
+              factId: factId,
               type: 'reminder',
               data: {
                 'title': normalizedTitle,
@@ -201,6 +219,15 @@ report is not permission to create one.
               },
             );
 
+            final existing =
+                await SystemActionService.instance.getAction(actionId);
+            if (existing != null && existing.status != 'pending') {
+              return AgentToolResult(
+                  content: TextPart(
+                'Existing device proposal $actionId has status ${existing.status}. '
+                'Do not create a duplicate or ask again. No new device write occurred.',
+              ));
+            }
             final artifact = ChatArtifact.systemAction(
               actionId: actionId,
               systemActionKind: 'reminder',
@@ -227,6 +254,43 @@ report is not permission to create one.
         },
       ),
     ];
+  }
+
+  // Proposals already have persistent review UI. Do not pause once to prepare
+  // and a second time to execute; read-only remains enforced at execution too.
+  static void _checkWritableMode() {
+    final metadata = AgentCallToolContext.current?.state.metadata;
+    if (AgentRunMode.fromWire(metadata?[AgentRunMode.metadataKey] as String?) ==
+        AgentRunMode.readOnly) {
+      throw StateError('Device proposals are unavailable in read-only mode.');
+    }
+  }
+
+  static Future<String> _prepare({
+    required String? userId,
+    required String? factId,
+    required String type,
+    required Map<String, dynamic> data,
+  }) async {
+    final sourceId = _optionalText(factId);
+    if (sourceId != null) {
+      final owner = userId ??
+          AgentCallToolContext.current?.state.metadata['userId'] as String?;
+      if (owner == null || owner.isEmpty) {
+        throw StateError('A user context is required for a record proposal.');
+      }
+      return SystemActionService.instance.prepareForRecord(
+        userId: owner,
+        factId: sourceId,
+        type: type,
+        data: data,
+      );
+    }
+    return SystemActionService.instance.createAction(
+      id: const Uuid().v4(),
+      type: type,
+      data: data,
+    );
   }
 
   static String _requiredText(String value, {required String field}) {

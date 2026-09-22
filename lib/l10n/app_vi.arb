@@ -500,6 +500,8 @@
   "unknownAction": "Hành động không xác định",
   "discoveredCalendarEvent": "Sự kiện lịch đang chờ xác nhận",
   "discoveredReminder": "Nhắc nhở đang chờ xác nhận",
+  "reviewInCalendar": "Review in calendar",
+  "calendarEditorExplanation": "Review and edit the prefilled event in the system calendar editor. It is added only when you save there.",
   "addToCalendar": "Thêm vào lịch",
   "addToReminders": "Thêm vào nhắc nhở",
   "systemActionPendingExplanation": "Chưa thêm. Nhấn bên dưới để yêu cầu quyền và thêm vào thiết bị.",

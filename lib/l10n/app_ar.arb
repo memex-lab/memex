@@ -500,6 +500,8 @@
   "unknownAction": "إجراء غير معروف",
   "discoveredCalendarEvent": "تم العثور على حدث تقويم",
   "discoveredReminder": "تم العثور على تذكير",
+  "reviewInCalendar": "Review in calendar",
+  "calendarEditorExplanation": "Review and edit the prefilled event in the system calendar editor. It is added only when you save there.",
   "addToCalendar": "إضافة إلى التقويم",
   "addToReminders": "إضافة إلى التذكيرات",
   "systemActionPendingExplanation": "لم تتم الإضافة بعد. اضغط أدناه لطلب الإذن وإضافته إلى جهازك.",
