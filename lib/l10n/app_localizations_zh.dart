@@ -1047,6 +1047,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get discoveredReminder => '待确认的提醒事项';
 
   @override
+  String get reviewInCalendar => '在日历中确认';
+
+  @override
+  String get calendarEditorExplanation =>
+      '打开系统日历编辑页，查看或修改已填好的信息。只有在系统界面保存后才会添加。';
+
+  @override
   String get addToCalendar => '加到日历';
 
   @override
@@ -4260,6 +4267,13 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get discoveredReminder => '發現提醒事項';
+
+  @override
+  String get reviewInCalendar => '在行事曆中確認';
+
+  @override
+  String get calendarEditorExplanation =>
+      '開啟系統行事曆編輯頁，查看或修改已填好的資訊。只有在系統介面儲存後才會加入。';
 
   @override
   String get addToCalendar => '加入行事曆';

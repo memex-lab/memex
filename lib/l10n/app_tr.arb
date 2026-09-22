@@ -498,6 +498,8 @@
   "unknownAction": "Bilinmeyen eylem",
   "discoveredCalendarEvent": "Onay bekleyen takvim etkinliği",
   "discoveredReminder": "Onay bekleyen hatırlatıcı",
+  "reviewInCalendar": "Review in calendar",
+  "calendarEditorExplanation": "Review and edit the prefilled event in the system calendar editor. It is added only when you save there.",
   "addToCalendar": "Takvime ekle",
   "addToReminders": "Hatırlatıcılara ekle",
   "systemActionPendingExplanation": "Henüz eklenmedi. İzin istemek ve cihazınıza eklemek için aşağıya dokunun.",

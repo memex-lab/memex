@@ -7,7 +7,8 @@ class NativeActionService {
   static const MethodChannel _channel =
       MethodChannel('com.memexlab.memex/system_actions');
 
-  static Future<bool> addCalendarEvent({
+  /// Returns null when the user cancels the system editor.
+  static Future<bool?> addCalendarEvent({
     required String title,
     required DateTime startTime,
     DateTime? endTime,
@@ -23,6 +24,7 @@ class NativeActionService {
         'location': location,
         'notes': notes,
       });
+      if (result == 'cancelled') return null;
       return result == true;
     } catch (error, stackTrace) {
       _logger.severe(

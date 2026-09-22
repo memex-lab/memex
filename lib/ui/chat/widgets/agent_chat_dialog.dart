@@ -3283,6 +3283,9 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   // --- Artifact previews ---
 
   String _artifactHeading(ChatArtifact artifact) {
+    if (artifact.operation == ChatArtifact.operationReference) {
+      return UserStorage.l10n.sourceTraceWithCount(1);
+    }
     switch (artifact.kind) {
       case ChatArtifact.kindTimelineCard:
         return artifact.updated

@@ -500,6 +500,8 @@
   "unknownAction": "未知操作",
   "discoveredCalendarEvent": "待确认的日历事件",
   "discoveredReminder": "待确认的提醒事项",
+  "reviewInCalendar": "在日历中确认",
+  "calendarEditorExplanation": "打开系统日历编辑页，查看或修改已填好的信息。只有在系统界面保存后才会添加。",
   "addToCalendar": "加到日历",
   "addToReminders": "加到提醒事项",
   "systemActionPendingExplanation": "尚未添加。点击下方按钮后，系统会请求权限并写入你的设备。",

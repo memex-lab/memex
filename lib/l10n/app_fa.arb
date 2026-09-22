@@ -500,6 +500,8 @@
   "unknownAction": "اقدام ناشناخته",
   "discoveredCalendarEvent": "رویداد تقویم در انتظار تأیید",
   "discoveredReminder": "یادآور در انتظار تأیید",
+  "reviewInCalendar": "Review in calendar",
+  "calendarEditorExplanation": "Review and edit the prefilled event in the system calendar editor. It is added only when you save there.",
   "addToCalendar": "افزودن به تقویم",
   "addToReminders": "افزودن به یادآورها",
   "systemActionPendingExplanation": "هنوز افزوده نشده است. برای درخواست مجوز و افزودن به دستگاه، پایین را لمس کنید.",

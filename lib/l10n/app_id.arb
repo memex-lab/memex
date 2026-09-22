@@ -500,6 +500,8 @@
   "unknownAction": "Tindakan tidak dikenal",
   "discoveredCalendarEvent": "Acara kalender ditemukan",
   "discoveredReminder": "Pengingat ditemukan",
+  "reviewInCalendar": "Review in calendar",
+  "calendarEditorExplanation": "Review and edit the prefilled event in the system calendar editor. It is added only when you save there.",
   "addToCalendar": "Tambahkan ke kalender",
   "addToReminders": "Tambahkan ke pengingat",
   "systemActionPendingExplanation": "Belum ditambahkan. Ketuk di bawah untuk meminta izin dan menambahkannya ke perangkat Anda.",

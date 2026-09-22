@@ -500,6 +500,8 @@
   "unknownAction": "अज्ञात कार्रवाई",
   "discoveredCalendarEvent": "कैलेंडर ईवेंट मिला",
   "discoveredReminder": "रिमाइंडर मिला",
+  "reviewInCalendar": "Review in calendar",
+  "calendarEditorExplanation": "Review and edit the prefilled event in the system calendar editor. It is added only when you save there.",
   "addToCalendar": "कैलेंडर में जोड़ें",
   "addToReminders": "रिमाइंडर में जोड़ें",
   "systemActionPendingExplanation": "अभी जोड़ा नहीं गया है। अनुमति माँगने और इसे अपने डिवाइस में जोड़ने के लिए नीचे टैप करें।",

@@ -1056,6 +1056,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get discoveredReminder => '미리 알림을 찾았습니다';
 
   @override
+  String get reviewInCalendar => 'Review in calendar';
+
+  @override
+  String get calendarEditorExplanation =>
+      'Review and edit the prefilled event in the system calendar editor. It is added only when you save there.';
+
+  @override
   String get addToCalendar => '캘린더에 추가';
 
   @override

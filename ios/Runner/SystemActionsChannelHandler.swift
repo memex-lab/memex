@@ -1,9 +1,14 @@
 import Flutter
 import EventKit
+import EventKitUI
+import UIKit
 
 /// Handles `com.memexlab.memex/system_actions` MethodChannel.
 /// Supports: addCalendarEvent, addReminder.
-class SystemActionsChannelHandler: NSObject {
+class SystemActionsChannelHandler: NSObject, EKEventEditViewDelegate {
+
+    private var calendarResult: FlutterResult?
+    private var calendarEditor: EKEventEditViewController?
 
     private let eventStore = EKEventStore()
 
@@ -44,34 +49,72 @@ class SystemActionsChannelHandler: NSObject {
         let location = args["location"] as? String
         let notes = args["notes"] as? String
 
-        requestCalendarAccess { [weak self] granted, error in
-            guard let self = self else { return }
-            guard granted, error == nil else {
-                DispatchQueue.main.async {
-                    result(FlutterError(code: "PERMISSION_DENIED",
-                                        message: "Calendar permission denied", details: nil))
-                }
+        DispatchQueue.main.async {
+            guard self.calendarResult == nil else {
+                result(FlutterError(code: "EDITOR_BUSY", message: "Calendar editor already open", details: nil))
                 return
             }
-
-            let event = EKEvent(eventStore: self.eventStore)
-            event.title = title
-            event.startDate = startDate
-            event.endDate = endDate
-            event.location = location
-            event.notes = notes
-            event.calendar = self.eventStore.defaultCalendarForNewEvents
-
-            do {
-                try self.eventStore.save(event, span: .thisEvent)
-                DispatchQueue.main.async { result(true) }
-            } catch {
-                DispatchQueue.main.async {
-                    result(FlutterError(code: "SAVE_ERROR",
-                                        message: error.localizedDescription, details: nil))
+            self.calendarResult = result
+            let presentEditor = {
+                guard let scene = UIApplication.shared.connectedScenes
+                    .compactMap({ $0 as? UIWindowScene })
+                    .first(where: { $0.activationState == .foregroundActive }),
+                      var presenter = scene.windows.first(where: { $0.isKeyWindow })?.rootViewController else {
+                    self.finishCalendar(FlutterError(code: "NO_PRESENTER", message: "No active window", details: nil))
+                    return
+                }
+                while let presented = presenter.presentedViewController {
+                    presenter = presented
+                }
+                guard !presenter.isBeingDismissed, presenter.viewIfLoaded?.window != nil else {
+                    self.finishCalendar(FlutterError(code: "NO_PRESENTER", message: "Window is transitioning", details: nil))
+                    return
+                }
+                let event = EKEvent(eventStore: self.eventStore)
+                event.title = title
+                event.startDate = startDate
+                event.endDate = endDate
+                event.location = location
+                event.notes = notes
+                let editor = EKEventEditViewController()
+                editor.eventStore = self.eventStore
+                editor.event = event
+                editor.editViewDelegate = self
+                // Dismiss through the system Cancel button so the result always resolves.
+                editor.isModalInPresentation = true
+                self.calendarEditor = editor
+                presenter.present(editor, animated: true)
+            }
+            if #available(iOS 17.0, *) {
+                // EventKitUI handles saving without granting Memex calendar access.
+                presentEditor()
+            } else {
+                self.requestCalendarAccess { granted, error in
+                    DispatchQueue.main.async {
+                        if granted && error == nil {
+                            presentEditor()
+                        } else {
+                            self.finishCalendar(FlutterError(code: "PERMISSION_DENIED", message: "Calendar permission denied", details: nil))
+                        }
+                    }
                 }
             }
         }
+    }
+
+    func eventEditViewController(_ controller: EKEventEditViewController,
+                                 didCompleteWith action: EKEventEditViewAction) {
+        guard controller === calendarEditor else { return }
+        controller.dismiss(animated: true) {
+            self.finishCalendar(action == .saved ? (true as Any) : ("cancelled" as Any))
+        }
+    }
+
+    private func finishCalendar(_ value: Any) {
+        let result = calendarResult
+        calendarResult = nil
+        calendarEditor = nil
+        result?(value)
     }
 
     // MARK: - Reminder

@@ -2020,6 +2020,18 @@ abstract class AppLocalizations {
   /// **'Reminder awaiting confirmation'**
   String get discoveredReminder;
 
+  /// No description provided for @reviewInCalendar.
+  ///
+  /// In en, this message translates to:
+  /// **'Review in calendar'**
+  String get reviewInCalendar;
+
+  /// No description provided for @calendarEditorExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'Review and edit the prefilled event in the system calendar editor. It is added only when you save there.'**
+  String get calendarEditorExplanation;
+
   /// No description provided for @addToCalendar.
   ///
   /// In en, this message translates to:

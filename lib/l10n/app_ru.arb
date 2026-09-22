@@ -500,6 +500,8 @@
   "unknownAction": "Неизвестное действие",
   "discoveredCalendarEvent": "Найдено событие календаря",
   "discoveredReminder": "Найдено напоминание",
+  "reviewInCalendar": "Review in calendar",
+  "calendarEditorExplanation": "Review and edit the prefilled event in the system calendar editor. It is added only when you save there.",
   "addToCalendar": "Добавить в календарь",
   "addToReminders": "Добавить в напоминания",
   "systemActionPendingExplanation": "Ещё не добавлено. Нажмите ниже, чтобы запросить разрешение и добавить на устройство.",
