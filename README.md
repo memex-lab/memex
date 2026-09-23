@@ -111,6 +111,7 @@ https://github.com/user-attachments/assets/5048a9b1-47b2-462a-99f3-6a178e183861
 | MiniMax | Anthropic-compatible | MiniMax-M3, MiniMax-M2.7, etc. |
 | Xiaomi MIMO | Anthropic-compatible | mimo-v2.5-pro, mimo-v2.5 |
 | OpenRouter | OpenAI-compatible | Access multiple providers via one API |
+| Requesty | OpenAI-compatible | Access multiple providers via one API |
 | Ollama | OpenAI-compatible (local) | Run models locally on your device |
 
 ## Install
@@ -236,7 +237,7 @@ For Android local development, prefer `globalDev` / `cnDev`; they use isolated p
 | Platforms | iOS, Android |
 | Database | Drift (SQLite) |
 | State Management | Provider + MVVM |
-| LLM Providers | Gemini, OpenAI, Claude, Bedrock, Memex AI, Kimi, Qwen, Doubao, GLM, DeepSeek, MiniMax, MIMO, OpenRouter, Ollama |
+| LLM Providers | Gemini, OpenAI, Claude, Bedrock, Memex AI, Kimi, Qwen, Doubao, GLM, DeepSeek, MiniMax, MIMO, OpenRouter, Requesty, Ollama |
 | Agent Framework | dart_agent_core |
 
 ### Project Structure

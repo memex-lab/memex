@@ -788,6 +788,7 @@
   "providerDeepSeek": "DeepSeek",
   "providerMinimax": "MiniMax",
   "providerOpenRouter": "OpenRouter",
+  "providerRequesty": "Requesty",
   "providerOllama": "Ollama (локально)",
   "providerMimo": "Xiaomi MIMO",
   "providerMemex": "Прокси-сервис Memex",

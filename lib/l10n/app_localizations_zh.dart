@@ -1644,6 +1644,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get providerOpenRouter => 'OpenRouter';
 
   @override
+  String get providerRequesty => 'Requesty';
+
+  @override
   String get providerOllama => 'Ollama (本地)';
 
   @override
@@ -4857,6 +4860,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get providerOpenRouter => 'OpenRouter';
+
+  @override
+  String get providerRequesty => 'Requesty';
 
   @override
   String get providerOllama => 'Ollama（本機）';

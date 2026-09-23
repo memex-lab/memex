@@ -118,6 +118,47 @@ void main() {
     });
   });
 
+  group('Requesty provider', () {
+    test('uses the OpenAI-compatible router defaults', () {
+      expect(LLMConfig.typeRequesty, 'requesty');
+      expect(LLMConfig.providerDisplayName(LLMConfig.typeRequesty), 'Requesty');
+      expect(LLMConfig.displayName(LLMConfig.typeRequesty), 'Requesty');
+      expect(
+        LLMConfig.underlyingClientType(LLMConfig.typeRequesty),
+        LLMConfig.typeChatCompletion,
+      );
+      expect(
+        LLMConfig.defaultBaseUrl(LLMConfig.typeRequesty),
+        'https://router.requesty.ai/v1',
+      );
+    });
+
+    test('lists the managed models', () {
+      expect(LLMConfig.supportsModelListing(LLMConfig.typeRequesty), isTrue);
+      expect(
+        LLMConfig.modelsEndpoint(
+          LLMConfig.typeRequesty,
+          'https://router.eu.requesty.ai/v1/',
+        ),
+        'https://router.eu.requesty.ai/v1/models/managed',
+      );
+    });
+
+    test('requires an API key and base URL', () {
+      const validConfig = LLMConfig(
+        key: 'requesty',
+        type: LLMConfig.typeRequesty,
+        modelId: 'claude-sonnet-5',
+        apiKey: 'sk-test',
+        baseUrl: 'https://router.requesty.ai/v1',
+      );
+
+      expect(validConfig.isValid, isTrue);
+      expect(validConfig.copyWith(apiKey: '').isValid, isFalse);
+      expect(validConfig.copyWith(baseUrl: '').isValid, isFalse);
+    });
+  });
+
   group('current model recommendations', () {
     test('uses the canonical GPT-5.6 Sol ID for new global configurations', () {
       AppFlavor.init('global');
@@ -168,6 +209,7 @@ void main() {
         LLMConfig.typeMinimax: 'MiniMax-M3',
         LLMConfig.typeMimo: 'mimo-v2.5-pro',
         LLMConfig.typeOpenRouter: 'anthropic/claude-fable-5',
+        LLMConfig.typeRequesty: 'claude-fable-5',
         LLMConfig.typeOllama: 'qwen3.5:9b',
       };
 

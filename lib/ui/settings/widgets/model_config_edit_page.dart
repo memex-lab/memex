@@ -564,6 +564,7 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
         _ProviderEntry(LLMConfig.typeDeepSeek, l10n.providerDeepSeek),
         _ProviderEntry(LLMConfig.typeMimo, l10n.providerMimo),
         _ProviderEntry(LLMConfig.typeOpenRouter, l10n.providerOpenRouter),
+        _ProviderEntry(LLMConfig.typeRequesty, l10n.providerRequesty),
         _ProviderEntry(LLMConfig.typeOllama, l10n.providerOllama),
       ],
     };
@@ -912,6 +913,7 @@ class _ModelConfigEditPageState extends State<ModelConfigEditPage>
       LLMConfig.typeDeepSeek => 'deepseek',
       LLMConfig.typeMinimax => 'minimax',
       LLMConfig.typeOpenRouter => 'openrouter',
+      LLMConfig.typeRequesty => 'requesty',
       LLMConfig.typeOllama => 'ollama',
       _ => 'custom',
     };

@@ -1700,6 +1700,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get providerOpenRouter => 'OpenRouter';
 
   @override
+  String get providerRequesty => 'Requesty';
+
+  @override
   String get providerOllama => 'Ollama (स्थानीय प्रदाता)';
 
   @override

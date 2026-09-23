@@ -26,7 +26,7 @@ Memex connects to third-party LLM (Large Language Model) providers only when you
 - Zhipu GLM — [Privacy Policy](https://docs.bigmodel.cn/cn/terms/privacy-policy)
 - MiniMax — [Privacy Policy](https://platform.minimaxi.com/protocol/privacy-policy)
 - Xiaomi MIMO — [Privacy Policy](https://platform.xiaomimimo.com/#/docs/terms/privacy-policy)
-- OpenRouter, Ollama, and other aggregator/local inference platforms
+- OpenRouter, Requesty, Ollama, and other aggregator/local inference platforms
 
 When you use any of these services, the following types of data may be sent directly from your device to the provider you selected:
 

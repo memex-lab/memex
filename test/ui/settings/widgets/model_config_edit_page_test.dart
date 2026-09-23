@@ -208,6 +208,29 @@ void main() {
       expect(find.text('https://api.deepseek.com'), findsOneWidget);
       expect(find.text('deepseek-v4-flash'), findsOneWidget);
     });
+
+    testWidgets('renders Requesty configuration with router defaults',
+        (tester) async {
+      AppFlavor.init('global');
+      const requestyConfig = LLMConfig(
+        key: 'requesty',
+        type: LLMConfig.typeRequesty,
+        modelId: 'claude-sonnet-5',
+        apiKey: 'sk-test',
+        baseUrl: 'https://router.requesty.ai/v1',
+      );
+
+      await tester.pumpWidget(
+        buildTestableWidget(
+          const ModelConfigEditPage(duplicateSource: requestyConfig),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.textContaining('Requesty'), findsWidgets);
+      expect(find.text('https://router.requesty.ai/v1'), findsOneWidget);
+      expect(find.text('claude-sonnet-5'), findsOneWidget);
+    });
   });
 
   group('ModelConfigEditPage simple setup mode', () {

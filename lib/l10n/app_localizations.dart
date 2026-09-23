@@ -3118,6 +3118,12 @@ abstract class AppLocalizations {
   /// **'OpenRouter'**
   String get providerOpenRouter;
 
+  /// No description provided for @providerRequesty.
+  ///
+  /// In en, this message translates to:
+  /// **'Requesty'**
+  String get providerRequesty;
+
   /// No description provided for @providerOllama.
   ///
   /// In en, this message translates to:

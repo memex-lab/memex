@@ -788,6 +788,7 @@
   "providerDeepSeek": "DeepSeek",
   "providerMinimax": "MiniMax",
   "providerOpenRouter": "OpenRouter",
+  "providerRequesty": "Requesty",
   "providerOllama": "Ollama(로컬)",
   "providerMimo": "Xiaomi MIMO",
   "providerMemex": "Memex 프록시 서비스",

@@ -47,6 +47,7 @@ class AppConfig {
     LLMConfig.typeMimo,
     // Aggregators
     LLMConfig.typeOpenRouter,
+    LLMConfig.typeRequesty,
     LLMConfig.typeOllama,
   ];
 

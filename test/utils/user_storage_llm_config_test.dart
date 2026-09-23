@@ -81,6 +81,21 @@ void main() {
       expect(resources.modelConfig.model, 'deepseek-v4-flash');
     });
 
+    test('Requesty builds an OpenAI-compatible chat client', () async {
+      const config = LLMConfig(
+        key: 'requesty',
+        type: LLMConfig.typeRequesty,
+        modelId: 'gpt-5.6-sol',
+        apiKey: 'sk-test',
+        baseUrl: 'https://router.requesty.ai/v1',
+      );
+
+      final resources = await UserStorage.buildLLMResources(config);
+
+      expect(resources.client, isA<OpenAIClient>());
+      expect(resources.modelConfig.model, 'gpt-5.6-sol');
+    });
+
     test(
       'model role service maps text role to selected global default',
       () async {

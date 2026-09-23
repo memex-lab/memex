@@ -786,6 +786,7 @@
   "providerDeepSeek": "Derin Arama",
   "providerMinimax": "MiniMaks",
   "providerOpenRouter": "Açık Yönlendirici",
+  "providerRequesty": "Requesty",
   "providerOllama": "Ollama (Yerel)",
   "providerMimo": "Xiaomi MIMO",
   "providerMemex": "Memex proxy hizmeti",

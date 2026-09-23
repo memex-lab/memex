@@ -788,6 +788,7 @@
   "providerDeepSeek": "DeepSeek (官方 API)",
   "providerMinimax": "MiniMax",
   "providerOpenRouter": "OpenRouter",
+  "providerRequesty": "Requesty",
   "providerOllama": "Ollama (本地)",
   "providerMimo": "Xiaomi MIMO (小米)",
   "providerMemex": "Memex 代理服务",

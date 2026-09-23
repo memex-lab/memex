@@ -1659,6 +1659,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get providerOpenRouter => 'OpenRouter';
 
   @override
+  String get providerRequesty => 'Requesty';
+
+  @override
   String get providerOllama => 'Ollama(로컬)';
 
   @override

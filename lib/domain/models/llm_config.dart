@@ -19,6 +19,7 @@ class LLMConfig {
   static const String typeDeepSeek = 'deepseek';
   static const String typeMinimax = 'minimax';
   static const String typeOpenRouter = 'openrouter';
+  static const String typeRequesty = 'requesty';
   static const String typeOllama = 'ollama';
   static const String typeMimo = 'mimo';
   static const String typeMemex = 'memex';
@@ -58,6 +59,8 @@ class LLMConfig {
         return 'Xiaomi MIMO';
       case typeOpenRouter:
         return 'OpenRouter';
+      case typeRequesty:
+        return 'Requesty';
       case typeOllama:
         return 'Ollama';
       case typeMemex:
@@ -76,6 +79,7 @@ class LLMConfig {
       case typeZhipu:
       case typeDeepSeek:
       case typeOpenRouter:
+      case typeRequesty:
       case typeOllama:
       case typeMemex:
         return typeChatCompletion;
@@ -120,6 +124,8 @@ class LLMConfig {
         return 'MiniMax';
       case typeOpenRouter:
         return 'OpenRouter';
+      case typeRequesty:
+        return 'Requesty';
       case typeOllama:
         return 'Ollama';
       case typeMemex:
@@ -210,6 +216,23 @@ class LLMConfig {
           'z-ai/glm-5.2',
           'xiaomi/mimo-v2.5-pro',
           'moonshotai/kimi-k2.7-code',
+        };
+      case typeRequesty:
+        return const {
+          'claude-fable-5',
+          'claude-opus-5',
+          'claude-sonnet-5',
+          'gpt-5.6-sol',
+          'gpt-5.6-terra',
+          'gpt-5.6-luna',
+          'gemini-3.6-flash',
+          'gemini-3.1-pro-preview',
+          'qwen3.8-max',
+          'deepseek-v4-pro',
+          'minimax-m3',
+          'glm-5.2',
+          'mimo-v2.5-pro',
+          'kimi-k2.7-code',
         };
       case typeOllama:
         return const {'qwen3.5:9b', 'gemma4:12b', 'llama4:scout'};
@@ -328,6 +351,23 @@ class LLMConfig {
           'xiaomi/mimo-v2.5-pro',
           'moonshotai/kimi-k2.7-code',
         ];
+      case typeRequesty:
+        return const [
+          'claude-fable-5',
+          'claude-opus-5',
+          'claude-sonnet-5',
+          'gpt-5.6-sol',
+          'gpt-5.6-terra',
+          'gpt-5.6-luna',
+          'gemini-3.6-flash',
+          'gemini-3.1-pro-preview',
+          'qwen3.8-max',
+          'deepseek-v4-pro',
+          'minimax-m3',
+          'glm-5.2',
+          'mimo-v2.5-pro',
+          'kimi-k2.7-code',
+        ];
       case typeOllama:
         return const [
           'qwen3.5:9b',
@@ -372,6 +412,7 @@ class LLMConfig {
       case typeMinimax:
       case typeMimo:
       case typeOpenRouter:
+      case typeRequesty:
       case typeOllama:
       case typeGemini:
       case typeMemex:
@@ -392,6 +433,10 @@ class LLMConfig {
         : baseUrl;
     if (type == typeClaude || type == typeMinimax || type == typeMimo) {
       return base.endsWith('/v1') ? '$base/models' : '$base/v1/models';
+    }
+    if (type == typeRequesty) {
+      // Curated managed routing policies, usable as model IDs as-is.
+      return '$base/models/managed';
     }
     return '$base/models';
   }
@@ -454,6 +499,7 @@ class LLMConfig {
             id.startsWith('gemma4') ||
             id.startsWith('llama4');
       case typeOpenRouter:
+      case typeRequesty:
       case typeMemex:
         return id.contains('gemini') ||
             id.contains('claude') ||
@@ -497,6 +543,8 @@ class LLMConfig {
         return 'https://api.minimaxi.com/anthropic';
       case typeOpenRouter:
         return 'https://openrouter.ai/api/v1';
+      case typeRequesty:
+        return 'https://router.requesty.ai/v1';
       case typeOllama:
         return 'http://localhost:11434/v1';
       case typeMemex:
@@ -579,6 +627,7 @@ class LLMConfig {
             type == typeMinimax ||
             type == typeMimo ||
             type == typeOpenRouter ||
+            type == typeRequesty ||
             type == typeMemex) &&
         getEffectiveApiKey().isEmpty) {
       return false;
@@ -596,6 +645,7 @@ class LLMConfig {
       typeDeepSeek,
       typeMinimax,
       typeOpenRouter,
+      typeRequesty,
       typeOllama,
       typeMimo,
       typeMemex,

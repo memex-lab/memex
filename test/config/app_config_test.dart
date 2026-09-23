@@ -11,6 +11,12 @@ void main() {
       expect(AppConfig.availableProviders, contains(LLMConfig.typeDeepSeek));
     });
 
+    test('includes Requesty in global flavor', () {
+      AppFlavor.init('global');
+
+      expect(AppConfig.availableProviders, contains(LLMConfig.typeRequesty));
+    });
+
     test('excludes Memex proxy service from manual providers', () {
       AppFlavor.init('global');
 
@@ -23,6 +29,15 @@ void main() {
       AppFlavor.init('cn');
 
       expect(AppConfig.availableProviders, contains(LLMConfig.typeDeepSeek));
+    });
+
+    test('excludes Requesty from CN flavor like OpenRouter', () {
+      AppFlavor.init('cn');
+
+      expect(
+        AppConfig.availableProviders,
+        isNot(contains(LLMConfig.typeRequesty)),
+      );
     });
   });
 }

@@ -111,6 +111,7 @@ https://github.com/user-attachments/assets/37e59089-9f94-44dc-8265-269045ce982f
 | MiniMax | Anthropic 兼容 | MiniMax-M3、MiniMax-M2.7 等 |
 | 小米 MIMO | Anthropic 兼容 | mimo-v2.5-pro、mimo-v2.5 |
 | OpenRouter | OpenAI 兼容 | 通过一个 API 访问多个提供商 |
+| Requesty | OpenAI 兼容 | 通过一个 API 访问多个提供商 |
 | Ollama | OpenAI 兼容（本地） | 在本地设备上运行模型 |
 
 ## 安装
@@ -236,7 +237,7 @@ Android 本地开发优先使用 `globalDev` / `cnDev`，它们有独立包名�
 | 平台 | iOS、Android |
 | 数据库 | Drift (SQLite) |
 | 状态管理 | Provider + MVVM |
-| LLM | Gemini、OpenAI、Claude、Bedrock、Memex AI、Kimi、通义千问、豆包、智谱 GLM、DeepSeek、MiniMax、MIMO、OpenRouter、Ollama |
+| LLM | Gemini、OpenAI、Claude、Bedrock、Memex AI、Kimi、通义千问、豆包、智谱 GLM、DeepSeek、MiniMax、MIMO、OpenRouter、Requesty、Ollama |
 | Agent 框架 | dart_agent_core |
 
 ### 项目结构

@@ -765,6 +765,7 @@ class UserStorage {
       case LLMConfig.typeZhipu:
       case LLMConfig.typeDeepSeek:
       case LLMConfig.typeOpenRouter:
+      case LLMConfig.typeRequesty:
       case LLMConfig.typeOllama:
       case LLMConfig.typeMemex:
         client = OpenAIClient(

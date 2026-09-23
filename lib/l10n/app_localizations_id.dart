@@ -1711,6 +1711,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get providerOpenRouter => 'OpenRouter';
 
   @override
+  String get providerRequesty => 'Requesty';
+
+  @override
   String get providerOllama => 'Ollama (Lokal)';
 
   @override

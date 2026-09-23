@@ -1686,6 +1686,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get providerOpenRouter => 'OpenRouter';
 
   @override
+  String get providerRequesty => 'Requesty';
+
+  @override
   String get providerOllama => 'Ollama المحلي';
 
   @override

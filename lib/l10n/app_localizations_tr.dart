@@ -1711,6 +1711,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get providerOpenRouter => 'Açık Yönlendirici';
 
   @override
+  String get providerRequesty => 'Requesty';
+
+  @override
   String get providerOllama => 'Ollama (Yerel)';
 
   @override
