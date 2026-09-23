@@ -1178,7 +1178,7 @@
   "speechTranscribing": "Recognizing...",
   "speechNoResult": "No speech detected",
   "useLocalSpeechToTextTitle": "Use local speech to text",
-  "useLocalSpeechToTextDesc": "When enabled, audio is transcribed on-device before sending — useful for models that do not support audio input. When disabled, the original audio is sent directly to the model.",
+  "useLocalSpeechToTextDesc": "When enabled, audio is transcribed on-device before sending — useful for models that do not support audio input. When disabled, audio is transcribed by your configured cloud model (requires audio input support).",
   "pendingAiProcessingHint": "Set up AI model to process",
   "demoWelcome": "Welcome to Memex!\nLet's take a quick tour of what AI can do for your records.",
   "demoTapAdd": "Tap here to create your first record",
