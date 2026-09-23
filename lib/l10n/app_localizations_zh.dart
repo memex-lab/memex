@@ -2462,7 +2462,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get useLocalSpeechToTextDesc =>
-      '开启时，会先在设备上把音频转成文字再发送，这适合不支持音频输入的模型。关闭后，会直接把原始音频发送给模型处理。';
+      '开启时，会先在设备上把音频转成文字再发送，这适合不支持音频输入的模型。关闭后，由已配置的云端模型进行转录（模型需支持音频输入）。';
 
   @override
   String get pendingAiProcessingHint => '配置 AI 模型以自动整理此记录';

@@ -2545,7 +2545,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get useLocalSpeechToTextDesc =>
-      'When enabled, audio is transcribed on-device before sending — useful for models that do not support audio input. When disabled, the original audio is sent directly to the model.';
+      'When enabled, audio is transcribed on-device before sending — useful for models that do not support audio input. When disabled, audio is transcribed by your configured cloud model (requires audio input support).';
 
   @override
   String get pendingAiProcessingHint => 'Set up AI model to process';
