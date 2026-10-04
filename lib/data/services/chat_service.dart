@@ -23,6 +23,8 @@ import 'package:memex/domain/models/llm_config.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/chat_session_storage.dart';
 import 'package:memex/data/services/local_task_executor.dart';
+import 'package:memex/data/services/task_handlers/llm_error_utils.dart';
+import 'package:memex/data/services/timeline_card_event_publisher.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/time_context.dart';
 import 'package:memex/domain/models/agent_definitions.dart';
@@ -42,8 +44,13 @@ String chatErrorUserNotLoggedIn() => UserStorage.l10n.userIdNotFound;
 String chatErrorEmptyMessage() => UserStorage.l10n.unknownError;
 
 @visibleForTesting
-String chatErrorOperationFailed(Object error) =>
-    UserStorage.l10n.operationFailed('$error');
+String chatErrorOperationFailed(Object error) {
+  final category = classifyError(error);
+  if (category == LlmErrorCategory.unknownError) {
+    return UserStorage.l10n.operationFailed('$error');
+  }
+  return getLocalizedErrorMessage(category, error);
+}
 
 // --- Chat Service ---
 
@@ -1001,7 +1008,7 @@ class ChatService {
       } catch (e) {
         _logger.severe('Agent run failed', e);
         if (!run.isClosed) {
-          run.add(ChatErrorEvent(turnId, e.toString()));
+          run.add(ChatErrorEvent(turnId, chatErrorOperationFailed(e)));
           if (await _shouldCloseRunAfterTask(taskId)) {
             run.close();
           }
@@ -1150,7 +1157,9 @@ class ChatService {
       if (event.error != null) {
         if (!stream.isClosed) {
           stream.add(ChatAgentStoppedEvent(turnId));
-          stream.add(ChatErrorEvent(turnId, event.error.toString()));
+          stream.add(
+            ChatErrorEvent(turnId, chatErrorOperationFailed(event.error!)),
+          );
           if (await _shouldCloseRunAfterTask(taskId)) {
             stream.close();
           }
@@ -1465,5 +1474,82 @@ class ChatService {
   ) async {
     if (!await _chatStorage.sessionExists(userId, sessionId)) return false;
     return _chatStorage.hasAssistantMessageForTurn(userId, sessionId, turnId);
+  }
+
+  Future<void> handleSuperAgentChatTurnFailure(
+    String userId,
+    Map<String, dynamic> payload,
+    TaskContext context,
+    Object error,
+    StackTrace? stackTrace,
+  ) async {
+    await handleGenericAgentFailure(
+      userId,
+      payload,
+      context,
+      error,
+      stackTrace,
+    );
+    await markProcessingCardFailedForSuperAgentTurn(
+      userId: userId,
+      payload: payload,
+      error: error,
+      resolveAgentStateSessionId: (chatSessionId) =>
+          _resolveAgentStateSessionId(userId, chatSessionId),
+    );
+  }
+}
+
+const _preMintedFactIdMetadataKey = 'super_agent_pre_minted_record_fact_id';
+const _preMintedTurnIdMetadataKey = 'super_agent_pre_minted_record_turn_id';
+
+@visibleForTesting
+Future<void> markProcessingCardFailedForSuperAgentTurn({
+  required String userId,
+  required Map<String, dynamic> payload,
+  required Object error,
+  required Future<String> Function(String chatSessionId)
+      resolveAgentStateSessionId,
+}) async {
+  final chatSessionId = payload['session_id'] as String?;
+  final turnId = payload['turn_id'] as String?;
+  if (chatSessionId == null || chatSessionId.isEmpty) return;
+
+  final agentStateSessionId =
+      (payload['agent_state_session_id'] as String?)?.trim().isNotEmpty == true
+          ? (payload['agent_state_session_id'] as String).trim()
+          : await resolveAgentStateSessionId(chatSessionId);
+
+  final state = await loadOrCreateAgentState(
+    agentStateSessionId,
+    {'userId': userId},
+  );
+  final metadataTurnId =
+      state.metadata[_preMintedTurnIdMetadataKey]?.toString();
+  if (turnId != null &&
+      metadataTurnId != null &&
+      metadataTurnId.isNotEmpty &&
+      metadataTurnId != turnId) {
+    return;
+  }
+
+  final factId = state.metadata[_preMintedFactIdMetadataKey]?.toString().trim();
+  if (factId == null || factId.isEmpty) return;
+
+  final failureReason = getLocalizedErrorMessage(classifyError(error), error);
+  final updated = await FileSystemService.instance.updateCardFile(
+    userId,
+    factId,
+    (card) {
+      if (card.status != 'processing') return card;
+      return card.copyWith(status: 'failed', failureReason: failureReason);
+    },
+  );
+  if (updated != null) {
+    await emitTimelineCardUpdated(
+      userId: userId,
+      cardId: factId,
+      cardData: updated,
+    );
   }
 }

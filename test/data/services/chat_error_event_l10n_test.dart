@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:memex/data/services/chat_service.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -18,6 +19,16 @@ void main() {
     expect(
       chatErrorOperationFailed('timeout'),
       UserStorage.l10n.operationFailed('timeout'),
+    );
+    expect(
+      chatErrorOperationFailed(
+        AgentException(
+          AgentExceptionCode.unknown,
+          'Agent run failed',
+          error: Exception('Failed host lookup: api.example.com'),
+        ),
+      ),
+      UserStorage.l10n.llmNetworkError,
     );
   });
 }

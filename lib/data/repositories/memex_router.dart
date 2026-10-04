@@ -360,6 +360,10 @@ class MemexRouter {
       ChatService.instance.handleSuperAgentChatTurnTask,
       concurrencyPolicy: TaskConcurrencyPolicy.byUser(),
     );
+    executor.registerFailureHandler(
+      'super_agent_chat_turn_task',
+      ChatService.instance.handleSuperAgentChatTurnFailure,
+    );
     executor.registerHandler('fts_index_update', handleFtsIndexUpdateImpl);
     executor.registerHandler(
       'comment_agent_task',

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:dart_agent_core/dart_agent_core.dart';
+import 'package:dio/dio.dart';
 import 'package:logging/logging.dart';
 import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/data/services/local_task_executor.dart';
@@ -46,6 +47,13 @@ LlmErrorCategory classifyError(Object error) {
   if (actual is SocketException || actual is TimeoutException) {
     return LlmErrorCategory.networkError;
   }
+  if (actual is DioException &&
+      (actual.type == DioExceptionType.connectionError ||
+          actual.type == DioExceptionType.connectionTimeout ||
+          actual.type == DioExceptionType.receiveTimeout ||
+          actual.type == DioExceptionType.sendTimeout)) {
+    return LlmErrorCategory.networkError;
+  }
 
   final errorStr = actual.toString();
 
@@ -62,7 +70,11 @@ LlmErrorCategory classifyError(Object error) {
     return LlmErrorCategory.serverError;
   }
   if (errorStr.contains('SocketException') ||
-      errorStr.contains('TimeoutException')) {
+      errorStr.contains('TimeoutException') ||
+      errorStr.contains('Failed host lookup') ||
+      errorStr.contains('failed host lookup') ||
+      errorStr.contains('Connection refused') ||
+      errorStr.contains('Network is unreachable')) {
     return LlmErrorCategory.networkError;
   }
 
