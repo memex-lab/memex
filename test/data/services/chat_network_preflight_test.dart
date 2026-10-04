@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:memex/data/model/chat_events.dart';
 import 'package:memex/data/services/chat_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/db/app_database.dart';
