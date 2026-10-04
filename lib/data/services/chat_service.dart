@@ -24,6 +24,7 @@ import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/chat_session_storage.dart';
 import 'package:memex/data/services/local_task_executor.dart';
 import 'package:memex/utils/logger.dart';
+import 'package:memex/utils/network_reachability.dart';
 import 'package:memex/utils/time_context.dart';
 import 'package:memex/domain/models/agent_definitions.dart';
 import 'package:memex/utils/user_storage.dart';
@@ -40,6 +41,9 @@ String chatErrorUserNotLoggedIn() => UserStorage.l10n.userIdNotFound;
 
 @visibleForTesting
 String chatErrorEmptyMessage() => UserStorage.l10n.unknownError;
+
+@visibleForTesting
+Future<bool> Function()? chatNetworkReachabilityCheck;
 
 @visibleForTesting
 String chatErrorOperationFailed(Object error) =>
@@ -492,6 +496,16 @@ class ChatService {
 
     final runAlreadyActive = _runRegistry.isActive(finalSessionId);
     final run = _runRegistry.getOrStart(finalSessionId);
+
+    final reachabilityCheck =
+        chatNetworkReachabilityCheck ?? canReachPublicInternet;
+    if (!await reachabilityCheck()) {
+      yield ChatErrorEvent(turnId, UserStorage.l10n.llmNetworkError);
+      if (!runAlreadyActive) {
+        run.close();
+      }
+      return;
+    }
 
     try {
       final previousTaskId = await LocalTaskExecutor.instance.getLastTaskByType(
