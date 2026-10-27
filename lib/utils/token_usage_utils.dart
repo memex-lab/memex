@@ -26,6 +26,15 @@ class TokenUsageUtils {
     final recorded = _asBool(recordedValue);
     if (recorded != null) return recorded;
 
+    // Live adapters normalize usage before Memex receives it. In particular,
+    // dart_agent_core 2.1.8 includes Claude cache reads/writes in promptTokens,
+    // even though originalUsage still contains Anthropic's separate counts.
+    if (client != null) {
+      final semantics = cachedTokensIncludedInPromptForClient(client);
+      if (semantics != null) return semantics;
+    }
+
+    // Keep the legacy inference for stored records without an explicit flag.
     final usage = originalUsage is Map ? originalUsage : null;
     if (usage != null) {
       if (usage.containsKey('cache_read_input_tokens') ||
@@ -39,15 +48,15 @@ class TokenUsageUtils {
       }
     }
 
-    if (client == null) return null;
-    return cachedTokensIncludedInPromptForClient(client);
+    return null;
   }
 
   static bool? cachedTokensIncludedInPromptForClient(Object client) {
-    if (client is ClaudeClient || client is BedrockClaudeClient) {
+    if (client is BedrockClaudeClient) {
       return false;
     }
-    if (client is GeminiClient ||
+    if (client is ClaudeClient ||
+        client is GeminiClient ||
         client is GeminiOAuthClient ||
         client is OpenAIClient ||
         client is ResponsesClient ||
@@ -68,9 +77,9 @@ class TokenUsageUtils {
 
   /// Returns the total input-token denominator for cache-rate display.
   ///
-  /// When [cachedTokensIncludedInPrompt] is true (OpenAI/Gemini), prompt
+  /// When [cachedTokensIncludedInPrompt] is true, prompt
   /// already contains cached, so the denominator is just prompt.
-  /// When false (Claude), cached is separate, so denominator = prompt + cached.
+  /// When false (Bedrock/legacy Claude), denominator = prompt + cached.
   static int effectivePromptTokens({
     required int promptTokens,
     required int cachedTokens,
