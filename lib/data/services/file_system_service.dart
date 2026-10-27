@@ -327,42 +327,56 @@ class FileSystemService {
       return [];
     }
 
-    final cardFiles = <String>[];
-
-    // Iterate each day
+    // One directory listing per month. The old loop listed Cards/YYYY/MM again
+    // for every day and stat'd every file in that folder each time.
+    final daysByMonth = <String, List<String>>{};
     var currentDate = startDate;
     while (currentDate.isBefore(endDate) ||
         currentDate.isAtSameMomentAs(endDate)) {
       final year = currentDate.year.toString();
       final month = currentDate.month.toString().padLeft(2, '0');
       final day = currentDate.day.toString().padLeft(2, '0');
+      (daysByMonth['$year/$month'] ??= <String>[]).add(day);
+      currentDate = DateTime(
+        currentDate.year,
+        currentDate.month,
+        currentDate.day,
+      ).add(const Duration(days: 1));
+    }
 
-      // Month dir: Cards/YYYY/MM
-      final monthDir = path.join(cardsPath, year, month);
-
-      if (await _baseService.exists(monthDir) &&
-          await _baseService.isDirectory(monthDir)) {
-        // Day's cards: DD_ts_*.yaml
-        try {
-          final items = await _baseService.listDirectory(monthDir);
-          for (final item in items) {
-            final itemPath = path.join(monthDir, item);
-            if (await _baseService.isFile(itemPath)) {
-              final name = path.basename(item);
-              if (name.startsWith('${day}_ts_') && name.endsWith('.yaml')) {
-                cardFiles.add(itemPath);
-              }
-            }
-          }
-        } catch (e) {
-          _logger.warning('Failed to read directory $monthDir: $e');
-        }
+    final cardFiles = <String>[];
+    for (final entry in daysByMonth.entries) {
+      final parts = entry.key.split('/');
+      final monthDir = path.join(cardsPath, parts[0], parts[1]);
+      final days = entry.value.toSet();
+      if (!await _baseService.exists(monthDir) ||
+          !await _baseService.isDirectory(monthDir)) {
+        continue;
       }
 
-      // Next day
-      currentDate =
-          DateTime(currentDate.year, currentDate.month, currentDate.day)
-              .add(const Duration(days: 1));
+      final filesByDay = <String, List<String>>{};
+      try {
+        final items = await _baseService.listDirectory(monthDir);
+        for (final item in items) {
+          final name = path.basename(item);
+          if (!name.endsWith('.yaml')) continue;
+          final separator = name.indexOf('_');
+          if (separator <= 0) continue;
+          final day = name.substring(0, separator);
+          if (!days.contains(day) || !name.startsWith('${day}_ts_')) continue;
+          final itemPath = path.join(monthDir, item);
+          if (!await _baseService.isFile(itemPath)) continue;
+          (filesByDay[day] ??= <String>[]).add(itemPath);
+        }
+      } catch (e) {
+        _logger.warning('Failed to read directory $monthDir: $e');
+        continue;
+      }
+
+      for (final day in entry.value) {
+        final matches = filesByDay[day];
+        if (matches != null) cardFiles.addAll(matches);
+      }
     }
 
     return cardFiles;
