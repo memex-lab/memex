@@ -1,7 +1,5 @@
 {
-  "chatPreparingMessage": "संदेश तैयार हो रहा है…",
-  "chatQueuedMessage": "कतार में…",
-  "chatThinkingMessage": "सोच रहा है…",
+  "chatProcessingMessage": "प्रोसेस हो रहा है…",
 
   "@@locale": "hi",
   "timesLabel": "बार",

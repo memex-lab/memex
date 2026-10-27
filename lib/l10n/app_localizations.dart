@@ -129,23 +129,11 @@ abstract class AppLocalizations {
     Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant')
   ];
 
-  /// No description provided for @chatPreparingMessage.
+  /// No description provided for @chatProcessingMessage.
   ///
   /// In en, this message translates to:
-  /// **'Preparing message…'**
-  String get chatPreparingMessage;
-
-  /// No description provided for @chatQueuedMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'Queued…'**
-  String get chatQueuedMessage;
-
-  /// No description provided for @chatThinkingMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'Thinking…'**
-  String get chatThinkingMessage;
+  /// **'Processing…'**
+  String get chatProcessingMessage;
 
   /// No description provided for @timesLabel.
   ///

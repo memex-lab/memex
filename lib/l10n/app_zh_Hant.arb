@@ -1,7 +1,5 @@
 {
-  "chatPreparingMessage": "正在準備訊息…",
-  "chatQueuedMessage": "排隊中…",
-  "chatThinkingMessage": "正在思考…",
+  "chatProcessingMessage": "正在處理…",
 
   "@@locale": "zh_Hant",
   "timesLabel": "次數",

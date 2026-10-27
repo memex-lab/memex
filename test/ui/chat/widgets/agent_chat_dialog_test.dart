@@ -50,15 +50,15 @@ void main() {
     expect(find.text('First reply', findRichText: true), findsOneWidget);
     await active.close();
     await tester.pump();
-    expect(find.text(UserStorage.l10n.chatPreparingMessage), findsOneWidget);
+    expect(find.text(UserStorage.l10n.chatProcessingMessage), findsOneWidget);
 
     next.add(ChatTurnQueuedEvent('second', 'run-2'));
     next.add(ChatRunAttachedEvent('run-2'));
     await tester.pump();
-    expect(find.text(UserStorage.l10n.chatQueuedMessage), findsOneWidget);
+    expect(find.text(UserStorage.l10n.chatProcessingMessage), findsOneWidget);
     next.add(ChatAgentStartedEvent('second'));
     await tester.pump();
-    expect(find.text(UserStorage.l10n.chatThinkingMessage), findsOneWidget);
+    expect(find.text(UserStorage.l10n.chatProcessingMessage), findsOneWidget);
     next.add(ChatResponseChunkEvent('second', 'Second reply', isDone: true));
     next.add(ChatAgentStoppedEvent('second'));
     await tester.pump(const Duration(milliseconds: 50));
@@ -92,10 +92,10 @@ void main() {
     await tester.pump();
     active.add(ChatAgentStoppedEvent('first'));
     await tester.pump();
-    expect(find.text(UserStorage.l10n.chatQueuedMessage), findsOneWidget);
+    expect(find.text(UserStorage.l10n.chatProcessingMessage), findsOneWidget);
     active.add(ChatAgentStartedEvent('second'));
     await tester.pump();
-    expect(find.text(UserStorage.l10n.chatThinkingMessage), findsOneWidget);
+    expect(find.text(UserStorage.l10n.chatProcessingMessage), findsOneWidget);
     active.add(ChatResponseChunkEvent('second', 'Queued reply', isDone: true));
     active.add(ChatAgentStoppedEvent('second'));
     await tester.pump(const Duration(milliseconds: 50));
@@ -123,7 +123,7 @@ void main() {
     await next.close();
     await tester.pump();
     expect(find.text('Cannot read attachment'), findsOneWidget);
-    expect(find.text(UserStorage.l10n.chatThinkingMessage), findsOneWidget);
+    expect(find.text(UserStorage.l10n.chatProcessingMessage), findsOneWidget);
     active.add(ChatResponseChunkEvent('first', 'Still listening', isDone: true));
     await tester.pump(const Duration(milliseconds: 50));
     expect(find.text('Still listening', findRichText: true), findsOneWidget);

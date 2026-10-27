@@ -1,7 +1,5 @@
 {
-  "chatPreparingMessage": "กำลังเตรียมข้อความ…",
-  "chatQueuedMessage": "อยู่ในคิว…",
-  "chatThinkingMessage": "กำลังคิด…",
+  "chatProcessingMessage": "กำลังประมวลผล…",
 
   "@@locale": "th",
   "timesLabel": "ครั้ง",

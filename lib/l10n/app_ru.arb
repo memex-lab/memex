@@ -1,7 +1,5 @@
 {
-  "chatPreparingMessage": "Подготовка сообщения…",
-  "chatQueuedMessage": "В очереди…",
-  "chatThinkingMessage": "Обдумывание…",
+  "chatProcessingMessage": "Обработка…",
 
   "@@locale": "ru",
   "timesLabel": "Раз",

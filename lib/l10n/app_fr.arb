@@ -1,7 +1,5 @@
 {
-  "chatPreparingMessage": "Préparation du message…",
-  "chatQueuedMessage": "En attente…",
-  "chatThinkingMessage": "Réflexion en cours…",
+  "chatProcessingMessage": "Traitement en cours…",
 
   "@@locale": "fr",
   "timesLabel": "Fois",

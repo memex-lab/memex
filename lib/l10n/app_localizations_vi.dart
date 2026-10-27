@@ -9,13 +9,7 @@ class AppLocalizationsVi extends AppLocalizations {
   AppLocalizationsVi([String locale = 'vi']) : super(locale);
 
   @override
-  String get chatPreparingMessage => 'Đang chuẩn bị tin nhắn…';
-
-  @override
-  String get chatQueuedMessage => 'Đang xếp hàng…';
-
-  @override
-  String get chatThinkingMessage => 'Đang suy nghĩ…';
+  String get chatProcessingMessage => 'Đang xử lý…';
 
   @override
   String get timesLabel => 'Số lần';

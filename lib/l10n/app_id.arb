@@ -1,7 +1,5 @@
 {
-  "chatPreparingMessage": "Menyiapkan pesan…",
-  "chatQueuedMessage": "Dalam antrean…",
-  "chatThinkingMessage": "Sedang berpikir…",
+  "chatProcessingMessage": "Memproses…",
 
   "@@locale": "id",
   "timesLabel": "Kali",

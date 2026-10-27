@@ -1,7 +1,5 @@
 {
-  "chatPreparingMessage": "Mesaj hazırlanıyor…",
-  "chatQueuedMessage": "Sırada…",
-  "chatThinkingMessage": "Düşünüyor…",
+  "chatProcessingMessage": "İşleniyor…",
 
   "@@locale": "tr",
   "timesLabel": "Kez",

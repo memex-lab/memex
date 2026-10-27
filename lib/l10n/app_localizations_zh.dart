@@ -9,13 +9,7 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
-  String get chatPreparingMessage => '正在准备消息…';
-
-  @override
-  String get chatQueuedMessage => '排队中…';
-
-  @override
-  String get chatThinkingMessage => '正在思考…';
+  String get chatProcessingMessage => '正在处理…';
 
   @override
   String get timesLabel => '次数';
@@ -3234,13 +3228,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   AppLocalizationsZhHant() : super('zh_Hant');
 
   @override
-  String get chatPreparingMessage => '正在準備訊息…';
-
-  @override
-  String get chatQueuedMessage => '排隊中…';
-
-  @override
-  String get chatThinkingMessage => '正在思考…';
+  String get chatProcessingMessage => '正在處理…';
 
   @override
   String get timesLabel => '次數';

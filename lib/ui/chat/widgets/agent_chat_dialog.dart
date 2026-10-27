@@ -1747,11 +1747,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
           ),
           const SizedBox(width: 8),
           Text(
-            _turns.hasRunning || _restoringRun
-                ? UserStorage.l10n.chatThinkingMessage
-                : _turns.hasPreparing
-                    ? UserStorage.l10n.chatPreparingMessage
-                    : UserStorage.l10n.chatQueuedMessage,
+            UserStorage.l10n.chatProcessingMessage,
             style: const TextStyle(
               fontSize: 13,
               color: AppColors.textTertiary,

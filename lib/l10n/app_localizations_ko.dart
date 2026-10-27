@@ -9,13 +9,7 @@ class AppLocalizationsKo extends AppLocalizations {
   AppLocalizationsKo([String locale = 'ko']) : super(locale);
 
   @override
-  String get chatPreparingMessage => '메시지 준비 중…';
-
-  @override
-  String get chatQueuedMessage => '대기 중…';
-
-  @override
-  String get chatThinkingMessage => '생각 중…';
+  String get chatProcessingMessage => '처리 중…';
 
   @override
   String get timesLabel => '횟수';

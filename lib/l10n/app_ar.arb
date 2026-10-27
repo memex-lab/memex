@@ -1,7 +1,5 @@
 {
-  "chatPreparingMessage": "جارٍ تحضير الرسالة…",
-  "chatQueuedMessage": "في قائمة الانتظار…",
-  "chatThinkingMessage": "جارٍ التفكير…",
+  "chatProcessingMessage": "جارٍ المعالجة…",
 
   "@@locale": "ar",
   "timesLabel": "مرات",

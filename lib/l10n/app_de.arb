@@ -1,7 +1,5 @@
 {
-  "chatPreparingMessage": "Nachricht wird vorbereitet…",
-  "chatQueuedMessage": "In der Warteschlange…",
-  "chatThinkingMessage": "Denkt nach…",
+  "chatProcessingMessage": "Wird verarbeitet…",
 
   "@@locale": "de",
   "timesLabel": "Mal",

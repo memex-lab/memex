@@ -1,7 +1,5 @@
 {
-  "chatPreparingMessage": "در حال آماده‌سازی پیام…",
-  "chatQueuedMessage": "در صف…",
-  "chatThinkingMessage": "در حال فکر کردن…",
+  "chatProcessingMessage": "در حال پردازش…",
 
   "@@locale": "fa",
   "timesLabel": "بار",
