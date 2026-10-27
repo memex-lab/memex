@@ -1,4 +1,8 @@
 {
+  "chatPreparingMessage": "Préparation du message…",
+  "chatQueuedMessage": "En attente…",
+  "chatThinkingMessage": "Réflexion en cours…",
+
   "@@locale": "fr",
   "timesLabel": "Fois",
   "modelSetAsDefault": "Définir {modelId} comme modèle par défaut",

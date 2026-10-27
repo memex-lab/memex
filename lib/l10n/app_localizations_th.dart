@@ -9,6 +9,15 @@ class AppLocalizationsTh extends AppLocalizations {
   AppLocalizationsTh([String locale = 'th']) : super(locale);
 
   @override
+  String get chatPreparingMessage => 'กำลังเตรียมข้อความ…';
+
+  @override
+  String get chatQueuedMessage => 'อยู่ในคิว…';
+
+  @override
+  String get chatThinkingMessage => 'กำลังคิด…';
+
+  @override
   String get timesLabel => 'ครั้ง';
 
   @override

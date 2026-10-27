@@ -9,6 +9,15 @@ class AppLocalizationsId extends AppLocalizations {
   AppLocalizationsId([String locale = 'id']) : super(locale);
 
   @override
+  String get chatPreparingMessage => 'Menyiapkan pesan…';
+
+  @override
+  String get chatQueuedMessage => 'Dalam antrean…';
+
+  @override
+  String get chatThinkingMessage => 'Sedang berpikir…';
+
+  @override
   String get timesLabel => 'Kali';
 
   @override

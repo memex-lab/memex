@@ -1,4 +1,8 @@
 {
+  "chatPreparingMessage": "正在準備訊息…",
+  "chatQueuedMessage": "排隊中…",
+  "chatThinkingMessage": "正在思考…",
+
   "@@locale": "zh_Hant",
   "timesLabel": "次數",
   "modelSetAsDefault": "已將 {modelId} 設為預設模型",

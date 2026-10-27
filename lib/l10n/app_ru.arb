@@ -1,4 +1,8 @@
 {
+  "chatPreparingMessage": "Подготовка сообщения…",
+  "chatQueuedMessage": "В очереди…",
+  "chatThinkingMessage": "Обдумывание…",
+
   "@@locale": "ru",
   "timesLabel": "Раз",
   "@modelSetAsDefault": {

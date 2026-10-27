@@ -1,4 +1,8 @@
 {
+  "chatPreparingMessage": "در حال آماده‌سازی پیام…",
+  "chatQueuedMessage": "در صف…",
+  "chatThinkingMessage": "در حال فکر کردن…",
+
   "@@locale": "fa",
   "timesLabel": "بار",
   "@modelSetAsDefault": {

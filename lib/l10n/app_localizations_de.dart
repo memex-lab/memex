@@ -9,6 +9,15 @@ class AppLocalizationsDe extends AppLocalizations {
   AppLocalizationsDe([String locale = 'de']) : super(locale);
 
   @override
+  String get chatPreparingMessage => 'Nachricht wird vorbereitet…';
+
+  @override
+  String get chatQueuedMessage => 'In der Warteschlange…';
+
+  @override
+  String get chatThinkingMessage => 'Denkt nach…';
+
+  @override
   String get timesLabel => 'Mal';
 
   @override

@@ -1,4 +1,8 @@
 {
+  "chatPreparingMessage": "Đang chuẩn bị tin nhắn…",
+  "chatQueuedMessage": "Đang xếp hàng…",
+  "chatThinkingMessage": "Đang suy nghĩ…",
+
   "@@locale": "vi",
   "timesLabel": "Số lần",
   "@modelSetAsDefault": {

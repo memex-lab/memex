@@ -1,4 +1,8 @@
 {
+  "chatPreparingMessage": "メッセージを準備中…",
+  "chatQueuedMessage": "待機中…",
+  "chatThinkingMessage": "思考中…",
+
   "@@locale": "ja",
   "timesLabel": "回数",
   "modelSetAsDefault": "{modelId} をデフォルトモデルに設定",

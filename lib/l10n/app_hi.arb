@@ -1,4 +1,8 @@
 {
+  "chatPreparingMessage": "संदेश तैयार हो रहा है…",
+  "chatQueuedMessage": "कतार में…",
+  "chatThinkingMessage": "सोच रहा है…",
+
   "@@locale": "hi",
   "timesLabel": "बार",
   "modelSetAsDefault": "{modelId} को डिफ़ॉल्ट मॉडल बनाएं",

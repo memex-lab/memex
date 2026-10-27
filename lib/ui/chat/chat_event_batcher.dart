@@ -24,7 +24,9 @@ class ChatEventBatcher {
   void add(ChatEvent event) {
     if (_disposed) return;
     final immediate = flushImmediately?.call(event) ??
-        event is ChatAgentStartedEvent ||
+        event is ChatTurnPreparingEvent ||
+            event is ChatTurnQueuedEvent ||
+            event is ChatAgentStartedEvent ||
             event is ChatAgentStoppedEvent ||
             event is ChatErrorEvent ||
             event is ChatSessionCreatedEvent;

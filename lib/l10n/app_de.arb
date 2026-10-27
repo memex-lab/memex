@@ -1,4 +1,8 @@
 {
+  "chatPreparingMessage": "Nachricht wird vorbereitet…",
+  "chatQueuedMessage": "In der Warteschlange…",
+  "chatThinkingMessage": "Denkt nach…",
+
   "@@locale": "de",
   "timesLabel": "Mal",
   "@modelSetAsDefault": {

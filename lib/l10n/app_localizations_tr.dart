@@ -9,6 +9,15 @@ class AppLocalizationsTr extends AppLocalizations {
   AppLocalizationsTr([String locale = 'tr']) : super(locale);
 
   @override
+  String get chatPreparingMessage => 'Mesaj hazırlanıyor…';
+
+  @override
+  String get chatQueuedMessage => 'Sırada…';
+
+  @override
+  String get chatThinkingMessage => 'Düşünüyor…';
+
+  @override
   String get timesLabel => 'Kez';
 
   @override

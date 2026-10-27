@@ -1,4 +1,8 @@
 {
+  "chatPreparingMessage": "Preparing message…",
+  "chatQueuedMessage": "Queued…",
+  "chatThinkingMessage": "Thinking…",
+
   "@@locale": "en",
   "timesLabel": "Times",
   "@modelSetAsDefault": {

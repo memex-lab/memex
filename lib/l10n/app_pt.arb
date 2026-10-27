@@ -1,4 +1,8 @@
 {
+  "chatPreparingMessage": "Preparando mensagem…",
+  "chatQueuedMessage": "Na fila…",
+  "chatThinkingMessage": "Pensando…",
+
   "@@locale": "pt",
   "timesLabel": "Vezes",
   "modelSetAsDefault": "Definir {modelId} como modelo padrão",

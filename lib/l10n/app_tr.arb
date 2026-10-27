@@ -1,4 +1,8 @@
 {
+  "chatPreparingMessage": "Mesaj hazırlanıyor…",
+  "chatQueuedMessage": "Sırada…",
+  "chatThinkingMessage": "Düşünüyor…",
+
   "@@locale": "tr",
   "timesLabel": "Kez",
   "@modelSetAsDefault": {

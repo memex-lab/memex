@@ -1,4 +1,8 @@
 {
+  "chatPreparingMessage": "กำลังเตรียมข้อความ…",
+  "chatQueuedMessage": "อยู่ในคิว…",
+  "chatThinkingMessage": "กำลังคิด…",
+
   "@@locale": "th",
   "timesLabel": "ครั้ง",
   "@modelSetAsDefault": {

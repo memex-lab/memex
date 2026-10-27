@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:crypto/crypto.dart' as crypto;
 import 'package:logging/logging.dart';
+import 'package:uuid/uuid.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -37,6 +38,8 @@ import 'package:memex/ui/core/themes/app_colors.dart';
 import 'package:memex/utils/token_usage_utils.dart';
 import 'package:memex/utils/time_context.dart';
 import 'package:memex/ui/chat/chat_event_batcher.dart';
+import 'package:memex/ui/chat/chat_submission_coordinator.dart';
+import 'package:memex/ui/chat/view_models/chat_turn_viewmodel.dart';
 
 // --- Display Models ---
 
@@ -296,20 +299,6 @@ bool shouldCreateAIMessageForResponseChunk({
   return !(isDone && text.isEmpty);
 }
 
-/// Queued sends may emit session/error/early-start events while the live
-/// subscription still owns the executing turn. Only promote on later
-/// progress that means this send became the active stream.
-@visibleForTesting
-bool shouldPromoteQueuedChatSend(ChatEvent event) {
-  if (event is ChatSessionCreatedEvent || event is ChatErrorEvent) {
-    return false;
-  }
-  if (event is ChatAgentStartedEvent && event.isPreparing) {
-    return false;
-  }
-  return true;
-}
-
 @visibleForTesting
 bool shouldRequestOlderSuperAgentHistory({
   required bool hasMoreHistory,
@@ -380,7 +369,7 @@ bool shouldShowSuperAgentThinkingRow({
   required ChatDisplayItem? primaryItem,
 }) {
   if (!isLoadingAgent) return false;
-  if (primaryItem is ProcessItem) return false;
+  if (primaryItem is ProcessItem && !primaryItem.isFinished) return false;
   if (primaryItem is AIMessageItem && primaryItem.isStreaming) return false;
   return true;
 }
@@ -410,15 +399,6 @@ bool shouldShowSuperAgentPhotoSuggestionStatus({
   required bool hasLoadedSuggestions,
 }) {
   return !hasSuggestions && (isLoading || !hasLoadedSuggestions);
-}
-
-@visibleForTesting
-bool shouldQueueSuperAgentSend({
-  required bool isStreaming,
-  required bool hasSessionId,
-  required bool hasChatSubscription,
-}) {
-  return isStreaming && hasSessionId && hasChatSubscription;
 }
 
 @visibleForTesting
@@ -485,7 +465,7 @@ class AgentChatDialog extends StatefulWidget {
   @visibleForTesting
   final Stream<ChatEvent>? chatEventsForTesting;
   @visibleForTesting
-  final Stream<ChatEvent>? queuedChatEventsForTesting;
+  final Stream<ChatEvent>? additionalChatEventsForTesting;
   @visibleForTesting
   final DateTime Function()? scrollClockForTesting;
 
@@ -501,7 +481,7 @@ class AgentChatDialog extends StatefulWidget {
     this.initialIsLoadingAgent = false,
     this.initialTokenUsage,
     this.chatEventsForTesting,
-    this.queuedChatEventsForTesting,
+    this.additionalChatEventsForTesting,
     this.scrollClockForTesting,
   });
 
@@ -527,8 +507,11 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   bool _isLoadingMoreHistory = false;
   bool _hasMoreHistory = false;
   String? _olderHistoryCursor;
-  bool _isStreaming = false;
-  bool _isLoadingAgent = false;
+  final ChatSubmissionCoordinator _submissions = ChatSubmissionCoordinator();
+  final ChatTurnViewModel _turns = ChatTurnViewModel();
+  bool _restoringRun = false;
+  bool get _isStreaming => _turns.hasPending || _restoringRun;
+  bool get _isLoadingAgent => _turns.hasPending || _restoringRun;
   bool _isRefreshingAgentState = false;
   bool _nextResponseStartsNewMessage = true;
   ChatTokenUsageEvent? _lastTokenUsage;
@@ -545,8 +528,8 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   final ImagePicker _imagePicker = ImagePicker();
   final List<XFile> _selectedImages = [];
   final Map<String, String> _originalFilenames = {};
-  StreamSubscription<ChatEvent>? _chatSubscription;
-  final List<StreamSubscription<ChatEvent>> _queuedSendSubscriptions = [];
+  final Set<StreamSubscription<ChatEvent>> _chatSubscriptions = {};
+  final Map<String, StreamSubscription<ChatEvent>> _runSubscriptions = {};
   Timer? _draftSaveDebounce;
   bool _isApplyingDraft = false;
   bool _isLoadingPhotoSuggestions = false;
@@ -583,7 +566,8 @@ class _AgentChatDialogState extends State<AgentChatDialog>
     );
     _currentSessionId = widget.initialSessionId;
     _items = List<ChatDisplayItem>.from(widget.initialItems);
-    _isLoadingAgent = widget.initialIsLoadingAgent;
+    _restoringRun = widget.initialIsLoadingAgent;
+    _turns.addListener(_onTurnStateChanged);
     _lastTokenUsage = widget.initialTokenUsage;
     final initialDraftText = widget.initialDraftText;
     if (initialDraftText != null && initialDraftText.isNotEmpty) {
@@ -629,8 +613,8 @@ class _AgentChatDialogState extends State<AgentChatDialog>
     if (_currentSessionId != null) {
       _loadSessionHistory();
     }
-    final queuedChatEvents = widget.queuedChatEventsForTesting;
-    if (queuedChatEvents != null) _listenToQueuedSend(queuedChatEvents);
+    final additionalChatEvents = widget.additionalChatEventsForTesting;
+    if (additionalChatEvents != null) _listenToChatStream(additionalChatEvents);
     final chatEvents = widget.chatEventsForTesting;
     if (chatEvents != null) {
       _listenToChatStream(chatEvents);
@@ -649,11 +633,13 @@ class _AgentChatDialogState extends State<AgentChatDialog>
     _chatEventBatcher.dispose();
     _photoSuggestionCancellationToken?.cancel();
     _photoSuggestionCancellationToken = null;
-    _chatSubscription?.cancel();
-    for (final subscription in _queuedSendSubscriptions) {
+    _submissions.dispose();
+    _turns.dispose();
+    for (final subscription in _chatSubscriptions) {
       subscription.cancel();
     }
-    _queuedSendSubscriptions.clear();
+    _chatSubscriptions.clear();
+    _runSubscriptions.clear();
     _approvalSubscription?.cancel();
     final sessionId = _currentSessionId;
     if (sessionId != null) {
@@ -1142,11 +1128,9 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   }) {
     if (message.trim().isEmpty && images.isEmpty) return false;
 
-    final queueBehindActiveRun = shouldQueueSuperAgentSend(
-      isStreaming: _isStreaming,
-      hasSessionId: _currentSessionId != null,
-      hasChatSubscription: _chatSubscription != null,
-    );
+    final requestId = const Uuid().v4();
+    final submittedRunMode = _runMode;
+    _turns.prepare(requestId);
     _messageFocusNode.unfocus();
     String finalMessage = message.trim();
     final displayText = finalMessage.isNotEmpty
@@ -1168,7 +1152,6 @@ class _AgentChatDialogState extends State<AgentChatDialog>
           timestamp: sentAt,
         ),
       );
-      _isStreaming = true;
       _messageController.clear();
       if (images.isNotEmpty) {
         _selectedImages.clear();
@@ -1178,136 +1161,89 @@ class _AgentChatDialogState extends State<AgentChatDialog>
     _clearDraftAfterAcceptedSend();
     _scrollToBottom();
 
-    final stream = _router.sendMessage(
-      finalMessage,
+    final stream = _submissions.submit(
       sessionId: _currentSessionId,
-      agentName: 'memex_agent',
-      scene: 'super_agent_home',
-      sceneId: widget.sceneId,
-      refs: refs,
-      images: images,
-      imageOriginalFilenames: imageOriginalFilenames,
-      isQuickQuery: _runMode == AgentRunMode.readOnly,
-      runMode: _runMode.wireName,
+      send: (sessionId) => _router.sendMessage(
+        finalMessage,
+        sessionId: sessionId,
+        requestId: requestId,
+        agentName: 'memex_agent',
+        scene: 'super_agent_home',
+        sceneId: widget.sceneId,
+        refs: refs,
+        images: images,
+        imageOriginalFilenames: imageOriginalFilenames,
+        isQuickQuery: submittedRunMode == AgentRunMode.readOnly,
+        runMode: submittedRunMode.wireName,
+      ),
     );
     _recordSentImageHashes(images, imageOriginalFilenames);
-    if (queueBehindActiveRun) {
-      _listenToQueuedSend(stream);
-    } else {
-      _listenToChatStream(stream);
-    }
+    _listenToChatStream(stream, requestId: requestId);
     return true;
   }
 
-  /// Subscribes the dialog to a chat event stream — either a freshly started
-  /// send or a re-attached in-flight run.
-  void _listenToChatStream(Stream<ChatEvent> stream) {
-    _chatSubscription?.cancel();
-    late final StreamSubscription<ChatEvent> subscription;
-    subscription = stream.listen(
-      (event) {
-        _handleChatEvent(event);
-      },
-      onError: (e) {
-        if (_chatSubscription == subscription) {
-          _chatSubscription = null;
-        }
-        _handleChatStreamError(e);
-      },
-      onDone: () {
-        if (_chatSubscription == subscription) {
-          _chatSubscription = null;
-        }
-        _handleChatStreamDone();
-      },
-    );
-    _chatSubscription = subscription;
+  void _onTurnStateChanged() {
+    if (mounted) setState(() {});
   }
 
-  /// Consumes the enqueue/session events from a send made while this dialog is
-  /// already attached to the active run. The existing live subscription remains
-  /// responsible for agent progress and responses.
-  void _listenToQueuedSend(Stream<ChatEvent> stream) {
+  /// Every send owns its preparation stream. Run ownership is announced by
+  /// the service, never inferred from progress events or current UI flags.
+  void _listenToChatStream(Stream<ChatEvent> stream, {String? requestId}) {
     late final StreamSubscription<ChatEvent> subscription;
-    var promotedToChatStream = false;
-
-    void promoteToChatStream(ChatEvent firstEvent) {
-      promotedToChatStream = true;
-      _queuedSendSubscriptions.remove(subscription);
-      final previousSubscription = _chatSubscription;
-      if (previousSubscription != null &&
-          previousSubscription != subscription) {
-        unawaited(previousSubscription.cancel());
-      }
-      _chatSubscription = subscription;
-      _handleChatEvent(firstEvent);
-    }
-
+    var runId = const Uuid().v4();
     subscription = stream.listen(
       (event) {
         if (!mounted) return;
-        if (!promotedToChatStream && !shouldPromoteQueuedChatSend(event)) {
-          if (event is ChatAgentStartedEvent) return;
-          _handleChatEvent(event);
+        if (event is ChatRunAttachedEvent) {
+          runId = event.runId;
+          final existing = _runSubscriptions[runId];
+          if (existing != null && existing != subscription) {
+            _chatSubscriptions.remove(subscription);
+            unawaited(subscription.cancel());
+            return;
+          }
+          _runSubscriptions[runId] = subscription;
           return;
         }
-        if (!promotedToChatStream) {
-          promoteToChatStream(event);
-          return;
-        }
+        if (event is ChatTurnPreparingEvent) requestId = event.turnId;
+        _turns.handle(event, runId: runId);
         _handleChatEvent(event);
       },
-      onError: (e) {
+      onError: (Object error) {
         if (!mounted) return;
-        if (promotedToChatStream) {
-          if (_chatSubscription == subscription) {
-            _chatSubscription = null;
-          }
-          _handleChatStreamError(e);
-        } else {
-          setState(() => _items.add(ErrorItem(e.toString())));
-          _scrollToBottom();
-        }
+        if (requestId != null) _turns.fail(requestId!);
+        _turns.finishRun(runId);
+        setState(() {
+          _items.add(ErrorItem(error.toString()));
+          _restoringRun = false;
+        });
+        _scrollToBottom();
       },
       onDone: () {
-        if (promotedToChatStream) {
-          if (_chatSubscription == subscription) {
-            _chatSubscription = null;
-          }
-          _handleChatStreamDone();
-        } else {
-          _queuedSendSubscriptions.remove(subscription);
+        _chatSubscriptions.remove(subscription);
+        if (_runSubscriptions[runId] == subscription) {
+          _runSubscriptions.remove(runId);
         }
+        if (!mounted) return;
+        _turns.finishPreparation(requestId);
+        _turns.finishRun(runId);
+        setState(() {
+          _restoringRun = false;
+          // Do not finish another stream's currently rendering reply.
+          if (!_turns.hasRunning) {
+            if (_items.isNotEmpty && _items.last is AIMessageItem) {
+              (_items.last as AIMessageItem).isStreaming = false;
+            }
+            final primary = _lastPrimaryItem();
+            if (primary is ProcessItem) {
+              primary.isFinished = true;
+              primary.isExpanded = false;
+            }
+          }
+        });
       },
     );
-    _queuedSendSubscriptions.add(subscription);
-  }
-
-  void _handleChatStreamError(Object error) {
-    if (!mounted) return;
-    setState(() {
-      _items.add(ErrorItem(error.toString()));
-      _isStreaming = false;
-      _isLoadingAgent = false;
-    });
-    _scrollToBottom();
-  }
-
-  void _handleChatStreamDone() {
-    if (!mounted) return;
-    setState(() {
-      _isStreaming = false;
-      _isLoadingAgent = false;
-      // Ensure the last AI message is marked as done
-      if (_items.isNotEmpty && _items.last is AIMessageItem) {
-        (_items.last as AIMessageItem).isStreaming = false;
-      }
-      final primary = _lastPrimaryItem();
-      if (primary is ProcessItem) {
-        primary.isFinished = true;
-        primary.isExpanded = false;
-      }
-    });
+    _chatSubscriptions.add(subscription);
   }
 
   /// If this session has a run still executing (the dialog was closed while
@@ -1321,8 +1257,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
     AgentActionApprovalService.instance.attachSession(sessionId);
     _messageFocusNode.unfocus();
     setState(() {
-      _isStreaming = true;
-      _isLoadingAgent = true;
+      _restoringRun = true;
       _nextResponseStartsNewMessage = true;
     });
     _listenToChatStream(_router.attachToChatRun(sessionId));
@@ -1582,14 +1517,13 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   void _applyChatEvent(ChatEvent event) {
     if (event is ChatAgentStartedEvent) {
         _messageFocusNode.unfocus();
-        _isStreaming = true;
-        _isLoadingAgent = true;
+        _restoringRun = false;
         _nextResponseStartsNewMessage = true;
         _discardPendingReplyArtifactsExcept(event.turnId);
         return;
       }
       if (event is ChatAgentStoppedEvent) {
-        _isLoadingAgent = false;
+        _restoringRun = false;
         _forceNextChatScroll = true;
         return;
       }
@@ -1683,7 +1617,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
         }
       } else if (event is ChatErrorEvent) {
         final primary = _lastPrimaryItem();
-        if (primary is ProcessItem) {
+        if (primary is ProcessItem && !_turns.hasRunning) {
           primary.isFinished = true;
           primary.needsAttention = true;
           primary.isExpanded = false;
@@ -1795,11 +1729,11 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   }
 
   Widget _buildAgentThinkingItem() {
-    return const Padding(
-      padding: EdgeInsets.only(bottom: 24),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
       child: Row(
         children: [
-          CircleAvatar(
+          const CircleAvatar(
             radius: 12,
             backgroundColor: AppColors.iconBgLight,
             child: SizedBox(
@@ -1811,10 +1745,14 @@ class _AgentChatDialogState extends State<AgentChatDialog>
               ),
             ),
           ),
-          SizedBox(width: 8),
+          const SizedBox(width: 8),
           Text(
-            'Thinking...',
-            style: TextStyle(
+            _turns.hasRunning || _restoringRun
+                ? UserStorage.l10n.chatThinkingMessage
+                : _turns.hasPreparing
+                    ? UserStorage.l10n.chatPreparingMessage
+                    : UserStorage.l10n.chatQueuedMessage,
+            style: const TextStyle(
               fontSize: 13,
               color: AppColors.textTertiary,
             ),

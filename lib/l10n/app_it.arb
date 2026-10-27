@@ -1,4 +1,8 @@
 {
+  "chatPreparingMessage": "Preparazione del messaggio…",
+  "chatQueuedMessage": "In coda…",
+  "chatThinkingMessage": "Elaborazione in corso…",
+
   "@@locale": "it",
   "timesLabel": "Volte",
   "@modelSetAsDefault": {

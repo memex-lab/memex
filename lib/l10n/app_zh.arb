@@ -1,4 +1,8 @@
 {
+  "chatPreparingMessage": "正在准备消息…",
+  "chatQueuedMessage": "排队中…",
+  "chatThinkingMessage": "正在思考…",
+
   "@@locale": "zh",
   "timesLabel": "次数",
   "@modelSetAsDefault": {

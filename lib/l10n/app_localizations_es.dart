@@ -9,6 +9,15 @@ class AppLocalizationsEs extends AppLocalizations {
   AppLocalizationsEs([String locale = 'es']) : super(locale);
 
   @override
+  String get chatPreparingMessage => 'Preparando mensaje…';
+
+  @override
+  String get chatQueuedMessage => 'En cola…';
+
+  @override
+  String get chatThinkingMessage => 'Pensando…';
+
+  @override
   String get timesLabel => 'Veces';
 
   @override

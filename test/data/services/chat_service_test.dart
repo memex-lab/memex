@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:memex/agent/state_util.dart';
 import 'package:memex/data/model/chat_artifact.dart';
 import 'package:memex/data/services/agent_foreground_task_tracker.dart';
@@ -18,56 +19,33 @@ import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  group('shouldEmitChatTurnStartedBeforeIo', () {
-    test('announces a text turn before image and session I/O', () {
-      expect(
-        shouldEmitChatTurnStartedBeforeIo(
-          trimmedMessage: 'hello',
-          hasImages: false,
-        ),
-        isTrue,
-      );
+  TestWidgetsFlutterBinding.ensureInitialized();
+  setUpAll(() async {
+    SharedPreferences.setMockInitialValues({'language': 'en'});
+    await UserStorage.initL10n();
+  });
+  group('request preparation events', () {
+    test('announces text preparation before doing any user/session I/O', () async {
+      final event = await ChatService.instance.sendMessage(
+        'hello', requestId: 'request-text',
+      ).first;
+      expect(event, isA<ChatTurnPreparingEvent>());
+      expect((event as ChatTurnPreparingEvent).turnId, 'request-text');
     });
 
-    test('announces an image-only turn before attachment persistence', () {
-      expect(
-        shouldEmitChatTurnStartedBeforeIo(
-          trimmedMessage: '',
-          hasImages: true,
-        ),
-        isTrue,
-      );
+    test('announces image preparation before trying to read the file', () async {
+      final event = await ChatService.instance.sendMessage(
+        '', images: [XFile('/nonexistent/attachment.jpg')],
+      ).first;
+      expect(event, isA<ChatTurnPreparingEvent>());
     });
 
-    test('does not announce an empty turn', () {
-      expect(
-        shouldEmitChatTurnStartedBeforeIo(
-          trimmedMessage: '',
-          hasImages: false,
-        ),
-        isFalse,
-      );
-    });
-
-    test('does not announce a whitespace-only turn', () {
-      expect(
-        shouldEmitChatTurnStartedBeforeIo(
-          trimmedMessage: '   ',
-          hasImages: false,
-        ),
-        isFalse,
-      );
-    });
-
-    test('does not announce an early start when the session run is live', () {
-      expect(
-        shouldEmitChatTurnStartedBeforeIo(
-          trimmedMessage: 'hello',
-          hasImages: true,
-          runAlreadyActive: true,
-        ),
-        isFalse,
-      );
+    test('rejects empty and whitespace-only requests without preparation', () async {
+      for (final text in ['', '   ']) {
+        final events = await ChatService.instance.sendMessage(text).toList();
+        expect(events, hasLength(1));
+        expect(events.single, isA<ChatErrorEvent>());
+      }
     });
   });
 
@@ -310,20 +288,45 @@ void main() {
         ),
       );
 
+      final events = <ChatEvent>[];
+      final attached = Completer<ChatRunAttachedEvent>();
       final subscription = ChatService.instance
           .sendMessage(
             'next turn',
+            requestId: 'request-with-frozen-state',
             sessionId: queuedSessionId,
             agentName: 'memex_agent',
             scene: 'super_agent_home',
           )
-          .listen((_) {});
+          .listen((event) {
+        events.add(event);
+        if (event is ChatRunAttachedEvent && !attached.isCompleted) {
+          attached.complete(event);
+        }
+      });
       try {
         final task = await _waitForQueuedChatTask(db, queuedSessionId);
         final payload = jsonDecode(task.payload!) as Map<String, dynamic>;
         final foregroundSnapshot =
             await AgentForegroundTaskTracker.forTesting(db: db).getSnapshot();
 
+        final attachment = await attached.future.timeout(const Duration(seconds: 5));
+        expect(events.first, isA<ChatTurnPreparingEvent>());
+        final queued = events.whereType<ChatTurnQueuedEvent>().first;
+        expect(queued.runId, attachment.runId);
+        expect(queued.turnId, 'request-with-frozen-state');
+        expect(events.whereType<ChatAgentStartedEvent>(), isEmpty);
+        expect(payload['turn_id'], queued.turnId);
+        expect(events.indexOf(queued), lessThan(events.indexOf(attachment)));
+
+        // A second submission announces the same run explicitly, allowing the
+        // UI to deduplicate without guessing whether a listener exists.
+        final second = await ChatService.instance.sendMessage(
+          'follow up', sessionId: queuedSessionId, requestId: 'follow-up',
+        ).take(4).toList();
+        expect(second.first, isA<ChatTurnPreparingEvent>());
+        expect(second.whereType<ChatRunAttachedEvent>().single.runId, attachment.runId);
+        expect(second.whereType<ChatTurnQueuedEvent>().single.runId, attachment.runId);
         expect(payload['session_id'], queuedSessionId);
         expect(payload['agent_state_session_id'], activeStateId);
         expect(foregroundSnapshot.activeTaskIds, contains(task.id));

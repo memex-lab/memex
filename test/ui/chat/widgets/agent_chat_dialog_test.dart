@@ -32,64 +32,103 @@ void main() {
     await UserStorage.initL10n();
   });
 
-  group('queued send subscription', () {
-    test('does not promote early AgentStarted or session events', () {
-      expect(
-        shouldPromoteQueuedChatSend(
-          ChatAgentStartedEvent('turn-2', isPreparing: true),
-        ),
-        isFalse,
-      );
-      expect(
-        shouldPromoteQueuedChatSend(ChatSessionCreatedEvent('session-1')),
-        isFalse,
-      );
-      expect(shouldPromoteQueuedChatSend(ChatErrorEvent('turn-2', 'nope')), isFalse);
-    });
-
-    test('promotes later live progress onto the main subscription', () {
-      expect(shouldPromoteQueuedChatSend(ChatAgentStartedEvent('turn-2')), isTrue);
-      expect(
-        shouldPromoteQueuedChatSend(ChatThoughtChunkEvent('thinking')),
-        isTrue,
-      );
-    });
-  });
-
-  testWidgets('queued turn restores loading after the previous stream ends',
+  testWidgets('preparing and queued requests survive the previous run ending',
       (tester) async {
     final active = StreamController<ChatEvent>();
-    final queued = StreamController<ChatEvent>();
-    await _pumpDialog(
-      tester,
-      dialog: AgentChatDialog(
-        chatEventsForTesting: active.stream,
-        queuedChatEventsForTesting: queued.stream,
-      ),
-    );
+    final next = StreamController<ChatEvent>();
+    await _pumpDialog(tester, dialog: AgentChatDialog(
+      initialItems: [UserMessageItem('First request'), UserMessageItem('Second request')],
+      chatEventsForTesting: active.stream,
+      additionalChatEventsForTesting: next.stream,
+    ));
+    active.add(ChatRunAttachedEvent('run-1'));
     active.add(ChatAgentStartedEvent('first'));
+    next.add(ChatTurnPreparingEvent('second'));
     await tester.pump();
-    queued.add(ChatAgentStartedEvent('second', isPreparing: true));
-    await tester.pump();
-    // Early feedback must not detach the still-running first turn.
     active.add(ChatResponseChunkEvent('first', 'First reply', isDone: true));
     await tester.pump(const Duration(milliseconds: 50));
     expect(find.text('First reply', findRichText: true), findsOneWidget);
     await active.close();
     await tester.pump();
-    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(find.text(UserStorage.l10n.chatPreparingMessage), findsOneWidget);
 
-    // Image preparation finishes after the old stream closed. The actual
-    // start must restore the thinking row before any model tokens arrive.
-    queued.add(ChatAgentStartedEvent('second'));
+    next.add(ChatTurnQueuedEvent('second', 'run-2'));
+    next.add(ChatRunAttachedEvent('run-2'));
     await tester.pump();
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
-    queued.add(ChatResponseChunkEvent('second', 'Second reply', isDone: true));
+    expect(find.text(UserStorage.l10n.chatQueuedMessage), findsOneWidget);
+    next.add(ChatAgentStartedEvent('second'));
+    await tester.pump();
+    expect(find.text(UserStorage.l10n.chatThinkingMessage), findsOneWidget);
+    next.add(ChatResponseChunkEvent('second', 'Second reply', isDone: true));
+    next.add(ChatAgentStoppedEvent('second'));
     await tester.pump(const Duration(milliseconds: 50));
     expect(find.text('Second reply', findRichText: true), findsOneWidget);
-    await queued.close();
+    await next.close();
     await tester.pumpAndSettle();
     expect(find.byType(CircularProgressIndicator), findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('duplicate attachment leaves queued work on the existing listener',
+      (tester) async {
+    final active = StreamController<ChatEvent>();
+    var duplicateCancelled = false;
+    final next = StreamController<ChatEvent>(onCancel: () { duplicateCancelled = true; });
+    await _pumpDialog(tester, dialog: AgentChatDialog(
+      initialItems: [UserMessageItem('First request'), UserMessageItem('Second request')],
+      chatEventsForTesting: active.stream,
+      additionalChatEventsForTesting: next.stream,
+    ));
+    active.add(ChatRunAttachedEvent('shared-run'));
+    active.add(ChatAgentStartedEvent('first'));
+    next.add(ChatTurnPreparingEvent('second'));
+    next.add(ChatTurnQueuedEvent('second', 'shared-run'));
+    next.add(ChatRunAttachedEvent('shared-run'));
+    next.add(ChatResponseChunkEvent('first', 'Duplicate replay'));
+    await tester.pump();
+    expect(duplicateCancelled, isTrue);
+    expect(find.text('Duplicate replay', findRichText: true), findsNothing);
+    unawaited(next.close());
+    await tester.pump();
+    active.add(ChatAgentStoppedEvent('first'));
+    await tester.pump();
+    expect(find.text(UserStorage.l10n.chatQueuedMessage), findsOneWidget);
+    active.add(ChatAgentStartedEvent('second'));
+    await tester.pump();
+    expect(find.text(UserStorage.l10n.chatThinkingMessage), findsOneWidget);
+    active.add(ChatResponseChunkEvent('second', 'Queued reply', isDone: true));
+    active.add(ChatAgentStoppedEvent('second'));
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(find.text('Queued reply', findRichText: true), findsOneWidget);
+    await active.close();
+    await tester.pumpAndSettle();
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('attachment failure does not stop another running request',
+      (tester) async {
+    final active = StreamController<ChatEvent>();
+    final next = StreamController<ChatEvent>();
+    await _pumpDialog(tester, dialog: AgentChatDialog(
+      initialItems: [UserMessageItem('First request'), UserMessageItem('Second request')],
+      chatEventsForTesting: active.stream,
+      additionalChatEventsForTesting: next.stream,
+    ));
+    active.add(ChatRunAttachedEvent('run-1'));
+    active.add(ChatAgentStartedEvent('first'));
+    next.add(ChatTurnPreparingEvent('second'));
+    next.add(ChatErrorEvent('second', 'Cannot read attachment'));
+    await tester.pump();
+    await next.close();
+    await tester.pump();
+    expect(find.text('Cannot read attachment'), findsOneWidget);
+    expect(find.text(UserStorage.l10n.chatThinkingMessage), findsOneWidget);
+    active.add(ChatResponseChunkEvent('first', 'Still listening', isDone: true));
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(find.text('Still listening', findRichText: true), findsOneWidget);
+    await active.close();
+    await tester.pumpAndSettle();
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
@@ -297,6 +336,9 @@ void main() {
     });
 
     test('shows standalone thinking only before process or reply appears', () {
+      expect(shouldShowSuperAgentThinkingRow(
+        isLoadingAgent: true, primaryItem: ProcessItem()..isFinished = true,
+      ), isTrue);
       expect(
         shouldShowSuperAgentThinkingRow(
           isLoadingAgent: false,
@@ -377,41 +419,6 @@ void main() {
           hasLoadedSuggestions: true,
         ),
         isFalse,
-      );
-    });
-
-    test('queues a super agent send while another run is active', () {
-      expect(
-        shouldQueueSuperAgentSend(
-          isStreaming: false,
-          hasSessionId: true,
-          hasChatSubscription: true,
-        ),
-        isFalse,
-      );
-      expect(
-        shouldQueueSuperAgentSend(
-          isStreaming: true,
-          hasSessionId: false,
-          hasChatSubscription: true,
-        ),
-        isFalse,
-      );
-      expect(
-        shouldQueueSuperAgentSend(
-          isStreaming: true,
-          hasSessionId: true,
-          hasChatSubscription: false,
-        ),
-        isFalse,
-      );
-      expect(
-        shouldQueueSuperAgentSend(
-          isStreaming: true,
-          hasSessionId: true,
-          hasChatSubscription: true,
-        ),
-        isTrue,
       );
     });
 

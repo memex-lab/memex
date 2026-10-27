@@ -1,4 +1,8 @@
 {
+  "chatPreparingMessage": "메시지 준비 중…",
+  "chatQueuedMessage": "대기 중…",
+  "chatThinkingMessage": "생각 중…",
+
   "@@locale": "ko",
   "timesLabel": "횟수",
   "modelSetAsDefault": "{modelId}을(를) 기본 모델로 설정",
