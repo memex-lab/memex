@@ -9,7 +9,7 @@ class AppLocalizationsFr extends AppLocalizations {
   AppLocalizationsFr([String locale = 'fr']) : super(locale);
 
   @override
-  String get chatProcessingMessage => 'Traitement en cours…';
+  String get chatThinkingMessage => 'Réflexion en cours…';
 
   @override
   String get timesLabel => 'Fois';

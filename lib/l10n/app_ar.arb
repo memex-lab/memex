@@ -1,5 +1,5 @@
 {
-  "chatProcessingMessage": "جارٍ المعالجة…",
+  "chatThinkingMessage": "جارٍ التفكير…",
 
   "@@locale": "ar",
   "timesLabel": "مرات",

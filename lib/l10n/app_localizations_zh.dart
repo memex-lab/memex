@@ -9,7 +9,7 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
-  String get chatProcessingMessage => '正在处理…';
+  String get chatThinkingMessage => '正在思考…';
 
   @override
   String get timesLabel => '次数';
@@ -3228,7 +3228,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   AppLocalizationsZhHant() : super('zh_Hant');
 
   @override
-  String get chatProcessingMessage => '正在處理…';
+  String get chatThinkingMessage => '正在思考…';
 
   @override
   String get timesLabel => '次數';

@@ -9,7 +9,7 @@ class AppLocalizationsPt extends AppLocalizations {
   AppLocalizationsPt([String locale = 'pt']) : super(locale);
 
   @override
-  String get chatProcessingMessage => 'Processando…';
+  String get chatThinkingMessage => 'Pensando…';
 
   @override
   String get timesLabel => 'Vezes';

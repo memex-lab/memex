@@ -1,5 +1,5 @@
 {
-  "chatProcessingMessage": "Procesando…",
+  "chatThinkingMessage": "Pensando…",
 
   "@@locale": "es",
   "timesLabel": "Veces",

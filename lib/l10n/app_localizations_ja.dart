@@ -9,7 +9,7 @@ class AppLocalizationsJa extends AppLocalizations {
   AppLocalizationsJa([String locale = 'ja']) : super(locale);
 
   @override
-  String get chatProcessingMessage => '処理中…';
+  String get chatThinkingMessage => '思考中…';
 
   @override
   String get timesLabel => '回数';

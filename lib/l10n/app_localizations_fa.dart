@@ -9,7 +9,7 @@ class AppLocalizationsFa extends AppLocalizations {
   AppLocalizationsFa([String locale = 'fa']) : super(locale);
 
   @override
-  String get chatProcessingMessage => 'در حال پردازش…';
+  String get chatThinkingMessage => 'در حال فکر کردن…';
 
   @override
   String get timesLabel => 'بار';

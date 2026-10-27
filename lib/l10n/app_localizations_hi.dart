@@ -9,7 +9,7 @@ class AppLocalizationsHi extends AppLocalizations {
   AppLocalizationsHi([String locale = 'hi']) : super(locale);
 
   @override
-  String get chatProcessingMessage => 'प्रोसेस हो रहा है…';
+  String get chatThinkingMessage => 'सोच रहा है…';
 
   @override
   String get timesLabel => 'बार';

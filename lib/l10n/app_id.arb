@@ -1,5 +1,5 @@
 {
-  "chatProcessingMessage": "Memproses…",
+  "chatThinkingMessage": "Sedang berpikir…",
 
   "@@locale": "id",
   "timesLabel": "Kali",

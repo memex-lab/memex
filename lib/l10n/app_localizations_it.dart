@@ -9,7 +9,7 @@ class AppLocalizationsIt extends AppLocalizations {
   AppLocalizationsIt([String locale = 'it']) : super(locale);
 
   @override
-  String get chatProcessingMessage => 'Elaborazione in corso…';
+  String get chatThinkingMessage => 'Elaborazione in corso…';
 
   @override
   String get timesLabel => 'Volte';

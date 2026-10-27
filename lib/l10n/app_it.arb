@@ -1,5 +1,5 @@
 {
-  "chatProcessingMessage": "Elaborazione in corso…",
+  "chatThinkingMessage": "Elaborazione in corso…",
 
   "@@locale": "it",
   "timesLabel": "Volte",

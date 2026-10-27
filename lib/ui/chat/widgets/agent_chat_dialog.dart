@@ -1747,7 +1747,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
           ),
           const SizedBox(width: 8),
           Text(
-            UserStorage.l10n.chatProcessingMessage,
+            UserStorage.l10n.chatThinkingMessage,
             style: const TextStyle(
               fontSize: 13,
               color: AppColors.textTertiary,

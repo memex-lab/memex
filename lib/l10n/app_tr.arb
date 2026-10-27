@@ -1,5 +1,5 @@
 {
-  "chatProcessingMessage": "İşleniyor…",
+  "chatThinkingMessage": "Düşünüyor…",
 
   "@@locale": "tr",
   "timesLabel": "Kez",

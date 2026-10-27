@@ -1,5 +1,5 @@
 {
-  "chatProcessingMessage": "प्रोसेस हो रहा है…",
+  "chatThinkingMessage": "सोच रहा है…",
 
   "@@locale": "hi",
   "timesLabel": "बार",

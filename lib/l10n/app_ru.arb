@@ -1,5 +1,5 @@
 {
-  "chatProcessingMessage": "Обработка…",
+  "chatThinkingMessage": "Обдумывание…",
 
   "@@locale": "ru",
   "timesLabel": "Раз",

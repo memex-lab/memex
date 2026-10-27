@@ -9,7 +9,7 @@ class AppLocalizationsTr extends AppLocalizations {
   AppLocalizationsTr([String locale = 'tr']) : super(locale);
 
   @override
-  String get chatProcessingMessage => 'İşleniyor…';
+  String get chatThinkingMessage => 'Düşünüyor…';
 
   @override
   String get timesLabel => 'Kez';

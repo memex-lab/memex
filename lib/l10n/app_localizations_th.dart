@@ -9,7 +9,7 @@ class AppLocalizationsTh extends AppLocalizations {
   AppLocalizationsTh([String locale = 'th']) : super(locale);
 
   @override
-  String get chatProcessingMessage => 'กำลังประมวลผล…';
+  String get chatThinkingMessage => 'กำลังคิด…';
 
   @override
   String get timesLabel => 'ครั้ง';

@@ -1,5 +1,5 @@
 {
-  "chatProcessingMessage": "正在處理…",
+  "chatThinkingMessage": "正在思考…",
 
   "@@locale": "zh_Hant",
   "timesLabel": "次數",

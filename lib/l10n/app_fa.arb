@@ -1,5 +1,5 @@
 {
-  "chatProcessingMessage": "در حال پردازش…",
+  "chatThinkingMessage": "در حال فکر کردن…",
 
   "@@locale": "fa",
   "timesLabel": "بار",

@@ -9,7 +9,7 @@ class AppLocalizationsId extends AppLocalizations {
   AppLocalizationsId([String locale = 'id']) : super(locale);
 
   @override
-  String get chatProcessingMessage => 'Memproses…';
+  String get chatThinkingMessage => 'Sedang berpikir…';
 
   @override
   String get timesLabel => 'Kali';

@@ -1,5 +1,5 @@
 {
-  "chatProcessingMessage": "Traitement en cours…",
+  "chatThinkingMessage": "Réflexion en cours…",
 
   "@@locale": "fr",
   "timesLabel": "Fois",

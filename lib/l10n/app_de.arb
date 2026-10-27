@@ -1,5 +1,5 @@
 {
-  "chatProcessingMessage": "Wird verarbeitet…",
+  "chatThinkingMessage": "Denkt nach…",
 
   "@@locale": "de",
   "timesLabel": "Mal",

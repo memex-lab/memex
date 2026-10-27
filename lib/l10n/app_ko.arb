@@ -1,5 +1,5 @@
 {
-  "chatProcessingMessage": "처리 중…",
+  "chatThinkingMessage": "생각 중…",
 
   "@@locale": "ko",
   "timesLabel": "횟수",
