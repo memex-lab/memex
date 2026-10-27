@@ -304,7 +304,7 @@ bool shouldPromoteQueuedChatSend(ChatEvent event) {
   if (event is ChatSessionCreatedEvent || event is ChatErrorEvent) {
     return false;
   }
-  if (event is ChatAgentStartedEvent) {
+  if (event is ChatAgentStartedEvent && event.isPreparing) {
     return false;
   }
   return true;
@@ -485,6 +485,8 @@ class AgentChatDialog extends StatefulWidget {
   @visibleForTesting
   final Stream<ChatEvent>? chatEventsForTesting;
   @visibleForTesting
+  final Stream<ChatEvent>? queuedChatEventsForTesting;
+  @visibleForTesting
   final DateTime Function()? scrollClockForTesting;
 
   const AgentChatDialog({
@@ -499,6 +501,7 @@ class AgentChatDialog extends StatefulWidget {
     this.initialIsLoadingAgent = false,
     this.initialTokenUsage,
     this.chatEventsForTesting,
+    this.queuedChatEventsForTesting,
     this.scrollClockForTesting,
   });
 
@@ -626,6 +629,8 @@ class _AgentChatDialogState extends State<AgentChatDialog>
     if (_currentSessionId != null) {
       _loadSessionHistory();
     }
+    final queuedChatEvents = widget.queuedChatEventsForTesting;
+    if (queuedChatEvents != null) _listenToQueuedSend(queuedChatEvents);
     final chatEvents = widget.chatEventsForTesting;
     if (chatEvents != null) {
       _listenToChatStream(chatEvents);

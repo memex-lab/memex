@@ -67,7 +67,9 @@ class ChatArtifactsEvent extends ChatEvent {
 
 class ChatAgentStartedEvent extends ChatEvent {
   final String turnId;
-  ChatAgentStartedEvent(this.turnId);
+  /// True for UI feedback before image preparation; no run owns this event yet.
+  final bool isPreparing;
+  ChatAgentStartedEvent(this.turnId, {this.isPreparing = false});
 }
 
 class ChatAgentStoppedEvent extends ChatEvent {

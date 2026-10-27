@@ -415,7 +415,7 @@ class ChatService {
       hasImages: images.isNotEmpty,
       runAlreadyActive: liveRunAlreadyActive,
     )) {
-      yield ChatAgentStartedEvent(turnId);
+      yield ChatAgentStartedEvent(turnId, isPreparing: true);
     }
 
     final preparedImages = <AgentImageAttachment>[];

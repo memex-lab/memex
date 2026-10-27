@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:drift/native.dart';
@@ -34,7 +35,9 @@ void main() {
   group('queued send subscription', () {
     test('does not promote early AgentStarted or session events', () {
       expect(
-        shouldPromoteQueuedChatSend(ChatAgentStartedEvent('turn-2')),
+        shouldPromoteQueuedChatSend(
+          ChatAgentStartedEvent('turn-2', isPreparing: true),
+        ),
         isFalse,
       );
       expect(
@@ -45,11 +48,49 @@ void main() {
     });
 
     test('promotes later live progress onto the main subscription', () {
+      expect(shouldPromoteQueuedChatSend(ChatAgentStartedEvent('turn-2')), isTrue);
       expect(
         shouldPromoteQueuedChatSend(ChatThoughtChunkEvent('thinking')),
         isTrue,
       );
     });
+  });
+
+  testWidgets('queued turn restores loading after the previous stream ends',
+      (tester) async {
+    final active = StreamController<ChatEvent>();
+    final queued = StreamController<ChatEvent>();
+    await _pumpDialog(
+      tester,
+      dialog: AgentChatDialog(
+        chatEventsForTesting: active.stream,
+        queuedChatEventsForTesting: queued.stream,
+      ),
+    );
+    active.add(ChatAgentStartedEvent('first'));
+    await tester.pump();
+    queued.add(ChatAgentStartedEvent('second', isPreparing: true));
+    await tester.pump();
+    // Early feedback must not detach the still-running first turn.
+    active.add(ChatResponseChunkEvent('first', 'First reply', isDone: true));
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(find.text('First reply', findRichText: true), findsOneWidget);
+    await active.close();
+    await tester.pump();
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+
+    // Image preparation finishes after the old stream closed. The actual
+    // start must restore the thinking row before any model tokens arrive.
+    queued.add(ChatAgentStartedEvent('second'));
+    await tester.pump();
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    queued.add(ChatResponseChunkEvent('second', 'Second reply', isDone: true));
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(find.text('Second reply', findRichText: true), findsOneWidget);
+    await queued.close();
+    await tester.pumpAndSettle();
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 
   group('AgentChatDialog layout metrics', () {
