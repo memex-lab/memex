@@ -95,8 +95,8 @@ These rules produce `high_risk`.
 ## Out of Scope
 
 Policy Preflight should not own semantic review or attention heuristics. The
-following signals belong to `PR AI Review`, where they can be interpreted with
-the actual diff and PR context:
+following signals require maintainer review using the actual diff and PR
+context. The `PR AI Review` workflow has been retired:
 
 - Missing or weak test evidence.
 - User-facing localization or UI behavior concerns.

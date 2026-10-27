@@ -1,5 +1,7 @@
 # PR AI Semantic Review Rules
 
+> Retired: the `PR AI Review` GitHub Actions workflow has been removed because the AI service is no longer operational. The configuration and rules below are historical reference only. Semantic review is handled by maintainers.
+
 `PR AI Review` complements the deterministic policy preflight and Flutter
 quality preflight. It uses Claude Code GitHub Action to read PR metadata,
 changed files, diffs, `AGENTS.md`, and this document, then decides whether the

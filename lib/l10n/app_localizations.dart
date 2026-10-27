@@ -4633,7 +4633,7 @@ abstract class AppLocalizations {
   /// No description provided for @useLocalSpeechToTextDesc.
   ///
   /// In en, this message translates to:
-  /// **'When enabled, audio is transcribed on-device before sending — useful for models that do not support audio input. When disabled, the original audio is sent directly to the model.'**
+  /// **'When enabled, audio is transcribed on-device before sending — useful for models that do not support audio input. When disabled, audio is transcribed by your configured cloud model (requires audio input support).'**
   String get useLocalSpeechToTextDesc;
 
   /// No description provided for @pendingAiProcessingHint.

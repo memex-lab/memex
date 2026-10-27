@@ -29,6 +29,8 @@ typedef TimelineCardsFetcher =
 typedef TimelineTagsFetcher = Future<Result<List<TagModel>>> Function();
 typedef TimelineAttachmentFetcher =
     Future<List<CardAttachmentData>> Function(String factId);
+typedef TimelineAttachmentsPageFetcher =
+    Future<Map<String, List<CardAttachmentData>>> Function(List<String> factIds);
 typedef PendingAttachmentsFetcher = Future<List<CardAttachmentData>> Function();
 
 /// Upserts a card into a timeline list by stable card id.
@@ -101,6 +103,7 @@ class TimelineViewModel extends ChangeNotifier {
     TimelineCardsFetcher? fetchTimelineCards,
     TimelineTagsFetcher? fetchTags,
     TimelineAttachmentFetcher? fetchAttachmentForCard,
+    TimelineAttachmentsPageFetcher? fetchAttachmentsForCards,
     PendingAttachmentsFetcher? fetchPendingAttachments,
     Duration auxiliaryQueryTimeout = defaultAuxiliaryQueryTimeout,
     bool autoLoad = true,
@@ -124,6 +127,9 @@ class TimelineViewModel extends ChangeNotifier {
          fetchAttachmentForCard:
              fetchAttachmentForCard ??
              CardAttachmentService.instance.getAttachments,
+         fetchAttachmentsForCards:
+             fetchAttachmentsForCards ??
+             CardAttachmentService.instance.getAttachmentsForFacts,
          fetchPendingAttachments:
              fetchPendingAttachments ??
              CardAttachmentService.instance.getPendingAttachments,
@@ -136,10 +142,13 @@ class TimelineViewModel extends ChangeNotifier {
     TimelineCardsFetcher? fetchTimelineCards,
     TimelineTagsFetcher? fetchTags,
     TimelineAttachmentFetcher? fetchAttachmentForCard,
+    TimelineAttachmentsPageFetcher? fetchAttachmentsForCards,
     PendingAttachmentsFetcher? fetchPendingAttachments,
     Duration auxiliaryQueryTimeout = defaultAuxiliaryQueryTimeout,
     bool autoLoad = false,
   }) {
+    final perCard =
+        fetchAttachmentForCard ?? (_) async => const <CardAttachmentData>[];
     return TimelineViewModel._(
       fetchTimelineCards:
           fetchTimelineCards ??
@@ -151,8 +160,16 @@ class TimelineViewModel extends ChangeNotifier {
             DateTime? dateTo,
           }) async => const Ok(<TimelineCardModel>[]),
       fetchTags: fetchTags ?? () async => const Ok(<TagModel>[]),
-      fetchAttachmentForCard:
-          fetchAttachmentForCard ?? (_) async => const <CardAttachmentData>[],
+      fetchAttachmentForCard: perCard,
+      fetchAttachmentsForCards:
+          fetchAttachmentsForCards ??
+          (ids) async {
+            final map = <String, List<CardAttachmentData>>{};
+            for (final id in ids) {
+              map[id] = await perCard(id);
+            }
+            return map;
+          },
       fetchPendingAttachments:
           fetchPendingAttachments ?? () async => const <CardAttachmentData>[],
       auxiliaryQueryTimeout: auxiliaryQueryTimeout,
@@ -164,12 +181,14 @@ class TimelineViewModel extends ChangeNotifier {
     required TimelineCardsFetcher fetchTimelineCards,
     required TimelineTagsFetcher fetchTags,
     required TimelineAttachmentFetcher fetchAttachmentForCard,
+    required TimelineAttachmentsPageFetcher fetchAttachmentsForCards,
     required PendingAttachmentsFetcher fetchPendingAttachments,
     required Duration auxiliaryQueryTimeout,
     required bool autoLoad,
   }) : _fetchTimelineCards = fetchTimelineCards,
        _fetchTags = fetchTags,
        _fetchAttachmentForCard = fetchAttachmentForCard,
+       _fetchAttachmentsForCards = fetchAttachmentsForCards,
        _fetchPendingAttachments = fetchPendingAttachments,
        _auxiliaryQueryTimeout = auxiliaryQueryTimeout {
     load = Command0<void>(_loadInitial);
@@ -182,6 +201,7 @@ class TimelineViewModel extends ChangeNotifier {
   final TimelineCardsFetcher _fetchTimelineCards;
   final TimelineTagsFetcher _fetchTags;
   final TimelineAttachmentFetcher _fetchAttachmentForCard;
+  final TimelineAttachmentsPageFetcher _fetchAttachmentsForCards;
   final PendingAttachmentsFetcher _fetchPendingAttachments;
   final Duration _auxiliaryQueryTimeout;
 
@@ -369,27 +389,16 @@ class TimelineViewModel extends ChangeNotifier {
   }) async {
     if (cardList.isEmpty) return false;
     final factIds = cardList.map((c) => c.id).toList();
-    final entries = await Future.wait(
-      factIds.map((factId) async {
-        final data = await _runAuxiliaryQuery<List<CardAttachmentData>>(
-          label: 'load attachments for $factId',
-          query: () => _fetchAttachmentForCard(factId),
-        );
-        return data == null ? null : MapEntry(factId, data);
-      }),
+    final map = await _runAuxiliaryQuery<Map<String, List<CardAttachmentData>>>(
+      label: 'load attachments for page',
+      query: () => _fetchAttachmentsForCards(factIds),
     );
     if (generation != null &&
         filter != null &&
         _isStaleTimelineLoad(generation, filter)) {
       return false;
     }
-    final map = <String, List<CardAttachmentData>>{};
-    for (final entry in entries) {
-      if (entry != null) {
-        map[entry.key] = entry.value;
-      }
-    }
-    if (map.isEmpty) return false;
+    if (map == null || map.isEmpty) return false;
     attachments.addAll(map);
     if (notify) notifyListeners();
     return true;

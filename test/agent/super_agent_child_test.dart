@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:memex/agent/skills/dynamic_timeline_ui/dynamic_timeline_ui_skill.dart';
 import 'package:memex/agent/skills/manage_pkm/pkm_skill.dart';
 import 'package:memex/agent/skills/manage_timeline_card/timeline_card_skill.dart';
+import 'package:memex/agent/state_util.dart';
 import 'package:memex/agent/super_agent/subagent/delegate_progress.dart';
 import 'package:memex/agent/super_agent/subagent/delegate_subagent_tool.dart';
 import 'package:memex/agent/super_agent/subagent/super_agent_child.dart';
@@ -612,6 +613,37 @@ void main() {
       expect(result.summary, 'no_op: no dated content');
     });
 
+    test('empty child response retries without spending the last turn',
+        () async {
+      final client = _ScriptedClient(texts: const ['', 'Completed the task.']);
+      final agent = createSuperAgentChild(
+        config: cfg(ChildToolProfile.none),
+        client: client,
+        modelConfig: ModelConfig(model: 'test'),
+        userId: userId,
+      );
+
+      final messages = await agent.run(
+        [UserMessage.text('Complete the task.')],
+        useStream: false,
+        maxTurns: 1,
+      );
+
+      expect(client._i, 2);
+      expect(messages.whereType<ModelMessage>().single.textOutput,
+          'Completed the task.');
+      final savedState = await loadOrCreateAgentState(
+        agent.state.sessionId,
+        {'userId': userId},
+      );
+      expect(savedState.currentLoopCount, 1);
+      expect(savedState.lastError, isNull);
+      expect(
+        savedState.history.messages.whereType<ModelMessage>().single.textOutput,
+        'Completed the task.',
+      );
+    });
+
     test('terminal tool finish_summary completes child without final LLM call',
         () async {
       const factId = '2026/06/26.md#ts_1';
@@ -734,6 +766,15 @@ void main() {
       );
       expect(result.status, SuperAgentChildStatus.failed);
       expect(result.error, isNotNull);
+      expect(result.error, contains('boom'));
+
+      // The upgraded runtime must persist the failure as well as returning it
+      // through Memex's child result, so later state loads retain diagnostics.
+      final savedState = await loadOrCreateAgentState(
+        result.childSessionId!,
+        {'userId': userId},
+      );
+      expect(savedState.lastError, contains('boom'));
     });
 
     test('timed out child cancels the model request and saves state', () async {

@@ -1,5 +1,7 @@
 # PR AI 语义预检规则
 
+> 已停用：由于 AI 服务已失效，`PR AI Review` GitHub Actions 工作流已移除。下方配置和规则仅保留作历史参考，语义审查由维护者人工完成。
+
 `PR AI Review` 是对现有规则预检和 Flutter 质量预检的补充。它使用 Claude Code
 GitHub Action 阅读 PR 元数据、变更文件、diff、`AGENTS.md` 和本文件，判断变更是否符合
 Memex 的架构边界、是否影响核心用户链路，以及是否需要 maintainer 人工审核。

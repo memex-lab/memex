@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 import 'package:flutter/material.dart';
@@ -23,11 +22,11 @@ import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:memex/ui/core/themes/app_theme.dart';
 import 'package:memex/ui/core/themes/bundled_google_fonts.dart';
 import 'dart:io';
+import 'package:memex/ui/main_screen/quick_recording_transcript.dart';
 import 'package:memex/ui/main_screen/widgets/radial_menu.dart';
 import 'package:memex/domain/models/shortcut_item.dart' as app_shortcut;
 import 'package:record/record.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:memex/ui/settings/widgets/ai_service_setup_page.dart';
 import 'package:memex/ui/settings/widgets/model_config_list_page.dart';
@@ -66,6 +65,7 @@ import 'package:quick_actions/quick_actions.dart';
 import 'package:memex/data/services/app_action_link_service.dart';
 import 'package:memex/data/services/app_action_service.dart';
 import 'package:memex/data/services/speech_transcription_service.dart';
+import 'package:memex/data/services/task_handlers/llm_error_utils.dart';
 import 'package:memex/utils/wakelock_manager.dart';
 import 'package:memex/data/services/clipboard_preview_service.dart';
 import 'package:memex/ui/main_screen/widgets/clipboard_preview_card.dart';
@@ -501,7 +501,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   StreamSubscription<Uint8List>? _quickAudioSub;
   final List<int> _quickPcmBuffer = [];
   String _quickTranscribedText = '';
-  String? _quickAudioPath;
+  Object? _quickTranscriptionError;
   bool _isQuickCalibrating = false;
   Offset _centerButtonCenter = Offset.zero;
   final GlobalKey<RadialMenuState> _radialMenuKey =
@@ -1341,41 +1341,28 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       if (cancel) {
         _quickPcmBuffer.clear();
         _quickTranscribedText = '';
-        _quickAudioPath = null;
+        _quickTranscriptionError = null;
         _recordingPath = null;
         return;
       }
 
-      // Final calibration from accumulated PCM
-      if (_quickPcmBuffer.isNotEmpty) {
-        final useLocal =
-            await SpeechTranscriptionService.instance.isUsingLocalModel();
-        final aligned = Uint8List.fromList(_quickPcmBuffer);
-        final int16Data = Int16List.view(aligned.buffer);
-        final samples = Float32List(int16Data.length);
-        for (int i = 0; i < int16Data.length; i++) {
-          samples[i] = int16Data[i] / 32768.0;
-        }
-
-        if (useLocal) {
-          final calibrated = await SpeechTranscriptionService.instance
-              .transcribeSamples(samples);
-          if (calibrated != null && calibrated.isNotEmpty) {
-            _quickTranscribedText = calibrated;
-          }
-        } else {
-          // Cloud mode: save WAV and submit as audio file
-          final directory = await getTemporaryDirectory();
-          final timestamp = DateTime.now().millisecondsSinceEpoch;
-          final wavPath = '${directory.path}/quick_audio_$timestamp.wav';
-          await SpeechTranscriptionService.instance.savePcmAsWav(
-            wavPath,
-            Uint8List.fromList(_quickPcmBuffer),
-          );
-          _quickAudioPath = wavPath;
-        }
-        _quickPcmBuffer.clear();
+      // Final transcription from accumulated PCM (local or cloud via service).
+      // Use samples — not a temp WAV named with epoch ms — so AssetSafetyService
+      // never misreads the filename suffix as duration seconds.
+      final result = await finalizeQuickRecordingTranscript(
+        pcmBytes: List<int>.from(_quickPcmBuffer),
+        existingText: _quickTranscribedText,
+        transcribeSamples: SpeechTranscriptionService.instance.transcribeSamples,
+      );
+      _quickTranscribedText = result.text;
+      _quickTranscriptionError = result.error;
+      if (result.hasError) {
+        _logger.severe(
+          'Quick recording transcription failed: ${result.error}',
+          result.error,
+        );
       }
+      _quickPcmBuffer.clear();
     } catch (e) {
       _logger.severe('Error stopping recording: $e', e);
     }
@@ -1401,11 +1388,17 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       });
       if (_quickTranscribedText.isNotEmpty) {
         _openSuperAgentDialog(initialDraftText: _quickTranscribedText);
-      } else if (_quickAudioPath != null) {
+      } else if (_quickTranscriptionError != null) {
+        final error = _quickTranscriptionError!;
+        ToastHelper.showError(
+          context,
+          getLocalizedErrorMessage(classifyError(error), error),
+        );
+      } else {
         ToastHelper.showInfo(context, UserStorage.l10n.speechNoResult);
       }
       _quickTranscribedText = '';
-      _quickAudioPath = null;
+      _quickTranscriptionError = null;
       _recordingPath = null;
     } else {
       if (mounted) setState(() => _isRadialMenuOpen = false);

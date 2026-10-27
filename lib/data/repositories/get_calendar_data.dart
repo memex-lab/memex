@@ -10,10 +10,12 @@ final _logger = getLogger('GetCalendarDataEndpoint');
 /// Maps to backend GET /cards/calendar
 Future<List<CalendarDay>> getCalendarData(
   int fromTimestamp,
-  int toTimestamp,
-) async {
+  int toTimestamp, {
+  Duration? utcOffset,
+}) async {
   _logger.info(
-      'getCalendarData called: fromTimestamp=$fromTimestamp, toTimestamp=$toTimestamp');
+    'getCalendarData called: fromTimestamp=$fromTimestamp, toTimestamp=$toTimestamp',
+  );
 
   try {
     final userId = await UserStorage.getUserId();
@@ -24,33 +26,40 @@ Future<List<CalendarDay>> getCalendarData(
 
     final fileSystemService = FileSystemService.instance;
 
-    // Convert timestamps to dates
-    final startDate =
-        DateTime.fromMillisecondsSinceEpoch(fromTimestamp * 1000, isUtc: true);
-    final endDate =
-        DateTime.fromMillisecondsSinceEpoch(toTimestamp * 1000, isUtc: true);
+    // Convert timestamps to the device's local calendar days. Card files and
+    // the calendar UI both use local dates; UTC year/month/day drops cards
+    // that fall on the previous UTC day (for example 02:00 in UTC+4).
+    final startWall = _calendarWallClock(fromTimestamp, utcOffset: utcOffset);
+    final endWall = _calendarWallClock(toTimestamp, utcOffset: utcOffset);
+    final startDate = DateTime(startWall.year, startWall.month, startWall.day);
+    final endDate = DateTime(endWall.year, endWall.month, endWall.day);
 
     // Use FileSystemService to find files in range
     final cardFiles = await fileSystemService.getCardFilesInDateRange(
       userId,
-      DateTime(startDate.year, startDate.month, startDate.day),
-      DateTime(endDate.year, endDate.month, endDate.day),
+      startDate,
+      endDate,
     );
 
     // Group data by date
     final dailyData = <int, List<CalendarCard>>{};
 
     // Init container per day (ensure empty list even when no cards)
-    var currentDate = DateTime(startDate.year, startDate.month, startDate.day);
-    final endDateTime = DateTime(endDate.year, endDate.month, endDate.day);
-    while (currentDate.isBefore(endDateTime) ||
-        currentDate.isAtSameMomentAs(endDateTime)) {
-      // Day start timestamp (00:00:00)
-      final dayStart =
-          DateTime(currentDate.year, currentDate.month, currentDate.day);
-      final ts = dayStart.millisecondsSinceEpoch ~/ 1000;
+    var currentDate = startDate;
+    while (currentDate.isBefore(endDate) ||
+        currentDate.isAtSameMomentAs(endDate)) {
+      final ts = _calendarDayStartUnix(
+        currentDate.year,
+        currentDate.month,
+        currentDate.day,
+        utcOffset: utcOffset,
+      );
       dailyData[ts] = [];
-      currentDate = currentDate.add(const Duration(days: 1));
+      currentDate = DateTime(
+        currentDate.year,
+        currentDate.month,
+        currentDate.day,
+      ).add(const Duration(days: 1));
     }
 
     // Process card files
@@ -86,14 +95,18 @@ Future<List<CalendarDay>> getCalendarData(
 
         var ts = cardData.userFixedTimestamp ?? cardData.timestamp;
 
-        // Assign to day by ts
-        final cardDt =
-            DateTime.fromMillisecondsSinceEpoch(ts * 1000, isUtc: true);
-        final dayStartDt = DateTime(cardDt.year, cardDt.month, cardDt.day);
-        final dayStartTs = dayStartDt.millisecondsSinceEpoch ~/ 1000;
+        // Assign to the local calendar day, matching CalendarViewModel.
+        final cardWall = _calendarWallClock(ts, utcOffset: utcOffset);
+        final dayStartTs = _calendarDayStartUnix(
+          cardWall.year,
+          cardWall.month,
+          cardWall.day,
+          utcOffset: utcOffset,
+        );
 
         if (dailyData.containsKey(dayStartTs)) {
-          final location = cardData.userFixedAddress ??
+          final location =
+              cardData.userFixedAddress ??
               cardData.userFixedLocation?.name ??
               cardData.address ??
               '';
@@ -124,11 +137,9 @@ Future<List<CalendarDay>> getCalendarData(
       // Sort day's cards by time
       cards.sort((a, b) => a.timestamp.compareTo(b.timestamp));
 
-      result.add(CalendarDay(
-        timestamp: dayTs,
-        cards: cards,
-        total: cards.length,
-      ));
+      result.add(
+        CalendarDay(timestamp: dayTs, cards: cards, total: cards.length),
+      );
     }
 
     return result;
@@ -136,4 +147,28 @@ Future<List<CalendarDay>> getCalendarData(
     _logger.severe('Failed to get calendar data: $e');
     return [];
   }
+}
+
+/// Wall-clock time for a unix timestamp. [utcOffset] is for tests; production
+/// uses the device zone, including the offset that applied at that instant.
+DateTime _calendarWallClock(int unixSeconds, {Duration? utcOffset}) {
+  final utc = DateTime.fromMillisecondsSinceEpoch(
+    unixSeconds * 1000,
+    isUtc: true,
+  );
+  if (utcOffset == null) return utc.toLocal();
+  return utc.add(utcOffset);
+}
+
+/// Unix seconds for local midnight of a civil date.
+int _calendarDayStartUnix(int year, int month, int day, {Duration? utcOffset}) {
+  if (utcOffset == null) {
+    return DateTime(year, month, day).millisecondsSinceEpoch ~/ 1000;
+  }
+  return DateTime.utc(
+        year,
+        month,
+        day,
+      ).subtract(utcOffset).millisecondsSinceEpoch ~/
+      1000;
 }

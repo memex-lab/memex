@@ -139,9 +139,19 @@ void main() {
     test('detects cache token semantics from concrete client adapters', () {
       expect(
         TokenUsageUtils.cachedTokensIncludedInPrompt(
-          client: ClaudeClient(apiKey: 'test-key'),
+          client: BedrockClaudeClient(
+            accessKeyId: 'test-key',
+            secretAccessKey: 'test-secret',
+            region: 'us-west-2',
+          ),
         ),
         isFalse,
+      );
+      expect(
+        TokenUsageUtils.cachedTokensIncludedInPrompt(
+          client: ClaudeClient(apiKey: 'test-key'),
+        ),
+        isTrue,
       );
       expect(
         TokenUsageUtils.cachedTokensIncludedInPrompt(
@@ -204,6 +214,15 @@ void main() {
     });
 
     test('resolveFromUsageRecord reads persisted semantics', () {
+      // Explicit historical semantics must survive the SDK upgrade.
+      expect(
+        TokenUsageUtils.cachedTokensIncludedInPrompt(
+          client: ClaudeClient(apiKey: 'test-key'),
+          recordedValue: false,
+          originalUsage: {'cache_read_input_tokens': 100},
+        ),
+        isFalse,
+      );
       expect(
         TokenUsageUtils.resolveFromUsageRecord({
           'cache_tokens_included_in_prompt': true,
