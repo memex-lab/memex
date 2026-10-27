@@ -37,6 +37,8 @@ class ChatSessionStorage {
   static const String legacyArchiveDirName = '_legacy_yaml';
   static const String storageSchemaVersionKey = 'storage_schema_version';
   static const String storageMigrationKey = 'chat_sessions_jsonl_v1';
+  static const String legacyMessageCountKey =
+      'chat_sessions_drop_message_count_v1';
 
   final _logger = getLogger('ChatSessionStorage');
   final FileSystemService? _injectedFileService;
@@ -84,6 +86,15 @@ class ChatSessionStorage {
     // every legacy file during the first scan. Re-scan on the comparatively
     // rare session-list path so late YAML files remain recoverable.
     await _scanLegacyYamlSessions(userId);
+    await MigrationStateService.instance.runOnce(
+      userId: userId,
+      key: legacyMessageCountKey,
+      migrate: () async {
+        final sessionsRoot = Directory(_sessionsPath(userId));
+        if (!await sessionsRoot.exists()) return true;
+        return _removeLegacyMessageCounts(userId, sessionsRoot);
+      },
+    );
     final root = Directory(_sessionsPath(userId));
     if (!await root.exists()) return const [];
 
@@ -490,8 +501,7 @@ class ChatSessionStorage {
       }
     }
 
-    final removedLegacyCounts = await _removeLegacyMessageCounts(userId, root);
-    return !hadFailures && removedLegacyCounts;
+    return !hadFailures;
   }
 
   Future<bool> _scanLegacyYamlSessions(String userId) async {
