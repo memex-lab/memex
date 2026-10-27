@@ -307,7 +307,12 @@ class BackupService {
       buildNumber = packageInfo.buildNumber;
     } catch (_) {}
 
-    // 3. Write zip in a background isolate. Automatic path writes use temp +
+    // 3. Checkpoint before the copy. The archive reads the main database file
+    // from disk and does not include the WAL.
+    onProgress?.call('Packing database...');
+    await AppDatabase.checkpointForBackup();
+
+    // 4. Write zip in a background isolate. Automatic path writes use temp +
     // rename in the same dir.
     onProgress?.call('Compressing...');
     final archiveResult = await Isolate.run(
@@ -1526,7 +1531,16 @@ Future<void> _applyStagedBackupRestore({
         }
       }
       await _moveFileReplacing(entity, targetPath);
+      await _deleteSqliteSidecar(targetPath, '-wal');
+      await _deleteSqliteSidecar(targetPath, '-shm');
     }
+  }
+}
+
+Future<void> _deleteSqliteSidecar(String databasePath, String suffix) async {
+  final sidecar = File('$databasePath$suffix');
+  if (await sidecar.exists()) {
+    await sidecar.delete();
   }
 }
 
