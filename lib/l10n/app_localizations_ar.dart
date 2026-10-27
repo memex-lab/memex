@@ -9,6 +9,9 @@ class AppLocalizationsAr extends AppLocalizations {
   AppLocalizationsAr([String locale = 'ar']) : super(locale);
 
   @override
+  String get chatThinkingMessage => 'جارٍ التفكير…';
+
+  @override
   String get timesLabel => 'مرات';
 
   @override

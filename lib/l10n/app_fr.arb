@@ -1,4 +1,6 @@
 {
+  "chatThinkingMessage": "Réflexion en cours…",
+
   "@@locale": "fr",
   "timesLabel": "Fois",
   "modelSetAsDefault": "Définir {modelId} comme modèle par défaut",

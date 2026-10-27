@@ -1,4 +1,6 @@
 {
+  "chatThinkingMessage": "思考中…",
+
   "@@locale": "ja",
   "timesLabel": "回数",
   "modelSetAsDefault": "{modelId} をデフォルトモデルに設定",

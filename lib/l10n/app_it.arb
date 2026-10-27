@@ -1,4 +1,6 @@
 {
+  "chatThinkingMessage": "Elaborazione in corso…",
+
   "@@locale": "it",
   "timesLabel": "Volte",
   "@modelSetAsDefault": {

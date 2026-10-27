@@ -1,4 +1,6 @@
 {
+  "chatThinkingMessage": "در حال فکر کردن…",
+
   "@@locale": "fa",
   "timesLabel": "بار",
   "@modelSetAsDefault": {

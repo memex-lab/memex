@@ -1,4 +1,6 @@
 {
+  "chatThinkingMessage": "Denkt nach…",
+
   "@@locale": "de",
   "timesLabel": "Mal",
   "@modelSetAsDefault": {

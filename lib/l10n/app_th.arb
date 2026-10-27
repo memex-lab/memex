@@ -1,4 +1,6 @@
 {
+  "chatThinkingMessage": "กำลังคิด…",
+
   "@@locale": "th",
   "timesLabel": "ครั้ง",
   "@modelSetAsDefault": {

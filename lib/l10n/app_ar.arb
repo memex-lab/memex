@@ -1,4 +1,6 @@
 {
+  "chatThinkingMessage": "جارٍ التفكير…",
+
   "@@locale": "ar",
   "timesLabel": "مرات",
   "modelSetAsDefault": "تعيين {modelId} كنموذج افتراضي",

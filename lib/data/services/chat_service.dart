@@ -292,12 +292,17 @@ class ChatService {
   Stream<ChatEvent> attachToActiveRun(String sessionId) async* {
     final activeRun = _runRegistry[sessionId];
     if (activeRun != null) {
-      yield* activeRun.attach();
+      yield* _attachRun(activeRun);
       return;
     }
 
     if (!await _hasQueuedChatTurn(sessionId)) return;
-    yield* _runRegistry.getOrStart(sessionId).attach();
+    yield* _attachRun(_runRegistry.getOrStart(sessionId));
+  }
+
+  Stream<ChatEvent> _attachRun(ActiveChatRun run) async* {
+    yield ChatRunAttachedEvent(run.runId);
+    yield* run.attach();
   }
 
   Future<bool> _hasQueuedChatTurn(String sessionId) async {
@@ -370,6 +375,7 @@ class ChatService {
   Stream<ChatEvent> sendMessage(
     String message, {
     String? sessionId,
+    String? requestId,
     String? agentName = 'memex_agent',
     String? scene = 'assistant',
     String? sceneId,
@@ -383,7 +389,13 @@ class ChatService {
       'sendMessage: sessionId=$sessionId, message=$message, refs=${refs?.length}',
     );
 
-    final turnId = _uuid.v4();
+    final turnId = requestId ?? _uuid.v4();
+    final trimmedMessage = message.trim();
+    if (trimmedMessage.isEmpty && images.isEmpty) {
+      yield ChatErrorEvent(turnId, chatErrorEmptyMessage());
+      return;
+    }
+    yield ChatTurnPreparingEvent(turnId);
     final userId = await UserStorage.getUserId();
     if (userId == null) {
       yield ChatErrorEvent(turnId, chatErrorUserNotLoggedIn());
@@ -392,7 +404,6 @@ class ChatService {
 
     String finalSessionId = sessionId ?? '';
     final userMessageTime = DateTime.now();
-    final trimmedMessage = message.trim();
     final preparedImages = <AgentImageAttachment>[];
     String agentStateSessionId = '';
 
@@ -409,11 +420,6 @@ class ChatService {
     } catch (e) {
       _logger.severe('Failed to prepare chat image attachment', e);
       yield ChatErrorEvent(turnId, chatErrorOperationFailed(e));
-      return;
-    }
-
-    if (trimmedMessage.isEmpty && preparedImages.isEmpty) {
-      yield ChatErrorEvent(turnId, chatErrorEmptyMessage());
       return;
     }
 
@@ -523,6 +529,8 @@ class ChatService {
         // later user message.
         waitFor: previousTaskId == null ? null : [previousTaskId],
       );
+      final queued = ChatTurnQueuedEvent(turnId, run.runId);
+      run.add(queued);
       try {
         await AgentForegroundTaskTracker.instance.trackTask(taskId);
       } catch (trackingError, trackingStack) {
@@ -532,20 +540,18 @@ class ChatService {
           trackingStack,
         );
       }
+      yield queued;
     } catch (e, st) {
       _logger.severe('Failed to enqueue chat turn', e, st);
-      run.add(ChatErrorEvent(turnId, chatErrorOperationFailed(e)));
-      run.close();
-    }
-
-    if (runAlreadyActive) {
-      // The dialog already has a live subscription for this session. This call
-      // only persists/enqueues the next turn; returning live events here would
-      // create a second UI subscription and duplicate or steal stream handling.
+      // An enqueue failure belongs to this request, not to an existing run.
+      yield ChatErrorEvent(turnId, chatErrorOperationFailed(e));
+      if (!runAlreadyActive) run.close();
       return;
     }
 
-    yield* run.attach();
+    // Always identify the run explicitly. Consumers can deduplicate an
+    // attachment by runId; service state does not imply a UI is listening.
+    yield* _attachRun(run);
   }
 
   Future<void> handleSuperAgentChatTurnTask(

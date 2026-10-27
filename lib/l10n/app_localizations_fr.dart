@@ -9,6 +9,9 @@ class AppLocalizationsFr extends AppLocalizations {
   AppLocalizationsFr([String locale = 'fr']) : super(locale);
 
   @override
+  String get chatThinkingMessage => 'Réflexion en cours…';
+
+  @override
   String get timesLabel => 'Fois';
 
   @override

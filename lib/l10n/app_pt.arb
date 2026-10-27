@@ -1,4 +1,6 @@
 {
+  "chatThinkingMessage": "Pensando…",
+
   "@@locale": "pt",
   "timesLabel": "Vezes",
   "modelSetAsDefault": "Definir {modelId} como modelo padrão",

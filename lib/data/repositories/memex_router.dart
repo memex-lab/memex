@@ -1387,6 +1387,7 @@ class MemexRouter {
   Stream<ChatEvent> sendMessage(
     String message, {
     String? sessionId,
+    String? requestId,
     String? agentName = 'memex_agent',
     String? scene = 'assistant',
     String? sceneId,
@@ -1400,6 +1401,7 @@ class MemexRouter {
     yield* ChatService.instance.sendMessage(
       message,
       sessionId: sessionId,
+      requestId: requestId,
       agentName: agentName,
       scene: scene,
       sceneId: sceneId,

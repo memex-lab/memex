@@ -65,6 +65,25 @@ class ChatArtifactsEvent extends ChatEvent {
   ChatArtifactsEvent(this.turnId, this.artifacts);
 }
 
+/// A request is accepted and is preparing its attachments/session.
+class ChatTurnPreparingEvent extends ChatEvent {
+  final String turnId;
+  ChatTurnPreparingEvent(this.turnId);
+}
+
+/// The request has been persisted in the task queue.
+class ChatTurnQueuedEvent extends ChatEvent {
+  final String turnId;
+  final String runId;
+  ChatTurnQueuedEvent(this.turnId, this.runId);
+}
+
+/// Identifies the run whose replay/live events follow on this stream.
+class ChatRunAttachedEvent extends ChatEvent {
+  final String runId;
+  ChatRunAttachedEvent(this.runId);
+}
+
 class ChatAgentStartedEvent extends ChatEvent {
   final String turnId;
   ChatAgentStartedEvent(this.turnId);

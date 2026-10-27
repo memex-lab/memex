@@ -1,4 +1,6 @@
 {
+  "chatThinkingMessage": "Đang suy nghĩ…",
+
   "@@locale": "vi",
   "timesLabel": "Số lần",
   "@modelSetAsDefault": {

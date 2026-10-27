@@ -9,6 +9,9 @@ class AppLocalizationsEs extends AppLocalizations {
   AppLocalizationsEs([String locale = 'es']) : super(locale);
 
   @override
+  String get chatThinkingMessage => 'Pensando…';
+
+  @override
   String get timesLabel => 'Veces';
 
   @override

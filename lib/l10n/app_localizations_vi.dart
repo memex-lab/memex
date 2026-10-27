@@ -9,6 +9,9 @@ class AppLocalizationsVi extends AppLocalizations {
   AppLocalizationsVi([String locale = 'vi']) : super(locale);
 
   @override
+  String get chatThinkingMessage => 'Đang suy nghĩ…';
+
+  @override
   String get timesLabel => 'Số lần';
 
   @override
