@@ -67,6 +67,22 @@ class AppDatabase extends _$AppDatabase {
 
   static bool get isInitialized => _instance != null;
 
+  /// Fold the WAL into the main database file before a backup copies it.
+  ///
+  /// Recent commits can live only in `sqlite-wal` while the connection stays
+  /// open. Copying the main file alone drops those rows.
+  static Future<void> checkpointForBackup() async {
+    if (!isInitialized) return;
+    try {
+      await instance.customStatement('PRAGMA wal_checkpoint(TRUNCATE);');
+    } on StateError catch (error) {
+      // A previous close leaves the singleton set. SQLite already folded the
+      // WAL when that connection shut down, so the main file is safe to copy.
+      if (error.message.contains('connection was closed')) return;
+      rethrow;
+    }
+  }
+
   /// Initialize the database for a specific user
   static Future<void> init(String userId) async {
     if (_instance != null) {
