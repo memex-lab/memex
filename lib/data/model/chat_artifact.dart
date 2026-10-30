@@ -29,6 +29,7 @@ class ChatArtifact {
   static const String kindSystemAction = 'system_action';
   static const String kindUiTemplate = 'ui_template';
 
+  static const String operationReference = 'reference';
   static const String operationCreate = 'create';
   static const String operationUpdate = 'update';
   static const String operationSave = 'save';
@@ -44,6 +45,7 @@ class ChatArtifact {
   };
 
   static const Set<String> _knownOperations = {
+    operationReference,
     operationCreate,
     operationUpdate,
     operationSave,

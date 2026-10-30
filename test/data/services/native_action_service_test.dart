@@ -42,6 +42,23 @@ void main() {
     });
   });
 
+  test('calendar cancellation is distinct from a bridge failure', () async {
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(channel, (call) async => 'cancelled');
+    expect(
+        await NativeActionService.addCalendarEvent(
+            title: 'Review', startTime: DateTime(2099)),
+        isNull);
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      throw PlatformException(code: 'NO_PRESENTER');
+    });
+    expect(
+        await NativeActionService.addCalendarEvent(
+            title: 'Review', startTime: DateTime(2099)),
+        isFalse);
+  });
+
   test('forwards reminders to the native system action channel', () async {
     MethodCall? received;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger

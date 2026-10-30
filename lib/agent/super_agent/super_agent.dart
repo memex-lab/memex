@@ -1,4 +1,5 @@
 import 'package:dart_agent_core/dart_agent_core.dart';
+import 'package:memex/agent/skills/recall_records/record_recall_tools.dart';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:memex/agent/agent_system_prompt_helper.dart';
 import 'package:memex/agent/agent_controller.util.dart';
@@ -27,6 +28,8 @@ export 'package:memex/agent/super_agent/super_agent_pre_minted_record_hook.dart'
 
 /// Read-only tool names available in Quick Query mode.
 const _readOnlyToolNames = {
+  'search_records',
+  'read_record_evidence',
   'LS',
   'Glob',
   'Grep',
@@ -133,6 +136,7 @@ class SuperAgent {
     );
 
     final allTools = [
+      ...buildRecordRecallTools(userId),
       fileToolFactory.buildLSTool(),
       fileToolFactory.buildGlobTool(),
       fileToolFactory.buildGrepTool(),
@@ -189,7 +193,7 @@ class SuperAgent {
       DynamicTimelineUiSkill(),
       TimelineDiagnosticsSkill(),
       PkmSkill(workingDirectory: '/PKM'),
-      SystemActionSkill(),
+      SystemActionSkill(userId: userId),
     ];
     if (quickQuery) {
       skills = skills
