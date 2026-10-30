@@ -55,6 +55,69 @@ void main() {
     );
     expect(find.text('Activity stats'), findsNothing);
   });
+
+  testWidgets('a failed pin does not say the insight was pinned', (
+    tester,
+  ) async {
+    final viewModel = _FixedInsightActions(succeeds: false)
+      ..isLoading = false
+      ..insights = [_insight(id: 'first', quote: 'First insight')];
+    addTearDown(viewModel.dispose);
+
+    await _pumpInsight(tester, viewModel);
+    await tester.tap(find.byIcon(Icons.push_pin_outlined));
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('Style pinned'), findsNothing);
+    expect(find.textContaining('Operation failed'), findsOneWidget);
+    expect(find.text('First insight'), findsOneWidget);
+  });
+
+  testWidgets('a failed delete keeps the insight on screen', (tester) async {
+    final viewModel = _FixedInsightActions(succeeds: false)
+      ..isLoading = false
+      ..insights = [_insight(id: 'first', quote: 'First insight')];
+    addTearDown(viewModel.dispose);
+
+    await _pumpInsight(tester, viewModel);
+    await tester.longPress(find.text('First insight'));
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.delete));
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('Insight card deleted'), findsNothing);
+    expect(find.textContaining('Delete failed'), findsOneWidget);
+    expect(find.text('First insight'), findsOneWidget);
+  });
+}
+
+Future<void> _pumpInsight(WidgetTester tester, InsightViewModel viewModel) {
+  return tester.pumpWidget(
+    MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Scaffold(
+        body: InsightScreen(
+          viewModel: viewModel,
+          isEmbedded: true,
+        ),
+      ),
+    ),
+  );
+}
+
+class _FixedInsightActions extends InsightViewModel {
+  _FixedInsightActions({required this.succeeds}) : super(router: MemexRouter());
+
+  final bool succeeds;
+
+  @override
+  Future<bool> togglePin(KnowledgeInsightCard item) async => succeeds;
+
+  @override
+  Future<bool> deleteCard(KnowledgeInsightCard item) async => succeeds;
 }
 
 KnowledgeInsightCard _insight({
