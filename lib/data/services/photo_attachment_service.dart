@@ -1,14 +1,27 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:memex/domain/models/prepared_photo_attachment.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/result.dart';
 
 class PhotoAttachmentService {
-  static final Map<String, Future<Result<PreparedPhotoAttachment>>> _pending =
-      {};
+  PhotoAttachmentService._(this._assetLoader);
 
-  static Future<Result<PreparedPhotoAttachment>> prepare(String assetId) {
+  @visibleForTesting
+  factory PhotoAttachmentService.forTesting({
+    required Future<AssetEntity?> Function(String) assetLoader,
+  }) =>
+      PhotoAttachmentService._(assetLoader);
+
+  static final _instance = PhotoAttachmentService._(AssetEntity.fromId);
+  static Future<Result<PreparedPhotoAttachment>> prepare(String assetId) =>
+      _instance.prepareAsset(assetId);
+
+  final Future<AssetEntity?> Function(String) _assetLoader;
+  final Map<String, Future<Result<PreparedPhotoAttachment>>> _pending = {};
+
+  Future<Result<PreparedPhotoAttachment>> prepareAsset(String assetId) {
     final existing = _pending[assetId];
     if (existing != null) return existing;
     final job = _prepare(assetId);
@@ -19,10 +32,10 @@ class PhotoAttachmentService {
     return job;
   }
 
-  static Future<Result<PreparedPhotoAttachment>> _prepare(String assetId) =>
+  Future<Result<PreparedPhotoAttachment>> _prepare(String assetId) =>
       runResult(() async {
         final watch = Stopwatch()..start();
-        final asset = await AssetEntity.fromId(assetId);
+        final asset = await _assetLoader(assetId);
         if (asset == null) throw StateError('Photo is no longer available');
         // Keep the original, including EXIF/GPS. The picker thumbnail is only
         // for presentation and must never replace the file sent to the agent.

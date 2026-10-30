@@ -1,4 +1,5 @@
 import 'dart:io';
+import '../../../helpers/fake_photo_asset.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/services.dart';
@@ -188,30 +189,22 @@ void main() {
         'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=');
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel,
         (call) async {
-      switch (call.method) {
-        case 'fetchEntityProperties':
-          return {
-            'id': 'selection-original',
-            'type': 1,
-            'width': 4000,
-            'height': 3000
-          };
-        case 'getFullFile':
-          expect(call.arguments['isOrigin'], isTrue);
-          exportCalls++;
-          return original.future;
-        case 'getTitleAsync':
-          return 'IMG_original.HEIC';
-        case 'getThumb':
-          return png;
-        default:
-          return null;
-      }
+      if (call.method == 'getThumb') return png;
+      return null;
     });
     addTearDown(() => tester.binding.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, null));
-    final vm = PhotoAttachmentsViewModel.forTesting(
-        loader: PhotoAttachmentService.prepare);
+    final service = PhotoAttachmentService.forTesting(
+        assetLoader: (id) async => FakePhotoAsset(
+            id: id,
+            fileLoader: (isOrigin) async {
+              expect(isOrigin, isTrue);
+              exportCalls++;
+              return File(await original.future);
+            },
+            titleLoader: () async => 'IMG_original.HEIC'));
+    final vm =
+        PhotoAttachmentsViewModel.forTesting(loader: service.prepareAsset);
     addTearDown(vm.dispose);
     await _pumpDialogFrame(tester,
         dialog: AgentChatDialog(
@@ -251,30 +244,25 @@ void main() {
     var fail = true;
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel,
         (call) async {
-      switch (call.method) {
-        case 'fetchEntityProperties':
-          return {
-            'id': 'failed-selection',
-            'type': 1,
-            'width': 100,
-            'height': 100
-          };
-        case 'getFullFile':
-          if (fail) throw PlatformException(code: 'offline');
-          return '/original/photo.heic';
-        case 'getTitleAsync':
-          return 'photo.heic';
-        case 'getThumb':
-          return base64Decode(
-              'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=');
-        default:
-          return null;
+      if (call.method == 'getThumb') {
+        return base64Decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=');
       }
+      return null;
     });
     addTearDown(() => tester.binding.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, null));
-    final vm = PhotoAttachmentsViewModel.forTesting(
-        loader: PhotoAttachmentService.prepare);
+    final service = PhotoAttachmentService.forTesting(
+        assetLoader: (id) async => FakePhotoAsset(
+            id: id,
+            fileLoader: (isOrigin) async {
+              expect(isOrigin, isTrue);
+              if (fail) throw PlatformException(code: 'offline');
+              return File('/original/photo.heic');
+            },
+            titleLoader: () async => 'photo.heic'));
+    final vm =
+        PhotoAttachmentsViewModel.forTesting(loader: service.prepareAsset);
     addTearDown(vm.dispose);
     await _pumpDialogFrame(tester,
         dialog: AgentChatDialog(
