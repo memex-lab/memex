@@ -717,7 +717,10 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-      Object running, Object pending, Object retrying) {
+    Object running,
+    Object pending,
+    Object retrying,
+  ) {
     return 'In esecuzione $running, In sospeso $pending, Riprova $retrying';
   }
 
@@ -1929,6 +1932,16 @@ class AppLocalizationsIt extends AppLocalizations {
   String invalidModelConfigDetailed(Object agentId, Object configKey) {
     return 'L\'agente AI \"$agentId\" necessita di una configurazione del modello valida (chiave: \"$configKey\") per funzionare. Si prega di verificare le impostazioni del modello.';
   }
+
+  @override
+  String get invalidModelConfigPlain =>
+      'Puoi continuare a registrare senza IA. Attiva l\'IA quando vuoi che organizzi e riassuma ciò che salvi.';
+
+  @override
+  String get keepRecording => 'Continua a registrare';
+
+  @override
+  String get turnOnAi => 'Attiva IA';
 
   @override
   String get discardChangesTitle => 'Lasciare questa pagina?';

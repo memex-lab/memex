@@ -708,7 +708,10 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-      Object running, Object pending, Object retrying) {
+    Object running,
+    Object pending,
+    Object retrying,
+  ) {
     return 'Çalıştırılıyor $running, Beklemede $pending, Yeniden Dene $retrying';
   }
 
@@ -1902,6 +1905,16 @@ class AppLocalizationsTr extends AppLocalizations {
   String invalidModelConfigDetailed(Object agentId, Object configKey) {
     return 'AI Aracısı \"$agentId\", çalışması için geçerli bir model yapılandırmasına (anahtar: \"$configKey\") ihtiyaç duyar. Lütfen model ayarlarını kontrol edin.';
   }
+
+  @override
+  String get invalidModelConfigPlain =>
+      'AI olmadan kaydetmeye devam edebilirsiniz. Kaydettiklerinizi düzenleyip özetlemesini istediğinizde AI\'yi açın.';
+
+  @override
+  String get keepRecording => 'Kaydetmeye devam et';
+
+  @override
+  String get turnOnAi => 'AI\'yi aç';
 
   @override
   String get discardChangesTitle => 'Bu sayfadan ayrılmak mı istiyorsunuz?';

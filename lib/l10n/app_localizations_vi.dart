@@ -703,7 +703,10 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-      Object running, Object pending, Object retrying) {
+    Object running,
+    Object pending,
+    Object retrying,
+  ) {
     return 'Đang chạy $running, Chờ $pending, Thử lại $retrying';
   }
 
@@ -1881,6 +1884,16 @@ class AppLocalizationsVi extends AppLocalizations {
   String invalidModelConfigDetailed(Object agentId, Object configKey) {
     return 'AI Agent \"$agentId\" cần cấu hình mô hình hợp lệ (key: \"$configKey\") để hoạt động. Vui lòng kiểm tra cài đặt mô hình.';
   }
+
+  @override
+  String get invalidModelConfigPlain =>
+      'Bạn vẫn có thể ghi lại mà không cần AI. Bật AI khi bạn muốn nó sắp xếp và tóm tắt những gì đã lưu.';
+
+  @override
+  String get keepRecording => 'Tiếp tục ghi';
+
+  @override
+  String get turnOnAi => 'Bật AI';
 
   @override
   String get discardChangesTitle => 'Rời trang này?';

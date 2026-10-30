@@ -701,7 +701,10 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-      Object running, Object pending, Object retrying) {
+    Object running,
+    Object pending,
+    Object retrying,
+  ) {
     return 'กำลังทำงาน $running, รอดำเนินการ $pending, ลองใหม่ $retrying';
   }
 
@@ -1884,6 +1887,16 @@ class AppLocalizationsTh extends AppLocalizations {
   String invalidModelConfigDetailed(Object agentId, Object configKey) {
     return 'AI Agent \"$agentId\" ต้องการการกำหนดค่าโมเดลที่ถูกต้อง (key: \"$configKey\") เพื่อทำงาน โปรดตรวจสอบการตั้งค่าโมเดล';
   }
+
+  @override
+  String get invalidModelConfigPlain =>
+      'คุณยังบันทึกต่อได้โดยไม่ใช้ AI เปิด AI เมื่อต้องการให้ช่วยจัดระเบียบและสรุปสิ่งที่บันทึก';
+
+  @override
+  String get keepRecording => 'บันทึกต่อ';
+
+  @override
+  String get turnOnAi => 'เปิด AI';
 
   @override
   String get discardChangesTitle => 'ออกจากหน้านี้?';

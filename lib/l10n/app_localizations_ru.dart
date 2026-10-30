@@ -710,7 +710,10 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-      Object running, Object pending, Object retrying) {
+    Object running,
+    Object pending,
+    Object retrying,
+  ) {
     return 'Выполняется $running, ожидает $pending, повтор $retrying';
   }
 
@@ -1904,6 +1907,16 @@ class AppLocalizationsRu extends AppLocalizations {
   String invalidModelConfigDetailed(Object agentId, Object configKey) {
     return 'AI Agent \"$agentId\" нужна действительная конфигурация модели (ключ: \"$configKey\") для работы. Проверьте настройки модели.';
   }
+
+  @override
+  String get invalidModelConfigPlain =>
+      'Можно продолжать записи без ИИ. Включите ИИ, когда захотите, чтобы он упорядочивал и кратко пересказывал сохранённое.';
+
+  @override
+  String get keepRecording => 'Продолжить запись';
+
+  @override
+  String get turnOnAi => 'Включить ИИ';
 
   @override
   String get discardChangesTitle => 'Покинуть эту страницу?';

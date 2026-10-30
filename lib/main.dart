@@ -29,6 +29,7 @@ import 'package:record/record.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:memex/ui/settings/widgets/ai_service_setup_page.dart';
+import 'package:memex/ui/settings/widgets/invalid_model_config_dialog.dart';
 import 'package:memex/ui/settings/widgets/model_config_list_page.dart';
 import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/data/services/file_import_service.dart';
@@ -754,42 +755,27 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: Text(UserStorage.l10n.warning),
-        content: Text(
-          UserStorage.l10n.invalidModelConfigDetailed(
-            message.agentId,
-            message.configKey,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              if (mounted) {
-                setState(() => _isInvalidConfigDialogShowing = false);
-              }
-            },
-            child: Text(UserStorage.l10n.cancel),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              if (mounted) {
-                setState(() => _isInvalidConfigDialogShowing = false);
-              }
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => AppConfig.enableMemexModelService
-                      ? const AiServiceSetupPage()
-                      : const ModelConfigListPage(),
-                ),
-              );
-            },
-            child: Text(UserStorage.l10n.modelConfig),
-          ),
-        ],
+      builder: (context) => InvalidModelConfigDialog(
+        onKeepRecording: () {
+          Navigator.of(context).pop();
+          if (mounted) {
+            setState(() => _isInvalidConfigDialogShowing = false);
+          }
+        },
+        onTurnOnAi: () {
+          Navigator.of(context).pop();
+          if (mounted) {
+            setState(() => _isInvalidConfigDialogShowing = false);
+          }
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AppConfig.enableMemexModelService
+                  ? const AiServiceSetupPage()
+                  : const ModelConfigListPage(),
+            ),
+          );
+        },
       ),
     ).then((_) {
       if (mounted) {
