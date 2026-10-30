@@ -5,6 +5,7 @@ import 'package:path/path.dart' as path;
 
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/domain/models/card_model.dart';
+import 'package:memex/domain/models/civil_date.dart';
 import 'package:memex/domain/models/user_stats_model.dart';
 import 'package:memex/utils/logger.dart';
 
@@ -69,8 +70,10 @@ class UserStatsService {
   }) async {
     final daily = <String, _DailyStatsAccumulator>{};
     final details = <String, _DayDetailAccumulator>{};
-    for (var i = 0; i < normalizedRange.dayCount; i++) {
-      final date = normalizedRange.start.add(Duration(days: i));
+    for (final date in civilDaysInclusive(
+      normalizedRange.start,
+      normalizedRange.end,
+    )) {
       final key = _dateKey(date);
       daily[key] = _DailyStatsAccumulator(date);
       details[key] = _DayDetailAccumulator(date);
