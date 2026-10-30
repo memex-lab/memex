@@ -18,5 +18,6 @@ class ChannelRegistrar {
         AgentBackgroundTaskChannelHandler.register(with: messenger)
         ClipboardPreviewChannelHandler.register(with: messenger)
         AppActionChannelHandler.register(with: messenger)
+        PhotoPickerChannelHandler.register(with: messenger)
     }
 }

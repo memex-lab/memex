@@ -1,4 +1,7 @@
 {
+  "preparingSelectedPhotos": "Preparando fotos…",
+  "selectedPhotosPreparationFailed": "Não foi possível preparar algumas fotos. Tente novamente ou remova as fotos marcadas.",
+
   "@@locale": "pt",
   "timesLabel": "Vezes",
   "modelSetAsDefault": "Definir {modelId} como modelo padrão",

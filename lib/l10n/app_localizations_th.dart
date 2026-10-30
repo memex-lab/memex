@@ -9,6 +9,13 @@ class AppLocalizationsTh extends AppLocalizations {
   AppLocalizationsTh([String locale = 'th']) : super(locale);
 
   @override
+  String get preparingSelectedPhotos => 'กำลังเตรียมรูปภาพ…';
+
+  @override
+  String get selectedPhotosPreparationFailed =>
+      'ไม่สามารถเตรียมรูปภาพบางรูปได้ โปรดลองอีกครั้งหรือลบรูปภาพที่ทำเครื่องหมายไว้';
+
+  @override
   String get timesLabel => 'ครั้ง';
 
   @override

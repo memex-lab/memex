@@ -1,4 +1,15 @@
 import 'dart:io';
+import 'dart:async';
+import 'dart:convert';
+import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
+import 'package:photo_manager/photo_manager.dart';
+import 'package:memex/data/services/photo_attachment_service.dart';
+import 'package:memex/data/services/native_photo_picker_service.dart';
+import 'package:memex/data/services/photo_suggestion_service.dart';
+import 'package:memex/domain/models/native_photo_selection.dart';
+import 'package:memex/ui/chat/view_models/photo_attachments_viewmodel.dart';
+import 'package:memex/ui/core/widgets/reliable_asset_picker.dart';
 
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -29,6 +40,271 @@ void main() {
     SharedPreferences.setMockInitialValues({'language': 'en'});
     await initializeDateFormatting('en');
     await UserStorage.initL10n();
+  });
+
+  testWidgets(
+      'iOS gallery uses system picker and previews a limited-access selection before export',
+      (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    try {
+      final original = Completer<Map<String, Object>>();
+      var pickerCalls = 0;
+      final released = <String>[];
+      final png = base64Decode(
+          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=');
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          NativePhotoPickerService.channel, (call) async {
+        switch (call.method) {
+          case 'pickImages':
+            pickerCalls++;
+            expect(call.arguments['maxAssets'], 9);
+            return [
+              {'id': 'native-selected'}
+            ];
+          case 'thumbnail':
+            return png;
+          case 'prepareOriginal':
+            return original.future;
+          case 'release':
+            released.add(call.arguments['id'] as String);
+            return null;
+        }
+        throw StateError('Unexpected method');
+      });
+      addTearDown(() => tester.binding.defaultBinaryMessenger
+          .setMockMethodCallHandler(NativePhotoPickerService.channel, null));
+      final vm = PhotoAttachmentsViewModel.forTesting(
+          loader: (_) async => throw StateError(
+              'Must use picker provider, not PhotoKit export'));
+      await _pumpDialogFrame(tester,
+          dialog: AgentChatDialog(
+              photoAttachmentsForTesting: vm,
+              initialDraftText: 'keep my draft'));
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester
+          .tap(find.byKey(const ValueKey('super_agent_gallery_button')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(pickerCalls, 1);
+      expect(find.byKey(const ValueKey('selected-photo-native-selected')),
+          findsOneWidget);
+      expect(find.byKey(const Key('native-photo-preview')), findsOneWidget);
+      final send = find.byKey(const ValueKey('super_agent_publish_button'));
+      expect(tester.widget<GestureDetector>(send).onTap, isNull);
+      expect(find.text('keep my draft'), findsOneWidget);
+      original.complete({
+        'path': '/original/IMG_native.HEIC',
+        'originalName': 'IMG_native.HEIC'
+      });
+      await tester.pump();
+      await tester.pump();
+      expect(tester.widget<GestureDetector>(send).onTap, isNotNull);
+      expect(vm.items.single.prepared!.originalName, 'IMG_native.HEIC');
+      expect(find.byKey(const Key('native-photo-preview')), findsOneWidget);
+      await tester
+          .tap(find.byKey(const ValueKey('remove-photo-native-selected')));
+      await tester.pump();
+      expect(find.byKey(const ValueKey('selected-photo-native-selected')),
+          findsNothing);
+      expect(find.text('keep my draft'), findsOneWidget);
+      expect(released, ['native-selected']);
+      await tester.pumpWidget(const SizedBox.shrink());
+      vm.dispose();
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
+  });
+
+  testWidgets(
+      'recommended photo selected through native picker can be deselected by asset ID',
+      (tester) async {
+    final original = Completer<Map<String, Object>>();
+    final png = base64Decode(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=');
+    final released = <String>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        NativePhotoPickerService.channel, (call) async {
+      switch (call.method) {
+        case 'thumbnail':
+          return png;
+        case 'prepareOriginal':
+          return original.future;
+        case 'release':
+          released.add(call.arguments['id'] as String);
+          return null;
+      }
+      return null;
+    });
+    const photoChannel = MethodChannel('com.fluttercandies/photo_manager');
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        photoChannel,
+        (call) async =>
+            call.method == 'getTitleAsync' ? 'suggestion.jpg' : png);
+    addTearDown(() {
+      tester.binding.defaultBinaryMessenger
+          .setMockMethodCallHandler(NativePhotoPickerService.channel, null);
+      tester.binding.defaultBinaryMessenger
+          .setMockMethodCallHandler(photoChannel, null);
+    });
+    final vm = PhotoAttachmentsViewModel.forTesting(
+        loader: (_) async => throw StateError('No library export expected'));
+    vm.addNativePhotos(
+        [const NativePhotoSelection(id: 'native-copy', assetId: 'same-photo')]);
+    final suggestion = EnhancedPhoto(
+        entity:
+            AssetEntity(id: 'same-photo', typeInt: 1, width: 100, height: 100),
+        xFile: XFile('/different/suggestion.jpg'),
+        time: DateTime(2026, 10, 30));
+    await _pumpDialogFrame(tester,
+        dialog: AgentChatDialog(
+            photoAttachmentsForTesting: vm,
+            photoSuggestionsForTesting: [
+              [suggestion]
+            ],
+            initialDraftText: 'keep draft'));
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(find.byIcon(Icons.check_circle), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.check_circle));
+    await tester.pump();
+    expect(find.byIcon(Icons.add_circle_outline), findsOneWidget);
+    expect(vm.items, isEmpty);
+    expect(released, ['native-copy']);
+    original.complete(
+        {'path': '/native/export.heic', 'originalName': 'export.heic'});
+    await tester.pump();
+    expect(vm.items, isEmpty);
+    expect(find.text('keep draft'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    vm.dispose();
+  });
+
+  testWidgets(
+      'gallery preview appears before original export and cannot submit an incomplete attachment',
+      (tester) async {
+    const channel = MethodChannel('com.fluttercandies/photo_manager');
+    final original = Completer<String>();
+    var exportCalls = 0;
+    final png = base64Decode(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=');
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel,
+        (call) async {
+      switch (call.method) {
+        case 'fetchEntityProperties':
+          return {
+            'id': 'selection-original',
+            'type': 1,
+            'width': 4000,
+            'height': 3000
+          };
+        case 'getFullFile':
+          expect(call.arguments['isOrigin'], isTrue);
+          exportCalls++;
+          return original.future;
+        case 'getTitleAsync':
+          return 'IMG_original.HEIC';
+        case 'getThumb':
+          return png;
+        default:
+          return null;
+      }
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, null));
+    final vm = PhotoAttachmentsViewModel.forTesting(
+        loader: PhotoAttachmentService.prepare);
+    addTearDown(vm.dispose);
+    await _pumpDialogFrame(tester,
+        dialog: AgentChatDialog(
+          photoAttachmentsForTesting: vm,
+          imagePickerForTesting: (_) async => [
+            AssetEntity(
+                id: 'selection-original', typeInt: 1, width: 4000, height: 3000)
+          ],
+        ));
+    await tester.pump(const Duration(milliseconds: 600));
+    await tester.tap(find.byKey(const ValueKey('super_agent_gallery_button')));
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.byKey(const ValueKey('selected-photo-selection-original')),
+        findsOneWidget);
+    expect(find.byKey(reliableThumbnailImageKey), findsOneWidget);
+    expect(find.text(UserStorage.l10n.preparingSelectedPhotos), findsOneWidget);
+    final send = find.byKey(const ValueKey('super_agent_publish_button'));
+    expect(tester.widget<GestureDetector>(send).onTap, isNull);
+    expect(exportCalls, 1);
+    original.complete('/original/IMG_original.HEIC');
+    await tester.pump();
+    await tester.pump();
+    expect(find.text(UserStorage.l10n.preparingSelectedPhotos), findsNothing);
+    expect(tester.widget<GestureDetector>(send).onTap, isNotNull);
+    expect(vm.items.single.prepared!.path, '/original/IMG_original.HEIC');
+    expect(vm.items.single.prepared!.originalName, 'IMG_original.HEIC');
+    expect(find.byKey(reliableThumbnailImageKey), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets(
+      'failed gallery originals offer retry and removal without losing the draft',
+      (tester) async {
+    const channel = MethodChannel('com.fluttercandies/photo_manager');
+    var fail = true;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel,
+        (call) async {
+      switch (call.method) {
+        case 'fetchEntityProperties':
+          return {
+            'id': 'failed-selection',
+            'type': 1,
+            'width': 100,
+            'height': 100
+          };
+        case 'getFullFile':
+          if (fail) throw PlatformException(code: 'offline');
+          return '/original/photo.heic';
+        case 'getTitleAsync':
+          return 'photo.heic';
+        case 'getThumb':
+          return base64Decode(
+              'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=');
+        default:
+          return null;
+      }
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, null));
+    final vm = PhotoAttachmentsViewModel.forTesting(
+        loader: PhotoAttachmentService.prepare);
+    addTearDown(vm.dispose);
+    await _pumpDialogFrame(tester,
+        dialog: AgentChatDialog(
+          initialDraftText: 'keep this draft',
+          photoAttachmentsForTesting: vm,
+          imagePickerForTesting: (_) async => [
+            AssetEntity(
+                id: 'failed-selection', typeInt: 1, width: 100, height: 100)
+          ],
+        ));
+    await tester.pump(const Duration(milliseconds: 600));
+    await tester.tap(find.byKey(const ValueKey('super_agent_gallery_button')));
+    await tester.pump();
+    await tester.pump();
+    expect(find.text(UserStorage.l10n.selectedPhotosPreparationFailed),
+        findsOneWidget);
+    expect(find.text('keep this draft'), findsOneWidget);
+    fail = false;
+    await tester
+        .tap(find.byKey(const ValueKey('retry-photo-failed-selection')));
+    await tester.pump();
+    await tester.pump();
+    expect(vm.canSubmit, isTrue);
+    await tester
+        .tap(find.byKey(const ValueKey('remove-photo-failed-selection')));
+    await tester.pump();
+    expect(find.byKey(const ValueKey('selected-photo-failed-selection')),
+        findsNothing);
+    expect(find.text('keep this draft'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 
   group('AgentChatDialog layout metrics', () {

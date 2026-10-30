@@ -10,7 +10,7 @@ import 'package:memex/data/services/asset_safety_service.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
-import 'package:synchronized/synchronized.dart';
+import 'package:memex/utils/async_work_queue.dart';
 
 typedef TempDirectoryProvider = Future<Directory> Function();
 typedef NetworkImageFetcher = Future<http.Response> Function(Uri uri);
@@ -66,7 +66,9 @@ class ImagePreviewCacheService {
   final TempDirectoryProvider _tempDirectoryProvider;
   final ImageFileCompressor _compressor;
   final NetworkImageFetcher _networkImageFetcher;
-  final Lock _previewLock = Lock();
+  final AsyncWorkQueue _previewQueue = AsyncWorkQueue(maxConcurrent: 2);
+  final Map<String, Future<ImagePreviewFile>> _pending = {};
+  Future<void> _clearBarrier = Future<void>.value();
   final Logger _logger = getLogger('ImagePreviewCacheService');
 
   static Future<String?> _defaultCompressor({
@@ -102,15 +104,53 @@ class ImagePreviewCacheService {
   /// Backup restore replaces the workspace wholesale, so path-based cache
   /// entries cannot be trusted afterward. Normal reads remain path-only and
   /// pay no file-version lookup cost.
-  Future<void> clear() => _previewLock.synchronized(() async {
-        final tempDir = await _tempDirectoryProvider();
-        final cacheDir = Directory(path.join(tempDir.path, cacheDirectoryName));
-        if (await cacheDir.exists()) {
-          await cacheDir.delete(recursive: true);
+  Future<void> clear() {
+    final previousClear = _clearBarrier;
+    final pending = _pending.values.toList();
+    // New reads cannot reuse work from before a workspace restore.
+    _pending.clear();
+    final clearing = () async {
+      await previousClear;
+      await Future.wait(pending.map((job) async {
+        try {
+          await job;
+        } catch (_) {
+          // A failed generation must not prevent cache clearing.
         }
-      });
+      }));
+      final tempDir = await _tempDirectoryProvider();
+      final cacheDir = Directory(path.join(tempDir.path, cacheDirectoryName));
+      if (await cacheDir.exists()) await cacheDir.delete(recursive: true);
+    }();
+    // Report a clear failure to its caller without poisoning future reads.
+    _clearBarrier =
+        clearing.then<void>((_) {}, onError: (Object _, StackTrace __) {});
+    return clearing;
+  }
 
   Future<ImagePreviewFile> getOrCreatePreview({
+    required String source,
+    required bool isLocalFile,
+  }) {
+    final key = '$isLocalFile:$source';
+    final existing = _pending[key];
+    if (existing != null) return existing;
+    final barrier = _clearBarrier;
+    final job = () async {
+      await barrier;
+      return _getOrCreatePreview(source: source, isLocalFile: isLocalFile);
+    }();
+    _pending[key] = job;
+    void release() {
+      if (identical(_pending[key], job)) _pending.remove(key);
+    }
+
+    unawaited(job.then<void>((_) => release(),
+        onError: (Object _, StackTrace __) => release()));
+    return job;
+  }
+
+  Future<ImagePreviewFile> _getOrCreatePreview({
     required String source,
     required bool isLocalFile,
   }) async {
@@ -142,24 +182,12 @@ class ImagePreviewCacheService {
       );
     }
 
-    return _previewLock.synchronized(() async {
-      if (!await cacheFile.parent.exists()) {
-        await cacheFile.parent.create(recursive: true);
-      }
-      if (await cacheFile.exists()) {
-        return ImagePreviewFile(
-          file: cacheFile,
-          contentType: await detectImageContentType(cacheFile.path),
-          cacheHit: true,
-        );
-      }
-
-      return _createPreviewFile(
-        source: source,
-        isLocalFile: isLocalFile,
-        cacheFile: cacheFile,
-      );
-    });
+    await cacheFile.parent.create(recursive: true);
+    return _previewQueue.run(() => _createPreviewFile(
+          source: source,
+          isLocalFile: isLocalFile,
+          cacheFile: cacheFile,
+        ));
   }
 
   Future<ImagePreviewFile> _createPreviewFile({

@@ -9,6 +9,13 @@ class AppLocalizationsHi extends AppLocalizations {
   AppLocalizationsHi([String locale = 'hi']) : super(locale);
 
   @override
+  String get preparingSelectedPhotos => 'फ़ोटो तैयार की जा रही हैं…';
+
+  @override
+  String get selectedPhotosPreparationFailed =>
+      'कुछ फ़ोटो तैयार नहीं हो सकीं। फिर से कोशिश करें या चिह्नित फ़ोटो हटा दें।';
+
+  @override
   String get timesLabel => 'बार';
 
   @override

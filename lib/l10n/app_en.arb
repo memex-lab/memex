@@ -1,4 +1,7 @@
 {
+  "preparingSelectedPhotos": "Preparing photos…",
+  "selectedPhotosPreparationFailed": "Could not prepare photos. Retry or remove the marked photos.",
+
   "@@locale": "en",
   "timesLabel": "Times",
   "@modelSetAsDefault": {

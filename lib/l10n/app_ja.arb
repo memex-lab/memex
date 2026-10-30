@@ -1,4 +1,7 @@
 {
+  "preparingSelectedPhotos": "写真を準備しています…",
+  "selectedPhotosPreparationFailed": "一部の写真を準備できませんでした。再試行するか、マークされた写真を削除してください。",
+
   "@@locale": "ja",
   "timesLabel": "回数",
   "modelSetAsDefault": "{modelId} をデフォルトモデルに設定",

@@ -9,6 +9,13 @@ class AppLocalizationsTr extends AppLocalizations {
   AppLocalizationsTr([String locale = 'tr']) : super(locale);
 
   @override
+  String get preparingSelectedPhotos => 'Fotoğraflar hazırlanıyor…';
+
+  @override
+  String get selectedPhotosPreparationFailed =>
+      'Bazı fotoğraflar hazırlanamadı. Yeniden deneyin veya işaretli fotoğrafları kaldırın.';
+
+  @override
   String get timesLabel => 'Kez';
 
   @override

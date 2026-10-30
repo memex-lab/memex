@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -93,6 +94,144 @@ void main() {
     expect(preview.file.path, cachedAgain.file.path);
     expect(preview.contentType, 'image/jpeg');
     expect(cachedAgain.cacheHit, isTrue);
+  });
+
+  test(
+      'a slow download does not block a local preview and duplicate work is shared',
+      () async {
+    final download = Completer<http.Response>();
+    var downloads = 0;
+    final service = ImagePreviewCacheService(
+      tempDirectoryProvider: () async => tempDir,
+      networkImageFetcher: (_) {
+        downloads++;
+        return download.future;
+      },
+    );
+    final remote = service.getOrCreatePreview(
+        source: 'https://example.test/photo.png', isLocalFile: false);
+    final duplicate = service.getOrCreatePreview(
+        source: 'https://example.test/photo.png', isLocalFile: false);
+    expect(identical(remote, duplicate), isTrue);
+    final local = File('${tempDir.path}/local.png');
+    await local.writeAsBytes(_pngHeader(width: 100, height: 100));
+    final localPreview =
+        await service.getOrCreatePreview(source: local.path, isLocalFile: true);
+    expect(localPreview.file.existsSync(), isTrue);
+    expect(downloads, 1);
+    download.complete(http.Response.bytes(
+        _pngHeader(width: 100, height: 100), 200,
+        headers: {'content-type': 'image/png'}));
+    expect((await remote).file.existsSync(), isTrue);
+  });
+
+  test('clear waits for active work and new readers regenerate after clearing',
+      () async {
+    final image = File('${tempDir.path}/active.png');
+    await image.writeAsBytes(_pngHeader(width: 1200, height: 900));
+    final started = Completer<void>();
+    final finish = Completer<void>();
+    var compressions = 0;
+    final service = ImagePreviewCacheService(
+      tempDirectoryProvider: () async => tempDir,
+      compressor: (
+          {required sourcePath,
+          required targetPath,
+          required maxWidth,
+          required maxHeight,
+          required quality}) async {
+        compressions++;
+        if (compressions == 1) {
+          started.complete();
+          await finish.future;
+        }
+        await File(targetPath).writeAsBytes(_jpegHeader());
+        return targetPath;
+      },
+    );
+    final old =
+        service.getOrCreatePreview(source: image.path, isLocalFile: true);
+    await started.future;
+    final clearing = service.clear();
+    final fresh =
+        service.getOrCreatePreview(source: image.path, isLocalFile: true);
+    finish.complete();
+    await old;
+    await clearing;
+    expect((await fresh).cacheHit, isFalse);
+    expect(compressions, 2);
+  });
+
+  test('cached previews bypass busy workers and new generation stays bounded',
+      () async {
+    final gates = <String, Completer<void>>{};
+    final bothStarted = Completer<void>();
+    final thirdStarted = Completer<void>();
+    var active = 0;
+    var maxActive = 0;
+    final service = ImagePreviewCacheService(
+      tempDirectoryProvider: () async => tempDir,
+      compressor: (
+          {required sourcePath,
+          required targetPath,
+          required maxWidth,
+          required maxHeight,
+          required quality}) async {
+        active++;
+        if (active > maxActive) maxActive = active;
+        final gate = Completer<void>();
+        gates[sourcePath] = gate;
+        if (gates.length == 2) bothStarted.complete();
+        if (gates.length == 3) thirdStarted.complete();
+        await gate.future;
+        await File(targetPath).writeAsBytes(_jpegHeader());
+        active--;
+        return targetPath;
+      },
+    );
+    final small = File('${tempDir.path}/ready.png');
+    await small.writeAsBytes(_pngHeader(width: 100, height: 100));
+    await service.getOrCreatePreview(source: small.path, isLocalFile: true);
+    final jobs = <Future<ImagePreviewFile>>[];
+    for (var i = 0; i < 3; i++) {
+      final file = File('${tempDir.path}/large_$i.png');
+      await file.writeAsBytes(_pngHeader(width: 1200, height: 900));
+      jobs.add(
+          service.getOrCreatePreview(source: file.path, isLocalFile: true));
+    }
+    await bothStarted.future;
+    expect(gates.length, 2);
+    expect(
+        (await service.getOrCreatePreview(
+                source: small.path, isLocalFile: true))
+            .cacheHit,
+        isTrue);
+    gates.values.first.complete();
+    await thirdStarted.future;
+    for (final gate in gates.values) {
+      if (!gate.isCompleted) gate.complete();
+    }
+    await Future.wait(jobs);
+    expect(maxActive, 2);
+  });
+
+  test('a failed clear does not poison later preview requests', () async {
+    var failDirectoryLookup = false;
+    final service = ImagePreviewCacheService(tempDirectoryProvider: () async {
+      if (failDirectoryLookup) throw const FileSystemException('unavailable');
+      return tempDir;
+    });
+    failDirectoryLookup = true;
+    await expectLater(service.clear(), throwsA(isA<FileSystemException>()));
+    failDirectoryLookup = false;
+    final image = File('${tempDir.path}/after_failed_clear.png');
+    await image.writeAsBytes(_pngHeader(width: 100, height: 100));
+    expect(
+        (await service.getOrCreatePreview(
+                source: image.path, isLocalFile: true))
+            .file
+            .existsSync(),
+        isTrue);
   });
 
   test('clear removes every generated preview', () async {

@@ -1,4 +1,7 @@
 {
+  "preparingSelectedPhotos": "جارٍ تجهيز الصور…",
+  "selectedPhotosPreparationFailed": "تعذّر تجهيز بعض الصور. أعد المحاولة أو أزل الصور المحددة.",
+
   "@@locale": "ar",
   "timesLabel": "مرات",
   "modelSetAsDefault": "تعيين {modelId} كنموذج افتراضي",

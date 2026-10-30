@@ -1,4 +1,7 @@
 {
+  "preparingSelectedPhotos": "फ़ोटो तैयार की जा रही हैं…",
+  "selectedPhotosPreparationFailed": "कुछ फ़ोटो तैयार नहीं हो सकीं। फिर से कोशिश करें या चिह्नित फ़ोटो हटा दें।",
+
   "@@locale": "hi",
   "timesLabel": "बार",
   "modelSetAsDefault": "{modelId} को डिफ़ॉल्ट मॉडल बनाएं",

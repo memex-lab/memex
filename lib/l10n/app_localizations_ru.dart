@@ -9,6 +9,13 @@ class AppLocalizationsRu extends AppLocalizations {
   AppLocalizationsRu([String locale = 'ru']) : super(locale);
 
   @override
+  String get preparingSelectedPhotos => 'Подготовка фотографий…';
+
+  @override
+  String get selectedPhotosPreparationFailed =>
+      'Не удалось подготовить некоторые фотографии. Повторите попытку или удалите отмеченные фотографии.';
+
+  @override
   String get timesLabel => 'Раз';
 
   @override

@@ -1,4 +1,7 @@
 {
+  "preparingSelectedPhotos": "Preparazione delle foto…",
+  "selectedPhotosPreparationFailed": "Impossibile preparare alcune foto. Riprova o rimuovi le foto contrassegnate.",
+
   "@@locale": "it",
   "timesLabel": "Volte",
   "@modelSetAsDefault": {

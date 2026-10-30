@@ -1,4 +1,7 @@
 {
+  "preparingSelectedPhotos": "Fotos werden vorbereitet…",
+  "selectedPhotosPreparationFailed": "Einige Fotos konnten nicht vorbereitet werden. Erneut versuchen oder markierte Fotos entfernen.",
+
   "@@locale": "de",
   "timesLabel": "Mal",
   "@modelSetAsDefault": {

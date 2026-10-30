@@ -9,6 +9,12 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get preparingSelectedPhotos => '正在准备照片…';
+
+  @override
+  String get selectedPhotosPreparationFailed => '部分照片准备失败，请重试或移除标记的照片。';
+
+  @override
   String get timesLabel => '次数';
 
   @override
@@ -3223,6 +3229,12 @@ class AppLocalizationsZh extends AppLocalizations {
 /// The translations for Chinese, using the Han script (`zh_Hant`).
 class AppLocalizationsZhHant extends AppLocalizationsZh {
   AppLocalizationsZhHant() : super('zh_Hant');
+
+  @override
+  String get preparingSelectedPhotos => '正在準備照片…';
+
+  @override
+  String get selectedPhotosPreparationFailed => '部分照片準備失敗，請重試或移除標記的照片。';
 
   @override
   String get timesLabel => '次數';
