@@ -1,5 +1,6 @@
 import 'package:path/path.dart' as path;
 import 'package:memex/domain/models/calendar_model.dart';
+import 'package:memex/domain/models/civil_date.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/data/services/file_system_service.dart';
@@ -45,9 +46,7 @@ Future<List<CalendarDay>> getCalendarData(
     final dailyData = <int, List<CalendarCard>>{};
 
     // Init container per day (ensure empty list even when no cards)
-    var currentDate = startDate;
-    while (currentDate.isBefore(endDate) ||
-        currentDate.isAtSameMomentAs(endDate)) {
+    for (final currentDate in civilDaysInclusive(startDate, endDate)) {
       final ts = _calendarDayStartUnix(
         currentDate.year,
         currentDate.month,
@@ -55,11 +54,6 @@ Future<List<CalendarDay>> getCalendarData(
         utcOffset: utcOffset,
       );
       dailyData[ts] = [];
-      currentDate = DateTime(
-        currentDate.year,
-        currentDate.month,
-        currentDate.day,
-      ).add(const Duration(days: 1));
     }
 
     // Process card files
