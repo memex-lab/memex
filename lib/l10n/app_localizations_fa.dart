@@ -703,7 +703,10 @@ class AppLocalizationsFa extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-      Object running, Object pending, Object retrying) {
+    Object running,
+    Object pending,
+    Object retrying,
+  ) {
     return 'در حال اجرا $running، در انتظار $pending، تلاش مجدد $retrying';
   }
 
@@ -1890,6 +1893,16 @@ class AppLocalizationsFa extends AppLocalizations {
   String invalidModelConfigDetailed(Object agentId, Object configKey) {
     return 'عامل هوش مصنوعی «$agentId» برای کارکرد به پیکربندی معتبر مدل (کلید: «$configKey») نیاز دارد. لطفاً تنظیمات مدل را بررسی کنید.';
   }
+
+  @override
+  String get invalidModelConfigPlain =>
+      'بدون هوش مصنوعی هم می‌توانید ثبت را ادامه دهید. وقتی خواستید نوشته‌ها مرتب و خلاصه شوند، هوش مصنوعی را روشن کنید.';
+
+  @override
+  String get keepRecording => 'ادامه ثبت';
+
+  @override
+  String get turnOnAi => 'روشن کردن هوش مصنوعی';
 
   @override
   String get discardChangesTitle => 'این صفحه را ترک می‌کنید؟';

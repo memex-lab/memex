@@ -701,7 +701,10 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-      Object running, Object pending, Object retrying) {
+    Object running,
+    Object pending,
+    Object retrying,
+  ) {
     return 'قيد التشغيل $running، معلق $pending، إعادة محاولة $retrying';
   }
 
@@ -1876,6 +1879,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String invalidModelConfigDetailed(Object agentId, Object configKey) {
     return 'يحتاج وكيل الذكاء الاصطناعي \"$agentId\" إلى إعداد نموذج صالح (مفتاح: \"$configKey\") للعمل. يرجى فحص إعدادات النموذج.';
   }
+
+  @override
+  String get invalidModelConfigPlain =>
+      'يمكنك متابعة التسجيل بدون ذكاء اصطناعي. شغّله عندما تريد تنظيم ما تحفظه وتلخيصه.';
+
+  @override
+  String get keepRecording => 'متابعة التسجيل';
+
+  @override
+  String get turnOnAi => 'تشغيل الذكاء الاصطناعي';
 
   @override
   String get discardChangesTitle => 'مغادرة هذه الصفحة؟';

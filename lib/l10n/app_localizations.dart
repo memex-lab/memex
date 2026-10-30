@@ -78,7 +78,7 @@ import 'app_localizations_zh.dart';
 /// property.
 abstract class AppLocalizations {
   AppLocalizations(String locale)
-      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -101,11 +101,11 @@ abstract class AppLocalizations {
   /// of delegates is preferred or required.
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
       <LocalizationsDelegate<dynamic>>[
-    delegate,
-    GlobalMaterialLocalizations.delegate,
-    GlobalCupertinoLocalizations.delegate,
-    GlobalWidgetsLocalizations.delegate,
-  ];
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
@@ -126,7 +126,7 @@ abstract class AppLocalizations {
     Locale('tr'),
     Locale('vi'),
     Locale('zh'),
-    Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant')
+    Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant'),
   ];
 
   /// No description provided for @preparingSelectedPhotos.
@@ -1376,7 +1376,10 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Running {running}, Pending {pending}, Retry {retrying}'**
   String agentBackgroundTaskSummary(
-      Object running, Object pending, Object retrying);
+    Object running,
+    Object pending,
+    Object retrying,
+  );
 
   /// No description provided for @agentBackgroundTaskDetail.
   ///
@@ -3477,6 +3480,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'AI Agent \"{agentId}\" needs a valid model configuration (key: \"{configKey}\") to operate. Please check the model settings.'**
   String invalidModelConfigDetailed(Object agentId, Object configKey);
+
+  /// No description provided for @invalidModelConfigPlain.
+  ///
+  /// In en, this message translates to:
+  /// **'You can keep recording without AI. Turn AI on when you want it to organize and summarize what you save.'**
+  String get invalidModelConfigPlain;
+
+  /// No description provided for @keepRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep recording'**
+  String get keepRecording;
+
+  /// No description provided for @turnOnAi.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on AI'**
+  String get turnOnAi;
 
   /// No description provided for @discardChangesTitle.
   ///
@@ -6028,24 +6049,24 @@ class _AppLocalizationsDelegate
 
   @override
   bool isSupported(Locale locale) => <String>[
-        'ar',
-        'de',
-        'en',
-        'es',
-        'fa',
-        'fr',
-        'hi',
-        'id',
-        'it',
-        'ja',
-        'ko',
-        'pt',
-        'ru',
-        'th',
-        'tr',
-        'vi',
-        'zh'
-      ].contains(locale.languageCode);
+    'ar',
+    'de',
+    'en',
+    'es',
+    'fa',
+    'fr',
+    'hi',
+    'id',
+    'it',
+    'ja',
+    'ko',
+    'pt',
+    'ru',
+    'th',
+    'tr',
+    'vi',
+    'zh',
+  ].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -6103,8 +6124,9 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   }
 
   throw FlutterError(
-      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-      'an issue with the localizations generation tool. Please file an issue '
-      'on GitHub with a reproducible sample app and the gen-l10n configuration '
-      'that was used.');
+    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+    'an issue with the localizations generation tool. Please file an issue '
+    'on GitHub with a reproducible sample app and the gen-l10n configuration '
+    'that was used.',
+  );
 }
