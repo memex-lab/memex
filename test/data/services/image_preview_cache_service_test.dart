@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:memex/data/services/image_preview_cache_service.dart';
+import 'package:memex/data/services/asset_safety_service.dart';
 
 void main() {
   late Directory tempDir;
@@ -53,6 +54,29 @@ void main() {
     expect(preview.file.path, cachedAgain.file.path);
     expect(preview.contentType, 'image/png');
     expect(cachedAgain.cacheHit, isTrue);
+  });
+
+  test('cached previews never re-inspect the cloud original', () async {
+    final source = File('${tempDir.path}/cloud.png');
+    await source.writeAsBytes(_pngHeader(width: 320, height: 240));
+    var inspections = 0;
+    final service = ImagePreviewCacheService(
+        tempDirectoryProvider: () async => tempDir,
+        safetyInspector: (file, {required config}) async {
+          inspections++;
+          if (inspections > 2) {
+            throw StateError('Cached preview must not read original headers');
+          }
+          return AssetSafetyService.instance.inspectFile(file, config: config);
+        });
+    final first = await service.getOrCreatePreview(
+        source: source.path, isLocalFile: true);
+    expect(inspections, 2);
+    final cached = await service.getOrCreatePreview(
+        source: source.path, isLocalFile: true);
+    expect(cached.cacheHit, isTrue);
+    expect(cached.file.path, first.file.path);
+    expect(inspections, 2);
   });
 
   test('compresses large images into the shared max768 cache path', () async {

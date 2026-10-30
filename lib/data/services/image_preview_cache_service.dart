@@ -14,6 +14,8 @@ import 'package:memex/utils/async_work_queue.dart';
 
 typedef TempDirectoryProvider = Future<Directory> Function();
 typedef NetworkImageFetcher = Future<http.Response> Function(Uri uri);
+typedef ImageSafetyInspector = Future<AssetSafetyReport> Function(String path,
+    {required AssetSafetyConfig config});
 
 typedef ImageFileCompressor = Future<String?> Function({
   required String sourcePath,
@@ -49,9 +51,13 @@ class ImagePreviewCacheService {
     TempDirectoryProvider? tempDirectoryProvider,
     ImageFileCompressor? compressor,
     NetworkImageFetcher? networkImageFetcher,
+    ImageSafetyInspector? safetyInspector,
   })  : _tempDirectoryProvider = tempDirectoryProvider ?? getTemporaryDirectory,
         _compressor = compressor ?? _defaultCompressor,
-        _networkImageFetcher = networkImageFetcher ?? http.get;
+        _networkImageFetcher = networkImageFetcher ?? http.get,
+        _safetyInspector = safetyInspector ??
+            ((source, {required config}) => AssetSafetyService.instance
+                .inspectFile(source, config: config));
 
   static final ImagePreviewCacheService instance = ImagePreviewCacheService();
 
@@ -66,6 +72,7 @@ class ImagePreviewCacheService {
   final TempDirectoryProvider _tempDirectoryProvider;
   final ImageFileCompressor _compressor;
   final NetworkImageFetcher _networkImageFetcher;
+  final ImageSafetyInspector _safetyInspector;
   final AsyncWorkQueue _previewQueue = AsyncWorkQueue(maxConcurrent: 2);
   final Map<String, Future<ImagePreviewFile>> _pending = {};
   Future<void> _clearBarrier = Future<void>.value();
@@ -158,21 +165,9 @@ class ImagePreviewCacheService {
       throw const ImagePreviewUnavailable('image source is empty');
     }
 
-    if (isLocalFile) {
-      final sourceFile = File(source);
-      if (!await sourceFile.exists()) {
-        throw ImagePreviewUnavailable('source image is missing: $source');
-      }
-
-      final safety = AssetSafetyService.instance.inspectFileSync(
-        source,
-        config: previewSourceSafetyConfig,
-      );
-      if (!safety.safeForPreview) {
-        throw ImagePreviewUnavailable(safety.reason);
-      }
+    if (isLocalFile && !await File(source).exists()) {
+      throw ImagePreviewUnavailable('source image is missing: $source');
     }
-
     final cacheFile = await cacheFileForSource(source);
     if (await cacheFile.exists()) {
       return ImagePreviewFile(
@@ -226,7 +221,7 @@ class ImagePreviewCacheService {
         sourcePath = tempDownloadFile.path;
       }
 
-      final sourceSafety = AssetSafetyService.instance.inspectFileSync(
+      final sourceSafety = await _safetyInspector(
         sourcePath,
         config: previewSourceSafetyConfig,
       );
@@ -257,8 +252,9 @@ class ImagePreviewCacheService {
         throw const ImagePreviewUnavailable('safe preview generation failed');
       }
 
-      final resultSafety = AssetSafetyService.instance.inspectFileSync(
+      final resultSafety = await _safetyInspector(
         resultPath,
+        config: const AssetSafetyConfig(),
       );
       if (!resultSafety.safeForPreview) {
         throw ImagePreviewUnavailable(resultSafety.reason);
