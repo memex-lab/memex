@@ -37,6 +37,8 @@ import 'package:memex/ui/core/themes/app_colors.dart';
 import 'package:memex/utils/token_usage_utils.dart';
 import 'package:memex/utils/time_context.dart';
 import 'package:memex/ui/chat/chat_event_batcher.dart';
+import 'package:memex/ui/chat/view_models/photo_attachments_viewmodel.dart';
+import 'package:memex/ui/chat/widgets/selected_photo_attachment.dart';
 
 // --- Display Models ---
 
@@ -473,6 +475,14 @@ class AgentChatDialog extends StatefulWidget {
   @visibleForTesting
   final DateTime Function()? scrollClockForTesting;
 
+  @visibleForTesting
+  final PhotoAttachmentsViewModel? photoAttachmentsForTesting;
+  @visibleForTesting
+  final List<List<EnhancedPhoto>>? photoSuggestionsForTesting;
+  @visibleForTesting
+  final Future<List<AssetEntity>?> Function(BuildContext)?
+      imagePickerForTesting;
+
   const AgentChatDialog({
     super.key,
     this.initialSessionId,
@@ -486,6 +496,9 @@ class AgentChatDialog extends StatefulWidget {
     this.initialTokenUsage,
     this.chatEventsForTesting,
     this.scrollClockForTesting,
+    this.photoAttachmentsForTesting,
+    this.photoSuggestionsForTesting,
+    this.imagePickerForTesting,
   });
 
   @override
@@ -527,6 +540,28 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   final FocusNode _messageFocusNode = FocusNode();
   final ImagePicker _imagePicker = ImagePicker();
   final List<XFile> _selectedImages = [];
+  PhotoAttachmentsViewModel? _galleryAttachments;
+  bool get _canSubmitAttachments => _galleryAttachments?.canSubmit ?? true;
+  List<XFile> get _allSelectedImages => [
+        ..._selectedImages,
+        for (final item
+            in _galleryAttachments?.items ?? <SelectedPhotoAttachment>[])
+          if (item.prepared != null) XFile(item.prepared!.path),
+      ];
+
+  PhotoAttachmentsViewModel get _attachments => _galleryAttachments ??=
+      PhotoAttachmentsViewModel(router: _router)
+        ..addListener(_onAttachmentsChanged);
+
+  void _onAttachmentsChanged() {
+    if (!mounted) return;
+    setState(() {});
+    if (!(_galleryAttachments?.isPreparing ?? false) &&
+        !_hasLoadedPhotoSuggestions) {
+      _requestPhotoSuggestions();
+    }
+  }
+
   final Map<String, String> _originalFilenames = {};
   StreamSubscription<ChatEvent>? _chatSubscription;
   final List<StreamSubscription<ChatEvent>> _queuedSendSubscriptions = [];
@@ -554,6 +589,9 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   @override
   void initState() {
     super.initState();
+    _photoSuggestionClusters = widget.photoSuggestionsForTesting ?? [];
+    _galleryAttachments = widget.photoAttachmentsForTesting;
+    _galleryAttachments?.addListener(_onAttachmentsChanged);
     _chatEventBatcher = ChatEventBatcher(
       apply: _applyChatEvent,
       onFlush: () {
@@ -627,6 +665,10 @@ class _AgentChatDialogState extends State<AgentChatDialog>
 
   @override
   void dispose() {
+    _galleryAttachments?.removeListener(_onAttachmentsChanged);
+    if (widget.photoAttachmentsForTesting == null) {
+      _galleryAttachments?.dispose();
+    }
     _chatEventBatcher.dispose();
     _photoSuggestionCancellationToken?.cancel();
     _photoSuggestionCancellationToken = null;
@@ -974,6 +1016,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
 
   Future<void> _loadPhotoSuggestions() async {
     if (_isPhotoPickerActive ||
+        (_galleryAttachments?.isPreparing ?? false) ||
         _isLoadingPhotoSuggestions ||
         _photoSuggestionClusters.isNotEmpty) {
       return;
@@ -1055,9 +1098,10 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   bool _isSuggestionClusterSelected(List<EnhancedPhoto> cluster) {
     return cluster.isNotEmpty &&
         cluster.every(
-          (photo) => _selectedImages.any(
+          (photo) => _allSelectedImages.any(
             (image) => image.path == photo.xFile.path,
-          ),
+          ) || (_galleryAttachments?.items.any(
+              (item) => item.assetId == photo.entity.id) ?? false),
         );
   }
 
@@ -1070,6 +1114,13 @@ class _AgentChatDialogState extends State<AgentChatDialog>
           _selectedImages
               .removeWhere((image) => image.path == photo.xFile.path);
           _originalFilenames.remove(photo.xFile.path);
+          for (final item
+              in _galleryAttachments?.items ?? <SelectedPhotoAttachment>[]) {
+            if (item.assetId == photo.entity.id ||
+                item.prepared?.path == photo.xFile.path) {
+              _galleryAttachments!.remove(item);
+            }
+          }
         }
       });
       return;
@@ -1078,7 +1129,10 @@ class _AgentChatDialogState extends State<AgentChatDialog>
     setState(() {
       for (final photo in cluster) {
         final alreadySelected =
-            _selectedImages.any((image) => image.path == photo.xFile.path);
+            _allSelectedImages.any((image) => image.path == photo.xFile.path) ||
+                (_galleryAttachments?.items
+                        .any((item) => item.assetId == photo.entity.id) ??
+                    false);
         if (alreadySelected) continue;
 
         // Keep the original EXIF/GPS-carrying file from assetToXFile().
@@ -1153,6 +1207,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
       _messageController.clear();
       if (images.isNotEmpty) {
         _selectedImages.clear();
+        _galleryAttachments?.clear();
         _originalFilenames.clear();
       }
     });
@@ -1394,6 +1449,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   }
 
   Future<void> _pickImage(ImageSource source) async {
+    if (_isPhotoPickerActive) return;
     try {
       if (source == ImageSource.camera) {
         final image = await _imagePicker.pickImage(
@@ -1409,18 +1465,27 @@ class _AgentChatDialogState extends State<AgentChatDialog>
       if (!mounted) return;
       _pausePhotoSuggestionsForPicker();
       try {
-        final result = await pickPlatformImageAssets(context, maxAssets: 9);
-        if (result == null) return;
-
-        for (final asset in result) {
-          final xFile = await PhotoSuggestionService.assetToXFile(asset);
-          if (xFile == null) continue;
-          final originalName = await asset.titleAsync;
-          _originalFilenames[xFile.path] = originalName;
+        final picker = widget.imagePickerForTesting;
+        if (picker == null && defaultTargetPlatform == TargetPlatform.iOS) {
+          final existing = _photoSuggestionClusters.expand((cluster) => cluster)
+              .where((photo) => _selectedImages.any((image) => image.path == photo.xFile.path))
+              .map((photo) => photo.entity.id).toSet();
+          final result = await _attachments.pickNativePhotos(excludedAssetIds: existing);
           if (mounted) {
-            setState(() => _selectedImages.add(xFile));
+            result.when(onOk: (_) {}, onError: (error, _) => ToastHelper.showError(context, error));
           }
+          return;
         }
+        final result = await (picker != null
+            ? picker(context)
+            : pickPlatformImageAssets(context, maxAssets: 9));
+        if (!mounted || result == null) return;
+        _attachments.addAssets(result.where((asset) => !_photoSuggestionClusters
+            .expand((cluster) => cluster)
+            .any((photo) =>
+                photo.entity.id == asset.id &&
+                _selectedImages
+                    .any((image) => image.path == photo.xFile.path))));
       } finally {
         if (mounted) _resumePhotoSuggestionsAfterPicker();
       }
@@ -1440,9 +1505,16 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   }
 
   void _handleSuperAgentSubmit() {
+    if (!_canSubmitAttachments) return;
     final message = _messageController.text;
-    final images = List<XFile>.from(_selectedImages);
-    final imageOriginalFilenames = Map<String, String>.from(_originalFilenames);
+    final images = _allSelectedImages;
+    final imageOriginalFilenames = {
+      ..._originalFilenames,
+      for (final item
+          in _galleryAttachments?.items ?? <SelectedPhotoAttachment>[])
+        if (item.prepared != null)
+          item.prepared!.path: item.prepared!.originalName,
+    };
 
     if (_handleDemoSubmitIfNeeded(message, images: images)) return;
 
@@ -1472,6 +1544,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
     _messageFocusNode.unfocus();
     _messageController.clear();
     _selectedImages.clear();
+    _galleryAttachments?.clear();
     _originalFilenames.clear();
     _clearDraftAfterAcceptedSend();
 
@@ -2312,15 +2385,38 @@ class _AgentChatDialogState extends State<AgentChatDialog>
         children: [
           _buildPhotoSuggestionRow(),
           const SizedBox(height: 10),
-          if (_selectedImages.isNotEmpty) ...[
+          if (!_canSubmitAttachments)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
+                _galleryAttachments!.isPreparing
+                    ? UserStorage.l10n.preparingSelectedPhotos
+                    : UserStorage.l10n.selectedPhotosPreparationFailed,
+                style: const TextStyle(
+                    fontSize: 12, color: AppColors.textSecondary),
+              ),
+            ),
+          if (_selectedImages.isNotEmpty ||
+              (_galleryAttachments?.items.isNotEmpty ?? false)) ...[
             SizedBox(
               height: 72,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
-                itemCount: _selectedImages.length,
+                itemCount: _selectedImages.length +
+                    (_galleryAttachments?.items.length ?? 0),
                 separatorBuilder: (_, __) => const SizedBox(width: 10),
                 itemBuilder: (context, index) {
-                  return _buildSelectedImageThumb(index);
+                  if (index < _selectedImages.length) {
+                    return _buildSelectedImageThumb(index);
+                  }
+                  final item = _galleryAttachments!
+                      .items[index - _selectedImages.length];
+                  return SelectedPhotoAttachmentThumb(
+                    key: ValueKey('selected-photo-${item.id}'),
+                    item: item,
+                    onRemove: () => _galleryAttachments!.remove(item),
+                    onRetry: () => _galleryAttachments!.retry(item),
+                  );
                 },
               ),
             ),
@@ -2390,7 +2486,9 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                       ),
                       child: GestureDetector(
                         key: const ValueKey('super_agent_publish_button'),
-                        onTap: _handleSuperAgentSubmit,
+                        onTap: _canSubmitAttachments
+                            ? _handleSuperAgentSubmit
+                            : null,
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 160),
                           padding: const EdgeInsets.symmetric(
@@ -2398,7 +2496,9 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                             vertical: 11,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.textPrimary,
+                            color: _canSubmitAttachments
+                                ? AppColors.textPrimary
+                                : AppColors.textTertiary,
                             borderRadius: BorderRadius.circular(24),
                           ),
                           child: Row(

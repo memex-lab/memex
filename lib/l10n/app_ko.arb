@@ -1,4 +1,7 @@
 {
+  "preparingSelectedPhotos": "사진 준비 중…",
+  "selectedPhotosPreparationFailed": "일부 사진을 준비하지 못했습니다. 다시 시도하거나 표시된 사진을 삭제하세요.",
+
   "@@locale": "ko",
   "timesLabel": "횟수",
   "modelSetAsDefault": "{modelId}을(를) 기본 모델로 설정",

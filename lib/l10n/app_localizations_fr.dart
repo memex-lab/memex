@@ -9,6 +9,13 @@ class AppLocalizationsFr extends AppLocalizations {
   AppLocalizationsFr([String locale = 'fr']) : super(locale);
 
   @override
+  String get preparingSelectedPhotos => 'Préparation des photos…';
+
+  @override
+  String get selectedPhotosPreparationFailed =>
+      'Impossible de préparer certaines photos. Réessayez ou retirez les photos signalées.';
+
+  @override
   String get timesLabel => 'Fois';
 
   @override

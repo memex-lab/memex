@@ -1,4 +1,7 @@
 {
+  "preparingSelectedPhotos": "正在準備照片…",
+  "selectedPhotosPreparationFailed": "部分照片準備失敗，請重試或移除標記的照片。",
+
   "@@locale": "zh_Hant",
   "timesLabel": "次數",
   "modelSetAsDefault": "已將 {modelId} 設為預設模型",

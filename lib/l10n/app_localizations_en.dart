@@ -9,6 +9,13 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get preparingSelectedPhotos => 'Preparing photos…';
+
+  @override
+  String get selectedPhotosPreparationFailed =>
+      'Could not prepare photos. Retry or remove the marked photos.';
+
+  @override
   String get timesLabel => 'Times';
 
   @override

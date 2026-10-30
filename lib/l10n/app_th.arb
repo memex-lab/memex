@@ -1,4 +1,7 @@
 {
+  "preparingSelectedPhotos": "กำลังเตรียมรูปภาพ…",
+  "selectedPhotosPreparationFailed": "ไม่สามารถเตรียมรูปภาพบางรูปได้ โปรดลองอีกครั้งหรือลบรูปภาพที่ทำเครื่องหมายไว้",
+
   "@@locale": "th",
   "timesLabel": "ครั้ง",
   "@modelSetAsDefault": {

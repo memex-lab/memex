@@ -1,4 +1,7 @@
 {
+  "preparingSelectedPhotos": "در حال آماده‌سازی عکس‌ها…",
+  "selectedPhotosPreparationFailed": "برخی عکس‌ها آماده نشدند. دوباره تلاش کنید یا عکس‌های علامت‌گذاری‌شده را حذف کنید.",
+
   "@@locale": "fa",
   "timesLabel": "بار",
   "@modelSetAsDefault": {

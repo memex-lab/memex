@@ -1,9 +1,13 @@
 import 'dart:io';
+import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:memex/data/services/asset_safety_service.dart';
+import 'package:memex/data/services/image_preview_cache_service.dart';
 import 'package:memex/ui/core/widgets/local_image.dart';
 
 void main() {
@@ -32,13 +36,21 @@ void main() {
           home: SizedBox(
             width: 160,
             height: 120,
-            child: LocalImage(url: image.path, fit: BoxFit.cover),
+            child: LocalImage(
+                url: image.path,
+                fit: BoxFit.cover,
+                previewCacheService: ImagePreviewCacheService(
+                    tempDirectoryProvider: () async => tempDir)),
           ),
         ),
       );
 
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 50));
+      await _pumpUntil(
+          tester,
+          () => find
+              .byIcon(Icons.image_not_supported_outlined)
+              .evaluate()
+              .isNotEmpty);
 
       expect(find.byIcon(Icons.image_not_supported_outlined), findsOneWidget);
       expect(find.byType(Image), findsNothing);
@@ -74,61 +86,142 @@ void main() {
   testWidgets(
     'shows a safe placeholder for unsafe downloaded network images',
     (tester) async {
-      late HttpServer server;
-      await tester.runAsync<void>(() async {
-        server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
-        server.listen((request) {
-          request.response.headers.contentType = ContentType(
-            'image',
-            'png',
-          );
-          request.response.add(_pngHeader(width: 1000, height: 13000));
-          request.response.close();
-        });
-      });
-
-      await tester.pumpWidget(
-        MaterialApp(
+      final service = ImagePreviewCacheService(
+          tempDirectoryProvider: () async => tempDir,
+          networkImageFetcher: (_) async => http.Response.bytes(
+              _pngHeader(width: 1000, height: 13000), 200,
+              headers: {'content-type': 'image/png'}));
+      await tester.pumpWidget(MaterialApp(
           home: SizedBox(
-            width: 160,
-            height: 120,
-            child: LocalImage(
-              url: 'http://${server.address.host}:${server.port}/long.png',
-              fit: BoxFit.cover,
-            ),
-          ),
-        ),
-      );
-
-      await tester.runAsync<void>(() async {
-        await Future<void>.delayed(const Duration(milliseconds: 200));
-      });
-      await tester.pump();
-      await tester.runAsync<void>(() async {
-        await server.close(force: true);
-      });
+              width: 160,
+              height: 120,
+              child: LocalImage(
+                  url: 'https://example.test/long.png',
+                  previewCacheService: service,
+                  fit: BoxFit.cover))));
+      await _pumpUntil(
+          tester,
+          () => find
+              .byIcon(Icons.image_not_supported_outlined)
+              .evaluate()
+              .isNotEmpty);
 
       expect(find.byIcon(Icons.image_not_supported_outlined), findsOneWidget);
       expect(find.byType(Image), findsNothing);
     },
   );
 
-  test('provider returns memory placeholder for unsafe local images', () {
+  test('provider resolves unsafe local images to a transparent placeholder',
+      () async {
     final image = File('${tempDir.path}/long.png');
     image.writeAsBytesSync(_pngHeader(width: 1000, height: 13000));
-
-    final provider = LocalImage.provider(image.path);
-
-    expect(provider, isA<MemoryImage>());
+    final info = await _resolve(LocalImage.provider(image.path));
+    addTearDown(info.dispose);
+    expect(info.image.width, 1);
+    expect(info.image.height, 1);
+    final pixels = await info.image.toByteData();
+    expect(pixels!.getUint8(3), 0);
   });
 
-  test('provider keeps safe local images as file-backed providers', () {
+  test('provider still decodes safe local image pixels', () async {
     final image = File('${tempDir.path}/safe.png');
-    image.writeAsBytesSync(_pngHeader(width: 320, height: 240));
+    image.writeAsBytesSync(base64Decode(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='));
+    final info = await _resolve(LocalImage.provider(image.path));
+    addTearDown(info.dispose);
+    expect(info.image.width, 1);
+    final pixels = await info.image.toByteData();
+    expect(pixels!.getUint8(3), greaterThan(0));
+  });
 
-    final provider = LocalImage.provider(image.path);
+  testWidgets('late failure from a recycled image cannot replace the new image',
+      (tester) async {
+    final oldFile = File('${tempDir.path}/old.png');
+    oldFile.writeAsBytesSync(_pngHeader(width: 1000, height: 13000));
+    final newFile = File('${tempDir.path}/new.png');
+    newFile.writeAsBytesSync(base64Decode(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='));
+    final inspection = Completer<AssetSafetyReport>();
+    final started = Completer<void>();
+    final service = ImagePreviewCacheService(
+        tempDirectoryProvider: () async => tempDir,
+        safetyInspector: (file, {required config}) {
+          if (file == oldFile.path) {
+            if (!started.isCompleted) started.complete();
+            return inspection.future;
+          }
+          return AssetSafetyService.instance.inspectFile(file, config: config);
+        });
+    Widget page(String source) => MaterialApp(
+        home: SizedBox(
+            width: 160,
+            height: 120,
+            child: LocalImage(
+                key: const ValueKey('recycled'),
+                url: source,
+                previewCacheService: service)));
+    await tester.pumpWidget(page(oldFile.path));
+    await _pumpUntil(tester, () => started.isCompleted);
+    var oldFinished = false;
+    unawaited(service
+        .getOrCreatePreview(source: oldFile.path, isLocalFile: true)
+        .then<void>((_) => oldFinished = true,
+            onError: (Object _, StackTrace __) {
+      oldFinished = true;
+    }));
+    await tester.pumpWidget(page(newFile.path));
+    await _pumpUntil(tester, () => find.byType(Image).evaluate().isNotEmpty);
+    final displayed = tester.widget<Image>(find.byType(Image)).image;
+    inspection
+        .complete(AssetSafetyService.instance.inspectFileSync(oldFile.path));
+    await _pumpUntil(tester, () => oldFinished);
+    expect(find.byIcon(Icons.image_not_supported_outlined), findsNothing);
+    expect(tester.widget<Image>(find.byType(Image)).image, displayed);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
 
-    expect(provider, isA<FileImage>());
+  testWidgets('slow source inspection leaves the page interactive',
+      (tester) async {
+    final image = File('${tempDir.path}/photo.png');
+    image.writeAsBytesSync(base64Decode(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='));
+    final inspection = Completer<AssetSafetyReport>();
+    final started = Completer<void>();
+    final service = ImagePreviewCacheService(
+        tempDirectoryProvider: () async => tempDir,
+        safetyInspector: (file, {required config}) {
+          if (file == image.path) {
+            if (!started.isCompleted) started.complete();
+            return inspection.future;
+          }
+          return AssetSafetyService.instance.inspectFile(file, config: config);
+        });
+    var taps = 0;
+    await tester.pumpWidget(MaterialApp(
+        home: StatefulBuilder(
+            builder: (context, setState) => Scaffold(
+                    body: Column(children: [
+                  SizedBox(
+                      width: 160,
+                      height: 120,
+                      child: LocalImage(
+                          url: image.path, previewCacheService: service)),
+                  TextButton(
+                      onPressed: () => setState(() => taps++),
+                      child: Text('taps $taps')),
+                ])))));
+    await _pumpUntil(tester, () => started.isCompleted);
+    expect(started.isCompleted, isTrue);
+    await tester.tap(find.text('taps 0'));
+    await tester.pump();
+    expect(find.text('taps 1'), findsOneWidget);
+    expect(inspection.isCompleted, isFalse);
+    inspection
+        .complete(AssetSafetyService.instance.inspectFileSync(image.path));
+    await _pumpUntil(tester, () => find.byType(Image).evaluate().isNotEmpty);
+    expect(find.byType(Image), findsOneWidget);
+    expect(find.text('taps 1'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 }
 
@@ -173,4 +266,27 @@ void _writeUint32Be(Uint8List bytes, int offset, int value) {
   bytes[offset + 1] = (value >> 16) & 0xff;
   bytes[offset + 2] = (value >> 8) & 0xff;
   bytes[offset + 3] = value & 0xff;
+}
+
+Future<ImageInfo> _resolve(ImageProvider provider) {
+  final result = Completer<ImageInfo>();
+  final stream = provider.resolve(ImageConfiguration.empty);
+  late ImageStreamListener listener;
+  listener = ImageStreamListener((info, _) {
+    if (!result.isCompleted) result.complete(info);
+  }, onError: (Object error, StackTrace? stack) {
+    if (!result.isCompleted) result.completeError(error, stack);
+  });
+  stream.addListener(listener);
+  return result.future.whenComplete(() => stream.removeListener(listener));
+}
+
+Future<void> _pumpUntil(WidgetTester tester, bool Function() done) async {
+  for (var attempt = 0; attempt < 100 && !done(); attempt++) {
+    await tester
+        .runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+    await tester.pump();
+  }
+  expect(done(), isTrue,
+      reason: 'Asynchronous image load did not reach its expected state');
 }

@@ -9,6 +9,13 @@ class AppLocalizationsAr extends AppLocalizations {
   AppLocalizationsAr([String locale = 'ar']) : super(locale);
 
   @override
+  String get preparingSelectedPhotos => 'جارٍ تجهيز الصور…';
+
+  @override
+  String get selectedPhotosPreparationFailed =>
+      'تعذّر تجهيز بعض الصور. أعد المحاولة أو أزل الصور المحددة.';
+
+  @override
   String get timesLabel => 'مرات';
 
   @override

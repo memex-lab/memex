@@ -129,6 +129,18 @@ abstract class AppLocalizations {
     Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant')
   ];
 
+  /// No description provided for @preparingSelectedPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing photos…'**
+  String get preparingSelectedPhotos;
+
+  /// No description provided for @selectedPhotosPreparationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not prepare photos. Retry or remove the marked photos.'**
+  String get selectedPhotosPreparationFailed;
+
   /// No description provided for @timesLabel.
   ///
   /// In en, this message translates to:
