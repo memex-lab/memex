@@ -239,6 +239,7 @@ class MemexRouter {
       subscription: EventTaskSubscription(
         subscriptionId: 'comment_agent',
         taskType: 'comment_agent_task',
+        scheduleDelaySeconds: 20,
         requiresSuccessOf: const ['character_perception'],
         payloadBuilder: (_, event) {
           final p = event.payload as UserInputSubmittedPayload;
@@ -259,6 +260,7 @@ class MemexRouter {
       subscription: EventTaskSubscription(
         subscriptionId: 'character_perception',
         taskType: 'character_perception_task',
+        scheduleDelaySeconds: 20,
         maxRetries: 3,
         payloadBuilder: (_, event) {
           final p = event.payload as UserInputSubmittedPayload;
@@ -277,6 +279,7 @@ class MemexRouter {
       subscription: EventTaskSubscription(
         subscriptionId: 'character_initiative',
         taskType: CharacterInitiativeService.taskType,
+        scheduleDelaySeconds: 20,
         requiresSuccessOf: const ['comment_agent', 'character_perception'],
         maxRetries: 3,
         payloadBuilder: (_, event) {
