@@ -1,10 +1,12 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
+import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/native_action_service.dart';
 import 'package:memex/db/app_database.dart';
 import 'package:memex/utils/date_util.dart';
 import 'package:memex/utils/logger.dart';
+import 'package:uuid/uuid.dart';
 
 class SystemActionService {
   static final SystemActionService instance = SystemActionService._internal();
@@ -12,6 +14,53 @@ class SystemActionService {
 
   final _logger = getLogger('SystemActionService');
   AppDatabase get _db => AppDatabase.instance;
+
+  /// Record proposals are reviewable attachments, never implicit OS writes.
+  /// A deterministic ID preserves completed/rejected state across tool retries.
+  Future<String> prepareForRecord({
+    required String userId,
+    required String factId,
+    required String type,
+    required Map<String, dynamic> data,
+  }) async {
+    final db = _db;
+    if (!RegExp(r'^\d{4}/\d{2}/\d{2}\.md#ts_\d+$').hasMatch(factId)) {
+      throw ArgumentError.value(factId, 'factId', 'Expected a saved record ID');
+    }
+    final card = await FileSystemService.instance.readCardFile(userId, factId);
+    if (card == null || card.deleted == true || card.status != 'completed') {
+      throw StateError('Save the source record successfully before proposing.');
+    }
+    final time = parseLocalDateTime(
+      type == 'calendar' ? data['start_time'] : data['due_date'],
+    );
+    if (!{'calendar', 'reminder'}.contains(type) ||
+        time == null ||
+        !time.isAfter(DateTime.now())) {
+      throw ArgumentError('Record proposals require a concrete future time.');
+    }
+    final keys = data.keys.toList()..sort();
+    final canonical = {for (final key in keys) key: data[key]};
+    final id = const Uuid().v5(
+        Namespace.url.value,
+        jsonEncode(
+            ['memex-record-device-action', userId, factId, type, canonical]));
+    if (!identical(db, _db)) throw StateError('Workspace changed.');
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    await db.into(db.systemActions).insert(
+          SystemActionsCompanion.insert(
+            id: id,
+            actionType: type,
+            actionData: Value(jsonEncode(canonical)),
+            status: 'pending',
+            factId: Value(factId),
+            createdAt: Value(now),
+            updatedAt: Value(now),
+          ),
+          mode: InsertMode.insertOrIgnore,
+        );
+    return id;
+  }
 
   /// Creates a new system action (Calendar or Reminder) in the local database.
   /// Status is initialized to 'pending' for user review.
@@ -70,8 +119,22 @@ class SystemActionService {
   /// Permission prompting stays in the UI. This service owns payload parsing,
   /// native dispatch, and persistence so widgets do not contain action
   /// execution business logic.
-  Future<bool> applyToDevice(SystemAction action) async {
+  final Map<String, Future<bool?>> _inFlight = {};
+
+  Future<bool?> applyToDevice(SystemAction action) {
+    final existing = _inFlight[action.id];
+    if (existing != null) return existing;
+    final future = _applyToDevice(action.id);
+    _inFlight[action.id] = future;
+    return future.whenComplete(() => _inFlight.remove(action.id));
+  }
+
+  Future<bool?> _applyToDevice(String actionId) async {
     try {
+      final action = await getAction(actionId);
+      if (action == null) return false;
+      if (action.status == 'completed') return true;
+      if (!{'pending', 'dismissed'}.contains(action.status)) return false;
       final data = decodeActionData(action);
       final title = _optionalText(data['title']);
       if (title == null) {
@@ -79,7 +142,7 @@ class SystemActionService {
         return false;
       }
 
-      final bool applied;
+      final bool? applied;
       switch (action.actionType) {
         case 'calendar':
           final start = parseLocalDateTime(data['start_time']);
@@ -120,11 +183,14 @@ class SystemActionService {
           return false;
       }
 
+      if (applied == null) {
+        return null; // System editor cancelled; keep pending.
+      }
       if (!applied) return false;
       return updateActionStatus(action.id, 'completed');
     } catch (error, stackTrace) {
       _logger.severe(
-        'Failed to apply system action ${action.id}',
+        'Failed to apply system action $actionId',
         error,
         stackTrace,
       );
