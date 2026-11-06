@@ -26,6 +26,7 @@ import 'package:memex/data/services/local_task_executor.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/time_context.dart';
 import 'package:memex/domain/models/agent_definitions.dart';
+import 'package:memex/domain/models/task_exceptions.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/utils/token_usage_utils.dart';
 import 'package:flutter/foundation.dart';
@@ -42,8 +43,13 @@ String chatErrorUserNotLoggedIn() => UserStorage.l10n.userIdNotFound;
 String chatErrorEmptyMessage() => UserStorage.l10n.unknownError;
 
 @visibleForTesting
-String chatErrorOperationFailed(Object error) =>
-    UserStorage.l10n.operationFailed('$error');
+String chatErrorOperationFailed(Object error) {
+  if (error is InvalidModelConfigException ||
+      '$error'.contains('InvalidModelConfigException')) {
+    return UserStorage.l10n.invalidModelConfigPlain;
+  }
+  return UserStorage.l10n.operationFailed('$error');
+}
 
 // --- Chat Service ---
 

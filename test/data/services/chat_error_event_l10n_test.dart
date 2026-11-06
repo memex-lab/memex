@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:memex/data/services/chat_service.dart';
+import 'package:memex/domain/models/task_exceptions.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -19,5 +20,13 @@ void main() {
       chatErrorOperationFailed('timeout'),
       UserStorage.l10n.operationFailed('timeout'),
     );
+    final missingModel = chatErrorOperationFailed(
+      InvalidModelConfigException(
+        'The LLM configuration for chat_agent is invalid.',
+      ),
+    );
+    expect(missingModel, UserStorage.l10n.invalidModelConfigPlain);
+    expect(missingModel, isNot(contains('chat_agent')));
+    expect(missingModel, isNot(contains('InvalidModelConfigException')));
   });
 }
