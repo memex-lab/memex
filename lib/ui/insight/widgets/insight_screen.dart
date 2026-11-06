@@ -32,15 +32,18 @@ class _InsightScreenState extends State<InsightScreen> {
     KnowledgeInsightCard item,
   ) async {
     try {
-      await vm.togglePin(item);
-      if (mounted) {
-        ToastHelper.showSuccess(
-          context,
-          item.isPinned
-              ? UserStorage.l10n.unpinned
-              : UserStorage.l10n.pinnedStyle,
-        );
+      final pinned = await vm.togglePin(item);
+      if (!mounted) return;
+      if (!pinned) {
+        ToastHelper.showError(context, UserStorage.l10n.operationFailed(''));
+        return;
       }
+      ToastHelper.showSuccess(
+        context,
+        item.isPinned
+            ? UserStorage.l10n.unpinned
+            : UserStorage.l10n.pinnedStyle,
+      );
     } catch (e) {
       if (mounted) {
         ToastHelper.showError(
@@ -53,10 +56,13 @@ class _InsightScreenState extends State<InsightScreen> {
 
   Future<void> _saveSortOrder(InsightViewModel vm) async {
     try {
-      await vm.saveSortOrder();
-      if (mounted) {
-        ToastHelper.showSuccess(context, UserStorage.l10n.sortUpdated);
+      final saved = await vm.saveSortOrder();
+      if (!mounted) return;
+      if (!saved) {
+        ToastHelper.showError(context, UserStorage.l10n.sortSaveFailed(''));
+        return;
       }
+      ToastHelper.showSuccess(context, UserStorage.l10n.sortUpdated);
     } catch (e) {
       if (mounted) {
         ToastHelper.showError(
@@ -72,10 +78,13 @@ class _InsightScreenState extends State<InsightScreen> {
     KnowledgeInsightCard item,
   ) async {
     try {
-      await vm.deleteCard(item);
-      if (mounted) {
-        ToastHelper.showSuccess(context, UserStorage.l10n.insightCardDeleted);
+      final deleted = await vm.deleteCard(item);
+      if (!mounted) return;
+      if (!deleted) {
+        ToastHelper.showError(context, UserStorage.l10n.deleteFailedShort(''));
+        return;
       }
+      ToastHelper.showSuccess(context, UserStorage.l10n.insightCardDeleted);
     } catch (e) {
       if (mounted) {
         ToastHelper.showError(

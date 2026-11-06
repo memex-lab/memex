@@ -103,12 +103,12 @@ class InsightViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> togglePin(KnowledgeInsightCard item) async {
-    if (pinningIds.contains(item.id)) return;
+  Future<bool> togglePin(KnowledgeInsightCard item) async {
+    if (pinningIds.contains(item.id)) return false;
 
     final isOriginallyPinned = item.isPinned;
     final index = insights?.indexWhere((i) => i.id == item.id) ?? -1;
-    if (index == -1 || insights == null) return;
+    if (index == -1 || insights == null) return false;
 
     pinningIds.add(item.id);
     insights![index] = item.copyWith(isPinned: !isOriginallyPinned);
@@ -123,6 +123,7 @@ class InsightViewModel extends ChangeNotifier {
     }
     pinningIds.remove(item.id);
     notifyListeners();
+    return success;
   }
 
   void setActiveCardId(String? id) {
@@ -145,20 +146,24 @@ class InsightViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> saveSortOrder() async {
-    if (insights == null) return;
+  Future<bool> saveSortOrder() async {
+    if (insights == null) return false;
 
     isReordering = false;
     notifyListeners();
 
     final ids = insights!.map((e) => e.id).toList();
     final result = await _router.updateInsightCardSortOrder(ids);
-    if (result.isError) await loadData();
+    if (result.isError) {
+      await loadData();
+      return false;
+    }
     notifyListeners();
+    return true;
   }
 
-  Future<void> deleteCard(KnowledgeInsightCard item) async {
-    if (isDeleting) return;
+  Future<bool> deleteCard(KnowledgeInsightCard item) async {
+    if (isDeleting) return false;
 
     isDeleting = true;
     final originalList = List<KnowledgeInsightCard>.from(insights ?? []);
@@ -177,6 +182,7 @@ class InsightViewModel extends ChangeNotifier {
     }
     isDeleting = false;
     notifyListeners();
+    return success;
   }
 
   @override
