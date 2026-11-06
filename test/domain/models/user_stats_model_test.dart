@@ -1,7 +1,23 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:memex/domain/models/civil_date.dart';
 import 'package:memex/domain/models/user_stats_model.dart';
 
 void main() {
+  test('lastDays stays on civil dates across the spring-forward', () {
+    final range = UserStatsDateRange.lastDays(
+      7,
+      now: DateTime(2026, 4, 2, 15),
+    );
+
+    expect(range.start, DateTime(2026, 3, 27));
+    expect(range.end, DateTime(2026, 4, 2));
+    expect(range.dayCount, 7);
+    expect(
+      civilDaysInclusive(range.start, range.end).last,
+      DateTime(2026, 4, 2),
+    );
+  });
+
   group('UserStatsSnapshot trend buckets', () {
     test('uses daily buckets for shorter ranges', () {
       final snapshot = _snapshot(start: DateTime(2026, 1, 1), dayCount: 30);

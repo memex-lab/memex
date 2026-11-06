@@ -58,4 +58,14 @@ tags: []
     expect(occupied.single.cards.single.title, 'Night note');
     expect(occupied.single.cards.single.id, factId);
   });
+
+  test('a month that contains the DST fallback still returns each day',
+      () async {
+    final from = DateTime(2026, 10, 24).millisecondsSinceEpoch ~/ 1000;
+    final to = DateTime(2026, 10, 26, 12).millisecondsSinceEpoch ~/ 1000;
+
+    final days = await getCalendarData(from, to);
+
+    expect(days, hasLength(3));
+  });
 }

@@ -78,6 +78,42 @@ void main() {
       expect(events.single.containsKey('event_time_local'), isFalse);
     });
 
+    test('reads the daylight-saving fallback day once', () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'memex_event_log_service_test_',
+      );
+      addTearDown(() async {
+        if (await tempDir.exists()) {
+          await tempDir.delete(recursive: true);
+        }
+      });
+
+      final service = EventLogService(dataRoot: tempDir.path);
+      final logFile = File(
+        service.getEventLogPath('test-user', DateTime(2026, 10, 25)),
+      );
+      await logFile.parent.create(recursive: true);
+      await logFile.writeAsString(
+        '${jsonEncode({
+              'event_type': 'user_input',
+              'description': 'fallback day',
+              'event_time': '2026-10-25T12:00:00.000',
+              'user_id': 'test-user',
+            })}\n',
+      );
+
+      final events = await service.searchEvents(
+        userId: 'test-user',
+        fromTime: '2026-10-24T00:00:00.000',
+        toTime: '2026-10-26T23:59:59.000',
+        offset: 0,
+        limit: 10,
+      );
+
+      expect(events, hasLength(1));
+      expect(events.single['description'], 'fallback day');
+    });
+
     test('applies event type, time range, and pagination filters', () async {
       final tempDir = await Directory.systemTemp.createTemp(
         'memex_event_log_service_test_',

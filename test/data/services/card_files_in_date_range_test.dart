@@ -48,4 +48,30 @@ void main() {
       ['01_ts_1.yaml', '15_ts_2.yaml'],
     );
   });
+
+  test('includes the civil day after a daylight-saving fallback', () async {
+    // 2026-10-25 is the EU fallback. In Europe/Helsinki, midnight plus 24
+    // hours is still 25 Oct, so a Duration stepper never reaches the 26th.
+    final month = Directory(
+      p.join(
+        FileSystemService.instance.getCardsPath(userId),
+        '2026',
+        '10',
+      ),
+    );
+    await month.create(recursive: true);
+    await File(p.join(month.path, '25_ts_1.yaml')).writeAsString('title: fall');
+    await File(p.join(month.path, '26_ts_1.yaml')).writeAsString('title: next');
+
+    final files = await FileSystemService.instance.getCardFilesInDateRange(
+      userId,
+      DateTime(2026, 10, 24),
+      DateTime(2026, 10, 26),
+    );
+
+    expect(
+      files.map(p.basename).toList(),
+      ['25_ts_1.yaml', '26_ts_1.yaml'],
+    );
+  });
 }
