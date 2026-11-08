@@ -10,6 +10,7 @@ import 'package:memex/data/services/sqlite_busy_retry.dart';
 import 'package:memex/db/app_database.dart';
 import 'package:memex/domain/models/task_exceptions.dart';
 import 'package:memex/utils/logger.dart';
+import 'package:memex/utils/network_reachability.dart';
 
 /// Context for task execution
 class TaskContext {
@@ -242,8 +243,18 @@ class LocalTaskExecutor {
   TaskQueueOwnerKind _queueOwnerKind = TaskQueueOwnerKind.foreground;
   Timer? _queueLeaseHeartbeatTimer;
 
+  /// Replaced in tests so a parked task can be resumed without public DNS.
+  @visibleForTesting
+  Future<bool> Function() reachabilityCheck = canReachPublicInternet;
+
+  DateTime? _nextReachabilityProbeAt;
+
+  @visibleForTesting
+  Duration reachabilityProbeInterval = _reachabilityProbeInterval;
+
   // Polling interval
   static const Duration _pollInterval = Duration(seconds: 1);
+  static const Duration _reachabilityProbeInterval = Duration(seconds: 15);
   static const String _queueLeaseBucket = 'agent_queue_lease';
   static const String _queueLeaseKeyPrefix = 'agent_queue_lease:';
   static const String _foregroundQueueLeasePattern = '%:foreground';
@@ -829,6 +840,7 @@ class LocalTaskExecutor {
     int? scheduledAt,
     int maxRetries = 5,
     String? bizId,
+    String status = 'pending',
 
     /// Hard dependencies that must complete successfully before this task.
     List<String>? dependencies,
@@ -858,7 +870,7 @@ class LocalTaskExecutor {
             type: taskType,
             payload: Value(jsonEncode(payload)),
             runId: Value(runId ?? payload['run_id'] as String?),
-            status: 'pending',
+            status: status,
             priority: Value(priority),
             createdAt: Value(now),
             scheduledAt: Value(scheduledAt),
@@ -884,6 +896,100 @@ class LocalTaskExecutor {
     }
 
     return taskId;
+  }
+
+  /// Merge [extra] into a task payload without changing its status.
+  Future<void> mergeTaskPayload(
+    String taskId,
+    Map<String, dynamic> extra,
+  ) async {
+    final task = await (_db.select(_db.tasks)
+          ..where((t) => t.id.equals(taskId)))
+        .getSingleOrNull();
+    if (task == null) return;
+    final payload = _decodePayload(task)..addAll(extra);
+    await (_db.update(_db.tasks)..where((t) => t.id.equals(taskId))).write(
+      TasksCompanion(payload: Value(jsonEncode(payload))),
+    );
+  }
+
+  /// Force a saved capture turn back to pending so the user can retry it
+  /// even when the automatic reachability probe still says offline.
+  Future<bool> requeueCaptureTask(String factId) async {
+    final tasks = await (_db.select(_db.tasks)
+          ..where((t) => t.type.equals('super_agent_chat_turn_task')))
+        .get();
+    var found = false;
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    for (final task in tasks) {
+      if (task.status == 'completed') continue;
+      final payload = _decodePayload(task);
+      if (payload['pre_minted_fact_id'] != factId) continue;
+      await (_db.update(_db.tasks)..where((t) => t.id.equals(task.id))).write(
+        TasksCompanion(
+          status: const Value('pending'),
+          retryCount: const Value(0),
+          error: const Value(null),
+          scheduledAt: Value(now),
+          updatedAt: Value(now),
+        ),
+      );
+      found = true;
+    }
+    if (found && _isRunning) {
+      _scheduleNextPoll(immediate: true);
+    }
+    return found;
+  }
+
+  Future<void> _parkTaskForNetwork(Task task, Object error) async {
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    await (_db.update(_db.tasks)..where((t) => t.id.equals(task.id))).write(
+      TasksCompanion(
+        status: const Value(waitingNetworkTaskStatus),
+        updatedAt: Value(now),
+        scheduledAt: const Value(null),
+        error: Value(error.toString()),
+      ),
+    );
+    _logger.info('Task ${task.id} is waiting for network');
+  }
+
+  Future<void> _resumeWaitingNetworkTasks() async {
+    final clock = DateTime.now();
+    if (_nextReachabilityProbeAt != null &&
+        clock.isBefore(_nextReachabilityProbeAt!)) {
+      return;
+    }
+    final waiting = await (_db.selectOnly(_db.tasks)
+          ..addColumns([_db.tasks.id.count()])
+          ..where(_db.tasks.status.equals(waitingNetworkTaskStatus)))
+        .getSingle();
+    final count = waiting.read(_db.tasks.id.count()) ?? 0;
+    if (count == 0) return;
+
+    _nextReachabilityProbeAt = clock.add(reachabilityProbeInterval);
+    var online = false;
+    try {
+      online = await reachabilityCheck();
+    } catch (e) {
+      _logger.warning('Reachability probe failed: $e');
+    }
+    if (!online) return;
+
+    final now = clock.millisecondsSinceEpoch ~/ 1000;
+    final resumed = await (_db.update(_db.tasks)
+          ..where((t) => t.status.equals(waitingNetworkTaskStatus)))
+        .write(
+      TasksCompanion(
+        status: const Value('pending'),
+        updatedAt: Value(now),
+        scheduledAt: Value(now),
+      ),
+    );
+    if (resumed > 0) {
+      _logger.info('Resumed $resumed tasks that were waiting for network');
+    }
   }
 
   /// Keeps at most one waiting task for a business key. If a matching task is
@@ -984,6 +1090,7 @@ class LocalTaskExecutor {
         return;
       }
       await _recoverStaleTasksAfterOwnershipIfNeeded();
+      await _resumeWaitingNetworkTasks();
 
       final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
 
@@ -1384,11 +1491,15 @@ class LocalTaskExecutor {
     } catch (e, stack) {
       _logger.severe('Task ${task.id} failed', e, stack);
 
-      // Retry Logic
       final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
       final nextRetry = task.retryCount + 1;
+      final parkForNetwork = e is WaitingForNetworkException ||
+          (e is! NonRetryableTaskException && looksLikeNetworkError(e));
 
-      if (e is! NonRetryableTaskException && nextRetry <= task.maxRetries) {
+      if (parkForNetwork) {
+        await _parkTaskForNetwork(task, e);
+      } else if (e is! NonRetryableTaskException &&
+          nextRetry <= task.maxRetries) {
         // Exponential backoff
         const backoff = 30; //* (1 << (task.retryCount));
         final nextRun = now + backoff;
@@ -1398,8 +1509,6 @@ class LocalTaskExecutor {
             status: const Value('retrying'),
             retryCount: Value(nextRetry),
             updatedAt: Value(now),
-            // For simple polling, we don't strictly update scheduledAt for retries currently in query logic
-            // but we should if we want valid backoff.
             // Existing query handles scheduledAt logic, so updating it works.
             scheduledAt: Value(nextRun),
             error: Value(e.toString()),

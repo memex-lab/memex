@@ -1935,6 +1935,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get processingStatus => 'Processando';
 
   @override
+  String get waitingForNetworkStatus => 'Aguardando rede';
+
+  @override
   String get failedStatus => 'Falhou';
 
   @override

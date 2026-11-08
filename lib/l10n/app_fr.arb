@@ -873,6 +873,7 @@
   "modelNotConfiguredBanner": "Modèle AI pas encore configuré. Configurez-le pour déverrouiller toutes les fonctionnalités.",
   "modelNotConfiguredSubmitHint": "Veuillez configurer un modèle AI avant de publier",
   "processingStatus": "Traitement",
+  "waitingForNetworkStatus": "En attente du réseau",
   "failedStatus": "Échec",
   "failureReason": "Raison de l'échec",
   "unknownError": "Une erreur inconnue est survenue",

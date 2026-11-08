@@ -1915,6 +1915,9 @@ class AppLocalizationsTh extends AppLocalizations {
   String get processingStatus => 'กำลังประมวลผล';
 
   @override
+  String get waitingForNetworkStatus => 'กำลังรอเครือข่าย';
+
+  @override
   String get failedStatus => 'ล้มเหลว';
 
   @override

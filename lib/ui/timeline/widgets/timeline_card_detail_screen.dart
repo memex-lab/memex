@@ -14,6 +14,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter/gestures.dart';
 import 'package:memex/domain/models/card_detail_model.dart';
 import 'package:memex/data/repositories/memex_router.dart';
+import 'package:memex/data/services/capture_card_status.dart';
 import 'package:memex/utils/toast_helper.dart';
 import 'package:memex/utils/time_context.dart';
 import 'package:memex/utils/user_storage.dart';
@@ -1110,6 +1111,23 @@ class _TimelineCardDetailScreenState extends State<TimelineCardDetailScreen> {
                                   const SizedBox(height: 16),
                                   if (detail.status == 'processing') ...[
                                     const CardProcessingBanner(),
+                                    const SizedBox(height: 16),
+                                  ],
+                                  if (detail.status ==
+                                          waitingForNetworkCardStatus ||
+                                      detail.status == 'failed') ...[
+                                    CardHoldBanner(
+                                      message: detail.status ==
+                                              waitingForNetworkCardStatus
+                                          ? UserStorage
+                                              .l10n.waitingForNetworkStatus
+                                          : (detail.failureReason ??
+                                              UserStorage.l10n.failedStatus),
+                                      onRetry: () async {
+                                        await requeueCaptureCard(widget.cardId);
+                                        await _fetchDetail();
+                                      },
+                                    ),
                                     const SizedBox(height: 16),
                                   ],
                                   // Title
@@ -2394,6 +2412,53 @@ class _CommentInputWidgetState extends State<_CommentInputWidget> {
           ),
         ),
       ],
+    );
+  }
+}
+
+class CardHoldBanner extends StatelessWidget {
+  final String message;
+  final Future<void> Function() onRetry;
+
+  const CardHoldBanner({
+    super.key,
+    required this.message,
+    required this.onRetry,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF7ED),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: const Color(0xFFFB923C).withValues(alpha: 0.4),
+          width: 0.8,
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.cloud_off_rounded, color: Color(0xFFC2410C)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF9A3412),
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => onRetry(),
+            child: Text(UserStorage.l10n.retry),
+          ),
+        ],
+      ),
     );
   }
 }

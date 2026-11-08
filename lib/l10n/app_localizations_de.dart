@@ -1954,6 +1954,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get processingStatus => 'Verarbeitung';
 
   @override
+  String get waitingForNetworkStatus => 'Warten auf das Netzwerk';
+
+  @override
   String get failedStatus => 'Fehlgeschlagen';
 
   @override

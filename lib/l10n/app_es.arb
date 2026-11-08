@@ -873,6 +873,7 @@
   "modelNotConfiguredBanner": "El modelo de IA aún no está configurado. Configúralo para desbloquear todas las funciones.",
   "modelNotConfiguredSubmitHint": "Configura un modelo de IA antes de publicar",
   "processingStatus": "Procesando",
+  "waitingForNetworkStatus": "Esperando red",
   "failedStatus": "Fallido",
   "failureReason": "Motivo del fallo",
   "unknownError": "Ocurrió un error desconocido",

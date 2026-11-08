@@ -36,6 +36,16 @@ class NonRetryableLlmException implements NonRetryableTaskException {
   }
 }
 
+/// The device cannot reach the model provider. The task stays queued.
+class WaitingForNetworkException implements Exception {
+  final Object cause;
+
+  WaitingForNetworkException(this.cause);
+
+  @override
+  String toString() => 'WaitingForNetworkException: $cause';
+}
+
 /// Exception thrown when an agent reached its max-turn/loop guard.
 class NonRetryableAgentLoopException implements NonRetryableTaskException {
   @override

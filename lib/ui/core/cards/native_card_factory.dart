@@ -49,6 +49,7 @@ class NativeCardFactory {
       'status': status,
       if (failureReason != null) 'failure_reason': failureReason,
       ...data,
+      if (cardId != null) 'card_id': cardId,
       if (overrideTitle) 'title': title,
     };
 

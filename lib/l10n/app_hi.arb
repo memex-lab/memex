@@ -873,6 +873,7 @@
   "modelNotConfiguredBanner": "एआई मॉडल अभी कॉन्फ़िगर नहीं है। सभी सुविधाएँ अनलॉक करने के लिए सेटअप करें।",
   "modelNotConfiguredSubmitHint": "प्रकाशित करने से पहले कृपया एआई मॉडल कॉन्फ़िगर करें",
   "processingStatus": "प्रोसेसिंग में",
+  "waitingForNetworkStatus": "नेटवर्क की प्रतीक्षा",
   "failedStatus": "विफल स्थिति",
   "failureReason": "विफलता कारण",
   "unknownError": "अज्ञात त्रुटि हुई",

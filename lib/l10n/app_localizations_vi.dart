@@ -1913,6 +1913,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get processingStatus => 'Đang xử lý';
 
   @override
+  String get waitingForNetworkStatus => 'Đang chờ mạng';
+
+  @override
   String get failedStatus => 'Thất bại';
 
   @override

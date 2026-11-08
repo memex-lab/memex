@@ -871,6 +871,7 @@
   "modelNotConfiguredBanner": "AI modeli henüz yapılandırılmadı. Tüm özelliklerin kilidini açmak için ayarlayın.",
   "modelNotConfiguredSubmitHint": "Lütfen yayınlamadan önce bir AI modeli yapılandırın",
   "processingStatus": "İşleme",
+  "waitingForNetworkStatus": "Ağ bekleniyor",
   "failedStatus": "Arızalı",
   "failureReason": "Arıza Sebebi",
   "unknownError": "Bilinmeyen hata oluştu",

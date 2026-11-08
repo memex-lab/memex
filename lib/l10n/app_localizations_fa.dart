@@ -1922,6 +1922,9 @@ class AppLocalizationsFa extends AppLocalizations {
   String get processingStatus => 'در حال پردازش';
 
   @override
+  String get waitingForNetworkStatus => 'در انتظار شبکه';
+
+  @override
   String get failedStatus => 'ناموفق';
 
   @override

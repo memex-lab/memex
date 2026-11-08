@@ -873,6 +873,7 @@
   "modelNotConfiguredBanner": "Mô hình AI chưa được cấu hình. Thiết lập để mở khóa tất cả tính năng.",
   "modelNotConfiguredSubmitHint": "Vui lòng cấu hình mô hình AI trước khi xuất bản",
   "processingStatus": "Đang xử lý",
+  "waitingForNetworkStatus": "Đang chờ mạng",
   "failedStatus": "Thất bại",
   "failureReason": "Lý do thất bại",
   "unknownError": "Đã xảy ra lỗi không xác định",

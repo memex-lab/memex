@@ -873,6 +873,7 @@
   "modelNotConfiguredBanner": "KI-Modell noch nicht konfiguriert. Richten Sie es ein, um alle Funktionen freizuschalten.",
   "modelNotConfiguredSubmitHint": "Bitte konfiguriere vor dem Veröffentlichen ein AI-Modell",
   "processingStatus": "Verarbeitung",
+  "waitingForNetworkStatus": "Warten auf das Netzwerk",
   "failedStatus": "Fehlgeschlagen",
   "failureReason": "Fehlergrund",
   "unknownError": "Es ist ein unbekannter Fehler aufgetreten",

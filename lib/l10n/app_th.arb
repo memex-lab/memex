@@ -871,6 +871,7 @@
   "modelNotConfiguredBanner": "ยังไม่ได้กำหนดค่าโมเดล AI ตั้งค่าเพื่อปลดล็อกฟีเจอร์ทั้งหมด",
   "modelNotConfiguredSubmitHint": "โปรดกำหนดค่าโมเดล AI ก่อนเผยแพร่",
   "processingStatus": "กำลังประมวลผล",
+  "waitingForNetworkStatus": "กำลังรอเครือข่าย",
   "failedStatus": "ล้มเหลว",
   "failureReason": "สาเหตุที่ล้มเหลว",
   "unknownError": "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ",

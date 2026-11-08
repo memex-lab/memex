@@ -3532,6 +3532,12 @@ abstract class AppLocalizations {
   /// **'Processing'**
   String get processingStatus;
 
+  /// No description provided for @waitingForNetworkStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for network'**
+  String get waitingForNetworkStatus;
+
   /// No description provided for @failedStatus.
   ///
   /// In en, this message translates to:

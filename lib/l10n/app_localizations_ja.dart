@@ -1877,6 +1877,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get processingStatus => '処理中';
 
   @override
+  String get waitingForNetworkStatus => 'ネットワーク待ち';
+
+  @override
   String get failedStatus => '失敗';
 
   @override

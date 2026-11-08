@@ -19,5 +19,11 @@ void main() {
       chatErrorOperationFailed('timeout'),
       UserStorage.l10n.operationFailed('timeout'),
     );
+    expect(
+      chatErrorOperationFailed(
+        "Exception: Failed host lookup: 'api.anthropic.com'",
+      ),
+      UserStorage.l10n.llmNetworkError,
+    );
   });
 }

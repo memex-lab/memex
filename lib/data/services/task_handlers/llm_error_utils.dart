@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:logging/logging.dart';
@@ -7,6 +6,7 @@ import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/data/services/local_task_executor.dart';
 import 'package:memex/domain/models/task_exceptions.dart';
 import 'package:memex/utils/logger.dart';
+import 'package:memex/utils/network_reachability.dart';
 import 'package:memex/utils/user_storage.dart';
 
 final Logger _logger = getLogger('LlmErrorUtils');
@@ -41,12 +41,12 @@ enum LlmErrorCategory {
 /// If [error] is an [AgentException], extracts the original exception via
 /// `error.error` before classification.
 LlmErrorCategory classifyError(Object error) {
-  final actual = _unwrapError(error);
-
-  if (actual is SocketException || actual is TimeoutException) {
+  if (unwrapNetworkError(error) is TimeoutException ||
+      looksLikeNetworkError(error)) {
     return LlmErrorCategory.networkError;
   }
 
+  final actual = _unwrapError(error);
   final errorStr = actual.toString();
 
   if (RegExp(r'\b40[13]\b').hasMatch(errorStr)) {
@@ -61,11 +61,6 @@ LlmErrorCategory classifyError(Object error) {
   if (RegExp(r'\b5\d{2}\b').hasMatch(errorStr)) {
     return LlmErrorCategory.serverError;
   }
-  if (errorStr.contains('SocketException') ||
-      errorStr.contains('TimeoutException')) {
-    return LlmErrorCategory.networkError;
-  }
-
   return LlmErrorCategory.unknownError;
 }
 

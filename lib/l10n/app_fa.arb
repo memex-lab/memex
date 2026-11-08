@@ -873,6 +873,7 @@
   "modelNotConfiguredBanner": "مدل هوش مصنوعی هنوز پیکربندی نشده. برای فعال‌سازی همه قابلیت‌ها آن را تنظیم کنید.",
   "modelNotConfiguredSubmitHint": "لطفاً قبل از انتشار، یک مدل هوش مصنوعی پیکربندی کنید",
   "processingStatus": "در حال پردازش",
+  "waitingForNetworkStatus": "در انتظار شبکه",
   "failedStatus": "ناموفق",
   "failureReason": "دلیل خطا",
   "unknownError": "خطای ناشناخته رخ داد",

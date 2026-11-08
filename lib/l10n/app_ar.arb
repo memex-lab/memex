@@ -873,6 +873,7 @@
   "modelNotConfiguredBanner": "لم يتم إعداد نموذج الذكاء الاصطناعي بعد. قم بإعداده لفتح كل الميزات.",
   "modelNotConfiguredSubmitHint": "يرجى إعداد نموذج الذكاء الاصطناعي قبل النشر",
   "processingStatus": "قيد المعالجة",
+  "waitingForNetworkStatus": "في انتظار الشبكة",
   "failedStatus": "فشل",
   "failureReason": "سبب الفشل",
   "unknownError": "حدث خطأ غير معروف",

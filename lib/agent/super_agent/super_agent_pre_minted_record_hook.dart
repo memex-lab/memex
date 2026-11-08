@@ -1,6 +1,7 @@
 import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:logging/logging.dart';
+import 'package:memex/data/services/capture_card_status.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/timeline_card_event_publisher.dart';
 import 'package:memex/domain/models/card_model.dart';
@@ -23,10 +24,8 @@ class SuperAgentPreMintedRecordHook extends AgentHook {
 
   static final Logger _logger = getLogger('SuperAgentPreMintedRecordHook');
 
-  @visibleForTesting
   static const factIdMetadataKey = _factIdMetadataKey;
 
-  @visibleForTesting
   static const turnIdMetadataKey = _turnIdMetadataKey;
 
   @visibleForTesting
@@ -59,7 +58,6 @@ class SuperAgentPreMintedRecordHook extends AgentHook {
     }
   }
 
-  @visibleForTesting
   String? get factIdForTesting => _factId;
 
   @override
@@ -95,8 +93,23 @@ class SuperAgentPreMintedRecordHook extends AgentHook {
     _loadFromState(context.state);
     final factId = _factId?.trim();
     if (factId == null || factId.isEmpty) return;
-    if (context.error != null && context.state.isRunning) {
-      return;
+    if (context.error != null) {
+      if (context.error!.code != AgentExceptionCode.cancelled) {
+        try {
+          // isRunning stays true after a thrown run, which used to skip this
+          // hook and leave the placeholder on "processing" forever.
+          await settleCaptureCardForError(
+            userId: userId,
+            factId: factId,
+            error: context.error!,
+          );
+        } catch (e) {
+          _logger.warning(
+            'Failed to settle pre-minted record fact_id $factId: $e',
+          );
+        }
+      }
+      if (context.state.isRunning) return;
     }
 
     try {
