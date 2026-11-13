@@ -579,7 +579,7 @@ class PedometerFetcher implements HealthDataFetcher {
 
       for (var d = startTime;
           d.isBefore(endTime);
-          d = d.add(const Duration(days: 1))) {
+          d = DateTime(d.year, d.month, d.day + 1)) {
         final dStr = _formatDate(d);
 
         if (dStr == todayStr) {
@@ -590,7 +590,7 @@ class PedometerFetcher implements HealthDataFetcher {
           if (todaySteps > 0) stepsByDate[dStr] = todaySteps;
         } else {
           // Past day's steps = NextDaySnapshot - StartOfDaySnapshot
-          final nextDay = d.add(const Duration(days: 1));
+          final nextDay = DateTime(d.year, d.month, d.day + 1);
           final nextDayStr = _formatDate(nextDay);
 
           if (snapshots.containsKey(dStr) &&
