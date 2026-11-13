@@ -10,6 +10,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get chatThinkingMessage => 'جارٍ التفكير…';
+
   @override
   String get preparingSelectedPhotos => 'جارٍ تجهيز الصور…';
 
@@ -2542,6 +2543,25 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get useLocalSpeechToTextDesc =>
       'عند التفعيل، يتم تفريغ الصوت على الجهاز قبل الإرسال — مفيد للنماذج التي لا تدعم إدخال الصوت. عند التعطيل، يرسل الصوت الأصلي مباشرة إلى النموذج.';
+
+  @override
+  String get localSpeechModelTitle => 'نموذج الكلام';
+
+  @override
+  String get localSpeechModelSenseVoice => 'SenseVoice';
+
+  @override
+  String get localSpeechModelWhisper => 'متعدد اللغات';
+
+  @override
+  String get localSpeechLanguageTitle => 'اللغة المنطوقة';
+
+  @override
+  String get localSpeechLanguageAuto => 'تلقائي';
+
+  @override
+  String get localSpeechLanguageUnsupported =>
+      'هذا النموذج على الجهاز لا يغطي تلك اللغة. متعدد اللغات يشمل الألمانية ولغات أوروبية أخرى. SenseVoice يغطي الصينية والإنجليزية واليابانية والكورية والكانتونية.';
 
   @override
   String get pendingAiProcessingHint =>
