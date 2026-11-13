@@ -676,7 +676,10 @@ class UserStorage {
       case LLMConfig.typeGemini:
         final effectiveApiKey = llmConfig.getEffectiveApiKey();
         if (effectiveApiKey.isEmpty) {
-          throw InvalidModelConfigException('LLM API Key is empty');
+          throw InvalidModelConfigException(
+            'LLM API Key is empty',
+            InvalidModelConfigReason.emptyApiKey,
+          );
         }
         client = GeminiClient(
           apiKey: effectiveApiKey,
@@ -686,7 +689,10 @@ class UserStorage {
       case LLMConfig.typeGeminiOauth:
         final accessToken = await GeminiAuthService.getValidAccessToken();
         if (accessToken == null) {
-          throw InvalidModelConfigException('Gemini OAuth not authorized.');
+          throw InvalidModelConfigException(
+            'Gemini OAuth not authorized.',
+            InvalidModelConfigReason.oauth,
+          );
         }
         client = GeminiOAuthClient(
           proxyUrl: proxyUrl,
@@ -695,7 +701,10 @@ class UserStorage {
       case LLMConfig.typeResponses:
         final effectiveApiKey = llmConfig.getEffectiveApiKey();
         if (effectiveApiKey.isEmpty) {
-          throw InvalidModelConfigException('LLM API Key is empty');
+          throw InvalidModelConfigException(
+            'LLM API Key is empty',
+            InvalidModelConfigReason.emptyApiKey,
+          );
         }
         client = ResponsesClient(
           apiKey: effectiveApiKey,
@@ -706,7 +715,10 @@ class UserStorage {
       case LLMConfig.typeChatCompletion:
         final effectiveApiKey = llmConfig.getEffectiveApiKey();
         if (effectiveApiKey.isEmpty) {
-          throw InvalidModelConfigException('LLM API Key is empty');
+          throw InvalidModelConfigException(
+            'LLM API Key is empty',
+            InvalidModelConfigReason.emptyApiKey,
+          );
         }
         client = OpenAIClient(
           apiKey: effectiveApiKey,
@@ -717,7 +729,10 @@ class UserStorage {
       case LLMConfig.typeClaude:
         final effectiveApiKey = llmConfig.getEffectiveApiKey();
         if (effectiveApiKey.isEmpty) {
-          throw InvalidModelConfigException('LLM API Key is empty');
+          throw InvalidModelConfigException(
+            'LLM API Key is empty',
+            InvalidModelConfigReason.emptyApiKey,
+          );
         }
         client = ClaudeClient(
           apiKey: effectiveApiKey,
@@ -748,7 +763,10 @@ class UserStorage {
       case LLMConfig.typeOpenAiOauth:
         final tokens = await OpenAiAuthService.getSavedTokens();
         if (tokens == null) {
-          throw InvalidModelConfigException('OpenAI OAuth not authorized.');
+          throw InvalidModelConfigException(
+            'OpenAI OAuth not authorized.',
+            InvalidModelConfigReason.oauth,
+          );
         }
         client = CodexResponsesClient(
           accessToken: tokens['accessToken'] as String,
@@ -792,7 +810,9 @@ class UserStorage {
         break;
       default:
         throw InvalidModelConfigException(
-            'Unknown LLM type: ${llmConfig.type}');
+          'Unknown LLM type: ${llmConfig.type}',
+          InvalidModelConfigReason.other,
+        );
     }
 
     // Create ModelConfig

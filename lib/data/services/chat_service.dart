@@ -44,11 +44,19 @@ String chatErrorEmptyMessage() => UserStorage.l10n.unknownError;
 
 @visibleForTesting
 String chatErrorOperationFailed(Object error) {
-  if (error is InvalidModelConfigException ||
-      '$error'.contains('InvalidModelConfigException')) {
+  if (error is InvalidModelConfigException) {
+    if (error.reason == InvalidModelConfigReason.notConfigured) {
+      return UserStorage.l10n.invalidModelConfigPlain;
+    }
+    return UserStorage.l10n.operationFailed(error.message);
+  }
+  final text = '$error';
+  if (text.contains('InvalidModelConfigException') &&
+      !text.contains('OAuth') &&
+      !text.contains('API Key')) {
     return UserStorage.l10n.invalidModelConfigPlain;
   }
-  return UserStorage.l10n.operationFailed('$error');
+  return UserStorage.l10n.operationFailed(text);
 }
 
 // --- Chat Service ---
