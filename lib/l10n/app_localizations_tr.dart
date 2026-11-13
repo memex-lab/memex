@@ -9,6 +9,8 @@ class AppLocalizationsTr extends AppLocalizations {
   AppLocalizationsTr([String locale = 'tr']) : super(locale);
 
   @override
+  String get chatThinkingMessage => 'Düşünüyor…';
+  @override
   String get preparingSelectedPhotos => 'Fotoğraflar hazırlanıyor…';
 
   @override

@@ -9,6 +9,8 @@ class AppLocalizationsIt extends AppLocalizations {
   AppLocalizationsIt([String locale = 'it']) : super(locale);
 
   @override
+  String get chatThinkingMessage => 'Elaborazione in corso…';
+  @override
   String get preparingSelectedPhotos => 'Preparazione delle foto…';
 
   @override

@@ -1,19 +1,11 @@
-import 'dart:io';
-import '../../../helpers/fake_photo_asset.dart';
 import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/services.dart';
-import 'package:flutter/foundation.dart';
-import 'package:photo_manager/photo_manager.dart';
-import 'package:memex/data/services/photo_attachment_service.dart';
-import 'package:memex/data/services/native_photo_picker_service.dart';
-import 'package:memex/data/services/photo_suggestion_service.dart';
-import 'package:memex/domain/models/native_photo_selection.dart';
-import 'package:memex/ui/chat/view_models/photo_attachments_viewmodel.dart';
-import 'package:memex/ui/core/widgets/reliable_asset_picker.dart';
+import 'dart:io';
 
 import 'package:drift/native.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -22,17 +14,26 @@ import 'package:memex/data/model/chat_events.dart';
 import 'package:memex/data/services/demo_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/local_asset_server.dart';
+import 'package:memex/data/services/native_photo_picker_service.dart';
+import 'package:memex/data/services/photo_attachment_service.dart';
+import 'package:memex/data/services/photo_suggestion_service.dart';
 import 'package:memex/data/services/system_action_service.dart';
 import 'package:memex/db/app_database.dart';
+import 'package:memex/domain/models/native_photo_selection.dart';
 import 'package:memex/l10n/app_localizations.dart';
+import 'package:memex/ui/chat/view_models/photo_attachments_viewmodel.dart';
 import 'package:memex/ui/chat/widgets/agent_chat_dialog.dart';
 import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:memex/ui/core/widgets/local_image.dart';
+import 'package:memex/ui/core/widgets/reliable_asset_picker.dart';
 import 'package:memex/ui/knowledge/widgets/knowledge_file_page.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:path/path.dart' as p;
 import 'package:permission_handler/permission_handler.dart';
+import 'package:photo_manager/photo_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../../helpers/fake_photo_asset.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -41,6 +42,106 @@ void main() {
     SharedPreferences.setMockInitialValues({'language': 'en'});
     await initializeDateFormatting('en');
     await UserStorage.initL10n();
+  });
+
+  testWidgets('preparing and queued requests survive the previous run ending',
+      (tester) async {
+    final active = StreamController<ChatEvent>();
+    final next = StreamController<ChatEvent>();
+    await _pumpDialog(tester, dialog: AgentChatDialog(
+      initialItems: [UserMessageItem('First request'), UserMessageItem('Second request')],
+      chatEventsForTesting: active.stream,
+      additionalChatEventsForTesting: next.stream,
+    ));
+    active.add(ChatRunAttachedEvent('run-1'));
+    active.add(ChatAgentStartedEvent('first'));
+    next.add(ChatTurnPreparingEvent('second'));
+    await tester.pump();
+    active.add(ChatResponseChunkEvent('first', 'First reply', isDone: true));
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(find.text('First reply', findRichText: true), findsOneWidget);
+    await active.close();
+    await tester.pump();
+    expect(find.text(UserStorage.l10n.chatThinkingMessage), findsOneWidget);
+
+    next.add(ChatTurnQueuedEvent('second', 'run-2'));
+    next.add(ChatRunAttachedEvent('run-2'));
+    await tester.pump();
+    expect(find.text(UserStorage.l10n.chatThinkingMessage), findsOneWidget);
+    next.add(ChatAgentStartedEvent('second'));
+    await tester.pump();
+    expect(find.text(UserStorage.l10n.chatThinkingMessage), findsOneWidget);
+    next.add(ChatResponseChunkEvent('second', 'Second reply', isDone: true));
+    next.add(ChatAgentStoppedEvent('second'));
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(find.text('Second reply', findRichText: true), findsOneWidget);
+    await next.close();
+    await tester.pumpAndSettle();
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('duplicate attachment leaves queued work on the existing listener',
+      (tester) async {
+    final active = StreamController<ChatEvent>();
+    var duplicateCancelled = false;
+    final next = StreamController<ChatEvent>(onCancel: () { duplicateCancelled = true; });
+    await _pumpDialog(tester, dialog: AgentChatDialog(
+      initialItems: [UserMessageItem('First request'), UserMessageItem('Second request')],
+      chatEventsForTesting: active.stream,
+      additionalChatEventsForTesting: next.stream,
+    ));
+    active.add(ChatRunAttachedEvent('shared-run'));
+    active.add(ChatAgentStartedEvent('first'));
+    next.add(ChatTurnPreparingEvent('second'));
+    next.add(ChatTurnQueuedEvent('second', 'shared-run'));
+    next.add(ChatRunAttachedEvent('shared-run'));
+    next.add(ChatResponseChunkEvent('first', 'Duplicate replay'));
+    await tester.pump();
+    expect(duplicateCancelled, isTrue);
+    expect(find.text('Duplicate replay', findRichText: true), findsNothing);
+    unawaited(next.close());
+    await tester.pump();
+    active.add(ChatAgentStoppedEvent('first'));
+    await tester.pump();
+    expect(find.text(UserStorage.l10n.chatThinkingMessage), findsOneWidget);
+    active.add(ChatAgentStartedEvent('second'));
+    await tester.pump();
+    expect(find.text(UserStorage.l10n.chatThinkingMessage), findsOneWidget);
+    active.add(ChatResponseChunkEvent('second', 'Queued reply', isDone: true));
+    active.add(ChatAgentStoppedEvent('second'));
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(find.text('Queued reply', findRichText: true), findsOneWidget);
+    await active.close();
+    await tester.pumpAndSettle();
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('attachment failure does not stop another running request',
+      (tester) async {
+    final active = StreamController<ChatEvent>();
+    final next = StreamController<ChatEvent>();
+    await _pumpDialog(tester, dialog: AgentChatDialog(
+      initialItems: [UserMessageItem('First request'), UserMessageItem('Second request')],
+      chatEventsForTesting: active.stream,
+      additionalChatEventsForTesting: next.stream,
+    ));
+    active.add(ChatRunAttachedEvent('run-1'));
+    active.add(ChatAgentStartedEvent('first'));
+    next.add(ChatTurnPreparingEvent('second'));
+    next.add(ChatErrorEvent('second', 'Cannot read attachment'));
+    await tester.pump();
+    await next.close();
+    await tester.pump();
+    expect(find.text('Cannot read attachment'), findsOneWidget);
+    expect(find.text(UserStorage.l10n.chatThinkingMessage), findsOneWidget);
+    active.add(ChatResponseChunkEvent('first', 'Still listening', isDone: true));
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(find.text('Still listening', findRichText: true), findsOneWidget);
+    await active.close();
+    await tester.pumpAndSettle();
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 
   testWidgets(
@@ -499,6 +600,9 @@ void main() {
     });
 
     test('shows standalone thinking only before process or reply appears', () {
+      expect(shouldShowSuperAgentThinkingRow(
+        isLoadingAgent: true, primaryItem: ProcessItem()..isFinished = true,
+      ), isTrue);
       expect(
         shouldShowSuperAgentThinkingRow(
           isLoadingAgent: false,
@@ -579,41 +683,6 @@ void main() {
           hasLoadedSuggestions: true,
         ),
         isFalse,
-      );
-    });
-
-    test('queues a super agent send while another run is active', () {
-      expect(
-        shouldQueueSuperAgentSend(
-          isStreaming: false,
-          hasSessionId: true,
-          hasChatSubscription: true,
-        ),
-        isFalse,
-      );
-      expect(
-        shouldQueueSuperAgentSend(
-          isStreaming: true,
-          hasSessionId: false,
-          hasChatSubscription: true,
-        ),
-        isFalse,
-      );
-      expect(
-        shouldQueueSuperAgentSend(
-          isStreaming: true,
-          hasSessionId: true,
-          hasChatSubscription: false,
-        ),
-        isFalse,
-      );
-      expect(
-        shouldQueueSuperAgentSend(
-          isStreaming: true,
-          hasSessionId: true,
-          hasChatSubscription: true,
-        ),
-        isTrue,
       );
     });
 

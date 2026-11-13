@@ -9,6 +9,8 @@ class AppLocalizationsId extends AppLocalizations {
   AppLocalizationsId([String locale = 'id']) : super(locale);
 
   @override
+  String get chatThinkingMessage => 'Sedang berpikir…';
+  @override
   String get preparingSelectedPhotos => 'Menyiapkan foto…';
 
   @override

@@ -1,7 +1,39 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:memex/domain/models/civil_date.dart';
 import 'package:memex/domain/models/user_stats_model.dart';
 
 void main() {
+  test('lastDays stays on civil dates across the spring-forward', () {
+    final range = UserStatsDateRange.lastDays(
+      7,
+      now: DateTime(2026, 4, 2, 15),
+    );
+
+    expect(range.start, DateTime(2026, 3, 27));
+    expect(range.end, DateTime(2026, 4, 2));
+    expect(range.dayCount, 7);
+    expect(
+      civilDaysInclusive(range.start, range.end).last,
+      DateTime(2026, 4, 2),
+    );
+  });
+
+  test('inclusive civil end stays on the fall-back day', () {
+    final end = DateTime(2026, 10, 25);
+    final bound = inclusiveCivilDayEnd(end);
+    final byDuration = end
+        .add(const Duration(days: 1))
+        .subtract(const Duration(microseconds: 1));
+
+    expect(DateTime(bound.year, bound.month, bound.day), end);
+    expect(bound.hour, 23);
+    expect(bound.minute, 59);
+    final repeatedHour = end.add(const Duration(days: 1)).day == end.day;
+    if (repeatedHour) {
+      expect(bound.isAfter(byDuration), isTrue);
+    }
+  });
+
   group('UserStatsSnapshot trend buckets', () {
     test('uses daily buckets for shorter ranges', () {
       final snapshot = _snapshot(start: DateTime(2026, 1, 1), dayCount: 30);
@@ -49,9 +81,10 @@ void main() {
 }
 
 UserStatsSnapshot _snapshot({required DateTime start, required int dayCount}) {
+  final origin = DateTime(start.year, start.month, start.day);
   final daily = List.generate(dayCount, (index) {
     return UserStatsDailyPoint(
-      date: start.add(Duration(days: index)),
+      date: _civilOffset(origin, index),
       inputs: index + 1,
       words: (index + 1) * 10,
       cards: 1,
@@ -63,8 +96,8 @@ UserStatsSnapshot _snapshot({required DateTime start, required int dayCount}) {
 
   return UserStatsSnapshot(
     range: UserStatsDateRange(
-      start: start,
-      end: start.add(Duration(days: dayCount - 1)),
+      start: origin,
+      end: _civilOffset(origin, dayCount - 1),
     ),
     summary: UserStatsSummary(
       totalInputs: daily.fold(0, (sum, point) => sum + point.inputs),
@@ -107,4 +140,12 @@ String _dateKey(DateTime date) {
   final month = date.month.toString().padLeft(2, '0');
   final day = date.day.toString().padLeft(2, '0');
   return '$year-$month-$day';
+}
+
+DateTime _civilOffset(DateTime start, int days) {
+  var cursor = start;
+  for (var i = 0; i < days; i++) {
+    cursor = nextCivilDay(cursor);
+  }
+  return cursor;
 }
