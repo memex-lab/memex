@@ -19,6 +19,7 @@ import 'package:memex/ui/knowledge/widgets/knowledge_base_screen.dart';
 import 'package:memex/ui/user_setup/widgets/user_setup_screen.dart';
 import 'package:memex/ui/app_lock/widgets/lock_screen_page.dart';
 import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
+import 'package:memex/ui/core/widgets/phone_width_frame.dart';
 import 'package:memex/ui/core/themes/app_theme.dart';
 import 'package:memex/ui/core/themes/bundled_google_fonts.dart';
 import 'dart:io';
@@ -413,23 +414,25 @@ class _MemexAppState extends State<MemexApp> with WidgetsBindingObserver {
           locale: locale,
           routerConfig: widget.router,
           builder: (context, child) {
-            return _AppActionReadiness(
-              canHandleActions: !_isLocked,
-              child: Stack(
-                children: [
-                  if (child != null) child,
-                  const DemoOverlay(),
-                  if (_isLocked && _hasUser)
-                    _requiresAuth
-                        ? LockScreen(
-                            onUnlock: () {
-                              setState(() {
-                                _isLocked = false;
-                              });
-                            },
-                          )
-                        : const PrivacyScreen(),
-                ],
+            return PhoneWidthFrame(
+              child: _AppActionReadiness(
+                canHandleActions: !_isLocked,
+                child: Stack(
+                  children: [
+                    if (child != null) child,
+                    const DemoOverlay(),
+                    if (_isLocked && _hasUser)
+                      _requiresAuth
+                          ? LockScreen(
+                              onUnlock: () {
+                                setState(() {
+                                  _isLocked = false;
+                                });
+                              },
+                            )
+                          : const PrivacyScreen(),
+                  ],
+                ),
               ),
             );
           },
