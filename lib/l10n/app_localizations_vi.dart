@@ -10,6 +10,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get chatThinkingMessage => 'Đang suy nghĩ…';
+
   @override
   String get preparingSelectedPhotos => 'Đang chuẩn bị ảnh…';
 
@@ -2549,6 +2550,25 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String get useLocalSpeechToTextDesc =>
       'Khi bật, âm thanh được chuyển thành văn bản trên thiết bị trước khi gửi — hữu ích cho mô hình không hỗ trợ đầu vào âm thanh. Khi tắt, âm thanh gốc được gửi trực tiếp tới mô hình.';
+
+  @override
+  String get localSpeechModelTitle => 'Mô hình giọng nói';
+
+  @override
+  String get localSpeechModelSenseVoice => 'SenseVoice';
+
+  @override
+  String get localSpeechModelWhisper => 'Đa ngôn ngữ';
+
+  @override
+  String get localSpeechLanguageTitle => 'Ngôn ngữ nói';
+
+  @override
+  String get localSpeechLanguageAuto => 'Tự động';
+
+  @override
+  String get localSpeechLanguageUnsupported =>
+      'Mô hình trên máy này không phủ ngôn ngữ đó. Đa ngôn ngữ gồm tiếng Đức và các ngôn ngữ châu Âu khác. SenseVoice phủ tiếng Trung, Anh, Nhật, Hàn và Quảng Đông.';
 
   @override
   String get pendingAiProcessingHint => 'Thiết lập mô hình AI để xử lý';

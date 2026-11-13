@@ -10,6 +10,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get chatThinkingMessage => 'Denkt nach…';
+
   @override
   String get preparingSelectedPhotos => 'Fotos werden vorbereitet…';
 
@@ -2599,6 +2600,25 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get useLocalSpeechToTextDesc =>
       'Wenn diese Option aktiviert ist, wird der Ton vor dem Senden auf dem Gerät transkribiert – nützlich für Modelle, die keinen Audioeingang unterstützen. Bei Deaktivierung wird der Originalton direkt an das Modell gesendet.';
+
+  @override
+  String get localSpeechModelTitle => 'Sprachmodell';
+
+  @override
+  String get localSpeechModelSenseVoice => 'SenseVoice';
+
+  @override
+  String get localSpeechModelWhisper => 'Mehrsprachig';
+
+  @override
+  String get localSpeechLanguageTitle => 'Gesprochene Sprache';
+
+  @override
+  String get localSpeechLanguageAuto => 'Automatisch';
+
+  @override
+  String get localSpeechLanguageUnsupported =>
+      'Dieses Gerätemodell deckt diese Sprache nicht ab. Mehrsprachig enthält Deutsch und weitere europäische Sprachen. SenseVoice deckt Chinesisch, Englisch, Japanisch, Koreanisch und Kantonesisch ab.';
 
   @override
   String get pendingAiProcessingHint =>

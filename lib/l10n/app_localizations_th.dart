@@ -10,6 +10,7 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get chatThinkingMessage => 'กำลังคิด…';
+
   @override
   String get preparingSelectedPhotos => 'กำลังเตรียมรูปภาพ…';
 
@@ -2551,6 +2552,25 @@ class AppLocalizationsTh extends AppLocalizations {
   @override
   String get useLocalSpeechToTextDesc =>
       'เมื่อเปิดใช้งาน เสียงจะถอดในเครื่องก่อนส่ง — มีประโยชน์สำหรับโมเดลที่ไม่รองรับการป้อนเสียง เมื่อปิด จะส่งเสียงต้นฉบับตรงไปยังโมเดล';
+
+  @override
+  String get localSpeechModelTitle => 'โมเดลเสียง';
+
+  @override
+  String get localSpeechModelSenseVoice => 'SenseVoice';
+
+  @override
+  String get localSpeechModelWhisper => 'หลายภาษา';
+
+  @override
+  String get localSpeechLanguageTitle => 'ภาษาที่พูด';
+
+  @override
+  String get localSpeechLanguageAuto => 'อัตโนมัติ';
+
+  @override
+  String get localSpeechLanguageUnsupported =>
+      'โมเดลในเครื่องนี้ไม่ครอบคลุมภาษานั้น หลายภาษารวมเยอรมันและภาษายุโรปอื่น SenseVoice ครอบคลุมจีน อังกฤษ ญี่ปุ่น เกาหลี และกวางตุ้ง';
 
   @override
   String get pendingAiProcessingHint => 'ตั้งค่าโมเดล AI เพื่อประมวลผล';

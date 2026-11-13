@@ -9,6 +9,7 @@ import 'package:logging/logging.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/domain/models/llm_config.dart';
 import 'package:memex/domain/models/agent_config.dart';
+import 'package:memex/domain/models/local_speech.dart';
 import 'package:memex/domain/models/location_context_config.dart';
 import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:memex/domain/models/agent_definitions.dart';
@@ -503,6 +504,8 @@ class UserStorage {
 
   static const String _keyAgentConfigs = 'agent_configs';
   static const String _keyUseLocalSpeechToText = 'use_local_speech_to_text';
+  static const String _keyLocalSpeechEngine = 'local_speech_engine';
+  static const String _keyLocalSpeechLanguage = 'local_speech_language';
   static const String _keySuperAgentRunMode = 'super_agent_run_mode';
 
   /// Persisted run mode for the SuperAgent home entry ('auto' | 'confirm' |
@@ -583,6 +586,52 @@ class UserStorage {
       await prefs.setBool(_keyUseLocalSpeechToText, value);
     } catch (e) {
       throw Exception('Failed to save speech preference: $e');
+    }
+  }
+
+  static Future<String> getLocalSpeechEngine() async {
+    try {
+      final prefs = await sharedPrefs();
+      return LocalSpeechEngines.normalize(
+        prefs.getString(_keyLocalSpeechEngine),
+      );
+    } catch (e) {
+      return LocalSpeechEngines.defaultEngine;
+    }
+  }
+
+  static Future<void> setLocalSpeechEngine(String value) async {
+    try {
+      final prefs = await sharedPrefs();
+      await prefs.setString(
+        _keyLocalSpeechEngine,
+        LocalSpeechEngines.normalize(value),
+      );
+    } catch (e) {
+      throw Exception('Failed to save speech engine: $e');
+    }
+  }
+
+  static Future<String> getLocalSpeechLanguage() async {
+    try {
+      final prefs = await sharedPrefs();
+      return LocalSpeechLanguages.normalize(
+        prefs.getString(_keyLocalSpeechLanguage),
+      );
+    } catch (e) {
+      return localSpeechLanguageAuto;
+    }
+  }
+
+  static Future<void> setLocalSpeechLanguage(String value) async {
+    try {
+      final prefs = await sharedPrefs();
+      await prefs.setString(
+        _keyLocalSpeechLanguage,
+        LocalSpeechLanguages.normalize(value),
+      );
+    } catch (e) {
+      throw Exception('Failed to save speech language: $e');
     }
   }
 
