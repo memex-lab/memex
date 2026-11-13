@@ -279,9 +279,7 @@ class ChatService {
     StackTrace? stackTrace,
   ) async {
     final factId = (payload['pre_minted_fact_id'] as String?)?.trim();
-    if (factId != null &&
-        factId.isNotEmpty &&
-        !looksLikeNetworkError(error)) {
+    if (factId != null && factId.isNotEmpty && !looksLikeNetworkError(error)) {
       await settleCaptureCardForError(
         userId: userId,
         factId: factId,
@@ -652,6 +650,19 @@ class ChatService {
       return;
     }
 
+    if (preMintedFactId != null &&
+        preMintedFactId.isNotEmpty &&
+        !await _captureCardStillExists(userId, preMintedFactId)) {
+      _logger.info(
+        'Skipping chat turn $turnId because capture card $preMintedFactId '
+        'was deleted',
+      );
+      if (await _shouldCloseRunAfterTask(taskContext.taskId)) {
+        _runRegistry[sessionId]?.close();
+      }
+      return;
+    }
+
     final run = _runRegistry.getOrStart(sessionId);
 
     await _runSuperAgentChatTurn(
@@ -669,10 +680,9 @@ class ChatService {
       runMode: runMode,
       userMessageTime: userMessageTime,
       agentStateSessionId: agentStateSessionId,
-      preMintedFactId:
-          preMintedFactId == null || preMintedFactId.isEmpty
-              ? null
-              : preMintedFactId,
+      preMintedFactId: preMintedFactId == null || preMintedFactId.isEmpty
+          ? null
+          : preMintedFactId,
       run: run,
     );
   }
@@ -1055,11 +1065,11 @@ class ChatService {
             preMintedFactId,
           );
           if (existing != null && existing.deleted != true) {
-            activeAgent.state.metadata[
-                    SuperAgentPreMintedRecordHook.factIdMetadataKey] =
+            activeAgent.state
+                    .metadata[SuperAgentPreMintedRecordHook.factIdMetadataKey] =
                 preMintedFactId;
-            activeAgent.state.metadata[
-                    SuperAgentPreMintedRecordHook.turnIdMetadataKey] =
+            activeAgent.state
+                    .metadata[SuperAgentPreMintedRecordHook.turnIdMetadataKey] =
                 turnId;
             final processingCard = await _fileService.updateCardFile(
               userId,
@@ -1595,6 +1605,11 @@ class ChatService {
       usage: usage,
       isQuickQuery: isQuickQuery,
     );
+  }
+
+  Future<bool> _captureCardStillExists(String userId, String factId) async {
+    final card = await _fileService.readCardFile(userId, factId);
+    return card != null && card.deleted != true;
   }
 
   Future<bool> _sessionHasAssistantForTurn(

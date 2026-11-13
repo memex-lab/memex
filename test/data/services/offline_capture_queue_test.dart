@@ -1,10 +1,14 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:dart_agent_core/dart_agent_core.dart';
+import 'package:dio/dio.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart';
 import 'package:memex/agent/super_agent/super_agent_pre_minted_record_hook.dart';
+import 'package:memex/data/repositories/card.dart';
 import 'package:memex/data/services/chat_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/local_task_executor.dart';
@@ -220,6 +224,166 @@ void main() {
       isTrue,
     );
   });
+
+  test('deleting a waiting card cancels its turn and lets the next one run',
+      () async {
+    await ChatService.instance
+        .sendMessage(
+          'garage note',
+          sessionId: '',
+          agentName: 'memex_agent',
+          scene: 'super_agent_home',
+        )
+        .toList();
+
+    final parked = (await db.select(db.tasks).get()).single;
+    final factId = _payloadFactId(parked.payload);
+    expect(factId, isNotNull);
+    expect(await deleteCardEndpoint(factId!), isTrue);
+    expect(
+      await FileSystemService.instance.readCardFile(
+        'offline-capture-user',
+        factId,
+      ),
+      isNull,
+    );
+
+    final cancelled = (await db.select(db.tasks).get()).single;
+    expect(cancelled.status, cancelledTaskStatus);
+
+    var runs = 0;
+    executor.registerHandler('super_agent_chat_turn_task', (_, __, ___) async {
+      runs += 1;
+    });
+    await executor.enqueueTask(
+      userId: 'offline-capture-user',
+      taskType: 'super_agent_chat_turn_task',
+      payload: {'turn_id': 'next-turn'},
+      waitFor: [cancelled.id],
+    );
+    executor.reachabilityCheck = () async => true;
+    await executor.start(
+      userId: 'offline-capture-user',
+      recoverStaleTasks: false,
+    );
+
+    final completed = await _waitForStatus(db, 'completed');
+    expect(completed.id, isNot(cancelled.id));
+    expect(runs, 1);
+    expect(await _cardFiles(), isEmpty);
+  });
+
+  test('a resumed turn does not mint a card after the original was deleted',
+      () async {
+    await ChatService.instance
+        .sendMessage(
+          'what is the garage code',
+          sessionId: '',
+          agentName: 'memex_agent',
+          scene: 'super_agent_home',
+        )
+        .toList();
+
+    final parked = (await db.select(db.tasks).get()).single;
+    final factId = _payloadFactId(parked.payload)!;
+    expect(
+      await FileSystemService.instance.deleteCard(
+        'offline-capture-user',
+        factId,
+      ),
+      isTrue,
+    );
+
+    final payload = jsonDecode(parked.payload!) as Map<String, dynamic>;
+    await ChatService.instance.handleSuperAgentChatTurnTask(
+      'offline-capture-user',
+      payload,
+      TaskContext(taskId: parked.id, taskType: parked.type),
+    );
+
+    expect(await _cardFiles(), isEmpty);
+  });
+
+  test('a text-only reply removes the empty offline placeholder', () async {
+    final factId = await FileSystemService.instance.allocateCardFactId(
+      'offline-capture-user',
+    );
+    final placeholder = await FileSystemService.instance.readCardFile(
+      'offline-capture-user',
+      factId,
+    );
+    expect(isUnusedPreallocatedRecordPlaceholder(placeholder, factId), isTrue);
+
+    final state = AgentState(
+      sessionId: 'offline-question',
+      metadata: {
+        SuperAgentPreMintedRecordHook.turnIdMetadataKey: 'turn-1',
+        SuperAgentPreMintedRecordHook.factIdMetadataKey: factId,
+      },
+    );
+    final hook = SuperAgentPreMintedRecordHook(
+      userId: 'offline-capture-user',
+      turnId: 'turn-1',
+    );
+    await hook.afterRun(
+      AfterRunHookContext(
+        StatefulAgent(
+          name: 'text_only',
+          client: _NoopClient(),
+          modelConfig: ModelConfig(model: 'test'),
+          state: state,
+        ),
+        input: const [],
+        modelMessages: const [],
+      ),
+    );
+
+    expect(
+      await FileSystemService.instance.readCardFile(
+        'offline-capture-user',
+        factId,
+      ),
+      isNull,
+    );
+  });
+}
+
+Future<List<File>> _cardFiles() async {
+  final cardsRoot = Directory(
+    FileSystemService.instance.getCardsPath('offline-capture-user'),
+  );
+  if (!await cardsRoot.exists()) return const [];
+  final entities = await cardsRoot.list(recursive: true).toList();
+  return [
+    for (final entity in entities)
+      if (entity is File) entity
+  ];
+}
+
+class _NoopClient extends LLMClient {
+  @override
+  Future<ModelMessage> generate(
+    List<LLMMessage> messages, {
+    List<Tool>? tools,
+    ToolChoice? toolChoice,
+    required ModelConfig modelConfig,
+    bool? jsonOutput,
+    CancelToken? cancelToken,
+  }) async {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<Stream<StreamingMessage>> stream(
+    List<LLMMessage> messages, {
+    List<Tool>? tools,
+    ToolChoice? toolChoice,
+    required ModelConfig modelConfig,
+    bool? jsonOutput,
+    CancelToken? cancelToken,
+  }) async {
+    throw UnimplementedError();
+  }
 }
 
 String? _payloadFactId(String? payload) {

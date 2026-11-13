@@ -9,6 +9,9 @@ import 'package:memex/utils/user_storage.dart';
 /// Task status for work that is saved and waiting until the device is online.
 const waitingNetworkTaskStatus = 'waiting_network';
 
+/// Task status for a capture turn whose card the user already deleted.
+const cancelledTaskStatus = 'cancelled';
+
 /// Best-effort check that the device can resolve a public DNS name.
 ///
 /// Used when the configured model host is unknown. A local or private model

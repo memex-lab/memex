@@ -926,7 +926,9 @@ class LocalTaskExecutor {
     var found = false;
     final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     for (final task in tasks) {
-      if (task.status == 'completed') continue;
+      if (task.status == 'completed' || task.status == cancelledTaskStatus) {
+        continue;
+      }
       final payload = _decodePayload(task);
       if (payload['pre_minted_fact_id'] != factId) continue;
       await (_db.update(_db.tasks)..where((t) => t.id.equals(task.id))).write(
@@ -944,6 +946,36 @@ class LocalTaskExecutor {
       _scheduleNextPoll(immediate: true);
     }
     return found;
+  }
+
+  /// Stop a queued capture turn for [factId]. A deleted waiting card must not
+  /// be minted again when the network returns. A task already processing is
+  /// left alone; its handler checks that the card is still there.
+  Future<int> cancelCaptureTasksForFact(String factId) async {
+    final tasks = await (_db.select(_db.tasks)
+          ..where((t) => t.type.equals('super_agent_chat_turn_task')))
+        .get();
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    var cancelled = 0;
+    for (final task in tasks) {
+      if (task.status == 'completed' ||
+          task.status == 'processing' ||
+          task.status == cancelledTaskStatus) {
+        continue;
+      }
+      final payload = _decodePayload(task);
+      if (payload['pre_minted_fact_id'] != factId) continue;
+      await (_db.update(_db.tasks)..where((t) => t.id.equals(task.id))).write(
+        TasksCompanion(
+          status: const Value(cancelledTaskStatus),
+          updatedAt: Value(now),
+          completedAt: Value(now),
+          error: const Value('capture card deleted'),
+        ),
+      );
+      cancelled += 1;
+    }
+    return cancelled;
   }
 
   Future<void> _parkTaskForNetwork(Task task, Object error) async {
@@ -1115,11 +1147,9 @@ class LocalTaskExecutor {
 
       // 2. Fetch runnable tasks. Dependency-blocked tasks at the front of the
       // queue should not starve later tasks that can safely run now.
-      final agentFamilyActive = activeTasks
-          .where((task) => isAgentFamilyTaskType(task.type))
-          .length;
-      final remainingAgentSlots =
-          maxAgentFamilyConcurrency - agentFamilyActive;
+      final agentFamilyActive =
+          activeTasks.where((task) => isAgentFamilyTaskType(task.type)).length;
+      final remainingAgentSlots = maxAgentFamilyConcurrency - agentFamilyActive;
 
       final candidates = await _findRunnableTasks(
         slotsAvailable: slotsAvailable,
@@ -1445,8 +1475,9 @@ class LocalTaskExecutor {
         final status = statusById[dependency.taskId];
         return switch (dependency.condition) {
           TaskDependencyCondition.requiresSuccess => status == 'completed',
-          TaskDependencyCondition.waitForCompletion =>
-            status == 'completed' || status == 'failed',
+          TaskDependencyCondition.waitForCompletion => status == 'completed' ||
+              status == 'failed' ||
+              status == cancelledTaskStatus,
         };
       });
     } catch (e) {
