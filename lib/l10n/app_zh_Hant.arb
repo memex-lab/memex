@@ -874,6 +874,7 @@
   "modelNotConfiguredBanner": "AI 模型尚未設定，請先設定以解鎖全部功能。",
   "modelNotConfiguredSubmitHint": "請先設定 AI 模型再發布內容",
   "processingStatus": "處理中",
+  "waitingForNetworkStatus": "等待網路",
   "failedStatus": "處理失敗",
   "failureReason": "失敗原因",
   "unknownError": "發生未知錯誤",

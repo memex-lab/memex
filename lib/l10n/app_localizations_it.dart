@@ -1963,6 +1963,9 @@ class AppLocalizationsIt extends AppLocalizations {
   String get processingStatus => 'Elaborazione';
 
   @override
+  String get waitingForNetworkStatus => 'In attesa della rete';
+
+  @override
   String get failedStatus => 'Fallito';
 
   @override

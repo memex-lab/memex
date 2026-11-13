@@ -1924,6 +1924,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get processingStatus => 'प्रोसेसिंग में';
 
   @override
+  String get waitingForNetworkStatus => 'नेटवर्क की प्रतीक्षा';
+
+  @override
   String get failedStatus => 'विफल स्थिति';
 
   @override

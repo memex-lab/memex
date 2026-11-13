@@ -1936,6 +1936,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get processingStatus => 'İşleme';
 
   @override
+  String get waitingForNetworkStatus => 'Ağ bekleniyor';
+
+  @override
   String get failedStatus => 'Arızalı';
 
   @override

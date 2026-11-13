@@ -175,6 +175,13 @@ void main() {
       );
       expect(
         isUnusedPreallocatedRecordPlaceholder(
+          placeholder.copyWith(status: 'waiting_for_network'),
+          factId,
+        ),
+        isTrue,
+      );
+      expect(
+        isUnusedPreallocatedRecordPlaceholder(
           placeholder.copyWith(status: 'completed'),
           factId,
         ),
@@ -183,6 +190,20 @@ void main() {
       expect(
         isUnusedPreallocatedRecordPlaceholder(
           placeholder.copyWith(fact: 'recorded content'),
+          factId,
+        ),
+        isFalse,
+      );
+      expect(
+        isUnusedPreallocatedRecordPlaceholder(
+          placeholder.copyWith(
+            uiConfigs: const [
+              UiConfig(
+                templateId: 'classic_card',
+                data: {'content': 'garage note'},
+              ),
+            ],
+          ),
           factId,
         ),
         isFalse,

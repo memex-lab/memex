@@ -874,6 +874,7 @@
   "modelNotConfiguredBanner": "AI-модель еще не настроена. Настройте ее, чтобы открыть все функции.",
   "modelNotConfiguredSubmitHint": "Настройте AI-модель перед публикацией",
   "processingStatus": "Обработка",
+  "waitingForNetworkStatus": "Ожидание сети",
   "failedStatus": "Сбой",
   "failureReason": "Причина сбоя",
   "unknownError": "Произошла неизвестная ошибка",

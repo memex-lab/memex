@@ -874,6 +874,7 @@
   "modelNotConfiguredBanner": "AI モデルがまだ設定されていません。設定するとすべての機能を利用できます。",
   "modelNotConfiguredSubmitHint": "公開する前に AI モデルを設定してください",
   "processingStatus": "処理中",
+  "waitingForNetworkStatus": "ネットワーク待ち",
   "failedStatus": "失敗",
   "failureReason": "失敗理由",
   "unknownError": "不明なエラーが発生しました",
