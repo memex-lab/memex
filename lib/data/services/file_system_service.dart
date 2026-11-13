@@ -166,8 +166,10 @@ class FileSystemService {
   /// Flag to indicate if a rebuild is in progress to prevent recursion
   bool _isRebuilding = false;
   RecentPkmCacheEntry? _recentPkmCache;
+  int _recentPkmCacheGeneration = 0;
 
   void invalidateRecentPkmCache() {
+    _recentPkmCacheGeneration++;
     _recentPkmCache = null;
   }
 
@@ -2491,15 +2493,26 @@ class FileSystemService {
       return cache!.files.take(limit).toList();
     }
 
+    final startedGeneration = _recentPkmCacheGeneration;
     final pkmPath = getPkmPath(userId);
     final dir = Directory(pkmPath);
 
-    if (!await dir.exists()) {
+    void store(List<Map<String, dynamic>> files) {
+      if (!shouldStoreRecentPkmResult(
+        startedGeneration: startedGeneration,
+        currentGeneration: _recentPkmCacheGeneration,
+      )) {
+        return;
+      }
       _recentPkmCache = RecentPkmCacheEntry(
         userId: userId,
         cachedAt: now,
-        files: const [],
+        files: files,
       );
+    }
+
+    if (!await dir.exists()) {
+      store(const <Map<String, dynamic>>[]);
       return [];
     }
 
@@ -2537,11 +2550,7 @@ class FileSystemService {
       ..sort(
           (a, b) => (b['modified'] as int).compareTo(a['modified'] as int));
 
-    _recentPkmCache = RecentPkmCacheEntry(
-      userId: userId,
-      cachedAt: now,
-      files: fileList,
-    );
+    store(fileList);
 
     return fileList.take(limit).toList();
   }

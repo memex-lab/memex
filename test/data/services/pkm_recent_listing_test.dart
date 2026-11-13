@@ -55,6 +55,17 @@ void main() {
     );
   });
 
+  test('a listing started earlier does not overwrite a newer generation', () {
+    expect(
+      shouldStoreRecentPkmResult(startedGeneration: 1, currentGeneration: 1),
+      isTrue,
+    );
+    expect(
+      shouldStoreRecentPkmResult(startedGeneration: 1, currentGeneration: 2),
+      isFalse,
+    );
+  });
+
   test('detects PKM workspace files for cache invalidation', () {
     expect(
       isPkmWorkspaceFile('/workspace/_u1/PKM/Projects/note.md'),

@@ -25,6 +25,15 @@ bool shouldReuseRecentPkmCache({
   return now.difference(cache.cachedAt) < ttl;
 }
 
+/// An in-flight listing must not write its snapshot back after a newer
+/// invalidation or refresh has moved the generation forward.
+bool shouldStoreRecentPkmResult({
+  required int startedGeneration,
+  required int currentGeneration,
+}) {
+  return startedGeneration == currentGeneration;
+}
+
 bool isPkmWorkspaceFile(String filePath) {
   final normalized = filePath.replaceAll('\\', '/');
   return normalized.contains('/PKM/') || normalized.endsWith('/PKM');
