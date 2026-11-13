@@ -108,6 +108,61 @@ void main() {
     expect(tester.getTopLeft(find.byKey(_WidthProbe.columnKey)).dx, 0);
     expect(tester.getSize(find.byKey(_WidthProbe.bubbleKey)).width, 840 * 0.72);
   });
+
+  testWidgets('a flat hinge is shifted into the centered column', (
+    tester,
+  ) async {
+    const size = Size(840, 900);
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = size;
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    const hinge = DisplayFeature(
+      bounds: Rect.fromLTWH(410, 0, 20, 900),
+      type: DisplayFeatureType.fold,
+      state: DisplayFeatureState.postureFlat,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: (context, child) {
+          final media = MediaQuery.of(context).copyWith(
+            displayFeatures: const [hinge],
+          );
+          return MediaQuery(
+            data: media,
+            child: PhoneWidthFrame(child: child!),
+          );
+        },
+        home: Builder(
+          builder: (context) {
+            return TextButton(
+              onPressed: () {
+                showDialog<void>(
+                  context: context,
+                  builder: (dialogContext) {
+                    return LayoutBuilder(
+                      builder: (context, constraints) {
+                        return Text('area:${constraints.maxWidth.round()}');
+                      },
+                    );
+                  },
+                );
+              },
+              child: const Text('open'),
+            );
+          },
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    // Column starts at x=180, so the hinge at screen x=410 sits at x=230.
+    expect(find.text('area:230'), findsOneWidget);
+  });
 }
 
 class _WidthProbe extends StatelessWidget {

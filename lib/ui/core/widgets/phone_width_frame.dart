@@ -1,4 +1,4 @@
-import 'dart:ui' show DisplayFeatureState, DisplayFeatureType;
+import 'dart:ui' show DisplayFeature, DisplayFeatureState, DisplayFeatureType;
 
 import 'package:flutter/material.dart';
 
@@ -34,11 +34,32 @@ class PhoneWidthFrame extends StatelessWidget {
     return true;
   }
 
+  /// Hinge bounds arrive in screen coordinates. The column is inset, so shift
+  /// them by the same left gutter and drop any feature that misses the column.
+  static List<DisplayFeature> _featuresInFrame(
+      MediaQueryData media, double left) {
+    final frame = Rect.fromLTWH(0, 0, maxWidth, media.size.height);
+    final shifted = <DisplayFeature>[];
+    for (final feature in media.displayFeatures) {
+      final clipped = feature.bounds.shift(Offset(-left, 0)).intersect(frame);
+      if (clipped.isEmpty) continue;
+      shifted.add(
+        DisplayFeature(
+          bounds: clipped,
+          type: feature.type,
+          state: feature.state,
+        ),
+      );
+    }
+    return shifted;
+  }
+
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
     if (!frames(media)) return child;
 
+    final left = (media.size.width - maxWidth) / 2;
     return ColoredBox(
       color: Theme.of(context).scaffoldBackgroundColor,
       child: Center(
@@ -47,6 +68,7 @@ class PhoneWidthFrame extends StatelessWidget {
           child: MediaQuery(
             data: media.copyWith(
               size: Size(maxWidth, media.size.height),
+              displayFeatures: _featuresInFrame(media, left),
             ),
             child: child,
           ),

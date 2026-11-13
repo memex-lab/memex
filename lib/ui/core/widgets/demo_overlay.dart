@@ -294,9 +294,17 @@ class _SpotlightOverlayState extends State<_SpotlightOverlay>
     final renderBox =
         widget.targetKey.currentContext?.findRenderObject() as RenderBox?;
     if (renderBox == null || !renderBox.hasSize) return null;
-    final topLeft = renderBox.localToGlobal(Offset.zero);
-    final bottomRight = renderBox.localToGlobal(
-      Offset(renderBox.size.width, renderBox.size.height),
+    final overlayBox = context.findRenderObject();
+    if (overlayBox is! RenderBox || !overlayBox.hasSize) return null;
+    // The target lives in the column, and this overlay is a sibling of it.
+    // Screen coordinates are shifted once the column is centered.
+    final topLeft = overlayBox.globalToLocal(
+      renderBox.localToGlobal(Offset.zero),
+    );
+    final bottomRight = overlayBox.globalToLocal(
+      renderBox.localToGlobal(
+        Offset(renderBox.size.width, renderBox.size.height),
+      ),
     );
     return Rect.fromLTRB(
       topLeft.dx,
