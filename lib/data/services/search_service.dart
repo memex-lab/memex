@@ -56,10 +56,23 @@ class SearchService {
 
     _subscribeToDataChanges();
     _bridgeFileOperationEvents(userId);
+    _schedulePendingFtsRebuild(userId);
+  }
 
-    // Check if a post-migration FTS rebuild is needed.
-    if (AppDatabase.isInitialized && AppDatabase.instance.needsFtsRebuild) {
-      final scheduledGeneration = _initGeneration;
+  void _schedulePendingFtsRebuild(String userId) {
+    final scheduledGeneration = _initGeneration;
+    Future<void>(() async {
+      if (!AppDatabase.isInitialized ||
+          !await AppDatabase.instance.readFtsRebuildPending()) {
+        return;
+      }
+      if (!shouldRunDeferredFtsRebuild(
+        scheduledGeneration: scheduledGeneration,
+        currentGeneration: _initGeneration,
+        initialized: _initialized,
+      )) {
+        return;
+      }
       _logger.info(
           'FTS tables newly created via migration — scheduling full rebuild');
       // Defer so first Timeline paint is not competing with jieba + full scans.
@@ -76,19 +89,23 @@ class SearchService {
         }
         try {
           await rebuildAll(userId);
-          if (shouldRunDeferredFtsRebuild(
+          final stillThisInit = shouldRunDeferredFtsRebuild(
             scheduledGeneration: scheduledGeneration,
             currentGeneration: _initGeneration,
             initialized: _initialized,
+          );
+          if (!shouldKeepPendingFtsRebuild(
+            deferredCallbackStillValid: stillThisInit,
+            rebuildSucceeded: true,
           )) {
-            AppDatabase.instance.clearFtsRebuildFlag();
+            await AppDatabase.instance.clearPersistedFtsRebuildFlag();
           }
           _logger.info('Post-migration FTS rebuild completed');
         } catch (e) {
           _logger.warning('Post-migration FTS rebuild failed: $e');
         }
       });
-    }
+    });
   }
 
   /// Reset state on logout so the next login re-initializes.

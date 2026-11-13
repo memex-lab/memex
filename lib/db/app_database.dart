@@ -50,8 +50,38 @@ class AppDatabase extends _$AppDatabase {
   /// Whether a full FTS rebuild is needed (set during migration, cleared after rebuild).
   bool get needsFtsRebuild => _needsFtsRebuild;
 
-  /// Clear the FTS rebuild flag after the rebuild has been triggered.
+  static const ftsRebuildPendingKey = 'fts_rebuild_pending';
+
+  /// Remember the pending rebuild in sqlite so the next [AppDatabase] for this
+  /// user still sees it after logout closes this object.
+  Future<void> markFtsRebuildPending() async {
+    _needsFtsRebuild = true;
+    await into(kvStore).insertOnConflictUpdate(
+      KvStoreCompanion.insert(
+        key: ftsRebuildPendingKey,
+        value: const Value('1'),
+      ),
+    );
+  }
+
+  Future<bool> readFtsRebuildPending() async {
+    if (_needsFtsRebuild) return true;
+    final row = await (select(kvStore)
+          ..where((table) => table.key.equals(ftsRebuildPendingKey)))
+        .getSingleOrNull();
+    return row?.value == '1';
+  }
+
+  /// Clear the in-memory flag. The sqlite row is cleared by
+  /// [clearPersistedFtsRebuildFlag] after a rebuild actually finishes.
   void clearFtsRebuildFlag() => _needsFtsRebuild = false;
+
+  Future<void> clearPersistedFtsRebuildFlag() async {
+    _needsFtsRebuild = false;
+    await (delete(kvStore)
+          ..where((table) => table.key.equals(ftsRebuildPendingKey)))
+        .go();
+  }
 
   /// Singleton pattern to ensure one DB connection
   static AppDatabase?
@@ -206,7 +236,7 @@ class AppDatabase extends _$AppDatabase {
             // because their data was never indexed. We set a flag here
             // and MemexRouter._init() picks it up after all services are ready.
             await searchDao.createFtsTables();
-            _needsFtsRebuild = true;
+            await markFtsRebuildPending();
           }
           if (from < 11) {
             await _createClarificationRequestsTable(m);
