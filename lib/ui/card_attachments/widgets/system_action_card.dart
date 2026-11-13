@@ -1,6 +1,7 @@
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:memex/data/services/system_action_service.dart';
 import 'package:memex/db/app_database.dart';
@@ -58,7 +59,7 @@ class _SystemActionCardState extends State<SystemActionCard> {
       return;
     }
 
-    if (isCalendar) {
+    if (isCalendar && defaultTargetPlatform != TargetPlatform.iOS) {
       final calendarPermission = Platform.isIOS
           ? Permission.calendarWriteOnly
           : Permission.calendarFullAccess;
@@ -69,7 +70,7 @@ class _SystemActionCardState extends State<SystemActionCard> {
         }
         return;
       }
-    } else {
+    } else if (isReminder) {
       final reminderPermission = Platform.isAndroid
           ? Permission.calendarFullAccess
           : Permission.reminders;
@@ -83,12 +84,12 @@ class _SystemActionCardState extends State<SystemActionCard> {
     }
 
     final success = await widget.service.applyToDevice(widget.action);
-    if (!success) {
+    if (success == false) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(UserStorage.l10n.writeToSystemFailed)));
       }
-    } else if (mounted) {
+    } else if (success == true && mounted) {
       setState(() => _statusOverride = 'completed');
       widget.onActionChanged?.call();
     }
@@ -171,7 +172,9 @@ class _SystemActionCardState extends State<SystemActionCard> {
       _ => UserStorage.l10n.unknownAction,
     };
     final buttonText = switch (widget.action.actionType) {
-      'calendar' => UserStorage.l10n.addToCalendar,
+      'calendar' => defaultTargetPlatform == TargetPlatform.iOS
+          ? UserStorage.l10n.reviewInCalendar
+          : UserStorage.l10n.addToCalendar,
       'reminder' => UserStorage.l10n.addToReminders,
       _ => UserStorage.l10n.unknownAction,
     };
@@ -288,7 +291,9 @@ class _SystemActionCardState extends State<SystemActionCard> {
             ],
             const SizedBox(height: 10),
             Text(
-              UserStorage.l10n.systemActionPendingExplanation,
+              isCalendar && defaultTargetPlatform == TargetPlatform.iOS
+                  ? UserStorage.l10n.calendarEditorExplanation
+                  : UserStorage.l10n.systemActionPendingExplanation,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                     height: 1.4,

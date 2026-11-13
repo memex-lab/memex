@@ -1,7 +1,15 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:memex/agent/skills/manage_system_action/system_action_skill.dart';
+import 'package:memex/data/services/file_system_service.dart';
+import 'package:memex/data/services/card_attachment_service.dart';
+import 'package:memex/domain/models/card_model.dart';
+import 'package:memex/ui/card_attachments/card_attachment_factory.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:memex/data/services/system_action_service.dart';
 import 'package:memex/db/app_database.dart';
@@ -27,6 +35,127 @@ void main() {
   }
 
   group('SystemActionCard', () {
+    testWidgets(
+        'SuperAgent record proposal appears on its source and writes only after Add',
+        (tester) async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      AppDatabase.setTestInstance(db);
+      late Directory root;
+      await tester.runAsync(() async {
+        root = await Directory.systemTemp.createTemp('record_device_ui_');
+        await FileSystemService.init(root.path);
+      });
+      const native = MethodChannel('com.memexlab.memex/system_actions');
+      const permissions =
+          MethodChannel('flutter.baseflow.com/permissions/methods');
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      var writes = 0;
+      messenger.setMockMethodCallHandler(native, (call) async {
+        expect(call.method, 'addCalendarEvent');
+        expect((call.arguments as Map)['title'], '陪妈妈复查');
+        writes++;
+        return true;
+      });
+      messenger.setMockMethodCallHandler(permissions, (call) async => 1);
+      addTearDown(() async {
+        messenger.setMockMethodCallHandler(native, null);
+        messenger.setMockMethodCallHandler(permissions, null);
+        await db.close();
+        await root.delete(recursive: true);
+      });
+      const factId = '2026/09/17.md#ts_3';
+      await tester.runAsync(() async {
+        final fs = FileSystemService.instance;
+        await fs.writeYamlFile(
+            fs.getCardPath('record-user', factId),
+            const CardData(
+                    factId: factId,
+                    timestamp: 1789603200,
+                    status: 'completed',
+                    tags: [],
+                    uiConfigs: [],
+                    fact: '2099年9月18日下午三点带妈妈复查。')
+                .toJson());
+        // The real SuperAgent skill is invoked without any Character setup.
+        final tool = SystemActionSkill(userId: 'record-user').tools!.first;
+        await Function.apply(tool.executable!, [
+          '陪妈妈复查',
+          '2099-09-18 15:00:00',
+          null,
+          null,
+          null,
+          factId,
+        ]);
+      });
+      final attachments =
+          await CardAttachmentService.instance.getAttachments(factId);
+      expect(attachments, hasLength(1));
+      expect(writes, 0);
+      await tester.pumpWidget(
+          buildHost(CardAttachmentFactory.build(attachments.single)));
+      await tester.pumpAndSettle();
+      expect(find.text('陪妈妈复查'), findsOneWidget);
+      expect(find.text(UserStorage.l10n.addToCalendar), findsOneWidget);
+      await tester.tap(find.text(UserStorage.l10n.addToCalendar));
+      await tester.pumpAndSettle();
+      expect(writes, 1);
+      expect(find.text(UserStorage.l10n.addToCalendar), findsNothing);
+      expect(
+          (await db.select(db.systemActions).get()).single.status, 'completed');
+    });
+
+    testWidgets(
+        'iOS editor cancel stays pending without permission or error; save completes',
+        (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      AppDatabase.setTestInstance(db);
+      const native = MethodChannel('com.memexlab.memex/system_actions');
+      const permissions =
+          MethodChannel('flutter.baseflow.com/permissions/methods');
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      var launches = 0;
+      var permissionCalls = 0;
+      messenger.setMockMethodCallHandler(native, (call) async {
+        launches++;
+        return launches == 1 ? 'cancelled' : true;
+      });
+      messenger.setMockMethodCallHandler(permissions, (call) async {
+        permissionCalls++;
+        return 0;
+      });
+      addTearDown(() async {
+        debugDefaultTargetPlatformOverride = null;
+        messenger.setMockMethodCallHandler(native, null);
+        messenger.setMockMethodCallHandler(permissions, null);
+        await db.close();
+      });
+      final service = SystemActionService.instance;
+      await service.createAction(id: 'editor-test', type: 'calendar', data: {
+        'title': '复查',
+        'start_time': '2099-09-18 15:00:00',
+      });
+      final action = (await service.getAction('editor-test'))!;
+      await tester.pumpWidget(
+          buildHost(SystemActionCard(action: action, service: service)));
+      expect(find.text(UserStorage.l10n.calendarEditorExplanation),
+          findsOneWidget);
+      await tester.tap(find.text(UserStorage.l10n.reviewInCalendar));
+      await tester.pumpAndSettle();
+      expect(permissionCalls, 0);
+      expect((await service.getAction('editor-test'))!.status, 'pending');
+      expect(find.text(UserStorage.l10n.writeToSystemFailed), findsNothing);
+      expect(find.text(UserStorage.l10n.reviewInCalendar), findsOneWidget);
+      await tester.tap(find.text(UserStorage.l10n.reviewInCalendar));
+      await tester.pumpAndSettle();
+      expect(launches, 2);
+      expect((await service.getAction('editor-test'))!.status, 'completed');
+      expect(find.text(UserStorage.l10n.reviewInCalendar), findsNothing);
+      debugDefaultTargetPlatformOverride = null;
+    });
+
     testWidgets('renders dismissed actions as still actionable on source cards',
         (tester) async {
       await tester.pumpWidget(
