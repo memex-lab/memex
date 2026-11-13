@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart';
 import 'package:memex/agent/super_agent/super_agent_pre_minted_record_hook.dart';
 import 'package:memex/data/repositories/card.dart';
+import 'package:memex/data/services/capture_card_status.dart';
 import 'package:memex/data/services/chat_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/local_task_executor.dart';
@@ -78,7 +79,7 @@ void main() {
       'offline-capture-user',
       factId!,
     );
-    expect(card?.status, 'processing');
+    expect(card?.status, waitingForNetworkCardStatus);
     expect((card?.fact ?? '').trim(), isEmpty);
     final content =
         card?.uiConfigs.single.data['content']?.toString().trim() ?? '';
@@ -308,11 +309,13 @@ void main() {
     final factId = await FileSystemService.instance.allocateCardFactId(
       'offline-capture-user',
     );
-    final placeholder = await FileSystemService.instance.readCardFile(
+    final waiting = await FileSystemService.instance.updateCardFile(
       'offline-capture-user',
       factId,
+      (card) => card.copyWith(status: waitingForNetworkCardStatus),
     );
-    expect(isUnusedPreallocatedRecordPlaceholder(placeholder, factId), isTrue);
+    expect(waiting?.status, waitingForNetworkCardStatus);
+    expect(isUnusedPreallocatedRecordPlaceholder(waiting, factId), isTrue);
 
     final state = AgentState(
       sessionId: 'offline-question',

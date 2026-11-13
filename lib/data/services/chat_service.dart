@@ -550,9 +550,13 @@ class ChatService {
       // message into fact/content makes cleanup treat a home-screen question
       // as a real card.
       preMintedFactId = await _fileService.allocateCardFactId(userId);
-      final waitingCard = await _fileService.readCardFile(
+      final waitingCard = await _fileService.updateCardFile(
         userId,
         preMintedFactId,
+        (card) {
+          if (card.status == 'completed') return card;
+          return card.copyWith(status: waitingForNetworkCardStatus);
+        },
       );
       if (waitingCard != null) {
         await emitTimelineCardAdded(

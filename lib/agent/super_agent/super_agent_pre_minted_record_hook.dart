@@ -228,7 +228,10 @@ List<LLMMessage> annotatePreMintedRecordFactIdReminder(
 bool isUnusedPreallocatedRecordPlaceholder(CardData? card, String factId) {
   if (card == null) return false;
   if (card.factId != factId) return false;
-  if (card.status != 'processing') return false;
+  if (card.status != 'processing' &&
+      card.status != waitingForNetworkCardStatus) {
+    return false;
+  }
   if ((card.title ?? '').trim().isNotEmpty) return false;
   if ((card.fact ?? '').trim().isNotEmpty) return false;
   if (card.assets.isNotEmpty) return false;

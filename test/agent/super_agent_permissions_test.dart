@@ -175,6 +175,13 @@ void main() {
       );
       expect(
         isUnusedPreallocatedRecordPlaceholder(
+          placeholder.copyWith(status: 'waiting_for_network'),
+          factId,
+        ),
+        isTrue,
+      );
+      expect(
+        isUnusedPreallocatedRecordPlaceholder(
           placeholder.copyWith(status: 'completed'),
           factId,
         ),
