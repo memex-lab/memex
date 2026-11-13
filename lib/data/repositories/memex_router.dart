@@ -1,6 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
+import 'package:memex/data/services/native_photo_picker_service.dart';
+import 'package:memex/domain/models/native_photo_selection.dart';
+import 'package:memex/data/services/photo_attachment_service.dart';
+import 'package:memex/domain/models/prepared_photo_attachment.dart';
 import 'package:memex/data/repositories/migrate_cards_fact_assets.dart';
 import 'package:memex/data/repositories/update_card_ui_config.dart'
     as update_config_endpoint;
@@ -94,6 +99,21 @@ class MemexRouter {
   Future<void>? _initFuture;
   Future<void>? _fullInitFuture;
   int _initGeneration = 0;
+
+  Future<Result<PreparedPhotoAttachment>> preparePhotoAttachment(
+          String assetId) =>
+      PhotoAttachmentService.prepare(assetId);
+
+  Future<Result<List<NativePhotoSelection>>> pickNativePhotos(
+          {int maxAssets = 9}) =>
+      NativePhotoPickerService.pick(maxAssets: maxAssets);
+  Future<Result<PreparedPhotoAttachment>> prepareNativePhotoAttachment(
+          String id) =>
+      NativePhotoPickerService.prepare(id);
+  Future<Result<Uint8List?>> nativePhotoThumbnail(String id) =>
+      NativePhotoPickerService.thumbnail(id);
+  Future<void> releaseNativePhoto(String id) =>
+      NativePhotoPickerService.release(id);
 
   FileSystemService get fileSystemService => FileSystemService.instance;
 
@@ -219,6 +239,7 @@ class MemexRouter {
       subscription: EventTaskSubscription(
         subscriptionId: 'comment_agent',
         taskType: 'comment_agent_task',
+        scheduleDelaySeconds: 20,
         requiresSuccessOf: const ['character_perception'],
         payloadBuilder: (_, event) {
           final p = event.payload as UserInputSubmittedPayload;
@@ -239,6 +260,7 @@ class MemexRouter {
       subscription: EventTaskSubscription(
         subscriptionId: 'character_perception',
         taskType: 'character_perception_task',
+        scheduleDelaySeconds: 20,
         maxRetries: 3,
         payloadBuilder: (_, event) {
           final p = event.payload as UserInputSubmittedPayload;
@@ -257,6 +279,7 @@ class MemexRouter {
       subscription: EventTaskSubscription(
         subscriptionId: 'character_initiative',
         taskType: CharacterInitiativeService.taskType,
+        scheduleDelaySeconds: 20,
         requiresSuccessOf: const ['comment_agent', 'character_perception'],
         maxRetries: 3,
         payloadBuilder: (_, event) {

@@ -139,7 +139,14 @@ class AssetSafetyService {
     String filePath, {
     AssetSafetyConfig config = const AssetSafetyConfig(),
   }) async {
-    return inspectFileSync(filePath, config: config);
+    final file = File(filePath);
+    if (!await file.exists()) return _missingReport(filePath);
+    final fileSize = await file.length();
+    final metadata =
+        imageExtensions.contains(path.extension(filePath).toLowerCase())
+            ? await _readImageMetadataAsync(filePath)
+            : null;
+    return _inspectMetadata(filePath, fileSize, config, metadata);
   }
 
   AssetSafetyReport inspectFileSync(
@@ -147,8 +154,16 @@ class AssetSafetyService {
     AssetSafetyConfig config = const AssetSafetyConfig(),
   }) {
     final file = File(filePath);
-    if (!file.existsSync()) {
-      return AssetSafetyReport(
+    if (!file.existsSync()) return _missingReport(filePath);
+    final fileSize = file.lengthSync();
+    final metadata =
+        imageExtensions.contains(path.extension(filePath).toLowerCase())
+            ? _readImageMetadata(filePath)
+            : null;
+    return _inspectMetadata(filePath, fileSize, config, metadata);
+  }
+
+  AssetSafetyReport _missingReport(String filePath) => AssetSafetyReport(
         filePath: filePath,
         type: AssetSafetyType.missing,
         fileSizeBytes: 0,
@@ -161,17 +176,16 @@ class AssetSafetyService {
         safeForInlineBase64: false,
         reason: 'file is missing',
       );
-    }
 
-    final fileSize = file.lengthSync();
+  AssetSafetyReport _inspectMetadata(String filePath, int fileSize,
+      AssetSafetyConfig config, _ImageMetadata? metadata) {
     final extension = path.extension(filePath).toLowerCase();
     if (imageExtensions.contains(extension)) {
-      return _inspectImage(filePath, fileSize, config);
+      return _inspectImage(filePath, fileSize, config, metadata);
     }
     if (audioExtensions.contains(extension)) {
       return _inspectAudio(filePath, fileSize, config);
     }
-
     return AssetSafetyReport(
       filePath: filePath,
       type: AssetSafetyType.unsupported,
@@ -191,8 +205,8 @@ class AssetSafetyService {
     String filePath,
     int fileSize,
     AssetSafetyConfig config,
+    _ImageMetadata? metadata,
   ) {
-    final metadata = _readImageMetadata(filePath);
     final width = metadata?.width;
     final height = metadata?.height;
     final reasons = <String>[];
@@ -308,6 +322,25 @@ class AssetSafetyService {
           ? 'asset is within safety limits'
           : reasons.join('; '),
     );
+  }
+
+  Future<_ImageMetadata?> _readImageMetadataAsync(String filePath) async {
+    RandomAccessFile? file;
+    try {
+      file = await File(filePath).open();
+      final length = await file.length();
+      final header = await file.read(math.min(length, 1024 * 1024));
+      return _parseImageMetadata(header);
+    } catch (e) {
+      _logger.fine('Failed to read image metadata for $filePath: $e');
+      return null;
+    } finally {
+      try {
+        await file?.close();
+      } catch (e) {
+        _logger.fine('Failed to close image metadata file: $e');
+      }
+    }
   }
 
   _ImageMetadata? _readImageMetadata(String filePath) {

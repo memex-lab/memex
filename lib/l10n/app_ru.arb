@@ -1,5 +1,7 @@
 {
   "chatThinkingMessage": "Обдумывание…",
+  "preparingSelectedPhotos": "Подготовка фотографий…",
+  "selectedPhotosPreparationFailed": "Не удалось подготовить некоторые фотографии. Повторите попытку или удалите отмеченные фотографии.",
 
   "@@locale": "ru",
   "timesLabel": "Раз",

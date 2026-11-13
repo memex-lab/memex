@@ -10,6 +10,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get chatThinkingMessage => '思考中…';
+  @override
+  String get preparingSelectedPhotos => '写真を準備しています…';
+
+  @override
+  String get selectedPhotosPreparationFailed =>
+      '一部の写真を準備できませんでした。再試行するか、マークされた写真を削除してください。';
 
   @override
   String get timesLabel => '回数';

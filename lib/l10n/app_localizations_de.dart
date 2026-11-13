@@ -10,6 +10,12 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get chatThinkingMessage => 'Denkt nach…';
+  @override
+  String get preparingSelectedPhotos => 'Fotos werden vorbereitet…';
+
+  @override
+  String get selectedPhotosPreparationFailed =>
+      'Einige Fotos konnten nicht vorbereitet werden. Erneut versuchen oder markierte Fotos entfernen.';
 
   @override
   String get timesLabel => 'Mal';

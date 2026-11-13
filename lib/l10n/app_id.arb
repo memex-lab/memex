@@ -1,5 +1,7 @@
 {
   "chatThinkingMessage": "Sedang berpikir…",
+  "preparingSelectedPhotos": "Menyiapkan foto…",
+  "selectedPhotosPreparationFailed": "Beberapa foto tidak dapat disiapkan. Coba lagi atau hapus foto yang ditandai.",
 
   "@@locale": "id",
   "timesLabel": "Kali",

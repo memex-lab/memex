@@ -1,5 +1,7 @@
 {
   "chatThinkingMessage": "Pensando…",
+  "preparingSelectedPhotos": "Preparando fotos…",
+  "selectedPhotosPreparationFailed": "No se pudieron preparar algunas fotos. Vuelve a intentarlo o elimina las fotos marcadas.",
 
   "@@locale": "es",
   "timesLabel": "Veces",

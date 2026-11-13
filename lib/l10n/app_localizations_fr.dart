@@ -10,6 +10,12 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get chatThinkingMessage => 'Réflexion en cours…';
+  @override
+  String get preparingSelectedPhotos => 'Préparation des photos…';
+
+  @override
+  String get selectedPhotosPreparationFailed =>
+      'Impossible de préparer certaines photos. Réessayez ou retirez les photos signalées.';
 
   @override
   String get timesLabel => 'Fois';

@@ -10,6 +10,12 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get chatThinkingMessage => 'جارٍ التفكير…';
+  @override
+  String get preparingSelectedPhotos => 'جارٍ تجهيز الصور…';
+
+  @override
+  String get selectedPhotosPreparationFailed =>
+      'تعذّر تجهيز بعض الصور. أعد المحاولة أو أزل الصور المحددة.';
 
   @override
   String get timesLabel => 'مرات';

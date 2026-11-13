@@ -10,6 +10,11 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get chatThinkingMessage => '正在思考…';
+  @override
+  String get preparingSelectedPhotos => '正在准备照片…';
+
+  @override
+  String get selectedPhotosPreparationFailed => '部分照片准备失败，请重试或移除标记的照片。';
 
   @override
   String get timesLabel => '次数';
@@ -3229,6 +3234,11 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get chatThinkingMessage => '正在思考…';
+  @override
+  String get preparingSelectedPhotos => '正在準備照片…';
+
+  @override
+  String get selectedPhotosPreparationFailed => '部分照片準備失敗，請重試或移除標記的照片。';
 
   @override
   String get timesLabel => '次數';

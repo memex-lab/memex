@@ -10,6 +10,12 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get chatThinkingMessage => 'กำลังคิด…';
+  @override
+  String get preparingSelectedPhotos => 'กำลังเตรียมรูปภาพ…';
+
+  @override
+  String get selectedPhotosPreparationFailed =>
+      'ไม่สามารถเตรียมรูปภาพบางรูปได้ โปรดลองอีกครั้งหรือลบรูปภาพที่ทำเครื่องหมายไว้';
 
   @override
   String get timesLabel => 'ครั้ง';

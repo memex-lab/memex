@@ -134,6 +134,17 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Thinking…'**
   String get chatThinkingMessage;
+  /// No description provided for @preparingSelectedPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing photos…'**
+  String get preparingSelectedPhotos;
+
+  /// No description provided for @selectedPhotosPreparationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not prepare photos. Retry or remove the marked photos.'**
+  String get selectedPhotosPreparationFailed;
 
   /// No description provided for @timesLabel.
   ///

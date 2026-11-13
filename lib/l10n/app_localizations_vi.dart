@@ -10,6 +10,12 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get chatThinkingMessage => 'Đang suy nghĩ…';
+  @override
+  String get preparingSelectedPhotos => 'Đang chuẩn bị ảnh…';
+
+  @override
+  String get selectedPhotosPreparationFailed =>
+      'Không thể chuẩn bị một số ảnh. Hãy thử lại hoặc xóa các ảnh được đánh dấu.';
 
   @override
   String get timesLabel => 'Số lần';
