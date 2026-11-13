@@ -104,8 +104,8 @@ class UserStorage {
   /// so [SharedPreferences.setMockInitialValues] keeps working, unless
   /// [cachePrefsInTests] is set.
   static Future<SharedPreferences> sharedPrefs() {
-    final useCache = cachePrefsInTests ||
-        !Platform.environment.containsKey('FLUTTER_TEST');
+    final useCache =
+        cachePrefsInTests || !Platform.environment.containsKey('FLUTTER_TEST');
     if (!useCache) {
       return prefsLoader();
     }
@@ -881,12 +881,21 @@ class UserStorage {
         await getAgentLLMConfig(agentId, defaultClientKey: defaultClientKey);
 
     if (!llmConfig.isValid) {
+      final reason = llmConfig.configurationProblem ??
+          InvalidModelConfigReason.notConfigured;
+      final detail = switch (reason) {
+        InvalidModelConfigReason.emptyApiKey => 'LLM API Key is empty',
+        InvalidModelConfigReason.other when llmConfig.baseUrl.isEmpty =>
+          'LLM base URL is empty',
+        _ => 'The LLM configuration for $agentId is invalid.',
+      };
       EventBusService.instance.emitEvent(InvalidModelConfigMessage(
         agentId: AgentDefinitions.displayNames[agentId] ?? agentId,
         configKey: llmConfig.key,
+        reason: reason,
+        detail: detail,
       ));
-      throw InvalidModelConfigException(
-          'The LLM configuration for $agentId is invalid.');
+      throw InvalidModelConfigException(detail, reason);
     }
 
     return buildLLMResources(llmConfig);

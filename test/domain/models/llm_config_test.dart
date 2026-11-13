@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:memex/config/app_flavor.dart';
 import 'package:memex/domain/models/llm_config.dart';
+import 'package:memex/domain/models/task_exceptions.dart';
 
 void main() {
   group('LLMConfig.duplicate', () {
@@ -113,8 +114,17 @@ void main() {
       );
 
       expect(validConfig.isValid, isTrue);
+      expect(validConfig.configurationProblem, isNull);
       expect(validConfig.copyWith(apiKey: '').isValid, isFalse);
+      expect(
+        validConfig.copyWith(apiKey: '').configurationProblem,
+        InvalidModelConfigReason.emptyApiKey,
+      );
       expect(validConfig.copyWith(baseUrl: '').isValid, isFalse);
+      expect(
+        validConfig.copyWith(modelId: '').configurationProblem,
+        InvalidModelConfigReason.notConfigured,
+      );
     });
   });
 

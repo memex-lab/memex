@@ -759,6 +759,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       context: context,
       barrierDismissible: false,
       builder: (context) => InvalidModelConfigDialog(
+        reason: message.reason,
+        detail: message.detail,
         onKeepRecording: () {
           Navigator.of(context).pop();
           if (mounted) {

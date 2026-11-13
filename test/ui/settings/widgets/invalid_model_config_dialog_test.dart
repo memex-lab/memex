@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:memex/domain/models/task_exceptions.dart';
 import 'package:memex/ui/settings/widgets/invalid_model_config_dialog.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -39,4 +40,28 @@ void main() {
     expect(kept, isTrue);
     expect(turnedOn, isTrue);
   });
+
+  testWidgets('an empty API key matches the chat error', (tester) async {
+    const detail = 'LLM API Key is empty';
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: InvalidModelConfigDialog(
+          reason: InvalidModelConfigReason.emptyApiKey,
+          detail: detail,
+          onKeepRecording: _noop,
+          onTurnOnAi: _noop,
+        ),
+      ),
+    );
+
+    expect(
+      find.text(UserStorage.l10n.operationFailed(detail)),
+      findsOneWidget,
+    );
+    expect(find.text(UserStorage.l10n.invalidModelConfigPlain), findsNothing);
+    expect(find.textContaining('chat_agent'), findsNothing);
+    expect(find.textContaining('default'), findsNothing);
+  });
 }
+
+void _noop() {}
