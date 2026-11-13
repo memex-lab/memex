@@ -30,6 +30,25 @@ void main() {
     ]);
   });
 
+  test('orders a tied timestamp like the card query, ts_99 before ts_100', () {
+    final order = compareCardCacheRows(
+      timestamp: 1781971200,
+      factId: '2026/09/10.md#ts_100',
+      otherTimestamp: 1781971200,
+      otherFactId: '2026/09/10.md#ts_99',
+    );
+    expect(order, greaterThan(0));
+    expect(
+      compareCardCacheRows(
+        timestamp: 20,
+        factId: '2026/09/10.md#ts_1',
+        otherTimestamp: 10,
+        otherFactId: '2026/09/10.md#ts_100',
+      ),
+      lessThan(0),
+    );
+  });
+
   test('orders ts_10 ahead of ts_9 on the same day', () {
     expect(
       sortCardFilesNewestFirst([

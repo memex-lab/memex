@@ -165,6 +165,7 @@ class FileSystemService {
 
   /// Flag to indicate if a rebuild is in progress to prevent recursion
   bool _isRebuilding = false;
+  int _cardCacheRebuildGeneration = 0;
   Completer<void>? _rebuildVisibleReady;
   Completer<void>? _rebuildComplete;
 
@@ -189,6 +190,11 @@ class FileSystemService {
       return;
     }
 
+    final previous = _instance;
+    if (previous != null) {
+      previous.abandonCardCacheRebuild();
+      await previous.waitForCardCacheRebuild();
+    }
     _instance = FileSystemService._(dataRoot: dataRoot);
     await LocalAssetServer.startServer(dataRoot: dataRoot, preferredPort: 0);
     getLogger('FileSystemService')
@@ -528,11 +534,16 @@ class FileSystemService {
 
   /// Update the card cache in the local database
   Future<void> updateCardCache(
-      String userId, String factId, CardData cardData) async {
+    String userId,
+    String factId,
+    CardData cardData, {
+    AppDatabase? database,
+  }) async {
+    final db = database ?? AppDatabase.instance;
     try {
       if (!_isRebuilding &&
           cardCacheNeedsRebuild(
-            cacheEmpty: await AppDatabase.instance.cardDao.isCacheEmpty(),
+            cacheEmpty: await db.cardDao.isCacheEmpty(),
             rebuildInterrupted: await isCardCacheRebuildInterrupted(userId),
           )) {
         _logger.info('Card cache is empty, triggering rebuild...');
@@ -566,7 +577,7 @@ class FileSystemService {
         tags: drift.Value(tagsJson),
       );
 
-      await AppDatabase.instance.cardDao.upsertCard(entry);
+      await db.cardDao.upsertCard(entry);
 
       // NOTE: Publish responsibility now belongs to _safeWriteCardFileInternal.
       // updateCardCache is also called from rebuildCardCache where we do NOT
@@ -654,6 +665,17 @@ class FileSystemService {
     if (complete != null) await complete.future;
   }
 
+  /// Stop a rebuild that is still writing. The next user or workspace must not
+  /// receive the previous user's rows.
+  void abandonCardCacheRebuild() {
+    _cardCacheRebuildGeneration += 1;
+  }
+
+  bool _rebuildStillOwns(int generation, AppDatabase database) {
+    return generation == _cardCacheRebuildGeneration &&
+        identical(AppDatabase.instance, database);
+  }
+
   /// Rebuild the entire card cache for a user.
   ///
   /// When [waitUntilIndexed] is set, returns after that many cards are indexed
@@ -676,11 +698,15 @@ class FileSystemService {
     _isRebuilding = true;
     _rebuildVisibleReady = Completer<void>();
     _rebuildComplete = Completer<void>();
+    final generation = _cardCacheRebuildGeneration;
+    final database = AppDatabase.instance;
     _logger.info('Starting card cache rebuild for user $userId');
 
     final body = _rebuildCardCacheBody(
       userId,
       waitUntilIndexed: waitUntilIndexed,
+      generation: generation,
+      database: database,
     );
     if (waitUntilIndexed == null) {
       await body;
@@ -693,6 +719,8 @@ class FileSystemService {
   Future<void> _rebuildCardCacheBody(
     String userId, {
     int? waitUntilIndexed,
+    required int generation,
+    required AppDatabase database,
   }) async {
     void markVisibleReady() {
       final gate = _rebuildVisibleReady;
@@ -702,37 +730,62 @@ class FileSystemService {
     }
 
     try {
+      if (!_rebuildStillOwns(generation, database)) return;
       await _markCardCacheRebuildInterrupted(userId);
-      await AppDatabase.instance.delete(AppDatabase.instance.cardCache).go();
+      await database.delete(database.cardCache).go();
 
       final cardFiles =
           sortCardFilesNewestFirst(await listAllCardFiles(userId));
       _logger.info('Found ${cardFiles.length} card files to index');
 
-      int count = 0;
+      final pending = <({String factId, CardData data, int sortTime})>[];
       for (final cardFile in cardFiles) {
+        if (!_rebuildStillOwns(generation, database)) return;
         try {
           final factId = factIdFromCardPath(cardFile);
           if (factId == null) continue;
-
           final cardData = await readCardFile(userId, factId);
-          if (cardData == null) continue;
+          if (cardData == null || cardData.deleted == true) continue;
+          pending.add((
+            factId: factId,
+            data: cardData,
+            sortTime: cardData.createdAt ?? cardData.timestamp,
+          ));
+        } catch (e) {
+          _logger.warning('Error reading card file $cardFile: $e');
+        }
+      }
+      pending.sort(
+        (a, b) => compareCardCacheRows(
+          timestamp: a.sortTime,
+          factId: a.factId,
+          otherTimestamp: b.sortTime,
+          otherFactId: b.factId,
+        ),
+      );
 
-          if (cardData.deleted == true) continue;
-
-          await updateCardCache(userId, factId, cardData);
+      int count = 0;
+      for (final item in pending) {
+        if (!_rebuildStillOwns(generation, database)) return;
+        try {
+          await updateCardCache(
+            userId,
+            item.factId,
+            item.data,
+            database: database,
+          );
           count++;
-          if (waitUntilIndexed != null &&
-              count >= waitUntilIndexed) {
+          if (waitUntilIndexed != null && count >= waitUntilIndexed) {
             markVisibleReady();
           }
           if (shouldYieldCardCacheRebuild(count)) {
             await Future<void>.delayed(Duration.zero);
           }
         } catch (e) {
-          _logger.warning('Error indexing card file $cardFile: $e');
+          _logger.warning('Error indexing card ${item.factId}: $e');
         }
       }
+      if (!_rebuildStillOwns(generation, database)) return;
       _logger.info('Card cache rebuild complete. Indexed $count cards.');
       await _clearCardCacheRebuildInterrupted(userId);
     } catch (e) {

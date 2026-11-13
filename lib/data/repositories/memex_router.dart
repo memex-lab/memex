@@ -206,7 +206,7 @@ class MemexRouter {
   }
 
   String?
-  _targetUserIdForInit; // Track the user ID we are currently initializing for
+      _targetUserIdForInit; // Track the user ID we are currently initializing for
 
   void _registerEventSubscriptions() {
     final eventBus = GlobalEventBus.instance;
@@ -418,9 +418,17 @@ class MemexRouter {
     );
   }
 
+  Future<void> _abandonCardCacheRebuild() async {
+    if (!FileSystemService.isInitialized) return;
+    final files = FileSystemService.instance;
+    files.abandonCardCacheRebuild();
+    await files.waitForCardCacheRebuild();
+  }
+
   /// External hook to force switch user (e.g. on login)
   Future<void> switchUser(String userId) async {
     _logger.info('Switching user to $userId');
+    await _abandonCardCacheRebuild();
     _initGeneration += 1;
     _targetUserIdForInit = null;
     _initFuture = null;
@@ -432,6 +440,7 @@ class MemexRouter {
   Future<void> applyWorkspaceStorageChange() async {
     final userId = await UserStorage.getUserId();
     if (userId != null) HydratedCardCache.instance.clearUser(userId);
+    await _abandonCardCacheRebuild();
     final dataRoot = await UserStorage.resolveDataRoot(userId);
     await FileSystemService.init(dataRoot);
     if (userId != null && userId.isNotEmpty) {
@@ -467,6 +476,9 @@ class MemexRouter {
   /// Clear init state and stop executor on logout so next login re-inits for new user.
   void resetForLogout() {
     _logger.info('Resetting MemexRouter for logout');
+    if (FileSystemService.isInitialized) {
+      FileSystemService.instance.abandonCardCacheRebuild();
+    }
     HydratedCardCache.instance.clearAll();
     _initGeneration += 1;
     _targetUserIdForInit = null;
@@ -974,8 +986,8 @@ class MemexRouter {
             id,
           );
           if (cardData != null) {
-            final currentSortOrder = (cardData['sort_order'] as num? ?? 0)
-                .toInt();
+            final currentSortOrder =
+                (cardData['sort_order'] as num? ?? 0).toInt();
             if (currentSortOrder != i) {
               cardData['sort_order'] = i;
               await fileSystemService.writeKnowledgeInsightCard(
