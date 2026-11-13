@@ -9,6 +9,8 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get chatThinkingMessage => '正在思考…';
+  @override
   String get preparingSelectedPhotos => '正在准备照片…';
 
   @override
@@ -3230,6 +3232,8 @@ class AppLocalizationsZh extends AppLocalizations {
 class AppLocalizationsZhHant extends AppLocalizationsZh {
   AppLocalizationsZhHant() : super('zh_Hant');
 
+  @override
+  String get chatThinkingMessage => '正在思考…';
   @override
   String get preparingSelectedPhotos => '正在準備照片…';
 

@@ -1,4 +1,5 @@
 {
+  "chatThinkingMessage": "Thinking…",
   "preparingSelectedPhotos": "Preparing photos…",
   "selectedPhotosPreparationFailed": "Could not prepare photos. Retry or remove the marked photos.",
 

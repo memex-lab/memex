@@ -9,6 +9,8 @@ class AppLocalizationsJa extends AppLocalizations {
   AppLocalizationsJa([String locale = 'ja']) : super(locale);
 
   @override
+  String get chatThinkingMessage => '思考中…';
+  @override
   String get preparingSelectedPhotos => '写真を準備しています…';
 
   @override

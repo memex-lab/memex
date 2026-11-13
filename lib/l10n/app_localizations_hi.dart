@@ -9,6 +9,8 @@ class AppLocalizationsHi extends AppLocalizations {
   AppLocalizationsHi([String locale = 'hi']) : super(locale);
 
   @override
+  String get chatThinkingMessage => 'सोच रहा है…';
+  @override
   String get preparingSelectedPhotos => 'फ़ोटो तैयार की जा रही हैं…';
 
   @override
