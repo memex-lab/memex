@@ -9,6 +9,14 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get chatThinkingMessage => '正在思考…';
+  @override
+  String get preparingSelectedPhotos => '正在准备照片…';
+
+  @override
+  String get selectedPhotosPreparationFailed => '部分照片准备失败，请重试或移除标记的照片。';
+
+  @override
   String get timesLabel => '次数';
 
   @override
@@ -2462,7 +2470,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get useLocalSpeechToTextDesc =>
-      '开启时，会先在设备上把音频转成文字再发送，这适合不支持音频输入的模型。关闭后，会直接把原始音频发送给模型处理。';
+      '开启时，会先在设备上把音频转成文字再发送，这适合不支持音频输入的模型。关闭后，由已配置的云端模型进行转录（模型需支持音频输入）。';
 
   @override
   String get pendingAiProcessingHint => '配置 AI 模型以自动整理此记录';
@@ -3223,6 +3231,14 @@ class AppLocalizationsZh extends AppLocalizations {
 /// The translations for Chinese, using the Han script (`zh_Hant`).
 class AppLocalizationsZhHant extends AppLocalizationsZh {
   AppLocalizationsZhHant() : super('zh_Hant');
+
+  @override
+  String get chatThinkingMessage => '正在思考…';
+  @override
+  String get preparingSelectedPhotos => '正在準備照片…';
+
+  @override
+  String get selectedPhotosPreparationFailed => '部分照片準備失敗，請重試或移除標記的照片。';
 
   @override
   String get timesLabel => '次數';

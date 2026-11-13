@@ -29,6 +29,20 @@ void main() {
     }
   });
 
+  test('asynchronous inspection never performs synchronous file I/O', () async {
+    final handle = _AsyncOnlyImageHandle(
+        Uint8List.fromList(_pngHeader(width: 800, height: 600)));
+    final file = _AsyncOnlyImageFile(handle);
+    final report = await IOOverrides.runZoned(
+      () => AssetSafetyService.instance.inspectFile('/cloud/photo.png'),
+      createFile: (_) => file,
+    );
+    expect(report.width, 800);
+    expect(report.height, 600);
+    expect(report.safeForPreview, isTrue);
+    expect(handle.closed, isTrue);
+  });
+
   test(
     'reads safe image dimensions from headers without full decode',
     () async {
@@ -325,5 +339,32 @@ Future<void> _resizeFile(File file, int length) async {
     await raf.truncate(length);
   } finally {
     await raf.close();
+  }
+}
+
+class _AsyncOnlyImageFile extends Fake implements File {
+  _AsyncOnlyImageFile(this.handle);
+  final _AsyncOnlyImageHandle handle;
+  @override
+  Future<bool> exists() async => true;
+  @override
+  Future<int> length() async => handle.bytes.length;
+  @override
+  Future<RandomAccessFile> open({FileMode mode = FileMode.read}) async =>
+      handle;
+}
+
+class _AsyncOnlyImageHandle extends Fake implements RandomAccessFile {
+  _AsyncOnlyImageHandle(this.bytes);
+  final Uint8List bytes;
+  bool closed = false;
+  @override
+  Future<int> length() async => bytes.length;
+  @override
+  Future<Uint8List> read(int count) async =>
+      Uint8List.sublistView(bytes, 0, count);
+  @override
+  Future<void> close() async {
+    closed = true;
   }
 }

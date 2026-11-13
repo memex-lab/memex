@@ -51,9 +51,9 @@ class CardDao extends DatabaseAccessor<AppDatabase> with _$CardDaoMixin {
       query.where((tbl) => tbl.timestamp.isBiggerOrEqualValue(fromTs));
     }
     if (dateTo != null) {
-      // End of dateTo day
-      final toDate = DateTime(dateTo.year, dateTo.month, dateTo.day)
-          .add(const Duration(days: 1))
+      // End of dateTo's civil day. A 24-hour add drops the last hour when
+      // clocks fall back.
+      final toDate = DateTime(dateTo.year, dateTo.month, dateTo.day + 1)
           .subtract(const Duration(seconds: 1));
       final toTs = toDate.millisecondsSinceEpoch ~/ 1000;
       query.where((tbl) => tbl.timestamp.isSmallerOrEqualValue(toTs));

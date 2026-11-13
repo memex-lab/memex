@@ -182,6 +182,42 @@ void main() {
       );
     });
 
+    test('legacy message_count cleanup does not rewrite metadata again',
+        () async {
+      const sessionId = 'memex_agent_count_cleanup';
+      final storage = ChatSessionStorage.instance;
+      await storage.createSession(
+        userId: userId,
+        sessionId: sessionId,
+        metadata: {
+          'session_id': sessionId,
+          'agent_name': 'memex_agent',
+          'title': 'Count cleanup',
+          'created_at': '2026-06-22T12:00:00.000',
+          'updated_at': '2026-06-22T12:00:00.000',
+        },
+      );
+      final metadataFile = File(storage.metadataPath(userId, sessionId));
+      final metadata = jsonDecode(await metadataFile.readAsString())
+          as Map<String, dynamic>;
+      metadata['message_count'] = 3;
+      await metadataFile.writeAsString(jsonEncode(metadata));
+
+      await storage.listSessionMetadata(userId);
+
+      final cleaned = jsonDecode(await metadataFile.readAsString())
+          as Map<String, dynamic>;
+      expect(cleaned.containsKey('message_count'), isFalse);
+
+      cleaned['message_count'] = 9;
+      await metadataFile.writeAsString(jsonEncode(cleaned));
+      await storage.listSessionMetadata(userId);
+
+      final second = jsonDecode(await metadataFile.readAsString())
+          as Map<String, dynamic>;
+      expect(second['message_count'], 9);
+    });
+
     test('appends messages to JSONL and updates metadata only', () async {
       const sessionId = 'memex_agent_new_storage';
       final storage = ChatSessionStorage.instance;
