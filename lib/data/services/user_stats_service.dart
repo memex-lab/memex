@@ -155,10 +155,7 @@ class UserStatsService {
       return await _fileSystemService.eventLogService.searchEvents(
         userId: userId,
         fromTime: range.start.toIso8601String(),
-        toTime: range.end
-            .add(const Duration(days: 1))
-            .subtract(const Duration(microseconds: 1))
-            .toIso8601String(),
+        toTime: inclusiveCivilDayEnd(range.end).toIso8601String(),
         offset: 0,
         limit: 100000,
       );

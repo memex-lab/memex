@@ -9,6 +9,11 @@ DateTime civilDay(DateTime date) => DateTime(date.year, date.month, date.day);
 DateTime nextCivilDay(DateTime date) =>
     DateTime(date.year, date.month, date.day + 1);
 
+/// Last instant of [date]'s civil day. Adding 24 hours is an hour short on
+/// a fall-back day and an hour long on a spring-forward day.
+DateTime inclusiveCivilDayEnd(DateTime date) =>
+    nextCivilDay(date).subtract(const Duration(microseconds: 1));
+
 /// Inclusive civil dates from [start] through [end]. Empty when [end] is
 /// before [start].
 List<DateTime> civilDaysInclusive(DateTime start, DateTime end) {
