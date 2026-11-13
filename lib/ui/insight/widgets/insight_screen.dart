@@ -32,10 +32,14 @@ class _InsightScreenState extends State<InsightScreen> {
     KnowledgeInsightCard item,
   ) async {
     try {
-      final pinned = await vm.togglePin(item);
+      final outcome = await vm.togglePin(item);
       if (!mounted) return;
-      if (!pinned) {
-        ToastHelper.showError(context, UserStorage.l10n.operationFailed(''));
+      if (outcome == InsightActionOutcome.ignored) return;
+      if (outcome == InsightActionOutcome.rejected) {
+        ToastHelper.showError(
+          context,
+          UserStorage.l10n.operationFailed(UserStorage.l10n.unknownError),
+        );
         return;
       }
       ToastHelper.showSuccess(
@@ -56,10 +60,14 @@ class _InsightScreenState extends State<InsightScreen> {
 
   Future<void> _saveSortOrder(InsightViewModel vm) async {
     try {
-      final saved = await vm.saveSortOrder();
+      final outcome = await vm.saveSortOrder();
       if (!mounted) return;
-      if (!saved) {
-        ToastHelper.showError(context, UserStorage.l10n.sortSaveFailed(''));
+      if (outcome == InsightActionOutcome.ignored) return;
+      if (outcome == InsightActionOutcome.rejected) {
+        ToastHelper.showError(
+          context,
+          UserStorage.l10n.sortSaveFailed(UserStorage.l10n.unknownError),
+        );
         return;
       }
       ToastHelper.showSuccess(context, UserStorage.l10n.sortUpdated);
@@ -78,10 +86,14 @@ class _InsightScreenState extends State<InsightScreen> {
     KnowledgeInsightCard item,
   ) async {
     try {
-      final deleted = await vm.deleteCard(item);
+      final outcome = await vm.deleteCard(item);
       if (!mounted) return;
-      if (!deleted) {
-        ToastHelper.showError(context, UserStorage.l10n.deleteFailedShort(''));
+      if (outcome == InsightActionOutcome.ignored) return;
+      if (outcome == InsightActionOutcome.rejected) {
+        ToastHelper.showError(
+          context,
+          UserStorage.l10n.deleteFailedShort(UserStorage.l10n.unknownError),
+        );
         return;
       }
       ToastHelper.showSuccess(context, UserStorage.l10n.insightCardDeleted);
@@ -98,7 +110,7 @@ class _InsightScreenState extends State<InsightScreen> {
   Widget _buildPinButton(InsightViewModel vm, KnowledgeInsightCard item) {
     final isPinning = vm.pinningIds.contains(item.id);
     return GestureDetector(
-      onTap: () => _onTogglePin(vm, item),
+      onTap: isPinning ? null : () => _onTogglePin(vm, item),
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
@@ -176,7 +188,9 @@ class _InsightScreenState extends State<InsightScreen> {
                     const SizedBox(width: 32), // Spacing between buttons
                     // Delete Button
                     GestureDetector(
-                      onTap: () => _onDeleteCard(vm, item),
+                      onTap: vm.isDeleting
+                          ? null
+                          : () => _onDeleteCard(vm, item),
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(

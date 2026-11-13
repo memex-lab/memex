@@ -91,6 +91,26 @@ void main() {
     expect(find.textContaining('Delete failed'), findsOneWidget);
     expect(find.text('First insight'), findsOneWidget);
   });
+
+  testWidgets('a pin that is already running does not toast a failure', (
+    tester,
+  ) async {
+    final viewModel = _FixedInsightActions(
+      succeeds: false,
+      outcome: InsightActionOutcome.ignored,
+    )
+      ..isLoading = false
+      ..insights = [_insight(id: 'first', quote: 'First insight')];
+    addTearDown(viewModel.dispose);
+
+    await _pumpInsight(tester, viewModel);
+    await tester.tap(find.byIcon(Icons.push_pin_outlined));
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.textContaining('Operation failed'), findsNothing);
+    expect(find.text('Style pinned'), findsNothing);
+  });
 }
 
 Future<void> _pumpInsight(WidgetTester tester, InsightViewModel viewModel) {
@@ -109,15 +129,27 @@ Future<void> _pumpInsight(WidgetTester tester, InsightViewModel viewModel) {
 }
 
 class _FixedInsightActions extends InsightViewModel {
-  _FixedInsightActions({required this.succeeds}) : super(router: MemexRouter());
+  _FixedInsightActions({
+    required this.succeeds,
+    this.outcome,
+  }) : super(router: MemexRouter());
 
   final bool succeeds;
+  final InsightActionOutcome? outcome;
+
+  InsightActionOutcome get _outcome =>
+      outcome ??
+      (succeeds
+          ? InsightActionOutcome.applied
+          : InsightActionOutcome.rejected);
 
   @override
-  Future<bool> togglePin(KnowledgeInsightCard item) async => succeeds;
+  Future<InsightActionOutcome> togglePin(KnowledgeInsightCard item) async =>
+      _outcome;
 
   @override
-  Future<bool> deleteCard(KnowledgeInsightCard item) async => succeeds;
+  Future<InsightActionOutcome> deleteCard(KnowledgeInsightCard item) async =>
+      _outcome;
 }
 
 KnowledgeInsightCard _insight({

@@ -986,6 +986,7 @@ class MemexRouter {
       );
       final userId = await UserStorage.getUserId();
       if (userId == null) return false;
+      var failed = false;
       for (int i = 0; i < sortedIds.length; i++) {
         final id = sortedIds[i];
         try {
@@ -993,23 +994,26 @@ class MemexRouter {
             userId,
             id,
           );
-          if (cardData != null) {
-            final currentSortOrder = (cardData['sort_order'] as num? ?? 0)
-                .toInt();
-            if (currentSortOrder != i) {
-              cardData['sort_order'] = i;
-              await fileSystemService.writeKnowledgeInsightCard(
-                userId,
-                id,
-                cardData,
-              );
-            }
+          if (cardData == null) {
+            failed = true;
+            continue;
+          }
+          final currentSortOrder = (cardData['sort_order'] as num? ?? 0)
+              .toInt();
+          if (currentSortOrder != i) {
+            cardData['sort_order'] = i;
+            await fileSystemService.writeKnowledgeInsightCard(
+              userId,
+              id,
+              cardData,
+            );
           }
         } catch (e) {
+          failed = true;
           _logger.warning('Failed to update sort order for card $id: $e');
         }
       }
-      return true;
+      return !failed;
     });
   }
 
