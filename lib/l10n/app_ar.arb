@@ -1183,6 +1183,27 @@
   "speechNoResult": "لم يتم اكتشاف كلام",
   "useLocalSpeechToTextTitle": "استخدام تحويل الكلام إلى نص محليا",
   "useLocalSpeechToTextDesc": "عند التفعيل، يتم تفريغ الصوت على الجهاز قبل الإرسال — مفيد للنماذج التي لا تدعم إدخال الصوت. عند التعطيل، يرسل الصوت الأصلي مباشرة إلى النموذج.",
+  "analyzeVocalToneTitle": "تحليل نبرة الصوت",
+  "analyzeVocalToneDesc": "مغلق بشكل افتراضي. عند تشغيله تُضاف ملاحظة قصيرة عن المزاج والطاقة إلى مسودة الصوت قبل الإرسال. نموذج الجهاز يبقى على الجهاز. يذهب الصوت إلى النموذج الذي أعددته فقط عندما لا يملك نموذج الجهاز علامة نبرة.",
+  "vocalToneLine": "نبرة الصوت: {mood}، {energy}.",
+  "@vocalToneLine": {
+    "placeholders": {
+      "mood": {"type": "String"},
+      "energy": {"type": "String"}
+    }
+  },
+  "vocalToneMoodHappy": "سعيد",
+  "vocalToneMoodSad": "حزين",
+  "vocalToneMoodAngry": "غاضب",
+  "vocalToneMoodCalm": "هادئ",
+  "vocalToneMoodTense": "متوتر",
+  "vocalToneMoodDispleased": "مستاء",
+  "vocalToneMoodSurprised": "مندهش",
+  "vocalToneMoodLaughter": "ضحك",
+  "vocalToneMoodCrying": "بكاء",
+  "vocalToneEnergyLow": "طاقة منخفضة",
+  "vocalToneEnergySteady": "طاقة ثابتة",
+  "vocalToneEnergyHigh": "طاقة عالية",
   "pendingAiProcessingHint": "قم بإعداد نموذج الذكاء الاصطناعي للمعالجة",
   "demoWelcome": "مرحبا بك في Memex!\nلنأخذ جولة سريعة عما يستطيع الذكاء الاصطناعي فعله لسجلاتك.",
   "demoTapAdd": "اضغط هنا لإنشاء أول سجل",

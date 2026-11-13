@@ -10,6 +10,7 @@ import 'package:memex/ui/settings/widgets/data_import_page.dart';
 import 'package:memex/ui/settings/widgets/data_storage_page.dart';
 import 'package:memex/ui/settings/widgets/location_context_settings_page.dart';
 import 'package:memex/ui/settings/widgets/early_update_settings_card.dart';
+import 'package:memex/ui/settings/widgets/vocal_tone_settings_card.dart';
 import 'package:memex/ui/settings/view_models/data_import_viewmodel.dart';
 import 'package:memex/db/app_database.dart';
 import 'package:memex/data/services/file_system_service.dart';
@@ -30,6 +31,7 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   String _currentLocaleTag = 'en';
   bool _useLocalSpeechToText = true;
+  bool _analyzeVocalTone = false;
   CommentSettings _commentSettings = const CommentSettings();
 
   @override
@@ -41,6 +43,7 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _loadSettings() async {
     final locale = await UserStorage.getLocale();
     final useLocalSpeechToText = await UserStorage.getUseLocalSpeechToText();
+    final analyzeVocalTone = await UserStorage.getAnalyzeVocalTone();
     final commentSettings = await MemexRouter().getCommentSettings();
     if (mounted) {
       setState(() {
@@ -48,6 +51,7 @@ class _SettingsPageState extends State<SettingsPage> {
           UserStorage.resolveToSupportedLocale(locale),
         );
         _useLocalSpeechToText = useLocalSpeechToText;
+        _analyzeVocalTone = analyzeVocalTone;
         _commentSettings = commentSettings;
       });
     }
@@ -81,6 +85,13 @@ class _SettingsPageState extends State<SettingsPage> {
     await UserStorage.setUseLocalSpeechToText(value);
     if (mounted) {
       setState(() => _useLocalSpeechToText = value);
+    }
+  }
+
+  Future<void> _updateAnalyzeVocalTone(bool value) async {
+    await UserStorage.setAnalyzeVocalTone(value);
+    if (mounted) {
+      setState(() => _analyzeVocalTone = value);
     }
   }
 
@@ -217,6 +228,10 @@ class _SettingsPageState extends State<SettingsPage> {
               value: _useLocalSpeechToText,
               onChanged: _updateUseLocalSpeechToText,
             ),
+          ),
+          VocalToneSettingsCard(
+            enabled: _analyzeVocalTone,
+            onChanged: _updateAnalyzeVocalTone,
           ),
           const SizedBox(height: 16),
           if (Platform.isAndroid && AppFlavor.isEarly) ...[

@@ -1183,6 +1183,27 @@
   "speechNoResult": "Aucune parole détectée",
   "useLocalSpeechToTextTitle": "Utiliser speech to text local",
   "useLocalSpeechToTextDesc": "Lorsque c'est activé, l'audio est transcrit sur l'appareil avant envoi — utile pour les modèles qui ne prennent pas en charge l'entrée audio. Désactivé, l'audio original est envoyé directement au modèle.",
+  "analyzeVocalToneTitle": "Analyser le ton de la voix",
+  "analyzeVocalToneDesc": "Désactivé par défaut. Quand c'est activé, une courte note sur l'humeur et l'énergie est ajoutée au brouillon vocal avant l'envoi. Un modèle sur l'appareil reste sur l'appareil. L'audio part vers le modèle configuré seulement si le modèle sur l'appareil n'a pas de marque de ton.",
+  "vocalToneLine": "Ton vocal : {mood}, {energy}.",
+  "@vocalToneLine": {
+    "placeholders": {
+      "mood": {"type": "String"},
+      "energy": {"type": "String"}
+    }
+  },
+  "vocalToneMoodHappy": "joyeux",
+  "vocalToneMoodSad": "triste",
+  "vocalToneMoodAngry": "en colère",
+  "vocalToneMoodCalm": "calme",
+  "vocalToneMoodTense": "tendu",
+  "vocalToneMoodDispleased": "mécontent",
+  "vocalToneMoodSurprised": "surpris",
+  "vocalToneMoodLaughter": "rire",
+  "vocalToneMoodCrying": "pleurs",
+  "vocalToneEnergyLow": "énergie basse",
+  "vocalToneEnergySteady": "énergie stable",
+  "vocalToneEnergyHigh": "énergie haute",
   "pendingAiProcessingHint": "Configurer un modèle AI pour traiter",
   "demoWelcome": "Bienvenue dans Memex !\nFaisons un rapide tour de ce que l'AI peut faire pour vos enregistrements.",
   "demoTapAdd": "Touchez ici pour créer votre premier enregistrement",

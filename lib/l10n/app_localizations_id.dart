@@ -10,6 +10,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get chatThinkingMessage => 'Sedang berpikir…';
+
   @override
   String get preparingSelectedPhotos => 'Menyiapkan foto…';
 
@@ -2574,6 +2575,54 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get useLocalSpeechToTextDesc =>
       'Jika aktif, audio ditranskripsi di perangkat sebelum dikirim — berguna untuk model yang tidak mendukung input audio. Jika nonaktif, audio asli dikirim langsung ke model.';
+
+  @override
+  String get analyzeVocalToneTitle => 'Analisis nada suara';
+
+  @override
+  String get analyzeVocalToneDesc =>
+      'Mati secara bawaan. Saat menyala, catatan pendek tentang suasana dan energi ditambahkan ke draf suara sebelum dikirim. Model di perangkat tetap di perangkat. Audio dikirim ke model yang diatur hanya bila model di perangkat tidak punya tanda nada.';
+
+  @override
+  String vocalToneLine(String mood, String energy) {
+    return 'Nada suara: $mood, $energy.';
+  }
+
+  @override
+  String get vocalToneMoodHappy => 'gembira';
+
+  @override
+  String get vocalToneMoodSad => 'sedih';
+
+  @override
+  String get vocalToneMoodAngry => 'marah';
+
+  @override
+  String get vocalToneMoodCalm => 'tenang';
+
+  @override
+  String get vocalToneMoodTense => 'tegang';
+
+  @override
+  String get vocalToneMoodDispleased => 'tidak senang';
+
+  @override
+  String get vocalToneMoodSurprised => 'terkejut';
+
+  @override
+  String get vocalToneMoodLaughter => 'tawa';
+
+  @override
+  String get vocalToneMoodCrying => 'tangis';
+
+  @override
+  String get vocalToneEnergyLow => 'energi rendah';
+
+  @override
+  String get vocalToneEnergySteady => 'energi stabil';
+
+  @override
+  String get vocalToneEnergyHigh => 'energi tinggi';
 
   @override
   String get pendingAiProcessingHint => 'Siapkan model AI untuk memproses';

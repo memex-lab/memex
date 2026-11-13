@@ -10,6 +10,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get chatThinkingMessage => '正在思考…';
+
   @override
   String get preparingSelectedPhotos => '正在准备照片…';
 
@@ -2473,6 +2474,54 @@ class AppLocalizationsZh extends AppLocalizations {
       '开启时，会先在设备上把音频转成文字再发送，这适合不支持音频输入的模型。关闭后，由已配置的云端模型进行转录（模型需支持音频输入）。';
 
   @override
+  String get analyzeVocalToneTitle => '分析语气';
+
+  @override
+  String get analyzeVocalToneDesc =>
+      '默认关闭。打开后，发送前会在语音草稿里加一句关于语气和力度的说明。设备上的模型结果留在设备上。只有设备上的模型没有语气标记时，音频才会发给你配置的模型。';
+
+  @override
+  String vocalToneLine(String mood, String energy) {
+    return '语气：$mood，$energy。';
+  }
+
+  @override
+  String get vocalToneMoodHappy => '愉快';
+
+  @override
+  String get vocalToneMoodSad => '悲伤';
+
+  @override
+  String get vocalToneMoodAngry => '生气';
+
+  @override
+  String get vocalToneMoodCalm => '平静';
+
+  @override
+  String get vocalToneMoodTense => '紧张';
+
+  @override
+  String get vocalToneMoodDispleased => '不悦';
+
+  @override
+  String get vocalToneMoodSurprised => '惊讶';
+
+  @override
+  String get vocalToneMoodLaughter => '笑声';
+
+  @override
+  String get vocalToneMoodCrying => '哭腔';
+
+  @override
+  String get vocalToneEnergyLow => '力度低';
+
+  @override
+  String get vocalToneEnergySteady => '力度平稳';
+
+  @override
+  String get vocalToneEnergyHigh => '力度高';
+
+  @override
   String get pendingAiProcessingHint => '配置 AI 模型以自动整理此记录';
 
   @override
@@ -3234,6 +3283,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get chatThinkingMessage => '正在思考…';
+
   @override
   String get preparingSelectedPhotos => '正在準備照片…';
 
@@ -5699,6 +5749,54 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   @override
   String get useLocalSpeechToTextDesc =>
       '開啟時，音訊會先在裝置上轉錄成文字再傳送，適合不支援音訊輸入的模型。關閉時，原始音訊會直接傳送給模型。';
+
+  @override
+  String get analyzeVocalToneTitle => '分析語氣';
+
+  @override
+  String get analyzeVocalToneDesc =>
+      '預設關閉。打開後，送出前會在語音草稿裡加一句關於語氣和力度的說明。裝置上的模型結果留在裝置上。只有裝置上的模型沒有語氣標記時，音訊才會發給你設定的模型。';
+
+  @override
+  String vocalToneLine(String mood, String energy) {
+    return '語氣：$mood，$energy。';
+  }
+
+  @override
+  String get vocalToneMoodHappy => '愉快';
+
+  @override
+  String get vocalToneMoodSad => '悲傷';
+
+  @override
+  String get vocalToneMoodAngry => '生氣';
+
+  @override
+  String get vocalToneMoodCalm => '平靜';
+
+  @override
+  String get vocalToneMoodTense => '緊張';
+
+  @override
+  String get vocalToneMoodDispleased => '不悅';
+
+  @override
+  String get vocalToneMoodSurprised => '驚訝';
+
+  @override
+  String get vocalToneMoodLaughter => '笑聲';
+
+  @override
+  String get vocalToneMoodCrying => '哭腔';
+
+  @override
+  String get vocalToneEnergyLow => '力度低';
+
+  @override
+  String get vocalToneEnergySteady => '力度平穩';
+
+  @override
+  String get vocalToneEnergyHigh => '力度高';
 
   @override
   String get pendingAiProcessingHint => '設定 AI 模型以處理';

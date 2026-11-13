@@ -1183,6 +1183,27 @@
   "speechNoResult": "未偵測到語音",
   "useLocalSpeechToTextTitle": "使用本機語音轉文字",
   "useLocalSpeechToTextDesc": "開啟時，音訊會先在裝置上轉錄成文字再傳送，適合不支援音訊輸入的模型。關閉時，原始音訊會直接傳送給模型。",
+  "analyzeVocalToneTitle": "分析語氣",
+  "analyzeVocalToneDesc": "預設關閉。打開後，送出前會在語音草稿裡加一句關於語氣和力度的說明。裝置上的模型結果留在裝置上。只有裝置上的模型沒有語氣標記時，音訊才會發給你設定的模型。",
+  "vocalToneLine": "語氣：{mood}，{energy}。",
+  "@vocalToneLine": {
+    "placeholders": {
+      "mood": {"type": "String"},
+      "energy": {"type": "String"}
+    }
+  },
+  "vocalToneMoodHappy": "愉快",
+  "vocalToneMoodSad": "悲傷",
+  "vocalToneMoodAngry": "生氣",
+  "vocalToneMoodCalm": "平靜",
+  "vocalToneMoodTense": "緊張",
+  "vocalToneMoodDispleased": "不悅",
+  "vocalToneMoodSurprised": "驚訝",
+  "vocalToneMoodLaughter": "笑聲",
+  "vocalToneMoodCrying": "哭腔",
+  "vocalToneEnergyLow": "力度低",
+  "vocalToneEnergySteady": "力度平穩",
+  "vocalToneEnergyHigh": "力度高",
   "pendingAiProcessingHint": "設定 AI 模型以處理",
   "demoWelcome": "歡迎來到 Memex！\n讓我們快速看看 AI 能為你的記錄做些什麼。",
   "demoTapAdd": "點這裡建立你的第一筆記錄",

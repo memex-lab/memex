@@ -1183,6 +1183,27 @@
   "speechNoResult": "Không phát hiện giọng nói",
   "useLocalSpeechToTextTitle": "Dùng chuyển giọng nói cục bộ",
   "useLocalSpeechToTextDesc": "Khi bật, âm thanh được chuyển thành văn bản trên thiết bị trước khi gửi — hữu ích cho mô hình không hỗ trợ đầu vào âm thanh. Khi tắt, âm thanh gốc được gửi trực tiếp tới mô hình.",
+  "analyzeVocalToneTitle": "Phân tích giọng",
+  "analyzeVocalToneDesc": "Mặc định tắt. Khi bật, một câu ngắn về tâm trạng và năng lượng được thêm vào bản nháp giọng trước khi gửi. Mô hình trên máy ở lại trên máy. Âm thanh chỉ được gửi tới mô hình đã cấu hình khi mô hình trên máy không có dấu giọng.",
+  "vocalToneLine": "Giọng: {mood}, {energy}.",
+  "@vocalToneLine": {
+    "placeholders": {
+      "mood": {"type": "String"},
+      "energy": {"type": "String"}
+    }
+  },
+  "vocalToneMoodHappy": "vui",
+  "vocalToneMoodSad": "buồn",
+  "vocalToneMoodAngry": "tức",
+  "vocalToneMoodCalm": "bình tĩnh",
+  "vocalToneMoodTense": "căng",
+  "vocalToneMoodDispleased": "không hài lòng",
+  "vocalToneMoodSurprised": "ngạc nhiên",
+  "vocalToneMoodLaughter": "cười",
+  "vocalToneMoodCrying": "khóc",
+  "vocalToneEnergyLow": "năng lượng thấp",
+  "vocalToneEnergySteady": "năng lượng đều",
+  "vocalToneEnergyHigh": "năng lượng cao",
   "pendingAiProcessingHint": "Thiết lập mô hình AI để xử lý",
   "demoWelcome": "Chào mừng đến Memex!\nHãy xem nhanh AI có thể làm gì cho bản ghi của bạn.",
   "demoTapAdd": "Nhấn đây để tạo bản ghi đầu tiên",
