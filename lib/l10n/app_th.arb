@@ -1181,6 +1181,27 @@
   "speechNoResult": "ไม่ตรวจพบเสียงพูด",
   "useLocalSpeechToTextTitle": "ใช้ speech to text ในเครื่อง",
   "useLocalSpeechToTextDesc": "เมื่อเปิดใช้งาน เสียงจะถอดในเครื่องก่อนส่ง — มีประโยชน์สำหรับโมเดลที่ไม่รองรับการป้อนเสียง เมื่อปิด จะส่งเสียงต้นฉบับตรงไปยังโมเดล",
+  "analyzeVocalToneTitle": "วิเคราะห์น้ำเสียง",
+  "analyzeVocalToneDesc": "ค่าเริ่มต้นปิด เมื่อเปิด จะมีข้อความสั้นเรื่องอารมณ์และพลังในฉบับร่างเสียงก่อนส่ง โมเดลในเครื่องอยู่บนเครื่อง เสียงจะไปยังโมเดลที่ตั้งไว้ก็ต่อเมื่อโมเดลในเครื่องไม่มีเครื่องหมายน้ำเสียง",
+  "vocalToneLine": "น้ำเสียง: {mood}, {energy}.",
+  "@vocalToneLine": {
+    "placeholders": {
+      "mood": {"type": "String"},
+      "energy": {"type": "String"}
+    }
+  },
+  "vocalToneMoodHappy": "ดีใจ",
+  "vocalToneMoodSad": "เศร้า",
+  "vocalToneMoodAngry": "โกรธ",
+  "vocalToneMoodCalm": "สงบ",
+  "vocalToneMoodTense": "ตึงเครียด",
+  "vocalToneMoodDispleased": "ไม่พอใจ",
+  "vocalToneMoodSurprised": "ประหลาดใจ",
+  "vocalToneMoodLaughter": "หัวเราะ",
+  "vocalToneMoodCrying": "ร้องไห้",
+  "vocalToneEnergyLow": "พลังต่ำ",
+  "vocalToneEnergySteady": "พลังสม่ำเสมอ",
+  "vocalToneEnergyHigh": "พลังสูง",
   "pendingAiProcessingHint": "ตั้งค่าโมเดล AI เพื่อประมวลผล",
   "demoWelcome": "ยินดีต้อนรับสู่ Memex!\nมาทัวร์สั้นๆ ดูว่า AI ช่วยบันทึกของคุณได้อย่างไร",
   "demoTapAdd": "แตะที่นี่เพื่อสร้างบันทึกแรกของคุณ",

@@ -4,6 +4,7 @@ import 'package:logging/logging.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa;
+import 'package:memex/domain/models/vocal_tone.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/audio_converter.dart';
 import 'package:memex/data/services/transcription_isolate.dart';
@@ -293,6 +294,20 @@ class WhisperService {
             'Segment transcribed (bg): ${text.substring(0, text.length.clamp(0, 80))}');
       }
       return text;
+    } catch (e) {
+      _logger.severe('Segment transcription failed: $e');
+      return null;
+    }
+  }
+
+  /// Same as [transcribeSamples], plus emotion and event when SenseVoice has them.
+  Future<LocalRecognition?> transcribeSamplesDetailed(
+    Float32List samples,
+  ) async {
+    try {
+      if (!await isModelDownloaded()) return null;
+      await _ensureBgIsolate();
+      return await _bgIsolate!.transcribeDetailed(samples);
     } catch (e) {
       _logger.severe('Segment transcription failed: $e');
       return null;

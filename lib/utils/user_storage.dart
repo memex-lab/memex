@@ -503,6 +503,7 @@ class UserStorage {
 
   static const String _keyAgentConfigs = 'agent_configs';
   static const String _keyUseLocalSpeechToText = 'use_local_speech_to_text';
+  static const String _keyAnalyzeVocalTone = 'analyze_vocal_tone';
   static const String _keySuperAgentRunMode = 'super_agent_run_mode';
 
   /// Persisted run mode for the SuperAgent home entry ('auto' | 'confirm' |
@@ -583,6 +584,24 @@ class UserStorage {
       await prefs.setBool(_keyUseLocalSpeechToText, value);
     } catch (e) {
       throw Exception('Failed to save speech preference: $e');
+    }
+  }
+
+  static Future<bool> getAnalyzeVocalTone() async {
+    try {
+      final prefs = await sharedPrefs();
+      return prefs.getBool(_keyAnalyzeVocalTone) ?? false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  static Future<void> setAnalyzeVocalTone(bool value) async {
+    try {
+      final prefs = await sharedPrefs();
+      await prefs.setBool(_keyAnalyzeVocalTone, value);
+    } catch (e) {
+      throw Exception('Failed to save vocal tone preference: $e');
     }
   }
 

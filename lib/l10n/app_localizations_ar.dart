@@ -10,6 +10,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get chatThinkingMessage => 'جارٍ التفكير…';
+
   @override
   String get preparingSelectedPhotos => 'جارٍ تجهيز الصور…';
 
@@ -2542,6 +2543,54 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get useLocalSpeechToTextDesc =>
       'عند التفعيل، يتم تفريغ الصوت على الجهاز قبل الإرسال — مفيد للنماذج التي لا تدعم إدخال الصوت. عند التعطيل، يرسل الصوت الأصلي مباشرة إلى النموذج.';
+
+  @override
+  String get analyzeVocalToneTitle => 'تحليل نبرة الصوت';
+
+  @override
+  String get analyzeVocalToneDesc =>
+      'مغلق بشكل افتراضي. عند تشغيله تُضاف ملاحظة قصيرة عن المزاج والطاقة إلى مسودة الصوت قبل الإرسال. نموذج الجهاز يبقى على الجهاز. يذهب الصوت إلى النموذج الذي أعددته فقط عندما لا يملك نموذج الجهاز علامة نبرة.';
+
+  @override
+  String vocalToneLine(String mood, String energy) {
+    return 'نبرة الصوت: $mood، $energy.';
+  }
+
+  @override
+  String get vocalToneMoodHappy => 'سعيد';
+
+  @override
+  String get vocalToneMoodSad => 'حزين';
+
+  @override
+  String get vocalToneMoodAngry => 'غاضب';
+
+  @override
+  String get vocalToneMoodCalm => 'هادئ';
+
+  @override
+  String get vocalToneMoodTense => 'متوتر';
+
+  @override
+  String get vocalToneMoodDispleased => 'مستاء';
+
+  @override
+  String get vocalToneMoodSurprised => 'مندهش';
+
+  @override
+  String get vocalToneMoodLaughter => 'ضحك';
+
+  @override
+  String get vocalToneMoodCrying => 'بكاء';
+
+  @override
+  String get vocalToneEnergyLow => 'طاقة منخفضة';
+
+  @override
+  String get vocalToneEnergySteady => 'طاقة ثابتة';
+
+  @override
+  String get vocalToneEnergyHigh => 'طاقة عالية';
 
   @override
   String get pendingAiProcessingHint =>

@@ -10,6 +10,7 @@ class AppLocalizationsFa extends AppLocalizations {
 
   @override
   String get chatThinkingMessage => 'در حال فکر کردن…';
+
   @override
   String get preparingSelectedPhotos => 'در حال آماده‌سازی عکس‌ها…';
 
@@ -2558,6 +2559,54 @@ class AppLocalizationsFa extends AppLocalizations {
   @override
   String get useLocalSpeechToTextDesc =>
       'در صورت فعال بودن، صدا قبل از ارسال روی دستگاه رونویسی می‌شود — برای مدل‌هایی که ورودی صوتی را پشتیبانی نمی‌کنند مفید است. در صورت غیرفعال بودن، صدای اصلی مستقیماً به مدل ارسال می‌شود.';
+
+  @override
+  String get analyzeVocalToneTitle => 'تحلیل لحن صدا';
+
+  @override
+  String get analyzeVocalToneDesc =>
+      'پیش‌فرض خاموش است. وقتی روشن باشد، پیش از ارسال یک جمله کوتاه درباره حال و انرژی به پیش‌نویس صدا اضافه می‌شود. نتیجه مدل روی دستگاه روی دستگاه می‌ماند. صدا فقط وقتی به مدل تنظیم‌شده می‌رود که مدل روی دستگاه نشانه‌ای از لحن نداشته باشد.';
+
+  @override
+  String vocalToneLine(String mood, String energy) {
+    return 'لحن صدا: $mood، $energy.';
+  }
+
+  @override
+  String get vocalToneMoodHappy => 'شاد';
+
+  @override
+  String get vocalToneMoodSad => 'غمگین';
+
+  @override
+  String get vocalToneMoodAngry => 'عصبانی';
+
+  @override
+  String get vocalToneMoodCalm => 'آرام';
+
+  @override
+  String get vocalToneMoodTense => 'مضطرب';
+
+  @override
+  String get vocalToneMoodDispleased => 'ناراضی';
+
+  @override
+  String get vocalToneMoodSurprised => 'متعجب';
+
+  @override
+  String get vocalToneMoodLaughter => 'خنده';
+
+  @override
+  String get vocalToneMoodCrying => 'گریه';
+
+  @override
+  String get vocalToneEnergyLow => 'انرژی کم';
+
+  @override
+  String get vocalToneEnergySteady => 'انرژی یکنواخت';
+
+  @override
+  String get vocalToneEnergyHigh => 'انرژی زیاد';
 
   @override
   String get pendingAiProcessingHint =>
