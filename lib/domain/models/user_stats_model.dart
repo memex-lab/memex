@@ -1,3 +1,5 @@
+import 'package:memex/domain/models/civil_date.dart';
+
 enum UserStatsMetric {
   inputs,
   words,
@@ -16,13 +18,14 @@ class UserStatsDateRange {
   factory UserStatsDateRange.lastDays(int days, {DateTime? now}) {
     final anchor = now ?? DateTime.now();
     final end = DateTime(anchor.year, anchor.month, anchor.day);
+    final span = days < 1 ? 0 : days - 1;
     return UserStatsDateRange(
-      start: end.subtract(Duration(days: days - 1)),
+      start: DateTime(end.year, end.month, end.day - span),
       end: end,
     );
   }
 
-  int get dayCount => end.difference(start).inDays + 1;
+  int get dayCount => civilDaysInclusive(start, end).length;
 
   Map<String, dynamic> toJson() => {
         'start': _dateKey(start),
@@ -276,17 +279,18 @@ class UserStatsSnapshot {
   });
 
   factory UserStatsSnapshot.empty(UserStatsDateRange range) {
-    final daily = List.generate(range.dayCount, (index) {
-      return UserStatsDailyPoint(
-        date: range.start.add(Duration(days: index)),
-        inputs: 0,
-        words: 0,
-        cards: 0,
-        knowledgeUnits: 0,
-        insights: 0,
-        completedTodos: 0,
-      );
-    });
+    final daily = [
+      for (final date in civilDaysInclusive(range.start, range.end))
+        UserStatsDailyPoint(
+          date: date,
+          inputs: 0,
+          words: 0,
+          cards: 0,
+          knowledgeUnits: 0,
+          insights: 0,
+          completedTodos: 0,
+        ),
+    ];
     return UserStatsSnapshot(
       range: range,
       summary: const UserStatsSummary(

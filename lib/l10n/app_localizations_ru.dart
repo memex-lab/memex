@@ -9,6 +9,8 @@ class AppLocalizationsRu extends AppLocalizations {
   AppLocalizationsRu([String locale = 'ru']) : super(locale);
 
   @override
+  String get chatThinkingMessage => 'Обдумывание…';
+  @override
   String get preparingSelectedPhotos => 'Подготовка фотографий…';
 
   @override

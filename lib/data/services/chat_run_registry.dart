@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:uuid/uuid.dart';
+
 import 'package:memex/data/model/chat_events.dart';
 
 /// One in-flight agent chat turn, owned by the service layer so it survives
@@ -17,6 +19,7 @@ class ActiveChatRun {
       : _onClosed = onClosed;
 
   final String sessionId;
+  final String runId = const Uuid().v4();
   final DateTime startedAt = DateTime.now();
   final List<ChatEvent> _replayBuffer = [];
   final StreamController<ChatEvent> _live =

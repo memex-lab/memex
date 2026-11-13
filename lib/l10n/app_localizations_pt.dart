@@ -9,6 +9,8 @@ class AppLocalizationsPt extends AppLocalizations {
   AppLocalizationsPt([String locale = 'pt']) : super(locale);
 
   @override
+  String get chatThinkingMessage => 'Pensando…';
+  @override
   String get preparingSelectedPhotos => 'Preparando fotos…';
 
   @override

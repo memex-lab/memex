@@ -1,4 +1,5 @@
 {
+  "chatThinkingMessage": "กำลังคิด…",
   "preparingSelectedPhotos": "กำลังเตรียมรูปภาพ…",
   "selectedPhotosPreparationFailed": "ไม่สามารถเตรียมรูปภาพบางรูปได้ โปรดลองอีกครั้งหรือลบรูปภาพที่ทำเครื่องหมายไว้",
 

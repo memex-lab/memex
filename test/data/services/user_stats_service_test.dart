@@ -249,6 +249,28 @@ void main() {
       );
     },
   );
+
+  test('keeps every civil day across the spring-forward', () async {
+    final snapshot = await UserStatsService(
+      useBackgroundIsolate: false,
+    ).fetchSnapshot(
+      userId: userId,
+      range: UserStatsDateRange(
+        start: DateTime(2026, 3, 27),
+        end: DateTime(2026, 4, 2),
+      ),
+    );
+
+    expect(snapshot.daily.map((point) => point.date).toList(), [
+      DateTime(2026, 3, 27),
+      DateTime(2026, 3, 28),
+      DateTime(2026, 3, 29),
+      DateTime(2026, 3, 30),
+      DateTime(2026, 3, 31),
+      DateTime(2026, 4, 1),
+      DateTime(2026, 4, 2),
+    ]);
+  });
 }
 
 Map<String, dynamic> _event({

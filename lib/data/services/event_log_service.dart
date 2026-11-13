@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:path/path.dart' as path;
 import 'package:logging/logging.dart';
+import 'package:memex/domain/models/civil_date.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/time_context.dart';
 
@@ -139,11 +140,7 @@ class EventLogService {
       final allEvents = <Map<String, dynamic>>[];
 
       // Iterate through dates from fromDate to toDate
-      var currentDate = DateTime(fromDate.year, fromDate.month, fromDate.day);
-      final endDate = DateTime(toDate.year, toDate.month, toDate.day);
-
-      while (currentDate.isBefore(endDate) ||
-          currentDate.isAtSameMomentAs(endDate)) {
+      for (final currentDate in civilDaysInclusive(fromDate, toDate)) {
         final logPath = getEventLogPath(userId, currentDate);
         final logFile = File(logPath);
 
@@ -172,8 +169,6 @@ class EventLogService {
             }
           }
         }
-
-        currentDate = currentDate.add(const Duration(days: 1));
       }
 
       // Sort by time descending (newest first)

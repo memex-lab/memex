@@ -15,6 +15,7 @@ import 'local_asset_server.dart';
 import 'event_log_service.dart';
 import 'package:memex/db/app_database.dart';
 import 'package:memex/domain/models/card_model.dart';
+import 'package:memex/domain/models/civil_date.dart';
 import 'package:memex/domain/models/system_event.dart';
 import 'package:memex/data/services/global_event_bus.dart';
 import 'package:drift/drift.dart' as drift;
@@ -330,18 +331,11 @@ class FileSystemService {
     // One directory listing per month. The old loop listed Cards/YYYY/MM again
     // for every day and stat'd every file in that folder each time.
     final daysByMonth = <String, List<String>>{};
-    var currentDate = startDate;
-    while (currentDate.isBefore(endDate) ||
-        currentDate.isAtSameMomentAs(endDate)) {
+    for (final currentDate in civilDaysInclusive(startDate, endDate)) {
       final year = currentDate.year.toString();
       final month = currentDate.month.toString().padLeft(2, '0');
       final day = currentDate.day.toString().padLeft(2, '0');
       (daysByMonth['$year/$month'] ??= <String>[]).add(day);
-      currentDate = DateTime(
-        currentDate.year,
-        currentDate.month,
-        currentDate.day,
-      ).add(const Duration(days: 1));
     }
 
     final cardFiles = <String>[];
