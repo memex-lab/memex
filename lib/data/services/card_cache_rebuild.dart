@@ -2,8 +2,33 @@ const int cardCacheRebuildYieldEvery = 8;
 
 List<String> sortCardFilesNewestFirst(List<String> paths) {
   if (paths.length <= 1) return List<String>.from(paths);
-  final next = List<String>.from(paths)..sort((a, b) => b.compareTo(a));
+  final next = List<String>.from(paths)..sort(compareCardFilesNewestFirst);
   return next;
+}
+
+final _cardFileOrder = RegExp(
+  r'(\d{4})[\\/](\d{2})[\\/](\d{2})_ts_(\d+)\.yaml$',
+);
+
+/// Newest calendar day first, then the numeric `ts_N` on that day.
+/// A string sort puts `ts_9` ahead of `ts_10`.
+int compareCardFilesNewestFirst(String a, String b) {
+  final left = _cardFileOrder.firstMatch(a);
+  final right = _cardFileOrder.firstMatch(b);
+  if (left == null || right == null) return b.compareTo(a);
+  for (var group = 1; group <= 3; group++) {
+    final compared = int.parse(right.group(group)!)
+        .compareTo(int.parse(left.group(group)!));
+    if (compared != 0) return compared;
+  }
+  return int.parse(right.group(4)!).compareTo(int.parse(left.group(4)!));
+}
+
+bool cardCacheNeedsRebuild({
+  required bool cacheEmpty,
+  required bool rebuildInterrupted,
+}) {
+  return cacheEmpty || rebuildInterrupted;
 }
 
 bool shouldYieldCardCacheRebuild(

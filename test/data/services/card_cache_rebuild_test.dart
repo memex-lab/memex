@@ -30,6 +30,30 @@ void main() {
     ]);
   });
 
+  test('orders ts_10 ahead of ts_9 on the same day', () {
+    expect(
+      sortCardFilesNewestFirst([
+        '/Cards/2026/09/10_ts_9.yaml',
+        '/Cards/2026/09/10_ts_10.yaml',
+      ]),
+      [
+        '/Cards/2026/09/10_ts_10.yaml',
+        '/Cards/2026/09/10_ts_9.yaml',
+      ],
+    );
+  });
+
+  test('an interrupted rebuild is not treated as a finished cache', () {
+    expect(
+      cardCacheNeedsRebuild(cacheEmpty: false, rebuildInterrupted: true),
+      isTrue,
+    );
+    expect(
+      cardCacheNeedsRebuild(cacheEmpty: false, rebuildInterrupted: false),
+      isFalse,
+    );
+  });
+
   test('yields every eight indexed cards', () {
     expect(shouldYieldCardCacheRebuild(0), isFalse);
     expect(shouldYieldCardCacheRebuild(7), isFalse);

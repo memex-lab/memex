@@ -530,7 +530,11 @@ class FileSystemService {
   Future<void> updateCardCache(
       String userId, String factId, CardData cardData) async {
     try {
-      if (!_isRebuilding && await AppDatabase.instance.cardDao.isCacheEmpty()) {
+      if (!_isRebuilding &&
+          cardCacheNeedsRebuild(
+            cacheEmpty: await AppDatabase.instance.cardDao.isCacheEmpty(),
+            rebuildInterrupted: await isCardCacheRebuildInterrupted(userId),
+          )) {
         _logger.info('Card cache is empty, triggering rebuild...');
         await rebuildCardCache(userId);
       }
@@ -622,6 +626,29 @@ class FileSystemService {
 
   bool get isCardCacheRebuilding => _isRebuilding;
 
+  File _cardCacheRebuildMarker(String userId) {
+    return File(
+      path.join(getSystemPath(userId), 'card_cache_rebuild_incomplete'),
+    );
+  }
+
+  Future<bool> isCardCacheRebuildInterrupted(String userId) {
+    return _cardCacheRebuildMarker(userId).exists();
+  }
+
+  Future<void> _markCardCacheRebuildInterrupted(String userId) async {
+    final marker = _cardCacheRebuildMarker(userId);
+    await marker.parent.create(recursive: true);
+    await marker.writeAsString('1');
+  }
+
+  Future<void> _clearCardCacheRebuildInterrupted(String userId) async {
+    final marker = _cardCacheRebuildMarker(userId);
+    if (await marker.exists()) {
+      await marker.delete();
+    }
+  }
+
   Future<void> waitForCardCacheRebuild() async {
     final complete = _rebuildComplete;
     if (complete != null) await complete.future;
@@ -675,6 +702,7 @@ class FileSystemService {
     }
 
     try {
+      await _markCardCacheRebuildInterrupted(userId);
       await AppDatabase.instance.delete(AppDatabase.instance.cardCache).go();
 
       final cardFiles =
@@ -706,6 +734,7 @@ class FileSystemService {
         }
       }
       _logger.info('Card cache rebuild complete. Indexed $count cards.');
+      await _clearCardCacheRebuildInterrupted(userId);
     } catch (e) {
       _logger.severe('Failed to rebuild card cache: $e');
     } finally {
