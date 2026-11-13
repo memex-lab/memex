@@ -9,6 +9,15 @@ class AppLocalizationsKo extends AppLocalizations {
   AppLocalizationsKo([String locale = 'ko']) : super(locale);
 
   @override
+  String get chatThinkingMessage => '생각 중…';
+  @override
+  String get preparingSelectedPhotos => '사진 준비 중…';
+
+  @override
+  String get selectedPhotosPreparationFailed =>
+      '일부 사진을 준비하지 못했습니다. 다시 시도하거나 표시된 사진을 삭제하세요.';
+
+  @override
   String get timesLabel => '횟수';
 
   @override

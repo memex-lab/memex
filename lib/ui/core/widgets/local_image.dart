@@ -107,6 +107,9 @@ class LocalImage extends StatefulWidget {
   /// Image URL
   final String url;
 
+  @visibleForTesting
+  final ImagePreviewCacheService? previewCacheService;
+
   /// Box fit
   final BoxFit? fit;
 
@@ -164,6 +167,7 @@ class LocalImage extends StatefulWidget {
   const LocalImage({
     super.key,
     required this.url,
+    this.previewCacheService,
     this.fit,
     this.width,
     this.height,
@@ -242,14 +246,7 @@ class LocalImage extends StatefulWidget {
 
     if (isLocalFile) {
       final filePath = localFilePath ?? url;
-      final safety = AssetSafetyService.instance.inspectFileSync(filePath);
-      if (!safety.safeForPreview) {
-        _logger.warning(
-          'LocalImage.provider blocked unsafe preview for $filePath: ${safety.reason}',
-        );
-        return MemoryImage(_transparentPng);
-      }
-      return FileImage(File(filePath));
+      return SafeLocalFileImage(File(filePath));
     } else {
       return TimeoutNetworkImage(
         url,
@@ -280,6 +277,7 @@ class LocalImage extends StatefulWidget {
 class _LocalImageState extends State<LocalImage> {
   File? _imageFile;
   bool _isLoading = true; // preload state for local images only
+  int _loadGeneration = 0;
   bool _previewUnavailable = false;
   String? _previewUnavailableReason;
 
@@ -292,17 +290,24 @@ class _LocalImageState extends State<LocalImage> {
   @override
   void didUpdateWidget(covariant LocalImage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.url != widget.url) {
+    if (oldWidget.url != widget.url ||
+        oldWidget.previewCacheService != widget.previewCacheService) {
       _loadImage();
     }
   }
 
   Future<void> _loadImage() async {
-    _previewUnavailable = false;
-    _previewUnavailableReason = null;
+    final watch = Stopwatch()..start();
+    final generation = ++_loadGeneration;
+    bool isCurrent() => mounted && generation == _loadGeneration;
+    setState(() {
+      _isLoading = _imageFile == null || !widget.gaplessPlayback;
+      _previewUnavailable = false;
+      _previewUnavailableReason = null;
+    });
 
     if (widget.url.isEmpty) {
-      if (mounted) {
+      if (isCurrent()) {
         setState(() {
           _imageFile = null;
           _isLoading = false;
@@ -313,61 +318,21 @@ class _LocalImageState extends State<LocalImage> {
       return;
     }
 
-    // 1. parse/check path
     final localFilePath = LocalImage._parseLocalFilePath(widget.url);
     final isLocalFile = localFilePath != null || !widget.url.startsWith('http');
-
-    String originalPath = '';
-
-    if (isLocalFile) {
-      originalPath = localFilePath ?? widget.url;
-      final originalFile = File(originalPath);
-
-      if (!originalFile.existsSync()) {
-        // original file not found, cannot load
-        if (mounted) {
-          setState(() {
-            _imageFile = File(
-              originalPath,
-            ); // still set so Image.file handles error
-            _isLoading = false;
-          });
-        }
-        return;
-      }
-
-      final safety = AssetSafetyService.instance.inspectFileSync(
-        originalPath,
-        config: LocalImage.previewSourceSafetyConfig,
-      );
-      if (!safety.safeForPreview) {
-        _logger.warning(
-          'Local image preview blocked for $originalPath: ${safety.reason}',
-        );
-        if (mounted) {
-          setState(() {
-            _imageFile = null;
-            _isLoading = false;
-            _previewUnavailable = true;
-            _previewUnavailableReason = safety.reason;
-          });
-        }
-        return;
-      }
-    } else {
-      // for network image, use URL as key base for originalPath
-      originalPath = widget.url;
-    }
+    final originalPath = localFilePath ?? widget.url;
 
     try {
-      final preview =
-          await ImagePreviewCacheService.instance.getOrCreatePreview(
+      final preview = await (widget.previewCacheService ??
+              ImagePreviewCacheService.instance)
+          .getOrCreatePreview(
         source: originalPath,
         isLocalFile: isLocalFile,
       );
 
-      if (mounted) {
-        _logger.info('Preview ready for image: $originalPath');
+      if (isCurrent()) {
+        _logger.info(
+            'Preview ready for image: $originalPath (cacheHit: ${preview.cacheHit}, elapsed: ${watch.elapsedMilliseconds}ms)');
         setState(() {
           _imageFile = preview.file;
           _isLoading = false;
@@ -375,7 +340,7 @@ class _LocalImageState extends State<LocalImage> {
       }
     } on ImagePreviewUnavailable catch (e) {
       _logger.warning('Image preview unavailable for $originalPath: $e');
-      if (mounted) {
+      if (isCurrent()) {
         setState(() {
           _imageFile = null;
           _isLoading = false;
@@ -385,7 +350,7 @@ class _LocalImageState extends State<LocalImage> {
       }
     } catch (e) {
       _logger.severe('LocalImage processing error for image: $originalPath', e);
-      if (mounted) {
+      if (isCurrent()) {
         setState(() {
           _imageFile = null;
           _isLoading = false;
@@ -489,11 +454,6 @@ class _LocalImageState extends State<LocalImage> {
 
     // local file mode
     if (_imageFile != null) {
-      if (!_imageFile!.existsSync()) {
-        _logger.severe(
-          'File not found when loading with Image.file: ${_imageFile!.path}',
-        );
-      }
       final dpr = MediaQuery.maybeDevicePixelRatioOf(context) ?? 1;
       return Image.file(
         _imageFile!,
@@ -550,13 +510,45 @@ class _LocalImageState extends State<LocalImage> {
       frameBuilder: _getFrameBuilder(),
       semanticLabel: widget.semanticLabel,
       excludeFromSemantics: widget.excludeFromSemantics,
-      cacheWidth: widget.cacheWidth ?? localImageDecodePixels(widget.width, dpr),
+      cacheWidth:
+          widget.cacheWidth ?? localImageDecodePixels(widget.width, dpr),
       cacheHeight:
           widget.cacheHeight ?? localImageDecodePixels(widget.height, dpr),
       color: widget.color,
       colorBlendMode: widget.colorBlendMode,
     );
   }
+}
+
+/// Defers local file inspection until resolution, without synchronous disk reads
+/// during widget build. Unsafe/missing files retain the transparent placeholder.
+class SafeLocalFileImage extends ImageProvider<SafeLocalFileImage> {
+  const SafeLocalFileImage(this.file);
+  final File file;
+
+  @override
+  Future<SafeLocalFileImage> obtainKey(ImageConfiguration configuration) =>
+      SynchronousFuture(this);
+
+  @override
+  ImageStreamCompleter loadImage(
+          SafeLocalFileImage key, ImageDecoderCallback decode) =>
+      MultiFrameImageStreamCompleter(
+          codec: _load(decode), scale: 1, debugLabel: file.path);
+
+  Future<ui.Codec> _load(ImageDecoderCallback decode) async {
+    final safety = await AssetSafetyService.instance.inspectFile(file.path);
+    final buffer = safety.safeForPreview
+        ? await ui.ImmutableBuffer.fromFilePath(file.path)
+        : await ui.ImmutableBuffer.fromUint8List(_transparentPng);
+    return decode(buffer);
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is SafeLocalFileImage && other.file.path == file.path;
+  @override
+  int get hashCode => Object.hash(SafeLocalFileImage, file.path);
 }
 
 /// Remote [ImageProvider] with a download timeout so a bad URL cannot hang

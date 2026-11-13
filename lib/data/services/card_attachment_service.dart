@@ -1,8 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:memex/data/services/system_action_service.dart';
 import 'package:memex/data/services/clarification_request_service.dart';
 import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/data/services/table_change_notifier.dart';
 import 'package:memex/data/services/user_notification_service.dart';
+import 'package:memex/db/app_database.dart';
 import 'package:memex/ui/card_attachments/card_attachment_data.dart';
 import 'package:memex/utils/user_storage.dart';
 
@@ -94,17 +96,25 @@ class CardAttachmentService {
     return merged;
   }
 
-  /// Fetches attachments for multiple factIds in one call.
+  /// Fetches attachments for multiple factIds in two queries, not N×2.
   /// Returns a map of factId → sorted attachment list.
   Future<Map<String, List<CardAttachmentData>>> getAttachmentsForFacts(
     List<String> factIds,
   ) async {
-    final map = <String, List<CardAttachmentData>>{};
-    final futures = factIds.map((id) async {
-      map[id] = await getAttachments(id);
-    });
-    await Future.wait(futures);
-    return map;
+    final uniqueIds = factIds.toSet().toList();
+    if (uniqueIds.isEmpty) {
+      return <String, List<CardAttachmentData>>{};
+    }
+
+    final actionsFuture =
+        SystemActionService.instance.getVisibleForFacts(uniqueIds);
+    final requestsFuture =
+        ClarificationRequestService.instance.getVisibleForFacts(uniqueIds);
+    return mergeAttachmentsForFacts(
+      factIds: uniqueIds,
+      actions: await actionsFuture,
+      requests: await requestsFuture,
+    );
   }
 
   // ---------------------------------------------------------------------------
@@ -182,4 +192,51 @@ class CardAttachmentService {
             ))
         .toList();
   }
+}
+
+@visibleForTesting
+Map<String, List<CardAttachmentData>> mergeAttachmentsForFacts({
+  required List<String> factIds,
+  required List<SystemAction> actions,
+  required List<ClarificationRequest> requests,
+}) {
+  final map = <String, List<CardAttachmentData>>{
+    for (final id in factIds) id: <CardAttachmentData>[],
+  };
+  for (final action in actions) {
+    final factId = action.factId;
+    if (factId == null) continue;
+    final bucket = map[factId];
+    if (bucket == null) continue;
+    bucket.add(
+      CardAttachmentData(
+        id: 'system_action_${action.id}',
+        type: CardAttachmentType.systemAction,
+        data: {'action': action},
+        sortKey: 100,
+      ),
+    );
+  }
+  for (final request in requests) {
+    final factId = request.factId;
+    if (factId == null) continue;
+    final bucket = map[factId];
+    if (bucket == null) continue;
+    bucket.add(
+      CardAttachmentData(
+        id: 'clarification_${request.id}',
+        type: CardAttachmentType.clarificationRequest,
+        data: {'request': request},
+        sortKey: 50,
+      ),
+    );
+  }
+  for (final attachments in map.values) {
+    attachments.sort((a, b) {
+      final byKey = a.sortKey.compareTo(b.sortKey);
+      if (byKey != 0) return byKey;
+      return a.id.compareTo(b.id);
+    });
+  }
+  return map;
 }

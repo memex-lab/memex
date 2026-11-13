@@ -81,6 +81,22 @@ void main() {
       expect(resources.modelConfig.model, 'deepseek-v4-flash');
     });
 
+    test('Claude uses the official endpoint and SDK caching default', () async {
+      const config = LLMConfig(
+        key: 'claude',
+        type: LLMConfig.typeClaude,
+        modelId: 'claude-test',
+        apiKey: 'test-key',
+        baseUrl: '',
+      );
+
+      final resources = await UserStorage.buildLLMResources(config);
+      final client = resources.client as ClaudeClient;
+
+      expect(client.baseUrl, 'https://api.anthropic.com');
+      expect(client.enablePromptCaching, isNull);
+    });
+
     test(
       'model role service maps text role to selected global default',
       () async {

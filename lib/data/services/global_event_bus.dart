@@ -40,6 +40,7 @@ class EventTaskSubscription {
     this.dependenciesBuilder,
     this.successDependenciesBuilder,
     this.shouldEnqueue,
+    this.scheduleDelaySeconds,
   });
 
   final String subscriptionId;
@@ -63,6 +64,10 @@ class EventTaskSubscription {
   /// Dynamically resolved hard dependencies that must succeed.
   final EventTaskDependencyBuilder? successDependenciesBuilder;
   final EventTaskShouldEnqueue? shouldEnqueue;
+
+  /// Optional delay before the task becomes runnable. Used to keep companion
+  /// LLM work off the Super Agent capture critical path.
+  final int? scheduleDelaySeconds;
 
   Iterable<String> get predecessorSubscriptionIds sync* {
     yield* dependsOn;
@@ -264,11 +269,19 @@ class GlobalEventBus {
         );
       }
 
+      int? scheduledAt;
+      final delaySeconds = subscription.scheduleDelaySeconds;
+      if (delaySeconds != null && delaySeconds > 0) {
+        scheduledAt =
+            DateTime.now().millisecondsSinceEpoch ~/ 1000 + delaySeconds;
+      }
+
       final taskId = await _taskExecutor.enqueueTask(
         userId: userId,
         taskType: subscription.taskType,
         payload: payload,
         priority: subscription.priority,
+        scheduledAt: scheduledAt,
         maxRetries: subscription.maxRetries,
         // Use a shared bizId for all tasks spawned by the same event.
         // Handlers that coordinate event-scoped work can use it as a stable

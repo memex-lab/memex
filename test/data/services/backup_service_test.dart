@@ -18,6 +18,7 @@ import 'package:path_provider_platform_interface/path_provider_platform_interfac
 // ignore: depend_on_referenced_packages
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sqlite3/sqlite3.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -699,6 +700,77 @@ void main() {
     timeout: const Timeout(Duration(seconds: 60)),
   );
 
+  test(
+    'createBackup includes rows that were only in the WAL, and restore drops sidecars',
+    () async {
+      await AppDatabase.init('backup-service-user');
+      final database = AppDatabase.instance;
+      await database.customStatement('PRAGMA wal_autocheckpoint=0;');
+      await database.customStatement('PRAGMA wal_checkpoint(TRUNCATE);');
+      await database.customStatement(
+        "INSERT INTO kv_store (key, value, bucket, updated_at) VALUES ('wal_probe', 'kept', NULL, 1)",
+      );
+
+      File? liveDb;
+      await for (final entity in tempDir.list(recursive: true)) {
+        if (entity is File &&
+            p.basename(entity.path) ==
+                'memex_local_backup-service-user.sqlite') {
+          liveDb = entity;
+        }
+      }
+      expect(liveDb, isNotNull);
+
+      final outputDir = Directory(p.join(tempDir.path, 'WalBackups'));
+      final backupPath = await BackupService.createBackup(
+        outputDirectory: outputDir.path,
+      );
+
+      final archive = ZipDecoder().decodeBytes(
+        await File(backupPath).readAsBytes(),
+      );
+      final archivedDb = archive.files.firstWhere(
+        (file) => file.name == 'db/memex_local_backup-service-user.sqlite',
+      );
+      final extracted = File(p.join(tempDir.path, 'extracted-no-wal.sqlite'));
+      await extracted.writeAsBytes(archivedDb.content);
+      final opened = sqlite3.open(extracted.path);
+      try {
+        final rows = opened.select(
+          "SELECT value FROM kv_store WHERE key = 'wal_probe'",
+        );
+        expect(rows, hasLength(1));
+        expect(rows.single['value'], 'kept');
+      } finally {
+        opened.dispose();
+      }
+
+      await database.close();
+      final walFile = File('${liveDb!.path}-wal');
+      final shmFile = File('${liveDb.path}-shm');
+      await walFile.writeAsBytes([1, 2, 3, 4]);
+      await shmFile.writeAsBytes([5]);
+
+      try {
+        await BackupService.restoreBackup(backupPath);
+        // Opening the restored database creates a fresh WAL. The stale bytes
+        // written before restore must not still be there.
+        expect(await _fileBytes(walFile), isNot(<int>[1, 2, 3, 4]));
+        expect(await _fileBytes(shmFile), isNot(<int>[5]));
+        final rows = await AppDatabase.instance
+            .customSelect(
+              "SELECT value FROM kv_store WHERE key = 'wal_probe'",
+            )
+            .get();
+        expect(rows.single.data['value'], 'kept');
+      } finally {
+        if (AppDatabase.isInitialized) {
+          await AppDatabase.instance.close();
+        }
+      }
+    },
+  );
+
   group('inspectBackup', () {
     test('reads backup manifest metadata', () async {
       final file = await _writeBackup(
@@ -770,6 +842,11 @@ void main() {
       );
     });
   });
+}
+
+Future<List<int>> _fileBytes(File file) async {
+  if (!await file.exists()) return const [];
+  return file.readAsBytes();
 }
 
 void _mockPathProviderChannel(String rootPath) {

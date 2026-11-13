@@ -55,6 +55,101 @@ void main() {
     );
     expect(find.text('Activity stats'), findsNothing);
   });
+
+  testWidgets('a failed pin does not say the insight was pinned', (
+    tester,
+  ) async {
+    final viewModel = _FixedInsightActions(succeeds: false)
+      ..isLoading = false
+      ..insights = [_insight(id: 'first', quote: 'First insight')];
+    addTearDown(viewModel.dispose);
+
+    await _pumpInsight(tester, viewModel);
+    await tester.tap(find.byIcon(Icons.push_pin_outlined));
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('Style pinned'), findsNothing);
+    expect(find.textContaining('Operation failed'), findsOneWidget);
+    expect(find.text('First insight'), findsOneWidget);
+  });
+
+  testWidgets('a failed delete keeps the insight on screen', (tester) async {
+    final viewModel = _FixedInsightActions(succeeds: false)
+      ..isLoading = false
+      ..insights = [_insight(id: 'first', quote: 'First insight')];
+    addTearDown(viewModel.dispose);
+
+    await _pumpInsight(tester, viewModel);
+    await tester.longPress(find.text('First insight'));
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.delete));
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('Insight card deleted'), findsNothing);
+    expect(find.textContaining('Delete failed'), findsOneWidget);
+    expect(find.text('First insight'), findsOneWidget);
+  });
+
+  testWidgets('a pin that is already running does not toast a failure', (
+    tester,
+  ) async {
+    final viewModel = _FixedInsightActions(
+      succeeds: false,
+      outcome: InsightActionOutcome.ignored,
+    )
+      ..isLoading = false
+      ..insights = [_insight(id: 'first', quote: 'First insight')];
+    addTearDown(viewModel.dispose);
+
+    await _pumpInsight(tester, viewModel);
+    await tester.tap(find.byIcon(Icons.push_pin_outlined));
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.textContaining('Operation failed'), findsNothing);
+    expect(find.text('Style pinned'), findsNothing);
+  });
+}
+
+Future<void> _pumpInsight(WidgetTester tester, InsightViewModel viewModel) {
+  return tester.pumpWidget(
+    MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Scaffold(
+        body: InsightScreen(
+          viewModel: viewModel,
+          isEmbedded: true,
+        ),
+      ),
+    ),
+  );
+}
+
+class _FixedInsightActions extends InsightViewModel {
+  _FixedInsightActions({
+    required this.succeeds,
+    this.outcome,
+  }) : super(router: MemexRouter());
+
+  final bool succeeds;
+  final InsightActionOutcome? outcome;
+
+  InsightActionOutcome get _outcome =>
+      outcome ??
+      (succeeds
+          ? InsightActionOutcome.applied
+          : InsightActionOutcome.rejected);
+
+  @override
+  Future<InsightActionOutcome> togglePin(KnowledgeInsightCard item) async =>
+      _outcome;
+
+  @override
+  Future<InsightActionOutcome> deleteCard(KnowledgeInsightCard item) async =>
+      _outcome;
 }
 
 KnowledgeInsightCard _insight({

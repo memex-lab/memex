@@ -277,7 +277,7 @@ class HealthService {
 
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final endOfToday = today.add(const Duration(days: 1));
+    final endOfToday = DateTime(today.year, today.month, today.day + 1);
 
     DateTime start;
     if (lastDateStr != null) {
