@@ -26,7 +26,6 @@ import 'package:memex/data/services/chat_session_storage.dart';
 import 'package:memex/data/services/local_task_executor.dart';
 import 'package:memex/data/services/timeline_card_event_publisher.dart';
 import 'package:memex/data/services/task_handlers/llm_error_utils.dart';
-import 'package:memex/domain/models/card_model.dart';
 import 'package:memex/domain/models/task_exceptions.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/network_reachability.dart';
@@ -533,29 +532,18 @@ class ChatService {
     final runAlreadyActive = _runRegistry.isActive(finalSessionId);
     final run = _runRegistry.getOrStart(finalSessionId);
 
-    final reachabilityCheck =
-        chatNetworkReachabilityCheck ?? canReachPublicInternet;
-    final online = await reachabilityCheck();
+    final online = await canReachActiveModelEndpoint(
+      whenPublic: chatNetworkReachabilityCheck,
+    );
     String? preMintedFactId;
     if (!online && !isQuickQuery) {
-      preMintedFactId =
-          await _fileService.allocateCardFactId(userId);
-      final waitingCard = await _fileService.updateCardFile(
+      // Leave the allocated processing placeholder empty. Writing the user
+      // message into fact/content makes cleanup treat a home-screen question
+      // as a real card.
+      preMintedFactId = await _fileService.allocateCardFactId(userId);
+      final waitingCard = await _fileService.readCardFile(
         userId,
         preMintedFactId,
-        (card) {
-          return card.copyWith(
-            status: waitingForNetworkCardStatus,
-            fact: trimmedMessage,
-            failureReason: UserStorage.l10n.llmNetworkError,
-            uiConfigs: [
-              UiConfig(
-                templateId: 'classic_card',
-                data: {'content': trimmedMessage},
-              ),
-            ],
-          );
-        },
       );
       if (waitingCard != null) {
         await emitTimelineCardAdded(
@@ -1299,7 +1287,9 @@ class ChatService {
       if (event.error != null) {
         if (!stream.isClosed) {
           stream.add(ChatAgentStoppedEvent(turnId));
-          stream.add(ChatErrorEvent(turnId, event.error.toString()));
+          stream.add(
+            ChatErrorEvent(turnId, chatErrorOperationFailed(event.error!)),
+          );
           if (await _shouldCloseRunAfterTask(taskId)) {
             stream.close();
           }

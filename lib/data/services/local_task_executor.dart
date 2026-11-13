@@ -243,9 +243,13 @@ class LocalTaskExecutor {
   TaskQueueOwnerKind _queueOwnerKind = TaskQueueOwnerKind.foreground;
   Timer? _queueLeaseHeartbeatTimer;
 
-  /// Replaced in tests so a parked task can be resumed without public DNS.
+  /// Replaced in tests so a parked task can be resumed without a live lookup.
+  ///
+  /// The default follows the configured model endpoint. A local or private
+  /// endpoint does not wait on public DNS.
   @visibleForTesting
-  Future<bool> Function() reachabilityCheck = canReachPublicInternet;
+  Future<bool> Function() reachabilityCheck =
+      () => canReachActiveModelEndpoint();
 
   DateTime? _nextReachabilityProbeAt;
 

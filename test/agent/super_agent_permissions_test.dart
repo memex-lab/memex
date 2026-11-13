@@ -187,6 +187,20 @@ void main() {
         ),
         isFalse,
       );
+      expect(
+        isUnusedPreallocatedRecordPlaceholder(
+          placeholder.copyWith(
+            uiConfigs: const [
+              UiConfig(
+                templateId: 'classic_card',
+                data: {'content': 'garage note'},
+              ),
+            ],
+          ),
+          factId,
+        ),
+        isFalse,
+      );
     });
 
     test('annotates the matching user message only in model requests', () {
