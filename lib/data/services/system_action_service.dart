@@ -164,9 +164,15 @@ class SystemActionService {
 
   /// Gets non-rejected actions for a given factId (one-shot query).
   Future<List<SystemAction>> getVisibleForFact(String factId) async {
+    return getVisibleForFacts([factId]);
+  }
+
+  /// Gets non-rejected actions for many facts in one query.
+  Future<List<SystemAction>> getVisibleForFacts(List<String> factIds) async {
+    if (factIds.isEmpty) return [];
     return (_db.select(_db.systemActions)
           ..where(
-              (t) => t.factId.equals(factId) & t.status.isNotIn(['rejected'])))
+              (t) => t.factId.isIn(factIds) & t.status.isNotIn(['rejected'])))
         .get();
   }
 

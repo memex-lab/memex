@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:crypto/crypto.dart' as crypto;
 import 'package:logging/logging.dart';
+import 'package:uuid/uuid.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -37,6 +38,10 @@ import 'package:memex/ui/core/themes/app_colors.dart';
 import 'package:memex/utils/token_usage_utils.dart';
 import 'package:memex/utils/time_context.dart';
 import 'package:memex/ui/chat/chat_event_batcher.dart';
+import 'package:memex/ui/chat/chat_submission_coordinator.dart';
+import 'package:memex/ui/chat/view_models/chat_turn_viewmodel.dart';
+import 'package:memex/ui/chat/view_models/photo_attachments_viewmodel.dart';
+import 'package:memex/ui/chat/widgets/selected_photo_attachment.dart';
 
 // --- Display Models ---
 
@@ -276,6 +281,19 @@ double resolveSuperAgentInputBottomInset({
 }
 
 @visibleForTesting
+bool shouldScrollChatToBottom({
+  required DateTime now,
+  required DateTime? lastScrollAt,
+  required Duration minInterval,
+  required bool force,
+}) {
+  if (force) return true;
+  if (lastScrollAt == null) return true;
+  if (now.isBefore(lastScrollAt)) return true;
+  return now.difference(lastScrollAt) >= minInterval;
+}
+
+@visibleForTesting
 bool shouldCreateAIMessageForResponseChunk({
   required String text,
   required bool isDone,
@@ -353,7 +371,7 @@ bool shouldShowSuperAgentThinkingRow({
   required ChatDisplayItem? primaryItem,
 }) {
   if (!isLoadingAgent) return false;
-  if (primaryItem is ProcessItem) return false;
+  if (primaryItem is ProcessItem && !primaryItem.isFinished) return false;
   if (primaryItem is AIMessageItem && primaryItem.isStreaming) return false;
   return true;
 }
@@ -383,15 +401,6 @@ bool shouldShowSuperAgentPhotoSuggestionStatus({
   required bool hasLoadedSuggestions,
 }) {
   return !hasSuggestions && (isLoading || !hasLoadedSuggestions);
-}
-
-@visibleForTesting
-bool shouldQueueSuperAgentSend({
-  required bool isStreaming,
-  required bool hasSessionId,
-  required bool hasChatSubscription,
-}) {
-  return isStreaming && hasSessionId && hasChatSubscription;
 }
 
 @visibleForTesting
@@ -455,6 +464,20 @@ class AgentChatDialog extends StatefulWidget {
   final bool initialIsLoadingAgent;
   @visibleForTesting
   final ChatTokenUsageEvent? initialTokenUsage;
+  @visibleForTesting
+  final Stream<ChatEvent>? chatEventsForTesting;
+  @visibleForTesting
+  final Stream<ChatEvent>? additionalChatEventsForTesting;
+  @visibleForTesting
+  final DateTime Function()? scrollClockForTesting;
+
+  @visibleForTesting
+  final PhotoAttachmentsViewModel? photoAttachmentsForTesting;
+  @visibleForTesting
+  final List<List<EnhancedPhoto>>? photoSuggestionsForTesting;
+  @visibleForTesting
+  final Future<List<AssetEntity>?> Function(BuildContext)?
+      imagePickerForTesting;
 
   const AgentChatDialog({
     super.key,
@@ -467,6 +490,12 @@ class AgentChatDialog extends StatefulWidget {
     this.initialItems = const [],
     this.initialIsLoadingAgent = false,
     this.initialTokenUsage,
+    this.chatEventsForTesting,
+    this.additionalChatEventsForTesting,
+    this.scrollClockForTesting,
+    this.photoAttachmentsForTesting,
+    this.photoSuggestionsForTesting,
+    this.imagePickerForTesting,
   });
 
   @override
@@ -491,8 +520,11 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   bool _isLoadingMoreHistory = false;
   bool _hasMoreHistory = false;
   String? _olderHistoryCursor;
-  bool _isStreaming = false;
-  bool _isLoadingAgent = false;
+  final ChatSubmissionCoordinator _submissions = ChatSubmissionCoordinator();
+  final ChatTurnViewModel _turns = ChatTurnViewModel();
+  bool _restoringRun = false;
+  bool get _isStreaming => _turns.hasPending || _restoringRun;
+  bool get _isLoadingAgent => _turns.hasPending || _restoringRun;
   bool _isRefreshingAgentState = false;
   bool _nextResponseStartsNewMessage = true;
   ChatTokenUsageEvent? _lastTokenUsage;
@@ -503,12 +535,36 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   // Controllers
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  DateTime? _lastChatScrollAt;
+  bool _forceNextChatScroll = false;
   final FocusNode _messageFocusNode = FocusNode();
   final ImagePicker _imagePicker = ImagePicker();
   final List<XFile> _selectedImages = [];
+  PhotoAttachmentsViewModel? _galleryAttachments;
+  bool get _canSubmitAttachments => _galleryAttachments?.canSubmit ?? true;
+  List<XFile> get _allSelectedImages => [
+        ..._selectedImages,
+        for (final item
+            in _galleryAttachments?.items ?? <SelectedPhotoAttachment>[])
+          if (item.prepared != null) XFile(item.prepared!.path),
+      ];
+
+  PhotoAttachmentsViewModel get _attachments => _galleryAttachments ??=
+      PhotoAttachmentsViewModel(router: _router)
+        ..addListener(_onAttachmentsChanged);
+
+  void _onAttachmentsChanged() {
+    if (!mounted) return;
+    setState(() {});
+    if (!(_galleryAttachments?.isPreparing ?? false) &&
+        !_hasLoadedPhotoSuggestions) {
+      _requestPhotoSuggestions();
+    }
+  }
+
   final Map<String, String> _originalFilenames = {};
-  StreamSubscription<ChatEvent>? _chatSubscription;
-  final List<StreamSubscription<ChatEvent>> _queuedSendSubscriptions = [];
+  final Set<StreamSubscription<ChatEvent>> _chatSubscriptions = {};
+  final Map<String, StreamSubscription<ChatEvent>> _runSubscriptions = {};
   Timer? _draftSaveDebounce;
   bool _isApplyingDraft = false;
   bool _isLoadingPhotoSuggestions = false;
@@ -533,17 +589,23 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   @override
   void initState() {
     super.initState();
+    _photoSuggestionClusters = widget.photoSuggestionsForTesting ?? [];
+    _galleryAttachments = widget.photoAttachmentsForTesting;
+    _galleryAttachments?.addListener(_onAttachmentsChanged);
     _chatEventBatcher = ChatEventBatcher(
       apply: _applyChatEvent,
       onFlush: () {
         if (!mounted) return;
         setState(() {});
-        _scrollToBottom();
+        final force = _forceNextChatScroll;
+        _forceNextChatScroll = false;
+        _scrollToBottom(force: force);
       },
     );
     _currentSessionId = widget.initialSessionId;
     _items = List<ChatDisplayItem>.from(widget.initialItems);
-    _isLoadingAgent = widget.initialIsLoadingAgent;
+    _restoringRun = widget.initialIsLoadingAgent;
+    _turns.addListener(_onTurnStateChanged);
     _lastTokenUsage = widget.initialTokenUsage;
     final initialDraftText = widget.initialDraftText;
     if (initialDraftText != null && initialDraftText.isNotEmpty) {
@@ -589,6 +651,12 @@ class _AgentChatDialogState extends State<AgentChatDialog>
     if (_currentSessionId != null) {
       _loadSessionHistory();
     }
+    final additionalChatEvents = widget.additionalChatEventsForTesting;
+    if (additionalChatEvents != null) _listenToChatStream(additionalChatEvents);
+    final chatEvents = widget.chatEventsForTesting;
+    if (chatEvents != null) {
+      _listenToChatStream(chatEvents);
+    }
   }
 
   void _handleEntranceAnimationStatus(AnimationStatus status) {
@@ -600,14 +668,20 @@ class _AgentChatDialogState extends State<AgentChatDialog>
 
   @override
   void dispose() {
+    _galleryAttachments?.removeListener(_onAttachmentsChanged);
+    if (widget.photoAttachmentsForTesting == null) {
+      _galleryAttachments?.dispose();
+    }
     _chatEventBatcher.dispose();
     _photoSuggestionCancellationToken?.cancel();
     _photoSuggestionCancellationToken = null;
-    _chatSubscription?.cancel();
-    for (final subscription in _queuedSendSubscriptions) {
+    _submissions.dispose();
+    _turns.dispose();
+    for (final subscription in _chatSubscriptions) {
       subscription.cancel();
     }
-    _queuedSendSubscriptions.clear();
+    _chatSubscriptions.clear();
+    _runSubscriptions.clear();
     _approvalSubscription?.cancel();
     final sessionId = _currentSessionId;
     if (sessionId != null) {
@@ -947,6 +1021,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
 
   Future<void> _loadPhotoSuggestions() async {
     if (_isPhotoPickerActive ||
+        (_galleryAttachments?.isPreparing ?? false) ||
         _isLoadingPhotoSuggestions ||
         _photoSuggestionClusters.isNotEmpty) {
       return;
@@ -1028,9 +1103,10 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   bool _isSuggestionClusterSelected(List<EnhancedPhoto> cluster) {
     return cluster.isNotEmpty &&
         cluster.every(
-          (photo) => _selectedImages.any(
+          (photo) => _allSelectedImages.any(
             (image) => image.path == photo.xFile.path,
-          ),
+          ) || (_galleryAttachments?.items.any(
+              (item) => item.assetId == photo.entity.id) ?? false),
         );
   }
 
@@ -1043,6 +1119,13 @@ class _AgentChatDialogState extends State<AgentChatDialog>
           _selectedImages
               .removeWhere((image) => image.path == photo.xFile.path);
           _originalFilenames.remove(photo.xFile.path);
+          for (final item
+              in _galleryAttachments?.items ?? <SelectedPhotoAttachment>[]) {
+            if (item.assetId == photo.entity.id ||
+                item.prepared?.path == photo.xFile.path) {
+              _galleryAttachments!.remove(item);
+            }
+          }
         }
       });
       return;
@@ -1051,7 +1134,10 @@ class _AgentChatDialogState extends State<AgentChatDialog>
     setState(() {
       for (final photo in cluster) {
         final alreadySelected =
-            _selectedImages.any((image) => image.path == photo.xFile.path);
+            _allSelectedImages.any((image) => image.path == photo.xFile.path) ||
+                (_galleryAttachments?.items
+                        .any((item) => item.assetId == photo.entity.id) ??
+                    false);
         if (alreadySelected) continue;
 
         // Keep the original EXIF/GPS-carrying file from assetToXFile().
@@ -1096,11 +1182,9 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   }) {
     if (message.trim().isEmpty && images.isEmpty) return false;
 
-    final queueBehindActiveRun = shouldQueueSuperAgentSend(
-      isStreaming: _isStreaming,
-      hasSessionId: _currentSessionId != null,
-      hasChatSubscription: _chatSubscription != null,
-    );
+    final requestId = const Uuid().v4();
+    final submittedRunMode = _runMode;
+    _turns.prepare(requestId);
     _messageFocusNode.unfocus();
     String finalMessage = message.trim();
     final displayText = finalMessage.isNotEmpty
@@ -1122,146 +1206,99 @@ class _AgentChatDialogState extends State<AgentChatDialog>
           timestamp: sentAt,
         ),
       );
-      _isStreaming = true;
       _messageController.clear();
       if (images.isNotEmpty) {
         _selectedImages.clear();
+        _galleryAttachments?.clear();
         _originalFilenames.clear();
       }
     });
     _clearDraftAfterAcceptedSend();
     _scrollToBottom();
 
-    final stream = _router.sendMessage(
-      finalMessage,
+    final stream = _submissions.submit(
       sessionId: _currentSessionId,
-      agentName: 'memex_agent',
-      scene: 'super_agent_home',
-      sceneId: widget.sceneId,
-      refs: refs,
-      images: images,
-      imageOriginalFilenames: imageOriginalFilenames,
-      isQuickQuery: _runMode == AgentRunMode.readOnly,
-      runMode: _runMode.wireName,
+      send: (sessionId) => _router.sendMessage(
+        finalMessage,
+        sessionId: sessionId,
+        requestId: requestId,
+        agentName: 'memex_agent',
+        scene: 'super_agent_home',
+        sceneId: widget.sceneId,
+        refs: refs,
+        images: images,
+        imageOriginalFilenames: imageOriginalFilenames,
+        isQuickQuery: submittedRunMode == AgentRunMode.readOnly,
+        runMode: submittedRunMode.wireName,
+      ),
     );
     _recordSentImageHashes(images, imageOriginalFilenames);
-    if (queueBehindActiveRun) {
-      _listenToQueuedSend(stream);
-    } else {
-      _listenToChatStream(stream);
-    }
+    _listenToChatStream(stream, requestId: requestId);
     return true;
   }
 
-  /// Subscribes the dialog to a chat event stream — either a freshly started
-  /// send or a re-attached in-flight run.
-  void _listenToChatStream(Stream<ChatEvent> stream) {
-    _chatSubscription?.cancel();
-    late final StreamSubscription<ChatEvent> subscription;
-    subscription = stream.listen(
-      (event) {
-        _handleChatEvent(event);
-      },
-      onError: (e) {
-        if (_chatSubscription == subscription) {
-          _chatSubscription = null;
-        }
-        _handleChatStreamError(e);
-      },
-      onDone: () {
-        if (_chatSubscription == subscription) {
-          _chatSubscription = null;
-        }
-        _handleChatStreamDone();
-      },
-    );
-    _chatSubscription = subscription;
+  void _onTurnStateChanged() {
+    if (mounted) setState(() {});
   }
 
-  /// Consumes the enqueue/session events from a send made while this dialog is
-  /// already attached to the active run. The existing live subscription remains
-  /// responsible for agent progress and responses.
-  void _listenToQueuedSend(Stream<ChatEvent> stream) {
+  /// Every send owns its preparation stream. Run ownership is announced by
+  /// the service, never inferred from progress events or current UI flags.
+  void _listenToChatStream(Stream<ChatEvent> stream, {String? requestId}) {
     late final StreamSubscription<ChatEvent> subscription;
-    var promotedToChatStream = false;
-
-    void promoteToChatStream(ChatEvent firstEvent) {
-      promotedToChatStream = true;
-      _queuedSendSubscriptions.remove(subscription);
-      final previousSubscription = _chatSubscription;
-      if (previousSubscription != null &&
-          previousSubscription != subscription) {
-        unawaited(previousSubscription.cancel());
-      }
-      _chatSubscription = subscription;
-      _handleChatEvent(firstEvent);
-    }
-
+    var runId = const Uuid().v4();
     subscription = stream.listen(
       (event) {
         if (!mounted) return;
-        if (!promotedToChatStream &&
-            (event is ChatSessionCreatedEvent || event is ChatErrorEvent)) {
-          _handleChatEvent(event);
+        if (event is ChatRunAttachedEvent) {
+          runId = event.runId;
+          final existing = _runSubscriptions[runId];
+          if (existing != null && existing != subscription) {
+            _chatSubscriptions.remove(subscription);
+            unawaited(subscription.cancel());
+            return;
+          }
+          _runSubscriptions[runId] = subscription;
           return;
         }
-        if (!promotedToChatStream) {
-          promoteToChatStream(event);
-          return;
-        }
+        if (event is ChatTurnPreparingEvent) requestId = event.turnId;
+        _turns.handle(event, runId: runId);
         _handleChatEvent(event);
       },
-      onError: (e) {
+      onError: (Object error) {
         if (!mounted) return;
-        if (promotedToChatStream) {
-          if (_chatSubscription == subscription) {
-            _chatSubscription = null;
-          }
-          _handleChatStreamError(e);
-        } else {
-          setState(() => _items.add(ErrorItem(e.toString())));
-          _scrollToBottom();
-        }
+        if (requestId != null) _turns.fail(requestId!);
+        _turns.finishRun(runId);
+        setState(() {
+          _items.add(ErrorItem(error.toString()));
+          _restoringRun = false;
+        });
+        _scrollToBottom();
       },
       onDone: () {
-        if (promotedToChatStream) {
-          if (_chatSubscription == subscription) {
-            _chatSubscription = null;
-          }
-          _handleChatStreamDone();
-        } else {
-          _queuedSendSubscriptions.remove(subscription);
+        _chatSubscriptions.remove(subscription);
+        if (_runSubscriptions[runId] == subscription) {
+          _runSubscriptions.remove(runId);
         }
+        if (!mounted) return;
+        _turns.finishPreparation(requestId);
+        _turns.finishRun(runId);
+        setState(() {
+          _restoringRun = false;
+          // Do not finish another stream's currently rendering reply.
+          if (!_turns.hasRunning) {
+            if (_items.isNotEmpty && _items.last is AIMessageItem) {
+              (_items.last as AIMessageItem).isStreaming = false;
+            }
+            final primary = _lastPrimaryItem();
+            if (primary is ProcessItem) {
+              primary.isFinished = true;
+              primary.isExpanded = false;
+            }
+          }
+        });
       },
     );
-    _queuedSendSubscriptions.add(subscription);
-  }
-
-  void _handleChatStreamError(Object error) {
-    if (!mounted) return;
-    setState(() {
-      _items.add(ErrorItem(error.toString()));
-      _isStreaming = false;
-      _isLoadingAgent = false;
-    });
-    _scrollToBottom();
-  }
-
-  void _handleChatStreamDone() {
-    if (!mounted) return;
-    setState(() {
-      _isStreaming = false;
-      _isLoadingAgent = false;
-      // Ensure the last AI message is marked as done
-      if (_items.isNotEmpty && _items.last is AIMessageItem) {
-        (_items.last as AIMessageItem).isStreaming = false;
-      }
-      final primary = _lastPrimaryItem();
-      if (primary is ProcessItem) {
-        primary.isFinished = true;
-        primary.isExpanded = false;
-      }
-    });
+    _chatSubscriptions.add(subscription);
   }
 
   /// If this session has a run still executing (the dialog was closed while
@@ -1275,8 +1312,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
     AgentActionApprovalService.instance.attachSession(sessionId);
     _messageFocusNode.unfocus();
     setState(() {
-      _isStreaming = true;
-      _isLoadingAgent = true;
+      _restoringRun = true;
       _nextResponseStartsNewMessage = true;
     });
     _listenToChatStream(_router.attachToChatRun(sessionId));
@@ -1367,6 +1403,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   }
 
   Future<void> _pickImage(ImageSource source) async {
+    if (_isPhotoPickerActive) return;
     try {
       if (source == ImageSource.camera) {
         final image = await _imagePicker.pickImage(
@@ -1382,18 +1419,27 @@ class _AgentChatDialogState extends State<AgentChatDialog>
       if (!mounted) return;
       _pausePhotoSuggestionsForPicker();
       try {
-        final result = await pickPlatformImageAssets(context, maxAssets: 9);
-        if (result == null) return;
-
-        for (final asset in result) {
-          final xFile = await PhotoSuggestionService.assetToXFile(asset);
-          if (xFile == null) continue;
-          final originalName = await asset.titleAsync;
-          _originalFilenames[xFile.path] = originalName;
+        final picker = widget.imagePickerForTesting;
+        if (picker == null && defaultTargetPlatform == TargetPlatform.iOS) {
+          final existing = _photoSuggestionClusters.expand((cluster) => cluster)
+              .where((photo) => _selectedImages.any((image) => image.path == photo.xFile.path))
+              .map((photo) => photo.entity.id).toSet();
+          final result = await _attachments.pickNativePhotos(excludedAssetIds: existing);
           if (mounted) {
-            setState(() => _selectedImages.add(xFile));
+            result.when(onOk: (_) {}, onError: (error, _) => ToastHelper.showError(context, error));
           }
+          return;
         }
+        final result = await (picker != null
+            ? picker(context)
+            : pickPlatformImageAssets(context, maxAssets: 9));
+        if (!mounted || result == null) return;
+        _attachments.addAssets(result.where((asset) => !_photoSuggestionClusters
+            .expand((cluster) => cluster)
+            .any((photo) =>
+                photo.entity.id == asset.id &&
+                _selectedImages
+                    .any((image) => image.path == photo.xFile.path))));
       } finally {
         if (mounted) _resumePhotoSuggestionsAfterPicker();
       }
@@ -1413,9 +1459,16 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   }
 
   void _handleSuperAgentSubmit() {
+    if (!_canSubmitAttachments) return;
     final message = _messageController.text;
-    final images = List<XFile>.from(_selectedImages);
-    final imageOriginalFilenames = Map<String, String>.from(_originalFilenames);
+    final images = _allSelectedImages;
+    final imageOriginalFilenames = {
+      ..._originalFilenames,
+      for (final item
+          in _galleryAttachments?.items ?? <SelectedPhotoAttachment>[])
+        if (item.prepared != null)
+          item.prepared!.path: item.prepared!.originalName,
+    };
 
     if (_handleDemoSubmitIfNeeded(message, images: images)) return;
 
@@ -1445,6 +1498,7 @@ class _AgentChatDialogState extends State<AgentChatDialog>
     _messageFocusNode.unfocus();
     _messageController.clear();
     _selectedImages.clear();
+    _galleryAttachments?.clear();
     _originalFilenames.clear();
     _clearDraftAfterAcceptedSend();
 
@@ -1536,14 +1590,14 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   void _applyChatEvent(ChatEvent event) {
     if (event is ChatAgentStartedEvent) {
         _messageFocusNode.unfocus();
-        _isStreaming = true;
-        _isLoadingAgent = true;
+        _restoringRun = false;
         _nextResponseStartsNewMessage = true;
         _discardPendingReplyArtifactsExcept(event.turnId);
         return;
       }
       if (event is ChatAgentStoppedEvent) {
-        _isLoadingAgent = false;
+        _restoringRun = false;
+        _forceNextChatScroll = true;
         return;
       }
       if (event is ChatTokenUsageEvent) {
@@ -1630,17 +1684,19 @@ class _AgentChatDialogState extends State<AgentChatDialog>
         }
         if (event.isDone) {
           _nextResponseStartsNewMessage = true;
+          _forceNextChatScroll = true;
         } else {
           _nextResponseStartsNewMessage = false;
         }
       } else if (event is ChatErrorEvent) {
         final primary = _lastPrimaryItem();
-        if (primary is ProcessItem) {
+        if (primary is ProcessItem && !_turns.hasRunning) {
           primary.isFinished = true;
           primary.needsAttention = true;
           primary.isExpanded = false;
         }
         _items.add(ErrorItem(event.error));
+        _forceNextChatScroll = true;
       }
   }
 
@@ -1703,7 +1759,19 @@ class _AgentChatDialogState extends State<AgentChatDialog>
     return processItem;
   }
 
-  void _scrollToBottom() {
+  // Only stream flushes opt into throttling. Explicit user actions and
+  // approval requests must still reveal the latest content immediately.
+  void _scrollToBottom({bool force = true}) {
+    final now = widget.scrollClockForTesting?.call() ?? DateTime.now();
+    if (!shouldScrollChatToBottom(
+      now: now,
+      lastScrollAt: _lastChatScrollAt,
+      minInterval: const Duration(milliseconds: 250),
+      force: force,
+    )) {
+      return;
+    }
+    _lastChatScrollAt = now;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
@@ -1734,11 +1802,11 @@ class _AgentChatDialogState extends State<AgentChatDialog>
   }
 
   Widget _buildAgentThinkingItem() {
-    return const Padding(
-      padding: EdgeInsets.only(bottom: 24),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
       child: Row(
         children: [
-          CircleAvatar(
+          const CircleAvatar(
             radius: 12,
             backgroundColor: AppColors.iconBgLight,
             child: SizedBox(
@@ -1750,10 +1818,10 @@ class _AgentChatDialogState extends State<AgentChatDialog>
               ),
             ),
           ),
-          SizedBox(width: 8),
+          const SizedBox(width: 8),
           Text(
-            'Thinking...',
-            style: TextStyle(
+            UserStorage.l10n.chatThinkingMessage,
+            style: const TextStyle(
               fontSize: 13,
               color: AppColors.textTertiary,
             ),
@@ -2270,15 +2338,38 @@ class _AgentChatDialogState extends State<AgentChatDialog>
         children: [
           _buildPhotoSuggestionRow(),
           const SizedBox(height: 10),
-          if (_selectedImages.isNotEmpty) ...[
+          if (!_canSubmitAttachments)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
+                _galleryAttachments!.isPreparing
+                    ? UserStorage.l10n.preparingSelectedPhotos
+                    : UserStorage.l10n.selectedPhotosPreparationFailed,
+                style: const TextStyle(
+                    fontSize: 12, color: AppColors.textSecondary),
+              ),
+            ),
+          if (_selectedImages.isNotEmpty ||
+              (_galleryAttachments?.items.isNotEmpty ?? false)) ...[
             SizedBox(
               height: 72,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
-                itemCount: _selectedImages.length,
+                itemCount: _selectedImages.length +
+                    (_galleryAttachments?.items.length ?? 0),
                 separatorBuilder: (_, __) => const SizedBox(width: 10),
                 itemBuilder: (context, index) {
-                  return _buildSelectedImageThumb(index);
+                  if (index < _selectedImages.length) {
+                    return _buildSelectedImageThumb(index);
+                  }
+                  final item = _galleryAttachments!
+                      .items[index - _selectedImages.length];
+                  return SelectedPhotoAttachmentThumb(
+                    key: ValueKey('selected-photo-${item.id}'),
+                    item: item,
+                    onRemove: () => _galleryAttachments!.remove(item),
+                    onRetry: () => _galleryAttachments!.retry(item),
+                  );
                 },
               ),
             ),
@@ -2348,7 +2439,9 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                       ),
                       child: GestureDetector(
                         key: const ValueKey('super_agent_publish_button'),
-                        onTap: _handleSuperAgentSubmit,
+                        onTap: _canSubmitAttachments
+                            ? _handleSuperAgentSubmit
+                            : null,
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 160),
                           padding: const EdgeInsets.symmetric(
@@ -2356,7 +2449,9 @@ class _AgentChatDialogState extends State<AgentChatDialog>
                             vertical: 11,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.textPrimary,
+                            color: _canSubmitAttachments
+                                ? AppColors.textPrimary
+                                : AppColors.textTertiary,
                             borderRadius: BorderRadius.circular(24),
                           ),
                           child: Row(

@@ -9,6 +9,15 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get chatThinkingMessage => 'Thinking…';
+  @override
+  String get preparingSelectedPhotos => 'Preparing photos…';
+
+  @override
+  String get selectedPhotosPreparationFailed =>
+      'Could not prepare photos. Retry or remove the marked photos.';
+
+  @override
   String get timesLabel => 'Times';
 
   @override
@@ -2545,7 +2554,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get useLocalSpeechToTextDesc =>
-      'When enabled, audio is transcribed on-device before sending — useful for models that do not support audio input. When disabled, the original audio is sent directly to the model.';
+      'When enabled, audio is transcribed on-device before sending — useful for models that do not support audio input. When disabled, audio is transcribed by your configured cloud model (requires audio input support).';
 
   @override
   String get pendingAiProcessingHint => 'Set up AI model to process';

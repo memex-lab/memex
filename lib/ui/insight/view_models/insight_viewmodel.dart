@@ -8,6 +8,10 @@ import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/utils/result.dart';
 import 'package:memex/utils/user_storage.dart';
 
+/// Pin, delete, and reorder either change the list, fail, or no-op because
+/// the same action is already running.
+enum InsightActionOutcome { applied, rejected, ignored }
+
 /// ViewModel for the Insight page. Holds insight list, pin/delete/reorder state.
 class InsightViewModel extends ChangeNotifier {
   InsightViewModel({required MemexRouter router}) : _router = router {
@@ -103,12 +107,12 @@ class InsightViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> togglePin(KnowledgeInsightCard item) async {
-    if (pinningIds.contains(item.id)) return;
+  Future<InsightActionOutcome> togglePin(KnowledgeInsightCard item) async {
+    if (pinningIds.contains(item.id)) return InsightActionOutcome.ignored;
 
     final isOriginallyPinned = item.isPinned;
     final index = insights?.indexWhere((i) => i.id == item.id) ?? -1;
-    if (index == -1 || insights == null) return;
+    if (index == -1 || insights == null) return InsightActionOutcome.ignored;
 
     pinningIds.add(item.id);
     insights![index] = item.copyWith(isPinned: !isOriginallyPinned);
@@ -123,6 +127,9 @@ class InsightViewModel extends ChangeNotifier {
     }
     pinningIds.remove(item.id);
     notifyListeners();
+    return success
+        ? InsightActionOutcome.applied
+        : InsightActionOutcome.rejected;
   }
 
   void setActiveCardId(String? id) {
@@ -145,20 +152,25 @@ class InsightViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> saveSortOrder() async {
-    if (insights == null) return;
+  Future<InsightActionOutcome> saveSortOrder() async {
+    if (insights == null) return InsightActionOutcome.ignored;
 
     isReordering = false;
     notifyListeners();
 
     final ids = insights!.map((e) => e.id).toList();
     final result = await _router.updateInsightCardSortOrder(ids);
-    if (result.isError) await loadData();
+    final saved = result.when(onOk: (v) => v, onError: (_, __) => false);
+    if (!saved) {
+      await loadData();
+      return InsightActionOutcome.rejected;
+    }
     notifyListeners();
+    return InsightActionOutcome.applied;
   }
 
-  Future<void> deleteCard(KnowledgeInsightCard item) async {
-    if (isDeleting) return;
+  Future<InsightActionOutcome> deleteCard(KnowledgeInsightCard item) async {
+    if (isDeleting) return InsightActionOutcome.ignored;
 
     isDeleting = true;
     final originalList = List<KnowledgeInsightCard>.from(insights ?? []);
@@ -177,6 +189,9 @@ class InsightViewModel extends ChangeNotifier {
     }
     isDeleting = false;
     notifyListeners();
+    return success
+        ? InsightActionOutcome.applied
+        : InsightActionOutcome.rejected;
   }
 
   @override

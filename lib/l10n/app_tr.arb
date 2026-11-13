@@ -1,4 +1,8 @@
 {
+  "chatThinkingMessage": "Düşünüyor…",
+  "preparingSelectedPhotos": "Fotoğraflar hazırlanıyor…",
+  "selectedPhotosPreparationFailed": "Bazı fotoğraflar hazırlanamadı. Yeniden deneyin veya işaretli fotoğrafları kaldırın.",
+
   "@@locale": "tr",
   "timesLabel": "Kez",
   "@modelSetAsDefault": {

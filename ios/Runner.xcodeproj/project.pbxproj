@@ -21,6 +21,7 @@
 		AA00010B1000000100000006 /* AgentBackgroundTaskChannelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00010C1000000100000006 /* AgentBackgroundTaskChannelHandler.swift */; };
 		AA00010D1000000100000007 /* ClipboardPreviewChannelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00010E1000000100000007 /* ClipboardPreviewChannelHandler.swift */; };
 		AA00010F1000000100000008 /* AppActionChannelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001101000000100000008 /* AppActionChannelHandler.swift */; };
+		AA0001111000000100000009 /* PhotoPickerChannelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001121000000100000009 /* PhotoPickerChannelHandler.swift */; };
 		94D8E68DFAF0E975A7B3AAC9 /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FD25ADB84447B9A4366F6055 /* Pods_RunnerTests.framework */; };
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
@@ -97,6 +98,7 @@
 		AA00010C1000000100000006 /* AgentBackgroundTaskChannelHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentBackgroundTaskChannelHandler.swift; sourceTree = "<group>"; };
 		AA00010E1000000100000007 /* ClipboardPreviewChannelHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardPreviewChannelHandler.swift; sourceTree = "<group>"; };
 		AA0001101000000100000008 /* AppActionChannelHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppActionChannelHandler.swift; sourceTree = "<group>"; };
+		AA0001121000000100000009 /* PhotoPickerChannelHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoPickerChannelHandler.swift; sourceTree = "<group>"; };
 		7AFA3C8E1D35360C0083082E /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Release.xcconfig; path = Flutter/Release.xcconfig; sourceTree = "<group>"; };
 		83F22F54729A29819701B85D /* Pods-ShareExtension.debug-cn.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ShareExtension.debug-cn.xcconfig"; path = "Target Support Files/Pods-ShareExtension/Pods-ShareExtension.debug-cn.xcconfig"; sourceTree = "<group>"; };
 		8968E2D1ACE76EDC468CD1F2 /* Pods-Runner.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"; sourceTree = "<group>"; };
@@ -244,6 +246,7 @@
 				AA00010C1000000100000006 /* AgentBackgroundTaskChannelHandler.swift */,
 				AA00010E1000000100000007 /* ClipboardPreviewChannelHandler.swift */,
 				AA0001101000000100000008 /* AppActionChannelHandler.swift */,
+		AA0001121000000100000009 /* PhotoPickerChannelHandler.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 			);
 			path = Runner;
@@ -597,6 +600,7 @@
 				AA00010B1000000100000006 /* AgentBackgroundTaskChannelHandler.swift in Sources */,
 				AA00010D1000000100000007 /* ClipboardPreviewChannelHandler.swift in Sources */,
 				AA00010F1000000100000008 /* AppActionChannelHandler.swift in Sources */,
+		AA0001111000000100000009 /* PhotoPickerChannelHandler.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

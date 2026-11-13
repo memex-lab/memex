@@ -129,6 +129,23 @@ abstract class AppLocalizations {
     Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant')
   ];
 
+  /// No description provided for @chatThinkingMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Thinking…'**
+  String get chatThinkingMessage;
+  /// No description provided for @preparingSelectedPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing photos…'**
+  String get preparingSelectedPhotos;
+
+  /// No description provided for @selectedPhotosPreparationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not prepare photos. Retry or remove the marked photos.'**
+  String get selectedPhotosPreparationFailed;
+
   /// No description provided for @timesLabel.
   ///
   /// In en, this message translates to:
@@ -4633,7 +4650,7 @@ abstract class AppLocalizations {
   /// No description provided for @useLocalSpeechToTextDesc.
   ///
   /// In en, this message translates to:
-  /// **'When enabled, audio is transcribed on-device before sending — useful for models that do not support audio input. When disabled, the original audio is sent directly to the model.'**
+  /// **'When enabled, audio is transcribed on-device before sending — useful for models that do not support audio input. When disabled, audio is transcribed by your configured cloud model (requires audio input support).'**
   String get useLocalSpeechToTextDesc;
 
   /// No description provided for @pendingAiProcessingHint.
