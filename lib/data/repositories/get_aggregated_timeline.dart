@@ -5,6 +5,7 @@ import 'package:memex/db/app_database.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/data/services/file_system_service.dart';
+import 'package:memex/data/services/card_cache_rebuild.dart';
 import 'package:memex/data/services/card_renderer.dart';
 import 'package:memex/domain/models/card_detail_model.dart';
 
@@ -33,9 +34,15 @@ Future<Map<String, dynamic>> getAggregatedTimeline({
     final fileSystemService = FileSystemService.instance;
 
     // Ensure cache is populated
-    if (await db.cardDao.isCacheEmpty()) {
+    if (cardCacheNeedsRebuild(
+      cacheEmpty: await db.cardDao.isCacheEmpty(),
+      rebuildInterrupted:
+          await fileSystemService.isCardCacheRebuildInterrupted(userId),
+    )) {
       _logger.info('Card cache is empty, triggering rebuild...');
       await fileSystemService.rebuildCardCache(userId);
+    } else if (fileSystemService.isCardCacheRebuilding) {
+      await fileSystemService.waitForCardCacheRebuild();
     }
 
     // Fetch ALL cards matching tag filter (no pagination here, we group locally)
