@@ -424,6 +424,10 @@ class MemexRouter {
       executor.registerFailureHandler(taskType, handleGenericAgentFailure);
     }
     executor.registerFailureHandler(
+      'super_agent_chat_turn_task',
+      ChatService.handleSuperAgentChatTurnFailure,
+    );
+    executor.registerFailureHandler(
       'character_perception_task',
       handleCharacterPerceptionFailure,
     );

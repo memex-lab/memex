@@ -872,6 +872,7 @@
   "modelNotConfiguredBanner": "Modello AI non ancora configurato. Configuralo per sbloccare tutte le funzionalità.",
   "modelNotConfiguredSubmitHint": "Configura un modello AI prima della pubblicazione",
   "processingStatus": "Elaborazione",
+  "waitingForNetworkStatus": "In attesa della rete",
   "failedStatus": "Fallito",
   "failureReason": "Motivo del fallimento",
   "unknownError": "Si è verificato un errore sconosciuto",

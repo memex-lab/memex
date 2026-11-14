@@ -1919,6 +1919,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get processingStatus => 'Processing';
 
   @override
+  String get waitingForNetworkStatus => 'Waiting for network';
+
+  @override
   String get failedStatus => 'Failed';
 
   @override

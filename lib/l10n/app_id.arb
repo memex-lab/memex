@@ -874,6 +874,7 @@
   "modelNotConfiguredBanner": "Model AI belum dikonfigurasi. Siapkan untuk membuka semua fitur.",
   "modelNotConfiguredSubmitHint": "Konfigurasikan model AI sebelum menerbitkan",
   "processingStatus": "Memproses",
+  "waitingForNetworkStatus": "Menunggu jaringan",
   "failedStatus": "Gagal",
   "failureReason": "Alasan kegagalan",
   "unknownError": "Terjadi error tidak dikenal",
