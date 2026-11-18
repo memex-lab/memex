@@ -10,6 +10,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get chatThinkingMessage => 'Elaborazione in corso…';
+
   @override
   String get preparingSelectedPhotos => 'Preparazione delle foto…';
 
@@ -2605,6 +2606,25 @@ class AppLocalizationsIt extends AppLocalizations {
   @override
   String get useLocalSpeechToTextDesc =>
       'Se abilitato, l\'audio viene trascritto sul dispositivo prima dell\'invio, utile per i modelli che non supportano l\'input audio. Quando disabilitato, l\'audio originale viene inviato direttamente al modello.';
+
+  @override
+  String get localSpeechModelTitle => 'Modello vocale';
+
+  @override
+  String get localSpeechModelSenseVoice => 'SenseVoice';
+
+  @override
+  String get localSpeechModelWhisper => 'Multilingue';
+
+  @override
+  String get localSpeechLanguageTitle => 'Lingua parlata';
+
+  @override
+  String get localSpeechLanguageAuto => 'Auto';
+
+  @override
+  String get localSpeechLanguageUnsupported =>
+      'Questo modello sul dispositivo non copre quella lingua. Multilingue include il tedesco e altre lingue europee. SenseVoice copre cinese, inglese, giapponese, coreano e cantonese.';
 
   @override
   String get pendingAiProcessingHint => 'Configura il modello AI da elaborare';

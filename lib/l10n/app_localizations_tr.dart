@@ -10,6 +10,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get chatThinkingMessage => 'Düşünüyor…';
+
   @override
   String get preparingSelectedPhotos => 'Fotoğraflar hazırlanıyor…';
 
@@ -2575,6 +2576,25 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get useLocalSpeechToTextDesc =>
       'Etkinleştirildiğinde, ses gönderilmeden önce cihazda metne dönüştürülür; bu, ses girişini desteklemeyen modeller için kullanışlıdır. Devre dışı bırakıldığında orijinal ses doğrudan modele gönderilir.';
+
+  @override
+  String get localSpeechModelTitle => 'Konuşma modeli';
+
+  @override
+  String get localSpeechModelSenseVoice => 'SenseVoice';
+
+  @override
+  String get localSpeechModelWhisper => 'Çok dilli';
+
+  @override
+  String get localSpeechLanguageTitle => 'Konuşulan dil';
+
+  @override
+  String get localSpeechLanguageAuto => 'Otomatik';
+
+  @override
+  String get localSpeechLanguageUnsupported =>
+      'Cihazdaki bu model o dili kapsamaz. Çok dilli model Almanca ve diğer Avrupa dillerini içerir. SenseVoice Çince, İngilizce, Japonca, Korece ve Kantonca kapsar.';
 
   @override
   String get pendingAiProcessingHint => 'İşlemek için AI modelini ayarlayın';

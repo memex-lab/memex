@@ -134,6 +134,7 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Thinking…'**
   String get chatThinkingMessage;
+
   /// No description provided for @preparingSelectedPhotos.
   ///
   /// In en, this message translates to:
@@ -4652,6 +4653,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'When enabled, audio is transcribed on-device before sending — useful for models that do not support audio input. When disabled, audio is transcribed by your configured cloud model (requires audio input support).'**
   String get useLocalSpeechToTextDesc;
+
+  /// No description provided for @localSpeechModelTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Speech model'**
+  String get localSpeechModelTitle;
+
+  /// No description provided for @localSpeechModelSenseVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'SenseVoice'**
+  String get localSpeechModelSenseVoice;
+
+  /// No description provided for @localSpeechModelWhisper.
+  ///
+  /// In en, this message translates to:
+  /// **'Multilingual'**
+  String get localSpeechModelWhisper;
+
+  /// No description provided for @localSpeechLanguageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Spoken language'**
+  String get localSpeechLanguageTitle;
+
+  /// No description provided for @localSpeechLanguageAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get localSpeechLanguageAuto;
+
+  /// No description provided for @localSpeechLanguageUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This on-device model does not cover that language. Multilingual includes German and other European languages. SenseVoice covers Chinese, English, Japanese, Korean, and Cantonese.'**
+  String get localSpeechLanguageUnsupported;
 
   /// No description provided for @pendingAiProcessingHint.
   ///

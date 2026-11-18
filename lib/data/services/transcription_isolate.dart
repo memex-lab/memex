@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:isolate';
 import 'dart:typed_data';
 import 'package:logging/logging.dart';
+import 'package:memex/domain/models/local_speech.dart';
 import 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa;
 
 /// Runs transcription in a background Isolate so the UI thread is never blocked.
@@ -24,6 +25,9 @@ class TranscriptionIsolate {
     required String modelPath,
     required String tokensPath,
     String provider = 'cpu',
+    String engine = LocalSpeechEngines.senseVoice,
+    String language = 'auto',
+    String? decoderPath,
   }) async {
     if (_isolate != null) return;
 
@@ -37,6 +41,9 @@ class TranscriptionIsolate {
         'modelPath': modelPath,
         'tokensPath': tokensPath,
         'provider': provider,
+        'engine': engine,
+        'language': language,
+        'decoderPath': decoderPath,
         'replyPort': receivePort.sendPort,
       },
     );
@@ -96,24 +103,41 @@ class TranscriptionIsolate {
     final modelPath = initConfig['modelPath'] as String;
     final tokensPath = initConfig['tokensPath'] as String;
     final provider = initConfig['provider'] as String;
+    final engine =
+        initConfig['engine'] as String? ?? LocalSpeechEngines.senseVoice;
+    final language = initConfig['language'] as String? ?? 'auto';
+    final decoderPath = initConfig['decoderPath'] as String?;
     final replyPort = initConfig['replyPort'] as SendPort;
 
     // Initialize sherpa-onnx in this isolate
     sherpa.initBindings();
 
-    final config = sherpa.OfflineRecognizerConfig(
-      model: sherpa.OfflineModelConfig(
-        senseVoice: sherpa.OfflineSenseVoiceModelConfig(
-          model: modelPath,
-          language: 'auto',
-          useInverseTextNormalization: true,
-        ),
-        tokens: tokensPath,
-        numThreads: 2,
-        debug: false,
-        provider: provider,
-      ),
-    );
+    final model = engine == LocalSpeechEngines.whisperTiny
+        ? sherpa.OfflineModelConfig(
+            whisper: sherpa.OfflineWhisperModelConfig(
+              encoder: modelPath,
+              decoder: decoderPath ?? '',
+              language: language,
+              task: 'transcribe',
+            ),
+            tokens: tokensPath,
+            numThreads: 2,
+            debug: false,
+            provider: provider,
+            modelType: 'whisper',
+          )
+        : sherpa.OfflineModelConfig(
+            senseVoice: sherpa.OfflineSenseVoiceModelConfig(
+              model: modelPath,
+              language: language,
+              useInverseTextNormalization: true,
+            ),
+            tokens: tokensPath,
+            numThreads: 2,
+            debug: false,
+            provider: provider,
+          );
+    final config = sherpa.OfflineRecognizerConfig(model: model);
 
     final recognizer = sherpa.OfflineRecognizer(config);
 

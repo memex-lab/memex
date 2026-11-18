@@ -10,6 +10,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get chatThinkingMessage => 'Обдумывание…';
+
   @override
   String get preparingSelectedPhotos => 'Подготовка фотографий…';
 
@@ -2577,6 +2578,25 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get useLocalSpeechToTextDesc =>
       'Когда включено, аудио транскрибируется на устройстве перед отправкой — полезно для моделей, которые не поддерживают аудиоввод. Когда отключено, исходное аудио отправляется напрямую в модель.';
+
+  @override
+  String get localSpeechModelTitle => 'Речевая модель';
+
+  @override
+  String get localSpeechModelSenseVoice => 'SenseVoice';
+
+  @override
+  String get localSpeechModelWhisper => 'Многоязычная';
+
+  @override
+  String get localSpeechLanguageTitle => 'Язык речи';
+
+  @override
+  String get localSpeechLanguageAuto => 'Авто';
+
+  @override
+  String get localSpeechLanguageUnsupported =>
+      'Эта модель на устройстве не покрывает этот язык. Многоязычная включает немецкий и другие европейские языки. SenseVoice покрывает китайский, английский, японский, корейский и кантонский.';
 
   @override
   String get pendingAiProcessingHint => 'Настройте AI-модель для обработки';

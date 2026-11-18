@@ -4,8 +4,10 @@ import 'package:logging/logging.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa;
+import 'package:memex/domain/models/local_speech.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/audio_converter.dart';
+import 'package:memex/utils/user_storage.dart';
 import 'package:memex/data/services/transcription_isolate.dart';
 import 'package:archive/archive.dart';
 
@@ -34,6 +36,7 @@ class WhisperService {
 
   sherpa.OfflineRecognizer? _recognizer; // kept for legacy, prefer bg isolate
   TranscriptionIsolate? _bgIsolate;
+  String? _loadedKey;
 
   /// Pick the best available execution provider for the current platform.
   static String get _provider {
@@ -49,19 +52,52 @@ class WhisperService {
     return '${dir.path}/$_modelDirName';
   }
 
-  /// Whether the model files exist locally.
+  /// Whether the model files for the selected engine exist locally.
   Future<bool> isModelDownloaded() async {
+    final engine = LocalSpeechEngines.normalize(
+      await UserStorage.getLocalSpeechEngine(),
+    );
+    if (engine == LocalSpeechEngines.whisperTiny) {
+      return _whisperFilesReady(await _whisperDir());
+    }
     final dir = await _modelDir();
     final model = File('$dir/$_modelFileName');
     final tokens = File('$dir/$_tokensFileName');
     return model.existsSync() && tokens.existsSync();
   }
 
+  Future<String> _whisperDir() async {
+    final dir = await getApplicationSupportDirectory();
+    return '${dir.path}/${WhisperTinyPackage.dirName}';
+  }
+
+  bool _whisperFilesReady(String dir) {
+    return File('$dir/${WhisperTinyPackage.encoderFile}').existsSync() &&
+        File('$dir/${WhisperTinyPackage.decoderFile}').existsSync() &&
+        File('$dir/${WhisperTinyPackage.tokensFile}').existsSync();
+  }
+
+  /// Download prompt size for the engine the user has selected.
+  Future<int> selectedModelSizeMb() async {
+    final engine = LocalSpeechEngines.normalize(
+      await UserStorage.getLocalSpeechEngine(),
+    );
+    if (engine == LocalSpeechEngines.whisperTiny) {
+      return WhisperTinyPackage.unpackedSizeMb;
+    }
+    return modelSizeMB.toInt();
+  }
+
   /// Delete any downloaded or partially downloaded local model files.
   Future<bool> deleteDownloadedModel() async {
     dispose();
 
-    final dirPath = await _modelDir();
+    final engine = LocalSpeechEngines.normalize(
+      await UserStorage.getLocalSpeechEngine(),
+    );
+    final dirPath = engine == LocalSpeechEngines.whisperTiny
+        ? await _whisperDir()
+        : await _modelDir();
     final dir = Directory(dirPath);
     if (!await dir.exists()) return false;
 
@@ -77,6 +113,16 @@ class WhisperService {
     required ValueChanged<double> onProgress,
     bool useChineseMirror = false,
   }) async {
+    final engine = LocalSpeechEngines.normalize(
+      await UserStorage.getLocalSpeechEngine(),
+    );
+    if (engine == LocalSpeechEngines.whisperTiny) {
+      await _downloadWhisperTiny(
+        onProgress: onProgress,
+        useChineseMirror: useChineseMirror,
+      );
+      return;
+    }
     final dir = await _modelDir();
     await Directory(dir).create(recursive: true);
 
@@ -124,6 +170,56 @@ class WhisperService {
     }
 
     _logger.info('SenseVoice model downloaded to $dir');
+  }
+
+  Future<void> _downloadWhisperTiny({
+    required ValueChanged<double> onProgress,
+    required bool useChineseMirror,
+  }) async {
+    final dir = await _whisperDir();
+    await Directory(dir).create(recursive: true);
+
+    if (useChineseMirror) {
+      await _downloadFile(
+        '${WhisperTinyPackage.mirrorBase}/${WhisperTinyPackage.encoderFile}',
+        '$dir/${WhisperTinyPackage.encoderFile}',
+        onProgress: (p) => onProgress(p * 0.15),
+      );
+      await _downloadFile(
+        '${WhisperTinyPackage.mirrorBase}/${WhisperTinyPackage.decoderFile}',
+        '$dir/${WhisperTinyPackage.decoderFile}',
+        onProgress: (p) => onProgress(0.15 + p * 0.80),
+      );
+      await _downloadFile(
+        '${WhisperTinyPackage.mirrorBase}/${WhisperTinyPackage.tokensFile}',
+        '$dir/${WhisperTinyPackage.tokensFile}',
+        onProgress: (p) => onProgress(0.95 + p * 0.05),
+      );
+    } else {
+      _logger.info(
+        'Downloading Whisper tiny from ${WhisperTinyPackage.archiveUrl}',
+      );
+      final tmpFile = File('$dir/model.tar.bz2');
+      await _downloadFile(
+        WhisperTinyPackage.archiveUrl,
+        tmpFile.path,
+        onProgress: (p) => onProgress(p * 0.9),
+      );
+      onProgress(0.9);
+      final bytes = await tmpFile.readAsBytes();
+      final decompressed = BZip2Decoder().decodeBytes(bytes);
+      final archive = TarDecoder().decodeBytes(decompressed);
+      for (final file in archive) {
+        if (!file.isFile || !WhisperTinyPackage.keepArchiveEntry(file.name)) {
+          continue;
+        }
+        final name = file.name.split('/').last;
+        await File('$dir/$name').writeAsBytes(file.content as List<int>);
+      }
+      if (tmpFile.existsSync()) await tmpFile.delete();
+      onProgress(1.0);
+    }
+    _logger.info('Whisper tiny model downloaded to $dir');
   }
 
   Future<void> _downloadFile(
@@ -279,6 +375,7 @@ class WhisperService {
     _recognizer = null;
     _bgIsolate?.dispose();
     _bgIsolate = null;
+    _loadedKey = null;
   }
 
   /// Transcribe a speech segment (Float32List samples at 16kHz).
@@ -293,23 +390,56 @@ class WhisperService {
             'Segment transcribed (bg): ${text.substring(0, text.length.clamp(0, 80))}');
       }
       return text;
+    } on UnsupportedLocalSpeechLanguage {
+      rethrow;
     } catch (e) {
       _logger.severe('Segment transcription failed: $e');
       return null;
     }
   }
 
-  /// Ensure the background isolate is running.
+  /// Ensure the background isolate is running for the selected engine.
   Future<void> _ensureBgIsolate() async {
-    if (_bgIsolate != null && _bgIsolate!.isReady) return;
+    final engine = LocalSpeechEngines.normalize(
+      await UserStorage.getLocalSpeechEngine(),
+    );
+    final language = LocalSpeechLanguages.normalize(
+      await UserStorage.getLocalSpeechLanguage(),
+    );
+    final plan = planLocalSpeech(engine: engine, language: language);
+    if (!plan.supported) {
+      throw UnsupportedLocalSpeechLanguage(
+        engine: plan.engine,
+        language: plan.language,
+      );
+    }
+    final key = '${plan.engine}|${plan.modelLanguage}';
+    if (_bgIsolate != null && _bgIsolate!.isReady && _loadedKey == key) {
+      return;
+    }
     // Free main-thread recognizer to avoid double memory usage
     _recognizer?.free();
     _recognizer = null;
+    _bgIsolate?.dispose();
     _bgIsolate = TranscriptionIsolate();
+    _loadedKey = key;
+    if (plan.engine == LocalSpeechEngines.whisperTiny) {
+      final dir = await _whisperDir();
+      await _bgIsolate!.start(
+        engine: plan.engine,
+        modelPath: '$dir/${WhisperTinyPackage.encoderFile}',
+        decoderPath: '$dir/${WhisperTinyPackage.decoderFile}',
+        tokensPath: '$dir/${WhisperTinyPackage.tokensFile}',
+        language: plan.modelLanguage,
+        provider: 'cpu',
+      );
+      return;
+    }
     final dir = await _modelDir();
     await _bgIsolate!.start(
       modelPath: '$dir/$_modelFileName',
       tokensPath: '$dir/$_tokensFileName',
+      language: plan.modelLanguage,
       provider: _provider,
     );
   }

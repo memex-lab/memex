@@ -10,6 +10,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get chatThinkingMessage => 'सोच रहा है…';
+
   @override
   String get preparingSelectedPhotos => 'फ़ोटो तैयार की जा रही हैं…';
 
@@ -2561,6 +2562,25 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get useLocalSpeechToTextDesc =>
       'चालू होने पर ऑडियो भेजने से पहले डिवाइस पर लिप्यंतरण होता है — उन मॉडल के लिए उपयोगी जो ऑडियो इनपुट का समर्थन नहीं करते। बंद होने पर मूल ऑडियो सीधे मॉडल को भेजा जाता है।';
+
+  @override
+  String get localSpeechModelTitle => 'वाक् मॉडल';
+
+  @override
+  String get localSpeechModelSenseVoice => 'SenseVoice';
+
+  @override
+  String get localSpeechModelWhisper => 'बहुभाषी';
+
+  @override
+  String get localSpeechLanguageTitle => 'बोली गई भाषा';
+
+  @override
+  String get localSpeechLanguageAuto => 'स्वतः';
+
+  @override
+  String get localSpeechLanguageUnsupported =>
+      'यह ऑन डिवाइस मॉडल उस भाषा को नहीं कवर करता। बहुभाषी में जर्मन और अन्य यूरोपीय भाषाएँ हैं। SenseVoice चीनी, अंग्रेज़ी, जापानी, कोरियाई और कैंटोनीज़ को कवर करता है।';
 
   @override
   String get pendingAiProcessingHint =>

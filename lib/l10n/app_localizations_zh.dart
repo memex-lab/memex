@@ -10,6 +10,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get chatThinkingMessage => '正在思考…';
+
   @override
   String get preparingSelectedPhotos => '正在准备照片…';
 
@@ -2473,6 +2474,25 @@ class AppLocalizationsZh extends AppLocalizations {
       '开启时，会先在设备上把音频转成文字再发送，这适合不支持音频输入的模型。关闭后，由已配置的云端模型进行转录（模型需支持音频输入）。';
 
   @override
+  String get localSpeechModelTitle => '语音模型';
+
+  @override
+  String get localSpeechModelSenseVoice => 'SenseVoice';
+
+  @override
+  String get localSpeechModelWhisper => '多语言';
+
+  @override
+  String get localSpeechLanguageTitle => '说话语言';
+
+  @override
+  String get localSpeechLanguageAuto => '自动';
+
+  @override
+  String get localSpeechLanguageUnsupported =>
+      '当前的本地模型不支持这个语言。多语言模型包含德语和其他欧洲语言。SenseVoice 支持中文、英文、日文、韩文和粤语。';
+
+  @override
   String get pendingAiProcessingHint => '配置 AI 模型以自动整理此记录';
 
   @override
@@ -3234,6 +3254,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get chatThinkingMessage => '正在思考…';
+
   @override
   String get preparingSelectedPhotos => '正在準備照片…';
 
@@ -5699,6 +5720,25 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   @override
   String get useLocalSpeechToTextDesc =>
       '開啟時，音訊會先在裝置上轉錄成文字再傳送，適合不支援音訊輸入的模型。關閉時，原始音訊會直接傳送給模型。';
+
+  @override
+  String get localSpeechModelTitle => '語音模型';
+
+  @override
+  String get localSpeechModelSenseVoice => 'SenseVoice';
+
+  @override
+  String get localSpeechModelWhisper => '多語言';
+
+  @override
+  String get localSpeechLanguageTitle => '說話語言';
+
+  @override
+  String get localSpeechLanguageAuto => '自動';
+
+  @override
+  String get localSpeechLanguageUnsupported =>
+      '目前的本機模型不支援這個語言。多語言模型包含德文和其他歐洲語言。SenseVoice 支援中文、英文、日文、韓文和粵語。';
 
   @override
   String get pendingAiProcessingHint => '設定 AI 模型以處理';
