@@ -1183,6 +1183,27 @@
   "speechNoResult": "कोई वाणी पहचानी नहीं हुई",
   "useLocalSpeechToTextTitle": "स्थानीय वाणी to पाठ उपयोग करें",
   "useLocalSpeechToTextDesc": "चालू होने पर ऑडियो भेजने से पहले डिवाइस पर लिप्यंतरण होता है — उन मॉडल के लिए उपयोगी जो ऑडियो इनपुट का समर्थन नहीं करते। बंद होने पर मूल ऑडियो सीधे मॉडल को भेजा जाता है।",
+  "analyzeVocalToneTitle": "स्वर का विश्लेषण",
+  "analyzeVocalToneDesc": "डिफ़ॉल्ट रूप से बंद। चालू होने पर भेजने से पहले मूड और ऊर्जा का एक छोटा नोट आवाज़ के मसौदे में जुड़ता है। डिवाइस का मॉडल डिवाइस पर रहता है। ऑडियो आपके कॉन्फ़िगर मॉडल पर तभी जाता है जब डिवाइस मॉडल पर टोन का निशान न हो।",
+  "vocalToneLine": "स्वर: {mood}, {energy}.",
+  "@vocalToneLine": {
+    "placeholders": {
+      "mood": {"type": "String"},
+      "energy": {"type": "String"}
+    }
+  },
+  "vocalToneMoodHappy": "खुश",
+  "vocalToneMoodSad": "उदास",
+  "vocalToneMoodAngry": "गुस्सा",
+  "vocalToneMoodCalm": "शांत",
+  "vocalToneMoodTense": "तनाव",
+  "vocalToneMoodDispleased": "अप्रसन्न",
+  "vocalToneMoodSurprised": "आश्चर्य",
+  "vocalToneMoodLaughter": "हँसी",
+  "vocalToneMoodCrying": "रोना",
+  "vocalToneEnergyLow": "कम ऊर्जा",
+  "vocalToneEnergySteady": "स्थिर ऊर्जा",
+  "vocalToneEnergyHigh": "अधिक ऊर्जा",
   "pendingAiProcessingHint": "प्रोसेस करने के लिए एआई मॉडल सेटअप करें",
   "demoWelcome": "Memex में आपका स्वागत है!\nआइए जल्दी से देखें कि एआई आपके रिकॉर्ड के लिए क्या कर सकता है।",
   "demoTapAdd": "अपना पहला रिकॉर्ड बनाने के लिए यहाँ टैप करें",

@@ -1183,6 +1183,27 @@
   "speechNoResult": "음성이 감지되지 않았습니다",
   "useLocalSpeechToTextTitle": "로컬 음성-텍스트 사용",
   "useLocalSpeechToTextDesc": "활성화하면 오디오가 전송 전에 기기에서 텍스트로 변환됩니다. 오디오 입력을 지원하지 않는 모델에 유용합니다. 비활성화하면 원본 오디오가 모델로 직접 전송됩니다.",
+  "analyzeVocalToneTitle": "목소리 톤 분석",
+  "analyzeVocalToneDesc": "기본값은 꺼짐입니다. 켜면 보내기 전에 기분과 힘에 대한 짧은 메모가 음성 초안에 붙습니다. 기기 모델의 결과는 기기에 남습니다. 기기 모델에 톤 표시가 없을 때만 오디오가 설정한 모델로 갑니다.",
+  "vocalToneLine": "목소리 톤: {mood}, {energy}.",
+  "@vocalToneLine": {
+    "placeholders": {
+      "mood": {"type": "String"},
+      "energy": {"type": "String"}
+    }
+  },
+  "vocalToneMoodHappy": "기쁨",
+  "vocalToneMoodSad": "슬픔",
+  "vocalToneMoodAngry": "화남",
+  "vocalToneMoodCalm": "차분",
+  "vocalToneMoodTense": "긴장",
+  "vocalToneMoodDispleased": "불쾌",
+  "vocalToneMoodSurprised": "놀람",
+  "vocalToneMoodLaughter": "웃음",
+  "vocalToneMoodCrying": "울음",
+  "vocalToneEnergyLow": "낮은 에너지",
+  "vocalToneEnergySteady": "고른 에너지",
+  "vocalToneEnergyHigh": "높은 에너지",
   "pendingAiProcessingHint": "처리할 AI 모델 설정",
   "demoWelcome": "Memex에 오신 것을 환영합니다!\nAI가 기록으로 무엇을 할 수 있는지 간단히 둘러보세요.",
   "demoTapAdd": "여기를 눌러 첫 기록을 만드세요",

@@ -1183,6 +1183,27 @@
   "speechNoResult": "Nenhuma fala detectada",
   "useLocalSpeechToTextTitle": "Usar speech to text local",
   "useLocalSpeechToTextDesc": "Quando ativado, o áudio é transcrito no dispositivo antes do envio — útil para modelos que não suportam entrada de áudio. Quando desativado, o áudio original é enviado diretamente ao modelo.",
+  "analyzeVocalToneTitle": "Analisar o tom da voz",
+  "analyzeVocalToneDesc": "Desligado por padrão. Quando ligado, uma nota curta sobre humor e energia entra no rascunho de voz antes do envio. Um modelo no dispositivo fica no dispositivo. O áudio vai para o modelo configurado só quando esse modelo no dispositivo não tem uma marca de tom.",
+  "vocalToneLine": "Tom de voz: {mood}, {energy}.",
+  "@vocalToneLine": {
+    "placeholders": {
+      "mood": {"type": "String"},
+      "energy": {"type": "String"}
+    }
+  },
+  "vocalToneMoodHappy": "feliz",
+  "vocalToneMoodSad": "triste",
+  "vocalToneMoodAngry": "irritado",
+  "vocalToneMoodCalm": "calmo",
+  "vocalToneMoodTense": "tenso",
+  "vocalToneMoodDispleased": "descontente",
+  "vocalToneMoodSurprised": "surpreso",
+  "vocalToneMoodLaughter": "riso",
+  "vocalToneMoodCrying": "choro",
+  "vocalToneEnergyLow": "energia baixa",
+  "vocalToneEnergySteady": "energia estável",
+  "vocalToneEnergyHigh": "energia alta",
   "pendingAiProcessingHint": "Configure o modelo AI para processar",
   "demoWelcome": "Boas-vindas ao Memex!\nVamos fazer uma tour rápida do que AI pode fazer pelos seus registros.",
   "demoTapAdd": "Toque aqui para criar seu primeiro registro",

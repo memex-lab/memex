@@ -10,6 +10,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get chatThinkingMessage => 'Đang suy nghĩ…';
+
   @override
   String get preparingSelectedPhotos => 'Đang chuẩn bị ảnh…';
 
@@ -2549,6 +2550,54 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String get useLocalSpeechToTextDesc =>
       'Khi bật, âm thanh được chuyển thành văn bản trên thiết bị trước khi gửi — hữu ích cho mô hình không hỗ trợ đầu vào âm thanh. Khi tắt, âm thanh gốc được gửi trực tiếp tới mô hình.';
+
+  @override
+  String get analyzeVocalToneTitle => 'Phân tích giọng';
+
+  @override
+  String get analyzeVocalToneDesc =>
+      'Mặc định tắt. Khi bật, một câu ngắn về tâm trạng và năng lượng được thêm vào bản nháp giọng trước khi gửi. Mô hình trên máy ở lại trên máy. Âm thanh chỉ được gửi tới mô hình đã cấu hình khi mô hình trên máy không có dấu giọng.';
+
+  @override
+  String vocalToneLine(String mood, String energy) {
+    return 'Giọng: $mood, $energy.';
+  }
+
+  @override
+  String get vocalToneMoodHappy => 'vui';
+
+  @override
+  String get vocalToneMoodSad => 'buồn';
+
+  @override
+  String get vocalToneMoodAngry => 'tức';
+
+  @override
+  String get vocalToneMoodCalm => 'bình tĩnh';
+
+  @override
+  String get vocalToneMoodTense => 'căng';
+
+  @override
+  String get vocalToneMoodDispleased => 'không hài lòng';
+
+  @override
+  String get vocalToneMoodSurprised => 'ngạc nhiên';
+
+  @override
+  String get vocalToneMoodLaughter => 'cười';
+
+  @override
+  String get vocalToneMoodCrying => 'khóc';
+
+  @override
+  String get vocalToneEnergyLow => 'năng lượng thấp';
+
+  @override
+  String get vocalToneEnergySteady => 'năng lượng đều';
+
+  @override
+  String get vocalToneEnergyHigh => 'năng lượng cao';
 
   @override
   String get pendingAiProcessingHint => 'Thiết lập mô hình AI để xử lý';

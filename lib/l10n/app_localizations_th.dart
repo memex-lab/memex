@@ -10,6 +10,7 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get chatThinkingMessage => 'กำลังคิด…';
+
   @override
   String get preparingSelectedPhotos => 'กำลังเตรียมรูปภาพ…';
 
@@ -2551,6 +2552,54 @@ class AppLocalizationsTh extends AppLocalizations {
   @override
   String get useLocalSpeechToTextDesc =>
       'เมื่อเปิดใช้งาน เสียงจะถอดในเครื่องก่อนส่ง — มีประโยชน์สำหรับโมเดลที่ไม่รองรับการป้อนเสียง เมื่อปิด จะส่งเสียงต้นฉบับตรงไปยังโมเดล';
+
+  @override
+  String get analyzeVocalToneTitle => 'วิเคราะห์น้ำเสียง';
+
+  @override
+  String get analyzeVocalToneDesc =>
+      'ค่าเริ่มต้นปิด เมื่อเปิด จะมีข้อความสั้นเรื่องอารมณ์และพลังในฉบับร่างเสียงก่อนส่ง โมเดลในเครื่องอยู่บนเครื่อง เสียงจะไปยังโมเดลที่ตั้งไว้ก็ต่อเมื่อโมเดลในเครื่องไม่มีเครื่องหมายน้ำเสียง';
+
+  @override
+  String vocalToneLine(String mood, String energy) {
+    return 'น้ำเสียง: $mood, $energy.';
+  }
+
+  @override
+  String get vocalToneMoodHappy => 'ดีใจ';
+
+  @override
+  String get vocalToneMoodSad => 'เศร้า';
+
+  @override
+  String get vocalToneMoodAngry => 'โกรธ';
+
+  @override
+  String get vocalToneMoodCalm => 'สงบ';
+
+  @override
+  String get vocalToneMoodTense => 'ตึงเครียด';
+
+  @override
+  String get vocalToneMoodDispleased => 'ไม่พอใจ';
+
+  @override
+  String get vocalToneMoodSurprised => 'ประหลาดใจ';
+
+  @override
+  String get vocalToneMoodLaughter => 'หัวเราะ';
+
+  @override
+  String get vocalToneMoodCrying => 'ร้องไห้';
+
+  @override
+  String get vocalToneEnergyLow => 'พลังต่ำ';
+
+  @override
+  String get vocalToneEnergySteady => 'พลังสม่ำเสมอ';
+
+  @override
+  String get vocalToneEnergyHigh => 'พลังสูง';
 
   @override
   String get pendingAiProcessingHint => 'ตั้งค่าโมเดล AI เพื่อประมวลผล';

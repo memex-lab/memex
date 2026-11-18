@@ -1183,6 +1183,27 @@
   "speechNoResult": "Речь не обнаружена",
   "useLocalSpeechToTextTitle": "Использовать локальный speech-to-text",
   "useLocalSpeechToTextDesc": "Когда включено, аудио транскрибируется на устройстве перед отправкой — полезно для моделей, которые не поддерживают аудиоввод. Когда отключено, исходное аудио отправляется напрямую в модель.",
+  "analyzeVocalToneTitle": "Анализировать тон голоса",
+  "analyzeVocalToneDesc": "По умолчанию выключено. Когда включено, короткая заметка о настроении и энергии добавляется в черновик перед отправкой. Модель на устройстве остается на устройстве. Аудио уходит в настроенную модель только если у модели на устройстве нет метки тона.",
+  "vocalToneLine": "Тон голоса: {mood}, {energy}.",
+  "@vocalToneLine": {
+    "placeholders": {
+      "mood": {"type": "String"},
+      "energy": {"type": "String"}
+    }
+  },
+  "vocalToneMoodHappy": "радостный",
+  "vocalToneMoodSad": "грустный",
+  "vocalToneMoodAngry": "злой",
+  "vocalToneMoodCalm": "спокойный",
+  "vocalToneMoodTense": "напряженный",
+  "vocalToneMoodDispleased": "недовольный",
+  "vocalToneMoodSurprised": "удивленный",
+  "vocalToneMoodLaughter": "смех",
+  "vocalToneMoodCrying": "плач",
+  "vocalToneEnergyLow": "низкая энергия",
+  "vocalToneEnergySteady": "ровная энергия",
+  "vocalToneEnergyHigh": "высокая энергия",
   "pendingAiProcessingHint": "Настройте AI-модель для обработки",
   "demoWelcome": "Добро пожаловать в Memex!\\nДавайте быстро посмотрим, что AI может делать с вашими записями.",
   "demoTapAdd": "Нажмите здесь, чтобы создать первую запись",

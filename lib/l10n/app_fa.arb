@@ -1183,6 +1183,27 @@
   "speechNoResult": "گفتاری شناسایی نشد",
   "useLocalSpeechToTextTitle": "استفاده از گفتار به متن محلی",
   "useLocalSpeechToTextDesc": "در صورت فعال بودن، صدا قبل از ارسال روی دستگاه رونویسی می‌شود — برای مدل‌هایی که ورودی صوتی را پشتیبانی نمی‌کنند مفید است. در صورت غیرفعال بودن، صدای اصلی مستقیماً به مدل ارسال می‌شود.",
+  "analyzeVocalToneTitle": "تحلیل لحن صدا",
+  "analyzeVocalToneDesc": "پیش‌فرض خاموش است. وقتی روشن باشد، پیش از ارسال یک جمله کوتاه درباره حال و انرژی به پیش‌نویس صدا اضافه می‌شود. نتیجه مدل روی دستگاه روی دستگاه می‌ماند. صدا فقط وقتی به مدل تنظیم‌شده می‌رود که مدل روی دستگاه نشانه‌ای از لحن نداشته باشد.",
+  "vocalToneLine": "لحن صدا: {mood}، {energy}.",
+  "@vocalToneLine": {
+    "placeholders": {
+      "mood": {"type": "String"},
+      "energy": {"type": "String"}
+    }
+  },
+  "vocalToneMoodHappy": "شاد",
+  "vocalToneMoodSad": "غمگین",
+  "vocalToneMoodAngry": "عصبانی",
+  "vocalToneMoodCalm": "آرام",
+  "vocalToneMoodTense": "مضطرب",
+  "vocalToneMoodDispleased": "ناراضی",
+  "vocalToneMoodSurprised": "متعجب",
+  "vocalToneMoodLaughter": "خنده",
+  "vocalToneMoodCrying": "گریه",
+  "vocalToneEnergyLow": "انرژی کم",
+  "vocalToneEnergySteady": "انرژی یکنواخت",
+  "vocalToneEnergyHigh": "انرژی زیاد",
   "pendingAiProcessingHint": "برای پردازش، مدل هوش مصنوعی را تنظیم کنید",
   "demoWelcome": "به Memex خوش آمدید!\nبیایید سریعی ببینیم هوش مصنوعی چه کاری می‌تواند برای رکوردهای شما انجام دهد.",
   "demoTapAdd": "اینجا بزنید تا اولین رکورد خود را بسازید",

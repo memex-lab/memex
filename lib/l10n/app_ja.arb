@@ -1183,6 +1183,27 @@
   "speechNoResult": "音声が検出されませんでした",
   "useLocalSpeechToTextTitle": "ローカル音声文字起こしを使用",
   "useLocalSpeechToTextDesc": "有効にすると、音声は送信前にデバイス上で文字起こしされます。音声入力に対応していないモデルに便利です。無効にすると、元の音声が直接モデルへ送信されます。",
+  "analyzeVocalToneTitle": "声の調子を分析",
+  "analyzeVocalToneDesc": "初期状態ではオフです。オンにすると、送信前の音声下書きに気分と勢いの短いメモが入ります。端末内モデルの結果は端末内に残ります。端末内モデルに調子の印がないときだけ、音声は設定したモデルへ送られます。",
+  "vocalToneLine": "声の調子: {mood}、{energy}。",
+  "@vocalToneLine": {
+    "placeholders": {
+      "mood": {"type": "String"},
+      "energy": {"type": "String"}
+    }
+  },
+  "vocalToneMoodHappy": "明るい",
+  "vocalToneMoodSad": "悲しい",
+  "vocalToneMoodAngry": "怒り",
+  "vocalToneMoodCalm": "落ち着き",
+  "vocalToneMoodTense": "緊張",
+  "vocalToneMoodDispleased": "不快",
+  "vocalToneMoodSurprised": "驚き",
+  "vocalToneMoodLaughter": "笑い",
+  "vocalToneMoodCrying": "泣き声",
+  "vocalToneEnergyLow": "勢いは弱い",
+  "vocalToneEnergySteady": "勢いは一定",
+  "vocalToneEnergyHigh": "勢いは強い",
   "pendingAiProcessingHint": "処理する AI モデルを設定",
   "demoWelcome": "Memex へようこそ！\nAI があなたの記録に何ができるか、簡単に見てみましょう。",
   "demoTapAdd": "ここをタップして最初の記録を作成",

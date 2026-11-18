@@ -10,6 +10,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get chatThinkingMessage => 'Réflexion en cours…';
+
   @override
   String get preparingSelectedPhotos => 'Préparation des photos…';
 
@@ -2595,6 +2596,54 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get useLocalSpeechToTextDesc =>
       'Lorsque c\'est activé, l\'audio est transcrit sur l\'appareil avant envoi — utile pour les modèles qui ne prennent pas en charge l\'entrée audio. Désactivé, l\'audio original est envoyé directement au modèle.';
+
+  @override
+  String get analyzeVocalToneTitle => 'Analyser le ton de la voix';
+
+  @override
+  String get analyzeVocalToneDesc =>
+      'Désactivé par défaut. Quand c\'est activé, une courte note sur l\'humeur et l\'énergie est ajoutée au brouillon vocal avant l\'envoi. Un modèle sur l\'appareil reste sur l\'appareil. L\'audio part vers le modèle configuré seulement si le modèle sur l\'appareil n\'a pas de marque de ton.';
+
+  @override
+  String vocalToneLine(String mood, String energy) {
+    return 'Ton vocal : $mood, $energy.';
+  }
+
+  @override
+  String get vocalToneMoodHappy => 'joyeux';
+
+  @override
+  String get vocalToneMoodSad => 'triste';
+
+  @override
+  String get vocalToneMoodAngry => 'en colère';
+
+  @override
+  String get vocalToneMoodCalm => 'calme';
+
+  @override
+  String get vocalToneMoodTense => 'tendu';
+
+  @override
+  String get vocalToneMoodDispleased => 'mécontent';
+
+  @override
+  String get vocalToneMoodSurprised => 'surpris';
+
+  @override
+  String get vocalToneMoodLaughter => 'rire';
+
+  @override
+  String get vocalToneMoodCrying => 'pleurs';
+
+  @override
+  String get vocalToneEnergyLow => 'énergie basse';
+
+  @override
+  String get vocalToneEnergySteady => 'énergie stable';
+
+  @override
+  String get vocalToneEnergyHigh => 'énergie haute';
 
   @override
   String get pendingAiProcessingHint => 'Configurer un modèle AI pour traiter';

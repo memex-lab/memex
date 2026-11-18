@@ -10,6 +10,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get chatThinkingMessage => 'Обдумывание…';
+
   @override
   String get preparingSelectedPhotos => 'Подготовка фотографий…';
 
@@ -2577,6 +2578,54 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get useLocalSpeechToTextDesc =>
       'Когда включено, аудио транскрибируется на устройстве перед отправкой — полезно для моделей, которые не поддерживают аудиоввод. Когда отключено, исходное аудио отправляется напрямую в модель.';
+
+  @override
+  String get analyzeVocalToneTitle => 'Анализировать тон голоса';
+
+  @override
+  String get analyzeVocalToneDesc =>
+      'По умолчанию выключено. Когда включено, короткая заметка о настроении и энергии добавляется в черновик перед отправкой. Модель на устройстве остается на устройстве. Аудио уходит в настроенную модель только если у модели на устройстве нет метки тона.';
+
+  @override
+  String vocalToneLine(String mood, String energy) {
+    return 'Тон голоса: $mood, $energy.';
+  }
+
+  @override
+  String get vocalToneMoodHappy => 'радостный';
+
+  @override
+  String get vocalToneMoodSad => 'грустный';
+
+  @override
+  String get vocalToneMoodAngry => 'злой';
+
+  @override
+  String get vocalToneMoodCalm => 'спокойный';
+
+  @override
+  String get vocalToneMoodTense => 'напряженный';
+
+  @override
+  String get vocalToneMoodDispleased => 'недовольный';
+
+  @override
+  String get vocalToneMoodSurprised => 'удивленный';
+
+  @override
+  String get vocalToneMoodLaughter => 'смех';
+
+  @override
+  String get vocalToneMoodCrying => 'плач';
+
+  @override
+  String get vocalToneEnergyLow => 'низкая энергия';
+
+  @override
+  String get vocalToneEnergySteady => 'ровная энергия';
+
+  @override
+  String get vocalToneEnergyHigh => 'высокая энергия';
 
   @override
   String get pendingAiProcessingHint => 'Настройте AI-модель для обработки';

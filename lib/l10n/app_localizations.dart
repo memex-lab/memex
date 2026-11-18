@@ -134,6 +134,7 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Thinking…'**
   String get chatThinkingMessage;
+
   /// No description provided for @preparingSelectedPhotos.
   ///
   /// In en, this message translates to:
@@ -4652,6 +4653,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'When enabled, audio is transcribed on-device before sending — useful for models that do not support audio input. When disabled, audio is transcribed by your configured cloud model (requires audio input support).'**
   String get useLocalSpeechToTextDesc;
+
+  /// No description provided for @analyzeVocalToneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Analyze vocal tone'**
+  String get analyzeVocalToneTitle;
+
+  /// No description provided for @analyzeVocalToneDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Off by default. When on, a short note about mood and energy is added to the voice draft before you send it. An on device model stays on device. Audio goes to your configured model only when that on device model has no tone tag.'**
+  String get analyzeVocalToneDesc;
+
+  /// No description provided for @vocalToneLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Vocal tone: {mood}, {energy}.'**
+  String vocalToneLine(String mood, String energy);
+
+  /// No description provided for @vocalToneMoodHappy.
+  ///
+  /// In en, this message translates to:
+  /// **'happy'**
+  String get vocalToneMoodHappy;
+
+  /// No description provided for @vocalToneMoodSad.
+  ///
+  /// In en, this message translates to:
+  /// **'sad'**
+  String get vocalToneMoodSad;
+
+  /// No description provided for @vocalToneMoodAngry.
+  ///
+  /// In en, this message translates to:
+  /// **'angry'**
+  String get vocalToneMoodAngry;
+
+  /// No description provided for @vocalToneMoodCalm.
+  ///
+  /// In en, this message translates to:
+  /// **'calm'**
+  String get vocalToneMoodCalm;
+
+  /// No description provided for @vocalToneMoodTense.
+  ///
+  /// In en, this message translates to:
+  /// **'tense'**
+  String get vocalToneMoodTense;
+
+  /// No description provided for @vocalToneMoodDispleased.
+  ///
+  /// In en, this message translates to:
+  /// **'displeased'**
+  String get vocalToneMoodDispleased;
+
+  /// No description provided for @vocalToneMoodSurprised.
+  ///
+  /// In en, this message translates to:
+  /// **'surprised'**
+  String get vocalToneMoodSurprised;
+
+  /// No description provided for @vocalToneMoodLaughter.
+  ///
+  /// In en, this message translates to:
+  /// **'laughter'**
+  String get vocalToneMoodLaughter;
+
+  /// No description provided for @vocalToneMoodCrying.
+  ///
+  /// In en, this message translates to:
+  /// **'crying'**
+  String get vocalToneMoodCrying;
+
+  /// No description provided for @vocalToneEnergyLow.
+  ///
+  /// In en, this message translates to:
+  /// **'low energy'**
+  String get vocalToneEnergyLow;
+
+  /// No description provided for @vocalToneEnergySteady.
+  ///
+  /// In en, this message translates to:
+  /// **'steady energy'**
+  String get vocalToneEnergySteady;
+
+  /// No description provided for @vocalToneEnergyHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'high energy'**
+  String get vocalToneEnergyHigh;
 
   /// No description provided for @pendingAiProcessingHint.
   ///

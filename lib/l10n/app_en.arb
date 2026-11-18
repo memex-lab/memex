@@ -1183,6 +1183,27 @@
   "speechNoResult": "No speech detected",
   "useLocalSpeechToTextTitle": "Use local speech to text",
   "useLocalSpeechToTextDesc": "When enabled, audio is transcribed on-device before sending — useful for models that do not support audio input. When disabled, audio is transcribed by your configured cloud model (requires audio input support).",
+  "analyzeVocalToneTitle": "Analyze vocal tone",
+  "analyzeVocalToneDesc": "Off by default. When on, a short note about mood and energy is added to the voice draft before you send it. An on device model stays on device. Audio goes to your configured model only when that on device model has no tone tag.",
+  "vocalToneLine": "Vocal tone: {mood}, {energy}.",
+  "@vocalToneLine": {
+    "placeholders": {
+      "mood": {"type": "String"},
+      "energy": {"type": "String"}
+    }
+  },
+  "vocalToneMoodHappy": "happy",
+  "vocalToneMoodSad": "sad",
+  "vocalToneMoodAngry": "angry",
+  "vocalToneMoodCalm": "calm",
+  "vocalToneMoodTense": "tense",
+  "vocalToneMoodDispleased": "displeased",
+  "vocalToneMoodSurprised": "surprised",
+  "vocalToneMoodLaughter": "laughter",
+  "vocalToneMoodCrying": "crying",
+  "vocalToneEnergyLow": "low energy",
+  "vocalToneEnergySteady": "steady energy",
+  "vocalToneEnergyHigh": "high energy",
   "pendingAiProcessingHint": "Set up AI model to process",
   "demoWelcome": "Welcome to Memex!\nLet's take a quick tour of what AI can do for your records.",
   "demoTapAdd": "Tap here to create your first record",

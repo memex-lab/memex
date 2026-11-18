@@ -1183,6 +1183,27 @@
   "speechNoResult": "Tidak ada suara terdeteksi",
   "useLocalSpeechToTextTitle": "Gunakan speech-to-text lokal",
   "useLocalSpeechToTextDesc": "Jika aktif, audio ditranskripsi di perangkat sebelum dikirim — berguna untuk model yang tidak mendukung input audio. Jika nonaktif, audio asli dikirim langsung ke model.",
+  "analyzeVocalToneTitle": "Analisis nada suara",
+  "analyzeVocalToneDesc": "Mati secara bawaan. Saat menyala, catatan pendek tentang suasana dan energi ditambahkan ke draf suara sebelum dikirim. Model di perangkat tetap di perangkat. Audio dikirim ke model yang diatur hanya bila model di perangkat tidak punya tanda nada.",
+  "vocalToneLine": "Nada suara: {mood}, {energy}.",
+  "@vocalToneLine": {
+    "placeholders": {
+      "mood": {"type": "String"},
+      "energy": {"type": "String"}
+    }
+  },
+  "vocalToneMoodHappy": "gembira",
+  "vocalToneMoodSad": "sedih",
+  "vocalToneMoodAngry": "marah",
+  "vocalToneMoodCalm": "tenang",
+  "vocalToneMoodTense": "tegang",
+  "vocalToneMoodDispleased": "tidak senang",
+  "vocalToneMoodSurprised": "terkejut",
+  "vocalToneMoodLaughter": "tawa",
+  "vocalToneMoodCrying": "tangis",
+  "vocalToneEnergyLow": "energi rendah",
+  "vocalToneEnergySteady": "energi stabil",
+  "vocalToneEnergyHigh": "energi tinggi",
   "pendingAiProcessingHint": "Siapkan model AI untuk memproses",
   "demoWelcome": "Selamat datang di Memex!\\nMari tur singkat melihat apa yang bisa AI lakukan untuk catatan Anda.",
   "demoTapAdd": "Ketuk di sini untuk membuat catatan pertama Anda",
