@@ -3,13 +3,27 @@ abstract class NonRetryableTaskException implements Exception {
   String get message;
 }
 
+/// Why [InvalidModelConfigException] was thrown.
+///
+/// [notConfigured] is the "AI is off" case. Credential failures stay separate
+/// so chat does not tell the user to turn AI on when OAuth or a key is the
+/// actual problem.
+enum InvalidModelConfigReason {
+  notConfigured,
+  emptyApiKey,
+  oauth,
+  other,
+}
+
 /// Exception thrown when LLM configuration is invalid or missing required fields.
 class InvalidModelConfigException implements NonRetryableTaskException {
   @override
   final String message;
+  final InvalidModelConfigReason reason;
 
   InvalidModelConfigException([
     this.message = 'The LLM configuration is invalid.',
+    this.reason = InvalidModelConfigReason.notConfigured,
   ]);
 
   @override
