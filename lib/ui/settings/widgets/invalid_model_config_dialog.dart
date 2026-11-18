@@ -1,3 +1,4 @@
+// ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:memex/domain/models/task_exceptions.dart';
 import 'package:memex/utils/user_storage.dart';
