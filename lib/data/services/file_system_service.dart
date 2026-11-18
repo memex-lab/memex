@@ -547,8 +547,8 @@ class FileSystemService {
     CardData cardData, {
     AppDatabase? database,
   }) async {
-    final db = database ?? AppDatabase.instance;
     try {
+      final db = database ?? AppDatabase.instance;
       if (!_isRebuilding &&
           cardCacheNeedsRebuild(
             cacheEmpty: await db.cardDao.isCacheEmpty(),
