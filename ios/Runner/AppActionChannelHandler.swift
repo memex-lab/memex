@@ -1,14 +1,16 @@
 import Flutter
 
 /// Handles Memex app-action deep links such as memex://quick_note.
-class AppActionChannelHandler: NSObject, FlutterStreamHandler {
+class AppActionChannelHandler: NSObject, FlutterStreamHandler, FlutterSceneLifeCycleDelegate {
     private static let shared = AppActionChannelHandler()
     private static let memexScheme = "memex"
 
     private var pendingLink: String?
     private var eventSink: FlutterEventSink?
 
-    static func register(with messenger: FlutterBinaryMessenger) {
+    static func register(with registrar: FlutterPluginRegistrar) {
+        registrar.addSceneDelegate(shared)
+        let messenger = registrar.messenger()
         let methodChannel = FlutterMethodChannel(
             name: "com.memexlab.memex/app_actions",
             binaryMessenger: messenger
@@ -30,6 +32,15 @@ class AppActionChannelHandler: NSObject, FlutterStreamHandler {
             binaryMessenger: messenger
         )
         eventChannel.setStreamHandler(shared)
+    }
+
+    func scene(_ scene: UIScene, willConnectTo session: UISceneSession,
+               options connectionOptions: UIScene.ConnectionOptions?) -> Bool {
+        connectionOptions?.urlContexts.contains { Self.handleURL($0.url) } ?? false
+    }
+
+    func scene(_ scene: UIScene, openURLContexts contexts: Set<UIOpenURLContext>) -> Bool {
+        contexts.contains { Self.handleURL($0.url) }
     }
 
     static func handleURL(_ url: URL?) -> Bool {
