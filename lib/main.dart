@@ -1435,6 +1435,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       if (!mounted || !_canHandleAppActions) return;
       _handleAppAction(action);
     });
+    // A foreground URL can arrive while the home screen has no frame pending.
+    WidgetsBinding.instance.ensureVisualUpdate();
   }
 
   void _handleAppAction(String? action) {

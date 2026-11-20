@@ -12,6 +12,15 @@ class RunnerTests: XCTestCase {
   }
 
   @MainActor
+  func testColdLaunchConnectsFlutterSceneAndRegistersAppActions() throws {
+    let scene = try XCTUnwrap(UIApplication.shared.connectedScenes
+      .compactMap { $0 as? UIWindowScene }.first)
+    let delegate = try XCTUnwrap(scene.delegate as? FlutterSceneDelegate)
+    let controller = try XCTUnwrap(delegate.window?.rootViewController as? FlutterViewController)
+    XCTAssertTrue(controller.engine.hasPlugin("MemexAppActions"))
+  }
+
+  @MainActor
   func testPickerScrollCannotDismissASheet() {
     let picker = PhotoPickerChannelHandler.makePicker(maxAssets: 9)
     XCTAssertEqual(picker.modalPresentationStyle, .fullScreen)
