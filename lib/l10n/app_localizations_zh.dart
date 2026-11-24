@@ -1875,6 +1875,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get processingStatus => '处理中';
 
   @override
+  String get waitingForNetworkStatus => '等待网络';
+
+  @override
   String get failedStatus => '处理失败';
 
   @override
@@ -5109,6 +5112,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get processingStatus => '處理中';
+
+  @override
+  String get waitingForNetworkStatus => '等待網路';
 
   @override
   String get failedStatus => '處理失敗';

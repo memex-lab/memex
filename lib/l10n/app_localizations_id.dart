@@ -1950,6 +1950,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get processingStatus => 'Memproses';
 
   @override
+  String get waitingForNetworkStatus => 'Menunggu jaringan';
+
+  @override
   String get failedStatus => 'Gagal';
 
   @override

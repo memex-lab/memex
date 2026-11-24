@@ -20,13 +20,17 @@ import 'package:memex/data/services/location_context_service.dart';
 import 'package:memex/domain/models/custom_agent_config.dart';
 import 'package:memex/domain/models/location_context_config.dart';
 import 'package:memex/domain/models/llm_config.dart';
+import 'package:memex/data/services/capture_card_status.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/chat_session_storage.dart';
 import 'package:memex/data/services/local_task_executor.dart';
+import 'package:memex/data/services/timeline_card_event_publisher.dart';
+import 'package:memex/data/services/task_handlers/llm_error_utils.dart';
+import 'package:memex/domain/models/task_exceptions.dart';
 import 'package:memex/utils/logger.dart';
+import 'package:memex/utils/network_reachability.dart';
 import 'package:memex/utils/time_context.dart';
 import 'package:memex/domain/models/agent_definitions.dart';
-import 'package:memex/domain/models/task_exceptions.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/utils/token_usage_utils.dart';
 import 'package:flutter/foundation.dart';
@@ -43,6 +47,9 @@ String chatErrorUserNotLoggedIn() => UserStorage.l10n.userIdNotFound;
 String chatErrorEmptyMessage() => UserStorage.l10n.unknownError;
 
 @visibleForTesting
+Future<bool> Function()? chatNetworkReachabilityCheck;
+
+@visibleForTesting
 String chatErrorOperationFailed(Object error) {
   if (error is InvalidModelConfigException) {
     if (error.reason == InvalidModelConfigReason.notConfigured) {
@@ -56,7 +63,11 @@ String chatErrorOperationFailed(Object error) {
       !text.contains('API Key')) {
     return UserStorage.l10n.invalidModelConfigPlain;
   }
-  return UserStorage.l10n.operationFailed(text);
+  final category = classifyError(error);
+  if (category == LlmErrorCategory.unknownError) {
+    return UserStorage.l10n.operationFailed('$error');
+  }
+  return getLocalizedErrorMessage(category, error);
 }
 
 // --- Chat Service ---
@@ -256,7 +267,12 @@ bool isActiveChatTurnTaskForSession({
 }) {
   if (sessionId.isEmpty) return false;
   if (taskType != expectedTaskType) return false;
-  if (!const {'pending', 'processing', 'retrying'}.contains(status)) {
+  if (!const {
+    'pending',
+    'processing',
+    'retrying',
+    waitingNetworkTaskStatus,
+  }.contains(status)) {
     return false;
   }
 
@@ -272,6 +288,30 @@ bool isActiveChatTurnTaskForSession({
 }
 
 class ChatService {
+  static Future<void> handleSuperAgentChatTurnFailure(
+    String userId,
+    Map<String, dynamic> payload,
+    TaskContext context,
+    Object error,
+    StackTrace? stackTrace,
+  ) async {
+    final factId = (payload['pre_minted_fact_id'] as String?)?.trim();
+    if (factId != null && factId.isNotEmpty && !looksLikeNetworkError(error)) {
+      await settleCaptureCardForError(
+        userId: userId,
+        factId: factId,
+        error: error,
+      );
+    }
+    await handleGenericAgentFailure(
+      userId,
+      payload,
+      context,
+      error,
+      stackTrace,
+    );
+  }
+
   static final ChatService _instance = ChatService._internal();
   static ChatService get instance => _instance;
   ChatService._internal();
@@ -513,6 +553,32 @@ class ChatService {
     final runAlreadyActive = _runRegistry.isActive(finalSessionId);
     final run = _runRegistry.getOrStart(finalSessionId);
 
+    final online = await canReachActiveModelEndpoint(
+      whenPublic: chatNetworkReachabilityCheck,
+    );
+    String? preMintedFactId;
+    if (!online && !isQuickQuery) {
+      // Leave the allocated processing placeholder empty. Writing the user
+      // message into fact/content makes cleanup treat a home-screen question
+      // as a real card.
+      preMintedFactId = await _fileService.allocateCardFactId(userId);
+      final waitingCard = await _fileService.updateCardFile(
+        userId,
+        preMintedFactId,
+        (card) {
+          if (card.status == 'completed') return card;
+          return card.copyWith(status: waitingForNetworkCardStatus);
+        },
+      );
+      if (waitingCard != null) {
+        await emitTimelineCardAdded(
+          userId: userId,
+          cardId: preMintedFactId,
+          cardData: waitingCard,
+        );
+      }
+    }
+
     try {
       final previousTaskId = await LocalTaskExecutor.instance.getLastTaskByType(
         _superAgentChatTurnTaskType,
@@ -533,7 +599,9 @@ class ChatService {
           'run_mode': runMode,
           'user_message_time': userMessageTime.toIso8601String(),
           'agent_state_session_id': agentStateSessionId,
+          if (preMintedFactId != null) 'pre_minted_fact_id': preMintedFactId,
         },
+        status: online ? 'pending' : waitingNetworkTaskStatus,
         // A chat turn is user-visible and should start promptly, but keep it
         // below system maintenance work that may use higher explicit priority.
         priority: 10,
@@ -559,6 +627,14 @@ class ChatService {
       _logger.severe('Failed to enqueue chat turn', e, st);
       // An enqueue failure belongs to this request, not to an existing run.
       yield ChatErrorEvent(turnId, chatErrorOperationFailed(e));
+      if (!runAlreadyActive) run.close();
+      return;
+    }
+
+    if (!online) {
+      final offline = ChatErrorEvent(turnId, UserStorage.l10n.llmNetworkError);
+      run.add(offline);
+      yield offline;
       if (!runAlreadyActive) run.close();
       return;
     }
@@ -590,10 +666,24 @@ class ChatService {
                 true
             ? (payload['agent_state_session_id'] as String).trim()
             : await _resolveAgentStateSessionId(userId, sessionId);
+    final preMintedFactId = (payload['pre_minted_fact_id'] as String?)?.trim();
 
     if (await _sessionHasAssistantForTurn(userId, sessionId, turnId)) {
       _logger.info(
         'Skipping already-completed chat turn $turnId for session $sessionId',
+      );
+      if (await _shouldCloseRunAfterTask(taskContext.taskId)) {
+        _runRegistry[sessionId]?.close();
+      }
+      return;
+    }
+
+    if (preMintedFactId != null &&
+        preMintedFactId.isNotEmpty &&
+        !await _captureCardStillExists(userId, preMintedFactId)) {
+      _logger.info(
+        'Skipping chat turn $turnId because capture card $preMintedFactId '
+        'was deleted',
       );
       if (await _shouldCloseRunAfterTask(taskContext.taskId)) {
         _runRegistry[sessionId]?.close();
@@ -618,6 +708,9 @@ class ChatService {
       runMode: runMode,
       userMessageTime: userMessageTime,
       agentStateSessionId: agentStateSessionId,
+      preMintedFactId: preMintedFactId == null || preMintedFactId.isEmpty
+          ? null
+          : preMintedFactId,
       run: run,
     );
   }
@@ -637,6 +730,7 @@ class ChatService {
     required String runMode,
     required DateTime userMessageTime,
     required String agentStateSessionId,
+    required String? preMintedFactId,
     required ActiveChatRun run,
   }) async {
     // 2. Initialize Agent
@@ -774,6 +868,16 @@ class ChatService {
       if (await _shouldCloseRunAfterTask(taskId)) {
         run.close();
       }
+      if (looksLikeNetworkError(e)) {
+        if (preMintedFactId != null) {
+          await settleCaptureCardForError(
+            userId: userId,
+            factId: preMintedFactId,
+            error: e,
+          );
+        }
+        throw WaitingForNetworkException(e);
+      }
       rethrow;
     }
 
@@ -905,6 +1009,7 @@ class ChatService {
     }
 
     List<LLMMessage> userMessages = const [];
+    var mintedFactId = preMintedFactId;
     if (!resumeExistingRun) {
       CurrentLocationContext? locationContext;
       String? locationContextReminder;
@@ -982,7 +1087,46 @@ class ChatService {
         },
       );
       try {
+        if (preMintedFactId != null) {
+          final existing = await _fileService.readCardFile(
+            userId,
+            preMintedFactId,
+          );
+          if (existing != null && existing.deleted != true) {
+            activeAgent.state
+                    .metadata[SuperAgentPreMintedRecordHook.factIdMetadataKey] =
+                preMintedFactId;
+            activeAgent.state
+                    .metadata[SuperAgentPreMintedRecordHook.turnIdMetadataKey] =
+                turnId;
+            final processingCard = await _fileService.updateCardFile(
+              userId,
+              preMintedFactId,
+              (card) {
+                if (card.status == 'completed') return card;
+                return card.copyWith(
+                  status: 'processing',
+                  clearFailureReason: true,
+                );
+              },
+            );
+            if (processingCard != null &&
+                processingCard.status == 'processing') {
+              await emitTimelineCardUpdated(
+                userId: userId,
+                cardId: preMintedFactId,
+                cardData: processingCard,
+              );
+            }
+          }
+        }
         await preMintedRecordHook?.preallocate(activeAgent.state);
+        mintedFactId = preMintedRecordHook?.factIdForTesting ?? mintedFactId;
+        if (mintedFactId != null && mintedFactId.isNotEmpty) {
+          await LocalTaskExecutor.instance.mergeTaskPayload(taskId, {
+            'pre_minted_fact_id': mintedFactId,
+          });
+        }
         if (preMintedRecordHook != null) {
           await saveAgentState(activeAgent.state);
         }
@@ -1021,10 +1165,21 @@ class ChatService {
       } catch (e) {
         _logger.severe('Agent run failed', e);
         if (!run.isClosed) {
-          run.add(ChatErrorEvent(turnId, e.toString()));
+          run.add(ChatErrorEvent(turnId, chatErrorOperationFailed(e)));
           if (await _shouldCloseRunAfterTask(taskId)) {
             run.close();
           }
+        }
+        if (looksLikeNetworkError(e)) {
+          final factId = preMintedRecordHook?.factIdForTesting ?? mintedFactId;
+          if (factId != null && factId.isNotEmpty) {
+            await settleCaptureCardForError(
+              userId: userId,
+              factId: factId,
+              error: e,
+            );
+          }
+          throw WaitingForNetworkException(e);
         }
         rethrow;
       }
@@ -1170,7 +1325,9 @@ class ChatService {
       if (event.error != null) {
         if (!stream.isClosed) {
           stream.add(ChatAgentStoppedEvent(turnId));
-          stream.add(ChatErrorEvent(turnId, event.error.toString()));
+          stream.add(
+            ChatErrorEvent(turnId, chatErrorOperationFailed(event.error!)),
+          );
           if (await _shouldCloseRunAfterTask(taskId)) {
             stream.close();
           }
@@ -1476,6 +1633,11 @@ class ChatService {
       usage: usage,
       isQuickQuery: isQuickQuery,
     );
+  }
+
+  Future<bool> _captureCardStillExists(String userId, String factId) async {
+    final card = await _fileService.readCardFile(userId, factId);
+    return card != null && card.deleted != true;
   }
 
   Future<bool> _sessionHasAssistantForTurn(

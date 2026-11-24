@@ -1892,6 +1892,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get processingStatus => '처리 중';
 
   @override
+  String get waitingForNetworkStatus => '네트워크 대기 중';
+
+  @override
   String get failedStatus => '실패';
 
   @override

@@ -1923,6 +1923,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get processingStatus => 'قيد المعالجة';
 
   @override
+  String get waitingForNetworkStatus => 'في انتظار الشبكة';
+
+  @override
   String get failedStatus => 'فشل';
 
   @override

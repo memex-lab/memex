@@ -1951,6 +1951,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get processingStatus => 'Обработка';
 
   @override
+  String get waitingForNetworkStatus => 'Ожидание сети';
+
+  @override
   String get failedStatus => 'Сбой';
 
   @override

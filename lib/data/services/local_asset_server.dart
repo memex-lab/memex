@@ -183,25 +183,19 @@ class LocalAssetServer {
         return;
       }
 
-      // Get request path (strip leading /)
-      var requestPath = request.uri.path;
-      if (requestPath.startsWith('/')) {
-        requestPath = requestPath.substring(1);
-      }
-
       // Log only in fine/debug to reduce overhead
       _logger.fine('Request received: ${request.method} ${request.uri.path}');
 
       if (request.method == 'GET') {
-        // findfile
-        // Path format: assets/{userId}/{filename}. Decode each path segment.
-        final pathParts = requestPath.split('/');
-        if (pathParts.length >= 3 && pathParts[0] == 'assets') {
-          final userId = Uri.decodeComponent(pathParts[1]);
-          final filename =
-              pathParts.sublist(2).map(Uri.decodeComponent).join('/');
+        // Path format: assets/{userId}/{filename...}
+        // Use pathSegments so percent-decoding happens once. A second
+        // decode turns %252e%252e into ".." and escapes the asset directory.
+        final segments = request.uri.pathSegments;
+        final relative = safeAssetRelativePath(segments);
+        if (relative != null) {
+          final userId = relative.userId;
+          final filename = relative.filename;
 
-          // buildfile path
           // pathformat: {dataRoot}/workspace/_{userId}/Facts/assets/{filename}
           if (_dataRoot == null) {
             _logger.warning('dataRoot not set, cannot handle file request');
@@ -214,17 +208,50 @@ class LocalAssetServer {
 
           final workspacePath = path.join(_dataRoot!, 'workspace', '_$userId');
           final assetsPath = path.join(workspacePath, 'Facts', 'assets');
-          final filePath = path.join(assetsPath, filename);
+          final filePath = path.normalize(path.join(assetsPath, filename));
+          if (!isPathInsideDirectory(assetsPath, filePath)) {
+            _logger.warning('Rejected asset path outside the asset directory');
+            request.response
+              ..statusCode = HttpStatus.forbidden
+              ..write('Access denied')
+              ..close();
+            return;
+          }
 
           _logger.fine('Attempting to serve file: $filePath');
 
-          // Checkfilewhether exists
           final file = File(filePath);
           if (!await file.exists()) {
             _logger.warning('File not found: $filePath');
             request.response
               ..statusCode = HttpStatus.notFound
-              ..write('File not found: $requestPath')
+              ..write('File not found')
+              ..close();
+            return;
+          }
+
+          try {
+            final resolved = await file.resolveSymbolicLinks();
+            var assetsRoot = assetsPath;
+            final assetsDirectory = Directory(assetsPath);
+            if (await assetsDirectory.exists()) {
+              assetsRoot = await assetsDirectory.resolveSymbolicLinks();
+            }
+            if (!isPathInsideDirectory(assetsRoot, resolved)) {
+              _logger.warning(
+                'Rejected asset symlink outside the asset directory',
+              );
+              request.response
+                ..statusCode = HttpStatus.forbidden
+                ..write('Access denied')
+                ..close();
+              return;
+            }
+          } catch (e) {
+            _logger.warning('Failed to resolve asset path: $e');
+            request.response
+              ..statusCode = HttpStatus.notFound
+              ..write('File not found')
               ..close();
             return;
           }
@@ -315,16 +342,15 @@ class LocalAssetServer {
             _logger.warning('Failed to read file: $filePath, error: $e');
             request.response
               ..statusCode = HttpStatus.internalServerError
-              ..write('Failed to read file: $e')
+              ..write('Failed to read file')
               ..close();
             return;
           }
         }
 
-        // return 404
         request.response
           ..statusCode = HttpStatus.notFound
-          ..write('Invalid path: $requestPath')
+          ..write('Invalid path')
           ..close();
       } else {
         // Method not supported
@@ -337,7 +363,7 @@ class LocalAssetServer {
       _logger.warning('Failed to handle request: $e', e, stackTrace);
       request.response
         ..statusCode = HttpStatus.internalServerError
-        ..write('Internal server error: $e')
+        ..write('Internal server error')
         ..close();
     }
   }
@@ -367,4 +393,54 @@ class LocalAssetServer {
         address.address.startsWith('127.') ||
         address.address.startsWith('::ffff:127.');
   }
+}
+
+/// User id plus a relative filename that cannot escape `Facts/assets`.
+class SafeAssetRelativePath {
+  final String userId;
+  final String filename;
+
+  const SafeAssetRelativePath({required this.userId, required this.filename});
+}
+
+/// Returns null when [segments] is not `assets/{userId}/{file...}` or contains
+/// a `.` / `..` segment. [segments] must already be decoded once.
+SafeAssetRelativePath? safeAssetRelativePath(List<String> segments) {
+  if (segments.length < 3 || segments.first != 'assets') return null;
+  final userId = segments[1];
+  if (!_isSafePathSegment(userId)) return null;
+
+  final filenameSegments = segments.sublist(2);
+  for (final segment in filenameSegments) {
+    if (!_isSafePathSegment(segment)) return null;
+  }
+  return SafeAssetRelativePath(
+    userId: userId,
+    filename: filenameSegments.join('/'),
+  );
+}
+
+bool _isSafePathSegment(String segment) {
+  if (segment.isEmpty || segment == '.' || segment == '..') return false;
+  if (segment.contains('/') ||
+      segment.contains('\\') ||
+      segment.contains('\x00')) {
+    return false;
+  }
+  final nested = segment.split(RegExp(r'[\\/]'));
+  for (final part in nested) {
+    if (part == '.' || part == '..') return false;
+  }
+  return true;
+}
+
+/// True when [candidate] is [root] or a file inside [root].
+bool isPathInsideDirectory(String root, String candidate) {
+  final normalizedRoot = path.normalize(root);
+  final normalizedCandidate = path.normalize(candidate);
+  if (normalizedCandidate == normalizedRoot) return true;
+  final prefix = normalizedRoot.endsWith(path.separator)
+      ? normalizedRoot
+      : '$normalizedRoot${path.separator}';
+  return normalizedCandidate.startsWith(prefix);
 }

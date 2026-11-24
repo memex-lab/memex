@@ -1963,6 +1963,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get processingStatus => 'Procesando';
 
   @override
+  String get waitingForNetworkStatus => 'Esperando red';
+
+  @override
   String get failedStatus => 'Fallido';
 
   @override

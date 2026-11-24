@@ -1966,6 +1966,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get processingStatus => 'Traitement';
 
   @override
+  String get waitingForNetworkStatus => 'En attente du réseau';
+
+  @override
   String get failedStatus => 'Échec';
 
   @override
