@@ -104,8 +104,8 @@ class UserStorage {
   /// so [SharedPreferences.setMockInitialValues] keeps working, unless
   /// [cachePrefsInTests] is set.
   static Future<SharedPreferences> sharedPrefs() {
-    final useCache = cachePrefsInTests ||
-        !Platform.environment.containsKey('FLUTTER_TEST');
+    final useCache =
+        cachePrefsInTests || !Platform.environment.containsKey('FLUTTER_TEST');
     if (!useCache) {
       return prefsLoader();
     }
@@ -721,7 +721,10 @@ class UserStorage {
       case LLMConfig.typeGemini:
         final effectiveApiKey = llmConfig.getEffectiveApiKey();
         if (effectiveApiKey.isEmpty) {
-          throw InvalidModelConfigException('LLM API Key is empty');
+          throw InvalidModelConfigException(
+            'LLM API Key is empty',
+            InvalidModelConfigReason.emptyApiKey,
+          );
         }
         client = GeminiClient(
           apiKey: effectiveApiKey,
@@ -731,7 +734,10 @@ class UserStorage {
       case LLMConfig.typeGeminiOauth:
         final accessToken = await GeminiAuthService.getValidAccessToken();
         if (accessToken == null) {
-          throw InvalidModelConfigException('Gemini OAuth not authorized.');
+          throw InvalidModelConfigException(
+            'Gemini OAuth not authorized.',
+            InvalidModelConfigReason.oauth,
+          );
         }
         client = GeminiOAuthClient(
           proxyUrl: proxyUrl,
@@ -740,7 +746,10 @@ class UserStorage {
       case LLMConfig.typeResponses:
         final effectiveApiKey = llmConfig.getEffectiveApiKey();
         if (effectiveApiKey.isEmpty) {
-          throw InvalidModelConfigException('LLM API Key is empty');
+          throw InvalidModelConfigException(
+            'LLM API Key is empty',
+            InvalidModelConfigReason.emptyApiKey,
+          );
         }
         client = ResponsesClient(
           apiKey: effectiveApiKey,
@@ -751,7 +760,10 @@ class UserStorage {
       case LLMConfig.typeChatCompletion:
         final effectiveApiKey = llmConfig.getEffectiveApiKey();
         if (effectiveApiKey.isEmpty) {
-          throw InvalidModelConfigException('LLM API Key is empty');
+          throw InvalidModelConfigException(
+            'LLM API Key is empty',
+            InvalidModelConfigReason.emptyApiKey,
+          );
         }
         client = OpenAIClient(
           apiKey: effectiveApiKey,
@@ -762,7 +774,10 @@ class UserStorage {
       case LLMConfig.typeClaude:
         final effectiveApiKey = llmConfig.getEffectiveApiKey();
         if (effectiveApiKey.isEmpty) {
-          throw InvalidModelConfigException('LLM API Key is empty');
+          throw InvalidModelConfigException(
+            'LLM API Key is empty',
+            InvalidModelConfigReason.emptyApiKey,
+          );
         }
         client = ClaudeClient(
           apiKey: effectiveApiKey,
@@ -793,7 +808,10 @@ class UserStorage {
       case LLMConfig.typeOpenAiOauth:
         final tokens = await OpenAiAuthService.getSavedTokens();
         if (tokens == null) {
-          throw InvalidModelConfigException('OpenAI OAuth not authorized.');
+          throw InvalidModelConfigException(
+            'OpenAI OAuth not authorized.',
+            InvalidModelConfigReason.oauth,
+          );
         }
         client = CodexResponsesClient(
           accessToken: tokens['accessToken'] as String,
@@ -837,7 +855,9 @@ class UserStorage {
         break;
       default:
         throw InvalidModelConfigException(
-            'Unknown LLM type: ${llmConfig.type}');
+          'Unknown LLM type: ${llmConfig.type}',
+          InvalidModelConfigReason.other,
+        );
     }
 
     // Create ModelConfig
@@ -861,12 +881,21 @@ class UserStorage {
         await getAgentLLMConfig(agentId, defaultClientKey: defaultClientKey);
 
     if (!llmConfig.isValid) {
+      final reason = llmConfig.configurationProblem ??
+          InvalidModelConfigReason.notConfigured;
+      final detail = switch (reason) {
+        InvalidModelConfigReason.emptyApiKey => 'LLM API Key is empty',
+        InvalidModelConfigReason.other when llmConfig.baseUrl.isEmpty =>
+          'LLM base URL is empty',
+        _ => 'The LLM configuration for $agentId is invalid.',
+      };
       EventBusService.instance.emitEvent(InvalidModelConfigMessage(
         agentId: AgentDefinitions.displayNames[agentId] ?? agentId,
         configKey: llmConfig.key,
+        reason: reason,
+        detail: detail,
       ));
-      throw InvalidModelConfigException(
-          'The LLM configuration for $agentId is invalid.');
+      throw InvalidModelConfigException(detail, reason);
     }
 
     return buildLLMResources(llmConfig);

@@ -689,7 +689,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-      Object running, Object pending, Object retrying) {
+    Object running,
+    Object pending,
+    Object retrying,
+  ) {
     return '执行中 $running，排队中 $pending，重试中 $retrying';
   }
 
@@ -1833,6 +1836,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String invalidModelConfigDetailed(Object agentId, Object configKey) {
     return '智能体“$agentId”需要有效的模型配置 (Key: “$configKey”) 才能运行。请在设置中更新并补全对应的参数。';
   }
+
+  @override
+  String get invalidModelConfigPlain =>
+      '没有配置 AI 也可以继续记录。想让它整理和总结你保存的内容时，再开启 AI。';
+
+  @override
+  String get keepRecording => '继续记录';
+
+  @override
+  String get turnOnAi => '开启 AI';
 
   @override
   String get discardChangesTitle => '离开此页面？';
@@ -3913,7 +3926,10 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String agentBackgroundTaskSummary(
-      Object running, Object pending, Object retrying) {
+    Object running,
+    Object pending,
+    Object retrying,
+  ) {
     return '執行中 $running，排隊中 $pending，重試中 $retrying';
   }
 
@@ -5056,6 +5072,16 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String invalidModelConfigDetailed(Object agentId, Object configKey) {
     return '智慧體「$agentId」需要有效的模型設定（Key：「$configKey」）才能執行。請在設定中更新並補全對應參數。';
   }
+
+  @override
+  String get invalidModelConfigPlain =>
+      '沒有設定 AI 也可以繼續記錄。想讓它整理和總結你保存的內容時，再開啟 AI。';
+
+  @override
+  String get keepRecording => '繼續記錄';
+
+  @override
+  String get turnOnAi => '開啟 AI';
 
   @override
   String get discardChangesTitle => '離開此頁面？';
