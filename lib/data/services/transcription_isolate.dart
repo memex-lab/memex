@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:isolate';
 import 'dart:typed_data';
 import 'package:logging/logging.dart';
+import 'package:memex/domain/models/vocal_tone.dart';
 import 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa;
 
 /// Runs transcription in a background Isolate so the UI thread is never blocked.
@@ -15,7 +16,7 @@ class TranscriptionIsolate {
   SendPort? _sendPort;
   ReceivePort? _mainReceivePort;
   int _nextId = 0;
-  final _pending = <int, Completer<String?>>{};
+  final _pending = <int, Completer<LocalRecognition?>>{};
 
   bool get isReady => _sendPort != null;
 
@@ -49,8 +50,14 @@ class TranscriptionIsolate {
         completer.complete();
       } else if (message is Map) {
         final id = message['id'] as int;
-        final text = message['text'] as String?;
-        _pending.remove(id)?.complete(text);
+        _pending.remove(id)?.complete(
+              LocalRecognition(
+                text: message['text'] as String?,
+                emotion: message['emotion'] as String? ?? '',
+                event: message['event'] as String? ?? '',
+                lang: message['lang'] as String? ?? '',
+              ),
+            );
       }
     });
 
@@ -60,11 +67,16 @@ class TranscriptionIsolate {
 
   /// Transcribe samples in the background isolate. Non-blocking.
   Future<String?> transcribe(Float32List samples) async {
+    final recognition = await transcribeDetailed(samples);
+    return recognition?.text;
+  }
+
+  /// Transcript plus SenseVoice emotion and event tags, when the model has them.
+  Future<LocalRecognition?> transcribeDetailed(Float32List samples) async {
     if (_sendPort == null) return null;
     final id = _nextId++;
-    final completer = Completer<String?>();
+    final completer = Completer<LocalRecognition?>();
     _pending[id] = completer;
-    // Send as a simple Map with primitive types
     _sendPort!.send({'id': id, 'samples': samples});
     return completer.future;
   }
@@ -136,10 +148,14 @@ class TranscriptionIsolate {
         try {
           stream.acceptWaveform(samples: samples, sampleRate: 16000);
           recognizer.decode(stream);
-          final text = recognizer.getResult(stream).text.trim();
+          final result = recognizer.getResult(stream);
+          final text = result.text.trim();
           replyPort.send({
             'id': id,
             'text': text.isEmpty ? null : text,
+            'emotion': result.emotion,
+            'event': result.event,
+            'lang': result.lang,
           });
         } catch (e) {
           replyPort.send({'id': id, 'text': null});
