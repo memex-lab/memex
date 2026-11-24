@@ -31,7 +31,6 @@ import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/network_reachability.dart';
 import 'package:memex/utils/time_context.dart';
 import 'package:memex/domain/models/agent_definitions.dart';
-import 'package:memex/domain/models/task_exceptions.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/utils/token_usage_utils.dart';
 import 'package:flutter/foundation.dart';
