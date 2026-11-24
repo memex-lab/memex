@@ -31,6 +31,7 @@ import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/network_reachability.dart';
 import 'package:memex/utils/time_context.dart';
 import 'package:memex/domain/models/agent_definitions.dart';
+import 'package:memex/domain/models/task_exceptions.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/utils/token_usage_utils.dart';
 import 'package:flutter/foundation.dart';
@@ -51,6 +52,18 @@ Future<bool> Function()? chatNetworkReachabilityCheck;
 
 @visibleForTesting
 String chatErrorOperationFailed(Object error) {
+  if (error is InvalidModelConfigException) {
+    if (error.reason == InvalidModelConfigReason.notConfigured) {
+      return UserStorage.l10n.invalidModelConfigPlain;
+    }
+    return UserStorage.l10n.operationFailed(error.message);
+  }
+  final text = '$error';
+  if (text.contains('InvalidModelConfigException') &&
+      !text.contains('OAuth') &&
+      !text.contains('API Key')) {
+    return UserStorage.l10n.invalidModelConfigPlain;
+  }
   final category = classifyError(error);
   if (category == LlmErrorCategory.unknownError) {
     return UserStorage.l10n.operationFailed('$error');

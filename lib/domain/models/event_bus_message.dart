@@ -1,3 +1,5 @@
+import 'package:memex/domain/models/task_exceptions.dart';
+
 import 'timeline_card_model.dart';
 
 /// EventBus message type
@@ -294,18 +296,33 @@ class NewSystemActionMessage extends EventBusMessage {
 class InvalidModelConfigMessage extends EventBusMessage {
   final String agentId;
   final String configKey;
+  final InvalidModelConfigReason reason;
+  final String detail;
 
-  InvalidModelConfigMessage({required this.agentId, required this.configKey})
-    : super(
-        type: EventBusMessageType.invalidModelConfig,
-        data: {'agent_id': agentId, 'config_key': configKey},
-      );
+  InvalidModelConfigMessage({
+    required this.agentId,
+    required this.configKey,
+    this.reason = InvalidModelConfigReason.notConfigured,
+    this.detail = '',
+  }) : super(
+         type: EventBusMessageType.invalidModelConfig,
+         data: {
+           'agent_id': agentId,
+           'config_key': configKey,
+           'reason': reason.name,
+           'detail': detail,
+         },
+       );
 
   factory InvalidModelConfigMessage.fromJson(Map<String, dynamic> json) {
     final data = json['data'] as Map<String, dynamic>;
     return InvalidModelConfigMessage(
       agentId: data['agent_id'] as String,
       configKey: data['config_key'] as String,
+      reason:
+          InvalidModelConfigReason.values.asNameMap()[data['reason']] ??
+          InvalidModelConfigReason.notConfigured,
+      detail: data['detail'] as String? ?? '',
     );
   }
 }
