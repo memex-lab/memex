@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:memex/config/app_flavor.dart';
+import 'package:memex/ui/app_lock/widgets/app_lock_settings_page.dart';
 import 'package:memex/ui/core/themes/app_colors.dart';
 import 'package:memex/ui/core/widgets/language_picker.dart';
 import 'package:memex/utils/user_storage.dart';
@@ -674,6 +675,26 @@ class _SettingsPageState extends State<SettingsPage> {
                     const Icon(Icons.chevron_right, color: Color(0xFFCBD5E1)),
                   ],
                 ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Material(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            child: ListTile(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              leading: const Icon(Icons.lock_outline, color: AppColors.primary),
+              title: Text(UserStorage.l10n.appLockSettings),
+              subtitle: Text(UserStorage.l10n.enableAppLockSubtitle),
+              trailing:
+                  const Icon(Icons.chevron_right, color: Color(0xFFCBD5E1)),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                    builder: (_) => const AppLockSettingsPage()),
               ),
             ),
           ),

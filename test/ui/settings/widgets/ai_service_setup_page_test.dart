@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:memex/config/app_flavor.dart';
 import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/data/services/settings_registry.dart';
 import 'package:memex/domain/models/llm_config.dart';
+import 'package:memex/ui/app_lock/widgets/app_lock_settings_page.dart';
 import 'package:memex/ui/settings/view_models/ai_service_setup_viewmodel.dart';
 import 'package:memex/ui/settings/widgets/ai_service_setup_page.dart';
 import 'package:memex/ui/settings/widgets/model_config_edit_page.dart';
@@ -140,11 +142,22 @@ void main() {
     expect(targetPage, isA<AiServiceSetupPage>());
   });
 
-  test('settings registry does not expose app lock entry', () {
-    expect(
-      SettingsRegistry.allItems.map((item) => item.id),
-      isNot(contains('app_lock')),
-    );
+  testWidgets('app lock settings entry opens the lock controls',
+      (tester) async {
+    const channel = MethodChannel('plugins.flutter.io/local_auth');
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(channel, (_) async => <String>[]);
+    addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+    final item = SettingsRegistry.allItems
+        .singleWhere((item) => item.id == 'settings.app_lock');
+    expect(item.parentPathGetter(),
+        [UserStorage.l10n.personalCenter, UserStorage.l10n.settings]);
+    await tester.pumpWidget(
+        MaterialApp(home: Builder(builder: item.navigationTarget.pageBuilder)));
+    await tester.pumpAndSettle();
+    expect(find.byType(AppLockSettingsPage), findsOneWidget);
+    expect(find.text(UserStorage.l10n.enableAppLock), findsOneWidget);
   });
 
   testWidgets('official route opens the existing Memex auth flow', (

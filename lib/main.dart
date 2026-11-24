@@ -17,6 +17,7 @@ import 'package:memex/ui/character/view_models/persona_avatar_viewmodel.dart';
 import 'package:memex/ui/timeline/widgets/timeline_screen.dart';
 import 'package:memex/ui/knowledge/widgets/knowledge_base_screen.dart';
 import 'package:memex/ui/user_setup/widgets/user_setup_screen.dart';
+import 'package:memex/ui/app_lock/app_lock_session.dart';
 import 'package:memex/ui/app_lock/widgets/lock_screen_page.dart';
 import 'package:memex/ui/core/widgets/agent_logo_loading.dart';
 import 'package:memex/ui/core/widgets/phone_width_frame.dart';
@@ -292,9 +293,7 @@ class MemexApp extends StatefulWidget {
 
 class _MemexAppState extends State<MemexApp> with WidgetsBindingObserver {
   bool _hasUser = false;
-  bool _isLocked = true; // Default to locked on start
-  bool _requiresAuth = true; // Whether actual authentication is required
-  DateTime? _lastPausedTime; // Track when app was paused
+  final AppLockSession _lock = AppLockSession();
 
   @override
   void initState() {
@@ -308,13 +307,9 @@ class _MemexAppState extends State<MemexApp> with WidgetsBindingObserver {
     final prefs = await SharedPreferences.getInstance();
     final isLockEnabled = prefs.getBool('app_lock_enabled') ?? false;
     if (mounted) {
-      setState(() {
-        // If lock is strictly required only when enabled, we update _isLocked.
-        // Default _isLocked is true. If disabled, we unlock immediately.
-        if (!isLockEnabled) {
-          _isLocked = false;
-        }
-      });
+      if (!isLockEnabled) {
+        setState(_lock.onLockDisabled);
+      }
     }
   }
 
@@ -333,7 +328,7 @@ class _MemexAppState extends State<MemexApp> with WidgetsBindingObserver {
         ),
       );
       unawaited(AgentBackgroundTaskService.instance.onAppPaused());
-      _lastPausedTime = DateTime.now();
+      _lock.notePaused(DateTime.now());
       _checkLockSettingsBeforeLocking();
     } else if (state == AppLifecycleState.resumed) {
       unawaited(LocalTaskExecutor.instance.clearGracefulShutdownMarker());
@@ -354,40 +349,16 @@ class _MemexAppState extends State<MemexApp> with WidgetsBindingObserver {
     final isLockEnabled = prefs.getBool('app_lock_enabled') ?? false;
     if (isLockEnabled && mounted) {
       setState(() {
-        _isLocked = true;
-        _requiresAuth = false; // Just show privacy screen initially
+        _lock.coverOnPause(lockEnabled: true);
       });
     }
   }
 
   Future<void> _checkGracePeriod() async {
-    if (!_isLocked) return;
-
-    if (_lastPausedTime != null) {
-      final difference = DateTime.now().difference(_lastPausedTime!);
-      // If less than 5 minutes, unlock automatically
-      if (difference.inMinutes < 5) {
-        if (mounted) {
-          setState(() {
-            _isLocked = false;
-          });
-        }
-      } else {
-        // More than 5 minutes, require auth
-        if (mounted) {
-          setState(() {
-            _requiresAuth = true;
-          });
-        }
-      }
-    } else {
-      // No pause time recorded (e.g. cold start), require auth
-      if (mounted) {
-        setState(() {
-          _requiresAuth = true;
-        });
-      }
-    }
+    if (!mounted) return;
+    setState(() {
+      _lock.onResume(DateTime.now());
+    });
   }
 
   Future<void> _checkUser() async {
@@ -417,18 +388,16 @@ class _MemexAppState extends State<MemexApp> with WidgetsBindingObserver {
           builder: (context, child) {
             return PhoneWidthFrame(
               child: _AppActionReadiness(
-                canHandleActions: !_isLocked,
+                canHandleActions: !_lock.isLocked,
                 child: Stack(
                   children: [
                     if (child != null) child,
                     const DemoOverlay(),
-                    if (_isLocked && _hasUser)
-                      _requiresAuth
+                    if (_lock.isLocked && _hasUser)
+                      _lock.requiresAuth
                           ? LockScreen(
                               onUnlock: () {
-                                setState(() {
-                                  _isLocked = false;
-                                });
+                                setState(_lock.onUnlock);
                               },
                             )
                           : const PrivacyScreen(),
