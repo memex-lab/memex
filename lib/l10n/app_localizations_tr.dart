@@ -10,6 +10,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get chatThinkingMessage => 'Düşünüyor…';
+
   @override
   String get preparingSelectedPhotos => 'Fotoğraflar hazırlanıyor…';
 
@@ -710,7 +711,10 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-      Object running, Object pending, Object retrying) {
+    Object running,
+    Object pending,
+    Object retrying,
+  ) {
     return 'Çalıştırılıyor $running, Beklemede $pending, Yeniden Dene $retrying';
   }
 
@@ -1906,6 +1910,16 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String get invalidModelConfigPlain =>
+      'AI olmadan kaydetmeye devam edebilirsiniz. Kaydettiklerinizi düzenleyip özetlemesini istediğinizde AI\'yi açın.';
+
+  @override
+  String get keepRecording => 'Kaydetmeye devam et';
+
+  @override
+  String get turnOnAi => 'AI\'yi aç';
+
+  @override
   String get discardChangesTitle => 'Bu sayfadan ayrılmak mı istiyorsunuz?';
 
   @override
@@ -1934,6 +1948,9 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get processingStatus => 'İşleme';
+
+  @override
+  String get waitingForNetworkStatus => 'Ağ bekleniyor';
 
   @override
   String get failedStatus => 'Arızalı';
@@ -2575,6 +2592,54 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get useLocalSpeechToTextDesc =>
       'Etkinleştirildiğinde, ses gönderilmeden önce cihazda metne dönüştürülür; bu, ses girişini desteklemeyen modeller için kullanışlıdır. Devre dışı bırakıldığında orijinal ses doğrudan modele gönderilir.';
+
+  @override
+  String get analyzeVocalToneTitle => 'Ses tonunu çözümle';
+
+  @override
+  String get analyzeVocalToneDesc =>
+      'Varsayılan kapalı. Açıkken, göndermeden önce ses taslağına ruh hali ve enerji hakkında kısa bir not eklenir. Cihazdaki model cihazda kalır. Ses, cihaz modelinde ton işareti yoksa yapılandırdığın modele gider.';
+
+  @override
+  String vocalToneLine(String mood, String energy) {
+    return 'Ses tonu: $mood, $energy.';
+  }
+
+  @override
+  String get vocalToneMoodHappy => 'mutlu';
+
+  @override
+  String get vocalToneMoodSad => 'üzgün';
+
+  @override
+  String get vocalToneMoodAngry => 'kızgın';
+
+  @override
+  String get vocalToneMoodCalm => 'sakin';
+
+  @override
+  String get vocalToneMoodTense => 'gergin';
+
+  @override
+  String get vocalToneMoodDispleased => 'hoşnutsuz';
+
+  @override
+  String get vocalToneMoodSurprised => 'şaşkın';
+
+  @override
+  String get vocalToneMoodLaughter => 'gülme';
+
+  @override
+  String get vocalToneMoodCrying => 'ağlama';
+
+  @override
+  String get vocalToneEnergyLow => 'düşük enerji';
+
+  @override
+  String get vocalToneEnergySteady => 'dengeli enerji';
+
+  @override
+  String get vocalToneEnergyHigh => 'yüksek enerji';
 
   @override
   String get pendingAiProcessingHint => 'İşlemek için AI modelini ayarlayın';

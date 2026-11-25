@@ -8,6 +8,8 @@ import 'package:path/path.dart' as path;
 import 'package:memex/data/services/asset_safety_service.dart';
 import 'package:memex/data/services/whisper_service.dart';
 import 'package:memex/domain/models/agent_definitions.dart';
+import 'package:memex/domain/models/vocal_tone.dart';
+import 'package:memex/l10n/app_localizations.dart';
 import 'package:memex/domain/models/llm_config.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/user_storage.dart';
@@ -123,12 +125,93 @@ class SpeechTranscriptionService {
   Future<SpeechTranscriptionResult> _transcribeSamplesLocally(
     Float32List samples,
   ) async {
-    final text = await WhisperService.instance.transcribeSamples(samples);
+    final enabled = await UserStorage.getAnalyzeVocalTone();
+    if (!enabled) {
+      final text = await WhisperService.instance.transcribeSamples(samples);
+      return SpeechTranscriptionResult(
+        text: text,
+        usage: null,
+        model: 'sensevoice-local',
+      );
+    }
+    final detailed = await WhisperService.instance.transcribeSamplesDetailed(
+      samples,
+    );
+    final localTone = vocalToneFromSenseVoice(
+      emotion: detailed?.emotion ?? '',
+      event: detailed?.event ?? '',
+    );
+    final text = await applyVocalTone(
+      enabled: true,
+      transcript: detailed?.text,
+      localTone: localTone,
+      describeWithCloud: () => _describeTone(_samplesToWavBytes(samples)),
+      format: _formatTone,
+    );
     return SpeechTranscriptionResult(
       text: text,
       usage: null,
       model: 'sensevoice-local',
     );
+  }
+
+  String _formatTone(VocalTone tone) {
+    final l10n = UserStorage.l10n;
+    return tone.format(
+      moodLabel: _moodLabel(l10n, tone.moodCode),
+      energyLabel: _energyLabel(l10n, tone.energyCode),
+      line: l10n.vocalToneLine,
+    );
+  }
+
+  String _moodLabel(AppLocalizations l10n, String code) {
+    switch (code) {
+      case 'happy':
+        return l10n.vocalToneMoodHappy;
+      case 'sad':
+        return l10n.vocalToneMoodSad;
+      case 'angry':
+        return l10n.vocalToneMoodAngry;
+      case 'calm':
+        return l10n.vocalToneMoodCalm;
+      case 'tense':
+        return l10n.vocalToneMoodTense;
+      case 'displeased':
+        return l10n.vocalToneMoodDispleased;
+      case 'surprised':
+        return l10n.vocalToneMoodSurprised;
+      case 'laughter':
+        return l10n.vocalToneMoodLaughter;
+      case 'crying':
+        return l10n.vocalToneMoodCrying;
+      default:
+        return code;
+    }
+  }
+
+  String _energyLabel(AppLocalizations l10n, String code) {
+    switch (code) {
+      case 'low':
+        return l10n.vocalToneEnergyLow;
+      case 'high':
+        return l10n.vocalToneEnergyHigh;
+      default:
+        return l10n.vocalToneEnergySteady;
+    }
+  }
+
+  Future<VocalTone?> _describeTone(List<int> bytes) async {
+    final resources = await UserStorage.getAgentLLMResources(
+      AgentDefinitions.chatAgent,
+      defaultClientKey: LLMConfig.defaultClientKey,
+    );
+    final response = await resources.client.generate([
+      UserMessage([
+        TextPart(vocalToneCloudPrompt),
+        AudioPart(base64Encode(bytes), 'audio/wav'),
+      ]),
+    ], modelConfig: resources.modelConfig);
+    return parseCloudVocalTone(response.textOutput);
   }
 
   Future<SpeechTranscriptionResult> _transcribeFileWithCloud(
@@ -165,7 +248,21 @@ class SpeechTranscriptionService {
     Float32List samples,
   ) async {
     final bytes = _samplesToWavBytes(samples);
-    return _transcribeAudioBytesWithCloud(bytes, mimeType: 'audio/wav');
+    final result = await _transcribeAudioBytesWithCloud(
+      bytes,
+      mimeType: 'audio/wav',
+    );
+    final text = await applyVocalTone(
+      enabled: await UserStorage.getAnalyzeVocalTone(),
+      transcript: result.text,
+      describeWithCloud: () => _describeTone(bytes),
+      format: _formatTone,
+    );
+    return SpeechTranscriptionResult(
+      text: text,
+      usage: result.usage,
+      model: result.model,
+    );
   }
 
   Future<SpeechTranscriptionResult> _transcribeAudioBytesWithCloud(

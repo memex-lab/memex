@@ -10,6 +10,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get chatThinkingMessage => 'सोच रहा है…';
+
   @override
   String get preparingSelectedPhotos => 'फ़ोटो तैयार की जा रही हैं…';
 
@@ -706,7 +707,10 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-      Object running, Object pending, Object retrying) {
+    Object running,
+    Object pending,
+    Object retrying,
+  ) {
     return 'चल रहे $running, लंबित $pending, पुनः प्रयास $retrying';
   }
 
@@ -1894,6 +1898,16 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String get invalidModelConfigPlain =>
+      'AI के बिना भी रिकॉर्ड जारी रख सकते हैं। सहेजी चीज़ों को व्यवस्थित और संक्षेप में चाहिए हो तो AI चालू करें।';
+
+  @override
+  String get keepRecording => 'रिकॉर्ड जारी रखें';
+
+  @override
+  String get turnOnAi => 'AI चालू करें';
+
+  @override
   String get discardChangesTitle => 'यह पेज छोड़ें?';
 
   @override
@@ -1922,6 +1936,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get processingStatus => 'प्रोसेसिंग में';
+
+  @override
+  String get waitingForNetworkStatus => 'नेटवर्क की प्रतीक्षा';
 
   @override
   String get failedStatus => 'विफल स्थिति';
@@ -2561,6 +2578,54 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get useLocalSpeechToTextDesc =>
       'चालू होने पर ऑडियो भेजने से पहले डिवाइस पर लिप्यंतरण होता है — उन मॉडल के लिए उपयोगी जो ऑडियो इनपुट का समर्थन नहीं करते। बंद होने पर मूल ऑडियो सीधे मॉडल को भेजा जाता है।';
+
+  @override
+  String get analyzeVocalToneTitle => 'स्वर का विश्लेषण';
+
+  @override
+  String get analyzeVocalToneDesc =>
+      'डिफ़ॉल्ट रूप से बंद। चालू होने पर भेजने से पहले मूड और ऊर्जा का एक छोटा नोट आवाज़ के मसौदे में जुड़ता है। डिवाइस का मॉडल डिवाइस पर रहता है। ऑडियो आपके कॉन्फ़िगर मॉडल पर तभी जाता है जब डिवाइस मॉडल पर टोन का निशान न हो।';
+
+  @override
+  String vocalToneLine(String mood, String energy) {
+    return 'स्वर: $mood, $energy.';
+  }
+
+  @override
+  String get vocalToneMoodHappy => 'खुश';
+
+  @override
+  String get vocalToneMoodSad => 'उदास';
+
+  @override
+  String get vocalToneMoodAngry => 'गुस्सा';
+
+  @override
+  String get vocalToneMoodCalm => 'शांत';
+
+  @override
+  String get vocalToneMoodTense => 'तनाव';
+
+  @override
+  String get vocalToneMoodDispleased => 'अप्रसन्न';
+
+  @override
+  String get vocalToneMoodSurprised => 'आश्चर्य';
+
+  @override
+  String get vocalToneMoodLaughter => 'हँसी';
+
+  @override
+  String get vocalToneMoodCrying => 'रोना';
+
+  @override
+  String get vocalToneEnergyLow => 'कम ऊर्जा';
+
+  @override
+  String get vocalToneEnergySteady => 'स्थिर ऊर्जा';
+
+  @override
+  String get vocalToneEnergyHigh => 'अधिक ऊर्जा';
 
   @override
   String get pendingAiProcessingHint =>

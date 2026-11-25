@@ -9,6 +9,8 @@ import 'api_exception.dart';
 import 'base_file_service.dart';
 import 'file_search_access_scope.dart';
 import 'file_operation_utils.dart';
+import 'file_system_service.dart';
+import 'pkm_recent_listing.dart';
 
 /// Callback signature for file change notifications.
 /// [filePath] is the absolute path; [changeType] is 'created', 'modified', 'deleted', or 'moved'.
@@ -47,6 +49,21 @@ class FileOperationService {
 
   /// Optional callback invoked after successful write/edit/move/remove operations.
   FileChangedCallback? onFileChanged;
+
+  void _notifyWorkspaceFileChanged(
+    String filePath,
+    String changeType, {
+    String? oldFilePath,
+  }) {
+    onFileChanged?.call(filePath, changeType, oldFilePath: oldFilePath);
+    if (!isPkmWorkspaceFile(filePath) &&
+        (oldFilePath == null || !isPkmWorkspaceFile(oldFilePath))) {
+      return;
+    }
+    if (FileSystemService.isInitialized) {
+      FileSystemService.instance.invalidateRecentPkmCache();
+    }
+  }
 
   FileOperationService._({BaseFileService? baseService})
       : _baseService = baseService ?? BaseFileService(),
@@ -281,7 +298,7 @@ class FileOperationService {
       await _baseService.writeFile(filePath, content);
 
       // Notify file change
-      onFileChanged?.call(
+      _notifyWorkspaceFileChanged(
           filePath, operation == 'create' ? 'created' : 'modified');
 
       // Build result message
@@ -349,7 +366,7 @@ class FileOperationService {
         }
 
         await _baseService.writeFile(filePath, newString);
-        onFileChanged?.call(filePath, 'created');
+        _notifyWorkspaceFileChanged(filePath, 'created');
         originFileContent = '';
       } else {
         // Handle edit
@@ -390,7 +407,7 @@ class FileOperationService {
         }
 
         await _baseService.writeFile(filePath, updatedContent);
-        onFileChanged?.call(filePath, 'modified');
+        _notifyWorkspaceFileChanged(filePath, 'modified');
         originFileContent = content;
       }
 
@@ -572,7 +589,7 @@ ${addLineNumbers(snippet, startLine: startLine)}''';
         );
 
         // Notify file change
-        onFileChanged?.call(actualDestination, 'moved',
+        _notifyWorkspaceFileChanged(actualDestination, 'moved',
             oldFilePath: sourcePath);
 
         // Rename vs move
@@ -639,7 +656,7 @@ ${addLineNumbers(snippet, startLine: startLine)}''';
       await _baseService.remove(filePath, recursive: true);
 
       // Notify file change
-      onFileChanged?.call(filePath, 'deleted');
+      _notifyWorkspaceFileChanged(filePath, 'deleted');
 
       return _maskResult(
           'Successfully removed $operationType: $filePath\n', workingDirectory);

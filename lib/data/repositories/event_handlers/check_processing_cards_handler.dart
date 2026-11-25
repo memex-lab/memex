@@ -47,7 +47,8 @@ Future<void> handleCheckProcessingCards(
 
         final cardStatus = cardData.status;
 
-        if (cardStatus != 'processing') {
+        if (cardStatus != 'processing' &&
+            cardStatus != 'waiting_for_network') {
           try {
             final renderResult = await renderCard(
               userId: userId,

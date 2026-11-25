@@ -10,6 +10,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get chatThinkingMessage => '思考中…';
+
   @override
   String get preparingSelectedPhotos => '写真を準備しています…';
 
@@ -695,7 +696,10 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-      Object running, Object pending, Object retrying) {
+    Object running,
+    Object pending,
+    Object retrying,
+  ) {
     return '実行中 $running、保留中 $pending、再試行 $retrying';
   }
 
@@ -1851,6 +1855,16 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get invalidModelConfigPlain =>
+      'AI がなくても記録は続けられます。保存した内容の整理や要約が必要になったら AI をオンにしてください。';
+
+  @override
+  String get keepRecording => '記録を続ける';
+
+  @override
+  String get turnOnAi => 'AI をオンにする';
+
+  @override
   String get discardChangesTitle => 'このページを離れますか？';
 
   @override
@@ -1877,6 +1891,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get processingStatus => '処理中';
+
+  @override
+  String get waitingForNetworkStatus => 'ネットワーク待ち';
 
   @override
   String get failedStatus => '失敗';
@@ -2501,6 +2518,54 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get useLocalSpeechToTextDesc =>
       '有効にすると、音声は送信前にデバイス上で文字起こしされます。音声入力に対応していないモデルに便利です。無効にすると、元の音声が直接モデルへ送信されます。';
+
+  @override
+  String get analyzeVocalToneTitle => '声の調子を分析';
+
+  @override
+  String get analyzeVocalToneDesc =>
+      '初期状態ではオフです。オンにすると、送信前の音声下書きに気分と勢いの短いメモが入ります。端末内モデルの結果は端末内に残ります。端末内モデルに調子の印がないときだけ、音声は設定したモデルへ送られます。';
+
+  @override
+  String vocalToneLine(String mood, String energy) {
+    return '声の調子: $mood、$energy。';
+  }
+
+  @override
+  String get vocalToneMoodHappy => '明るい';
+
+  @override
+  String get vocalToneMoodSad => '悲しい';
+
+  @override
+  String get vocalToneMoodAngry => '怒り';
+
+  @override
+  String get vocalToneMoodCalm => '落ち着き';
+
+  @override
+  String get vocalToneMoodTense => '緊張';
+
+  @override
+  String get vocalToneMoodDispleased => '不快';
+
+  @override
+  String get vocalToneMoodSurprised => '驚き';
+
+  @override
+  String get vocalToneMoodLaughter => '笑い';
+
+  @override
+  String get vocalToneMoodCrying => '泣き声';
+
+  @override
+  String get vocalToneEnergyLow => '勢いは弱い';
+
+  @override
+  String get vocalToneEnergySteady => '勢いは一定';
+
+  @override
+  String get vocalToneEnergyHigh => '勢いは強い';
 
   @override
   String get pendingAiProcessingHint => '処理する AI モデルを設定';

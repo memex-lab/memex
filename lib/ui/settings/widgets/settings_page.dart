@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:memex/config/app_flavor.dart';
+import 'package:memex/ui/app_lock/widgets/app_lock_settings_page.dart';
 import 'package:memex/ui/core/themes/app_colors.dart';
 import 'package:memex/ui/core/widgets/language_picker.dart';
 import 'package:memex/utils/user_storage.dart';
@@ -10,6 +11,7 @@ import 'package:memex/ui/settings/widgets/data_import_page.dart';
 import 'package:memex/ui/settings/widgets/data_storage_page.dart';
 import 'package:memex/ui/settings/widgets/location_context_settings_page.dart';
 import 'package:memex/ui/settings/widgets/early_update_settings_card.dart';
+import 'package:memex/ui/settings/widgets/vocal_tone_settings_card.dart';
 import 'package:memex/ui/settings/view_models/data_import_viewmodel.dart';
 import 'package:memex/db/app_database.dart';
 import 'package:memex/data/services/file_system_service.dart';
@@ -30,6 +32,7 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   String _currentLocaleTag = 'en';
   bool _useLocalSpeechToText = true;
+  bool _analyzeVocalTone = false;
   CommentSettings _commentSettings = const CommentSettings();
 
   @override
@@ -41,6 +44,7 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _loadSettings() async {
     final locale = await UserStorage.getLocale();
     final useLocalSpeechToText = await UserStorage.getUseLocalSpeechToText();
+    final analyzeVocalTone = await UserStorage.getAnalyzeVocalTone();
     final commentSettings = await MemexRouter().getCommentSettings();
     if (mounted) {
       setState(() {
@@ -48,6 +52,7 @@ class _SettingsPageState extends State<SettingsPage> {
           UserStorage.resolveToSupportedLocale(locale),
         );
         _useLocalSpeechToText = useLocalSpeechToText;
+        _analyzeVocalTone = analyzeVocalTone;
         _commentSettings = commentSettings;
       });
     }
@@ -81,6 +86,13 @@ class _SettingsPageState extends State<SettingsPage> {
     await UserStorage.setUseLocalSpeechToText(value);
     if (mounted) {
       setState(() => _useLocalSpeechToText = value);
+    }
+  }
+
+  Future<void> _updateAnalyzeVocalTone(bool value) async {
+    await UserStorage.setAnalyzeVocalTone(value);
+    if (mounted) {
+      setState(() => _analyzeVocalTone = value);
     }
   }
 
@@ -217,6 +229,10 @@ class _SettingsPageState extends State<SettingsPage> {
               value: _useLocalSpeechToText,
               onChanged: _updateUseLocalSpeechToText,
             ),
+          ),
+          VocalToneSettingsCard(
+            enabled: _analyzeVocalTone,
+            onChanged: _updateAnalyzeVocalTone,
           ),
           const SizedBox(height: 16),
           if (Platform.isAndroid && AppFlavor.isEarly) ...[
@@ -659,6 +675,26 @@ class _SettingsPageState extends State<SettingsPage> {
                     const Icon(Icons.chevron_right, color: Color(0xFFCBD5E1)),
                   ],
                 ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Material(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            child: ListTile(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              leading: const Icon(Icons.lock_outline, color: AppColors.primary),
+              title: Text(UserStorage.l10n.appLockSettings),
+              subtitle: Text(UserStorage.l10n.enableAppLockSubtitle),
+              trailing:
+                  const Icon(Icons.chevron_right, color: Color(0xFFCBD5E1)),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                    builder: (_) => const AppLockSettingsPage()),
               ),
             ),
           ),

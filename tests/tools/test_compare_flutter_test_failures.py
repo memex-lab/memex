@@ -54,3 +54,27 @@ class CompareFlutterTestFailuresTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class MachineTest(unittest.TestCase):
+    def stream(self, result, success):
+        import json
+        events = [
+            {"type":"suite","suite":{"id":1,"path":"/repo/test/a.dart"}},
+            {"type":"testStart","test":{"id":2,"suiteID":1,"name":"restore"}},
+            {"type":"testDone","testID":2,"result":result},
+            {"type":"done","success":success},
+        ]
+        return '\n[{"event":"test.startedProcess","params":{}}]\n' + "\n".join(map(json.dumps, events))
+
+    def test_structured_terminal_and_exit_agree(self):
+        from scripts.compare_flutter_test_failures import machine_failures
+        self.assertEqual(machine_failures(self.stream("success", True), 0), [])
+        failed = machine_failures(self.stream("failure", False), 1)
+        self.assertEqual(len(newly_introduced_failures([], failed)), 1)
+        self.assertEqual(newly_introduced_failures(failed, failed), [])
+        for stream, code in [(self.stream("success", True), 1),
+                             (self.stream("failure", False), 0),
+                             ('{"type":"start"}', 1), ("", 0), ("invalid", 1)]:
+            with self.assertRaises(ValueError):
+                machine_failures(stream, code)

@@ -42,7 +42,7 @@ Arabic is already shipped. Keep verifying layouts under `TextDirection.rtl`.
 
 1. Machine translation for the ARB skeleton, then native review — especially agent prompts
 2. After the skeleton lands, mark the locale `help wanted` + `good first issue` for native speakers
-3. CI should fail if ARB key sets drift across locales
+3. PR Flutter Quality checks that ARB key sets match across locales
 
 ## Checklist
 
@@ -56,5 +56,5 @@ Arabic is already shipped. Keep verifying layouts under `TextDirection.rtl`.
 - [x] iOS `Info.plist` locales beyond `en` / `zh-Hans`
 - [x] Android `values-<locale>/strings.xml` per locale
 - [~] Arabic RTL layout pass — directional insets applied to timeline, chat header, bottom bar, personal center, and insight summary cards; smoke test added (`test/ui/rtl/arabic_layout_smoke_test.dart`); remaining screens still need audit
-- [ ] Missing-key CI lint (checked in PR Flutter Quality via `scripts/check_arb_key_parity.py`)
+- [x] Missing-key CI lint (checked in PR Flutter Quality via `scripts/check_arb_key_parity.py`)
 - [ ] Native review per language

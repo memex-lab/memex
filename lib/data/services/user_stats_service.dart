@@ -454,7 +454,11 @@ class UserStatsService {
   }
 
   bool _isGeneratedCard(CardData card) {
-    if (card.status == 'processing' || card.status == 'failed') return false;
+    if (card.status == 'processing' ||
+        card.status == 'waiting_for_network' ||
+        card.status == 'failed') {
+      return false;
+    }
     return card.uiConfigs.isNotEmpty;
   }
 

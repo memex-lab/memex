@@ -10,6 +10,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatThinkingMessage => 'Thinking…';
+
   @override
   String get preparingSelectedPhotos => 'Preparing photos…';
 
@@ -704,7 +705,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-      Object running, Object pending, Object retrying) {
+    Object running,
+    Object pending,
+    Object retrying,
+  ) {
     return 'Running $running, Pending $pending, Retry $retrying';
   }
 
@@ -1889,6 +1893,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get invalidModelConfigPlain =>
+      'You can keep recording without AI. Turn AI on when you want it to organize and summarize what you save.';
+
+  @override
+  String get keepRecording => 'Keep recording';
+
+  @override
+  String get turnOnAi => 'Turn on AI';
+
+  @override
   String get discardChangesTitle => 'Leave this page?';
 
   @override
@@ -1917,6 +1931,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get processingStatus => 'Processing';
+
+  @override
+  String get waitingForNetworkStatus => 'Waiting for network';
 
   @override
   String get failedStatus => 'Failed';
@@ -2555,6 +2572,54 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get useLocalSpeechToTextDesc =>
       'When enabled, audio is transcribed on-device before sending — useful for models that do not support audio input. When disabled, audio is transcribed by your configured cloud model (requires audio input support).';
+
+  @override
+  String get analyzeVocalToneTitle => 'Analyze vocal tone';
+
+  @override
+  String get analyzeVocalToneDesc =>
+      'Off by default. When on, a short note about mood and energy is added to the voice draft before you send it. An on device model stays on device. Audio goes to your configured model only when that on device model has no tone tag.';
+
+  @override
+  String vocalToneLine(String mood, String energy) {
+    return 'Vocal tone: $mood, $energy.';
+  }
+
+  @override
+  String get vocalToneMoodHappy => 'happy';
+
+  @override
+  String get vocalToneMoodSad => 'sad';
+
+  @override
+  String get vocalToneMoodAngry => 'angry';
+
+  @override
+  String get vocalToneMoodCalm => 'calm';
+
+  @override
+  String get vocalToneMoodTense => 'tense';
+
+  @override
+  String get vocalToneMoodDispleased => 'displeased';
+
+  @override
+  String get vocalToneMoodSurprised => 'surprised';
+
+  @override
+  String get vocalToneMoodLaughter => 'laughter';
+
+  @override
+  String get vocalToneMoodCrying => 'crying';
+
+  @override
+  String get vocalToneEnergyLow => 'low energy';
+
+  @override
+  String get vocalToneEnergySteady => 'steady energy';
+
+  @override
+  String get vocalToneEnergyHigh => 'high energy';
 
   @override
   String get pendingAiProcessingHint => 'Set up AI model to process';

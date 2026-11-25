@@ -3,6 +3,7 @@ import 'package:memex/utils/logger.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:memex/domain/models/card_model.dart';
 import 'package:memex/data/services/file_system_service.dart';
+import 'package:memex/data/services/local_task_executor.dart';
 import 'package:memex/data/services/llm_call_record_service.dart';
 import 'package:memex/data/services/character_service.dart';
 import 'package:memex/data/services/card_renderer.dart';
@@ -382,8 +383,14 @@ Future<bool> deleteCardEndpoint(String cardId) async {
     final success = await _fileSystemService.deleteCard(userId, cardId);
     if (!success) {
       _logger.warning('Failed to delete card: $cardId');
+      return false;
     }
-    return success;
+    try {
+      await LocalTaskExecutor.instance.cancelCaptureTasksForFact(cardId);
+    } catch (e) {
+      _logger.warning('Failed to cancel capture task for $cardId: $e');
+    }
+    return true;
   } catch (e) {
     _logger.severe('Failed to delete card $cardId: $e');
     return false;
@@ -496,10 +503,9 @@ Future<bool> updateCardLocationEndpoint(
   }
 }
 
-String replyDisplayNameFor(Comment c, String userDisplayName) =>
-    c.isAi
-        ? (c.character?.name ?? UserStorage.l10n.commentAuthorAi)
-        : userDisplayName;
+String replyDisplayNameFor(Comment c, String userDisplayName) => c.isAi
+    ? (c.character?.name ?? UserStorage.l10n.commentAuthorAi)
+    : userDisplayName;
 
 Map<String, String> commentReplyNameMap(
   Iterable<Comment> comments, {

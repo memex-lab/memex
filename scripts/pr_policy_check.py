@@ -83,6 +83,12 @@ POLICY_CONTROL_PATTERNS = [
     "docs/pr-policy-preflight.zh.md",
     "scripts/pr_policy_check.py",
     ".github/CODEOWNERS",
+    "docs/local-pr-review.md",
+    "docs/review-verification-maintenance.md",
+    "scripts/local_pr_review.py",
+    "scripts/verify_pr.py",
+    "scripts/compare_flutter*.py",
+    "scripts/pr_preflight_summary_comment.py",
 ]
 
 HIGH_RISK_PATH_RULES: list[tuple[str, list[str], int, str, str]] = [

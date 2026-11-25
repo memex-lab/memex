@@ -46,6 +46,45 @@ def parse_failures(text: str) -> list[TestFailure]:
     return failures
 
 
+def machine_failures(text: str, exit_code: int) -> list[TestFailure]:
+    """A completed test protocol stream and process status must agree."""
+    suites = {}
+    tests = {}
+    failures = []
+    done = None
+    completed = 0
+    for raw in text.splitlines():
+        if not raw.strip():
+            continue
+        event = json.loads(raw)
+        # Flutter multiplexes daemon notifications into the package:test stream.
+        if isinstance(event, list) and all(isinstance(item, dict) and
+                str(item.get("event", "")).startswith("test.") for item in event):
+            continue
+        kind = event["type"]
+        if done is not None:
+            raise ValueError("events after test completion")
+        if kind == "suite":
+            suite = event["suite"]
+            suites[suite["id"]] = suite["path"]
+        elif kind == "testStart":
+            test = event["test"]
+            tests[test["id"]] = (test["suiteID"], test["name"])
+        elif kind == "testDone":
+            completed += 1
+            if event["result"] in {"failure", "error"}:
+                suite_id, name = tests[event["testID"]]
+                failures.append(TestFailure(f"{suites[suite_id]}: {name}"))
+            elif event["result"] != "success":
+                raise ValueError("unknown test result")
+        elif kind == "done":
+            done = event.get("success")
+    if (not completed or not isinstance(done, bool) or done != (exit_code == 0)
+            or done == bool(failures) or exit_code not in (0, 1)):
+        raise ValueError("incomplete or inconsistent test stream/process exit")
+    return failures
+
+
 def newly_introduced_failures(
     base_failures: list[TestFailure],
     head_failures: list[TestFailure],
@@ -105,10 +144,16 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--summary", type=Path)
     parser.add_argument("--markdown-output", type=Path)
     parser.add_argument("--json-output", type=Path)
+    parser.add_argument("--base-exit", required=True, type=int)
+    parser.add_argument("--head-exit", required=True, type=int)
     args = parser.parse_args(argv)
 
-    base_failures = parse_failures(read_report(args.base))
-    head_failures = parse_failures(read_report(args.head))
+    try:
+        base_failures = machine_failures(read_report(args.base), args.base_exit)
+        head_failures = machine_failures(read_report(args.head), args.head_exit)
+    except (ValueError, OSError, KeyError, TypeError) as exc:
+        print(f"Flutter test evidence incomplete: {exc}", file=sys.stderr)
+        return 2
     new_failures = newly_introduced_failures(base_failures, head_failures)
 
     summary = markdown_summary(
