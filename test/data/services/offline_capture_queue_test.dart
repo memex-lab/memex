@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart';
 import 'package:memex/agent/super_agent/super_agent_pre_minted_record_hook.dart';
 import 'package:memex/data/repositories/card.dart';
+import 'package:memex/data/repositories/get_timeline_cards.dart';
 import 'package:memex/data/services/capture_card_status.dart';
 import 'package:memex/data/services/chat_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
@@ -240,6 +241,7 @@ void main() {
     final parked = (await db.select(db.tasks).get()).single;
     final factId = _payloadFactId(parked.payload);
     expect(factId, isNotNull);
+    expect((await getTimelineCards()).map((card) => card.id), [factId]);
     expect(await deleteCardEndpoint(factId!), isTrue);
     expect(
       await FileSystemService.instance.readCardFile(
@@ -271,6 +273,7 @@ void main() {
     final completed = await _waitForStatus(db, 'completed');
     expect(completed.id, isNot(cancelled.id));
     expect(runs, 1);
+    expect(await getTimelineCards(), isEmpty);
     expect(await _cardFiles(), isEmpty);
   });
 

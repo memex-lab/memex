@@ -21,7 +21,8 @@ void main() {
       expect(result.error, isNull);
     });
 
-    test('non-empty PCM always calls transcribe and returns its text', () async {
+    test('non-empty PCM always calls transcribe and returns its text',
+        () async {
       Float32List? received;
       final result = await finalizeQuickRecordingTranscript(
         pcmBytes: _pcmForSamples(const [0.5, -0.25]),
@@ -56,15 +57,22 @@ void main() {
       expect(result.error, isNull);
     });
 
-    test('empty transcript does not wipe non-empty streaming text', () async {
-      final result = await finalizeQuickRecordingTranscript(
-        pcmBytes: _pcmForSamples(const [0.1]),
-        existingText: 'partial',
-        transcribeSamples: (_) async => null,
-      );
-
-      expect(result.text, 'partial');
-      expect(result.error, isNull);
+    test('failed or empty final passes preserve every existing draft',
+        () async {
+      for (final text in ['', '  draft  ', '笔记 🎙️', 'line one\nline two']) {
+        for (final outcome in ['empty', 'missing', 'failed']) {
+          final result = await finalizeQuickRecordingTranscript(
+            pcmBytes: _pcmForSamples([0.25, -0.25]),
+            existingText: text,
+            transcribeSamples: (_) async {
+              if (outcome == 'failed') throw StateError('offline');
+              return outcome == 'missing' ? null : '';
+            },
+          );
+          expect(result.text, text, reason: outcome);
+          expect(result.hasError, outcome == 'failed');
+        }
+      }
     });
 
     test('transcribe failure preserves text and surfaces error', () async {

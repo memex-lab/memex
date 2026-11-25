@@ -46,6 +46,10 @@ class LocalReviewTest(unittest.TestCase):
         self.assertCountEqual(select(["ios/Runner/AppDelegate.swift",
                                       "lib/data/services/backup_service.dart"]),
                               ["restore", "startup"])
+        self.assertCountEqual(select(["lib/data/services/file_system_service.dart"]),
+                              ["capture", "timeline"])
+        self.assertEqual(select(["lib/ui/main_screen/quick_recording_transcript.dart"]), ["voice"])
+        self.assertCountEqual(select(["lib/main.dart"]), ["lock", "voice", "startup"])
         self.assertEqual(select(["README.md"]), [])
 
 

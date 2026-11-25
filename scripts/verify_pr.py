@@ -6,13 +6,17 @@ from pathlib import Path
 import subprocess
 
 SCENARIOS = {
-    "capture": (("offline", "capture", "local_task", "chat_service", "timeline", "file_system_service"),
+    "capture": (("offline", "capture", "local_task", "chat_service", "file_system_service"),
                 ("test/data/services/offline_capture_queue_test.dart",)),
+    "voice": (("recording", "speech_transcription", "whisper_service", "vocal_tone", "lib/main.dart"),
+              ("test/ui/main_screen/quick_recording_transcript_test.dart",)),
+    "timeline": (("timeline", "card_cache", "card_dao", "file_system_service", "repositories/card.dart"),
+                 ("test/data/repositories/timeline_pagination_property_test.dart",)),
     "restore": (("backup", "restore", "lib/data/db/", "lib/db/", "migration", "lib/data/database"),
                 ("test/data/services/backup_service_test.dart",
                  "test/ui/settings/widgets/backup_restore_page_test.dart")),
-    "lock": (("app_lock", "root_shell", "privacy"),
-             ("test/ui/app_lock/app_lock_session_test.dart",)),
+    "lock": (("app_lock", "root_shell", "privacy", "lib/main.dart"),
+             ("test/ui/app_lock/app_lock_session_test.dart", "test/ui/app_lock/app_entry_pin_test.dart")),
     "agent": (("lib/agent/", "lib/data/agent", "permission", "built_in_tools"),
               ("test/agent/super_agent_permissions_test.dart",)),
     "startup": (("ios/", "android/", "lib/main.dart", "deep_link"),
