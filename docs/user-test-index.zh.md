@@ -2,7 +2,7 @@
 
 与[功能地图](user-feature-map.zh.md)配套。按用户任务展开测试文件；每个用例链接到声明位置。业务链单独注明起点与终点。“组件/业务层”涵盖内部断言，以及只验证一段生产链路的用例；“宿主控件”在 Flutter 测试宿主执行。通过状态只针对列出的边界。结果为 2026-11-25 主干基线加本次测试改动的快照；同名参数化用例按实际运行逐条列出。
 
-共 236 个测试源文件。通过 1150，跳过 5。
+共 236 个测试源文件。通过 1151，跳过 5。
 
 <a id="tasks"></a>
 ## 任务、后台与诊断
@@ -1637,19 +1637,20 @@
 </details>
 
 <details>
-<summary>local_image_safety_test.dart · 7 项</summary>
+<summary>local_image_safety_test.dart · 8 项</summary>
 
 [测试源文件](../test/ui/core/widgets/local_image_safety_test.dart)
 
 | 用例 | 证据边界 | 本次 |
 |---|---|---|
-| [shows a safe placeholder instead of rendering unsafe long image](../test/ui/core/widgets/local_image_safety_test.dart#L28) | 宿主控件 | 通过 |
-| [preview source config allows high-pixel phone photos only](../test/ui/core/widgets/local_image_safety_test.dart#L60) | 组件/业务层 | 通过 |
-| [shows a safe placeholder for unsafe downloaded network images](../test/ui/core/widgets/local_image_safety_test.dart#L86) | 宿主控件 | 通过 |
-| [provider resolves unsafe local images to a transparent placeholder](../test/ui/core/widgets/local_image_safety_test.dart#L114) | 组件/业务层 | 通过 |
-| [provider still decodes safe local image pixels](../test/ui/core/widgets/local_image_safety_test.dart#L126) | 组件/业务层 | 通过 |
-| [late failure from a recycled image cannot replace the new image](../test/ui/core/widgets/local_image_safety_test.dart#L137) | 宿主控件 | 通过 |
-| [slow source inspection leaves the page interactive](../test/ui/core/widgets/local_image_safety_test.dart#L183) | 宿主控件 | 通过 |
+| [shows a safe placeholder instead of rendering unsafe long image](../test/ui/core/widgets/local_image_safety_test.dart#L40) | 宿主控件 | 通过 |
+| [preview source config allows high-pixel phone photos only](../test/ui/core/widgets/local_image_safety_test.dart#L72) | 组件/业务层 | 通过 |
+| [shows a safe placeholder for unsafe downloaded network images](../test/ui/core/widgets/local_image_safety_test.dart#L98) | 宿主控件 | 通过 |
+| [provider resolves unsafe local images to a transparent placeholder](../test/ui/core/widgets/local_image_safety_test.dart#L126) | 组件/业务层 | 通过 |
+| [provider still decodes safe local image pixels](../test/ui/core/widgets/local_image_safety_test.dart#L138) | 组件/业务层 | 通过 |
+| [late failure from a recycled image cannot replace the new image](../test/ui/core/widgets/local_image_safety_test.dart#L149) | 宿主控件 | 通过 |
+| [slow source inspection leaves the page interactive](../test/ui/core/widgets/local_image_safety_test.dart#L195) | 宿主控件 | 通过 |
+| [swiping the detail gallery shows the pixels of the selected attachment](../test/ui/core/widgets/local_image_safety_test.dart#L238) | 详情图集控件→可见页的解码像素 | 通过 |
 
 </details>
 
@@ -2813,9 +2814,9 @@
 | [test_same_head_separate_pr_or_base_needs_fresh_verdict](../tests/tools/test_local_pr_review.py#L21) | 维护工具 | 通过 |
 | [test_record_withholds_status_when_concurrent_push_lands](../tests/tools/test_local_pr_review.py#L28) | 维护工具 | 通过 |
 | [test_routing_covers_multiple_scenarios](../tests/tools/test_local_pr_review.py#L45) | 维护工具 | 通过 |
-| [test_intent_edits_invalidate_status_context](../tests/tools/test_local_pr_review.py#L57) | 维护工具 | 通过 |
-| [test_artifact_version_and_policy_are_authoritative](../tests/tools/test_local_pr_review.py#L62) | 维护工具 | 通过 |
-| [test_independent_approval_needs_current_head_and_role](../tests/tools/test_local_pr_review.py#L84) | 维护工具 | 通过 |
+| [test_intent_edits_invalidate_status_context](../tests/tools/test_local_pr_review.py#L58) | 维护工具 | 通过 |
+| [test_artifact_version_and_policy_are_authoritative](../tests/tools/test_local_pr_review.py#L63) | 维护工具 | 通过 |
+| [test_independent_approval_needs_current_head_and_role](../tests/tools/test_local_pr_review.py#L85) | 维护工具 | 通过 |
 
 </details>
 

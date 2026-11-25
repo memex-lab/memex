@@ -13,7 +13,7 @@
 | 写一条记录，稍后找回 | 写入两条不同原文，读回时间线和详情；离线发送另外验证了排队、删除和恢复 | 从首页输入框按发送，退出并重开后仍读到同一原文 |
 | 打开列表，翻页，点一条看详情 | 校验新旧顺序、相同时间戳、按标签翻页、编辑和删除后的结果；详情正文控件验证原文显示 | 在实际列表滚动后点中目标，详情返回后保持原位置 |
 | 在一条记录下评论，再回复 | 经生产评论入口发言，再回复第一条；重新查询详情，原文、评论顺序和回复指向均正确，另一条记录没有串评论 | 从屏幕输入框发送、关闭并重新打开详情；断网或发送失败后的提示与重试 |
-| 浏览带图记录，快速滑到下一张 | 使用真实 PNG 解码并检查像素；复用图片控件后，上一张图的延迟失败不会覆盖新图 | 从系统相册选图发布，在实际列表看到对应缩略图，点开原图并返回同一卡片 |
+| 浏览带图记录，快速滑到下一张 | 在详情图集左右滑动，逐页检查可见图片的像素为红、蓝、红；复用图片控件后，上一张图的延迟失败不会覆盖新图 | 从系统相册选图发布，在实际列表看到对应缩略图，点开原图并返回同一卡片 |
 
 [记录、列表与评论回读](../test/data/repositories/timeline_comment_journey_test.dart) · [分页](../test/data/repositories/timeline_pagination_property_test.dart) · [详情正文控件](../test/ui/timeline/widgets/timeline_card_detail_body_section_test.dart) · [图片解码与滚动复用](../test/ui/core/widgets/local_image_safety_test.dart)
 
@@ -47,11 +47,22 @@
 | P1 | [导出文件、选择本机/iCloud/Android 目录 → 在外部读回](user-test-index.zh.md#media) | 工作区文件与归档内容、备份位置界面有覆盖 | 用系统文件 App 打开导出的 Markdown 和关联媒体；存储撤权后重新选择 |
 | P2 | [切语言、字体、RTL、外观与布局 → 当前页面可读可操作](user-test-index.zh.md#appearance) | ARB 完整性、控件、不同语言/方向的页面覆盖分列于索引 | 重启后从首页走同一任务；缩放、长文本和辅助功能导航 |
 | P2 | [个人中心、统计、用量、实验功能、模型/技能管理、诊断和更新 → 能查找和修改设置](user-test-index.zh.md#navigation) | 用户统计、模型用量、调试视图、实验室、更新信息与部分设置有用例 | 从设置搜索进入子页，保存后重新打开；设备上完成更新/失败恢复 |
+| P1 | 刷新时间线、等待处理完成、再次收到同一事件 | [列表控件](../test/ui/timeline/widgets/timeline_entry_dedupe_test.dart)实际断言同一卡片只有一个可见条目，旧状态被新正文替换；[加载提示](../test/ui/timeline/widgets/timeline_loading_spinner_test.dart)只验加载中 | 慢加载、空库与失败时刷新，再滚动到下一页，保留位置和已显示内容 |
+| P1 | 在详情左右滑动图片、放大查看，播放音频附件 | [详情图集](../lib/ui/timeline/widgets/timeline/asset_header_gallery.dart)包含图片分页、缩放与音频播放入口；解码、图集分页与错误占位分别验收 | 双指缩放与翻页的手势冲突、离开页面停止播放、系统音频中断恢复 |
+| P1 | 设置是否显示洞察、是否自动评论、最多几个角色参与 | [设置持久化](../lib/data/services/comment_settings_service.dart)和[评论处理入口](../lib/data/services/task_handlers/comment_agent_handler.dart)可定位；关闭自动评论时，显式指定角色有独立处理路径 | 切换后重开，普通记录、显式提及角色分别验证；另验人数上限及手动留言始终可用 |
+| P1 | 选择日期范围重新处理卡片，决定是否重跑后续任务 | [设置页用例](../test/ui/settings/widgets/debug_settings_page_test.dart)验到选择项和任务创建提示 | 对有范围内外记录的工作区执行，观察范围外内容保持原样，重复提交不重复生成下游结果 |
+| P0 | 设置中确认删除本地账号数据，回到初次设置 | [删除入口](../lib/ui/settings/widgets/settings_page.dart)核对输入后停止服务、清理数据根目录和偏好；尚无证据证明清理范围和重新启动的结果 | 在一次性合成工作区验证取消、输入错误、确认和冷启动，并核对工作区边界及外部备份 |
+
 
 ## 应长期保持的属性
 
 | 属性 | 判据与可复现输入 | 现有证据或待补层级 |
 |---|---|---|
+| 正文和记录 ID 一致 | 列表打开哪条记录，详情就读到那条原文；评论和回复不改变正文，也不串到邻卡 | [真实列表、评论与详情读回](../test/data/repositories/timeline_comment_journey_test.dart)；键盘发送和杀进程读回仍需设备验证 |
+| 同一条记录只展示一次 | 重复收到处理中或完成更新后，列表保留一个相同 ID 的可见条目；完成正文取代过期占位 | [列表条目控件](../test/ui/timeline/widgets/timeline_entry_dedupe_test.dart)；刷新与分页响应乱序仍待补 |
+| 评论线程归属 | 重新打开详情时，评论顺序、内容、回复目标 ID 与提交一致；另一条记录的评论集合不变 | [业务入口用例](../test/data/repositories/timeline_comment_journey_test.dart)，尚未验证重复点击发送时的语义 |
+| 图片与当前附件一致 | 第一张、下一张、回到第一张时，实际显示的像素匹配各自文件；已滑走图片的迟到失败不能盖住当前图 | [本地图片与图集控件](../test/ui/core/widgets/local_image_safety_test.dart)；系统选图到发布、打开原图仍待设备验收 |
+| 设置开关及清理范围 | 关闭自动评论应抑制非显式的角色参与；取消重处理或删除不应修改数据，确认后的范围与界面提示一致 | 设置和任务存在实现入口；这些否定路径的最终数据状态列为待验，不能由正常打开页面推断 |
 | 重建前后结果等价 | 生成同时间戳、重复 ID 编辑、删除、不同标签；把实际各页拼起来，与独立维护的存活记录集合按时间、ID 排序比较，并检查每条原文 | [固定种子的分页属性测试](../test/data/repositories/timeline_pagination_property_test.dart)，包含最后一张空页 |
 | 取消与恢复幂等 | 删除等待中的记录后，恢复网络仍不生成旧卡，后续依赖任务只运行一次 | [离线记录与队列](../test/data/services/offline_capture_queue_test.dart)；进程中断时序尚需设备验证 |
 | 恢复往返 | 备份前的可见正文和标签，在删除后恢复回到原值；最新 WAL 数据也要可读 | [备份服务](../test/data/services/backup_service_test.dart)；旧版本、原生文件授权待补 |
@@ -60,7 +71,7 @@
 | 转写失败不丢草稿 | 空、缺失或异常的最终结果都保留原文本，包括空格、换行与 Unicode；异常标志仍可见 | [转写输入组合](../test/ui/main_screen/quick_recording_transcript_test.dart)；设备手势到保存仍待验 |
 | 迁移兼容、附件完整 | 恢复或迁移前后，同一记录引用的媒体可打开且内容一致 | [附件迁移测试](../test/data/repositories/migrate_cards_fact_assets_test.dart)和备份测试有局部证据；跨版本设备样本待补 |
 | 副作用唯一、权限有效 | 重试、取消或切换会话不能执行两次系统操作；拒绝后不产生副作用 | 现有权限与审批测试见索引；系统实际执行次数、拒绝和撤权仍待设备验收 |
-| 导入去重与媒体安全 | 相同文件重复导入的结果符合去重策略；归档里的越界路径永远不能成为工作区外文件；混合附件不能丢失正文 | [导入服务](../test/data/services/file_import_service_test.dart)、[分享分流](../test/ui/main_screen/widgets/share_intent_handler_test.dart)有示例；从外部 App 发起的组合待补 |
+| 导入重名与媒体安全 | 不同文件使用相同名称时，两份内容都应保留，后导入者取得不冲突的名称；归档里的越界路径永远不能成为工作区外文件；混合附件不能丢失正文 | [导入服务](../test/data/services/file_import_service_test.dart)、[分享分流](../test/ui/main_screen/widgets/share_intent_handler_test.dart)有示例；从外部 App 发起的组合待补 |
 | 搜索与文件一致 | 对同一批内容新增、改名、重标或删除后，搜索结果 ID 应与当前工作区匹配；切换用户后无前一用户的结果 | [搜索更新判定](../test/data/services/search_service_test.dart)覆盖触发逻辑；全文检索到详情的差分待补 |
 | 日历边界 | 记录属于本地日期的唯一一天；月末、跨年与夏令时不会遗漏或重复 | [日历查询](../test/data/repositories/get_calendar_data_test.dart)和[日期工具](../test/utils/date_util_test.dart)；设备时区切换后的页面读回待补 |
 | 对话因果顺序 | 连续发送、打断和恢复后，回复仍归属原角色、原会话和原轮次，重复处理不新增一组消息 | [角色会话业务链](../test/integration/character_conversation_pipeline_test.dart)、[会话恢复](../test/data/services/persona_chat_workspace_recovery_test.dart) |
@@ -75,7 +86,7 @@
 
 ## 本次实测范围
 
-Flutter 3.41.6 在 macOS 测试宿主运行全部套件，通过 1110 项，跳过 5 项（外部模型和地图服务需要凭据）。随后新增的记录、列表和评论链路已单独执行通过。独立运行的 37 项 Python 工具测试全部通过。在 iPhone 16 Pro、iOS 18.6 模拟器运行 RunnerTests，两项 XCTest 均通过，验证相册选择器的呈现配置、取消回调只触发一次及下次可再次选择。该构建使用项目提供的 ML Kit 模拟器替身；本次没有执行真机麦克风、生物识别、系统分享或云端模型验收。
+Flutter 3.41.6 在 macOS 测试宿主运行全部套件，通过 1110 项，跳过 5 项（外部模型和地图服务需要凭据）。随后新增的记录、列表和评论链路已单独执行通过。本轮复核又运行了图片、列表去重、记录与评论回读、文件导入四个 Flutter 测试文件，20 项通过（含新增图集滑动用例）；本地 PR 审查工具的 7 项回归也通过。独立运行的 37 项 Python 工具测试全部通过。在 iPhone 16 Pro、iOS 18.6 模拟器运行 RunnerTests，两项 XCTest 均通过，验证相册选择器的呈现配置、取消回调只触发一次及下次可再次选择。该构建使用项目提供的 ML Kit 模拟器替身；本次没有执行真机麦克风、生物识别、系统分享或云端模型验收。
 
 ## 复跑与清理记录
 

@@ -50,6 +50,7 @@ class LocalReviewTest(unittest.TestCase):
                               ["capture", "timeline"])
         self.assertEqual(select(["lib/ui/main_screen/quick_recording_transcript.dart"]), ["voice"])
         self.assertCountEqual(select(["lib/main.dart"]), ["lock", "voice", "startup"])
+        self.assertEqual(select(["lib/ui/timeline/widgets/timeline/asset_header_gallery.dart"]), ["timeline", "images"])
         self.assertEqual(select(["README.md"]), [])
 
 
