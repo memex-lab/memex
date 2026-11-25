@@ -128,8 +128,10 @@ Future<CardRenderResult> renderCard({
 
   final List<UiConfig> uiConfigs = cardData.uiConfigs;
 
-  // Handle processing or failed status
-  if (cardStatus == 'processing' || cardStatus == 'failed') {
+  // Handle processing, offline-wait, or failed status
+  if (cardStatus == 'processing' ||
+      cardStatus == 'waiting_for_network' ||
+      cardStatus == 'failed') {
     // For native cards, return data with status
     if (uiConfigs.isNotEmpty &&
         uiConfigs.every((c) => isNativeCard(c.templateId))) {
@@ -149,16 +151,18 @@ Future<CardRenderResult> renderCard({
 
     // For HTML cards, return HTML
     String contentToDisplay = "";
-    contentToDisplay = cardStatus == 'processing'
-        ? "Parsing your record..."
-        : "Processing failed";
+    contentToDisplay = switch (cardStatus) {
+      'processing' => "Parsing your record...",
+      'waiting_for_network' => "Waiting for network...",
+      _ => "Processing failed",
+    };
     if (factContent != null && factContent.isNotEmpty) {
       contentToDisplay = factContent;
     }
 
-    final htmlContent = cardStatus == 'processing'
-        ? getProcessingCardHtml(contentToDisplay)
-        : getFallbackCardHtml(contentToDisplay);
+    final htmlContent = cardStatus == 'failed'
+        ? getFallbackCardHtml(contentToDisplay)
+        : getProcessingCardHtml(contentToDisplay);
     final finalHtml =
         await fileSystemService.replaceFsInHtml(htmlContent, userId);
     return CardRenderResult(

@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:memex/config/app_flavor.dart';
 import 'package:memex/domain/models/settings_item.dart';
 import 'package:memex/data/repositories/memex_router.dart';
+import 'package:memex/ui/app_lock/widgets/app_lock_settings_page.dart';
 import 'package:memex/ui/settings/widgets/ai_service_setup_page.dart';
 import 'package:memex/ui/settings/widgets/system_authorization_page.dart';
 import 'package:memex/ui/settings/widgets/agent_config_list_page.dart';
@@ -598,6 +599,33 @@ class SettingsRegistry {
           icon: Icons.backup_outlined,
           navigationTarget: NavigationTarget(
             pageBuilder: (_) => const BackupRestorePage(),
+          ),
+          parentPathGetter: () => [
+            UserStorage.l10n.personalCenter,
+            UserStorage.l10n.settings,
+          ],
+        ),
+        SettingsItem(
+          id: 'settings.app_lock',
+          titleGetter: () => UserStorage.l10n.appLockSettings,
+          descriptionGetter: () => UserStorage.l10n.enableAppLockSubtitle,
+          keywords: const [
+            '应用锁',
+            '锁定',
+            '密码',
+            '生物识别',
+            '面容',
+            '指纹',
+            'app lock',
+            'lock',
+            'password',
+            'biometrics',
+            'face id',
+            'touch id',
+          ],
+          icon: Icons.lock_outline,
+          navigationTarget: NavigationTarget(
+            pageBuilder: (_) => const AppLockSettingsPage(),
           ),
           parentPathGetter: () => [
             UserStorage.l10n.personalCenter,

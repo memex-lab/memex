@@ -14,6 +14,7 @@ import 'package:memex/data/services/chat_session_storage.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/local_asset_server.dart';
 import 'package:memex/db/app_database.dart';
+import 'package:memex/utils/network_reachability.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -25,22 +26,29 @@ void main() {
     await UserStorage.initL10n();
   });
   group('request preparation events', () {
-    test('announces text preparation before doing any user/session I/O', () async {
-      final event = await ChatService.instance.sendMessage(
-        'hello', requestId: 'request-text',
-      ).first;
+    test('announces text preparation before doing any user/session I/O',
+        () async {
+      final event = await ChatService.instance
+          .sendMessage(
+            'hello',
+            requestId: 'request-text',
+          )
+          .first;
       expect(event, isA<ChatTurnPreparingEvent>());
       expect((event as ChatTurnPreparingEvent).turnId, 'request-text');
     });
 
-    test('announces image preparation before trying to read the file', () async {
+    test('announces image preparation before trying to read the file',
+        () async {
       final event = await ChatService.instance.sendMessage(
-        '', images: [XFile('/nonexistent/attachment.jpg')],
+        '',
+        images: [XFile('/nonexistent/attachment.jpg')],
       ).first;
       expect(event, isA<ChatTurnPreparingEvent>());
     });
 
-    test('rejects empty and whitespace-only requests without preparation', () async {
+    test('rejects empty and whitespace-only requests without preparation',
+        () async {
       for (final text in ['', '   ']) {
         final events = await ChatService.instance.sendMessage(text).toList();
         expect(events, hasLength(1));
@@ -84,6 +92,17 @@ void main() {
           payloadJson: jsonEncode({'session_id': 'session-a'}),
         ),
         isFalse,
+      );
+
+      expect(
+        isActiveChatTurnTaskForSession(
+          sessionId: 'session-a',
+          taskType: taskType,
+          expectedTaskType: taskType,
+          status: waitingNetworkTaskStatus,
+          payloadJson: jsonEncode({'session_id': 'session-a'}),
+        ),
+        isTrue,
       );
 
       expect(
@@ -292,12 +311,12 @@ void main() {
       final attached = Completer<ChatRunAttachedEvent>();
       final subscription = ChatService.instance
           .sendMessage(
-            'next turn',
-            requestId: 'request-with-frozen-state',
-            sessionId: queuedSessionId,
-            agentName: 'memex_agent',
-            scene: 'super_agent_home',
-          )
+        'next turn',
+        requestId: 'request-with-frozen-state',
+        sessionId: queuedSessionId,
+        agentName: 'memex_agent',
+        scene: 'super_agent_home',
+      )
           .listen((event) {
         events.add(event);
         if (event is ChatRunAttachedEvent && !attached.isCompleted) {
@@ -310,7 +329,8 @@ void main() {
         final foregroundSnapshot =
             await AgentForegroundTaskTracker.forTesting(db: db).getSnapshot();
 
-        final attachment = await attached.future.timeout(const Duration(seconds: 5));
+        final attachment =
+            await attached.future.timeout(const Duration(seconds: 5));
         expect(events.first, isA<ChatTurnPreparingEvent>());
         final queued = events.whereType<ChatTurnQueuedEvent>().first;
         expect(queued.runId, attachment.runId);
@@ -321,12 +341,19 @@ void main() {
 
         // A second submission announces the same run explicitly, allowing the
         // UI to deduplicate without guessing whether a listener exists.
-        final second = await ChatService.instance.sendMessage(
-          'follow up', sessionId: queuedSessionId, requestId: 'follow-up',
-        ).take(4).toList();
+        final second = await ChatService.instance
+            .sendMessage(
+              'follow up',
+              sessionId: queuedSessionId,
+              requestId: 'follow-up',
+            )
+            .take(4)
+            .toList();
         expect(second.first, isA<ChatTurnPreparingEvent>());
-        expect(second.whereType<ChatRunAttachedEvent>().single.runId, attachment.runId);
-        expect(second.whereType<ChatTurnQueuedEvent>().single.runId, attachment.runId);
+        expect(second.whereType<ChatRunAttachedEvent>().single.runId,
+            attachment.runId);
+        expect(second.whereType<ChatTurnQueuedEvent>().single.runId,
+            attachment.runId);
         expect(payload['session_id'], queuedSessionId);
         expect(payload['agent_state_session_id'], activeStateId);
         expect(foregroundSnapshot.activeTaskIds, contains(task.id));

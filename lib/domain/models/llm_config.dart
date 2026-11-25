@@ -1,4 +1,5 @@
 import 'package:memex/config/app_flavor.dart';
+import 'package:memex/domain/models/task_exceptions.dart';
 
 class LLMConfig {
   static const String defaultClientKey = 'default';
@@ -560,50 +561,67 @@ class LLMConfig {
 
   bool get isDefault => key == defaultClientKey;
 
+  // OpenAI OAuth uses its own token. Ollama does not require an API key.
+  static const _apiKeyTypes = {
+    typeResponses,
+    typeChatCompletion,
+    typeClaude,
+    typeGemini,
+    typeKimi,
+    typeQwen,
+    typeSeed,
+    typeZhipu,
+    typeDeepSeek,
+    typeMinimax,
+    typeMimo,
+    typeOpenRouter,
+    typeMemex,
+  };
+
+  static const _baseUrlTypes = {
+    typeGemini,
+    typeChatCompletion,
+    typeResponses,
+    typeClaude,
+    typeKimi,
+    typeQwen,
+    typeSeed,
+    typeZhipu,
+    typeDeepSeek,
+    typeMinimax,
+    typeOpenRouter,
+    typeOllama,
+    typeMimo,
+    typeMemex,
+  };
+
   /// Check if this config is valid
   bool get isValid {
     if (type.isEmpty || modelId.isEmpty) {
       return false;
     }
-    // OpenAI OAuth uses its own internal token, so apiKey is allowed to be empty
-    // Ollama does not require an API key
-    if ((type == typeResponses ||
-            type == typeChatCompletion ||
-            type == typeClaude ||
-            type == typeGemini ||
-            type == typeKimi ||
-            type == typeQwen ||
-            type == typeSeed ||
-            type == typeZhipu ||
-            type == typeDeepSeek ||
-            type == typeMinimax ||
-            type == typeMimo ||
-            type == typeOpenRouter ||
-            type == typeMemex) &&
-        getEffectiveApiKey().isEmpty) {
+    if (_apiKeyTypes.contains(type) && getEffectiveApiKey().isEmpty) {
       return false;
     }
-    // Types that require a non-empty baseUrl
-    final typesRequiringBaseUrl = [
-      typeGemini,
-      typeChatCompletion,
-      typeResponses,
-      typeClaude,
-      typeKimi,
-      typeQwen,
-      typeSeed,
-      typeZhipu,
-      typeDeepSeek,
-      typeMinimax,
-      typeOpenRouter,
-      typeOllama,
-      typeMimo,
-      typeMemex,
-    ];
-    if (typesRequiringBaseUrl.contains(type)) {
+    if (_baseUrlTypes.contains(type)) {
       return baseUrl.isNotEmpty;
     }
     return true;
+  }
+
+  /// Why [isValid] is false. A selected model with a missing key stays
+  /// distinct from "AI is off".
+  InvalidModelConfigReason? get configurationProblem {
+    if (type.isEmpty || modelId.isEmpty) {
+      return InvalidModelConfigReason.notConfigured;
+    }
+    if (_apiKeyTypes.contains(type) && getEffectiveApiKey().isEmpty) {
+      return InvalidModelConfigReason.emptyApiKey;
+    }
+    if (_baseUrlTypes.contains(type) && baseUrl.isEmpty) {
+      return InvalidModelConfigReason.other;
+    }
+    return null;
   }
 
   Map<String, dynamic> toJson() {

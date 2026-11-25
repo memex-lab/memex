@@ -78,7 +78,7 @@ import 'app_localizations_zh.dart';
 /// property.
 abstract class AppLocalizations {
   AppLocalizations(String locale)
-      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -101,11 +101,11 @@ abstract class AppLocalizations {
   /// of delegates is preferred or required.
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
       <LocalizationsDelegate<dynamic>>[
-    delegate,
-    GlobalMaterialLocalizations.delegate,
-    GlobalCupertinoLocalizations.delegate,
-    GlobalWidgetsLocalizations.delegate,
-  ];
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
@@ -126,7 +126,7 @@ abstract class AppLocalizations {
     Locale('tr'),
     Locale('vi'),
     Locale('zh'),
-    Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant')
+    Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant'),
   ];
 
   /// No description provided for @chatThinkingMessage.
@@ -1382,7 +1382,10 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Running {running}, Pending {pending}, Retry {retrying}'**
   String agentBackgroundTaskSummary(
-      Object running, Object pending, Object retrying);
+    Object running,
+    Object pending,
+    Object retrying,
+  );
 
   /// No description provided for @agentBackgroundTaskDetail.
   ///
@@ -3484,6 +3487,24 @@ abstract class AppLocalizations {
   /// **'AI Agent \"{agentId}\" needs a valid model configuration (key: \"{configKey}\") to operate. Please check the model settings.'**
   String invalidModelConfigDetailed(Object agentId, Object configKey);
 
+  /// No description provided for @invalidModelConfigPlain.
+  ///
+  /// In en, this message translates to:
+  /// **'You can keep recording without AI. Turn AI on when you want it to organize and summarize what you save.'**
+  String get invalidModelConfigPlain;
+
+  /// No description provided for @keepRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep recording'**
+  String get keepRecording;
+
+  /// No description provided for @turnOnAi.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on AI'**
+  String get turnOnAi;
+
   /// No description provided for @discardChangesTitle.
   ///
   /// In en, this message translates to:
@@ -3537,6 +3558,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Processing'**
   String get processingStatus;
+
+  /// No description provided for @waitingForNetworkStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for network'**
+  String get waitingForNetworkStatus;
 
   /// No description provided for @failedStatus.
   ///
@@ -4689,6 +4716,95 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This on-device model does not cover that language. Multilingual includes German and other European languages. SenseVoice covers Chinese, English, Japanese, Korean, and Cantonese.'**
   String get localSpeechLanguageUnsupported;
+  /// No description provided for @analyzeVocalToneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Analyze vocal tone'**
+  String get analyzeVocalToneTitle;
+
+  /// No description provided for @analyzeVocalToneDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Off by default. When on, a short note about mood and energy is added to the voice draft before you send it. An on device model stays on device. Audio goes to your configured model only when that on device model has no tone tag.'**
+  String get analyzeVocalToneDesc;
+
+  /// No description provided for @vocalToneLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Vocal tone: {mood}, {energy}.'**
+  String vocalToneLine(String mood, String energy);
+
+  /// No description provided for @vocalToneMoodHappy.
+  ///
+  /// In en, this message translates to:
+  /// **'happy'**
+  String get vocalToneMoodHappy;
+
+  /// No description provided for @vocalToneMoodSad.
+  ///
+  /// In en, this message translates to:
+  /// **'sad'**
+  String get vocalToneMoodSad;
+
+  /// No description provided for @vocalToneMoodAngry.
+  ///
+  /// In en, this message translates to:
+  /// **'angry'**
+  String get vocalToneMoodAngry;
+
+  /// No description provided for @vocalToneMoodCalm.
+  ///
+  /// In en, this message translates to:
+  /// **'calm'**
+  String get vocalToneMoodCalm;
+
+  /// No description provided for @vocalToneMoodTense.
+  ///
+  /// In en, this message translates to:
+  /// **'tense'**
+  String get vocalToneMoodTense;
+
+  /// No description provided for @vocalToneMoodDispleased.
+  ///
+  /// In en, this message translates to:
+  /// **'displeased'**
+  String get vocalToneMoodDispleased;
+
+  /// No description provided for @vocalToneMoodSurprised.
+  ///
+  /// In en, this message translates to:
+  /// **'surprised'**
+  String get vocalToneMoodSurprised;
+
+  /// No description provided for @vocalToneMoodLaughter.
+  ///
+  /// In en, this message translates to:
+  /// **'laughter'**
+  String get vocalToneMoodLaughter;
+
+  /// No description provided for @vocalToneMoodCrying.
+  ///
+  /// In en, this message translates to:
+  /// **'crying'**
+  String get vocalToneMoodCrying;
+
+  /// No description provided for @vocalToneEnergyLow.
+  ///
+  /// In en, this message translates to:
+  /// **'low energy'**
+  String get vocalToneEnergyLow;
+
+  /// No description provided for @vocalToneEnergySteady.
+  ///
+  /// In en, this message translates to:
+  /// **'steady energy'**
+  String get vocalToneEnergySteady;
+
+  /// No description provided for @vocalToneEnergyHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'high energy'**
+  String get vocalToneEnergyHigh;
 
   /// No description provided for @pendingAiProcessingHint.
   ///
@@ -6070,24 +6186,24 @@ class _AppLocalizationsDelegate
 
   @override
   bool isSupported(Locale locale) => <String>[
-        'ar',
-        'de',
-        'en',
-        'es',
-        'fa',
-        'fr',
-        'hi',
-        'id',
-        'it',
-        'ja',
-        'ko',
-        'pt',
-        'ru',
-        'th',
-        'tr',
-        'vi',
-        'zh'
-      ].contains(locale.languageCode);
+    'ar',
+    'de',
+    'en',
+    'es',
+    'fa',
+    'fr',
+    'hi',
+    'id',
+    'it',
+    'ja',
+    'ko',
+    'pt',
+    'ru',
+    'th',
+    'tr',
+    'vi',
+    'zh',
+  ].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -6145,8 +6261,9 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   }
 
   throw FlutterError(
-      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-      'an issue with the localizations generation tool. Please file an issue '
-      'on GitHub with a reproducible sample app and the gen-l10n configuration '
-      'that was used.');
+    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+    'an issue with the localizations generation tool. Please file an issue '
+    'on GitHub with a reproducible sample app and the gen-l10n configuration '
+    'that was used.',
+  );
 }

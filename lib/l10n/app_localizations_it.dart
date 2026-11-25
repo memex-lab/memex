@@ -720,7 +720,10 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-      Object running, Object pending, Object retrying) {
+    Object running,
+    Object pending,
+    Object retrying,
+  ) {
     return 'In esecuzione $running, In sospeso $pending, Riprova $retrying';
   }
 
@@ -1934,6 +1937,16 @@ class AppLocalizationsIt extends AppLocalizations {
   }
 
   @override
+  String get invalidModelConfigPlain =>
+      'Puoi continuare a registrare senza IA. Attiva l\'IA quando vuoi che organizzi e riassuma ciò che salvi.';
+
+  @override
+  String get keepRecording => 'Continua a registrare';
+
+  @override
+  String get turnOnAi => 'Attiva IA';
+
+  @override
   String get discardChangesTitle => 'Lasciare questa pagina?';
 
   @override
@@ -1962,6 +1975,9 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get processingStatus => 'Elaborazione';
+
+  @override
+  String get waitingForNetworkStatus => 'In attesa della rete';
 
   @override
   String get failedStatus => 'Fallito';
@@ -2625,6 +2641,52 @@ class AppLocalizationsIt extends AppLocalizations {
   @override
   String get localSpeechLanguageUnsupported =>
       'Questo modello sul dispositivo non copre quella lingua. Multilingue include il tedesco e altre lingue europee. SenseVoice copre cinese, inglese, giapponese, coreano e cantonese.';
+  String get analyzeVocalToneTitle => 'Analizza il tono della voce';
+
+  @override
+  String get analyzeVocalToneDesc =>
+      'Spento per impostazione predefinita. Quando è acceso, una nota breve su umore ed energia viene aggiunta alla bozza vocale prima dell\'invio. Un modello sul dispositivo resta sul dispositivo. L\'audio va al modello configurato solo se quel modello sul dispositivo non ha un segno di tono.';
+
+  @override
+  String vocalToneLine(String mood, String energy) {
+    return 'Tono della voce: $mood, $energy.';
+  }
+
+  @override
+  String get vocalToneMoodHappy => 'felice';
+
+  @override
+  String get vocalToneMoodSad => 'triste';
+
+  @override
+  String get vocalToneMoodAngry => 'arrabbiato';
+
+  @override
+  String get vocalToneMoodCalm => 'calmo';
+
+  @override
+  String get vocalToneMoodTense => 'teso';
+
+  @override
+  String get vocalToneMoodDispleased => 'scontento';
+
+  @override
+  String get vocalToneMoodSurprised => 'sorpreso';
+
+  @override
+  String get vocalToneMoodLaughter => 'risata';
+
+  @override
+  String get vocalToneMoodCrying => 'pianto';
+
+  @override
+  String get vocalToneEnergyLow => 'energia bassa';
+
+  @override
+  String get vocalToneEnergySteady => 'energia stabile';
+
+  @override
+  String get vocalToneEnergyHigh => 'energia alta';
 
   @override
   String get pendingAiProcessingHint => 'Configura il modello AI da elaborare';

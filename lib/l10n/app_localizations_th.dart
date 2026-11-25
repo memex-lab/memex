@@ -704,7 +704,10 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-      Object running, Object pending, Object retrying) {
+    Object running,
+    Object pending,
+    Object retrying,
+  ) {
     return 'กำลังทำงาน $running, รอดำเนินการ $pending, ลองใหม่ $retrying';
   }
 
@@ -1889,6 +1892,16 @@ class AppLocalizationsTh extends AppLocalizations {
   }
 
   @override
+  String get invalidModelConfigPlain =>
+      'คุณยังบันทึกต่อได้โดยไม่ใช้ AI เปิด AI เมื่อต้องการให้ช่วยจัดระเบียบและสรุปสิ่งที่บันทึก';
+
+  @override
+  String get keepRecording => 'บันทึกต่อ';
+
+  @override
+  String get turnOnAi => 'เปิด AI';
+
+  @override
   String get discardChangesTitle => 'ออกจากหน้านี้?';
 
   @override
@@ -1916,6 +1929,9 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get processingStatus => 'กำลังประมวลผล';
+
+  @override
+  String get waitingForNetworkStatus => 'กำลังรอเครือข่าย';
 
   @override
   String get failedStatus => 'ล้มเหลว';
@@ -2571,6 +2587,52 @@ class AppLocalizationsTh extends AppLocalizations {
   @override
   String get localSpeechLanguageUnsupported =>
       'โมเดลในเครื่องนี้ไม่ครอบคลุมภาษานั้น หลายภาษารวมเยอรมันและภาษายุโรปอื่น SenseVoice ครอบคลุมจีน อังกฤษ ญี่ปุ่น เกาหลี และกวางตุ้ง';
+  String get analyzeVocalToneTitle => 'วิเคราะห์น้ำเสียง';
+
+  @override
+  String get analyzeVocalToneDesc =>
+      'ค่าเริ่มต้นปิด เมื่อเปิด จะมีข้อความสั้นเรื่องอารมณ์และพลังในฉบับร่างเสียงก่อนส่ง โมเดลในเครื่องอยู่บนเครื่อง เสียงจะไปยังโมเดลที่ตั้งไว้ก็ต่อเมื่อโมเดลในเครื่องไม่มีเครื่องหมายน้ำเสียง';
+
+  @override
+  String vocalToneLine(String mood, String energy) {
+    return 'น้ำเสียง: $mood, $energy.';
+  }
+
+  @override
+  String get vocalToneMoodHappy => 'ดีใจ';
+
+  @override
+  String get vocalToneMoodSad => 'เศร้า';
+
+  @override
+  String get vocalToneMoodAngry => 'โกรธ';
+
+  @override
+  String get vocalToneMoodCalm => 'สงบ';
+
+  @override
+  String get vocalToneMoodTense => 'ตึงเครียด';
+
+  @override
+  String get vocalToneMoodDispleased => 'ไม่พอใจ';
+
+  @override
+  String get vocalToneMoodSurprised => 'ประหลาดใจ';
+
+  @override
+  String get vocalToneMoodLaughter => 'หัวเราะ';
+
+  @override
+  String get vocalToneMoodCrying => 'ร้องไห้';
+
+  @override
+  String get vocalToneEnergyLow => 'พลังต่ำ';
+
+  @override
+  String get vocalToneEnergySteady => 'พลังสม่ำเสมอ';
+
+  @override
+  String get vocalToneEnergyHigh => 'พลังสูง';
 
   @override
   String get pendingAiProcessingHint => 'ตั้งค่าโมเดล AI เพื่อประมวลผล';

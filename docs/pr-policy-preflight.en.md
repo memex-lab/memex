@@ -6,8 +6,7 @@ semantically correct. It treats the PR as data and looks for governance,
 trust-boundary, and objective hard-policy signals from PR metadata, changed
 files, and diff content.
 
-In the current shadow phase, Preflight only reports a decision. Its decision is
-not a merge blocker yet.
+A reject fails the governance job. High risk routes to a maintainer. Branch protection is configured separately.
 
 Human-facing Markdown comments are split into two language sections: Chinese
 first, then English. They do not interleave Chinese and English line by line.
@@ -31,23 +30,13 @@ that check, with `scripts/compare_flutter_analyze.py` and
 `scripts/compare_flutter_test_failures.py` comparing base and PR analyzer/test
 output as a baseline.
 
-Recommended quality gates:
+Flutter Quality runs the tooling tests, checks ARB key parity, and runs the regression scenarios selected by `scripts/verify_pr.py`. It compares analyzer findings and Flutter test failures against the base revision. New findings or failures, incomplete baseline evidence, or a failed selected scenario prevent a passing quality check.
 
-- `flutter analyze --no-pub`: prefer a fully green result.
-- If the repository still has historical analyzer debt, maintain a baseline and
-  require the PR to introduce no new analyzer issues. The long-term target
-  should still be fully green.
-- `flutter test --no-pub`: prefer all tests to pass. If `main` temporarily has
-  historical failures, require the PR to introduce no new failing test.
-- Add compile/build checks when the PR touches platform, flavor, release, or
-  build-pipeline behavior.
+## Handoff to local Codex
 
-When the low-risk fast path is enabled later, a PR should satisfy all of these:
+An open, non-draft PR enters the local review queue when both preflight jobs pass, their reports match the PR and its base/head revisions, and the current review is outstanding. Both `low_risk` and `high_risk` can enter the queue. A `reject` blocks entry.
 
-- Preflight has no `reject` or `high_risk` result.
-- Flutter CI is green, or the PR introduces no new analyzer/test issue.
-- AI review says the PR is compliant and low risk.
-- A maintainer still clicks merge manually. There is no auto-merge.
+Local Codex publishes a review comment and records the verdict against the reviewed PR, base, head, title and body. For a high-risk decision or a sensitive change flagged by the review tool, recording `passed` requires approval of the current head by a maintainer with write access other than the PR author. Maintainers make the merge decision. See the [local review procedure](local-pr-review.md) for the queue and verdict commands.
 
 ## Decision Levels
 
@@ -64,9 +53,7 @@ the diff. Maintainer review is required.
 
 ### `low_risk`
 
-No deterministic rule found a reason to reject the PR or require maintainer
-review. AI review and normal CI can still raise additional semantic, quality, or
-test-evidence concerns.
+The governance check found no policy flags. Flutter verification and local Codex review still apply.
 
 ## Reject Rules
 
@@ -95,8 +82,7 @@ These rules produce `high_risk`.
 ## Out of Scope
 
 Policy Preflight should not own semantic review or attention heuristics. The
-following signals require maintainer review using the actual diff and PR
-context. The `PR AI Review` workflow has been retired:
+local Codex reviewer evaluates the following signals using the diff and PR context, and records `needs-human` when independent judgment or critical evidence is missing.
 
 - Missing or weak test evidence.
 - User-facing localization or UI behavior concerns.
@@ -106,16 +92,3 @@ context. The `PR AI Review` workflow has been retired:
   sparse PR title or body.
 - Whether a generated file that changed with its source was produced by the
   expected codegen path.
-
-## Shadow-Mode Behavior
-
-During shadow mode:
-
-- `low_risk`, `high_risk`, and `reject` are all reported.
-- The workflow exits successfully so the PR is not blocked.
-- Results are written to the workflow summary and uploaded as artifacts. The
-  separate preflight-summary workflow may include them in the combined PR
-  comment.
-
-After calibration, a separate gate can decide how to use the result as a merge
-requirement.

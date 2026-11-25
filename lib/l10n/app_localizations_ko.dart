@@ -696,7 +696,10 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-      Object running, Object pending, Object retrying) {
+    Object running,
+    Object pending,
+    Object retrying,
+  ) {
     return '실행 중 $running, 대기 중 $pending, 재시도 $retrying';
   }
 
@@ -1852,6 +1855,16 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get invalidModelConfigPlain =>
+      'AI 없이도 기록을 계속할 수 있습니다. 저장한 내용을 정리하고 요약하려면 AI를 켜세요.';
+
+  @override
+  String get keepRecording => '계속 기록';
+
+  @override
+  String get turnOnAi => 'AI 켜기';
+
+  @override
   String get discardChangesTitle => '이 페이지를 떠나시겠습니까?';
 
   @override
@@ -1878,6 +1891,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get processingStatus => '처리 중';
+
+  @override
+  String get waitingForNetworkStatus => '네트워크 대기 중';
 
   @override
   String get failedStatus => '실패';
@@ -2521,6 +2537,52 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get localSpeechLanguageUnsupported =>
       '이 기기 모델은 그 언어를 다루지 않습니다. 다국어 모델에는 독일어와 다른 유럽 언어가 포함됩니다. SenseVoice는 중국어, 영어, 일본어, 한국어, 광둥어를 다룹니다.';
+  String get analyzeVocalToneTitle => '목소리 톤 분석';
+
+  @override
+  String get analyzeVocalToneDesc =>
+      '기본값은 꺼짐입니다. 켜면 보내기 전에 기분과 힘에 대한 짧은 메모가 음성 초안에 붙습니다. 기기 모델의 결과는 기기에 남습니다. 기기 모델에 톤 표시가 없을 때만 오디오가 설정한 모델로 갑니다.';
+
+  @override
+  String vocalToneLine(String mood, String energy) {
+    return '목소리 톤: $mood, $energy.';
+  }
+
+  @override
+  String get vocalToneMoodHappy => '기쁨';
+
+  @override
+  String get vocalToneMoodSad => '슬픔';
+
+  @override
+  String get vocalToneMoodAngry => '화남';
+
+  @override
+  String get vocalToneMoodCalm => '차분';
+
+  @override
+  String get vocalToneMoodTense => '긴장';
+
+  @override
+  String get vocalToneMoodDispleased => '불쾌';
+
+  @override
+  String get vocalToneMoodSurprised => '놀람';
+
+  @override
+  String get vocalToneMoodLaughter => '웃음';
+
+  @override
+  String get vocalToneMoodCrying => '울음';
+
+  @override
+  String get vocalToneEnergyLow => '낮은 에너지';
+
+  @override
+  String get vocalToneEnergySteady => '고른 에너지';
+
+  @override
+  String get vocalToneEnergyHigh => '높은 에너지';
 
   @override
   String get pendingAiProcessingHint => '처리할 AI 모델 설정';

@@ -460,8 +460,11 @@ class TimelineViewModel extends ChangeNotifier {
     return null;
   }
 
+  bool _isQueuedCard(String status) =>
+      status == 'processing' || status == 'waiting_for_network';
+
   void _startPollingIfNeeded() {
-    final hasProcessing = cards.any((c) => c.status == 'processing');
+    final hasProcessing = cards.any((c) => _isQueuedCard(c.status));
     if (hasProcessing && _pollingTimer == null) {
       _logger.info('Starting polling for processing cards');
       _pollingTimer = Timer.periodic(
@@ -474,7 +477,7 @@ class TimelineViewModel extends ChangeNotifier {
   }
 
   void _checkAndStopPollingIfNeeded() {
-    if (!cards.any((c) => c.status == 'processing') && _pollingTimer != null) {
+    if (!cards.any((c) => _isQueuedCard(c.status)) && _pollingTimer != null) {
       _stopPolling();
     }
   }
@@ -486,7 +489,7 @@ class TimelineViewModel extends ChangeNotifier {
 
   void _pollProcessingCards() {
     final processingIds = cards
-        .where((c) => c.status == 'processing')
+        .where((c) => _isQueuedCard(c.status))
         .map((c) => c.id)
         .toList();
     if (processingIds.isEmpty) {
@@ -511,7 +514,7 @@ class TimelineViewModel extends ChangeNotifier {
   void addCard(TimelineCardModel card) {
     if (isRetiredTimelineCard(card)) return;
     cards = upsertTimelineCardById(cards, card);
-    if (card.status == 'processing') {
+    if (_isQueuedCard(card.status)) {
       _startPollingIfNeeded();
     }
     notifyListeners();

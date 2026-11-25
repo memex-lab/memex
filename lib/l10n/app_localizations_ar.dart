@@ -704,7 +704,10 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-      Object running, Object pending, Object retrying) {
+    Object running,
+    Object pending,
+    Object retrying,
+  ) {
     return 'قيد التشغيل $running، معلق $pending، إعادة محاولة $retrying';
   }
 
@@ -1881,6 +1884,16 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get invalidModelConfigPlain =>
+      'يمكنك متابعة التسجيل بدون ذكاء اصطناعي. شغّله عندما تريد تنظيم ما تحفظه وتلخيصه.';
+
+  @override
+  String get keepRecording => 'متابعة التسجيل';
+
+  @override
+  String get turnOnAi => 'تشغيل الذكاء الاصطناعي';
+
+  @override
   String get discardChangesTitle => 'مغادرة هذه الصفحة؟';
 
   @override
@@ -1909,6 +1922,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get processingStatus => 'قيد المعالجة';
+
+  @override
+  String get waitingForNetworkStatus => 'في انتظار الشبكة';
 
   @override
   String get failedStatus => 'فشل';
@@ -2562,6 +2578,52 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get localSpeechLanguageUnsupported =>
       'هذا النموذج على الجهاز لا يغطي تلك اللغة. متعدد اللغات يشمل الألمانية ولغات أوروبية أخرى. SenseVoice يغطي الصينية والإنجليزية واليابانية والكورية والكانتونية.';
+  String get analyzeVocalToneTitle => 'تحليل نبرة الصوت';
+
+  @override
+  String get analyzeVocalToneDesc =>
+      'مغلق بشكل افتراضي. عند تشغيله تُضاف ملاحظة قصيرة عن المزاج والطاقة إلى مسودة الصوت قبل الإرسال. نموذج الجهاز يبقى على الجهاز. يذهب الصوت إلى النموذج الذي أعددته فقط عندما لا يملك نموذج الجهاز علامة نبرة.';
+
+  @override
+  String vocalToneLine(String mood, String energy) {
+    return 'نبرة الصوت: $mood، $energy.';
+  }
+
+  @override
+  String get vocalToneMoodHappy => 'سعيد';
+
+  @override
+  String get vocalToneMoodSad => 'حزين';
+
+  @override
+  String get vocalToneMoodAngry => 'غاضب';
+
+  @override
+  String get vocalToneMoodCalm => 'هادئ';
+
+  @override
+  String get vocalToneMoodTense => 'متوتر';
+
+  @override
+  String get vocalToneMoodDispleased => 'مستاء';
+
+  @override
+  String get vocalToneMoodSurprised => 'مندهش';
+
+  @override
+  String get vocalToneMoodLaughter => 'ضحك';
+
+  @override
+  String get vocalToneMoodCrying => 'بكاء';
+
+  @override
+  String get vocalToneEnergyLow => 'طاقة منخفضة';
+
+  @override
+  String get vocalToneEnergySteady => 'طاقة ثابتة';
+
+  @override
+  String get vocalToneEnergyHigh => 'طاقة عالية';
 
   @override
   String get pendingAiProcessingHint =>

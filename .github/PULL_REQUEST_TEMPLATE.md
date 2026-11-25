@@ -34,6 +34,10 @@ Closes #
 
 <!-- Required for UI changes. Drag images or videos here. -->
 
+## User outcome and verification
+
+<!-- Given which starting state, what can the user observe? Include the tested commit, platform, result/artifact and gaps. For a migration or release change, describe recovery. -->
+
 ## Test plan
 
 <!-- List the exact commands and manual checks you ran. For behavior changes,

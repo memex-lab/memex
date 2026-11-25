@@ -5,6 +5,7 @@ import 'package:memex/ui/core/cards/style/timeline_theme.dart';
 import 'package:memex/ui/core/cards/ui/timeline_card_container.dart';
 import 'package:memex/ui/core/cards/ui/timeline_common.dart';
 import 'package:memex/ui/core/widgets/local_image.dart';
+import 'package:memex/data/services/capture_card_status.dart';
 import 'package:memex/ui/core/widgets/local_audio_source.dart';
 import 'package:memex/utils/user_storage.dart';
 
@@ -41,6 +42,7 @@ class _ClassicCardState extends State<ClassicCard> {
       (widget.data['images'] as List<dynamic>?)?.cast<String>() ?? [];
   String? get audioUrl => widget.data['audioUrl'] as String?;
   String get status => widget.data['status'] as String? ?? 'completed';
+  String? get cardId => widget.data['card_id'] as String?;
   String? get transcript => widget.data['transcript'] as String?;
   String? get failureReason => widget.data['failure_reason'] as String?;
 
@@ -133,8 +135,9 @@ class _ClassicCardState extends State<ClassicCard> {
   @override
   Widget build(BuildContext context) {
     final isProcessing = status == 'processing';
+    final isWaiting = status == waitingForNetworkCardStatus;
     final isFailed = status == 'failed';
-    final showStatusHeader = isProcessing || isFailed;
+    final showStatusHeader = isProcessing || isWaiting || isFailed;
 
     return TimelineCard(
       variant: TimelineCardVariant.glass,
@@ -190,8 +193,9 @@ class _ClassicCardState extends State<ClassicCard> {
 
   Widget _buildStatusHeader() {
     final isProcessing = status == 'processing';
+    final isWaiting = status == waitingForNetworkCardStatus;
 
-    if (isProcessing) {
+    if (isProcessing || isWaiting) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
@@ -220,13 +224,29 @@ class _ClassicCardState extends State<ClassicCard> {
             ),
             const SizedBox(width: 8),
             Text(
-              UserStorage.l10n.processingStatus,
+              isWaiting
+                  ? UserStorage.l10n.waitingForNetworkStatus
+                  : UserStorage.l10n.processingStatus,
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
                 color: const Color(0xFF8B5CF6).withValues(alpha: 0.8),
               ),
             ),
+            if (isWaiting && cardId != null) ...[
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: _retryCapture,
+                child: Text(
+                  UserStorage.l10n.retry,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF6D28D9),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       );
@@ -262,6 +282,20 @@ class _ClassicCardState extends State<ClassicCard> {
                 color: const Color(0xFFEF4444).withValues(alpha: 0.8),
               ),
             ),
+            if (cardId != null) ...[
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: _retryCapture,
+                child: Text(
+                  UserStorage.l10n.retry,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFFB91C1C),
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(width: 6),
             Icon(Icons.chevron_right,
                 size: 14,
@@ -270,6 +304,19 @@ class _ClassicCardState extends State<ClassicCard> {
         ),
       ),
     );
+  }
+
+  Future<void> _retryCapture() async {
+    final id = cardId;
+    if (id == null) return;
+    try {
+      await requeueCaptureCard(id);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(UserStorage.l10n.operationFailed('$e'))),
+      );
+    }
   }
 
   void _showFailureSheet(BuildContext context) {
