@@ -122,3 +122,5 @@ cd ios && pod install && cd ..
 ## 安全与隐私
 
 不要公开提交可能暴露私人数据、文件、模型凭证、应用锁行为或备份内容的漏洞。请先私下联系维护者。
+
+维护者按[本地 Codex 审查手册](docs/local-pr-review.md)处理待审 PR；出现漏检、误报或测试抖动时按[持续校准流程](docs/review-verification-maintenance.md)更新规则。

@@ -37,6 +37,7 @@ jobs:
               "workflow": "PR Flutter Quality",
               "artifact": "pr-flutter-quality",
               "pr_number": pr["number"],
+              "checkout_sha": os.environ["GITHUB_SHA"],
               "head_sha": pr["head"]["sha"],
               "head_ref": pr["head"]["ref"],
               "base_sha": pr["base"]["sha"],
@@ -56,7 +57,7 @@ jobs:
           git worktree add ../memex-base "${{ github.event.pull_request.base.sha }}"
 
       - name: Run preflight script unit tests
-        run: python3 scripts/compare_flutter_analyze_test.py
+        run: python3 -m unittest discover -s tests/tools -v
 
       - name: Check ARB key parity across locales
         run: python3 scripts/check_arb_key_parity.py
@@ -70,6 +71,7 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: 3.50.1
           channel: stable
           cache: true
 
@@ -78,26 +80,18 @@ jobs:
 
       - name: Install base Flutter dependencies
         working-directory: ../memex-base
-        run: |
-          python3 - << 'PY'
-          from pathlib import Path
-          path = Path("pubspec.yaml")
-          text = path.read_text()
-          # main still pins Drift's sqlite3 2 line, which current Flutter cannot solve.
-          # The PR checkout already carries the upgrade; give the baseline the same constraints.
-          for old, new in (
-              ("sqlite3_flutter_libs: ^0.5.41", "sqlite3_flutter_libs: ^0.6.0+eol"),
-              ("sqlite3_flutter_libs: ^0.5.42", "sqlite3_flutter_libs: ^0.6.0+eol"),
-              ("drift_flutter: ^0.2.8", "drift_flutter: ^0.3.0"),
-              ("sqlite3: ^2.4.6", "sqlite3: ^3.0.0"),
-          ):
-              text = text.replace(old, new)
-          path.write_text(text)
-          PY
-          flutter pub get
+        run: flutter pub get
 
       - name: Install PR Flutter dependencies
         run: flutter pub get
+
+      - name: Verify affected user scenarios
+        id: scenarios
+        run: |
+          verifier=../memex-base/scripts/verify_pr.py
+          # Bootstrap only for the PR introducing the verifier.
+          if [ ! -f "$verifier" ]; then verifier=scripts/verify_pr.py; fi
+          python3 "$verifier" --base "${{ github.event.pull_request.base.sha }}" --report scenarios.json
 
       - name: Analyze base and PR code
         shell: bash
@@ -116,7 +110,12 @@ jobs:
 
           echo "Base analyzer exit code: ${base_status}"
           echo "PR analyzer exit code: ${head_status}"
-          exit 0
+          for side in base head; do
+            status_var="${side}_status"
+            if [[ "${!status_var}" != 0 ]]; then
+              if [[ "${!status_var}" != 1 ]] || ! grep -qE "^\[error\]" "$RUNNER_TEMP/flutter-analyze-$side.txt"; then exit 2; fi
+            fi
+          done
 
       - name: Check analyzer baseline
         id: analyzer_baseline
@@ -135,18 +134,21 @@ jobs:
           exit 0
 
       - name: Run base and PR Flutter tests
+        id: tests
         shell: bash
         run: |
           set +e
           (
             cd ../memex-base
-            flutter test --no-pub
+            flutter test --no-pub --machine
           ) | tee "$RUNNER_TEMP/flutter-test-base.txt"
           base_status="${PIPESTATUS[0]}"
 
-          flutter test --no-pub | tee "$RUNNER_TEMP/flutter-test-head.txt"
+          flutter test --no-pub --machine | tee "$RUNNER_TEMP/flutter-test-head.txt"
           head_status="${PIPESTATUS[0]}"
 
+          echo "base_exit=$base_status" >> "$GITHUB_OUTPUT"
+          echo "head_exit=$head_status" >> "$GITHUB_OUTPUT"
           echo "Base test exit code: ${base_status}"
           echo "PR test exit code: ${head_status}"
           exit 0
@@ -157,6 +159,8 @@ jobs:
         run: |
           set +e
           python3 scripts/compare_flutter_test_failures.py \
+            --base-exit "${{ steps.tests.outputs.base_exit }}" \
+            --head-exit "${{ steps.tests.outputs.head_exit }}" \
             --base "$RUNNER_TEMP/flutter-test-base.txt" \
             --head "$RUNNER_TEMP/flutter-test-head.txt" \
             --summary "$GITHUB_STEP_SUMMARY" \
@@ -180,17 +184,19 @@ jobs:
           from pathlib import Path
 
           def status_label(status: str) -> tuple[str, str, str]:
-              if not status:
+              if not status or status == "2":
                   return ("INCOMPLETE", "未完成", "incomplete")
               if status == "0":
                   return ("PASS", "通过", "passed")
               return ("FAIL", "失败", "failed")
 
+          scenario_report = json.loads(Path("scenarios.json").read_text()) if Path("scenarios.json").is_file() else {}
           analyzer_status = os.environ.get("ANALYZER_STATUS", "")
           test_status = os.environ.get("TEST_STATUS", "")
           analyzer_en, analyzer_zh, analyzer_key = status_label(analyzer_status)
           test_en, test_zh, test_key = status_label(test_status)
           overall_key = (
+              "failed" if scenario_report.get("status") == "failed" else
               "passed"
               if analyzer_key == "passed" and test_key == "passed"
               else "incomplete"
@@ -214,6 +220,7 @@ jobs:
                   return file.read_text(encoding="utf-8", errors="replace").strip()
               return fallback
 
+          scenario_summary = f"{scenario_report.get('status', 'incomplete')} · " + ", ".join(scenario_report.get("scenarios", []))
           analyzer_md = read_text(
               "flutter-analyze.md",
               "## Flutter Analyzer Baseline\n\nAnalyzer baseline result was not produced.",
@@ -239,6 +246,9 @@ jobs:
                   f"- Analyzer baseline: `{analyzer_en}`",
                   f"- Test baseline: `{test_en}`",
                   "",
+                  f"User scenarios / 用户场景: {scenario_summary}",
+                  f"Tested checkout: `{os.environ['GITHUB_SHA']}`",
+                  "",
                   analyzer_md,
                   "",
                   test_md,
@@ -251,6 +261,7 @@ jobs:
                   {
                       "schema_version": 1,
                       "overall": overall_key,
+                      "scenarios": scenario_report,
                       "analyzer": {
                           "status": analyzer_key,
                           "exit_code": analyzer_status,
@@ -279,6 +290,7 @@ jobs:
             preflight-context.json
             flutter-quality.md
             flutter-quality.json
+            scenarios.json
             flutter-analyze.md
             flutter-analyze.json
             flutter-test.md
