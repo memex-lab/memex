@@ -22,21 +22,13 @@ CI 负责，因为这类 job 会执行 PR 代码，必须运行在无 secrets、
 `scripts/compare_flutter_analyze.py` 和 `scripts/compare_flutter_test_failures.py`
 对 base 与 PR 的 analyzer/test 输出做 baseline 对比。
 
-推荐质量门禁：
+Flutter 质量检查运行工具测试、核对各语言的 ARB 键，并运行 `scripts/verify_pr.py` 按改动选出的回归场景。工作流以 base 提交为基线，比对 analyzer 发现和 Flutter 测试失败。出现新增问题、基线结果不完整或选中的场景失败时，质量检查无法通过。
 
-- `flutter analyze --no-pub`：优先要求全绿。
-- 如果仓库暂时存在历史 analyzer 问题，则维护 baseline，只要求 PR 不新增 analyzer
-  issue；长期目标仍然是全绿。
-- `flutter test --no-pub`：优先要求全过；如果 main 暂时有历史失败，则要求 PR 不新增
-  失败测试。
-- 涉及平台、flavor、release 或构建链路时，再补充对应 compile/build。
+## 进入本地 Codex 审查
 
-后续真正接入低风险快速通道时，建议同时满足：
+开放且非草稿的 PR 在两项预检均通过、报告与当前 PR 编号及 base/head 提交匹配、当前版本待审时进入本地队列。`low_risk` 和 `high_risk` 都可以入队，`reject` 会阻止入队。
 
-- Preflight 没有 `reject` 或 `high_risk`。
-- Flutter CI 全绿，或者没有新增 analyzer/test 问题。
-- AI review 判断合规且低风险。
-- 仍然由 maintainer 手动点击合并，不做自动合并。
+本地 Codex 发表审查评论，并为本次审过的 PR、base、head、标题和正文记录结论。治理判定为高风险，或审查工具命中敏感改动时，记录 `passed` 前须由作者以外、有仓库写权限的维护者批准当前 head。最终由维护者决定是否合并。领取和记录结论的命令见[本地审查手册](local-pr-review.md)。
 
 ## 判定等级
 
@@ -51,8 +43,7 @@ PR 触及 review 规则、仓库自动化、lint 配置等治理面，或者包�
 
 ### `low_risk`
 
-没有确定性规则要求打回或人工审核。AI review 和普通 CI 仍然可以提出语义、质量或
-测试证据方面的问题。
+治理预检未发现策略风险。该 PR 仍须经过 Flutter 验证和本地 Codex 审查。
 
 ## 直接打回规则
 
@@ -81,7 +72,7 @@ PR 触及 review 规则、仓库自动化、lint 配置等治理面，或者包�
 ## 不负责的范围
 
 Policy Preflight 不负责语义 review 或注意力启发式规则。
-下面这些信号由维护者结合实际 diff 和 PR context 人工判断：
+本地 Codex 结合实际 diff 和 PR 上下文审查以下问题。缺少独立人工判断或关键证据时，记录 `needs-human`。
 
 - 测试证据缺失或不足。
 - 用户可见本地化、UI 行为或交互体验风险。
@@ -89,7 +80,3 @@ Policy Preflight 不负责语义 review 或注意力启发式规则。
   等架构或安全敏感关键词。
 - 大范围 diff、单文件大改，以及 PR title/body 过少导致的 review context 不完整。
 - generated file 和源文件一起变化时，是否来自预期 codegen 链路。
-
-## 本地复审
-
-[Local Codex review](local-pr-review.md)

@@ -42,7 +42,7 @@ Memex 已经提供 **17 种界面语言**：English (`en`)、简体中文 (`zh`)
 
 1. 机器翻译打底 ARB 骨架，再由母语者审校，尤其是 agent prompt
 2. 骨架合入后为该语言标记 `help wanted` + `good first issue`
-3. CI 应检查各 ARB 的 key 集合一致
+3. PR Flutter Quality 会检查各语言的 ARB 键是否一致
 
 ## Checklist
 
@@ -56,5 +56,5 @@ Memex 已经提供 **17 种界面语言**：English (`en`)、简体中文 (`zh`)
 - [x] iOS `Info.plist` 补齐 `en` / `zh-Hans` 以外的 locale
 - [x] 各语言 Android `values-<locale>/strings.xml`
 - [ ] 阿拉伯语 RTL 布局检查
-- [ ] 缺 key 的 CI lint
+- [x] 缺 key 的 CI 检查（PR Flutter Quality 运行 `scripts/check_arb_key_parity.py`）
 - [ ] 各语言母语者审校

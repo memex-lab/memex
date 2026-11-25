@@ -1,6 +1,6 @@
 # 用本地 Codex 处理 Memex PR
 
-每天可对本地 Codex 说：“按 main 的 docs/local-pr-review.md 处理待审 PR，发表报告并更新状态。遇到需人工决定的项交给我。” 使用受信的 Memex 主干 checkout 和有本仓库 PR 评论、commit status 写权限的 gh 登录。GitHub Actions 运行治理与质量检查，模型调用只发生在本地。
+每天可对本地 Codex 说：“按 main 的 docs/local-pr-review.md 处理待审 PR，发表报告并更新状态。遇到需人工决定的项交给我。” 使用受信的 Memex 主干 checkout 和有本仓库写权限且可发表 PR review、写入 commit status 的 gh 登录。GitHub Actions 运行治理与质量检查，模型调用只发生在本地。
 
 ## 领取工作
 
@@ -40,4 +40,4 @@ python3 scripts/local_pr_review.py record 492 --base BASE_SHA --head HEAD_SHA \
 python3 scripts/local_pr_review.py show 492
 ```
 
-每个结论绑定 PR、base SHA、head SHA 及标题/正文摘要。正文改动会让本地队列重新列为待审。新版本的旧结论仍在 GitHub 供追溯。治理检查通过后，Actions 在提交上留下 pending；Flutter 通过后本地队列才放行。既有 PR 若无 pending，队列按缺少结论处理。分支保护由仓库管理员单独管理，本流程不会自动合并。提交评审工具改动时遵循[持续校准流程](review-verification-maintenance.md)。
+每个结论绑定 PR、base SHA、head SHA 及标题/正文摘要。正文改动会让本地队列重新列为待审。新版本的旧结论仍在 GitHub 供追溯。治理检查通过后，Actions 为非草稿 PR 初始化 pending 状态（已有该版本状态时跳过）。两项检查均通过且报告与当前版本匹配后，本地队列才放行。既有 PR 若无 pending，队列按缺少结论处理。分支保护由仓库管理员单独管理，本流程不会自动合并。提交评审工具改动时遵循[持续校准流程](review-verification-maintenance.md)。
