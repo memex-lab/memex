@@ -308,6 +308,8 @@ def decision_label(decision: str) -> tuple[str, str]:
 
 
 def quality_label(overall: str, conclusion: str) -> tuple[str, str]:
+    if overall in {"incomplete", "unknown"}:
+        return ("INCOMPLETE", "未完成")
     if conclusion != "success":
         return (conclusion.upper() if conclusion else "UNKNOWN", "失败")
     return {
@@ -419,9 +421,12 @@ def build_comment(*, policy: TargetResult, flutter: TargetResult) -> str:
     elif decision == "reject":
         final_zh = "打回：规则预检命中阻断项，需要修复后再进入普通 review。"
         final_en = "Rejected: policy preflight found a blocking issue."
+    elif flutter_overall in {"incomplete", "unknown"}:
+        final_zh = "验证未完成。查看首个失败步骤并补齐证据。"
+        final_en = "Verification incomplete. Inspect the first failed step and refresh the evidence."
     elif flutter_conclusion != "success" or flutter_overall != "passed":
-        final_zh = "需要修复：Flutter quality 发现新增 analyzer/test 问题或未完整完成。"
-        final_en = "Needs fixes: Flutter quality found new analyzer/test issues or did not complete."
+        final_zh = "质量检查失败，请查看新增问题或失败场景。"
+        final_en = "Quality checks failed. Inspect the regression or the affected scenario."
     elif decision == "high_risk":
         final_zh = "预检完成。下一步为本地 Codex 审查及维护者独立判断。"
         final_en = "Preflights complete. Local Codex review and independent maintainer judgment required."

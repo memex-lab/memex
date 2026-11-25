@@ -132,6 +132,10 @@ def snapshot(repo, number):
             if status["context"] == context:
                 verdict, _, digest = (status["description"] or "").partition(" ")
                 if digest == intent(pr) and VERDICTS.get(verdict) == status["state"]:
+                    if verdict == "passed" and owner_required(repo, pr):
+                        reviews = pages_for(repo, f"pulls/{number}/reviews")
+                        if not independent_approval(repo, pr, reviews):
+                            return pr, "needs-human"
                     return pr, verdict
     return pr, "awaiting-codex"
 
@@ -151,6 +155,15 @@ def needs_owner(pr, files):
     return any(fnmatch(path, pattern)
                for item in files for path in (item["filename"], item.get("previous_filename", ""))
                for pattern in patterns)
+
+
+def pages_for(repo, path):
+    pages = gh("api", "--paginate", "--slurp", f"repos/{repo}/{path}?per_page=100")
+    return [item for page in pages for item in page]
+
+
+def owner_required(repo, pr):
+    return pr["requires_policy_owner"] or needs_owner(pr, pages_for(repo, f"pulls/{pr['number']}/files"))
 
 
 def independent_approval(repo, pr, reviews):
@@ -185,16 +198,13 @@ def record(repo, args):
             f"Base: `{args.base}` · Head: `{args.head}`\n\n{report}")
     reviews_path = f"repos/{repo}/pulls/{args.number}/reviews"
     actor = gh("api", "user")["login"]
-    pages = gh("api", "--paginate", "--slurp", reviews_path + "?per_page=100")
+    reviews = pages_for(repo, f"pulls/{args.number}/reviews")
     if not api(repo, "")["permissions"].get("push"):
         raise ValueError("Recording a verdict requires a repository maintainer with write access.")
-    if args.verdict == "passed":
-        files = gh("api", "--paginate", "--slurp",
-                   f"repos/{repo}/pulls/{args.number}/files?per_page=100")
-        if pr["requires_policy_owner"] or needs_owner(pr, [f for page in files for f in page]):
-            if not independent_approval(repo, pr, [r for page in pages for r in page]):
-                raise ValueError("Needs independent maintainer approval for this head; record needs-human.")
-    previous = next((r for p in reversed(pages) for r in reversed(p)
+    if args.verdict == "passed" and owner_required(repo, pr):
+        if not independent_approval(repo, pr, reviews):
+            raise ValueError("Needs independent maintainer approval for this head; record needs-human.")
+    previous = next((r for r in reversed(reviews)
                      if r["user"]["login"] == actor and r["commit_id"] == args.head
                      and r["body"] == body), None)
     review = previous or gh("api", reviews_path, payload={
@@ -248,10 +258,21 @@ def main():
         pages = gh("api", "--paginate", "--slurp",
                    f"repos/{args.repo}/pulls?state=open&sort=created&direction=asc&per_page=100")
         numbers = [pr["number"] for page in pages for pr in page]
+    unavailable = 0
     for number in numbers:
-        pr, state = snapshot(args.repo, number)
+        try:
+            pr, state = snapshot(args.repo, number)
+        except (ValueError, OSError, subprocess.CalledProcessError) as exc:
+            if args.command == "show":
+                raise
+            print(f"#{number}\tstatus-unavailable\t{exc}", file=sys.stderr)
+            unavailable += 1
+            continue
         if args.command == "show" or args.all or state == "awaiting-codex":
             print(f"#{number}\t{state}\t{pr['base']['sha']}..{pr['head']['sha']}\t{intent(pr)}\t{pr['title']}")
+
+    if unavailable:
+        raise ValueError(f"Queue incomplete: {unavailable} PR(s) could not be inspected")
 
 
 if __name__ == "__main__":

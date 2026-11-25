@@ -190,11 +190,13 @@ jobs:
                   return ("PASS", "通过", "passed")
               return ("FAIL", "失败", "failed")
 
+          scenario_report = json.loads(Path("scenarios.json").read_text()) if Path("scenarios.json").is_file() else {}
           analyzer_status = os.environ.get("ANALYZER_STATUS", "")
           test_status = os.environ.get("TEST_STATUS", "")
           analyzer_en, analyzer_zh, analyzer_key = status_label(analyzer_status)
           test_en, test_zh, test_key = status_label(test_status)
           overall_key = (
+              "failed" if scenario_report.get("status") == "failed" else
               "passed"
               if analyzer_key == "passed" and test_key == "passed"
               else "incomplete"
@@ -218,9 +220,7 @@ jobs:
                   return file.read_text(encoding="utf-8", errors="replace").strip()
               return fallback
 
-          scenario_report = read_text("scenarios.json", "")
-          scenario = json.loads(scenario_report) if scenario_report else {}
-          scenario_summary = f"{scenario.get('status', 'incomplete')} · " + ", ".join(scenario.get("scenarios", []))
+          scenario_summary = f"{scenario_report.get('status', 'incomplete')} · " + ", ".join(scenario_report.get("scenarios", []))
           analyzer_md = read_text(
               "flutter-analyze.md",
               "## Flutter Analyzer Baseline\n\nAnalyzer baseline result was not produced.",
@@ -261,6 +261,7 @@ jobs:
                   {
                       "schema_version": 1,
                       "overall": overall_key,
+                      "scenarios": scenario_report,
                       "analyzer": {
                           "status": analyzer_key,
                           "exit_code": analyzer_status,
