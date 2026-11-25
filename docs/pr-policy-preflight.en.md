@@ -95,7 +95,7 @@ These rules produce `high_risk`.
 
 Policy Preflight should not own semantic review or attention heuristics. The
 following signals require maintainer review using the actual diff and PR
-context. The `PR AI Review` workflow has been retired:
+context.
 
 - Missing or weak test evidence.
 - User-facing localization or UI behavior concerns.

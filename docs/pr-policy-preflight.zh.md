@@ -80,7 +80,7 @@ PR 触及 review 规则、仓库自动化、lint 配置等治理面，或者包�
 
 ## 不负责的范围
 
-Policy Preflight 不负责语义 review 或注意力启发式规则。`PR AI Review` 工作流已停用，
+Policy Preflight 不负责语义 review 或注意力启发式规则。
 下面这些信号由维护者结合实际 diff 和 PR context 人工判断：
 
 - 测试证据缺失或不足。
