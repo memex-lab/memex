@@ -6,8 +6,7 @@ semantically correct. It treats the PR as data and looks for governance,
 trust-boundary, and objective hard-policy signals from PR metadata, changed
 files, and diff content.
 
-In the current shadow phase, Preflight only reports a decision. Its decision is
-not a merge blocker yet.
+A reject fails the governance job. High risk routes to a maintainer. Branch protection is configured separately.
 
 Human-facing Markdown comments are split into two language sections: Chinese
 first, then English. They do not interleave Chinese and English line by line.
@@ -107,15 +106,6 @@ context. The `PR AI Review` workflow has been retired:
 - Whether a generated file that changed with its source was produced by the
   expected codegen path.
 
-## Shadow-Mode Behavior
+## Local review
 
-During shadow mode:
-
-- `low_risk`, `high_risk`, and `reject` are all reported.
-- The workflow exits successfully so the PR is not blocked.
-- Results are written to the workflow summary and uploaded as artifacts. The
-  separate preflight-summary workflow may include them in the combined PR
-  comment.
-
-After calibration, a separate gate can decide how to use the result as a merge
-requirement.
+[Local Codex review](local-pr-review.md)

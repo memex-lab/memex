@@ -275,6 +275,7 @@ def find_matching_result(
     target: Target,
     pr_number: int,
     head_sha: str,
+    base_sha: str,
 ) -> TargetResult | None:
     for run in client.workflow_runs(target):
         if run.get("status") != "completed":
@@ -292,20 +293,15 @@ def find_matching_result(
             context = load_context(files)
         except ValueError:
             continue
-        if int(context["pr_number"]) == pr_number and context["head_sha"] == head_sha:
+        if (int(context["pr_number"]) == pr_number and context["head_sha"] == head_sha
+                and context.get("base_sha") == base_sha):
             return TargetResult(target=target, run=run, context=context, files=files)
     return None
 
 
-def current_pr_head(client: GitHubClient, *, pr_number: int) -> str | None:
-    data = client.request_json("GET", f"/pulls/{pr_number}")
-    head = data.get("head") or {}
-    return head.get("sha")
-
-
 def decision_label(decision: str) -> tuple[str, str]:
     return {
-        "low_risk": ("LOW RISK", "低风险"),
+        "low_risk": ("NO GOVERNANCE FLAGS", "未命中治理规则"),
         "high_risk": ("HIGH RISK", "高风险"),
         "reject": ("REJECT", "打回"),
     }.get(decision, (decision.upper() if decision else "UNKNOWN", decision or "未知"))
@@ -417,18 +413,21 @@ def build_comment(*, policy: TargetResult, flutter: TargetResult) -> str:
         conclusion=flutter_conclusion,
     )
 
-    if decision == "reject":
+    if policy.run.get("conclusion") != "success" and decision != "reject":
+        final_zh = "治理检查未完成，请查看对应作业。"
+        final_en = "Governance check incomplete; inspect the job."
+    elif decision == "reject":
         final_zh = "打回：规则预检命中阻断项，需要修复后再进入普通 review。"
         final_en = "Rejected: policy preflight found a blocking issue."
     elif flutter_conclusion != "success" or flutter_overall != "passed":
         final_zh = "需要修复：Flutter quality 发现新增 analyzer/test 问题或未完整完成。"
         final_en = "Needs fixes: Flutter quality found new analyzer/test issues or did not complete."
     elif decision == "high_risk":
-        final_zh = "高风险：质量预检通过，但需要 maintainer 人工 review 后手动合并。"
-        final_en = "High risk: quality passed, but maintainer review is required before manual merge."
+        final_zh = "预检完成。下一步为本地 Codex 审查及维护者独立判断。"
+        final_en = "Preflights complete. Local Codex review and independent maintainer judgment required."
     elif decision == "low_risk":
-        final_zh = "低风险：两个预检均已完成，质量预检通过，可走普通手动合并流程。"
-        final_en = "Low risk: both preflights completed and quality passed; use the normal manual merge flow."
+        final_zh = "预检通过。下一步为本地 Codex 审查，当前进度见对应提交的 memex/local-review 状态。"
+        final_en = "Preflights passed. Local Codex review is required. See the commit’s memex/local-review status."
     else:
         final_zh = "未确认：预检完成，但 policy 判定不可识别。"
         final_en = "Unconfirmed: preflights completed, but the policy decision is unknown."
@@ -488,8 +487,9 @@ def main(argv: list[str] | None = None) -> int:
 
     pr_number = int(context["pr_number"])
     head_sha = str(context["head_sha"])
-    live_head_sha = current_pr_head(client, pr_number=pr_number)
-    if live_head_sha != head_sha:
+    pr = client.request_json("GET", f"/pulls/{pr_number}")
+    live_head_sha = pr["head"]["sha"]
+    if live_head_sha != head_sha or pr["base"]["sha"] != context.get("base_sha"):
         print(
             f"Skipping stale preflight summary for PR #{pr_number}: "
             f"artifact head {head_sha}, current head {live_head_sha}."
@@ -503,6 +503,7 @@ def main(argv: list[str] | None = None) -> int:
             target=target,
             pr_number=pr_number,
             head_sha=head_sha,
+            base_sha=pr["base"]["sha"],
         )
         if result is None:
             print(
@@ -512,6 +513,10 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         results[target.key] = result
 
+    checkout = results["flutter"].context.get("checkout_sha")
+    if checkout and checkout != pr.get("merge_commit_sha"):
+        print("Skipping summary for outdated test merge.")
+        return 0
     body = build_comment(policy=results["policy"], flutter=results["flutter"])
     if args.dry_run:
         print(body)

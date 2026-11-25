@@ -1,5 +1,7 @@
 # PR AI 语义预检规则
 
+[Current local Codex review workflow / 现行本地审查流程](local-pr-review.md)
+
 > 已停用：由于 AI 服务已失效，`PR AI Review` GitHub Actions 工作流已移除。下方配置和规则仅保留作历史参考，语义审查由维护者人工完成。
 
 `PR AI Review` 是对现有规则预检和 Flutter 质量预检的补充。它使用 Claude Code

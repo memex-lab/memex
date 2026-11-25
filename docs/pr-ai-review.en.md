@@ -1,5 +1,7 @@
 # PR AI Semantic Review Rules
 
+[Current local Codex review workflow / 现行本地审查流程](local-pr-review.md)
+
 > Retired: the `PR AI Review` GitHub Actions workflow has been removed because the AI service is no longer operational. The configuration and rules below are historical reference only. Semantic review is handled by maintainers.
 
 `PR AI Review` complements the deterministic policy preflight and Flutter

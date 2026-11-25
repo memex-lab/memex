@@ -139,3 +139,5 @@ context.
 ## Security and Privacy
 
 Do not open public issues for vulnerabilities that could expose private data, files, model credentials, app lock behavior, or backup contents. Please contact the maintainers privately first.
+
+Maintainers process ready PRs through the [local Codex review queue](docs/local-pr-review.md) and [calibrate review and verification](docs/review-verification-maintenance.md) using past regressions.

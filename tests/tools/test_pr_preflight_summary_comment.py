@@ -72,9 +72,9 @@ class PreflightSummaryCommentTest(unittest.TestCase):
 
         comment = build_comment(policy=policy, flutter=flutter)
 
-        self.assertIn("Policy preflight：`低风险`。未命中打回或高风险规则。", comment)
+        self.assertIn("Policy preflight：`未命中治理规则`。未命中打回或高风险规则。", comment)
         self.assertIn("Flutter quality：`通过`。Analyzer 和 test baseline 均未发现新增问题。", comment)
-        self.assertIn("Policy preflight: `LOW RISK`. No blocking or high-risk policy signal was found.", comment)
+        self.assertIn("Policy preflight: `NO GOVERNANCE FLAGS`. No blocking or high-risk policy signal was found.", comment)
         self.assertIn("Flutter quality: `PASS`. Analyzer and test baselines found no newly introduced issue.", comment)
 
     def test_trigger_context_skips_transient_artifact_download_error(self):

@@ -2,7 +2,7 @@ name: PR Policy Preflight
 
 on:
   pull_request_target:
-    types: [opened, synchronize, reopened, ready_for_review]
+    types: [opened, synchronize, edited, reopened, ready_for_review]
 
 permissions:
   contents: read
@@ -29,6 +29,9 @@ jobs:
         run: |
           git fetch --no-tags origin \
             "pull/${{ github.event.pull_request.number }}/head:refs/remotes/origin/pr-head"
+
+          git fetch --no-tags origin "${{ github.event.pull_request.base.sha }}"
+          test "$(git rev-parse refs/remotes/origin/pr-head)" = "${{ github.event.pull_request.head.sha }}"
 
       - name: Extract PR metadata
         run: |
@@ -59,18 +62,17 @@ jobs:
           )
           PY
 
-      - name: Run preflight in shadow mode
+      - name: Evaluate governance rules
         run: |
           set +e
           python3 scripts/pr_policy_check.py \
             --repo-path . \
-            --base "origin/${{ github.event.repository.default_branch }}" \
+            --base "${{ github.event.pull_request.base.sha }}" \
             --head "refs/remotes/origin/pr-head" \
             --pr-title-file pr-title.txt \
             --pr-body-file pr-body.txt \
             --output preflight.json \
-            --markdown-output preflight.md \
-            --no-fail-on-decision
+            --markdown-output preflight.md
           status="$?"
           set -e
 
@@ -88,7 +90,9 @@ jobs:
             } >> "$GITHUB_STEP_SUMMARY"
           fi
 
-          exit 0
+          # High risk routes to a maintainer. Reject and tool errors fail.
+          if [ "$status" = 2 ]; then exit 0; fi
+          exit "$status"
 
       - name: Upload preflight result
         if: always()
@@ -100,3 +104,21 @@ jobs:
             preflight-context.json
             preflight.json
             preflight.md
+
+  local-handoff:
+    name: Queue local review
+    needs: preflight
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    permissions:
+      statuses: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+      - name: Mark this review range pending
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/local_pr_review.py --repo "$GITHUB_REPOSITORY" initialize

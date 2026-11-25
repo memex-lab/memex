@@ -4,7 +4,7 @@
 PR 代码，也不判断代码语义是否正确。它只把 PR 当作数据读取，根据 PR 元数据、
 变更文件和 diff 内容识别治理面、信任边界和客观硬规则违规。
 
-当前阶段是 shadow mode，Preflight 只输出判定结果，不把判定作为合并阻塞依据。
+打回会使治理作业失败，高风险交维护者判断。是否强制阻止合并由仓库分支保护单独配置。
 
 面向人的 Markdown comment 按语言分成两个独立区块：先中文，后 English，不做中英
 交替展示。人类可读输出不展示风险分数；JSON 保持稳定英文字段名，并包含
@@ -90,13 +90,6 @@ Policy Preflight 不负责语义 review 或注意力启发式规则。`PR AI Rev
 - 大范围 diff、单文件大改，以及 PR title/body 过少导致的 review context 不完整。
 - generated file 和源文件一起变化时，是否来自预期 codegen 链路。
 
-## Shadow Mode 行为
+## 本地复审
 
-在 shadow mode 中：
-
-- `low_risk`、`high_risk`、`reject` 都只作为结果输出。
-- workflow 始终成功退出，不阻塞 PR。
-- 结果写入 workflow summary，并作为 artifact 上传。单独的 preflight-summary workflow
-  可以把结果汇总进 PR comment。
-
-规则稳定后，可以由单独的 gate 决定如何把结果接入 required check。
+[Local Codex review](local-pr-review.md)
