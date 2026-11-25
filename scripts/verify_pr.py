@@ -12,6 +12,8 @@ SCENARIOS = {
               ("test/ui/main_screen/quick_recording_transcript_test.dart",)),
     "timeline": (("timeline", "card_cache", "card_dao", "file_system_service", "repositories/card.dart"),
                  ("test/data/repositories/timeline_pagination_property_test.dart",)),
+    "comments": (("post_comment", "comment_reply", "timeline_comment", "timeline_card_detail", "repositories/card.dart"),
+                 ("test/data/repositories/timeline_comment_journey_test.dart",)),
     "restore": (("backup", "restore", "lib/data/db/", "lib/db/", "migration", "lib/data/database"),
                 ("test/data/services/backup_service_test.dart",
                  "test/ui/settings/widgets/backup_restore_page_test.dart")),

@@ -2,7 +2,7 @@
 
 与[功能地图](user-feature-map.zh.md)配套。按用户任务展开测试文件；每个用例链接到声明位置。业务链单独注明起点与终点。“组件/业务层”涵盖内部断言，以及只验证一段生产链路的用例；“宿主控件”在 Flutter 测试宿主执行。通过状态只针对列出的边界。结果为 2026-11-25 主干基线加本次测试改动的快照；同名参数化用例按实际运行逐条列出。
 
-共 235 个测试源文件。通过 1149，跳过 5。
+共 236 个测试源文件。通过 1150，跳过 5。
 
 <a id="tasks"></a>
 ## 任务、后台与诊断
@@ -1865,6 +1865,15 @@
 
 <a id="notifications"></a>
 ## 提醒与卡片评论
+
+<details>
+<summary>timeline_comment_journey_test.dart · 1 项</summary>
+
+| 用例 | 证据边界 | 本次 |
+|---|---|---|
+| [open a listed entry, post and reply, then reopen the correct thread](../test/data/repositories/timeline_comment_journey_test.dart#L17) | 写卡→列表→发表评论与回复→详情读回及卡片隔离 | 通过 |
+
+</details>
 
 <details>
 <summary>comment_agent_policy_live_test.dart · 3 项</summary>
