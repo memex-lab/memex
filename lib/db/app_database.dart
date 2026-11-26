@@ -85,12 +85,15 @@ class AppDatabase extends _$AppDatabase {
 
   /// Initialize the database for a specific user
   static Future<void> init(String userId) async {
-    if (_instance != null) {
-      await _instance!.close();
-      _instance = null;
-    }
-
+    await closeCurrent();
     _instance = AppDatabase._(userId);
+  }
+
+  static Future<void> closeCurrent() async {
+    final db = _instance;
+    if (db == null) return;
+    await db.close();
+    if (identical(db, _instance)) _instance = null;
   }
 
   /// Private constructor
@@ -105,16 +108,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @visibleForTesting
-  static int get sqliteBusyTimeoutMilliseconds =>
-      _sqliteBusyTimeoutMilliseconds;
-
-  @visibleForTesting
   static DriftNativeOptions get nativeOptionsForTesting => _nativeOptions;
-
-  @visibleForTesting
-  static void configureSqliteConnectionForTesting(dynamic db) {
-    _configureSqliteConnection(db);
-  }
 
   @override
   int get schemaVersion => 19;

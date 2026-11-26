@@ -29,7 +29,7 @@ abstract interface class DebugSettingsDataController {
 
   Future<void> rebuildAllFtsIndexes();
 
-  void resetForLogout();
+  Future<void> changeLocalUser(String? userId);
 }
 
 class MemexRouterDebugSettingsDataController
@@ -119,7 +119,8 @@ class MemexRouterDebugSettingsDataController
   Future<void> rebuildAllFtsIndexes() => _router.rebuildAllFtsIndexes();
 
   @override
-  void resetForLogout() => _router.resetForLogout();
+  Future<void> changeLocalUser(String? userId) =>
+      _router.changeLocalUser(userId);
 }
 
 class DebugSettingsUserNotFoundException implements Exception {
@@ -180,8 +181,7 @@ class DebugSettingsViewModel extends ChangeNotifier {
   bool get isRebuildingSearchIndex => _isRebuildingSearchIndex;
 
   Future<void> clearToken() async {
-    await UserStorage.clearUser();
-    _dataController.resetForLogout();
+    await _dataController.changeLocalUser(null);
   }
 
   Future<bool> clearData() async {
@@ -220,8 +220,7 @@ class DebugSettingsViewModel extends ChangeNotifier {
           targetUserId: targetUserId,
           overwriteTarget: overwriteTarget,
         );
-        await UserStorage.saveUser(result.targetUserId);
-        _dataController.resetForLogout();
+        await _dataController.changeLocalUser(result.targetUserId);
         return result;
       },
     );

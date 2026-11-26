@@ -9,6 +9,7 @@ import 'package:logging/logging.dart';
 import 'package:memex/utils/logger.dart';
 import 'package:memex/domain/models/llm_config.dart';
 import 'package:memex/domain/models/agent_config.dart';
+import 'package:memex/domain/models/local_speech.dart';
 import 'package:memex/domain/models/location_context_config.dart';
 import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:memex/domain/models/agent_definitions.dart';
@@ -249,7 +250,9 @@ class UserStorage {
   static Future<void> saveUser(String userId) async {
     try {
       final prefs = await sharedPrefs();
-      await prefs.setString(_keyUserId, userId);
+      if (!await prefs.setString(_keyUserId, userId)) {
+        throw StateError('Could not save local account');
+      }
     } catch (e) {
       throw Exception(UserStorage.l10n.saveUserInfoFailed(e));
     }
@@ -257,11 +260,9 @@ class UserStorage {
 
   /// Clear user info (used on logout)
   static Future<void> clearUser() async {
-    try {
-      final prefs = await sharedPrefs();
-      await prefs.remove(_keyUserId);
-    } catch (e) {
-      // ignore error
+    final prefs = await sharedPrefs();
+    if (prefs.containsKey(_keyUserId) && !await prefs.remove(_keyUserId)) {
+      throw StateError('Could not clear local account');
     }
   }
 
@@ -503,6 +504,8 @@ class UserStorage {
 
   static const String _keyAgentConfigs = 'agent_configs';
   static const String _keyUseLocalSpeechToText = 'use_local_speech_to_text';
+  static const String _keyLocalSpeechEngine = 'local_speech_engine';
+  static const String _keyLocalSpeechLanguage = 'local_speech_language';
   static const String _keyAnalyzeVocalTone = 'analyze_vocal_tone';
   static const String _keySuperAgentRunMode = 'super_agent_run_mode';
 
@@ -584,6 +587,52 @@ class UserStorage {
       await prefs.setBool(_keyUseLocalSpeechToText, value);
     } catch (e) {
       throw Exception('Failed to save speech preference: $e');
+    }
+  }
+
+  static Future<String> getLocalSpeechEngine() async {
+    try {
+      final prefs = await sharedPrefs();
+      return LocalSpeechEngines.normalize(
+        prefs.getString(_keyLocalSpeechEngine),
+      );
+    } catch (e) {
+      return LocalSpeechEngines.defaultEngine;
+    }
+  }
+
+  static Future<void> setLocalSpeechEngine(String value) async {
+    try {
+      final prefs = await sharedPrefs();
+      await prefs.setString(
+        _keyLocalSpeechEngine,
+        LocalSpeechEngines.normalize(value),
+      );
+    } catch (e) {
+      throw Exception('Failed to save speech engine: $e');
+    }
+  }
+
+  static Future<String> getLocalSpeechLanguage() async {
+    try {
+      final prefs = await sharedPrefs();
+      return LocalSpeechLanguages.normalize(
+        prefs.getString(_keyLocalSpeechLanguage),
+      );
+    } catch (e) {
+      return localSpeechLanguageAuto;
+    }
+  }
+
+  static Future<void> setLocalSpeechLanguage(String value) async {
+    try {
+      final prefs = await sharedPrefs();
+      await prefs.setString(
+        _keyLocalSpeechLanguage,
+        LocalSpeechLanguages.normalize(value),
+      );
+    } catch (e) {
+      throw Exception('Failed to save speech language: $e');
     }
   }
 
@@ -1306,13 +1355,34 @@ class UserStorage {
     _logger.info('iCloud migration: complete');
   }
 
-  /// Clear all SharedPreferences data (used for account deletion).
-  static Future<void> clearAllData() async {
-    try {
-      final prefs = await sharedPrefs();
-      await prefs.clear();
-    } catch (e) {
-      _logger.warning('Failed to clear SharedPreferences: $e');
+  /// Reset this installation's settings and keep other accounts' workspace preferences.
+  static Future<void> clearAllData({required String userId}) async {
+    final prefs = await sharedPrefs();
+    const perUserPrefixes = [
+      _keyLatestSuperAgentHomeSessionIdPrefix,
+      _keyMemexAgentNotificationPermissionPromptedPrefix,
+      _keyStorageLocationPrefix,
+      _keyCustomDataRootPathPrefix,
+      _keyAutoBackupEnabledPrefix,
+      _keyAutoBackupRetentionDaysPrefix,
+      _keyAutoBackupMaxBytesPrefix,
+      _keyLastAutoBackupAtPrefix,
+      _keyLastAutoBackupFingerprintPrefix,
+      _keyAndroidBackupTreeUriPrefix,
+      _keyAndroidBackupTreeNamePrefix,
+    ];
+    for (final key in prefs.getKeys()) {
+      if (key == _keyUserId) continue;
+      final belongsToAnotherAccount = perUserPrefixes.any(
+        (prefix) => key.startsWith(prefix) && key != '$prefix$userId',
+      );
+      if (belongsToAnotherAccount) continue;
+      if (!await prefs.remove(key)) {
+        throw StateError('Could not reset local settings');
+      }
+    }
+    if (!await prefs.remove(_keyUserId)) {
+      throw StateError('Could not clear local account');
     }
   }
 

@@ -2577,6 +2577,23 @@ class AppLocalizationsFa extends AppLocalizations {
       'در صورت فعال بودن، صدا قبل از ارسال روی دستگاه رونویسی می‌شود — برای مدل‌هایی که ورودی صوتی را پشتیبانی نمی‌کنند مفید است. در صورت غیرفعال بودن، صدای اصلی مستقیماً به مدل ارسال می‌شود.';
 
   @override
+  String get localSpeechModelTitle => 'مدل گفتار';
+
+  @override
+  String get localSpeechModelSenseVoice => 'SenseVoice';
+
+  @override
+  String get localSpeechModelWhisper => 'چندزبانه';
+
+  @override
+  String get localSpeechLanguageTitle => 'زبان گفتار';
+
+  @override
+  String get localSpeechLanguageAuto => 'خودکار';
+
+  @override
+  String get localSpeechLanguageUnsupported =>
+      'این مدل روی دستگاه آن زبان را پوشش نمی‌دهد. مدل چندزبانه آلمانی و زبان‌های اروپایی دیگر را دارد. SenseVoice چینی، انگلیسی، ژاپنی، کره‌ای و کانتونی را پوشش می‌دهد.';
   String get analyzeVocalToneTitle => 'تحلیل لحن صدا';
 
   @override

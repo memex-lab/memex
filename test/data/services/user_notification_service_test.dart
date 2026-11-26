@@ -4,130 +4,17 @@ import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:memex/db/app_database.dart';
-import 'package:memex/db/tables.dart';
 import 'package:memex/data/services/user_notification_service.dart';
 
-part 'user_notification_service_test.g.dart';
-
-/// Minimal Drift database for testing UserNotificationService in isolation.
-@DriftDatabase(tables: [UserNotifications])
-class TestNotificationServiceDb extends _$TestNotificationServiceDb {
-  TestNotificationServiceDb(super.e);
-
-  @override
-  int get schemaVersion => 1;
-
-  @override
-  MigrationStrategy get migration => MigrationStrategy(
-        onCreate: (Migrator m) async {
-          await m.createAll();
-          await customStatement(
-              'CREATE UNIQUE INDEX IF NOT EXISTS idx_user_notifications_unique '
-              'ON user_notifications(user_id, notification_type, subject_key)');
-          await customStatement(
-              'CREATE INDEX IF NOT EXISTS idx_user_notifications_list '
-              'ON user_notifications(user_id, notification_type, updated_at)');
-        },
-      );
-}
-
-/// A testable helper that mirrors [UserNotificationService] logic but uses
-/// a provided [TestNotificationServiceDb] instead of the global singleton.
-class TestableNotificationService {
-  TestableNotificationService(this._db);
-
-  final TestNotificationServiceDb _db;
-
-  Future<String> upsert({
-    required String userId,
-    required String notificationType,
-    required String subjectKey,
-    required Map<String, dynamic> payload,
-  }) async {
-    return _db.transaction(() async {
-      final existing = await (_db.select(_db.userNotifications)
-            ..where((t) =>
-                t.userId.equals(userId) &
-                t.notificationType.equals(notificationType) &
-                t.subjectKey.equals(subjectKey)))
-          .getSingleOrNull();
-
-      final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-
-      if (existing != null) {
-        await (_db.update(_db.userNotifications)
-              ..where((t) => t.id.equals(existing.id)))
-            .write(UserNotificationsCompanion(
-          payload: Value(jsonEncode(payload)),
-          updatedAt: Value(now),
-        ));
-        return existing.id;
-      }
-
-      final id = 'test-${DateTime.now().microsecondsSinceEpoch}';
-      await _db.into(_db.userNotifications).insert(
-            UserNotificationsCompanion.insert(
-              id: id,
-              userId: userId,
-              notificationType: notificationType,
-              subjectKey: subjectKey,
-              payload: Value(jsonEncode(payload)),
-              createdAt: now,
-              updatedAt: now,
-            ),
-          );
-      return id;
-    });
-  }
-
-  Future<void> dismiss(String id) async {
-    await (_db.delete(_db.userNotifications)..where((t) => t.id.equals(id)))
-        .go();
-  }
-
-  Future<void> dismissBy({
-    required String userId,
-    required String notificationType,
-    required String subjectKey,
-  }) async {
-    await (_db.delete(_db.userNotifications)
-          ..where((t) =>
-              t.userId.equals(userId) &
-              t.notificationType.equals(notificationType) &
-              t.subjectKey.equals(subjectKey)))
-        .go();
-  }
-
-  Future<List<UserNotification>> list({
-    required String userId,
-    String? notificationType,
-  }) async {
-    final query = _db.select(_db.userNotifications)
-      ..where((t) {
-        var condition = t.userId.equals(userId);
-        if (notificationType != null) {
-          condition = condition & t.notificationType.equals(notificationType);
-        }
-        return condition;
-      })
-      ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)]);
-
-    return query.get();
-  }
-}
-
 void main() {
-  late TestNotificationServiceDb db;
-  late TestableNotificationService service;
+  late AppDatabase db;
+  final service = UserNotificationService.instance;
 
   setUp(() {
-    db = TestNotificationServiceDb(NativeDatabase.memory());
-    service = TestableNotificationService(db);
+    db = AppDatabase.forTesting(NativeDatabase.memory());
+    AppDatabase.setTestInstance(db);
   });
-
-  tearDown(() async {
-    await db.close();
-  });
+  tearDown(() => db.close());
 
   group('UserNotificationService', () {
     group('upsert', () {
@@ -166,8 +53,11 @@ void main() {
           },
         );
 
-        // Small delay to ensure updatedAt differs
-        await Future<void>.delayed(const Duration(seconds: 1));
+        // Seed an older persisted notification without depending on the wall clock.
+        await (db.update(db.userNotifications)
+              ..where((row) => row.id.equals(id1)))
+            .write(const UserNotificationsCompanion(
+                createdAt: Value(1), updatedAt: Value(1)));
 
         final id2 = await service.upsert(
           userId: 'user-a',
@@ -192,7 +82,7 @@ void main() {
           {'comments', 'insight'},
         );
 
-        // updatedAt should be > createdAt (we waited 1 second)
+        expect(rows.first.createdAt, 1);
         expect(rows.first.updatedAt, greaterThan(rows.first.createdAt));
       });
     });
@@ -266,7 +156,7 @@ void main() {
         await service.upsert(
           userId: 'user-b',
           notificationType: 'card_detail_update',
-          subjectKey: 'fact-2',
+          subjectKey: 'fact-1',
           payload: {
             'signals': ['insight']
           },
@@ -275,10 +165,16 @@ void main() {
         final rowsA = await service.list(userId: 'user-a');
         expect(rowsA, hasLength(1));
         expect(rowsA.first.subjectKey, 'fact-1');
+        expect(jsonDecode(rowsA.first.payload!)['signals'], ['comments']);
 
         final rowsB = await service.list(userId: 'user-b');
         expect(rowsB, hasLength(1));
-        expect(rowsB.first.subjectKey, 'fact-2');
+        expect(rowsB.first.subjectKey, 'fact-1');
+        expect(jsonDecode(rowsB.first.payload!)['signals'], ['insight']);
+        await service.dismiss(rowsA.single.id);
+        expect(await service.list(userId: 'user-a'), isEmpty);
+        expect(
+            (await service.list(userId: 'user-b')).single.id, rowsB.single.id);
       });
 
       test('list with notificationType filter works', () async {
@@ -313,42 +209,6 @@ void main() {
 
         final all = await service.list(userId: 'user-a');
         expect(all, hasLength(2));
-      });
-    });
-
-    group('AppDatabase.isInitialized guard', () {
-      test('service methods return sentinels when DB is not initialized',
-          () async {
-        // AppDatabase.isInitialized is a static getter on the real AppDatabase.
-        // When _instance is null, it returns false. We verify the real service
-        // handles this by checking the static directly.
-        expect(AppDatabase.isInitialized, isFalse,
-            reason:
-                'No AppDatabase.init() was called, so isInitialized should be false');
-
-        // The real singleton service should return sentinels without throwing.
-        final realService = UserNotificationService.instance;
-
-        final id = await realService.upsert(
-          userId: 'user-a',
-          notificationType: 'card_detail_update',
-          subjectKey: 'fact-1',
-          payload: {
-            'signals': ['comments']
-          },
-        );
-        expect(id, isEmpty);
-
-        // dismiss and dismissBy should not throw
-        await realService.dismiss('nonexistent');
-        await realService.dismissBy(
-          userId: 'user-a',
-          notificationType: 'card_detail_update',
-          subjectKey: 'fact-1',
-        );
-
-        final rows = await realService.list(userId: 'user-a');
-        expect(rows, isEmpty);
       });
     });
   });

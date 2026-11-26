@@ -26,6 +26,7 @@ import 'package:memex/ui/core/themes/bundled_google_fonts.dart';
 import 'dart:io';
 import 'package:memex/ui/main_screen/quick_recording_transcript.dart';
 import 'package:memex/ui/main_screen/widgets/radial_menu.dart';
+import 'package:memex/domain/models/local_speech.dart';
 import 'package:memex/domain/models/shortcut_item.dart' as app_shortcut;
 import 'package:record/record.dart';
 import 'package:image_picker/image_picker.dart';
@@ -1070,7 +1071,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       if (await speechService.requiresLocalModelDownload()) {
         setState(() => _isRadialMenuOpen = false);
         if (!mounted) return;
-        _showSpeechModelDownloadDialog();
+        unawaited(_showSpeechModelDownloadDialog());
         return;
       }
 
@@ -1114,8 +1115,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     }
   }
 
-  void _showSpeechModelDownloadDialog() {
-    final sizeMB = WhisperService.modelSizeMB.toInt();
+  Future<void> _showSpeechModelDownloadDialog() async {
+    final sizeMB = await WhisperService.instance.selectedModelSizeMb();
+    if (!mounted) return;
 
     // CN flavor: single download button
     if (AppFlavor.isCN) {
@@ -1348,6 +1350,11 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       });
       if (_quickTranscribedText.isNotEmpty) {
         _openSuperAgentDialog(initialDraftText: _quickTranscribedText);
+      } else if (_quickTranscriptionError is UnsupportedLocalSpeechLanguage) {
+        ToastHelper.showInfo(
+          context,
+          UserStorage.l10n.localSpeechLanguageUnsupported,
+        );
       } else if (_quickTranscriptionError != null) {
         final error = _quickTranscriptionError!;
         ToastHelper.showError(

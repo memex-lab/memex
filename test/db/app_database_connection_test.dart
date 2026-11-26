@@ -6,9 +6,8 @@ import 'package:sqlite3/sqlite3.dart' as sqlite;
 
 void main() {
   group('AppDatabase connection options', () {
-    test('shares drift connections across isolates', () {
+    test('requests shared connections for native isolates', () {
       expect(AppDatabase.nativeOptionsForTesting.shareAcrossIsolates, isTrue);
-      expect(AppDatabase.nativeOptionsForTesting.setup, isNotNull);
     });
 
     test(
@@ -19,7 +18,7 @@ void main() {
         final database = sqlite.sqlite3.open(dbFile.path);
 
         try {
-          AppDatabase.configureSqliteConnectionForTesting(database);
+          AppDatabase.nativeOptionsForTesting.setup!(database);
 
           final journalMode = database
               .select('PRAGMA journal_mode;')
@@ -33,9 +32,9 @@ void main() {
                   as int;
 
           expect(journalMode, 'wal');
-          expect(busyTimeout, AppDatabase.sqliteBusyTimeoutMilliseconds);
+          expect(busyTimeout, 5000);
         } finally {
-          database.dispose();
+          database.close();
           await tempDir.delete(recursive: true);
         }
       },

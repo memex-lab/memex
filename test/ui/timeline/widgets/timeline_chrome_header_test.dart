@@ -43,9 +43,10 @@ void main() {
       ),
     );
 
-    expect(find.byType(MemexBrandTitle), findsOneWidget);
+    final title = find.byType(MemexBrandTitle);
+    final mountedTitle = tester.element(title);
     timeline.notifyListeners();
     await tester.pump();
-    expect(find.byType(MemexBrandTitle), findsOneWidget);
+    expect(tester.element(title), same(mountedTitle));
   });
 }

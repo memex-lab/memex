@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:memex/data/services/native_photo_picker_service.dart';
 import 'package:memex/domain/models/native_photo_selection.dart';
 import 'package:memex/data/services/photo_attachment_service.dart';
@@ -79,6 +80,7 @@ import 'package:memex/data/services/llm_call_record_service.dart';
 import 'package:memex/data/services/agent_activity_service.dart';
 import 'package:memex/data/services/avatar_media_service.dart';
 import 'package:memex/data/services/hydrated_card_cache.dart';
+import 'package:memex/data/services/local_account_data.dart';
 import 'package:memex/agent/state_util.dart';
 import 'package:memex/agent/skills/knowledge_insight/native_widgets.dart';
 import 'package:memex/utils/result.dart';
@@ -98,6 +100,7 @@ class MemexRouter {
 
   Future<void>? _initFuture;
   Future<void>? _fullInitFuture;
+  Future<void>? _accountChange;
   int _initGeneration = 0;
 
   Future<Result<PreparedPhotoAttachment>> preparePhotoAttachment(
@@ -117,7 +120,20 @@ class MemexRouter {
 
   FileSystemService get fileSystemService => FileSystemService.instance;
 
-  MemexRouter._() {
+  final Future<void> Function({required String userId})
+      _reconcilePendingReplies;
+
+  @visibleForTesting
+  MemexRouter.forTesting({
+    required Future<void> Function({required String userId})
+        reconcilePendingReplies,
+  }) : this._(reconcilePendingReplies: reconcilePendingReplies);
+
+  MemexRouter._(
+      {Future<void> Function({required String userId})?
+          reconcilePendingReplies})
+      : _reconcilePendingReplies = reconcilePendingReplies ??
+            CharacterConversationService.instance.reconcilePendingReplies {
     AgentActivityService.setInstance(LocalAgentActivityService.instance);
     _ensureInitialized();
   }
@@ -156,6 +172,11 @@ class MemexRouter {
   /// Workspace, DB, task queue, and search. Timeline first paint waits here.
   Future<String?> _initCore() async {
     final userId = await UserStorage.getUserId();
+    if (AppDatabase.isInitialized &&
+        LocalTaskExecutor.instance.currentUserId != null) {
+      await _closeAccountWorkspace();
+      SearchService.instance.reset();
+    }
     final dataRoot = await UserStorage.resolveDataRoot(userId);
     await FileSystemService.init(dataRoot);
 
@@ -190,9 +211,7 @@ class MemexRouter {
   /// Companion wake, custom agents, and background surfaces. Chat waits here.
   Future<void> _initDeferred(String userId, {required int generation}) async {
     try {
-      await CharacterConversationService.instance.reconcilePendingReplies(
-        userId: userId,
-      );
+      await _reconcilePendingReplies(userId: userId);
       if (generation != _initGeneration) return;
       await CustomAgentConfigService.instance.registerAll(userId);
       if (generation != _initGeneration) return;
@@ -315,6 +334,11 @@ class MemexRouter {
   Future<void> _ensureInitialized() async {
     // We double check if a user is logged in now, and if we need to re-init.
     final currentUser = await UserStorage.getUserId();
+    final change = _accountChange;
+    if (change != null) {
+      await change;
+      return _ensureInitialized();
+    }
 
     // If we are already initializing (or have initialized) for this user, return the existing future.
     // This prevents infinite loops when multiple calls happen while initialization is in progress.
@@ -500,22 +524,94 @@ class MemexRouter {
     );
   }
 
-  /// Clear init state and stop executor on logout so next login re-inits for new user.
-  void resetForLogout() {
-    _logger.info('Resetting MemexRouter for logout');
+  Future<void> deleteLocalAccount(String confirmedUserId) async {
+    await _ensureFullyInitialized();
+    await _serializeAccountChange(() => _deleteLocalAccount(confirmedUserId));
+  }
+
+  Future<void> _deleteLocalAccount(String confirmedUserId) async {
+    if (confirmedUserId.trim().isEmpty ||
+        await UserStorage.getUserId() != confirmedUserId) {
+      throw StateError('Active account changed before deletion');
+    }
+    final storage = FileSystemService.instance;
+    final db = AppDatabase.instance;
+    await LocalTaskExecutor.instance.stopAndWaitForActiveTasks();
+    try {
+      await AgentBackgroundCoordinator.instance.stop();
+      await AgentBackgroundTaskService.instance
+          .stopMonitoring(reason: 'account deletion');
+      if (await UserStorage.getUserId() != confirmedUserId ||
+          !identical(storage, FileSystemService.instance) ||
+          !AppDatabase.isInitialized ||
+          !identical(db, AppDatabase.instance)) {
+        throw StateError('Active workspace changed before deletion');
+      }
+      TableChangeNotifier.instance.dispose();
+      await AppDatabase.closeCurrent();
+      await deleteLocalAccountFiles(storage, confirmedUserId);
+      await UserStorage.clearAllData(userId: confirmedUserId);
+      await EventBusService.instance.disconnect();
+    } finally {
+      _resetAccountState();
+    }
+  }
+
+  void _resetAccountState() {
     if (FileSystemService.isInitialized) {
       FileSystemService.instance.abandonCardCacheRebuild();
     }
     HydratedCardCache.instance.clearAll();
-    _initGeneration += 1;
+    _initGeneration++;
     _targetUserIdForInit = null;
     _initFuture = null;
-    unawaited(AgentBackgroundCoordinator.instance.stop());
-    unawaited(
-      AgentBackgroundTaskService.instance.stopMonitoring(reason: 'logout'),
-    );
-    LocalTaskExecutor.instance.stop();
     SearchService.instance.reset();
+  }
+
+  Future<void> _closeAccountWorkspace() async {
+    await LocalTaskExecutor.instance.stopAndWaitForActiveTasks();
+    await AgentBackgroundCoordinator.instance.stop();
+    await AgentBackgroundTaskService.instance
+        .stopMonitoring(reason: 'account change');
+    TableChangeNotifier.instance.dispose();
+    await AppDatabase.closeCurrent();
+  }
+
+  /// Keep the old identity and database available until its last task commits.
+  Future<void> changeLocalUser(String? nextUserId) {
+    return _serializeAccountChange(() => _changeLocalUser(nextUserId));
+  }
+
+  Future<void> _serializeAccountChange(Future<void> Function() operation) {
+    final previous = _accountChange ?? Future<void>.value();
+    late final Future<void> change;
+    change = previous.then((_) => operation()).whenComplete(() {
+      if (identical(change, _accountChange)) _accountChange = null;
+    });
+    _accountChange = change;
+    return change;
+  }
+
+  Future<void> _changeLocalUser(String? nextUserId) async {
+    _initGeneration++;
+    final initializing = _fullInitFuture;
+    if (initializing != null) {
+      try {
+        await initializing;
+      } catch (e, st) {
+        _logger.warning('Closing a partially initialized workspace', e, st);
+      }
+    }
+    try {
+      await _closeAccountWorkspace();
+      if (nextUserId == null) {
+        await UserStorage.clearUser();
+      } else {
+        await UserStorage.saveUser(nextUserId);
+      }
+    } finally {
+      _resetAccountState();
+    }
   }
 
   void dispose() {
@@ -1017,8 +1113,8 @@ class MemexRouter {
             failed = true;
             continue;
           }
-          final currentSortOrder = (cardData['sort_order'] as num? ?? 0)
-              .toInt();
+          final currentSortOrder =
+              (cardData['sort_order'] as num? ?? 0).toInt();
           if (currentSortOrder != i) {
             cardData['sort_order'] = i;
             await fileSystemService.writeKnowledgeInsightCard(

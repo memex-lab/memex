@@ -9,6 +9,18 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:memex/data/services/asset_safety_service.dart';
 import 'package:memex/data/services/image_preview_cache_service.dart';
 import 'package:memex/ui/core/widgets/local_image.dart';
+import 'package:memex/domain/models/card_detail_model.dart';
+import 'package:memex/ui/timeline/widgets/timeline/asset_header_gallery.dart';
+
+// ignore: depend_on_referenced_packages
+import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
+
+class _GalleryPaths extends PathProviderPlatform {
+  _GalleryPaths(this.temp);
+  final Directory temp;
+  @override
+  Future<String?> getTemporaryPath() async => temp.path;
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -221,6 +233,53 @@ void main() {
     await _pumpUntil(tester, () => find.byType(Image).evaluate().isNotEmpty);
     expect(find.byType(Image), findsOneWidget);
     expect(find.text('taps 1'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+  testWidgets(
+      'swiping the detail gallery shows the pixels of the selected attachment',
+      (tester) async {
+    final previousPaths = PathProviderPlatform.instance;
+    PathProviderPlatform.instance = _GalleryPaths(tempDir);
+    addTearDown(() => PathProviderPlatform.instance = previousPaths);
+    final red = File('${tempDir.path}/red.png')
+      ..writeAsBytesSync(base64Decode(
+          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC'));
+    final blue = File('${tempDir.path}/blue.png')
+      ..writeAsBytesSync(base64Decode(
+          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGNgYPgPAAEDAQAIicLsAAAAAElFTkSuQmCC'));
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: AssetHeaderGallery(
+      assets: [
+        for (final file in [red, blue]) AssetData(type: 'image', url: file.path)
+      ],
+    ))));
+
+    Future<void> expectPixel(File file, List<int> rgba) async {
+      final tile =
+          find.byWidgetPredicate((w) => w is LocalImage && w.url == file.path);
+      final raw = find.descendant(of: tile, matching: find.byType(RawImage));
+      await _pumpUntil(
+          tester,
+          () =>
+              raw.evaluate().length == 1 &&
+              tester.widget<RawImage>(raw).image != null);
+      expect(tester.getCenter(tile).dx,
+          closeTo(tester.getCenter(find.byType(PageView)).dx, 1));
+      final pixels = await tester
+          .runAsync(() => tester.widget<RawImage>(raw).image!.toByteData());
+      expect(pixels!.buffer.asUint8List().take(4), rgba);
+    }
+
+    await expectPixel(red, [255, 0, 0, 255]);
+    await tester.fling(find.byType(PageView), const Offset(-650, 0), 1400);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    await expectPixel(blue, [0, 0, 255, 255]);
+    await tester.fling(find.byType(PageView), const Offset(650, 0), 1400);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    await expectPixel(red, [255, 0, 0, 255]);
     await tester.pumpWidget(const SizedBox.shrink());
   });
 }

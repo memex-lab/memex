@@ -66,30 +66,6 @@ void main() {
       // are inside a collapsed ExpansionTile and not checked here.
     });
 
-    testWidgets('save button is present when duplicateSource is provided',
-        (tester) async {
-      await tester.pumpWidget(
-        buildTestableWidget(
-          const ModelConfigEditPage(duplicateSource: sourceConfig),
-        ),
-      );
-      await tester.pump(const Duration(milliseconds: 100));
-
-      final saveButton = find.byIcon(Icons.save);
-      expect(saveButton, findsOneWidget);
-      expect(
-        find.byKey(const ValueKey('model_config_bottom_save_button')),
-        findsOneWidget,
-      );
-      expect(
-        find.descendant(
-          of: find.byKey(const ValueKey('model_config_bottom_save_button')),
-          matching: find.text('Save'),
-        ),
-        findsOneWidget,
-      );
-    });
-
     testWidgets('saves duplicate config with unique key', (tester) async {
       // Pre-populate storage with a default config and a custom config
       final defaultConfig = LLMConfig.createDefaultClientConfig();
@@ -120,6 +96,12 @@ void main() {
       );
       await tester.pump();
 
+      expect(
+          find.descendant(
+            of: find.byKey(const ValueKey('model_config_bottom_save_button')),
+            matching: find.text('Save'),
+          ),
+          findsOneWidget);
       // Tap save — duplicate config should be added
       await tester.tap(find.byIcon(Icons.save));
       await tester.pump(const Duration(milliseconds: 500));

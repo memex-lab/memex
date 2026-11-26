@@ -6,6 +6,9 @@ import 'package:archive/archive.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:memex/data/repositories/card.dart';
+import 'package:memex/data/repositories/get_timeline_cards.dart';
+import 'package:memex/domain/models/card_model.dart';
 import 'package:memex/data/services/backup_service.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/image_preview_cache_service.dart';
@@ -58,6 +61,38 @@ void main() {
     } on PathNotFoundException {
       // Some restore paths can remove the fake temp root before tearDown runs.
     }
+  });
+
+  test('restore brings a deleted journal entry back to Timeline and detail',
+      () async {
+    const user = 'backup-service-user';
+    const id = '2026/11/25.md#ts_1';
+    const text = 'Remember the blue notebook.';
+    await AppDatabase.init(user);
+    addTearDown(() async {
+      if (AppDatabase.isInitialized) await AppDatabase.instance.close();
+    });
+    expect(
+        await FileSystemService.instance.safeWriteCardFile(
+            user,
+            id,
+            const CardData(
+                factId: id,
+                timestamp: 1795564800,
+                fact: text,
+                tags: ['notebook'],
+                uiConfigs: [],
+                status: 'completed')),
+        isTrue);
+    final snapshot = await BackupService.createBackup(
+        outputDirectory: p.join(tempDir.path, 'Snapshots'));
+    expect(await deleteCardEndpoint(id), isTrue);
+    expect(await getTimelineCards(tags: ['notebook']), isEmpty);
+
+    expect(await BackupService.restoreBackup(snapshot), isTrue);
+    final cards = await getTimelineCards(tags: ['notebook']);
+    expect(cards.map((card) => card.id), [id]);
+    expect((await getCardDetail(cards.single.id)).rawContent, text);
   });
 
   test('createBackup writes manifest and workspace content', () async {

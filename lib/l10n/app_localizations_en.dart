@@ -2574,6 +2574,23 @@ class AppLocalizationsEn extends AppLocalizations {
       'When enabled, audio is transcribed on-device before sending — useful for models that do not support audio input. When disabled, audio is transcribed by your configured cloud model (requires audio input support).';
 
   @override
+  String get localSpeechModelTitle => 'Speech model';
+
+  @override
+  String get localSpeechModelSenseVoice => 'SenseVoice';
+
+  @override
+  String get localSpeechModelWhisper => 'Multilingual';
+
+  @override
+  String get localSpeechLanguageTitle => 'Spoken language';
+
+  @override
+  String get localSpeechLanguageAuto => 'Auto';
+
+  @override
+  String get localSpeechLanguageUnsupported =>
+      'This on-device model does not cover that language. Multilingual includes German and other European languages. SenseVoice covers Chinese, English, Japanese, Korean, and Cantonese.';
   String get analyzeVocalToneTitle => 'Analyze vocal tone';
 
   @override

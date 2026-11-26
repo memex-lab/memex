@@ -2520,6 +2520,23 @@ class AppLocalizationsKo extends AppLocalizations {
       '활성화하면 오디오가 전송 전에 기기에서 텍스트로 변환됩니다. 오디오 입력을 지원하지 않는 모델에 유용합니다. 비활성화하면 원본 오디오가 모델로 직접 전송됩니다.';
 
   @override
+  String get localSpeechModelTitle => '음성 모델';
+
+  @override
+  String get localSpeechModelSenseVoice => 'SenseVoice';
+
+  @override
+  String get localSpeechModelWhisper => '다국어';
+
+  @override
+  String get localSpeechLanguageTitle => '말한 언어';
+
+  @override
+  String get localSpeechLanguageAuto => '자동';
+
+  @override
+  String get localSpeechLanguageUnsupported =>
+      '이 기기 모델은 그 언어를 다루지 않습니다. 다국어 모델에는 독일어와 다른 유럽 언어가 포함됩니다. SenseVoice는 중국어, 영어, 일본어, 한국어, 광둥어를 다룹니다.';
   String get analyzeVocalToneTitle => '목소리 톤 분석';
 
   @override

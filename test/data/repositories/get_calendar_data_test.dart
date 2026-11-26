@@ -51,7 +51,7 @@ tags: []
 
     final expectedDay =
         DateTime.utc(2026, 10, 1).subtract(utcPlus4).millisecondsSinceEpoch ~/
-        1000;
+            1000;
 
     expect(occupied, hasLength(1));
     expect(occupied.single.timestamp, expectedDay);
@@ -67,5 +67,42 @@ tags: []
     final days = await getCalendarData(from, to);
 
     expect(days, hasLength(3));
+  });
+  test('midnight partitions cards exactly once across leap day and new year',
+      () async {
+    for (final offset in [
+      const Duration(hours: -8),
+      const Duration(hours: 5, minutes: 45)
+    ]) {
+      for (final first in [
+        DateTime.utc(2024, 2, 28),
+        DateTime.utc(2026, 12, 31)
+      ]) {
+        final expected = <List<String>>[];
+        for (var delta = -1; delta <= 2; delta++) {
+          final date = first.add(Duration(days: delta));
+          final day =
+              date.toIso8601String().substring(0, 10).replaceAll('-', '/');
+          final ids = <String>[];
+          for (final second in [0, 86399]) {
+            final id = '$day.md#ts_$second';
+            final instant =
+                date.subtract(offset).add(Duration(seconds: second));
+            final file =
+                File(FileSystemService.instance.getCardPath(userId, id));
+            await file.create(recursive: true);
+            await file.writeAsString(
+                'timestamp: ${instant.millisecondsSinceEpoch ~/ 1000}\nstatus: completed\ntitle: Note\ntags: []\n');
+            ids.add(id);
+          }
+          if (delta == 0 || delta == 1) expected.add(ids);
+        }
+        final from = first.subtract(offset).millisecondsSinceEpoch ~/ 1000;
+        final days = await getCalendarData(from, from + 2 * 86400 - 1,
+            utcOffset: offset);
+        expect(days.map((d) => d.timestamp), [from, from + 86400]);
+        expect(days.map((d) => d.cards.map((c) => c.id).toList()), expected);
+      }
+    }
   });
 }

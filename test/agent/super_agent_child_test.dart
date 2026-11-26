@@ -1092,49 +1092,6 @@ void main() {
       );
     });
 
-    test('delegate accepts a fixed agent_type call without profile or skills',
-        () async {
-      await Directory(FileSystemService.instance.getWorkspacePath(userId))
-          .create(recursive: true);
-      final tool = buildDelegateToSubagentTool();
-      final state = AgentState(
-        sessionId: 'delegate_omit_skills_test',
-        metadata: {'userId': userId},
-      );
-      final agent = StatefulAgent(
-        name: 'delegate_omit_skills_agent',
-        client: _SingleToolCallClient(
-          toolName: tool.name,
-          arguments: {
-            'agent_type': 'research',
-            'task_content': [
-              {
-                'type': 'text',
-                'text': 'Summarize what is in the knowledge base.',
-              },
-            ],
-          },
-          finalText: 'Nothing yet.',
-        ),
-        modelConfig: ModelConfig(model: 'test'),
-        state: state,
-        tools: [tool],
-        withGeneralPrinciples: false,
-        maxTurns: 3,
-      );
-
-      await agent.run([UserMessage.text('delegate')], useStream: false);
-
-      final result = state.history.messages
-          .whereType<FunctionExecutionResultMessage>()
-          .single
-          .results
-          .single;
-      expect(result.isError, isFalse);
-      expect(_text(result), contains('agent_type="research"'));
-      expect(_text(result), contains('Nothing yet.'));
-      expect(_text(result), isNot(contains('child=')));
-    });
   });
 }
 

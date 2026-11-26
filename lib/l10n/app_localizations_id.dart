@@ -2593,6 +2593,23 @@ class AppLocalizationsId extends AppLocalizations {
       'Jika aktif, audio ditranskripsi di perangkat sebelum dikirim — berguna untuk model yang tidak mendukung input audio. Jika nonaktif, audio asli dikirim langsung ke model.';
 
   @override
+  String get localSpeechModelTitle => 'Model ucapan';
+
+  @override
+  String get localSpeechModelSenseVoice => 'SenseVoice';
+
+  @override
+  String get localSpeechModelWhisper => 'Multibahasa';
+
+  @override
+  String get localSpeechLanguageTitle => 'Bahasa yang diucapkan';
+
+  @override
+  String get localSpeechLanguageAuto => 'Otomatis';
+
+  @override
+  String get localSpeechLanguageUnsupported =>
+      'Model di perangkat ini tidak mencakup bahasa itu. Multibahasa mencakup Jerman dan bahasa Eropa lain. SenseVoice mencakup Tionghoa, Inggris, Jepang, Korea, dan Kanton.';
   String get analyzeVocalToneTitle => 'Analisis nada suara';
 
   @override
