@@ -13,10 +13,6 @@ import 'package:memex/ui/settings/widgets/location_context_settings_page.dart';
 import 'package:memex/ui/settings/widgets/early_update_settings_card.dart';
 import 'package:memex/ui/settings/widgets/vocal_tone_settings_card.dart';
 import 'package:memex/ui/settings/view_models/data_import_viewmodel.dart';
-import 'package:memex/db/app_database.dart';
-import 'package:memex/data/services/file_system_service.dart';
-import 'package:memex/data/services/local_task_executor.dart';
-import 'package:memex/data/services/event_bus_service.dart';
 import 'package:memex/data/services/comment_settings_service.dart'
     show CommentSettings;
 import 'package:memex/data/repositories/memex_router.dart';
@@ -834,8 +830,8 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _showDeleteAccountDialog() async {
     final l10n = UserStorage.l10n;
-    final userId = await UserStorage.getUserId() ?? '';
-    if (!mounted) return;
+    final userId = await UserStorage.getUserId();
+    if (!mounted || userId == null || userId.trim().isEmpty) return;
     final controller = TextEditingController();
 
     final confirmed = await showDialog<bool>(
@@ -896,30 +892,8 @@ class _SettingsPageState extends State<SettingsPage> {
 
     // Perform deletion
     try {
-      // 1. Stop background services that use the database
-      await LocalTaskExecutor.instance.stop();
-      await EventBusService.instance.disconnect();
+      await MemexRouter().deleteLocalAccount(userId);
 
-      // 2. Close and delete database
-      if (AppDatabase.isInitialized) {
-        await AppDatabase.instance.close();
-      }
-
-      // 3. Delete workspace files
-      try {
-        final dataRoot = FileSystemService.instance.dataRoot;
-        final dir = Directory(dataRoot);
-        if (await dir.exists()) {
-          await dir.delete(recursive: true);
-        }
-      } catch (_) {
-        // workspace may not exist
-      }
-
-      // 4. Clear all SharedPreferences
-      await UserStorage.clearAllData();
-
-      // 5. Navigate back to home and let RootShell re-check user state
       if (mounted) {
         // Pop settings page first so we're back at the main screen
         Navigator.of(context).popUntil((route) => route.isFirst);

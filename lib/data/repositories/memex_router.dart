@@ -79,6 +79,7 @@ import 'package:memex/data/services/llm_call_record_service.dart';
 import 'package:memex/data/services/agent_activity_service.dart';
 import 'package:memex/data/services/avatar_media_service.dart';
 import 'package:memex/data/services/hydrated_card_cache.dart';
+import 'package:memex/data/services/local_account_data.dart';
 import 'package:memex/agent/state_util.dart';
 import 'package:memex/agent/skills/knowledge_insight/native_widgets.dart';
 import 'package:memex/utils/result.dart';
@@ -491,19 +492,51 @@ class MemexRouter {
     );
   }
 
+  Future<void> deleteLocalAccount(String confirmedUserId) async {
+    await _ensureFullyInitialized();
+    if (confirmedUserId.trim().isEmpty ||
+        await UserStorage.getUserId() != confirmedUserId) {
+      throw StateError('Active account changed before deletion');
+    }
+    final storage = FileSystemService.instance;
+    final db = AppDatabase.instance;
+    await LocalTaskExecutor.instance.stopAndWaitForActiveTasks();
+    try {
+      await AgentBackgroundCoordinator.instance.stop();
+      await AgentBackgroundTaskService.instance
+          .stopMonitoring(reason: 'account deletion');
+      if (await UserStorage.getUserId() != confirmedUserId ||
+          !identical(storage, FileSystemService.instance) ||
+          !AppDatabase.isInitialized ||
+          !identical(db, AppDatabase.instance)) {
+        throw StateError('Active workspace changed before deletion');
+      }
+      await AppDatabase.closeCurrent();
+      await deleteLocalAccountFiles(storage, confirmedUserId);
+      await UserStorage.clearAllData(userId: confirmedUserId);
+      await EventBusService.instance.disconnect();
+    } finally {
+      _resetAccountState();
+    }
+  }
+
+  void _resetAccountState() {
+    HydratedCardCache.instance.clearAll();
+    _initGeneration++;
+    _targetUserIdForInit = null;
+    _initFuture = null;
+    SearchService.instance.reset();
+  }
+
   /// Clear init state and stop executor on logout so next login re-inits for new user.
   void resetForLogout() {
     _logger.info('Resetting MemexRouter for logout');
-    HydratedCardCache.instance.clearAll();
-    _initGeneration += 1;
-    _targetUserIdForInit = null;
-    _initFuture = null;
+    _resetAccountState();
     unawaited(AgentBackgroundCoordinator.instance.stop());
     unawaited(
       AgentBackgroundTaskService.instance.stopMonitoring(reason: 'logout'),
     );
     LocalTaskExecutor.instance.stop();
-    SearchService.instance.reset();
   }
 
   void dispose() {

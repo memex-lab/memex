@@ -1,8 +1,8 @@
 # 用户功能测试逐项索引
 
-与[功能地图](user-feature-map.zh.md)配套。按用户任务展开测试文件；每个用例链接到声明位置。业务链单独注明起点与终点。“组件/业务层”涵盖内部断言，以及只验证一段生产链路的用例；“宿主控件”在 Flutter 测试宿主执行。通过状态只针对列出的边界。结果为 2026-11-25 主干基线加本次测试改动的快照；同名参数化用例按实际运行逐条列出。
+与[功能地图](user-feature-map.zh.md)配套。按用户任务展开测试文件；每个用例链接到声明位置。业务链单独注明起点与终点。“组件/业务层”涵盖内部断言，以及只验证一段生产链路的用例；“宿主控件”在 Flutter 测试宿主执行。通过状态只针对列出的边界。结果为 main@6953a8a8 加工作分支测试改动的快照；同名参数化用例按实际运行逐条列出。
 
-共 236 个测试源文件。通过 1151，跳过 5。
+共 238 个测试源文件。
 
 <a id="tasks"></a>
 ## 任务、后台与诊断
@@ -459,6 +459,18 @@
 ## 备份、还原、迁移与工作区
 
 <details>
+<summary>local_account_data_test.dart · 2 项</summary>
+
+[测试源文件](../test/data/services/local_account_data_test.dart)
+
+| 用例 | 证据边界 | 执行 |
+|---|---|---|
+| [delete only the account workspace and exact database files, even on retry](../test/data/services/local_account_data_test.dart#L38) | 临时工作区与两个数据库目录→按账号清理→重复执行 | 通过 |
+| [a linked workspace container or malformed identity cannot reach outside the account](../test/data/services/local_account_data_test.dart#L68) | 拒绝非法账号路径、链接目录→外部样本完好 | 通过 |
+
+</details>
+
+<details>
 <summary>filesystem_root_switch_test.dart · 1 项</summary>
 
 [测试源文件](../test/data/repositories/filesystem_root_switch_test.dart)
@@ -640,7 +652,7 @@
 </details>
 
 <details>
-<summary>get_calendar_data_test.dart · 2 项</summary>
+<summary>get_calendar_data_test.dart · 3 项</summary>
 
 [测试源文件](../test/data/repositories/get_calendar_data_test.dart)
 
@@ -648,6 +660,7 @@
 |---|---|---|
 | [a card just after local midnight stays on that local day](../test/data/repositories/get_calendar_data_test.dart#L30) | 组件/业务层 | 通过 |
 | [a month that contains the DST fallback still returns each day](../test/data/repositories/get_calendar_data_test.dart#L62) | 组件/业务层 | 通过 |
+| [midnight partitions cards exactly once across leap day and new year](../test/data/repositories/get_calendar_data_test.dart#L71) | 磁盘样本→日期范围查询，含闰日、跨年和半小时以外的时差 | 通过 |
 
 </details>
 
@@ -1868,11 +1881,14 @@
 ## 提醒与卡片评论
 
 <details>
-<summary>timeline_comment_journey_test.dart · 1 项</summary>
+<summary>timeline_comment_journey_test.dart · 2 项</summary>
+
+[测试源文件](../test/data/repositories/timeline_comment_journey_test.dart)
 
 | 用例 | 证据边界 | 本次 |
 |---|---|---|
-| [open a listed entry, post and reply, then reopen the correct thread](../test/data/repositories/timeline_comment_journey_test.dart#L17) | 写卡→列表→发表评论与回复→详情读回及卡片隔离 | 通过 |
+| [open a listed entry, post and reply, then reopen the correct thread](../test/data/repositories/timeline_comment_journey_test.dart#L26) | 写卡→列表→发表评论与回复→详情读回及卡片隔离 | 通过 |
+| [find a photo note and its thread after reopening the database](../test/data/repositories/timeline_comment_journey_test.dart#L75) | 导入图片→写卡、评论→重开数据库→搜索与日历→修改及删除 | 通过 |
 
 </details>
 
@@ -3506,6 +3522,20 @@
 
 <a id="cross-feature"></a>
 ## 跨功能业务场景
+
+<details>
+<summary>local_workspace_screens_test.dart · 4 项</summary>
+
+[测试源文件](../test/integration/local_workspace_screens_test.dart)
+
+| 用例 | 证据边界 | 执行 |
+|---|---|---|
+| [post a comment in detail and read it after reopening the screen](../test/integration/local_workspace_screens_test.dart#L149) | 真实设置页→时间线→图片、留言→返回再读 | 通过 |
+| [search the knowledge base and open the matching Markdown document](../test/integration/local_workspace_screens_test.dart#L249) | 知识库搜索框→无结果→命中文件→打开 Markdown 正文 | 通过 |
+| [send a photo offline, replay the queued turn and read the same note and attachment in detail](../test/integration/local_workspace_screens_test.dart#L288) | 记录输入框→离线发送→恢复队列→模型替身通过真实工具保存→按原 ID 从列表和详情读回图文 | 通过 |
+| [confirm account deletion keeps siblings, backups, and the selected folder](../test/integration/local_workspace_screens_test.dart#L403) | 删号确认→工作区、数据库、备份、另一账号→初次设置页面 | 通过 |
+
+</details>
 
 <details>
 <summary>agent_refactor_functional_test.dart · 7 项</summary>
