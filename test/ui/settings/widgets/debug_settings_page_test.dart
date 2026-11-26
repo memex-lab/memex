@@ -267,7 +267,7 @@ class _RecordingDebugSettingsDataController
   Future<void> rebuildAllFtsIndexes() async {}
 
   @override
-  void resetForLogout() {}
+  Future<void> changeLocalUser(String? userId) async {}
 }
 
 Future<void> _pumpDebugPage(

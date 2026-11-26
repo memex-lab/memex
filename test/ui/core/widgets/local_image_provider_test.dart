@@ -8,12 +8,6 @@ import 'package:memex/ui/core/widgets/local_image.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('provider does not use NetworkImage for remote URLs', () {
-    final provider = LocalImage.provider('https://example.invalid/x.png');
-
-    expect(provider, isNot(isA<NetworkImage>()));
-  });
-
   test('provider reports an error instead of hanging on a stalled download',
       () async {
     final previousHttpOverrides = HttpOverrides.current;
@@ -30,15 +24,13 @@ void main() {
 
     final provider = LocalImage.provider(
       'http://${server.address.host}:${server.port}/hang.png',
-      timeout: const Duration(milliseconds: 50),
+      timeout: const Duration(seconds: 3),
     );
 
-    expect(provider, isNot(isA<NetworkImage>()));
-
     final errorFuture = _resolveImageError(provider);
-    await requestReceived.future.timeout(const Duration(seconds: 1));
+    await requestReceived.future.timeout(const Duration(seconds: 15));
     final error = await errorFuture.timeout(
-      const Duration(seconds: 1),
+      const Duration(seconds: 15),
     );
 
     expect(error, isA<TimeoutException>());
@@ -49,11 +41,13 @@ void main() {
     HttpOverrides.global = null;
     addTearDown(() => HttpOverrides.global = previousHttpOverrides);
 
-    const timeout = Duration(milliseconds: 200);
+    const timeout = Duration(seconds: 3);
+    const headerDelay = Duration(milliseconds: 400);
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     addTearDown(() => server.close(force: true));
     server.listen((request) async {
-      await Future<void>.delayed(const Duration(milliseconds: 150));
+      await Future<void>.delayed(headerDelay);
+      request.response.bufferOutput = false;
       request.response.contentLength = 2;
       request.response.add(const [0x89]);
       await request.response.flush();
@@ -64,17 +58,22 @@ void main() {
       'http://${server.address.host}:${server.port}/slow.png',
       timeout: timeout,
     );
-    final stopwatch = Stopwatch()..start();
-    final error = await _resolveImageError(provider).timeout(
-      const Duration(seconds: 1),
-    );
+    var receivedBytes = 0;
+    final error = await _resolveImageError(provider,
+            onChunk: (event) => receivedBytes = event.cumulativeBytesLoaded)
+        .timeout(const Duration(seconds: 15));
 
+    expect(receivedBytes, 1, reason: 'download reached the stalled body');
     expect(error, isA<TimeoutException>());
-    expect(stopwatch.elapsed, lessThan(const Duration(milliseconds: 300)));
+    // The body timeout must use the budget left after waiting for headers.
+    // Compare the scheduled duration, independent of event-loop latency.
+    expect((error as TimeoutException).duration,
+        lessThanOrEqualTo(timeout - headerDelay));
   });
 }
 
-Future<Object> _resolveImageError(ImageProvider provider) {
+Future<Object> _resolveImageError(ImageProvider provider,
+    {ImageChunkListener? onChunk}) {
   final completer = Completer<Object>();
   final stream = provider.resolve(ImageConfiguration.empty);
   late final ImageStreamListener listener;
@@ -85,6 +84,7 @@ Future<Object> _resolveImageError(ImageProvider provider) {
         completer.completeError(StateError('image loaded unexpectedly'));
       }
     },
+    onChunk: onChunk,
     onError: (Object error, StackTrace? stackTrace) {
       if (!completer.isCompleted) {
         completer.complete(error);

@@ -6,9 +6,7 @@ import 'package:memex/l10n/supported_languages.dart';
 
 void main() {
   test('Italian locale resolves and loads l10n', () {
-    if (!supportedLanguageTags.contains('it')) {
-      return;
-    }
+    expect(supportedLanguageTags, contains('it'));
 
     const locale = Locale('it');
     final l10n = lookupAppLocalizations(locale);
@@ -22,9 +20,7 @@ void main() {
   });
 
   test('Italian locale exposes the simplified AI setup copy', () {
-    if (!supportedLanguageTags.contains('it')) {
-      return;
-    }
+    expect(supportedLanguageTags, contains('it'));
 
     const locale = Locale('it');
     final l10n = lookupAppLocalizations(locale);

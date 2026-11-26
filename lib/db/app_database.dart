@@ -108,16 +108,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @visibleForTesting
-  static int get sqliteBusyTimeoutMilliseconds =>
-      _sqliteBusyTimeoutMilliseconds;
-
-  @visibleForTesting
   static DriftNativeOptions get nativeOptionsForTesting => _nativeOptions;
-
-  @visibleForTesting
-  static void configureSqliteConnectionForTesting(dynamic db) {
-    _configureSqliteConnection(db);
-  }
 
   @override
   int get schemaVersion => 19;

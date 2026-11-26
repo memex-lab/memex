@@ -39,18 +39,7 @@ import 'package:path_provider_platform_interface/path_provider_platform_interfac
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../helpers/journal_model_fixture.dart';
-
-class _Paths extends PathProviderPlatform {
-  _Paths(this.root);
-  final String root;
-  @override
-  Future<String?> getApplicationDocumentsPath() async => root;
-  @override
-  Future<String?> getApplicationSupportPath() async => root;
-  @override
-  Future<String?> getTemporaryPath() async =>
-      (await Directory('$root/tmp').create(recursive: true)).path;
-}
+import '../helpers/workspace_test_paths.dart';
 
 Future<void> waitFor(WidgetTester tester, Finder target) async {
   for (var i = 0; i < 100 && target.evaluate().isEmpty; i++) {
@@ -84,7 +73,7 @@ void main() {
     final paths = PathProviderPlatform.instance;
     appDir = await Directory('${root.path}/documents').create();
     customRoot = await Directory('${root.path}/selected').create();
-    PathProviderPlatform.instance = _Paths(appDir.path);
+    PathProviderPlatform.instance = WorkspaceTestPaths(appDir.path);
     final messenger =
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     messenger.setMockMethodCallHandler(
@@ -117,10 +106,10 @@ void main() {
     await router.ensureInitialized();
     await LocalTaskExecutor.instance.stopAndWaitForActiveTasks();
     addTearDown(() async {
-      router.resetForLogout();
+      if (await UserStorage.getUserId() != null) {
+        await router.changeLocalUser(null);
+      }
       await LocalAssetServer.stopServer();
-
-      await AppDatabase.closeCurrent();
     });
     final fs = FileSystemService.instance;
     id = await fs.allocateCardFactId(user);

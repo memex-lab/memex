@@ -99,6 +99,7 @@ class MemexRouter {
 
   Future<void>? _initFuture;
   Future<void>? _fullInitFuture;
+  Future<void>? _accountChange;
   int _initGeneration = 0;
 
   Future<Result<PreparedPhotoAttachment>> preparePhotoAttachment(
@@ -157,6 +158,11 @@ class MemexRouter {
   /// Workspace, DB, task queue, and search. Timeline first paint waits here.
   Future<String?> _initCore() async {
     final userId = await UserStorage.getUserId();
+    if (AppDatabase.isInitialized &&
+        LocalTaskExecutor.instance.currentUserId != null) {
+      await _closeAccountWorkspace();
+      SearchService.instance.reset();
+    }
     final dataRoot = await UserStorage.resolveDataRoot(userId);
     await FileSystemService.init(dataRoot);
 
@@ -227,7 +233,7 @@ class MemexRouter {
   }
 
   String?
-  _targetUserIdForInit; // Track the user ID we are currently initializing for
+      _targetUserIdForInit; // Track the user ID we are currently initializing for
 
   void _registerEventSubscriptions() {
     final eventBus = GlobalEventBus.instance;
@@ -316,6 +322,11 @@ class MemexRouter {
   Future<void> _ensureInitialized() async {
     // We double check if a user is logged in now, and if we need to re-init.
     final currentUser = await UserStorage.getUserId();
+    final change = _accountChange;
+    if (change != null) {
+      await change;
+      return _ensureInitialized();
+    }
 
     // If we are already initializing (or have initialized) for this user, return the existing future.
     // This prevents infinite loops when multiple calls happen while initialization is in progress.
@@ -494,6 +505,10 @@ class MemexRouter {
 
   Future<void> deleteLocalAccount(String confirmedUserId) async {
     await _ensureFullyInitialized();
+    await _serializeAccountChange(() => _deleteLocalAccount(confirmedUserId));
+  }
+
+  Future<void> _deleteLocalAccount(String confirmedUserId) async {
     if (confirmedUserId.trim().isEmpty ||
         await UserStorage.getUserId() != confirmedUserId) {
       throw StateError('Active account changed before deletion');
@@ -511,6 +526,7 @@ class MemexRouter {
           !identical(db, AppDatabase.instance)) {
         throw StateError('Active workspace changed before deletion');
       }
+      TableChangeNotifier.instance.dispose();
       await AppDatabase.closeCurrent();
       await deleteLocalAccountFiles(storage, confirmedUserId);
       await UserStorage.clearAllData(userId: confirmedUserId);
@@ -528,15 +544,50 @@ class MemexRouter {
     SearchService.instance.reset();
   }
 
-  /// Clear init state and stop executor on logout so next login re-inits for new user.
-  void resetForLogout() {
-    _logger.info('Resetting MemexRouter for logout');
-    _resetAccountState();
-    unawaited(AgentBackgroundCoordinator.instance.stop());
-    unawaited(
-      AgentBackgroundTaskService.instance.stopMonitoring(reason: 'logout'),
-    );
-    LocalTaskExecutor.instance.stop();
+  Future<void> _closeAccountWorkspace() async {
+    await LocalTaskExecutor.instance.stopAndWaitForActiveTasks();
+    await AgentBackgroundCoordinator.instance.stop();
+    await AgentBackgroundTaskService.instance
+        .stopMonitoring(reason: 'account change');
+    TableChangeNotifier.instance.dispose();
+    await AppDatabase.closeCurrent();
+  }
+
+  /// Keep the old identity and database available until its last task commits.
+  Future<void> changeLocalUser(String? nextUserId) {
+    return _serializeAccountChange(() => _changeLocalUser(nextUserId));
+  }
+
+  Future<void> _serializeAccountChange(Future<void> Function() operation) {
+    final previous = _accountChange ?? Future<void>.value();
+    late final Future<void> change;
+    change = previous.then((_) => operation()).whenComplete(() {
+      if (identical(change, _accountChange)) _accountChange = null;
+    });
+    _accountChange = change;
+    return change;
+  }
+
+  Future<void> _changeLocalUser(String? nextUserId) async {
+    _initGeneration++;
+    final initializing = _fullInitFuture;
+    if (initializing != null) {
+      try {
+        await initializing;
+      } catch (e, st) {
+        _logger.warning('Closing a partially initialized workspace', e, st);
+      }
+    }
+    try {
+      await _closeAccountWorkspace();
+      if (nextUserId == null) {
+        await UserStorage.clearUser();
+      } else {
+        await UserStorage.saveUser(nextUserId);
+      }
+    } finally {
+      _resetAccountState();
+    }
   }
 
   void dispose() {
@@ -1038,8 +1089,8 @@ class MemexRouter {
             failed = true;
             continue;
           }
-          final currentSortOrder = (cardData['sort_order'] as num? ?? 0)
-              .toInt();
+          final currentSortOrder =
+              (cardData['sort_order'] as num? ?? 0).toInt();
           if (currentSortOrder != i) {
             cardData['sort_order'] = i;
             await fileSystemService.writeKnowledgeInsightCard(
