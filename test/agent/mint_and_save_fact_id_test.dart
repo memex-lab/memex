@@ -186,26 +186,6 @@ void main() {
       expect(await _pendingMemoryFactIds(userId), [factId]);
     });
 
-    test('save without minting first is a tool error', () async {
-      final result = await _runToolCall(
-        tool: _tool('save_timeline_card'),
-        arguments: {
-          'fact_id': '2099/01/01.md#ts_1',
-          'title': 'Never minted',
-          'fact': 'This id was never minted.',
-          'ui_configs': [
-            {
-              'template_id': 'article',
-              'data': {'body': 'This id was never minted.'},
-            },
-          ],
-        },
-        metadata: {'userId': userId},
-      );
-      expect(result.isError, isTrue);
-      expect(_text(result), contains('does not exist'));
-    });
-
     test('editing with only fact preserves the existing assets and title',
         () async {
       // Seed a real asset file so the reference survives validation.

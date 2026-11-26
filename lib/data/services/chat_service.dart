@@ -326,6 +326,40 @@ class ChatService {
       'active_agent_state_session_id';
   static const String _runningChatTurnIdKey = 'running_chat_turn_id';
 
+  /// Persist ownership before starting a turn, or resume its existing run.
+  Future<bool> prepareChatTurn(AgentState state,
+      {required String sessionId, required String turnId}) async {
+    final runningTurnId = state.metadata[_runningChatTurnIdKey] as String?;
+    final resumeExistingRun = state.isRunning && runningTurnId == turnId;
+    if (state.isRunning && !resumeExistingRun) {
+      _logger.warning(
+        'Ignoring stale SuperAgent running state, chatSessionId:$sessionId, '
+        'stateSessionId:${state.sessionId}, '
+        'stateTurnId:$runningTurnId, payloadTurnId:$turnId',
+      );
+      state.isRunning = false;
+      state.metadata.remove(_runningChatTurnIdKey);
+      await saveAgentState(state);
+    }
+    if (resumeExistingRun) {
+      _logger.info(
+        'SuperAgent resume, chatSessionId:$sessionId, '
+        'stateSessionId:${state.sessionId}, turnId:$turnId',
+      );
+    } else {
+      state.metadata[_runningChatTurnIdKey] = turnId;
+      await saveAgentState(state);
+    }
+    return resumeExistingRun;
+  }
+
+  Future<void> finishChatTurn(AgentState state, String turnId) async {
+    if (!state.isRunning && state.metadata[_runningChatTurnIdKey] == turnId) {
+      state.metadata.remove(_runningChatTurnIdKey);
+      await saveAgentState(state);
+    }
+  }
+
   /// In-flight runs keyed by session id. Runs are owned by the service so a
   /// closed chat dialog does not interrupt them; a reopened dialog can
   /// re-attach and replay what it missed.
@@ -984,29 +1018,8 @@ class ChatService {
     }
 
     final activeAgent = agent;
-    final runningTurnId =
-        activeAgent.state.metadata[_runningChatTurnIdKey] as String?;
-    final resumeExistingRun =
-        activeAgent.state.isRunning && runningTurnId == turnId;
-    if (activeAgent.state.isRunning && !resumeExistingRun) {
-      _logger.warning(
-        'Ignoring stale SuperAgent running state, chatSessionId:$sessionId, '
-        'stateSessionId:${activeAgent.state.sessionId}, '
-        'stateTurnId:$runningTurnId, payloadTurnId:$turnId',
-      );
-      activeAgent.state.isRunning = false;
-      activeAgent.state.metadata.remove(_runningChatTurnIdKey);
-      await saveAgentState(activeAgent.state);
-    }
-    if (resumeExistingRun) {
-      _logger.info(
-        'SuperAgent resume, chatSessionId:$sessionId, '
-        'stateSessionId:${activeAgent.state.sessionId}, turnId:$turnId',
-      );
-    } else {
-      activeAgent.state.metadata[_runningChatTurnIdKey] = turnId;
-      await saveAgentState(activeAgent.state);
-    }
+    final resumeExistingRun = await prepareChatTurn(activeAgent.state,
+        sessionId: sessionId, turnId: turnId);
 
     List<LLMMessage> userMessages = const [];
     var mintedFactId = preMintedFactId;
@@ -1148,11 +1161,7 @@ class ChatService {
                 cancelToken: cancelToken,
               );
         await agentFuture.whenComplete(() async {
-          if (!activeAgent.state.isRunning &&
-              activeAgent.state.metadata[_runningChatTurnIdKey] == turnId) {
-            activeAgent.state.metadata.remove(_runningChatTurnIdKey);
-            await saveAgentState(activeAgent.state);
-          }
+          await finishChatTurn(activeAgent.state, turnId);
           // Sync skill changes back to the original directory if we made a copy.
           if (skillSync != null) {
             try {

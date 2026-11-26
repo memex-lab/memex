@@ -1,10 +1,15 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:dio/dio.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:memex/agent/state_util.dart';
+import 'package:memex/data/services/chat_service.dart' show ChatService;
+import 'package:memex/data/services/file_system_service.dart';
+import 'package:memex/data/services/local_asset_server.dart';
 import 'package:memex/data/services/local_task_executor.dart';
 import 'package:memex/db/app_database.dart';
 
@@ -13,7 +18,14 @@ void main() {
     late AppDatabase db;
     late LocalTaskExecutor executor;
 
-    setUp(() {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    setUp(() async {
+      final root = await Directory.systemTemp.createTemp('memex-turn-recovery');
+      await FileSystemService.init(root.path);
+      addTearDown(() async {
+        await LocalAssetServer.stopServer();
+        await root.delete(recursive: true);
+      });
       db = AppDatabase.forTesting(NativeDatabase.memory());
       AppDatabase.setTestInstance(db);
       executor = LocalTaskExecutor.forTesting();
@@ -22,6 +34,25 @@ void main() {
     tearDown(() async {
       await executor.stop();
       await db.close();
+    });
+
+    test('a late completion cannot clear the newer turn on disk', () async {
+      const session = 'overlapping-turns';
+      final state =
+          _runningStateAfterToolCommit(sessionId: session, turnId: 'old');
+      final chat = ChatService.instance;
+      expect(
+          await chat.prepareChatTurn(state, sessionId: session, turnId: 'new'),
+          isFalse);
+      await chat.finishChatTurn(state, 'old');
+      final reopened = await loadOrCreateAgentState(session, null);
+      expect(reopened.metadata[_runningTurnIdKey], 'new');
+      await chat.finishChatTurn(reopened, 'new');
+      expect(
+          (await loadOrCreateAgentState(session, null))
+              .metadata
+              .containsKey(_runningTurnIdKey),
+          isFalse);
     });
 
     test('normal processing persists one user message', () async {
@@ -185,25 +216,14 @@ class _ChatTurnHarness {
     final message = payload['message'] as String;
     final agent = _agent(state: state, client: client);
 
-    final runningTurnId = state.metadata[_runningTurnIdKey] as String?;
-    final resumeExistingRun = state.isRunning && runningTurnId == turnId;
-    if (state.isRunning && !resumeExistingRun) {
-      state.isRunning = false;
-      state.metadata.remove(_runningTurnIdKey);
-    }
-    if (!resumeExistingRun) {
-      state.metadata[_runningTurnIdKey] = turnId;
-    }
-
+    final resumeExistingRun = await ChatService.instance
+        .prepareChatTurn(state, sessionId: state.sessionId, turnId: turnId);
     final future = resumeExistingRun
         ? agent.resume(useStream: false)
         : agent.run([UserMessage.text(message)], useStream: false);
 
-    await future.whenComplete(() {
-      if (!state.isRunning && state.metadata[_runningTurnIdKey] == turnId) {
-        state.metadata.remove(_runningTurnIdKey);
-      }
-    });
+    await future
+        .whenComplete(() => ChatService.instance.finishChatTurn(state, turnId));
   }
 }
 

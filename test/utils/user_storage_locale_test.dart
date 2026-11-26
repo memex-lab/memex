@@ -5,70 +5,29 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   group('UserStorage locale resolution', () {
-    test('keeps supported German locale', () {
-      final locale = UserStorage.resolveToSupportedLocale(const Locale('de'));
-
-      expect(locale.languageCode, 'de');
-    });
-
-    test('keeps supported Japanese locale', () {
-      final locale = UserStorage.resolveToSupportedLocale(const Locale('ja'));
-
-      expect(locale.languageCode, 'ja');
-    });
-
-    test('keeps supported Spanish locale', () {
-      final locale = UserStorage.resolveToSupportedLocale(const Locale('es'));
-
-      expect(locale.languageCode, 'es');
-    });
-
-    test('keeps supported Portuguese locale', () {
-      final locale = UserStorage.resolveToSupportedLocale(const Locale('pt'));
-
-      expect(locale.languageCode, 'pt');
-    });
-
-    test('keeps supported French locale', () {
-      final locale = UserStorage.resolveToSupportedLocale(const Locale('fr'));
-
-      expect(locale.languageCode, 'fr');
-    });
-
-    test('keeps supported Korean locale', () {
-      final locale = UserStorage.resolveToSupportedLocale(const Locale('ko'));
-
-      expect(locale.languageCode, 'ko');
-    });
-
-    test('keeps supported Hindi locale', () {
-      final locale = UserStorage.resolveToSupportedLocale(const Locale('hi'));
-
-      expect(locale.languageCode, 'hi');
-    });
-
-    test('keeps supported Indonesian locale', () {
-      final locale = UserStorage.resolveToSupportedLocale(const Locale('id'));
-
-      expect(locale.languageCode, 'id');
-    });
-
-    test('keeps supported Arabic locale', () {
-      final locale = UserStorage.resolveToSupportedLocale(const Locale('ar'));
-
-      expect(locale.languageCode, 'ar');
-    });
-
-    test('keeps supported Russian locale', () {
-      final locale = UserStorage.resolveToSupportedLocale(const Locale('ru'));
-
-      expect(locale.languageCode, 'ru');
-    });
-
-    test('keeps supported Italian locale', () {
-      final locale = UserStorage.resolveToSupportedLocale(const Locale('it'));
-
-      expect(locale.languageCode, 'it');
+    test('keeps every supported base language when resolving the locale', () {
+      for (final code in const [
+        'en',
+        'zh',
+        'de',
+        'ja',
+        'ko',
+        'es',
+        'hi',
+        'ar',
+        'pt',
+        'fr',
+        'id',
+        'fa',
+        'vi',
+        'th',
+        'tr',
+        'it',
+        'ru',
+      ]) {
+        expect(UserStorage.resolveToSupportedLocale(Locale(code)), Locale(code),
+            reason: code);
+      }
     });
 
     test('keeps supported Traditional Chinese locale', () {

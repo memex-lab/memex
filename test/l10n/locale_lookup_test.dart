@@ -17,9 +17,7 @@ void main() {
   });
 
   test('Vietnamese locale exposes translated common actions', () {
-    if (!supportedLanguageTags.contains('vi')) {
-      return;
-    }
+    expect(supportedLanguageTags, contains('vi'));
 
     const locale = Locale('vi');
     final l10n = lookupAppLocalizations(locale);
@@ -30,9 +28,7 @@ void main() {
   });
 
   test('Farsi locale exposes translated common actions', () {
-    if (!supportedLanguageTags.contains('fa')) {
-      return;
-    }
+    expect(supportedLanguageTags, contains('fa'));
 
     const locale = Locale('fa');
     final l10n = lookupAppLocalizations(locale);

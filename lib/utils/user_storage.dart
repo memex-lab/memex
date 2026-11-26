@@ -249,7 +249,9 @@ class UserStorage {
   static Future<void> saveUser(String userId) async {
     try {
       final prefs = await sharedPrefs();
-      await prefs.setString(_keyUserId, userId);
+      if (!await prefs.setString(_keyUserId, userId)) {
+        throw StateError('Could not save local account');
+      }
     } catch (e) {
       throw Exception(UserStorage.l10n.saveUserInfoFailed(e));
     }
@@ -257,11 +259,9 @@ class UserStorage {
 
   /// Clear user info (used on logout)
   static Future<void> clearUser() async {
-    try {
-      final prefs = await sharedPrefs();
-      await prefs.remove(_keyUserId);
-    } catch (e) {
-      // ignore error
+    final prefs = await sharedPrefs();
+    if (prefs.containsKey(_keyUserId) && !await prefs.remove(_keyUserId)) {
+      throw StateError('Could not clear local account');
     }
   }
 
@@ -1306,13 +1306,34 @@ class UserStorage {
     _logger.info('iCloud migration: complete');
   }
 
-  /// Clear all SharedPreferences data (used for account deletion).
-  static Future<void> clearAllData() async {
-    try {
-      final prefs = await sharedPrefs();
-      await prefs.clear();
-    } catch (e) {
-      _logger.warning('Failed to clear SharedPreferences: $e');
+  /// Reset this installation's settings and keep other accounts' workspace preferences.
+  static Future<void> clearAllData({required String userId}) async {
+    final prefs = await sharedPrefs();
+    const perUserPrefixes = [
+      _keyLatestSuperAgentHomeSessionIdPrefix,
+      _keyMemexAgentNotificationPermissionPromptedPrefix,
+      _keyStorageLocationPrefix,
+      _keyCustomDataRootPathPrefix,
+      _keyAutoBackupEnabledPrefix,
+      _keyAutoBackupRetentionDaysPrefix,
+      _keyAutoBackupMaxBytesPrefix,
+      _keyLastAutoBackupAtPrefix,
+      _keyLastAutoBackupFingerprintPrefix,
+      _keyAndroidBackupTreeUriPrefix,
+      _keyAndroidBackupTreeNamePrefix,
+    ];
+    for (final key in prefs.getKeys()) {
+      if (key == _keyUserId) continue;
+      final belongsToAnotherAccount = perUserPrefixes.any(
+        (prefix) => key.startsWith(prefix) && key != '$prefix$userId',
+      );
+      if (belongsToAnotherAccount) continue;
+      if (!await prefs.remove(key)) {
+        throw StateError('Could not reset local settings');
+      }
+    }
+    if (!await prefs.remove(_keyUserId)) {
+      throw StateError('Could not clear local account');
     }
   }
 

@@ -79,6 +79,8 @@ Maintainers may close PRs that are out of scope, too broad, or conflict with the
 
 ## Testing Expectations
 
+Use the [user feature map (Chinese)](docs/user-feature-map.zh.md) to find the affected journey. Report the platform and the user-visible outcome your test actually reached.
+
 Behavior changes should include test evidence in the same PR. A clear test plan
 is part of the change, not a follow-up.
 

@@ -61,6 +61,32 @@ void main() {
     expect(session.requiresAuth, isTrue);
   });
 
+  test(
+      'foreground and background transitions never authenticate a locked reader',
+      () {
+    for (final firstGap in [0, 299, 300, 301]) {
+      for (final secondGap in [0, 299, 300, 301]) {
+        for (final authenticated in [false, true]) {
+          final session = AppLockSession();
+          if (authenticated) session.onUnlock();
+          var allowed = authenticated;
+          var clock = start;
+          for (final gap in [firstGap, secondGap]) {
+            session.notePaused(clock);
+            session.coverOnPause(lockEnabled: true);
+            expect(session.isLocked, isTrue);
+            clock = clock.add(Duration(seconds: gap));
+            session.onResume(clock);
+            allowed = allowed && gap < 300;
+            expect(session.isLocked, !allowed,
+                reason: 'auth=$authenticated gaps=$firstGap,$secondGap');
+            if (!allowed) expect(session.requiresAuth, isTrue);
+          }
+        }
+      }
+    }
+  });
+
   test('lock disabled leaves the session open across pause', () {
     final session = AppLockSession();
     session.onLockDisabled();
