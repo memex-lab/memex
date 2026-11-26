@@ -2,7 +2,7 @@
 
 与[功能地图](user-feature-map.zh.md)配套。按用户任务展开测试文件；每个用例链接到声明位置。业务链单独注明起点与终点。“组件/业务层”涵盖内部断言，以及只验证一段生产链路的用例；“宿主控件”在 Flutter 测试宿主执行。通过状态只针对列出的边界。结果为 main@6953a8a8 加工作分支测试改动的快照；同名参数化用例按实际运行逐条列出。
 
-清理前核对了 238 份测试源文件。当前索引包含 236 份，其中 Flutter 229 份、Python 6 份、iOS XCTest 1 份。
+清理前核对了 238 份测试源文件。本次复核原有 1149 项，见[逐条审查记录](test-case-audit.zh.md)。当前索引包含 234 份，其中 Flutter 227 份、Python 6 份、iOS XCTest 1 份。
 
 <a id="tasks"></a>
 ## 任务、后台与诊断
@@ -352,19 +352,14 @@
 </details>
 
 <details>
-<summary>memex_router_init_test.dart · 7 项</summary>
+<summary>memex_router_init_test.dart · 2 项</summary>
 
 [测试源文件](../test/integration/memex_router_init_test.dart)
 
 | 用例 | 证据边界 | 本次 |
 |---|---|---|
-| [MemexRouter initialization source ordering task handlers are registered before LocalTaskExecutor starts](../test/integration/memex_router_init_test.dart#L23) | 源码约束 | 通过 |
-| [MemexRouter initialization source ordering primary companion wake loop is restored after task startup](../test/integration/memex_router_init_test.dart#L39) | 源码约束 | 通过 |
-| [MemexRouter initialization source ordering history acquaintance is scheduled before the initiative wake](../test/integration/memex_router_init_test.dart#L54) | 源码约束 | 通过 |
-| [MemexRouter initialization source ordering sendMessage waits for full router initialization before delegating](../test/integration/memex_router_init_test.dart#L69) | 源码约束 | 通过 |
-| [MemexRouter initialization source ordering timeline init completes core before awaiting deferred work](../test/integration/memex_router_init_test.dart#L90) | 源码约束 | 通过 |
-| [MemexRouter initialization source ordering fetchTimelineCards waits only for core initialization](../test/integration/memex_router_init_test.dart#L110) | 源码约束 | 通过 |
-| [switching accounts reopens the selected timeline even for the same card ID](../test/integration/memex_router_init_test.dart#L136) | 设置退出→等待旧任务写卡→A、B 读同一 ID→仅旧数据库有完成任务 | 通过 |
+| [cold start serves migrated cards and queued search before chat and companion startup finish](../test/integration/memex_router_init_test.dart#L26) | 冷启动→迁移时间线与 SQLite 排队索引→放行聊天及角色任务 | 通过 |
+| [switching accounts reopens the selected timeline even for the same card ID](../test/integration/memex_router_init_test.dart#L118) | 设置退出→等待旧任务写卡→A、B 读同一 ID→仅旧数据库有完成任务 | 通过 |
 
 </details>
 
@@ -391,16 +386,6 @@
 
 </details>
 
-<details>
-<summary>home_tab_rebuild_test.dart · 1 项</summary>
-
-[测试源文件](../test/ui/main_screen/home_tab_rebuild_test.dart)
-
-| 用例 | 证据边界 | 本次 |
-|---|---|---|
-| [reading tab view models does not rebuild siblings on notify](../test/ui/main_screen/home_tab_rebuild_test.dart#L10) | 宿主控件 | 通过 |
-
-</details>
 
 <details>
 <summary>main_bottom_bar_test.dart · 3 项</summary>
@@ -583,17 +568,16 @@
 </details>
 
 <details>
-<summary>user_notifications_migration_test.dart · 5 项</summary>
+<summary>user_notifications_migration_test.dart · 4 项</summary>
 
 [测试源文件](../test/db/user_notifications_migration_test.dart)
 
 | 用例 | 证据边界 | 本次 |
 |---|---|---|
-| [UserNotifications migration table is queryable after creation](../test/db/user_notifications_migration_test.dart#L43) | 组件/业务层 | 通过 |
-| [UserNotifications migration can insert and query a notification row](../test/db/user_notifications_migration_test.dart#L49) | 组件/业务层 | 通过 |
-| [UserNotifications migration payload column is nullable](../test/db/user_notifications_migration_test.dart#L75) | 组件/业务层 | 通过 |
-| [UserNotifications migration UNIQUE index rejects duplicate (userId, notificationType, subjectKey) triple](../test/db/user_notifications_migration_test.dart#L94) | 组件/业务层 | 通过 |
-| [UserNotifications migration UNIQUE index allows different triples](../test/db/user_notifications_migration_test.dart#L129) | 组件/业务层 | 通过 |
+| [UserNotifications migration can insert and query a notification row](../test/db/user_notifications_migration_test.dart#L18) | 生产 AppDatabase 建库→SQLite 字段与约束 | 通过 |
+| [UserNotifications migration payload column is nullable](../test/db/user_notifications_migration_test.dart#L44) | 生产 AppDatabase 建库→SQLite 字段与约束 | 通过 |
+| [UserNotifications migration UNIQUE index rejects duplicate (userId, notificationType, subjectKey) triple](../test/db/user_notifications_migration_test.dart#L63) | 生产 AppDatabase 建库→SQLite 字段与约束 | 通过 |
+| [UserNotifications migration UNIQUE index allows different triples](../test/db/user_notifications_migration_test.dart#L98) | 生产 AppDatabase 建库→SQLite 字段与约束 | 通过 |
 
 </details>
 
@@ -884,7 +868,7 @@
 </details>
 
 <details>
-<summary>mint_and_save_fact_id_test.dart · 10 项</summary>
+<summary>mint_and_save_fact_id_test.dart · 9 项</summary>
 
 [测试源文件](../test/agent/mint_and_save_fact_id_test.dart)
 
@@ -895,11 +879,10 @@
 | [mint_record_fact_id + status-driven new-card detection mint can reserve multiple processing placeholder cards](../test/agent/mint_and_save_fact_id_test.dart#L80) | 组件/业务层 | 通过 |
 | [mint_record_fact_id + status-driven new-card detection mint then save completes the card and enqueues memory once](../test/agent/mint_and_save_fact_id_test.dart#L102) | 组件/业务层 | 通过 |
 | [mint_record_fact_id + status-driven new-card detection re-saving a completed card is an edit and does not re-enqueue](../test/agent/mint_and_save_fact_id_test.dart#L145) | 组件/业务层 | 通过 |
-| [mint_record_fact_id + status-driven new-card detection save without minting first is a tool error](../test/agent/mint_and_save_fact_id_test.dart#L189) | 组件/业务层 | 通过 |
-| [mint_record_fact_id + status-driven new-card detection editing with only fact preserves the existing assets and title](../test/agent/mint_and_save_fact_id_test.dart#L209) | 组件/业务层 | 通过 |
-| [mint_record_fact_id + status-driven new-card detection save accepts bare fs asset refs and stores renderable markdown refs](../test/agent/mint_and_save_fact_id_test.dart#L265) | 组件/业务层 | 通过 |
-| [mint_record_fact_id + status-driven new-card detection card cache timeline ordering uses record creation time for new cards](../test/agent/mint_and_save_fact_id_test.dart#L303) | 组件/业务层 | 通过 |
-| [mint_record_fact_id + status-driven new-card detection a fact containing an fs:// reference is rejected](../test/agent/mint_and_save_fact_id_test.dart#L343) | 组件/业务层 | 通过 |
+| [mint_record_fact_id + status-driven new-card detection editing with only fact preserves the existing assets and title](../test/agent/mint_and_save_fact_id_test.dart#L189) | 组件/业务层 | 通过 |
+| [mint_record_fact_id + status-driven new-card detection save accepts bare fs asset refs and stores renderable markdown refs](../test/agent/mint_and_save_fact_id_test.dart#L245) | 组件/业务层 | 通过 |
+| [mint_record_fact_id + status-driven new-card detection card cache timeline ordering uses record creation time for new cards](../test/agent/mint_and_save_fact_id_test.dart#L283) | 组件/业务层 | 通过 |
+| [mint_record_fact_id + status-driven new-card detection a fact containing an fs:// reference is rejected](../test/agent/mint_and_save_fact_id_test.dart#L323) | 组件/业务层 | 通过 |
 
 </details>
 
@@ -918,7 +901,7 @@
 </details>
 
 <details>
-<summary>super_agent_child_test.dart · 29 项</summary>
+<summary>super_agent_child_test.dart · 28 项</summary>
 
 [测试源文件](../test/agent/super_agent_child_test.dart)
 
@@ -952,7 +935,6 @@
 | [SuperAgent child runtime delegate allows the fixed research agent type](../test/agent/super_agent_child_test.dart#L992) | 组件/业务层 | 通过 |
 | [SuperAgent child runtime delegate schema exposes agent_type instead of profile and skills](../test/agent/super_agent_child_test.dart#L1037) | 组件/业务层 | 通过 |
 | [SuperAgent child runtime finish_summary is only exposed by child-specialized skills](../test/agent/super_agent_child_test.dart#L1064) | 组件/业务层 | 通过 |
-| [SuperAgent child runtime delegate accepts a fixed agent_type call without profile or skills](../test/agent/super_agent_child_test.dart#L1095) | 组件/业务层 | 通过 |
 
 </details>
 
@@ -1786,7 +1768,7 @@
 </details>
 
 <details>
-<summary>quick_recording_transcript_test.dart · 5 项</summary>
+<summary>quick_recording_transcript_test.dart · 3 项</summary>
 
 [测试源文件](../test/ui/main_screen/quick_recording_transcript_test.dart)
 
@@ -1794,9 +1776,7 @@
 |---|---|---|
 | [finalizeQuickRecordingTranscript empty PCM does not transcribe and keeps existing text](../test/ui/main_screen/quick_recording_transcript_test.dart#L8) | 转写函数与注入回调 | 通过 |
 | [finalizeQuickRecordingTranscript non-empty PCM always calls transcribe and returns its text](../test/ui/main_screen/quick_recording_transcript_test.dart#L24) | 转写函数与注入回调 | 通过 |
-| [finalizeQuickRecordingTranscript empty transcript keeps existing text for the caller toast path](../test/ui/main_screen/quick_recording_transcript_test.dart#L42) | 转写函数与注入回调 | 通过 |
-| [finalizeQuickRecordingTranscript failed or empty final passes preserve every existing draft](../test/ui/main_screen/quick_recording_transcript_test.dart#L60) | 转写函数与注入回调 | 通过 |
-| [finalizeQuickRecordingTranscript transcribe failure preserves text and surfaces error](../test/ui/main_screen/quick_recording_transcript_test.dart#L78) | 转写函数与注入回调 | 通过 |
+| [finalizeQuickRecordingTranscript failed or empty final passes preserve every existing draft](../test/ui/main_screen/quick_recording_transcript_test.dart#L42) | 转写函数与注入回调 | 通过 |
 
 </details>
 
@@ -1845,7 +1825,7 @@
 </details>
 
 <details>
-<summary>super_agent_permissions_test.dart · 20 项</summary>
+<summary>super_agent_permissions_test.dart · 19 项</summary>
 
 [测试源文件](../test/agent/super_agent_permissions_test.dart)
 
@@ -1863,14 +1843,13 @@
 | [SuperAgent quick query tools excludes the mutating calendar and reminder skill](../test/agent/super_agent_permissions_test.dart#L113) | 组件/业务层 | 通过 |
 | [SuperAgent quick query tools excludes the memory write skill](../test/agent/super_agent_permissions_test.dart#L122) | 组件/业务层 | 通过 |
 | [SuperAgent quick query tools excludes the mutating PKM skill](../test/agent/super_agent_permissions_test.dart#L126) | 组件/业务层 | 通过 |
-| [SuperAgent run limits root agent allows long import and organization runs](../test/agent/super_agent_permissions_test.dart#L132) | 组件/业务层 | 通过 |
-| [SuperAgent legacy active skills drops stale active skill names before agent tools are composed](../test/agent/super_agent_permissions_test.dart#L139) | 组件/业务层 | 通过 |
-| [SuperAgent transient pre-minted record reminder matches only the empty processing placeholder](../test/agent/super_agent_permissions_test.dart#L160) | 组件/业务层 | 通过 |
-| [SuperAgent transient pre-minted record reminder annotates the matching user message only in model requests](../test/agent/super_agent_permissions_test.dart#L213) | 组件/业务层 | 通过 |
-| [SuperAgent transient pre-minted record reminder does not append when no pre-minted fact_id exists](../test/agent/super_agent_permissions_test.dart#L241) | 组件/业务层 | 通过 |
-| [SuperAgent transient pre-minted record reminder reuses persisted same-turn fact_id after task restart](../test/agent/super_agent_permissions_test.dart#L255) | 组件/业务层 | 通过 |
-| [SuperAgent transient pre-minted record reminder keeps same-turn fact_id when a running agent will retry](../test/agent/super_agent_permissions_test.dart#L277) | 组件/业务层 | 通过 |
-| [SuperAgent transient pre-minted record reminder annotates the matching history user message after the id is used](../test/agent/super_agent_permissions_test.dart#L322) | 组件/业务层 | 通过 |
+| [SuperAgent legacy active skills drops stale active skill names before agent tools are composed](../test/agent/super_agent_permissions_test.dart#L132) | 组件/业务层 | 通过 |
+| [SuperAgent transient pre-minted record reminder matches only the empty processing placeholder](../test/agent/super_agent_permissions_test.dart#L153) | 组件/业务层 | 通过 |
+| [SuperAgent transient pre-minted record reminder annotates the matching user message only in model requests](../test/agent/super_agent_permissions_test.dart#L206) | 组件/业务层 | 通过 |
+| [SuperAgent transient pre-minted record reminder does not append when no pre-minted fact_id exists](../test/agent/super_agent_permissions_test.dart#L234) | 组件/业务层 | 通过 |
+| [SuperAgent transient pre-minted record reminder reuses persisted same-turn fact_id after task restart](../test/agent/super_agent_permissions_test.dart#L248) | 组件/业务层 | 通过 |
+| [SuperAgent transient pre-minted record reminder keeps same-turn fact_id when a running agent will retry](../test/agent/super_agent_permissions_test.dart#L270) | 组件/业务层 | 通过 |
+| [SuperAgent transient pre-minted record reminder annotates the matching history user message after the id is used](../test/agent/super_agent_permissions_test.dart#L315) | 组件/业务层 | 通过 |
 
 </details>
 
@@ -2355,16 +2334,6 @@
 
 </details>
 
-<details>
-<summary>timeline_loading_spinner_test.dart · 1 项</summary>
-
-[测试源文件](../test/ui/timeline/widgets/timeline_loading_spinner_test.dart)
-
-| 用例 | 证据边界 | 本次 |
-|---|---|---|
-| [empty timeline loading uses a larger spinner](../test/ui/timeline/widgets/timeline_loading_spinner_test.dart#L26) | 宿主控件 | 通过 |
-
-</details>
 
 <details>
 <summary>timeline_model_config_banner_test.dart · 3 项</summary>
@@ -2541,7 +2510,7 @@
 </details>
 
 <details>
-<summary>model_config_edit_page_test.dart · 7 项</summary>
+<summary>model_config_edit_page_test.dart · 6 项</summary>
 
 [测试源文件](../test/ui/settings/widgets/model_config_edit_page_test.dart)
 
@@ -2549,11 +2518,10 @@
 |---|---|---|
 | [ModelConfigEditPage duplicate mode shows &quot;Duplicate Configuration&quot; title when duplicateSource is provided](../test/ui/settings/widgets/model_config_edit_page_test.dart#L39) | 宿主控件 | 通过 |
 | [ModelConfigEditPage duplicate mode pre-fills fields from duplicateSource](../test/ui/settings/widgets/model_config_edit_page_test.dart#L52) | 宿主控件 | 通过 |
-| [ModelConfigEditPage duplicate mode save button is present when duplicateSource is provided](../test/ui/settings/widgets/model_config_edit_page_test.dart#L69) | 宿主控件 | 通过 |
-| [ModelConfigEditPage duplicate mode saves duplicate config with unique key](../test/ui/settings/widgets/model_config_edit_page_test.dart#L93) | 宿主控件 | 通过 |
-| [ModelConfigEditPage duplicate mode increments counter when duplicate key already exists](../test/ui/settings/widgets/model_config_edit_page_test.dart#L142) | 宿主控件 | 通过 |
-| [ModelConfigEditPage provider selection renders DeepSeek configuration with official defaults](../test/ui/settings/widgets/model_config_edit_page_test.dart#L189) | 宿主控件 | 通过 |
-| [ModelConfigEditPage simple setup mode hides the internal key and generates one when saved](../test/ui/settings/widgets/model_config_edit_page_test.dart#L214) | 宿主控件 | 通过 |
+| [ModelConfigEditPage duplicate mode saves duplicate config with unique key](../test/ui/settings/widgets/model_config_edit_page_test.dart#L69) | 宿主控件 | 通过 |
+| [ModelConfigEditPage duplicate mode increments counter when duplicate key already exists](../test/ui/settings/widgets/model_config_edit_page_test.dart#L124) | 宿主控件 | 通过 |
+| [ModelConfigEditPage provider selection renders DeepSeek configuration with official defaults](../test/ui/settings/widgets/model_config_edit_page_test.dart#L171) | 宿主控件 | 通过 |
+| [ModelConfigEditPage simple setup mode hides the internal key and generates one when saved](../test/ui/settings/widgets/model_config_edit_page_test.dart#L196) | 宿主控件 | 通过 |
 
 </details>
 
@@ -2665,8 +2633,8 @@
 
 | 用例 | 证据边界 | 本次 |
 |---|---|---|
-| [uses a lazy ListView.builder for the insight feed](../test/ui/insight/widgets/insight_list_builder_test.dart#L24) | 宿主控件 | 通过 |
-| [failed HTML render stops until the user retries](../test/ui/insight/widgets/insight_list_builder_test.dart#L58) | 宿主控件 | 通过 |
+| [builds distant insight cards only as the reader scrolls](../test/ui/insight/widgets/insight_list_builder_test.dart#L24) | 宿主滚动→第 40 条洞察挂载可见 | 通过 |
+| [failed HTML render stops until the user retries](../test/ui/insight/widgets/insight_list_builder_test.dart#L62) | 宿主控件 | 通过 |
 
 </details>
 
@@ -3472,30 +3440,20 @@
 </details>
 
 <details>
-<summary>user_storage_locale_test.dart · 18 项</summary>
+<summary>user_storage_locale_test.dart · 8 项</summary>
 
 [测试源文件](../test/utils/user_storage_locale_test.dart)
 
 | 用例 | 证据边界 | 本次 |
 |---|---|---|
-| [UserStorage locale resolution keeps supported German locale](../test/utils/user_storage_locale_test.dart#L8) | 组件/业务层 | 通过 |
-| [UserStorage locale resolution keeps supported Japanese locale](../test/utils/user_storage_locale_test.dart#L14) | 组件/业务层 | 通过 |
-| [UserStorage locale resolution keeps supported Spanish locale](../test/utils/user_storage_locale_test.dart#L20) | 组件/业务层 | 通过 |
-| [UserStorage locale resolution keeps supported Portuguese locale](../test/utils/user_storage_locale_test.dart#L26) | 组件/业务层 | 通过 |
-| [UserStorage locale resolution keeps supported French locale](../test/utils/user_storage_locale_test.dart#L32) | 组件/业务层 | 通过 |
-| [UserStorage locale resolution keeps supported Korean locale](../test/utils/user_storage_locale_test.dart#L38) | 组件/业务层 | 通过 |
-| [UserStorage locale resolution keeps supported Hindi locale](../test/utils/user_storage_locale_test.dart#L44) | 组件/业务层 | 通过 |
-| [UserStorage locale resolution keeps supported Indonesian locale](../test/utils/user_storage_locale_test.dart#L50) | 组件/业务层 | 通过 |
-| [UserStorage locale resolution keeps supported Arabic locale](../test/utils/user_storage_locale_test.dart#L56) | 组件/业务层 | 通过 |
-| [UserStorage locale resolution keeps supported Russian locale](../test/utils/user_storage_locale_test.dart#L62) | 组件/业务层 | 通过 |
-| [UserStorage locale resolution keeps supported Italian locale](../test/utils/user_storage_locale_test.dart#L68) | 组件/业务层 | 通过 |
-| [UserStorage locale resolution keeps supported Traditional Chinese locale](../test/utils/user_storage_locale_test.dart#L74) | 组件/业务层 | 通过 |
-| [UserStorage locale resolution resolves Traditional Chinese regions to zh_Hant](../test/utils/user_storage_locale_test.dart#L82) | 组件/业务层 | 通过 |
-| [UserStorage locale resolution parses locale tags with script codes](../test/utils/user_storage_locale_test.dart#L90) | 组件/业务层 | 通过 |
-| [UserStorage locale resolution falls back unsupported locales to English](../test/utils/user_storage_locale_test.dart#L98) | 组件/业务层 | 通过 |
-| [UserStorage Memex Agent notification permission marker is scoped to the active user](../test/utils/user_storage_locale_test.dart#L110) | 组件/业务层 | 通过 |
-| [UserStorage Memex Agent notification permission marker does not set a marker without a user](../test/utils/user_storage_locale_test.dart#L137) | 组件/业务层 | 通过 |
-| [UserStorage Memex Agent notification permission marker classifies the permission prompt marker as device-local](../test/utils/user_storage_locale_test.dart#L146) | 组件/业务层 | 通过 |
+| [UserStorage locale resolution keeps every supported base language when resolving the locale](../test/utils/user_storage_locale_test.dart#L8) | 17 种语言分别经过生产解析器 | 通过 |
+| [UserStorage locale resolution keeps supported Traditional Chinese locale](../test/utils/user_storage_locale_test.dart#L33) | 组件/业务层 | 通过 |
+| [UserStorage locale resolution resolves Traditional Chinese regions to zh_Hant](../test/utils/user_storage_locale_test.dart#L41) | 组件/业务层 | 通过 |
+| [UserStorage locale resolution parses locale tags with script codes](../test/utils/user_storage_locale_test.dart#L49) | 组件/业务层 | 通过 |
+| [UserStorage locale resolution falls back unsupported locales to English](../test/utils/user_storage_locale_test.dart#L57) | 组件/业务层 | 通过 |
+| [UserStorage Memex Agent notification permission marker is scoped to the active user](../test/utils/user_storage_locale_test.dart#L69) | 组件/业务层 | 通过 |
+| [UserStorage Memex Agent notification permission marker does not set a marker without a user](../test/utils/user_storage_locale_test.dart#L96) | 组件/业务层 | 通过 |
+| [UserStorage Memex Agent notification permission marker classifies the permission prompt marker as device-local](../test/utils/user_storage_locale_test.dart#L105) | 组件/业务层 | 通过 |
 
 </details>
 

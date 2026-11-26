@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:memex/data/services/native_photo_picker_service.dart';
 import 'package:memex/domain/models/native_photo_selection.dart';
 import 'package:memex/data/services/photo_attachment_service.dart';
@@ -119,7 +120,20 @@ class MemexRouter {
 
   FileSystemService get fileSystemService => FileSystemService.instance;
 
-  MemexRouter._() {
+  final Future<void> Function({required String userId})
+      _reconcilePendingReplies;
+
+  @visibleForTesting
+  MemexRouter.forTesting({
+    required Future<void> Function({required String userId})
+        reconcilePendingReplies,
+  }) : this._(reconcilePendingReplies: reconcilePendingReplies);
+
+  MemexRouter._(
+      {Future<void> Function({required String userId})?
+          reconcilePendingReplies})
+      : _reconcilePendingReplies = reconcilePendingReplies ??
+            CharacterConversationService.instance.reconcilePendingReplies {
     AgentActivityService.setInstance(LocalAgentActivityService.instance);
     _ensureInitialized();
   }
@@ -197,9 +211,7 @@ class MemexRouter {
   /// Companion wake, custom agents, and background surfaces. Chat waits here.
   Future<void> _initDeferred(String userId, {required int generation}) async {
     try {
-      await CharacterConversationService.instance.reconcilePendingReplies(
-        userId: userId,
-      );
+      await _reconcilePendingReplies(userId: userId);
       if (generation != _initGeneration) return;
       await CustomAgentConfigService.instance.registerAll(userId);
       if (generation != _initGeneration) return;
