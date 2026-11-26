@@ -234,6 +234,7 @@ class TimelineViewModel extends ChangeNotifier {
 
   Timer? _pollingTimer;
   bool _eventBusSetup = false;
+  bool _disposed = false;
 
   late final Command0<void> load;
 
@@ -450,8 +451,10 @@ class TimelineViewModel extends ChangeNotifier {
     required String label,
     required Future<T> Function() query,
   }) async {
+    if (_disposed) return null;
     try {
-      return await query().timeout(_auxiliaryQueryTimeout);
+      final result = await query().timeout(_auxiliaryQueryTimeout);
+      return _disposed ? null : result;
     } on TimeoutException catch (e, st) {
       _logger.warning('$label timed out', e, st);
     } catch (e, st) {
@@ -690,6 +693,9 @@ class TimelineViewModel extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
+    _loadGeneration++;
+    _visibleLoadGeneration = null;
     _tagsRefreshTimer?.cancel();
     _stopPolling();
     if (_eventBusSetup) {

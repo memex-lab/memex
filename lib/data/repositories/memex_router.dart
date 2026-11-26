@@ -469,9 +469,17 @@ class MemexRouter {
     );
   }
 
+  Future<void> _abandonCardCacheRebuild() async {
+    if (!FileSystemService.isInitialized) return;
+    final files = FileSystemService.instance;
+    files.abandonCardCacheRebuild();
+    await files.waitForCardCacheRebuild();
+  }
+
   /// External hook to force switch user (e.g. on login)
   Future<void> switchUser(String userId) async {
     _logger.info('Switching user to $userId');
+    await _abandonCardCacheRebuild();
     _initGeneration += 1;
     _targetUserIdForInit = null;
     _initFuture = null;
@@ -483,6 +491,7 @@ class MemexRouter {
   Future<void> applyWorkspaceStorageChange() async {
     final userId = await UserStorage.getUserId();
     if (userId != null) HydratedCardCache.instance.clearUser(userId);
+    await _abandonCardCacheRebuild();
     final dataRoot = await UserStorage.resolveDataRoot(userId);
     await FileSystemService.init(dataRoot);
     if (userId != null && userId.isNotEmpty) {
@@ -538,6 +547,7 @@ class MemexRouter {
           !identical(db, AppDatabase.instance)) {
         throw StateError('Active workspace changed before deletion');
       }
+      await _abandonCardCacheRebuild();
       TableChangeNotifier.instance.dispose();
       await AppDatabase.closeCurrent();
       await deleteLocalAccountFiles(storage, confirmedUserId);
@@ -549,6 +559,9 @@ class MemexRouter {
   }
 
   void _resetAccountState() {
+    if (FileSystemService.isInitialized) {
+      FileSystemService.instance.abandonCardCacheRebuild();
+    }
     HydratedCardCache.instance.clearAll();
     _initGeneration++;
     _targetUserIdForInit = null;
@@ -561,6 +574,7 @@ class MemexRouter {
     await AgentBackgroundCoordinator.instance.stop();
     await AgentBackgroundTaskService.instance
         .stopMonitoring(reason: 'account change');
+    await _abandonCardCacheRebuild();
     TableChangeNotifier.instance.dispose();
     await AppDatabase.closeCurrent();
   }
