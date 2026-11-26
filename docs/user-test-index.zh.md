@@ -2739,17 +2739,17 @@
 
 
 <details>
-<summary>test_compare_flutter_analyze.py · 5 项</summary>
+<summary>compare_flutter_analyze_test.py · 5 项</summary>
 
-[测试源文件](../tests/tools/test_compare_flutter_analyze.py)
+[测试源文件](../scripts/compare_flutter_analyze_test.py)
 
 | 用例 | 证据边界 | 本次 |
 |---|---|---|
-| [test_parse_report_extracts_analyzer_issues](../tests/tools/test_compare_flutter_analyze.py#L16) | 维护工具 | 通过 |
-| [test_moved_existing_issue_is_not_new](../tests/tools/test_compare_flutter_analyze.py#L27) | 维护工具 | 通过 |
-| [test_additional_copy_of_existing_issue_is_new](../tests/tools/test_compare_flutter_analyze.py#L40) | 维护工具 | 通过 |
-| [test_parses_flutter_write_format_and_normalizes_paths](../tests/tools/test_compare_flutter_analyze.py#L54) | 维护工具 | 通过 |
-| [test_baseline_comparison_ignores_line_drift](../tests/tools/test_compare_flutter_analyze.py#L67) | 维护工具 | 通过 |
+| [test_parse_report_extracts_analyzer_issues](../scripts/compare_flutter_analyze_test.py#L18) | 维护工具 | 通过 |
+| [test_moved_existing_issue_is_not_new](../scripts/compare_flutter_analyze_test.py#L29) | 维护工具 | 通过 |
+| [test_additional_copy_of_existing_issue_is_new](../scripts/compare_flutter_analyze_test.py#L42) | 维护工具 | 通过 |
+| [test_parses_flutter_write_format_and_normalizes_paths](../scripts/compare_flutter_analyze_test.py#L56) | 维护工具 | 通过 |
+| [test_baseline_comparison_ignores_line_drift](../scripts/compare_flutter_analyze_test.py#L69) | 维护工具 | 通过 |
 
 </details>
 
