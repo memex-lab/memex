@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+// Exercise the same Material widget types as production on Flutter 3.41 and 3.50.
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -18,7 +20,6 @@ import 'package:memex/ui/user_setup/widgets/user_setup_screen.dart';
 import 'package:memex/ui/knowledge/view_models/knowledge_base_viewmodel.dart';
 import 'package:memex/ui/knowledge/widgets/knowledge_base_screen.dart';
 import 'package:memex/ui/knowledge/widgets/knowledge_file_page.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/data/services/file_system_service.dart';
 import 'package:memex/data/services/local_asset_server.dart';
@@ -38,6 +39,7 @@ import 'package:memex/utils/user_storage.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../helpers/bundled_test_fonts.dart';
 import '../helpers/journal_model_fixture.dart';
 import '../helpers/workspace_test_paths.dart';
 
@@ -52,6 +54,7 @@ Future<void> waitFor(WidgetTester tester, Finder target) async {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  setUpAll(loadBundledTestFonts);
   const user = 'detail-reader';
   late Directory customRoot;
   late Directory appDir;
@@ -434,7 +437,6 @@ void main() {
       }
       expect(await UserStorage.resolveDataRoot('other'), customRoot.path);
     });
-    GoogleFonts.config.allowRuntimeFetching = false;
     await tester.pumpWidget(const MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,

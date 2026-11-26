@@ -165,52 +165,59 @@ class _SearchResultsWidgetState extends State<_SearchResultsWidget> {
           ),
         ],
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: const Color(0xFFF7F8FA),
-            borderRadius: BorderRadius.circular(10),
+      child: Material(
+        type: MaterialType.transparency,
+        borderRadius: BorderRadius.circular(16),
+        clipBehavior: Clip.antiAlias,
+        child: ListTile(
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          leading: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF7F8FA),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.description_outlined,
+                color: Color(0xFF64748B), size: 20),
           ),
-          child: const Icon(Icons.description_outlined,
-              color: Color(0xFF64748B), size: 20),
-        ),
-        title: Text(name,
-            style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF1E293B))),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 4),
-            Text(filePath,
-                style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
-            if (snippet != null) ...[
+          title: Text(name,
+              style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1E293B))),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               const SizedBox(height: 4),
-              Text(snippet,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+              Text(filePath,
                   style:
-                      const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                      const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+              if (snippet != null) ...[
+                const SizedBox(height: 4),
+                Text(snippet,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                        fontSize: 12, color: Color(0xFF64748B))),
+              ],
             ],
-          ],
+          ),
+          onTap: () {
+            if (isMd) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => KnowledgeFilePage(filePath: filePath),
+                ),
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text(UserStorage.l10n.onlyMarkdownPreview)));
+            }
+          },
         ),
-        onTap: () {
-          if (isMd) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => KnowledgeFilePage(filePath: filePath),
-              ),
-            );
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(UserStorage.l10n.onlyMarkdownPreview)));
-          }
-        },
       ),
     );
   }

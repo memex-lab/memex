@@ -1714,7 +1714,7 @@
 
 | 用例 | 证据边界 | 本次 |
 |---|---|---|
-| [a protected route is reachable only after the saved PIN](../test/ui/app_lock/app_entry_pin_test.dart#L10) | 应用锁键盘→受保护路由可操作（宿主） | 通过 |
+| [a protected route is reachable only after the saved PIN](../test/ui/app_lock/app_entry_pin_test.dart#L12) | 应用锁键盘→受保护路由可操作（宿主） | 通过 |
 
 </details>
 
@@ -2633,8 +2633,8 @@
 
 | 用例 | 证据边界 | 本次 |
 |---|---|---|
-| [builds distant insight cards only as the reader scrolls](../test/ui/insight/widgets/insight_list_builder_test.dart#L24) | 宿主滚动→第 40 条洞察挂载可见 | 通过 |
-| [failed HTML render stops until the user retries](../test/ui/insight/widgets/insight_list_builder_test.dart#L62) | 宿主控件 | 通过 |
+| [builds distant insight cards only as the reader scrolls](../test/ui/insight/widgets/insight_list_builder_test.dart#L27) | 宿主滚动→第 40 条洞察挂载可见 | 通过 |
+| [failed HTML render stops until the user retries](../test/ui/insight/widgets/insight_list_builder_test.dart#L67) | 宿主控件 | 通过 |
 
 </details>
 
@@ -3468,10 +3468,10 @@
 
 | 用例 | 证据边界 | 本次 |
 |---|---|---|
-| [post a comment in detail and read it after reopening the screen](../test/integration/local_workspace_screens_test.dart#L138) | 真实设置页→时间线→图片、留言→返回再读 | 通过 |
-| [search the knowledge base and open the matching Markdown document](../test/integration/local_workspace_screens_test.dart#L238) | 知识库搜索框→无结果→命中文件→打开 Markdown 正文 | 通过 |
-| [send a photo offline, replay the queued turn and read the same note and attachment in detail](../test/integration/local_workspace_screens_test.dart#L277) | 记录输入框→离线发送→恢复队列→模型替身通过真实工具保存→按原 ID 从列表和详情读回图文 | 通过 |
-| [confirm account deletion keeps siblings, backups, and the selected folder](../test/integration/local_workspace_screens_test.dart#L392) | 删号确认→工作区、数据库、备份、另一账号→初次设置页面 | 通过 |
+| [post a comment in detail and read it after reopening the screen](../test/integration/local_workspace_screens_test.dart#L141) | 真实设置页→时间线→图片、留言→返回再读 | 通过 |
+| [search the knowledge base and open the matching Markdown document](../test/integration/local_workspace_screens_test.dart#L241) | 知识库搜索框→无结果→命中文件→打开 Markdown 正文 | 通过 |
+| [send a photo offline, replay the queued turn and read the same note and attachment in detail](../test/integration/local_workspace_screens_test.dart#L280) | 记录输入框→离线发送→恢复队列→模型替身通过真实工具保存→按原 ID 从列表和详情读回图文 | 通过 |
+| [confirm account deletion keeps siblings, backups, and the selected folder](../test/integration/local_workspace_screens_test.dart#L395) | 删号确认→工作区、数据库、备份、另一账号→初次设置页面 | 通过 |
 
 </details>
 

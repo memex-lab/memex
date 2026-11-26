@@ -183,19 +183,7 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ),
           const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.textSecondary.withValues(alpha: 0.08),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
+          _SwitchCard(
             child: SwitchListTile(
               contentPadding: EdgeInsets.zero,
               secondary: const Icon(
@@ -236,19 +224,7 @@ class _SettingsPageState extends State<SettingsPage> {
             const SizedBox(height: 16),
           ],
           // Show Insight Text toggle
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.textSecondary.withValues(alpha: 0.08),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
+          _SwitchCard(
             child: SwitchListTile(
               contentPadding: EdgeInsets.zero,
               secondary: const Icon(
@@ -281,19 +257,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           const SizedBox(height: 16),
           // Enable Character Comment toggle
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.textSecondary.withValues(alpha: 0.08),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
+          _SwitchCard(
             child: SwitchListTile(
               contentPadding: EdgeInsets.zero,
               secondary: const Icon(
@@ -914,6 +878,31 @@ class _SettingsPageState extends State<SettingsPage> {
       localeTag: _currentLocaleTag,
       onTap: _showLanguagePicker,
       trailingIcon: Icons.chevron_right,
+    );
+  }
+}
+
+class _SwitchCard extends StatelessWidget {
+  const _SwitchCard({required this.child});
+
+  final SwitchListTile child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.textSecondary.withValues(alpha: 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(type: MaterialType.transparency, child: child),
     );
   }
 }

@@ -10,7 +10,10 @@ import 'package:memex/utils/result.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../helpers/bundled_test_fonts.dart';
+
 void main() {
+  setUpAll(loadBundledTestFonts);
   setUp(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
     EventBusService.instance.clearHandlers();
@@ -57,6 +60,8 @@ void main() {
     await tester.scrollUntilVisible(last, 500,
         scrollable: find.byType(Scrollable).first);
     expect(last, findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
   });
 
   testWidgets('failed HTML render stops until the user retries', (

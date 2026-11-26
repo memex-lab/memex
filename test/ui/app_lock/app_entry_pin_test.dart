@@ -1,15 +1,16 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:memex/main.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../helpers/bundled_test_fonts.dart';
+
 void main() {
+  setUpAll(loadBundledTestFonts);
   testWidgets('a protected route is reachable only after the saved PIN',
       (tester) async {
-    GoogleFonts.config.allowRuntimeFetching = false;
     SharedPreferences.setMockInitialValues({
       'language': 'en',
       'app_lock_enabled': true,
@@ -24,12 +25,11 @@ void main() {
     final router = GoRouter(routes: [
       GoRoute(
           path: '/',
-          builder: (_, __) => Scaffold(
-                  body: Center(
-                child: TextButton(
-                    onPressed: () => opened = true,
+          builder: (_, __) => Center(
+                child: GestureDetector(
+                    onTap: () => opened = true,
                     child: const Text('Private entry')),
-              ))),
+              )),
     ]);
     addTearDown(router.dispose);
     await tester.pumpWidget(MemexApp(router: router));
@@ -51,5 +51,7 @@ void main() {
     expect(entry, findsOneWidget);
     await tester.tap(entry);
     expect(opened, isTrue);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
   });
 }
