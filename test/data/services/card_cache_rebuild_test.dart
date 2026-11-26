@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:memex/data/services/card_cache_rebuild.dart';
 
@@ -71,6 +73,32 @@ void main() {
       cardCacheNeedsRebuild(cacheEmpty: false, rebuildInterrupted: false),
       isFalse,
     );
+  });
+
+  test(
+      'bounded header keeps created_at ordering and falls back for legacy YAML',
+      () async {
+    final dir = await Directory.systemTemp.createTemp('card-sort-time');
+    addTearDown(() => dir.delete(recursive: true));
+    final file = File('${dir.path}/card.yaml');
+    for (final entry in {'created_at: 3': 3, 'created_at: null': 2}.entries) {
+      await file
+          .writeAsString('timestamp: 2\n${entry.key}\nfact: ${'z' * 8192}\n');
+      expect(
+          await readCardCacheSortTime(file,
+              readLegacyCard: () => fail('read full body')),
+          entry.value);
+    }
+    await file
+        .writeAsString('timestamp: 2\nfact: ${'z' * 8192}\ncreated_at: 9\n');
+    var usedLegacy = false;
+    expect(
+        await readCardCacheSortTime(file, readLegacyCard: () async {
+          usedLegacy = true;
+          return 9;
+        }),
+        9);
+    expect(usedLegacy, isTrue);
   });
 
   test('yields every eight indexed cards', () {

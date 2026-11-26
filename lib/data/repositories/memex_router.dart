@@ -547,6 +547,7 @@ class MemexRouter {
           !identical(db, AppDatabase.instance)) {
         throw StateError('Active workspace changed before deletion');
       }
+      await _abandonCardCacheRebuild();
       TableChangeNotifier.instance.dispose();
       await AppDatabase.closeCurrent();
       await deleteLocalAccountFiles(storage, confirmedUserId);
@@ -573,6 +574,7 @@ class MemexRouter {
     await AgentBackgroundCoordinator.instance.stop();
     await AgentBackgroundTaskService.instance
         .stopMonitoring(reason: 'account change');
+    await _abandonCardCacheRebuild();
     TableChangeNotifier.instance.dispose();
     await AppDatabase.closeCurrent();
   }

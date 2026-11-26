@@ -168,6 +168,10 @@ class FileSystemService {
   /// Flag to indicate if a rebuild is in progress to prevent recursion
   bool _isRebuilding = false;
   int _cardCacheRebuildGeneration = 0;
+  // Normal writes/deletes commit their row under this lock. Rebuild takes
+  // the same lock before rereading the current file and publishing its row.
+  final Lock _cardIndexLock = Lock();
+  int? _firstPageLimit;
   Completer<void>? _rebuildVisibleReady;
   Completer<void>? _rebuildComplete;
   RecentPkmCacheEntry? _recentPkmCache;
@@ -516,7 +520,13 @@ class FileSystemService {
       final tempFile =
           File(path.join(tempDir.path, '${path.basename(cardPath)}.tmp'));
 
-      final yamlContent = _mapToYaml(data.toJson());
+      // Keep both ordering fields in the first two lines so a cold index can
+      // rank even a large card without reading its body. Null uses timestamp.
+      final yamlContent = _mapToYaml({
+        'timestamp': data.timestamp,
+        'created_at': data.createdAt,
+        ...data.toJson(),
+      });
       await tempFile.writeAsString(yamlContent, encoding: utf8);
       await tempFile.rename(cardPath);
 
@@ -552,11 +562,10 @@ class FileSystemService {
   Future<void> updateCardCache(
     String userId,
     String factId,
-    CardData cardData, {
-    AppDatabase? database,
-  }) async {
+    CardData cardData,
+  ) async {
     try {
-      final db = database ?? AppDatabase.instance;
+      final db = AppDatabase.instance;
       if (!_isRebuilding &&
           cardCacheNeedsRebuild(
             cacheEmpty: await db.cardDao.isCacheEmpty(),
@@ -566,41 +575,28 @@ class FileSystemService {
         await rebuildCardCache(userId);
       }
 
-      final timestamp = cardData.createdAt ?? cardData.timestamp;
-
-      final tagsJson = jsonEncode(cardData.tags);
-
-      // We need the relative path for the card.
-      // Since we know the structure, we can reconstruct it from the factId.
-      // factId: YYYY/MM/DD.md#ts_N
-      final match =
-          RegExp(r'(\d{4})/(\d{2})/(\d{2})\.md#ts_(\d+)$').firstMatch(factId);
-      if (match == null) {
-        _logger.warning('Invalid fact_id format for cache update: $factId');
-        return;
-      }
-      final year = match.group(1)!;
-      final month = match.group(2)!;
-      final day = match.group(3)!;
-      final tsPart = 'ts_${match.group(4)!}';
-      final relativePath =
-          path.join('Cards', year, month, '${day}_$tsPart.yaml');
-
-      final entry = CardCacheCompanion(
-        factId: drift.Value(factId),
-        cardPath: drift.Value(relativePath),
-        timestamp: drift.Value(timestamp),
-        tags: drift.Value(tagsJson),
+      await _cardIndexLock.synchronized(
+        () => _upsertCardIndex(db, userId, factId, cardData),
       );
-
-      await db.cardDao.upsertCard(entry);
-
-      // NOTE: Publish responsibility now belongs to _safeWriteCardFileInternal.
-      // updateCardCache is also called from rebuildCardCache where we do NOT
-      // want to emit change events, so keeping publish here was a latent bug.
     } catch (e) {
       _logger.warning('Failed to update card cache for $factId: $e');
     }
+  }
+
+  Future<void> _upsertCardIndex(
+      AppDatabase db, String userId, String factId, CardData card) async {
+    if (card.deleted == true) {
+      await db.cardDao.deleteCard(factId);
+      return;
+    }
+    final relativePath = path.relative(getCardPath(userId, factId),
+        from: getWorkspacePath(userId));
+    await db.cardDao.upsertCard(CardCacheCompanion(
+      factId: drift.Value(factId),
+      cardPath: drift.Value(relativePath),
+      timestamp: drift.Value(card.createdAt ?? card.timestamp),
+      tags: drift.Value(jsonEncode(card.tags)),
+    ));
   }
 
   /// Delete a card physically and from cache
@@ -620,9 +616,9 @@ class FileSystemService {
 
           // Delete from cache
           try {
-            await (AppDatabase.instance.delete(AppDatabase.instance.cardCache)
-                  ..where((tbl) => tbl.factId.equals(cardId)))
-                .go();
+            final db = AppDatabase.instance;
+            await _cardIndexLock
+                .synchronized(() => db.cardDao.deleteCard(cardId));
           } catch (e) {
             _logger.warning('Failed to delete card from cache $cardId: $e');
           }
@@ -689,6 +685,7 @@ class FileSystemService {
 
   bool _rebuildStillOwns(int generation, AppDatabase database) {
     return generation == _cardCacheRebuildGeneration &&
+        AppDatabase.isInitialized &&
         identical(AppDatabase.instance, database);
   }
 
@@ -701,7 +698,9 @@ class FileSystemService {
     int? waitUntilIndexed,
   }) async {
     if (_isRebuilding) {
-      if (waitUntilIndexed == null) {
+      if (waitUntilIndexed == null ||
+          _firstPageLimit == null ||
+          waitUntilIndexed > _firstPageLimit!) {
         final complete = _rebuildComplete;
         if (complete != null) await complete.future;
       } else {
@@ -711,11 +710,12 @@ class FileSystemService {
       return;
     }
 
+    final database = AppDatabase.instance;
     _isRebuilding = true;
+    _firstPageLimit = waitUntilIndexed;
     _rebuildVisibleReady = Completer<void>();
     _rebuildComplete = Completer<void>();
     final generation = _cardCacheRebuildGeneration;
-    final database = AppDatabase.instance;
     _logger.info('Starting card cache rebuild for user $userId');
 
     final body = _rebuildCardCacheBody(
@@ -730,6 +730,41 @@ class FileSystemService {
     }
     unawaited(body);
     await _rebuildVisibleReady!.future;
+  }
+
+  Future<Iterable<String>> _rankCardFiles(String userId, List<String> cardFiles,
+      int generation, AppDatabase database) async {
+    final pending = <({String factId, int sortTime})>[];
+    for (final cardFile in cardFiles) {
+      if (!_rebuildStillOwns(generation, database)) return const [];
+      final factId = factIdFromCardPath(cardFile);
+      if (factId == null) continue;
+      try {
+        final sortTime = await readCardCacheSortTime(File(cardFile),
+            readLegacyCard: () async {
+          final data = await readCardFile(userId, factId);
+          return data?.createdAt ?? data?.timestamp;
+        });
+        if (sortTime != null) {
+          pending.add((factId: factId, sortTime: sortTime));
+        }
+      } on PathNotFoundException {
+        // Deleted while listing the workspace.
+        continue;
+      } on FileSystemException catch (e) {
+        _logger.warning('Could not read card header $cardFile: $e');
+      }
+    }
+    pending.sort(
+      (a, b) => compareCardCacheRows(
+        timestamp: a.sortTime,
+        factId: a.factId,
+        otherTimestamp: b.sortTime,
+        otherFactId: b.factId,
+      ),
+    );
+
+    return pending.map((item) => item.factId);
   }
 
   Future<void> _rebuildCardCacheBody(
@@ -748,57 +783,33 @@ class FileSystemService {
     try {
       if (!_rebuildStillOwns(generation, database)) return;
       await _markCardCacheRebuildInterrupted(userId);
-      await database.delete(database.cardCache).go();
-
-      final cardFiles =
-          sortCardFilesNewestFirst(await listAllCardFiles(userId));
-      _logger.info('Found ${cardFiles.length} card files to index');
-
-      final pending = <({String factId, CardData data, int sortTime})>[];
-      for (final cardFile in cardFiles) {
-        if (!_rebuildStillOwns(generation, database)) return;
-        try {
-          final factId = factIdFromCardPath(cardFile);
-          if (factId == null) continue;
-          final cardData = await readCardFile(userId, factId);
-          if (cardData == null || cardData.deleted == true) continue;
-          pending.add((
-            factId: factId,
-            data: cardData,
-            sortTime: cardData.createdAt ?? cardData.timestamp,
-          ));
-        } catch (e) {
-          _logger.warning('Error reading card file $cardFile: $e');
+      await _cardIndexLock.synchronized(() async {
+        if (_rebuildStillOwns(generation, database)) {
+          await database.cardDao.clearCache();
         }
-      }
-      pending.sort(
-        (a, b) => compareCardCacheRows(
-          timestamp: a.sortTime,
-          factId: a.factId,
-          otherTimestamp: b.sortTime,
-          otherFactId: b.factId,
-        ),
-      );
+      });
 
+      final cardFiles = await listAllCardFiles(userId);
+      final ids = waitUntilIndexed == null
+          ? cardFiles.map(factIdFromCardPath).whereType<String>()
+          : await _rankCardFiles(userId, cardFiles, generation, database);
       int count = 0;
-      for (final item in pending) {
+      for (final factId in ids) {
         if (!_rebuildStillOwns(generation, database)) return;
-        try {
-          await updateCardCache(
-            userId,
-            item.factId,
-            item.data,
-            database: database,
-          );
-          count++;
-          if (waitUntilIndexed != null && count >= waitUntilIndexed) {
-            markVisibleReady();
-          }
-          if (shouldYieldCardCacheRebuild(count)) {
-            await Future<void>.delayed(Duration.zero);
-          }
-        } catch (e) {
-          _logger.warning('Error indexing card ${item.factId}: $e');
+        final indexed = await _cardIndexLock.synchronized(() async {
+          if (!_rebuildStillOwns(generation, database)) return false;
+          final card = await readCardFile(userId, factId);
+          if (card == null || card.deleted == true) return false;
+          await _upsertCardIndex(database, userId, factId, card);
+          return true;
+        });
+        if (!indexed) continue;
+        count++;
+        if (waitUntilIndexed != null && count >= waitUntilIndexed) {
+          markVisibleReady();
+        }
+        if (shouldYieldCardCacheRebuild(count)) {
+          await Future<void>.delayed(Duration.zero);
         }
       }
       if (!_rebuildStillOwns(generation, database)) return;

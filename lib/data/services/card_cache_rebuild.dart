@@ -1,3 +1,8 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:yaml/yaml.dart';
+
 const int cardCacheRebuildYieldEvery = 8;
 
 List<String> sortCardFilesNewestFirst(List<String> paths) {
@@ -60,4 +65,37 @@ bool timelineQueryNeedsFullCardCache({
   if (page > 1) return true;
   if (tags != null && tags.isNotEmpty) return true;
   return dateFrom != null || dateTo != null;
+}
+
+// Old cards may have created_at after their UI configuration. Decode a
+// complete YAML prefix ending at that field when it fits in the header.
+// Legacy/hand-edited files with other layouts retain the full parser's order.
+final _createdAtLine = RegExp(r'^created_at: [^\r\n]+\r?\n', multiLine: true);
+
+Future<int?> readCardCacheSortTime(File file,
+    {required Future<int?> Function() readLegacyCard}) async {
+  final input = await file.open();
+  try {
+    const headerBytes = 1024;
+    final bytes = await input.read(headerBytes);
+    final header = utf8.decode(bytes, allowMalformed: true);
+    final line = _createdAtLine.firstMatch(header);
+    final completeFile = bytes.length < headerBytes;
+    if (line != null || completeFile) {
+      try {
+        final fields =
+            loadYaml(completeFile ? header : header.substring(0, line!.end));
+        if (fields is Map &&
+            (completeFile || fields.containsKey('created_at'))) {
+          final time = fields['created_at'] ?? fields['timestamp'];
+          if (time is int) return time;
+        }
+      } on YamlException {
+        // The prefix can end inside a quoted multiline YAML value.
+      }
+    }
+  } finally {
+    await input.close();
+  }
+  return readLegacyCard();
 }
