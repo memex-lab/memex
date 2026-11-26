@@ -55,6 +55,23 @@ void main() {
     }
   });
 
+  testWidgets('pending attachment query may finish after timeline disposal',
+      (tester) async {
+    final pending = Completer<List<CardAttachmentData>>();
+    final started = Completer<void>();
+    final vm = _timelineViewModel(fetchPendingAttachments: () {
+      started.complete();
+      return pending.future;
+    });
+
+    await vm.load.execute();
+    await started.future;
+    vm.dispose();
+    pending.complete([]);
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets(
     'timeline refresh renders cards and settles while auxiliary queries hang or fail',
     (tester) async {
