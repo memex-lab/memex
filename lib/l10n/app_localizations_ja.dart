@@ -2520,6 +2520,23 @@ class AppLocalizationsJa extends AppLocalizations {
       '有効にすると、音声は送信前にデバイス上で文字起こしされます。音声入力に対応していないモデルに便利です。無効にすると、元の音声が直接モデルへ送信されます。';
 
   @override
+  String get localSpeechModelTitle => '音声モデル';
+
+  @override
+  String get localSpeechModelSenseVoice => 'SenseVoice';
+
+  @override
+  String get localSpeechModelWhisper => '多言語';
+
+  @override
+  String get localSpeechLanguageTitle => '話している言語';
+
+  @override
+  String get localSpeechLanguageAuto => '自動';
+
+  @override
+  String get localSpeechLanguageUnsupported =>
+      'この端末内モデルはその言語に対応していません。多言語モデルはドイツ語と他のヨーロッパ言語を含みます。SenseVoice は中国語、英語、日本語、韓国語、広東語に対応します。';
   String get analyzeVocalToneTitle => '声の調子を分析';
 
   @override

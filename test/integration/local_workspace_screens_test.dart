@@ -140,6 +140,43 @@ void main() {
     await timeline.load.execute();
   });
 
+  testWidgets('change speech language and model and reopen Settings',
+      (tester) async {
+    final language = find.byKey(const Key('local-speech-language'));
+    final engine = find.byKey(const Key('local-speech-engine'));
+    final hint = find.byKey(const Key('local-speech-language-hint'));
+    await tester.binding.setSurfaceSize(const Size(800, 1800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    const settings = MaterialApp(home: SettingsPage());
+
+    await tester.pumpWidget(settings);
+    await tester.scrollUntilVisible(language, 200);
+    await tester.pumpAndSettle();
+    await tester.tap(language);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Deutsch').last);
+    await tester.pumpAndSettle();
+    expect(hint, findsOneWidget);
+
+    await tester.ensureVisible(engine);
+    await tester.pumpAndSettle();
+    await tester.tap(engine);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(UserStorage.l10n.localSpeechModelWhisper).last);
+    await tester.pumpAndSettle();
+    expect(hint, findsNothing);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpWidget(settings);
+    await tester.scrollUntilVisible(language, 200);
+    await waitFor(
+        tester,
+        find.byWidgetPredicate((widget) =>
+            widget is DropdownButton<String> && widget.value == 'de'));
+    expect(tester.widget<DropdownButton<String>>(engine).value, 'whisper_tiny');
+    expect(hint, findsNothing);
+  });
+
   testWidgets('post a comment in detail and read it after reopening the screen',
       (tester) async {
     Widget screen() => MaterialApp(

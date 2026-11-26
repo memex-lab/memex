@@ -2596,6 +2596,23 @@ class AppLocalizationsPt extends AppLocalizations {
       'Quando ativado, o áudio é transcrito no dispositivo antes do envio — útil para modelos que não suportam entrada de áudio. Quando desativado, o áudio original é enviado diretamente ao modelo.';
 
   @override
+  String get localSpeechModelTitle => 'Modelo de fala';
+
+  @override
+  String get localSpeechModelSenseVoice => 'SenseVoice';
+
+  @override
+  String get localSpeechModelWhisper => 'Multilíngue';
+
+  @override
+  String get localSpeechLanguageTitle => 'Idioma falado';
+
+  @override
+  String get localSpeechLanguageAuto => 'Auto';
+
+  @override
+  String get localSpeechLanguageUnsupported =>
+      'Este modelo no dispositivo não cobre esse idioma. Multilíngue inclui alemão e outras línguas europeias. SenseVoice cobre chinês, inglês, japonês, coreano e cantonês.';
   String get analyzeVocalToneTitle => 'Analisar o tom da voz';
 
   @override

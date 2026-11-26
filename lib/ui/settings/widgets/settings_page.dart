@@ -10,7 +10,10 @@ import 'package:memex/ui/settings/widgets/backup_restore_page.dart';
 import 'package:memex/ui/settings/widgets/data_import_page.dart';
 import 'package:memex/ui/settings/widgets/data_storage_page.dart';
 import 'package:memex/ui/settings/widgets/location_context_settings_page.dart';
+import 'package:memex/data/services/speech_transcription_service.dart';
+import 'package:memex/domain/models/local_speech.dart';
 import 'package:memex/ui/settings/widgets/early_update_settings_card.dart';
+import 'package:memex/ui/settings/widgets/local_speech_settings_card.dart';
 import 'package:memex/ui/settings/widgets/vocal_tone_settings_card.dart';
 import 'package:memex/ui/settings/view_models/data_import_viewmodel.dart';
 import 'package:memex/data/services/comment_settings_service.dart'
@@ -28,6 +31,8 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   String _currentLocaleTag = 'en';
   bool _useLocalSpeechToText = true;
+  String _localSpeechEngine = LocalSpeechEngines.senseVoice;
+  String _localSpeechLanguage = localSpeechLanguageAuto;
   bool _analyzeVocalTone = false;
   CommentSettings _commentSettings = const CommentSettings();
 
@@ -40,6 +45,8 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _loadSettings() async {
     final locale = await UserStorage.getLocale();
     final useLocalSpeechToText = await UserStorage.getUseLocalSpeechToText();
+    final localSpeechEngine = await UserStorage.getLocalSpeechEngine();
+    final localSpeechLanguage = await UserStorage.getLocalSpeechLanguage();
     final analyzeVocalTone = await UserStorage.getAnalyzeVocalTone();
     final commentSettings = await MemexRouter().getCommentSettings();
     if (mounted) {
@@ -48,6 +55,8 @@ class _SettingsPageState extends State<SettingsPage> {
           UserStorage.resolveToSupportedLocale(locale),
         );
         _useLocalSpeechToText = useLocalSpeechToText;
+        _localSpeechEngine = localSpeechEngine;
+        _localSpeechLanguage = localSpeechLanguage;
         _analyzeVocalTone = analyzeVocalTone;
         _commentSettings = commentSettings;
       });
@@ -79,9 +88,25 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _updateUseLocalSpeechToText(bool value) async {
-    await UserStorage.setUseLocalSpeechToText(value);
+    await SpeechTranscriptionService.instance.setUseLocalSpeechToText(value);
     if (mounted) {
       setState(() => _useLocalSpeechToText = value);
+    }
+  }
+
+  Future<void> _updateLocalSpeechEngine(String value) async {
+    await SpeechTranscriptionService.instance.setLocalSpeechEngine(value);
+    if (mounted) {
+      setState(() => _localSpeechEngine = LocalSpeechEngines.normalize(value));
+    }
+  }
+
+  Future<void> _updateLocalSpeechLanguage(String value) async {
+    await SpeechTranscriptionService.instance.setLocalSpeechLanguage(value);
+    if (mounted) {
+      setState(
+        () => _localSpeechLanguage = LocalSpeechLanguages.normalize(value),
+      );
     }
   }
 
@@ -213,6 +238,13 @@ class _SettingsPageState extends State<SettingsPage> {
               value: _useLocalSpeechToText,
               onChanged: _updateUseLocalSpeechToText,
             ),
+          ),
+          LocalSpeechSettingsCard(
+            useLocal: _useLocalSpeechToText,
+            engine: _localSpeechEngine,
+            language: _localSpeechLanguage,
+            onEngineChanged: _updateLocalSpeechEngine,
+            onLanguageChanged: _updateLocalSpeechLanguage,
           ),
           VocalToneSettingsCard(
             enabled: _analyzeVocalTone,

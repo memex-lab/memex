@@ -7,6 +7,7 @@ import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 import 'package:memex/data/services/asset_safety_service.dart';
 import 'package:memex/data/services/whisper_service.dart';
+import 'package:memex/domain/models/local_speech.dart';
 import 'package:memex/domain/models/agent_definitions.dart';
 import 'package:memex/domain/models/vocal_tone.dart';
 import 'package:memex/l10n/app_localizations.dart';
@@ -38,17 +39,42 @@ class SpeechTranscriptionService {
     return UserStorage.getUseLocalSpeechToText();
   }
 
+  Future<void> setUseLocalSpeechToText(bool value) async {
+    await UserStorage.setUseLocalSpeechToText(value);
+    WhisperService.instance.dispose();
+  }
+
+  Future<void> setLocalSpeechEngine(String value) async {
+    await UserStorage.setLocalSpeechEngine(value);
+    WhisperService.instance.dispose();
+  }
+
+  Future<void> setLocalSpeechLanguage(String value) async {
+    await UserStorage.setLocalSpeechLanguage(value);
+    WhisperService.instance.dispose();
+  }
+
   /// Whether the local speech model needs to be downloaded before recording.
   /// Returns false when using cloud model (no local download needed).
+  Future<LocalSpeechPlan> currentPlan() async {
+    return planLocalSpeech(
+      engine: await UserStorage.getLocalSpeechEngine(),
+      language: await UserStorage.getLocalSpeechLanguage(),
+    );
+  }
+
   Future<bool> requiresLocalModelDownload() async {
     if (!await isUsingLocalModel()) return false;
+    if (!(await currentPlan()).supported) return false;
     return !await WhisperService.instance.isModelDownloaded();
   }
 
   /// Whether real-time streaming transcription is available.
-  /// Only supported with the local model.
+  /// Only supported with the local model, and only when that model covers
+  /// the selected language. Otherwise the live pass would invent text.
   Future<bool> supportsStreamingTranscription() async {
     if (!await isUsingLocalModel()) return false;
+    if (!(await currentPlan()).supported) return false;
     return await WhisperService.instance.isModelDownloaded();
   }
 
@@ -96,10 +122,20 @@ class SpeechTranscriptionService {
     return _transcribeSamplesWithCloud(samples);
   }
 
+  Future<void> _rejectUnsupportedLanguage() async {
+    final plan = await currentPlan();
+    if (plan.supported) return;
+    throw UnsupportedLocalSpeechLanguage(
+      engine: plan.engine,
+      language: plan.language,
+    );
+  }
+
   Future<SpeechTranscriptionResult> _transcribeFileLocally(
     String audioPath, {
     bool skipLengthCheck = false,
   }) async {
+    await _rejectUnsupportedLanguage();
     final safety = await _inspectAudioForTranscription(audioPath);
     if (!safety.safeForAnalysis) {
       _logger.warning(
@@ -115,24 +151,17 @@ class SpeechTranscriptionService {
       audioPath,
       skipLengthCheck: skipLengthCheck,
     );
-    return SpeechTranscriptionResult(
-      text: text,
-      usage: null,
-      model: 'sensevoice-local',
-    );
+    return _localResult(text);
   }
 
   Future<SpeechTranscriptionResult> _transcribeSamplesLocally(
     Float32List samples,
   ) async {
+    await _rejectUnsupportedLanguage();
     final enabled = await UserStorage.getAnalyzeVocalTone();
     if (!enabled) {
       final text = await WhisperService.instance.transcribeSamples(samples);
-      return SpeechTranscriptionResult(
-        text: text,
-        usage: null,
-        model: 'sensevoice-local',
-      );
+      return _localResult(text);
     }
     final detailed = await WhisperService.instance.transcribeSamplesDetailed(
       samples,
@@ -148,10 +177,17 @@ class SpeechTranscriptionService {
       describeWithCloud: () => _describeTone(_samplesToWavBytes(samples)),
       format: _formatTone,
     );
+    return _localResult(text);
+  }
+
+  Future<SpeechTranscriptionResult> _localResult(String? text) async {
+    final plan = await currentPlan();
     return SpeechTranscriptionResult(
       text: text,
       usage: null,
-      model: 'sensevoice-local',
+      model: plan.engine == LocalSpeechEngines.whisperTiny
+          ? 'whisper-tiny-local'
+          : 'sensevoice-local',
     );
   }
 

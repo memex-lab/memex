@@ -2618,6 +2618,23 @@ class AppLocalizationsDe extends AppLocalizations {
       'Wenn diese Option aktiviert ist, wird der Ton vor dem Senden auf dem Gerät transkribiert – nützlich für Modelle, die keinen Audioeingang unterstützen. Bei Deaktivierung wird der Originalton direkt an das Modell gesendet.';
 
   @override
+  String get localSpeechModelTitle => 'Sprachmodell';
+
+  @override
+  String get localSpeechModelSenseVoice => 'SenseVoice';
+
+  @override
+  String get localSpeechModelWhisper => 'Mehrsprachig';
+
+  @override
+  String get localSpeechLanguageTitle => 'Gesprochene Sprache';
+
+  @override
+  String get localSpeechLanguageAuto => 'Automatisch';
+
+  @override
+  String get localSpeechLanguageUnsupported =>
+      'Dieses Gerätemodell deckt diese Sprache nicht ab. Mehrsprachig enthält Deutsch und weitere europäische Sprachen. SenseVoice deckt Chinesisch, Englisch, Japanisch, Koreanisch und Kantonesisch ab.';
   String get analyzeVocalToneTitle => 'Stimmton analysieren';
 
   @override

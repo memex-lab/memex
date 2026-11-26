@@ -2561,6 +2561,23 @@ class AppLocalizationsAr extends AppLocalizations {
       'عند التفعيل، يتم تفريغ الصوت على الجهاز قبل الإرسال — مفيد للنماذج التي لا تدعم إدخال الصوت. عند التعطيل، يرسل الصوت الأصلي مباشرة إلى النموذج.';
 
   @override
+  String get localSpeechModelTitle => 'نموذج الكلام';
+
+  @override
+  String get localSpeechModelSenseVoice => 'SenseVoice';
+
+  @override
+  String get localSpeechModelWhisper => 'متعدد اللغات';
+
+  @override
+  String get localSpeechLanguageTitle => 'اللغة المنطوقة';
+
+  @override
+  String get localSpeechLanguageAuto => 'تلقائي';
+
+  @override
+  String get localSpeechLanguageUnsupported =>
+      'هذا النموذج على الجهاز لا يغطي تلك اللغة. متعدد اللغات يشمل الألمانية ولغات أوروبية أخرى. SenseVoice يغطي الصينية والإنجليزية واليابانية والكورية والكانتونية.';
   String get analyzeVocalToneTitle => 'تحليل نبرة الصوت';
 
   @override
