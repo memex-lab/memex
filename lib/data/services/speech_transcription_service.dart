@@ -39,6 +39,21 @@ class SpeechTranscriptionService {
     return UserStorage.getUseLocalSpeechToText();
   }
 
+  Future<void> setUseLocalSpeechToText(bool value) async {
+    await UserStorage.setUseLocalSpeechToText(value);
+    WhisperService.instance.dispose();
+  }
+
+  Future<void> setLocalSpeechEngine(String value) async {
+    await UserStorage.setLocalSpeechEngine(value);
+    WhisperService.instance.dispose();
+  }
+
+  Future<void> setLocalSpeechLanguage(String value) async {
+    await UserStorage.setLocalSpeechLanguage(value);
+    WhisperService.instance.dispose();
+  }
+
   /// Whether the local speech model needs to be downloaded before recording.
   /// Returns false when using cloud model (no local download needed).
   Future<LocalSpeechPlan> currentPlan() async {

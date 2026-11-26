@@ -1,4 +1,4 @@
-import 'dart:io' show File, Directory, Platform;
+import 'dart:io' show File, Directory, Platform, HttpException;
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 import 'package:path_provider/path_provider.dart';
@@ -18,7 +18,12 @@ import 'package:archive/archive.dart';
 class WhisperService {
   static final WhisperService _instance = WhisperService._();
   static WhisperService get instance => _instance;
-  WhisperService._();
+  WhisperService._() : _createIsolate = TranscriptionIsolate.new;
+
+  @visibleForTesting
+  WhisperService.withIsolateFactory(this._createIsolate);
+
+  final TranscriptionIsolate Function() _createIsolate;
 
   final Logger _logger = getLogger('WhisperService');
 
@@ -38,6 +43,7 @@ class WhisperService {
   sherpa.OfflineRecognizer? _recognizer; // kept for legacy, prefer bg isolate
   TranscriptionIsolate? _bgIsolate;
   String? _loadedKey;
+  Future<TranscriptionIsolate>? _starting;
 
   /// Pick the best available execution provider for the current platform.
   static String get _provider {
@@ -73,9 +79,10 @@ class WhisperService {
   }
 
   bool _whisperFilesReady(String dir) {
-    return File('$dir/${WhisperTinyPackage.encoderFile}').existsSync() &&
-        File('$dir/${WhisperTinyPackage.decoderFile}').existsSync() &&
-        File('$dir/${WhisperTinyPackage.tokensFile}').existsSync();
+    return WhisperTinyPackage.fileSizes.entries.every((entry) {
+      final file = File('$dir/${entry.key}');
+      return file.existsSync() && file.lengthSync() == entry.value;
+    });
   }
 
   /// Download prompt size for the engine the user has selected.
@@ -177,9 +184,36 @@ class WhisperService {
     required ValueChanged<double> onProgress,
     required bool useChineseMirror,
   }) async {
-    final dir = await _whisperDir();
-    await Directory(dir).create(recursive: true);
+    final destination = Directory(await _whisperDir());
+    if (_whisperFilesReady(destination.path)) {
+      onProgress(1);
+      return;
+    }
 
+    await destination.parent.create(recursive: true);
+    final staging = await destination.parent.createTemp('.whisper-tiny-');
+    try {
+      await _fetchWhisperFiles(staging.path, onProgress, useChineseMirror);
+      if (!_whisperFilesReady(staging.path)) {
+        throw const FormatException('Incomplete Whisper tiny model');
+      }
+
+      // Another request may have finished while this one was downloading.
+      if (!_whisperFilesReady(destination.path)) {
+        if (destination.existsSync()) destination.deleteSync(recursive: true);
+        staging.renameSync(destination.path);
+      }
+      onProgress(1);
+    } finally {
+      if (await staging.exists()) await staging.delete(recursive: true);
+    }
+  }
+
+  Future<void> _fetchWhisperFiles(
+    String dir,
+    ValueChanged<double> onProgress,
+    bool useChineseMirror,
+  ) async {
     if (useChineseMirror) {
       await _downloadFile(
         '${WhisperTinyPackage.mirrorBase}/${WhisperTinyPackage.encoderFile}',
@@ -218,9 +252,7 @@ class WhisperService {
         await File('$dir/$name').writeAsBytes(file.content as List<int>);
       }
       if (tmpFile.existsSync()) await tmpFile.delete();
-      onProgress(1.0);
     }
-    _logger.info('Whisper tiny model downloaded to $dir');
   }
 
   Future<void> _downloadFile(
@@ -228,20 +260,32 @@ class WhisperService {
     String savePath, {
     required ValueChanged<double> onProgress,
   }) async {
-    final request = http.Request('GET', Uri.parse(url));
-    final response = await http.Client().send(request);
-    final totalBytes = response.contentLength ?? 0;
-    int receivedBytes = 0;
-    final sink = File(savePath).openWrite();
-
-    await for (final chunk in response.stream) {
-      sink.add(chunk);
-      receivedBytes += chunk.length;
-      if (totalBytes > 0) {
-        onProgress(receivedBytes / totalBytes);
+    final uri = Uri.parse(url);
+    final client = http.Client();
+    final target = File(savePath);
+    final staging = await target.parent.createTemp('.download-');
+    try {
+      final response = await client.send(http.Request('GET', uri));
+      if (response.statusCode != 200) {
+        throw HttpException('Download returned HTTP ${response.statusCode}',
+            uri: uri);
       }
+      final expected = response.contentLength;
+      var received = 0;
+      final file = File('${staging.path}/payload');
+      await response.stream.map((chunk) {
+        received += chunk.length;
+        if (expected != null && expected > 0) onProgress(received / expected);
+        return chunk;
+      }).pipe(file.openWrite());
+      if (received == 0 || (expected != null && received != expected)) {
+        throw HttpException('Incomplete model download', uri: uri);
+      }
+      await file.rename(savePath);
+    } finally {
+      client.close();
+      await staging.delete(recursive: true);
     }
-    await sink.close();
   }
 
   /// Get or create the recognizer instance.
@@ -377,6 +421,7 @@ class WhisperService {
     _bgIsolate?.dispose();
     _bgIsolate = null;
     _loadedKey = null;
+    _starting = null;
   }
 
   /// Transcribe a speech segment (Float32List samples at 16kHz).
@@ -384,8 +429,8 @@ class WhisperService {
   Future<String?> transcribeSamples(Float32List samples) async {
     try {
       if (!await isModelDownloaded()) return null;
-      await _ensureBgIsolate();
-      final text = await _bgIsolate!.transcribe(samples);
+      final isolate = await _ensureBgIsolate();
+      final text = await isolate.transcribe(samples);
       if (text != null) {
         _logger.info(
             'Segment transcribed (bg): ${text.substring(0, text.length.clamp(0, 80))}');
@@ -405,8 +450,8 @@ class WhisperService {
   ) async {
     try {
       if (!await isModelDownloaded()) return null;
-      await _ensureBgIsolate();
-      return await _bgIsolate!.transcribeDetailed(samples);
+      final isolate = await _ensureBgIsolate();
+      return await isolate.transcribeDetailed(samples);
     } catch (e) {
       _logger.severe('Segment transcription failed: $e');
       return null;
@@ -414,7 +459,7 @@ class WhisperService {
   }
 
   /// Ensure the background isolate is running for the selected engine.
-  Future<void> _ensureBgIsolate() async {
+  Future<TranscriptionIsolate> _ensureBgIsolate() async {
     final engine = LocalSpeechEngines.normalize(
       await UserStorage.getLocalSpeechEngine(),
     );
@@ -429,34 +474,46 @@ class WhisperService {
       );
     }
     final key = '${plan.engine}|${plan.modelLanguage}';
-    if (_bgIsolate != null && _bgIsolate!.isReady && _loadedKey == key) {
-      return;
+    final current = _bgIsolate;
+    if (current != null && _loadedKey == key) {
+      if (current.isReady) return current;
+      final starting = _starting;
+      if (starting != null) return starting;
     }
-    // Free main-thread recognizer to avoid double memory usage
-    _recognizer?.free();
-    _recognizer = null;
-    _bgIsolate?.dispose();
-    _bgIsolate = TranscriptionIsolate();
+
+    dispose();
+    final isolate = _createIsolate();
+    _bgIsolate = isolate;
     _loadedKey = key;
-    if (plan.engine == LocalSpeechEngines.whisperTiny) {
-      final dir = await _whisperDir();
-      await _bgIsolate!.start(
-        engine: plan.engine,
-        modelPath: '$dir/${WhisperTinyPackage.encoderFile}',
-        decoderPath: '$dir/${WhisperTinyPackage.decoderFile}',
-        tokensPath: '$dir/${WhisperTinyPackage.tokensFile}',
-        language: plan.modelLanguage,
-        provider: 'cpu',
-      );
-      return;
+    final starting = _startRecognizer(isolate, plan);
+    _starting = starting;
+    try {
+      return await starting;
+    } finally {
+      if (identical(_bgIsolate, isolate)) _starting = null;
     }
-    final dir = await _modelDir();
-    await _bgIsolate!.start(
-      modelPath: '$dir/$_modelFileName',
-      tokensPath: '$dir/$_tokensFileName',
+  }
+
+  Future<TranscriptionIsolate> _startRecognizer(
+    TranscriptionIsolate isolate,
+    LocalSpeechPlan plan,
+  ) async {
+    final isWhisper = plan.engine == LocalSpeechEngines.whisperTiny;
+    final dir = isWhisper ? await _whisperDir() : await _modelDir();
+    if (!identical(_bgIsolate, isolate)) {
+      throw StateError('Speech model selection changed during startup');
+    }
+    await isolate.start(
+      engine: plan.engine,
+      modelPath:
+          '$dir/${isWhisper ? WhisperTinyPackage.encoderFile : _modelFileName}',
+      decoderPath: isWhisper ? '$dir/${WhisperTinyPackage.decoderFile}' : null,
+      tokensPath:
+          '$dir/${isWhisper ? WhisperTinyPackage.tokensFile : _tokensFileName}',
       language: plan.modelLanguage,
-      provider: _provider,
+      provider: isWhisper ? 'cpu' : _provider,
     );
+    return isolate;
   }
 
   /// Ensure sherpa-onnx bindings are initialized.

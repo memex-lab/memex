@@ -206,6 +206,14 @@ class WhisperTinyPackage {
       'https://hf-mirror.com/csukuangfj/sherpa-onnx-whisper-tiny/resolve/main';
   static const unpackedSizeMb = 99;
 
+  // Exact sizes of the three files in the pinned tiny model package. Also
+  // recognize complete installations made before downloads were staged.
+  static const fileSizes = {
+    encoderFile: 12937772,
+    decoderFile: 89855401,
+    tokensFile: 816730,
+  };
+
   static bool keepArchiveEntry(String name) {
     final base = name.split('/').last;
     return base == encoderFile || base == decoderFile || base == tokensFile;

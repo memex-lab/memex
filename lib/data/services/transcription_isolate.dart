@@ -13,7 +13,7 @@ import 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa;
 class TranscriptionIsolate {
   static final _logger = Logger('TranscriptionIsolate');
 
-  Isolate? _isolate;
+  Completer<void>? _ready;
   SendPort? _sendPort;
   ReceivePort? _mainReceivePort;
   int _nextId = 0;
@@ -30,31 +30,23 @@ class TranscriptionIsolate {
     String language = 'auto',
     String? decoderPath,
   }) async {
-    if (_isolate != null) return;
+    final existing = _ready;
+    if (existing != null) return existing.future;
 
     final receivePort = ReceivePort();
+    final ready = Completer<void>();
+    _ready = ready;
     _mainReceivePort = receivePort;
-
-    // Pass init config as a simple Map
-    _isolate = await Isolate.spawn(
-      _isolateEntry,
-      {
-        'modelPath': modelPath,
-        'tokensPath': tokensPath,
-        'provider': provider,
-        'engine': engine,
-        'language': language,
-        'decoderPath': decoderPath,
-        'replyPort': receivePort.sendPort,
-      },
-    );
-
-    final completer = Completer<void>();
-
     receivePort.listen((message) {
+      if (_mainReceivePort != receivePort) {
+        // Disposed before the handshake. Let the worker free its recognizer.
+        if (message is SendPort) message.send({'shutdown': true});
+        receivePort.close();
+        return;
+      }
       if (message is SendPort) {
         _sendPort = message;
-        completer.complete();
+        ready.complete();
       } else if (message is Map) {
         final id = message['id'] as int;
         _pending.remove(id)?.complete(
@@ -65,10 +57,39 @@ class TranscriptionIsolate {
                 lang: message['lang'] as String? ?? '',
               ),
             );
+      } else {
+        // Isolate.spawn sends a list for an uncaught error and null on exit.
+        if (!ready.isCompleted) {
+          ready.completeError(
+              StateError('Transcription worker stopped: $message'));
+        }
+        dispose();
+        receivePort.close();
       }
     });
 
-    await completer.future;
+    unawaited(Isolate.spawn(
+      _isolateEntry,
+      {
+        'modelPath': modelPath,
+        'tokensPath': tokensPath,
+        'provider': provider,
+        'engine': engine,
+        'language': language,
+        'decoderPath': decoderPath,
+        'replyPort': receivePort.sendPort,
+      },
+      onError: receivePort.sendPort,
+      onExit: receivePort.sendPort,
+    ).then<void>((_) {}, onError: (Object error, StackTrace stack) {
+      receivePort.close();
+      if (_mainReceivePort == receivePort) {
+        ready.completeError(error, stack);
+        dispose();
+      }
+    }));
+
+    await ready.future;
     _logger.info('Transcription isolate started');
   }
 
@@ -90,19 +111,17 @@ class TranscriptionIsolate {
 
   /// Gracefully stop the isolate, allowing it to free native resources.
   void dispose() {
-    // Send shutdown signal so the isolate can free the recognizer
-    // before exiting — Isolate.kill would skip native cleanup.
-    _sendPort?.send({'shutdown': true});
-    _sendPort = null;
-
-    // Close our receive port; the isolate will exit once its receivePort
-    // is closed (no more listeners keeping it alive).
-    _mainReceivePort?.close();
+    final ready = _ready;
+    if (ready != null && !ready.isCompleted) {
+      ready.completeError(StateError('Transcription startup cancelled'));
+      // Keep listening for the worker's port so we can send shutdown.
+    } else {
+      _sendPort?.send({'shutdown': true});
+      _mainReceivePort?.close();
+    }
+    _ready = null;
     _mainReceivePort = null;
-
-    // Don't kill — let the isolate exit naturally after cleanup.
-    // It will terminate when its event loop is empty.
-    _isolate = null;
+    _sendPort = null;
 
     for (final c in _pending.values) {
       c.complete(null);

@@ -10,7 +10,7 @@ import 'package:memex/ui/settings/widgets/backup_restore_page.dart';
 import 'package:memex/ui/settings/widgets/data_import_page.dart';
 import 'package:memex/ui/settings/widgets/data_storage_page.dart';
 import 'package:memex/ui/settings/widgets/location_context_settings_page.dart';
-import 'package:memex/data/services/whisper_service.dart';
+import 'package:memex/data/services/speech_transcription_service.dart';
 import 'package:memex/domain/models/local_speech.dart';
 import 'package:memex/ui/settings/widgets/early_update_settings_card.dart';
 import 'package:memex/ui/settings/widgets/local_speech_settings_card.dart';
@@ -88,24 +88,21 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _updateUseLocalSpeechToText(bool value) async {
-    await UserStorage.setUseLocalSpeechToText(value);
-    WhisperService.instance.dispose();
+    await SpeechTranscriptionService.instance.setUseLocalSpeechToText(value);
     if (mounted) {
       setState(() => _useLocalSpeechToText = value);
     }
   }
 
   Future<void> _updateLocalSpeechEngine(String value) async {
-    await UserStorage.setLocalSpeechEngine(value);
-    WhisperService.instance.dispose();
+    await SpeechTranscriptionService.instance.setLocalSpeechEngine(value);
     if (mounted) {
       setState(() => _localSpeechEngine = LocalSpeechEngines.normalize(value));
     }
   }
 
   Future<void> _updateLocalSpeechLanguage(String value) async {
-    await UserStorage.setLocalSpeechLanguage(value);
-    WhisperService.instance.dispose();
+    await SpeechTranscriptionService.instance.setLocalSpeechLanguage(value);
     if (mounted) {
       setState(
         () => _localSpeechLanguage = LocalSpeechLanguages.normalize(value),
