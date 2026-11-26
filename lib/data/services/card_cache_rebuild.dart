@@ -1,9 +1,37 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:yaml/yaml.dart';
 
 const int cardCacheRebuildYieldEvery = 8;
+
+/// A first-page reader waits for its own limit, regardless of which request
+/// started the rebuild. Filtered and unbounded queries wait for completion.
+class CardCacheRebuildProgress {
+  final _done = Completer<void>();
+  final _pages = <int, Completer<void>>{};
+  int _indexed = 0;
+  int get indexed => _indexed;
+
+  Future<void> waitFor(int? limit) {
+    if (limit == null || limit < 0) return _done.future;
+    if (_done.isCompleted || limit <= _indexed) return Future.value();
+    return _pages.putIfAbsent(limit, Completer<void>.new).future;
+  }
+
+  void cardIndexed() {
+    _pages.remove(++_indexed)?.complete();
+  }
+
+  void finish() {
+    for (final page in _pages.values) {
+      page.complete();
+    }
+    _pages.clear();
+    _done.complete();
+  }
+}
 
 List<String> sortCardFilesNewestFirst(List<String> paths) {
   if (paths.length <= 1) return List<String>.from(paths);
@@ -67,35 +95,47 @@ bool timelineQueryNeedsFullCardCache({
   return dateFrom != null || dateTo != null;
 }
 
-// Old cards may have created_at after their UI configuration. Decode a
-// complete YAML prefix ending at that field when it fits in the header.
-// Legacy/hand-edited files with other layouts retain the full parser's order.
-final _createdAtLine = RegExp(r'^created_at: [^\r\n]+\r?\n', multiLine: true);
-
-Future<int?> readCardCacheSortTime(File file,
-    {required Future<int?> Function() readLegacyCard}) async {
+// Current files put both sort fields first. Older files can have large UI
+// configurations before created_at, or omit it entirely. Stop at a complete
+// YAML prefix containing the sort key; never infer a timestamp from the path.
+Future<int?> readCardCacheSortTime(File file) async {
   final input = await file.open();
+  Stream<List<int>> chunks() async* {
+    var size = 1024;
+    while (true) {
+      final bytes = await input.read(size);
+      if (bytes.isEmpty) return;
+      yield bytes;
+      if (bytes.length < size) return;
+      size = 16384;
+    }
+  }
+
+  final prefix = StringBuffer();
   try {
-    const headerBytes = 1024;
-    final bytes = await input.read(headerBytes);
-    final header = utf8.decode(bytes, allowMalformed: true);
-    final line = _createdAtLine.firstMatch(header);
-    final completeFile = bytes.length < headerBytes;
-    if (line != null || completeFile) {
-      try {
-        final fields =
-            loadYaml(completeFile ? header : header.substring(0, line!.end));
-        if (fields is Map &&
-            (completeFile || fields.containsKey('created_at'))) {
-          final time = fields['created_at'] ?? fields['timestamp'];
-          if (time is int) return time;
+    final lines =
+        chunks().transform(utf8.decoder).transform(const LineSplitter());
+    await for (final line in lines) {
+      prefix.writeln(line);
+      if (line.startsWith('created_at:')) {
+        try {
+          final fields = loadYaml(prefix.toString());
+          if (fields is Map && fields.containsKey('created_at')) {
+            final time = fields['created_at'] ?? fields['timestamp'];
+            if (time is int) return time;
+          }
+        } on YamlException {
+          // A multiline value may contain this text before the actual key.
         }
-      } on YamlException {
-        // The prefix can end inside a quoted multiline YAML value.
       }
     }
+    // Preserve full YAML semantics for imported layouts and the timestamp-only
+    // legacy format. Only one such document is materialized at a time.
+    final fields = loadYaml(prefix.toString());
+    if (fields is! Map || fields.isEmpty) return null;
+    final time = fields['created_at'] ?? fields['timestamp'] ?? 0;
+    return time is int ? time : null;
   } finally {
     await input.close();
   }
-  return readLegacyCard();
 }

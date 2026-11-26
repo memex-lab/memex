@@ -75,8 +75,7 @@ void main() {
     );
   });
 
-  test(
-      'bounded header keeps created_at ordering and falls back for legacy YAML',
+  test('rank current and legacy YAML by created_at with timestamp fallback',
       () async {
     final dir = await Directory.systemTemp.createTemp('card-sort-time');
     addTearDown(() => dir.delete(recursive: true));
@@ -84,21 +83,14 @@ void main() {
     for (final entry in {'created_at: 3': 3, 'created_at: null': 2}.entries) {
       await file
           .writeAsString('timestamp: 2\n${entry.key}\nfact: ${'z' * 8192}\n');
-      expect(
-          await readCardCacheSortTime(file,
-              readLegacyCard: () => fail('read full body')),
-          entry.value);
+      expect(await readCardCacheSortTime(file), entry.value);
     }
-    await file
-        .writeAsString('timestamp: 2\nfact: ${'z' * 8192}\ncreated_at: 9\n');
-    var usedLegacy = false;
-    expect(
-        await readCardCacheSortTime(file, readLegacyCard: () async {
-          usedLegacy = true;
-          return 9;
-        }),
-        9);
-    expect(usedLegacy, isTrue);
+    final oldHeader =
+        'fact_id: id\ntimestamp: 2\nstatus: completed\ntags: []\nui_configs:\n  -\n    label: ${'旧' * 32768}\n';
+    await file.writeAsString('${oldHeader}created_at: 9\nfact: text\n');
+    expect(await readCardCacheSortTime(file), 9);
+    await file.writeAsString('${oldHeader}fact: text\n');
+    expect(await readCardCacheSortTime(file), 2);
   });
 
   test('yields every eight indexed cards', () {

@@ -87,6 +87,22 @@ void main() {
     expect(await getTimelineCards(limit: 1000), hasLength(100));
     expect(larger.length, 100);
   });
+  test('a small page can finish while an earlier full rebuild continues',
+      () async {
+    const user = 'large-first';
+    await _writeCards(user, 100);
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    AppDatabase.setTestInstance(db);
+    addTearDown(db.close);
+    final files = FileSystemService.instance;
+    final full = files.rebuildCardCache(user);
+    await files.rebuildCardCache(user, waitUntilIndexed: 2);
+    expect(files.isCardCacheRebuilding, isTrue);
+    expect(await db.cardDao.getCards(limit: 2), hasLength(2));
+    await full;
+    expect(await db.cardDao.getCards(limit: 100), hasLength(100));
+  });
+
   test('the early page matches the full index order', () async {
     const userId = 'user-a';
     await _writeCards(userId, 100, body: 'x' * 32768);

@@ -166,14 +166,11 @@ class FileSystemService {
   final Lock _userLocationsLock = Lock();
 
   /// Flag to indicate if a rebuild is in progress to prevent recursion
-  bool _isRebuilding = false;
+  CardCacheRebuildProgress? _rebuild;
   int _cardCacheRebuildGeneration = 0;
   // Normal writes/deletes commit their row under this lock. Rebuild takes
   // the same lock before rereading the current file and publishing its row.
   final Lock _cardIndexLock = Lock();
-  int? _firstPageLimit;
-  Completer<void>? _rebuildVisibleReady;
-  Completer<void>? _rebuildComplete;
   RecentPkmCacheEntry? _recentPkmCache;
   int _recentPkmCacheGeneration = 0;
 
@@ -566,7 +563,7 @@ class FileSystemService {
   ) async {
     try {
       final db = AppDatabase.instance;
-      if (!_isRebuilding &&
+      if (!isCardCacheRebuilding &&
           cardCacheNeedsRebuild(
             cacheEmpty: await db.cardDao.isCacheEmpty(),
             rebuildInterrupted: await isCardCacheRebuildInterrupted(userId),
@@ -647,7 +644,7 @@ class FileSystemService {
     });
   }
 
-  bool get isCardCacheRebuilding => _isRebuilding;
+  bool get isCardCacheRebuilding => _rebuild != null;
 
   File _cardCacheRebuildMarker(String userId) {
     return File(
@@ -673,8 +670,7 @@ class FileSystemService {
   }
 
   Future<void> waitForCardCacheRebuild() async {
-    final complete = _rebuildComplete;
-    if (complete != null) await complete.future;
+    await _rebuild?.waitFor(null);
   }
 
   /// Stop a rebuild that is still writing. The next user or workspace must not
@@ -697,39 +693,14 @@ class FileSystemService {
     String userId, {
     int? waitUntilIndexed,
   }) async {
-    if (_isRebuilding) {
-      if (waitUntilIndexed == null ||
-          _firstPageLimit == null ||
-          waitUntilIndexed > _firstPageLimit!) {
-        final complete = _rebuildComplete;
-        if (complete != null) await complete.future;
-      } else {
-        final gate = _rebuildVisibleReady;
-        if (gate != null) await gate.future;
-      }
-      return;
-    }
-
+    final current = _rebuild;
+    if (current != null) return current.waitFor(waitUntilIndexed);
     final database = AppDatabase.instance;
-    _isRebuilding = true;
-    _firstPageLimit = waitUntilIndexed;
-    _rebuildVisibleReady = Completer<void>();
-    _rebuildComplete = Completer<void>();
-    final generation = _cardCacheRebuildGeneration;
-    _logger.info('Starting card cache rebuild for user $userId');
-
-    final body = _rebuildCardCacheBody(
-      userId,
-      waitUntilIndexed: waitUntilIndexed,
-      generation: generation,
-      database: database,
-    );
-    if (waitUntilIndexed == null) {
-      await body;
-      return;
-    }
-    unawaited(body);
-    await _rebuildVisibleReady!.future;
+    final progress = CardCacheRebuildProgress();
+    _rebuild = progress;
+    unawaited(_rebuildCardCacheBody(userId, progress,
+        generation: _cardCacheRebuildGeneration, database: database));
+    await progress.waitFor(waitUntilIndexed);
   }
 
   Future<Iterable<String>> _rankCardFiles(String userId, List<String> cardFiles,
@@ -740,18 +711,14 @@ class FileSystemService {
       final factId = factIdFromCardPath(cardFile);
       if (factId == null) continue;
       try {
-        final sortTime = await readCardCacheSortTime(File(cardFile),
-            readLegacyCard: () async {
-          final data = await readCardFile(userId, factId);
-          return data?.createdAt ?? data?.timestamp;
-        });
+        final sortTime = await readCardCacheSortTime(File(cardFile));
         if (sortTime != null) {
           pending.add((factId: factId, sortTime: sortTime));
         }
       } on PathNotFoundException {
         // Deleted while listing the workspace.
         continue;
-      } on FileSystemException catch (e) {
+      } on Exception catch (e) {
         _logger.warning('Could not read card header $cardFile: $e');
       }
     }
@@ -768,18 +735,11 @@ class FileSystemService {
   }
 
   Future<void> _rebuildCardCacheBody(
-    String userId, {
-    int? waitUntilIndexed,
+    String userId,
+    CardCacheRebuildProgress progress, {
     required int generation,
     required AppDatabase database,
   }) async {
-    void markVisibleReady() {
-      final gate = _rebuildVisibleReady;
-      if (gate != null && !gate.isCompleted) {
-        gate.complete();
-      }
-    }
-
     try {
       if (!_rebuildStillOwns(generation, database)) return;
       await _markCardCacheRebuildInterrupted(userId);
@@ -790,10 +750,7 @@ class FileSystemService {
       });
 
       final cardFiles = await listAllCardFiles(userId);
-      final ids = waitUntilIndexed == null
-          ? cardFiles.map(factIdFromCardPath).whereType<String>()
-          : await _rankCardFiles(userId, cardFiles, generation, database);
-      int count = 0;
+      final ids = await _rankCardFiles(userId, cardFiles, generation, database);
       for (final factId in ids) {
         if (!_rebuildStillOwns(generation, database)) return;
         final indexed = await _cardIndexLock.synchronized(() async {
@@ -804,26 +761,19 @@ class FileSystemService {
           return true;
         });
         if (!indexed) continue;
-        count++;
-        if (waitUntilIndexed != null && count >= waitUntilIndexed) {
-          markVisibleReady();
-        }
-        if (shouldYieldCardCacheRebuild(count)) {
+        progress.cardIndexed();
+        if (shouldYieldCardCacheRebuild(progress.indexed)) {
           await Future<void>.delayed(Duration.zero);
         }
       }
       if (!_rebuildStillOwns(generation, database)) return;
-      _logger.info('Card cache rebuild complete. Indexed $count cards.');
+      _logger.info('Card cache rebuild complete. Indexed ${progress.indexed} cards.');
       await _clearCardCacheRebuildInterrupted(userId);
     } catch (e) {
       _logger.severe('Failed to rebuild card cache: $e');
     } finally {
-      markVisibleReady();
-      final complete = _rebuildComplete;
-      if (complete != null && !complete.isCompleted) {
-        complete.complete();
-      }
-      _isRebuilding = false;
+      _rebuild = null;
+      progress.finish();
     }
   }
 
