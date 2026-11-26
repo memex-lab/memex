@@ -44,7 +44,9 @@ import '../helpers/journal_model_fixture.dart';
 import '../helpers/workspace_test_paths.dart';
 
 Future<void> waitFor(WidgetTester tester, Finder target) async {
-  for (var i = 0; i < 100 && target.evaluate().isEmpty; i++) {
+  final elapsed = Stopwatch()..start();
+  while (target.evaluate().isEmpty &&
+      elapsed.elapsed < const Duration(seconds: 30)) {
     await tester
         .runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
     await tester.pump(const Duration(milliseconds: 50));

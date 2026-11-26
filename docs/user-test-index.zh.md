@@ -3468,10 +3468,10 @@
 
 | 用例 | 证据边界 | 本次 |
 |---|---|---|
-| [post a comment in detail and read it after reopening the screen](../test/integration/local_workspace_screens_test.dart#L141) | 真实设置页→时间线→图片、留言→返回再读 | 通过 |
-| [search the knowledge base and open the matching Markdown document](../test/integration/local_workspace_screens_test.dart#L241) | 知识库搜索框→无结果→命中文件→打开 Markdown 正文 | 通过 |
-| [send a photo offline, replay the queued turn and read the same note and attachment in detail](../test/integration/local_workspace_screens_test.dart#L280) | 记录输入框→离线发送→恢复队列→模型替身通过真实工具保存→按原 ID 从列表和详情读回图文 | 通过 |
-| [confirm account deletion keeps siblings, backups, and the selected folder](../test/integration/local_workspace_screens_test.dart#L395) | 删号确认→工作区、数据库、备份、另一账号→初次设置页面 | 通过 |
+| [post a comment in detail and read it after reopening the screen](../test/integration/local_workspace_screens_test.dart#L143) | 真实设置页→时间线→图片、留言→返回再读 | 通过 |
+| [search the knowledge base and open the matching Markdown document](../test/integration/local_workspace_screens_test.dart#L243) | 知识库搜索框→无结果→命中文件→打开 Markdown 正文 | 通过 |
+| [send a photo offline, replay the queued turn and read the same note and attachment in detail](../test/integration/local_workspace_screens_test.dart#L282) | 记录输入框→离线发送→恢复队列→模型替身通过真实工具保存→按原 ID 从列表和详情读回图文 | 通过 |
+| [confirm account deletion keeps siblings, backups, and the selected folder](../test/integration/local_workspace_screens_test.dart#L397) | 删号确认→工作区、数据库、备份、另一账号→初次设置页面 | 通过 |
 
 </details>
 
