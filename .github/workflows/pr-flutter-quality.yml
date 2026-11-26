@@ -80,7 +80,23 @@ jobs:
 
       - name: Install base Flutter dependencies
         working-directory: ../memex-base
-        run: flutter pub get
+        run: |
+          python3 - << 'PY'
+          from pathlib import Path
+          path = Path("pubspec.yaml")
+          text = path.read_text()
+          # main still pins Drift's sqlite3 2 line, which current Flutter cannot solve.
+          # The PR checkout already carries the upgrade; give the baseline the same constraints.
+          for old, new in (
+              ("sqlite3_flutter_libs: ^0.5.41", "sqlite3_flutter_libs: ^0.6.0+eol"),
+              ("sqlite3_flutter_libs: ^0.5.42", "sqlite3_flutter_libs: ^0.6.0+eol"),
+              ("drift_flutter: ^0.2.8", "drift_flutter: ^0.3.0"),
+              ("sqlite3: ^2.4.6", "sqlite3: ^3.0.0"),
+          ):
+              text = text.replace(old, new)
+          path.write_text(text)
+          PY
+          flutter pub get
 
       - name: Install PR Flutter dependencies
         run: flutter pub get
