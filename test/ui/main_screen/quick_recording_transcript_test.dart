@@ -21,7 +21,8 @@ void main() {
       expect(result.error, isNull);
     });
 
-    test('non-empty PCM always calls transcribe and returns its text', () async {
+    test('non-empty PCM always calls transcribe and returns its text',
+        () async {
       Float32List? received;
       final result = await finalizeQuickRecordingTranscript(
         pcmBytes: _pcmForSamples(const [0.5, -0.25]),
@@ -33,51 +34,33 @@ void main() {
       );
 
       expect(received, isNotNull);
-      expect(received!.length, 2);
+      expect(received, [closeTo(0.5, 0.0001), closeTo(-0.25, 0.0001)]);
       expect(result.text, 'cloud transcript');
       expect(result.error, isNull);
     });
 
-    test('empty transcript keeps existing text for the caller toast path',
+    test('failed or empty final passes preserve every existing draft',
         () async {
-      var called = false;
-      final result = await finalizeQuickRecordingTranscript(
-        pcmBytes: _pcmForSamples(const [0.1]),
-        existingText: '',
-        transcribeSamples: (_) async {
-          called = true;
-          return '';
-        },
-      );
-
-      expect(called, isTrue);
-      expect(result.text, isEmpty);
-      expect(result.hasText, isFalse);
-      expect(result.error, isNull);
-    });
-
-    test('empty transcript does not wipe non-empty streaming text', () async {
-      final result = await finalizeQuickRecordingTranscript(
-        pcmBytes: _pcmForSamples(const [0.1]),
-        existingText: 'partial',
-        transcribeSamples: (_) async => null,
-      );
-
-      expect(result.text, 'partial');
-      expect(result.error, isNull);
-    });
-
-    test('transcribe failure preserves text and surfaces error', () async {
-      final boom = Exception('network down');
-      final result = await finalizeQuickRecordingTranscript(
-        pcmBytes: _pcmForSamples(const [0.2]),
-        existingText: '',
-        transcribeSamples: (_) async => throw boom,
-      );
-
-      expect(result.text, isEmpty);
-      expect(result.error, same(boom));
-      expect(result.hasError, isTrue);
+      for (final text in ['', '  draft  ', '笔记 🎙️', 'line one\nline two']) {
+        for (final outcome in ['empty', 'missing', 'failed']) {
+          final failure = StateError('offline');
+          var calls = 0;
+          final result = await finalizeQuickRecordingTranscript(
+            pcmBytes: _pcmForSamples([0.25, -0.25]),
+            existingText: text,
+            transcribeSamples: (_) async {
+              calls++;
+              if (outcome == 'failed') throw failure;
+              return outcome == 'missing' ? null : '';
+            },
+          );
+          expect(result.text, text, reason: outcome);
+          expect(calls, 1, reason: outcome);
+          expect(result.hasText, text.isNotEmpty);
+          expect(result.error, outcome == 'failed' ? same(failure) : isNull);
+          expect(result.hasError, outcome == 'failed');
+        }
+      }
     });
   });
 }

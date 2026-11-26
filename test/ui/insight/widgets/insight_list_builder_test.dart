@@ -10,7 +10,10 @@ import 'package:memex/utils/result.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../helpers/bundled_test_fonts.dart';
+
 void main() {
+  setUpAll(loadBundledTestFonts);
   setUp(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
     EventBusService.instance.clearHandlers();
@@ -21,13 +24,13 @@ void main() {
 
   tearDown(EventBusService.instance.clearHandlers);
 
-  testWidgets('uses a lazy ListView.builder for the insight feed', (
+  testWidgets('builds distant insight cards only as the reader scrolls', (
     tester,
   ) async {
     final viewModel = InsightViewModel(router: MemexRouter())
       ..isLoading = false
       ..insights = [
-        for (var i = 0; i < 8; i++)
+        for (var i = 0; i < 40; i++)
           KnowledgeInsightCard(
             id: 'insight-$i',
             title: 'Insight $i',
@@ -51,8 +54,14 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.byType(ListView), findsOneWidget);
     expect(find.text('Insight 0'), findsOneWidget);
+    final last = find.text('Insight 39');
+    expect(last, findsNothing);
+    await tester.scrollUntilVisible(last, 500,
+        scrollable: find.byType(Scrollable).first);
+    expect(last, findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
   });
 
   testWidgets('failed HTML render stops until the user retries', (

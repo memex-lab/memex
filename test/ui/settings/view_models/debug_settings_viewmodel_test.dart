@@ -82,8 +82,7 @@ void main() {
 
     await viewModel.clearToken();
 
-    expect(await UserStorage.getUserId(), isNull);
-    expect(dataController.resetForLogoutCount, 1);
+    expect(dataController.accountChanges, [null]);
   });
 
   test('clearData requires user and clears local data', () async {
@@ -120,12 +119,11 @@ void main() {
     );
 
     expect(result?.targetUserId, 'test_clone');
-    expect(await UserStorage.getUserId(), 'test_clone');
     expect(viewModel.isCloningTestUser, isFalse);
     expect(dataController.cloneRequests, hasLength(1));
     expect(dataController.cloneRequests.single.targetUserId, 'test_clone');
     expect(dataController.cloneRequests.single.overwriteTarget, isTrue);
-    expect(dataController.resetForLogoutCount, 1);
+    expect(dataController.accountChanges, ['test_clone']);
   });
 
   test('clearFailedAgentContexts returns cleared count', () async {
@@ -224,7 +222,7 @@ class _RecordingDebugSettingsDataController
   int clearDataCount = 0;
   int clearFailedAgentContextsCount = 0;
   int rebuildAllFtsIndexesCount = 0;
-  int resetForLogoutCount = 0;
+  final accountChanges = <String?>[];
 
   @override
   Future<void> enqueueTask({
@@ -279,7 +277,7 @@ class _RecordingDebugSettingsDataController
   }
 
   @override
-  void resetForLogout() {
-    resetForLogoutCount++;
+  Future<void> changeLocalUser(String? userId) async {
+    accountChanges.add(userId);
   }
 }

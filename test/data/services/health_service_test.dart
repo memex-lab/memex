@@ -7,12 +7,14 @@ import 'package:memex/data/services/health_service.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('iOS registers rich HealthKit metrics, not just steps', () {
-    // The registry is platform-branched; this assertion is meaningful on the
-    // non-Android (iOS) branch that the test host resolves to.
-    if (Platform.isAndroid) return;
-
+  test(
+      'registers only steps on Android and the HealthKit metrics on the other platform branch',
+      () {
     final types = HealthService().registeredTypes;
+    if (Platform.isAndroid) {
+      expect(types, [HealthDataType.STEPS]);
+      return;
+    }
     expect(
       types,
       containsAll(<HealthDataType>[

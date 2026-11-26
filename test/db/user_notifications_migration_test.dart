@@ -1,49 +1,18 @@
 import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:memex/db/tables.dart';
-
-part 'user_notifications_migration_test.g.dart';
-
-/// Minimal Drift database for testing the UserNotifications table schema
-/// and indices in isolation.
-@DriftDatabase(tables: [UserNotifications])
-class TestNotificationsDb extends _$TestNotificationsDb {
-  TestNotificationsDb(QueryExecutor e) : super(e);
-
-  @override
-  int get schemaVersion => 1;
-
-  @override
-  MigrationStrategy get migration => MigrationStrategy(
-        onCreate: (Migrator m) async {
-          await m.createAll();
-          await customStatement(
-              'CREATE UNIQUE INDEX IF NOT EXISTS idx_user_notifications_unique '
-              'ON user_notifications(user_id, notification_type, subject_key)');
-          await customStatement(
-              'CREATE INDEX IF NOT EXISTS idx_user_notifications_list '
-              'ON user_notifications(user_id, notification_type, updated_at)');
-        },
-      );
-}
+import 'package:memex/db/app_database.dart';
 
 void main() {
   group('UserNotifications migration', () {
-    late TestNotificationsDb db;
+    late AppDatabase db;
 
     setUp(() {
-      db = TestNotificationsDb(NativeDatabase.memory());
+      db = AppDatabase.forTesting(NativeDatabase.memory());
     });
 
     tearDown(() async {
       await db.close();
-    });
-
-    test('table is queryable after creation', () async {
-      // Verify the table exists and is empty
-      final rows = await db.select(db.userNotifications).get();
-      expect(rows, isEmpty);
     });
 
     test('can insert and query a notification row', () async {
@@ -110,8 +79,8 @@ void main() {
           );
 
       // Second insert with same triple but different id should fail
-      expect(
-        () => db.into(db.userNotifications).insert(
+      await expectLater(
+        db.into(db.userNotifications).insert(
               UserNotificationsCompanion.insert(
                 id: 'id-2',
                 userId: 'user-a',
