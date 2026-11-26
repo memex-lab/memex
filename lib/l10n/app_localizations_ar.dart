@@ -704,10 +704,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-    Object running,
-    Object pending,
-    Object retrying,
-  ) {
+      Object running, Object pending, Object retrying) {
     return 'قيد التشغيل $running، معلق $pending، إعادة محاولة $retrying';
   }
 
@@ -2578,6 +2575,8 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get localSpeechLanguageUnsupported =>
       'هذا النموذج على الجهاز لا يغطي تلك اللغة. متعدد اللغات يشمل الألمانية ولغات أوروبية أخرى. SenseVoice يغطي الصينية والإنجليزية واليابانية والكورية والكانتونية.';
+
+  @override
   String get analyzeVocalToneTitle => 'تحليل نبرة الصوت';
 
   @override
@@ -3405,4 +3404,56 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get authorizationTimedOut => 'انتهت صلاحية التفويض';
+
+  @override
+  String get libraryImportant => 'المستندات المهمة';
+
+  @override
+  String get libraryTopics => 'تصفح حسب الموضوع';
+
+  @override
+  String get libraryOriginals => 'المستندات الأصلية';
+
+  @override
+  String get libraryImport => 'استيراد';
+
+  @override
+  String get libraryPin => 'تثبيت في الرئيسية';
+
+  @override
+  String get libraryUnpin => 'إلغاء التثبيت';
+
+  @override
+  String get libraryHide => 'إخفاء من الرئيسية';
+
+  @override
+  String get libraryShow => 'عرض في الرئيسية';
+
+  @override
+  String get libraryOpen => 'فتح المستند';
+
+  @override
+  String get libraryOrganize => 'تنظيم المستند';
+
+  @override
+  String get libraryOrganizeDraft =>
+      'ساعدني في تنظيم هذا الملف. اسألني عما أريد تغييره واعرض التعديلات قبل حفظها.';
+
+  @override
+  String libraryDocCount(int count) {
+    return 'ملفات Markdown: $count';
+  }
+
+  @override
+  String libraryTaskProgress(int done, int total) {
+    return 'اكتمل $done من $total';
+  }
+
+  @override
+  String libraryTopicCount(int count) {
+    return 'المستندات: $count';
+  }
+
+  @override
+  String get libraryMove => 'نقل أو إعادة تسمية';
 }

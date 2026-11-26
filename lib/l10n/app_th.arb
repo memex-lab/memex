@@ -1583,5 +1583,20 @@
   },
   "taskCompletedLabel": "เสร็จสิ้น: {date}",
   "oauthCouldNotLaunchBrowser": "ไม่สามารถเปิดเบราว์เซอร์สำหรับ OAuth",
-  "authorizationTimedOut": "การอนุญาตหมดเวลา"
+  "authorizationTimedOut": "การอนุญาตหมดเวลา",
+  "libraryImportant": "เอกสารสำคัญ",
+  "libraryTopics": "เรียกดูตามหัวข้อ",
+  "libraryOriginals": "เอกสารต้นฉบับ",
+  "libraryImport": "นำเข้า",
+  "libraryPin": "ปักหมุดที่หน้าแรก",
+  "libraryUnpin": "เลิกปักหมุด",
+  "libraryHide": "ซ่อนจากหน้าแรก",
+  "libraryShow": "แสดงที่หน้าแรก",
+  "libraryOpen": "เปิดเอกสาร",
+  "libraryOrganize": "จัดระเบียบเอกสาร",
+  "libraryOrganizeDraft": "ช่วยจัดระเบียบไฟล์นี้ ถามก่อนว่าต้องการแก้อะไรและแสดงข้อเสนอเพื่อยืนยันก่อนบันทึก",
+  "libraryDocCount": "ไฟล์ Markdown {count} ไฟล์",
+  "libraryTaskProgress": "เสร็จแล้ว {done} จาก {total}",
+  "libraryTopicCount": "เอกสาร {count} ฉบับ",
+  "libraryMove": "ย้ายหรือเปลี่ยนชื่อ"
 }

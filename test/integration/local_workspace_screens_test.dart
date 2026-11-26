@@ -1,4 +1,6 @@
+import 'package:memex/utils/result.dart';
 import 'dart:convert';
+import 'package:provider/provider.dart';
 import 'dart:io';
 
 // Exercise the same Material widget types as production on Flutter 3.41 and 3.50.
@@ -277,6 +279,76 @@ void main() {
     await tester.scrollUntilVisible(posted, 200, scrollable: body);
     expect(posted, findsWidgets);
   });
+  testWidgets(
+      'library reads workspace, persists pin and exposes loose files and extra root folders',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1050));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final root = FileSystemService.instance.getPkmPath(user);
+    final vm = KnowledgeBaseViewModel(router: MemexRouter());
+    addTearDown(vm.dispose);
+    await tester.runAsync(() async {
+      await Directory('$root/Projects (Projekte)').create(recursive: true);
+      await File('$root/Projects (Projekte)/a.md').writeAsString('A');
+      await File('$root/Projects (Projekte)/b.md').writeAsString('B');
+      await File('$root/Loose note.md')
+          .writeAsString('# Loose note\nA useful excerpt');
+      await vm.fetchData(forceRefresh: true);
+      expect(await vm.toggle('Loose note.md', pin: true), isTrue);
+      await vm.fetchData();
+      expect(vm.featured.first.path, 'Loose note.md');
+    });
+    await tester.pumpWidget(ChangeNotifierProvider.value(
+        value: vm,
+        child: MaterialApp(home: KnowledgeBaseScreen(viewModel: vm))));
+    await tester.ensureVisible(find.text(UserStorage.l10n.libraryOriginals));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(UserStorage.l10n.libraryOriginals));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await waitFor(tester, find.text('2 items'));
+    expect(find.text('Projects (Projekte)'), findsWidgets);
+    expect(find.text('Loose note.md'), findsOneWidget);
+    await tester.runAsync(() async {
+      final router = MemexRouter();
+      expect(
+          (await router.moveLibraryDocument(
+                  'Loose note.md', 'Projects (Projekte)/a.md'))
+              .isError,
+          isTrue);
+      expect(
+          (await router.moveLibraryDocument('Loose note.md', '../escape.md'))
+              .isError,
+          isTrue);
+    });
+    await tester.tap(find.text('Loose note.md'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await waitFor(
+        tester,
+        find.descendant(
+            of: find.byType(KnowledgeFilePage),
+            matching:
+                find.textContaining('A useful excerpt', findRichText: true)));
+    await tester.tap(find.byType(PopupMenuButton<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(UserStorage.l10n.libraryMove));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+        find.byType(TextFormField), 'Projects (Projekte)/renamed.md');
+    await tester.tap(find.text(UserStorage.l10n.save));
+    await tester.pump();
+    await waitFor(tester, find.text('renamed.md'));
+    expect(find.byTooltip(UserStorage.l10n.libraryOrganize), findsOneWidget);
+    await tester.runAsync(() async {
+      await vm.fetchData(forceRefresh: true);
+      expect(vm.featured.first.path, 'Projects (Projekte)/renamed.md');
+      expect(await vm.toggle(vm.featured.first.path, pin: false), isTrue);
+      expect(vm.featured.any((d) => d.title == 'Loose note'), isFalse);
+    });
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
   testWidgets(
       'search the knowledge base and open the matching Markdown document',
       (tester) async {

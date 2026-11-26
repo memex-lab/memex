@@ -716,10 +716,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-    Object running,
-    Object pending,
-    Object retrying,
-  ) {
+      Object running, Object pending, Object retrying) {
     return 'En cours $running, en attente $pending, nouvelle tentative $retrying';
   }
 
@@ -2631,6 +2628,8 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get localSpeechLanguageUnsupported =>
       'Ce modèle sur l\'appareil ne couvre pas cette langue. Multilingue inclut l\'allemand et d\'autres langues européennes. SenseVoice couvre le chinois, l\'anglais, le japonais, le coréen et le cantonais.';
+
+  @override
   String get analyzeVocalToneTitle => 'Analyser le ton de la voix';
 
   @override
@@ -3484,4 +3483,56 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get authorizationTimedOut => 'Autorisation expirée';
+
+  @override
+  String get libraryImportant => 'Documents importants';
+
+  @override
+  String get libraryTopics => 'Parcourir par thème';
+
+  @override
+  String get libraryOriginals => 'Documents originaux';
+
+  @override
+  String get libraryImport => 'Importer';
+
+  @override
+  String get libraryPin => 'Épingler à l’accueil';
+
+  @override
+  String get libraryUnpin => 'Désépingler';
+
+  @override
+  String get libraryHide => 'Masquer sur l’accueil';
+
+  @override
+  String get libraryShow => 'Afficher sur l’accueil';
+
+  @override
+  String get libraryOpen => 'Ouvrir le document';
+
+  @override
+  String get libraryOrganize => 'Organiser ce document';
+
+  @override
+  String get libraryOrganizeDraft =>
+      'Aide-moi à organiser ce fichier. Demande-moi les changements souhaités et présente-les pour confirmation.';
+
+  @override
+  String libraryDocCount(int count) {
+    return '$count fichiers Markdown';
+  }
+
+  @override
+  String libraryTaskProgress(int done, int total) {
+    return '$done sur $total terminés';
+  }
+
+  @override
+  String libraryTopicCount(int count) {
+    return '$count documents';
+  }
+
+  @override
+  String get libraryMove => 'Déplacer ou renommer';
 }

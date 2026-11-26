@@ -39,6 +39,32 @@ enum StorageLocation {
 
 /// User storage: userId persistence and per-user workspace storage preference.
 class UserStorage {
+  static Future<List<String>> libraryChoices(String user,
+          {required bool pins}) async =>
+      (await sharedPrefs())
+          .getStringList('library.${pins ? "pins" : "hidden"}.$user') ??
+      [];
+
+  static Future<void> saveLibraryChoices(String user, List<String> paths,
+      {required bool pins}) async {
+    if (!await (await sharedPrefs())
+        .setStringList('library.${pins ? "pins" : "hidden"}.$user', paths)) {
+      throw StateError('Unable to save library preference');
+    }
+  }
+
+  // Bounded local history for ranking documents the user returns to.
+  static Future<List<String>> libraryVisits(String user) async =>
+      (await sharedPrefs()).getStringList('library.visits.$user') ?? [];
+
+  static Future<List<String>> recordLibraryVisit(
+      String user, String path) async {
+    final visits = await libraryVisits(user);
+    final next = [path, ...visits].take(40).toList();
+    await (await sharedPrefs()).setStringList('library.visits.$user', next);
+    return next;
+  }
+
   static AppLocalizationsExt? _l10n;
   static const String _keyUserId = 'user_id';
   static const String _keyPhotoSuggestionCache = 'photo_suggestion_cache';

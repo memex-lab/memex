@@ -1,3 +1,4 @@
+import 'package:memex/data/services/file_operation_service.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'package:memex/utils/logger.dart';
@@ -308,4 +309,33 @@ Future<Map<String, dynamic>> readPkmFileEndpoint(String filePath) async {
     _logger.severe('Failed to read PKM file $filePath: $e');
     rethrow;
   }
+}
+
+/// Moves a Markdown document to another relative path in an existing PKM folder.
+Future<void> moveLibraryDocument(String user, String from, String to) async {
+  final root = await Directory(_fileSystemService.getPkmPath(user))
+      .resolveSymbolicLinks();
+  for (final relative in [from, to]) {
+    if (relative.trim().isEmpty ||
+        p.isAbsolute(relative) ||
+        p.normalize(relative) != relative ||
+        relative.split('/').any((part) => part.startsWith('.')) ||
+        p.extension(relative).toLowerCase() != '.md') {
+      throw ArgumentError('Invalid Markdown document path');
+    }
+  }
+  final source = p.join(root, from), destination = p.join(root, to);
+  final parent = await Directory(p.dirname(destination)).resolveSymbolicLinks();
+  if (!p.isWithin(root, await File(source).resolveSymbolicLinks()) ||
+      !(p.equals(parent, root) || p.isWithin(root, parent)) ||
+      !await File(source).exists()) {
+    throw ArgumentError('Invalid document location');
+  }
+  if (p.equals(source, destination)) return;
+  if (await FileSystemEntity.type(destination, followLinks: false) !=
+      FileSystemEntityType.notFound) {
+    throw StateError('Destination already exists');
+  }
+  await FileOperationService.instance.moveFile(
+      sourcePath: source, destinationPath: destination, workingDirectory: root);
 }

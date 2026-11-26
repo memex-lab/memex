@@ -1,3 +1,7 @@
+import 'package:memex/ui/chat/widgets/open_super_agent_dialog.dart';
+import 'package:memex/ui/knowledge/view_models/knowledge_base_viewmodel.dart';
+import 'package:provider/provider.dart';
+import 'package:memex/utils/result.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:memex/data/repositories/memex_router.dart';
@@ -25,6 +29,7 @@ class KnowledgeFilePage extends StatefulWidget {
 
 class _KnowledgeFilePageState extends State<KnowledgeFilePage> {
   final MemexRouter _memexRouter = MemexRouter();
+  late String _documentPath = widget.filePath;
   String _content = '';
   List<String> _factIds = [];
   List<TimelineCardModel> _sourceCards = [];
@@ -42,13 +47,14 @@ class _KnowledgeFilePageState extends State<KnowledgeFilePage> {
     setState(() => _isLoading = true);
     try {
       // 1. Read file content
-      final response = await _memexRouter.readPkmFile(widget.filePath);
+      final response = await _memexRouter.readPkmFile(_documentPath);
       final content = response['content'] as String? ?? '';
 
       // 2. Parse fact_ids
       final ids = _extractFactIds(content);
 
       if (mounted) {
+        context.read<KnowledgeBaseViewModel?>()?.opened(_documentPath);
         setState(() {
           _content = content;
           _factIds = ids;
@@ -107,7 +113,7 @@ class _KnowledgeFilePageState extends State<KnowledgeFilePage> {
     try {
       await ShareService.shareTextAsFile(
         context,
-        fileName: path.basename(widget.filePath),
+        fileName: path.basename(_documentPath),
         content: _content,
         mimeType: 'text/markdown',
         text: UserStorage.l10n.sharedFromMemex,
@@ -137,12 +143,45 @@ class _KnowledgeFilePageState extends State<KnowledgeFilePage> {
     });
   }
 
+  Future<void> _move() async {
+    var proposed = _documentPath;
+    final target = await showDialog<String>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+                title: Text(UserStorage.l10n.libraryMove),
+                content: TextFormField(
+                    initialValue: proposed,
+                    autofocus: true,
+                    decoration: const InputDecoration(prefixText: 'PKM/'),
+                    onChanged: (value) => proposed = value,
+                    onFieldSubmitted: (value) =>
+                        Navigator.pop(ctx, value.trim())),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: Text(UserStorage.l10n.cancel)),
+                  TextButton(
+                      onPressed: () => Navigator.pop(ctx, proposed.trim()),
+                      child: Text(UserStorage.l10n.save))
+                ]));
+    if (target == null || target == _documentPath || !mounted) return;
+    final result =
+        await _memexRouter.moveLibraryDocument(_documentPath, target);
+    if (!mounted) return;
+    result.when(
+        onOk: (_) {
+          setState(() => _documentPath = target);
+        },
+        onError: (e, _) => ToastHelper.showError(
+            context, UserStorage.l10n.operationFailed(e.toString())));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text(path.basename(widget.filePath),
+        title: Text(path.basename(_documentPath),
             style: const TextStyle(
                 color: Color(0xFF1E293B),
                 fontSize: 16,
@@ -152,6 +191,40 @@ class _KnowledgeFilePageState extends State<KnowledgeFilePage> {
         leading: const AppBackButton(),
         iconTheme: const IconThemeData(color: Color(0xFF64748B)),
         actions: [
+          if (context.watch<KnowledgeBaseViewModel?>() case final vm?)
+            PopupMenuButton<String>(
+                onSelected: (action) async {
+                  if (action == "move") {
+                    await _move();
+                    return;
+                  }
+                  if (!await vm.toggle(_documentPath, pin: action == 'pin') &&
+                      context.mounted) {
+                    ToastHelper.showError(
+                        context, UserStorage.l10n.dataLoadFailedRetry);
+                  }
+                },
+                itemBuilder: (_) => [
+                      PopupMenuItem(
+                          value: "move",
+                          child: Text(UserStorage.l10n.libraryMove)),
+                      PopupMenuItem(
+                          value: 'pin',
+                          child: Text(vm.pinned.contains(_documentPath)
+                              ? UserStorage.l10n.libraryUnpin
+                              : UserStorage.l10n.libraryPin)),
+                      PopupMenuItem(
+                          value: 'hide',
+                          child: Text(vm.hidden.contains(_documentPath)
+                              ? UserStorage.l10n.libraryShow
+                              : UserStorage.l10n.libraryHide))
+                    ]),
+          IconButton(
+              icon: const Icon(Icons.auto_fix_high_outlined),
+              tooltip: UserStorage.l10n.libraryOrganize,
+              onPressed: () => openSuperAgentDialog(context,
+                  initialDraftText:
+                      '${UserStorage.l10n.libraryOrganizeDraft}\n/PKM/${_documentPath}')),
           IconButton(
             key: const ValueKey('knowledge_file_download_button'),
             tooltip: UserStorage.l10n.downloadFile,

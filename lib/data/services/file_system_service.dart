@@ -767,7 +767,8 @@ class FileSystemService {
         }
       }
       if (!_rebuildStillOwns(generation, database)) return;
-      _logger.info('Card cache rebuild complete. Indexed ${progress.indexed} cards.');
+      _logger.info(
+          'Card cache rebuild complete. Indexed ${progress.indexed} cards.');
       await _clearCardCacheRebuildInterrupted(userId);
     } catch (e) {
       _logger.severe('Failed to rebuild card cache: $e');
@@ -2584,6 +2585,19 @@ class FileSystemService {
         .replaceAll('#', '_');
   }
 
+  /// Read the Markdown documents listed by the PKM service.
+  Future<String> readLibraryMarkdown(String userId, String relativePath) async {
+    final root = getPkmPath(userId);
+    final file = File(path.join(root, relativePath));
+    final resolved = await file.resolveSymbolicLinks();
+    if (!path.isWithin(
+        await Directory(root).resolveSymbolicLinks(), resolved)) {
+      throw ArgumentError('Invalid document path');
+    }
+    if (await file.length() > 10 * 1024 * 1024) return '';
+    return file.readAsString();
+  }
+
   /// Get recently modified PKM files
   Future<List<Map<String, dynamic>>> getRecentPkmFiles(String userId,
       {int limit = 10, bool forceRefresh = false}) async {
@@ -2652,8 +2666,7 @@ class FileSystemService {
     }));
 
     final fileList = stats.whereType<Map<String, dynamic>>().toList()
-      ..sort(
-          (a, b) => (b['modified'] as int).compareTo(a['modified'] as int));
+      ..sort((a, b) => (b['modified'] as int).compareTo(a['modified'] as int));
 
     store(fileList);
 

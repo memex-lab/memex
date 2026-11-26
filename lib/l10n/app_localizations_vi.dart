@@ -706,10 +706,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-    Object running,
-    Object pending,
-    Object retrying,
-  ) {
+      Object running, Object pending, Object retrying) {
     return 'Đang chạy $running, Chờ $pending, Thử lại $retrying';
   }
 
@@ -2585,6 +2582,8 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String get localSpeechLanguageUnsupported =>
       'Mô hình trên máy này không phủ ngôn ngữ đó. Đa ngôn ngữ gồm tiếng Đức và các ngôn ngữ châu Âu khác. SenseVoice phủ tiếng Trung, Anh, Nhật, Hàn và Quảng Đông.';
+
+  @override
   String get analyzeVocalToneTitle => 'Phân tích giọng';
 
   @override
@@ -3416,4 +3415,56 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get authorizationTimedOut => 'Ủy quyền đã hết hạn';
+
+  @override
+  String get libraryImportant => 'Tài liệu quan trọng';
+
+  @override
+  String get libraryTopics => 'Duyệt theo chủ đề';
+
+  @override
+  String get libraryOriginals => 'Tài liệu gốc';
+
+  @override
+  String get libraryImport => 'Nhập';
+
+  @override
+  String get libraryPin => 'Ghim vào trang chủ';
+
+  @override
+  String get libraryUnpin => 'Bỏ ghim';
+
+  @override
+  String get libraryHide => 'Ẩn khỏi trang chủ';
+
+  @override
+  String get libraryShow => 'Hiện trên trang chủ';
+
+  @override
+  String get libraryOpen => 'Mở tài liệu';
+
+  @override
+  String get libraryOrganize => 'Sắp xếp tài liệu';
+
+  @override
+  String get libraryOrganizeDraft =>
+      'Giúp tôi sắp xếp tệp này. Hãy hỏi tôi muốn thay đổi gì và cho tôi xem đề xuất để xác nhận trước khi lưu.';
+
+  @override
+  String libraryDocCount(int count) {
+    return '$count tệp Markdown';
+  }
+
+  @override
+  String libraryTaskProgress(int done, int total) {
+    return 'Hoàn thành $done/$total';
+  }
+
+  @override
+  String libraryTopicCount(int count) {
+    return '$count tài liệu';
+  }
+
+  @override
+  String get libraryMove => 'Di chuyển hoặc đổi tên';
 }

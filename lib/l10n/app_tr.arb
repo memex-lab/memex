@@ -1583,5 +1583,20 @@
   },
   "taskCompletedLabel": "Tamamlandı: {date}",
   "oauthCouldNotLaunchBrowser": "OAuth için tarayıcı başlatılamadı",
-  "authorizationTimedOut": "Yetkilendirme zaman aşımına uğradı"
+  "authorizationTimedOut": "Yetkilendirme zaman aşımına uğradı",
+  "libraryImportant": "Önemli belgeler",
+  "libraryTopics": "Konulara göz at",
+  "libraryOriginals": "Orijinal belgeler",
+  "libraryImport": "İçe aktar",
+  "libraryPin": "Ana sayfaya sabitle",
+  "libraryUnpin": "Sabitlemeyi kaldır",
+  "libraryHide": "Ana sayfada gizle",
+  "libraryShow": "Ana sayfada göster",
+  "libraryOpen": "Belgeyi aç",
+  "libraryOrganize": "Belgeyi düzenle",
+  "libraryOrganizeDraft": "Bu dosyayı düzenlememe yardım et. Önce neyi değiştirmek istediğimi sor ve kaydetmeden önce öneriyi onayıma sun.",
+  "libraryDocCount": "{count} Markdown dosyası",
+  "libraryTaskProgress": "{total} öğeden {done} tanesi tamamlandı",
+  "libraryTopicCount": "{count} belge",
+  "libraryMove": "Taşı veya yeniden adlandır"
 }

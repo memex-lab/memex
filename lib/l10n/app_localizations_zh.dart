@@ -690,10 +690,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-    Object running,
-    Object pending,
-    Object retrying,
-  ) {
+      Object running, Object pending, Object retrying) {
     return '执行中 $running，排队中 $pending，重试中 $retrying';
   }
 
@@ -2507,6 +2504,8 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get localSpeechLanguageUnsupported =>
       '当前的本地模型不支持这个语言。多语言模型包含德语和其他欧洲语言。SenseVoice 支持中文、英文、日文、韩文和粤语。';
+
+  @override
   String get analyzeVocalToneTitle => '分析语气';
 
   @override
@@ -3308,6 +3307,57 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get authorizationTimedOut => '授权超时';
+
+  @override
+  String get libraryImportant => '重要资料';
+
+  @override
+  String get libraryTopics => '按主题浏览';
+
+  @override
+  String get libraryOriginals => '原始文档';
+
+  @override
+  String get libraryImport => '导入';
+
+  @override
+  String get libraryPin => '置顶到首页';
+
+  @override
+  String get libraryUnpin => '取消置顶';
+
+  @override
+  String get libraryHide => '从首页隐藏';
+
+  @override
+  String get libraryShow => '恢复首页推荐';
+
+  @override
+  String get libraryOpen => '打开文档';
+
+  @override
+  String get libraryOrganize => '整理这份资料';
+
+  @override
+  String get libraryOrganizeDraft => '帮我整理这份知识文件。先问我想改什么，给我看修改方案，等我确认后再写入。';
+
+  @override
+  String libraryDocCount(int count) {
+    return '$count 个 Markdown 文件';
+  }
+
+  @override
+  String libraryTaskProgress(int done, int total) {
+    return '已完成 $done/$total 项';
+  }
+
+  @override
+  String libraryTopicCount(int count) {
+    return '$count 份资料';
+  }
+
+  @override
+  String get libraryMove => '移动或重命名';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -3996,10 +4046,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String agentBackgroundTaskSummary(
-    Object running,
-    Object pending,
-    Object retrying,
-  ) {
+      Object running, Object pending, Object retrying) {
     return '執行中 $running，排隊中 $pending，重試中 $retrying';
   }
 
@@ -5817,6 +5864,8 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   @override
   String get localSpeechLanguageUnsupported =>
       '目前的本機模型不支援這個語言。多語言模型包含德文和其他歐洲語言。SenseVoice 支援中文、英文、日文、韓文和粵語。';
+
+  @override
   String get analyzeVocalToneTitle => '分析語氣';
 
   @override
@@ -6618,4 +6667,55 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get authorizationTimedOut => '授權逾時';
+
+  @override
+  String get libraryImportant => '重要資料';
+
+  @override
+  String get libraryTopics => '依主題瀏覽';
+
+  @override
+  String get libraryOriginals => '原始文件';
+
+  @override
+  String get libraryImport => '匯入';
+
+  @override
+  String get libraryPin => '置頂到首頁';
+
+  @override
+  String get libraryUnpin => '取消置頂';
+
+  @override
+  String get libraryHide => '從首頁隱藏';
+
+  @override
+  String get libraryShow => '恢復首頁推薦';
+
+  @override
+  String get libraryOpen => '開啟文件';
+
+  @override
+  String get libraryOrganize => '整理這份資料';
+
+  @override
+  String get libraryOrganizeDraft => '幫我整理這份知識文件。先問我想改什麼，給我看修改方案，等我確認後再寫入。';
+
+  @override
+  String libraryDocCount(int count) {
+    return '$count 個 Markdown 文件';
+  }
+
+  @override
+  String libraryTaskProgress(int done, int total) {
+    return '已完成 $done/$total 項';
+  }
+
+  @override
+  String libraryTopicCount(int count) {
+    return '$count 份資料';
+  }
+
+  @override
+  String get libraryMove => '移動或重新命名';
 }

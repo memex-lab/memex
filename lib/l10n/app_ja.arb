@@ -1585,5 +1585,20 @@
     "placeholders": {
       "week": {}
     }
-  }
+  },
+  "libraryImportant": "重要な資料",
+  "libraryTopics": "トピックから探す",
+  "libraryOriginals": "元の文書",
+  "libraryImport": "読み込む",
+  "libraryPin": "ホームに固定",
+  "libraryUnpin": "固定を解除",
+  "libraryHide": "ホームで非表示",
+  "libraryShow": "ホームに再表示",
+  "libraryOpen": "文書を開く",
+  "libraryOrganize": "資料を整理",
+  "libraryOrganizeDraft": "このファイルを整理してください。希望する変更を聞き、書き込む前に変更案を見せてください。",
+  "libraryDocCount": "Markdown ファイル {count} 件",
+  "libraryTaskProgress": "{total} 件中 {done} 件完了",
+  "libraryTopicCount": "資料 {count} 件",
+  "libraryMove": "移動または名前を変更"
 }

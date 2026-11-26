@@ -1585,5 +1585,20 @@
     "placeholders": {
       "week": {}
     }
-  }
+  },
+  "libraryImportant": "Wichtige Dokumente",
+  "libraryTopics": "Nach Thema durchsuchen",
+  "libraryOriginals": "Originaldokumente",
+  "libraryImport": "Importieren",
+  "libraryPin": "An Startseite anheften",
+  "libraryUnpin": "Loslösen",
+  "libraryHide": "Auf Startseite ausblenden",
+  "libraryShow": "Auf Startseite anzeigen",
+  "libraryOpen": "Dokument öffnen",
+  "libraryOrganize": "Dokument organisieren",
+  "libraryOrganizeDraft": "Hilf mir, diese Datei zu organisieren. Frage nach den gewünschten Änderungen und zeige mir einen Vorschlag zur Bestätigung.",
+  "libraryDocCount": "{count} Markdown-Dateien",
+  "libraryTaskProgress": "{done} von {total} erledigt",
+  "libraryTopicCount": "{count} Dokumente",
+  "libraryMove": "Verschieben oder umbenennen"
 }

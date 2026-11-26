@@ -1585,5 +1585,20 @@
     "placeholders": {
       "week": {}
     }
-  }
+  },
+  "libraryImportant": "المستندات المهمة",
+  "libraryTopics": "تصفح حسب الموضوع",
+  "libraryOriginals": "المستندات الأصلية",
+  "libraryImport": "استيراد",
+  "libraryPin": "تثبيت في الرئيسية",
+  "libraryUnpin": "إلغاء التثبيت",
+  "libraryHide": "إخفاء من الرئيسية",
+  "libraryShow": "عرض في الرئيسية",
+  "libraryOpen": "فتح المستند",
+  "libraryOrganize": "تنظيم المستند",
+  "libraryOrganizeDraft": "ساعدني في تنظيم هذا الملف. اسألني عما أريد تغييره واعرض التعديلات قبل حفظها.",
+  "libraryDocCount": "ملفات Markdown: {count}",
+  "libraryTaskProgress": "اكتمل {done} من {total}",
+  "libraryTopicCount": "المستندات: {count}",
+  "libraryMove": "نقل أو إعادة تسمية"
 }

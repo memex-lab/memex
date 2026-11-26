@@ -1585,5 +1585,20 @@
     "placeholders": {
       "week": {}
     }
-  }
+  },
+  "libraryImportant": "重要資料",
+  "libraryTopics": "依主題瀏覽",
+  "libraryOriginals": "原始文件",
+  "libraryImport": "匯入",
+  "libraryPin": "置頂到首頁",
+  "libraryUnpin": "取消置頂",
+  "libraryHide": "從首頁隱藏",
+  "libraryShow": "恢復首頁推薦",
+  "libraryOpen": "開啟文件",
+  "libraryOrganize": "整理這份資料",
+  "libraryOrganizeDraft": "幫我整理這份知識文件。先問我想改什麼，給我看修改方案，等我確認後再寫入。",
+  "libraryDocCount": "{count} 個 Markdown 文件",
+  "libraryTaskProgress": "已完成 {done}/{total} 項",
+  "libraryTopicCount": "{count} 份資料",
+  "libraryMove": "移動或重新命名"
 }

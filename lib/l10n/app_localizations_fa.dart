@@ -706,10 +706,7 @@ class AppLocalizationsFa extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-    Object running,
-    Object pending,
-    Object retrying,
-  ) {
+      Object running, Object pending, Object retrying) {
     return 'در حال اجرا $running، در انتظار $pending، تلاش مجدد $retrying';
   }
 
@@ -2594,6 +2591,8 @@ class AppLocalizationsFa extends AppLocalizations {
   @override
   String get localSpeechLanguageUnsupported =>
       'این مدل روی دستگاه آن زبان را پوشش نمی‌دهد. مدل چندزبانه آلمانی و زبان‌های اروپایی دیگر را دارد. SenseVoice چینی، انگلیسی، ژاپنی، کره‌ای و کانتونی را پوشش می‌دهد.';
+
+  @override
   String get analyzeVocalToneTitle => 'تحلیل لحن صدا';
 
   @override
@@ -3430,4 +3429,56 @@ class AppLocalizationsFa extends AppLocalizations {
 
   @override
   String get authorizationTimedOut => 'مهلت مجوز به پایان رسید';
+
+  @override
+  String get libraryImportant => 'سندهای مهم';
+
+  @override
+  String get libraryTopics => 'مرور بر اساس موضوع';
+
+  @override
+  String get libraryOriginals => 'سندهای اصلی';
+
+  @override
+  String get libraryImport => 'وارد کردن';
+
+  @override
+  String get libraryPin => 'سنجاق به خانه';
+
+  @override
+  String get libraryUnpin => 'برداشتن سنجاق';
+
+  @override
+  String get libraryHide => 'پنهان کردن از خانه';
+
+  @override
+  String get libraryShow => 'نمایش در خانه';
+
+  @override
+  String get libraryOpen => 'باز کردن سند';
+
+  @override
+  String get libraryOrganize => 'مرتب کردن سند';
+
+  @override
+  String get libraryOrganizeDraft =>
+      'در مرتب کردن این پرونده کمک کن. ابتدا بپرس چه تغییری می‌خواهم و پیش از ذخیره پیشنهادت را برای تأیید نشان بده.';
+
+  @override
+  String libraryDocCount(int count) {
+    return '$count پروندهٔ Markdown';
+  }
+
+  @override
+  String libraryTaskProgress(int done, int total) {
+    return '$done از $total انجام شده';
+  }
+
+  @override
+  String libraryTopicCount(int count) {
+    return '$count سند';
+  }
+
+  @override
+  String get libraryMove => 'جابجایی یا تغییر نام';
 }

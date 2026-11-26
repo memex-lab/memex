@@ -1,3 +1,5 @@
+import 'package:memex/domain/models/library_document.dart';
+import 'package:memex/data/repositories/library_home_repository.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -1612,6 +1614,33 @@ class MemexRouter {
       return {'archived_memory': '', 'recent_buffer': []};
     });
   }
+
+  Future<Result<void>> moveLibraryDocument(String from, String to) =>
+      runResult(() async {
+        await _ensureInitialized();
+        final user = await UserStorage.getUserId();
+        if (user == null) throw StateError('User missing');
+        await pkm_endpoint.moveLibraryDocument(user, from, to);
+        for (final pins in [true, false]) {
+          final choices = await UserStorage.libraryChoices(user, pins: pins);
+          if (choices.contains(from)) {
+            await UserStorage.saveLibraryChoices(
+                user, choices.map((p) => p == from ? to : p).toSet().toList(),
+                pins: pins);
+          }
+        }
+      });
+
+  final _libraryHome = LibraryHomeRepository();
+
+  Future<Result<List<LibraryDocument>>> loadLibraryHome(
+          {bool refresh = false}) =>
+      runResult(() async {
+        await _ensureInitialized();
+        final user = await UserStorage.getUserId();
+        if (user == null) return <LibraryDocument>[];
+        return _libraryHome.load(user, refresh: refresh);
+      });
 
   Future<Result<List<Map<String, dynamic>>>> getRecentPkmFiles({
     int limit = 10,
