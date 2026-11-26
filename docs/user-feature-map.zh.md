@@ -34,7 +34,7 @@
 | P1 | [查看任务、后台运行和失败日志 → 找到状态并继续处理](../test/data/services/local_task_executor_test.dart) | 队列、重试、任务跟踪、后台协调及活动面板分别测试 | 退后台、系统回收、再启动，看到相同任务和唯一结果 |
 | P1 | [浏览知识库、导入文档、打开目录和文件 → 内容可读](../test/ui/knowledge/knowledge_base_screen_test.dart) | PKM 列表、文档提取、目录/文件界面和导入控件分别覆盖 | 从系统文件选择到入库，再从知识库打开正文和媒体 |
 | P1 | [浏览洞察、模板和关联记录 → 打开详情或固定后再找到](../test/ui/insight/insight_detail_page_test.dart) | 洞察生成辅助逻辑、列表、详情、模板失败态有测试 | 在同一工作区由原始记录生成洞察，固定并重启回看 |
-| P1 | [查看、编辑或删除记忆 → 下次对话使用更新后的上下文](../test/agent/character_scene_memory_test.dart) | 记忆增删改、上下文拼装、列表时间和本地化有覆盖 | 从角色编辑页修改角色记忆后开始新会话，验证删除内容不再被引用 |
+| P1 | [查看、编辑或删除记忆 → 下次对话使用更新后的上下文](../test/agent_refactor_functional_test.dart#L121) | 记忆增删改、上下文拼装、列表时间和本地化有覆盖 | 从角色编辑页修改角色记忆后开始新会话，验证删除内容不再被引用 |
 | P1 | [创建、编辑、导入角色和头像 → 角色配置可用](../test/agent_refactor_functional_test.dart) | 角色卡 JSON/PNG 导入、冲突、存储和头像编辑有覆盖 | 从系统选择器导入，保存后切角色并重启 |
 | P1 | [角色评论、主动消息、私聊和历史 → 同一角色记得前文](../test/integration/character_conversation_pipeline_test.dart) | 记录→角色记忆→回复上下文、连续发送→持久化消息有业务链测试 | 在真实对话页切换角色、重新进入，验证模型输出和通知 |
 | P0 | [备份 → 删记录 → 恢复 → 再次筛到原记录并读回正文](../test/data/services/backup_service_test.dart) | 经备份/恢复业务入口、真实文件和数据库读回；另有 WAL 最新写入、快照保留与确认对话框用例 | 在 iOS Files / Android 文档选择器上导入旧版备份并冷启动 |
