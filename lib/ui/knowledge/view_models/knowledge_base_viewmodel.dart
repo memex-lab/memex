@@ -48,8 +48,9 @@ class KnowledgeBaseViewModel extends ChangeNotifier {
   }
 
   Future<void> ensureLoaded() async {
-    if (isLoading || (_loaded && _user == await UserStorage.getUserId()))
+    if (isLoading || (_loaded && _user == await UserStorage.getUserId())) {
       return;
+    }
     if (!_disposed) await fetchData();
   }
 
@@ -76,7 +77,9 @@ class KnowledgeBaseViewModel extends ChangeNotifier {
                   (event.payload.ns != DataChangeNs.card ||
                       (event.payload.op == DataChangeOp.update &&
                           event.payload.before?['tags'].toString() ==
-                              event.payload.after?['tags'].toString()))) return;
+                              event.payload.after?['tags'].toString()))) {
+                return;
+              }
               _debounce?.cancel();
               _debounce = Timer(const Duration(milliseconds: 650),
                   () => fetchData(forceRefresh: true));
@@ -116,13 +119,14 @@ class KnowledgeBaseViewModel extends ChangeNotifier {
     if (user == null || _disposed) return;
     final result =
         await runResult(() => UserStorage.recordLibraryVisit(user, path));
-    if (!_disposed && _user == user)
+    if (!_disposed && _user == user) {
       result.when(
           onOk: (paths) {
             _visits = paths;
             notifyListeners();
           },
           onError: (_, __) {});
+    }
   }
 
   Future<bool> toggle(String path, {required bool pin}) async {

@@ -28,9 +28,10 @@ class KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
   }
 
   void scrollToTopAndRefresh() {
-    if (_scroll.hasClients)
+    if (_scroll.hasClients) {
       _scroll.animateTo(0,
           duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+    }
     widget.viewModel.fetchData(forceRefresh: true);
   }
 

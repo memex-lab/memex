@@ -73,7 +73,9 @@ class LibraryDocument {
             .where((c) => c.isNotEmpty)
             .toList();
         if (cells.isEmpty ||
-            cells.every((c) => RegExp(r'^:?-{2,}:?$').hasMatch(c))) continue;
+            cells.every((c) => RegExp(r'^:?-{2,}:?$').hasMatch(c))) {
+          continue;
+        }
         if (tableHeader.isEmpty) {
           tableHeader = cells;
           continue;
@@ -105,7 +107,9 @@ class LibraryDocument {
           if (statusLine.isEmpty &&
               RegExp(r'^(?:进度|進度|待确认|待確認|当前状态|下一步|status|next step|progress)\s*[:：]',
                       caseSensitive: false)
-                  .hasMatch(clean)) statusLine = preview;
+                  .hasMatch(clean)) {
+            statusLine = preview;
+          }
         }
       }
     }
@@ -157,9 +161,10 @@ class LibraryDocument {
         .toList();
     candidates.sort((a, b) {
       final ai = pinned.indexOf(a.path), bi = pinned.indexOf(b.path);
-      if (ai != bi)
+      if (ai != bi) {
         return (ai < 0 ? pinned.length : ai)
             .compareTo(bi < 0 ? pinned.length : bi);
+      }
       final score = scoreOf(b).compareTo(scoreOf(a));
       if (score != 0) return score;
       final recent = b.modified.compareTo(a.modified);
@@ -172,7 +177,9 @@ class LibraryDocument {
               s.title == d.title ||
               (d.sources.isNotEmpty &&
                   d.sources.length == s.sources.length &&
-                  s.sources.containsAll(d.sources)))) continue;
+                  s.sources.containsAll(d.sources)))) {
+        continue;
+      }
       selected.add(d);
       if (selected.length == 3) break;
     }

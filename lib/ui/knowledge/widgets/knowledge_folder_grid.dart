@@ -1,3 +1,5 @@
+// Flutter 3.41 requires the SDK Material library.
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:memex/domain/models/library_document.dart';
 import 'package:memex/utils/user_storage.dart';

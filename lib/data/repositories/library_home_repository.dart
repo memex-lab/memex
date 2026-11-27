@@ -34,8 +34,9 @@ class LibraryHomeRepository {
         final content = await fs.readLibraryMarkdown(user, path);
         final doc = LibraryDocument.fromMarkdown(path, content, modified);
         result.add(doc);
-        if (_user == user)
+        if (_user == user) {
           _cache[path] = (modified: modified, size: size, doc: doc);
+        }
       } catch (e) {
         getLogger('LibraryHomeRepository').fine('Document unavailable', e);
       }

@@ -224,7 +224,7 @@ class _KnowledgeFilePageState extends State<KnowledgeFilePage> {
               tooltip: UserStorage.l10n.libraryOrganize,
               onPressed: () => openSuperAgentDialog(context,
                   initialDraftText:
-                      '${UserStorage.l10n.libraryOrganizeDraft}\n/PKM/${_documentPath}')),
+                      '${UserStorage.l10n.libraryOrganizeDraft}\n/PKM/$_documentPath')),
           IconButton(
             key: const ValueKey('knowledge_file_download_button'),
             tooltip: UserStorage.l10n.downloadFile,
