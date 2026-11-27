@@ -705,10 +705,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-    Object running,
-    Object pending,
-    Object retrying,
-  ) {
+      Object running, Object pending, Object retrying) {
     return 'Running $running, Pending $pending, Retry $retrying';
   }
 
@@ -2591,6 +2588,8 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get localSpeechLanguageUnsupported =>
       'This on-device model does not cover that language. Multilingual includes German and other European languages. SenseVoice covers Chinese, English, Japanese, Korean, and Cantonese.';
+
+  @override
   String get analyzeVocalToneTitle => 'Analyze vocal tone';
 
   @override
@@ -3425,4 +3424,56 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get authorizationTimedOut => 'Authorization timed out';
+
+  @override
+  String get libraryImportant => 'Important documents';
+
+  @override
+  String get libraryTopics => 'Browse by topic';
+
+  @override
+  String get libraryOriginals => 'Original documents';
+
+  @override
+  String get libraryImport => 'Import';
+
+  @override
+  String get libraryPin => 'Pin to home';
+
+  @override
+  String get libraryUnpin => 'Unpin';
+
+  @override
+  String get libraryHide => 'Hide from home';
+
+  @override
+  String get libraryShow => 'Show on home again';
+
+  @override
+  String get libraryOpen => 'Open document';
+
+  @override
+  String get libraryOrganize => 'Organize this document';
+
+  @override
+  String get libraryOrganizeDraft =>
+      'Help me organize the following knowledge file. First ask what I want to change, then show the proposed changes for my confirmation.';
+
+  @override
+  String libraryDocCount(int count) {
+    return '$count Markdown files';
+  }
+
+  @override
+  String libraryTaskProgress(int done, int total) {
+    return '$done/$total complete';
+  }
+
+  @override
+  String libraryTopicCount(int count) {
+    return '$count documents';
+  }
+
+  @override
+  String get libraryMove => 'Move or rename';
 }

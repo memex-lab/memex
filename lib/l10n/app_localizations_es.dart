@@ -714,10 +714,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-    Object running,
-    Object pending,
-    Object retrying,
-  ) {
+      Object running, Object pending, Object retrying) {
     return 'En ejecución $running, pendientes $pending, reintentos $retrying';
   }
 
@@ -2629,6 +2626,8 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get localSpeechLanguageUnsupported =>
       'Este modelo del dispositivo no cubre ese idioma. Multilingüe incluye alemán y otros idiomas europeos. SenseVoice cubre chino, inglés, japonés, coreano y cantonés.';
+
+  @override
   String get analyzeVocalToneTitle => 'Analizar el tono de voz';
 
   @override
@@ -3477,4 +3476,56 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get authorizationTimedOut => 'La autorización expiró';
+
+  @override
+  String get libraryImportant => 'Documentos importantes';
+
+  @override
+  String get libraryTopics => 'Explorar por tema';
+
+  @override
+  String get libraryOriginals => 'Documentos originales';
+
+  @override
+  String get libraryImport => 'Importar';
+
+  @override
+  String get libraryPin => 'Fijar en el inicio';
+
+  @override
+  String get libraryUnpin => 'Desfijar';
+
+  @override
+  String get libraryHide => 'Ocultar del inicio';
+
+  @override
+  String get libraryShow => 'Mostrar en el inicio';
+
+  @override
+  String get libraryOpen => 'Abrir documento';
+
+  @override
+  String get libraryOrganize => 'Organizar documento';
+
+  @override
+  String get libraryOrganizeDraft =>
+      'Ayúdame a organizar este archivo. Pregunta qué quiero cambiar y muéstrame la propuesta para confirmarla.';
+
+  @override
+  String libraryDocCount(int count) {
+    return '$count archivos Markdown';
+  }
+
+  @override
+  String libraryTaskProgress(int done, int total) {
+    return '$done de $total completados';
+  }
+
+  @override
+  String libraryTopicCount(int count) {
+    return '$count documentos';
+  }
+
+  @override
+  String get libraryMove => 'Mover o renombrar';
 }

@@ -1539,5 +1539,20 @@
     "placeholders": {
       "week": {}
     }
-  }
+  },
+  "libraryImportant": "重要资料",
+  "libraryTopics": "按主题浏览",
+  "libraryOriginals": "原始文档",
+  "libraryImport": "导入",
+  "libraryPin": "置顶到首页",
+  "libraryUnpin": "取消置顶",
+  "libraryHide": "从首页隐藏",
+  "libraryShow": "恢复首页推荐",
+  "libraryOpen": "打开文档",
+  "libraryOrganize": "整理这份资料",
+  "libraryOrganizeDraft": "帮我整理这份知识文件。先问我想改什么，给我看修改方案，等我确认后再写入。",
+  "libraryDocCount": "{count} 个 Markdown 文件",
+  "libraryTaskProgress": "已完成 {done}/{total} 项",
+  "libraryTopicCount": "{count} 份资料",
+  "libraryMove": "移动或重命名"
 }

@@ -696,10 +696,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-    Object running,
-    Object pending,
-    Object retrying,
-  ) {
+      Object running, Object pending, Object retrying) {
     return '실행 중 $running, 대기 중 $pending, 재시도 $retrying';
   }
 
@@ -2537,6 +2534,8 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get localSpeechLanguageUnsupported =>
       '이 기기 모델은 그 언어를 다루지 않습니다. 다국어 모델에는 독일어와 다른 유럽 언어가 포함됩니다. SenseVoice는 중국어, 영어, 일본어, 한국어, 광둥어를 다룹니다.';
+
+  @override
   String get analyzeVocalToneTitle => '목소리 톤 분석';
 
   @override
@@ -3347,4 +3346,56 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get authorizationTimedOut => '인증 시간이 초과되었습니다';
+
+  @override
+  String get libraryImportant => '중요한 문서';
+
+  @override
+  String get libraryTopics => '주제별로 보기';
+
+  @override
+  String get libraryOriginals => '원본 문서';
+
+  @override
+  String get libraryImport => '가져오기';
+
+  @override
+  String get libraryPin => '홈에 고정';
+
+  @override
+  String get libraryUnpin => '고정 해제';
+
+  @override
+  String get libraryHide => '홈에서 숨기기';
+
+  @override
+  String get libraryShow => '홈에 다시 표시';
+
+  @override
+  String get libraryOpen => '문서 열기';
+
+  @override
+  String get libraryOrganize => '문서 정리';
+
+  @override
+  String get libraryOrganizeDraft =>
+      '이 파일을 정리해 주세요. 원하는 변경 내용을 먼저 묻고 저장 전에 변경안을 보여 주세요.';
+
+  @override
+  String libraryDocCount(int count) {
+    return 'Markdown 파일 $count개';
+  }
+
+  @override
+  String libraryTaskProgress(int done, int total) {
+    return '$total개 중 $done개 완료';
+  }
+
+  @override
+  String libraryTopicCount(int count) {
+    return '문서 $count개';
+  }
+
+  @override
+  String get libraryMove => '이동 또는 이름 변경';
 }

@@ -22,6 +22,6 @@ void main() {
     final vm = KnowledgeBaseViewModel(router: MemexRouter());
     addTearDown(vm.dispose);
     expect(vm.isLoading, isFalse);
-    expect(vm.recentFiles, isEmpty);
+    expect(vm.documents, isEmpty);
   });
 }

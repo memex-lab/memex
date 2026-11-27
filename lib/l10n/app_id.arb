@@ -1585,5 +1585,20 @@
     "placeholders": {
       "week": {}
     }
-  }
+  },
+  "libraryImportant": "Dokumen penting",
+  "libraryTopics": "Jelajahi menurut topik",
+  "libraryOriginals": "Dokumen asli",
+  "libraryImport": "Impor",
+  "libraryPin": "Sematkan ke beranda",
+  "libraryUnpin": "Lepas sematan",
+  "libraryHide": "Sembunyikan dari beranda",
+  "libraryShow": "Tampilkan di beranda",
+  "libraryOpen": "Buka dokumen",
+  "libraryOrganize": "Atur dokumen",
+  "libraryOrganizeDraft": "Bantu saya menata berkas ini. Tanyakan perubahan yang diinginkan dan tampilkan usulan untuk dikonfirmasi.",
+  "libraryDocCount": "{count} berkas Markdown",
+  "libraryTaskProgress": "{done} dari {total} selesai",
+  "libraryTopicCount": "{count} dokumen",
+  "libraryMove": "Pindahkan atau ganti nama"
 }

@@ -1585,5 +1585,20 @@
     "placeholders": {
       "week": {}
     }
-  }
+  },
+  "libraryImportant": "महत्वपूर्ण दस्तावेज़",
+  "libraryTopics": "विषय के अनुसार देखें",
+  "libraryOriginals": "मूल दस्तावेज़",
+  "libraryImport": "आयात करें",
+  "libraryPin": "होम पर पिन करें",
+  "libraryUnpin": "पिन हटाएँ",
+  "libraryHide": "होम से छिपाएँ",
+  "libraryShow": "होम पर दिखाएँ",
+  "libraryOpen": "दस्तावेज़ खोलें",
+  "libraryOrganize": "दस्तावेज़ व्यवस्थित करें",
+  "libraryOrganizeDraft": "इस फ़ाइल को व्यवस्थित करने में मदद करें। पहले पूछें कि मुझे क्या बदलना है और सहेजने से पहले बदलाव दिखाएँ।",
+  "libraryDocCount": "{count} Markdown फ़ाइलें",
+  "libraryTaskProgress": "{total} में से {done} पूरे",
+  "libraryTopicCount": "{count} दस्तावेज़",
+  "libraryMove": "स्थान या नाम बदलें"
 }

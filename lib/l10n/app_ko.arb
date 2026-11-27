@@ -1585,5 +1585,20 @@
     "placeholders": {
       "week": {}
     }
-  }
+  },
+  "libraryImportant": "중요한 문서",
+  "libraryTopics": "주제별로 보기",
+  "libraryOriginals": "원본 문서",
+  "libraryImport": "가져오기",
+  "libraryPin": "홈에 고정",
+  "libraryUnpin": "고정 해제",
+  "libraryHide": "홈에서 숨기기",
+  "libraryShow": "홈에 다시 표시",
+  "libraryOpen": "문서 열기",
+  "libraryOrganize": "문서 정리",
+  "libraryOrganizeDraft": "이 파일을 정리해 주세요. 원하는 변경 내용을 먼저 묻고 저장 전에 변경안을 보여 주세요.",
+  "libraryDocCount": "Markdown 파일 {count}개",
+  "libraryTaskProgress": "{total}개 중 {done}개 완료",
+  "libraryTopicCount": "문서 {count}개",
+  "libraryMove": "이동 또는 이름 변경"
 }

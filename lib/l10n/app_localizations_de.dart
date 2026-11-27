@@ -719,10 +719,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-    Object running,
-    Object pending,
-    Object retrying,
-  ) {
+      Object running, Object pending, Object retrying) {
     return '$running wird ausgeführt, $pending steht aus, $retrying erneut versuchen';
   }
 
@@ -2635,6 +2632,8 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get localSpeechLanguageUnsupported =>
       'Dieses Gerätemodell deckt diese Sprache nicht ab. Mehrsprachig enthält Deutsch und weitere europäische Sprachen. SenseVoice deckt Chinesisch, Englisch, Japanisch, Koreanisch und Kantonesisch ab.';
+
+  @override
   String get analyzeVocalToneTitle => 'Stimmton analysieren';
 
   @override
@@ -3487,4 +3486,56 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get authorizationTimedOut => 'Autorisierung abgelaufen';
+
+  @override
+  String get libraryImportant => 'Wichtige Dokumente';
+
+  @override
+  String get libraryTopics => 'Nach Thema durchsuchen';
+
+  @override
+  String get libraryOriginals => 'Originaldokumente';
+
+  @override
+  String get libraryImport => 'Importieren';
+
+  @override
+  String get libraryPin => 'An Startseite anheften';
+
+  @override
+  String get libraryUnpin => 'Loslösen';
+
+  @override
+  String get libraryHide => 'Auf Startseite ausblenden';
+
+  @override
+  String get libraryShow => 'Auf Startseite anzeigen';
+
+  @override
+  String get libraryOpen => 'Dokument öffnen';
+
+  @override
+  String get libraryOrganize => 'Dokument organisieren';
+
+  @override
+  String get libraryOrganizeDraft =>
+      'Hilf mir, diese Datei zu organisieren. Frage nach den gewünschten Änderungen und zeige mir einen Vorschlag zur Bestätigung.';
+
+  @override
+  String libraryDocCount(int count) {
+    return '$count Markdown-Dateien';
+  }
+
+  @override
+  String libraryTaskProgress(int done, int total) {
+    return '$done von $total erledigt';
+  }
+
+  @override
+  String libraryTopicCount(int count) {
+    return '$count Dokumente';
+  }
+
+  @override
+  String get libraryMove => 'Verschieben oder umbenennen';
 }

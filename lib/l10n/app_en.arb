@@ -1585,5 +1585,44 @@
   },
   "taskCompletedLabel": "Completed: {date}",
   "oauthCouldNotLaunchBrowser": "Could not launch browser for OAuth",
-  "authorizationTimedOut": "Authorization timed out"
+  "authorizationTimedOut": "Authorization timed out",
+  "libraryImportant": "Important documents",
+  "libraryTopics": "Browse by topic",
+  "libraryOriginals": "Original documents",
+  "libraryImport": "Import",
+  "libraryPin": "Pin to home",
+  "libraryUnpin": "Unpin",
+  "libraryHide": "Hide from home",
+  "libraryShow": "Show on home again",
+  "libraryOpen": "Open document",
+  "libraryOrganize": "Organize this document",
+  "libraryOrganizeDraft": "Help me organize the following knowledge file. First ask what I want to change, then show the proposed changes for my confirmation.",
+  "libraryDocCount": "{count} Markdown files",
+  "@libraryDocCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "libraryTaskProgress": "{done}/{total} complete",
+  "@libraryTaskProgress": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "libraryTopicCount": "{count} documents",
+  "@libraryTopicCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "libraryMove": "Move or rename"
 }

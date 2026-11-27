@@ -707,10 +707,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-    Object running,
-    Object pending,
-    Object retrying,
-  ) {
+      Object running, Object pending, Object retrying) {
     return 'चल रहे $running, लंबित $pending, पुनः प्रयास $retrying';
   }
 
@@ -2597,6 +2594,8 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get localSpeechLanguageUnsupported =>
       'यह ऑन डिवाइस मॉडल उस भाषा को नहीं कवर करता। बहुभाषी में जर्मन और अन्य यूरोपीय भाषाएँ हैं। SenseVoice चीनी, अंग्रेज़ी, जापानी, कोरियाई और कैंटोनीज़ को कवर करता है।';
+
+  @override
   String get analyzeVocalToneTitle => 'स्वर का विश्लेषण';
 
   @override
@@ -3435,4 +3434,56 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get authorizationTimedOut => 'प्राधिकरण समय समाप्त';
+
+  @override
+  String get libraryImportant => 'महत्वपूर्ण दस्तावेज़';
+
+  @override
+  String get libraryTopics => 'विषय के अनुसार देखें';
+
+  @override
+  String get libraryOriginals => 'मूल दस्तावेज़';
+
+  @override
+  String get libraryImport => 'आयात करें';
+
+  @override
+  String get libraryPin => 'होम पर पिन करें';
+
+  @override
+  String get libraryUnpin => 'पिन हटाएँ';
+
+  @override
+  String get libraryHide => 'होम से छिपाएँ';
+
+  @override
+  String get libraryShow => 'होम पर दिखाएँ';
+
+  @override
+  String get libraryOpen => 'दस्तावेज़ खोलें';
+
+  @override
+  String get libraryOrganize => 'दस्तावेज़ व्यवस्थित करें';
+
+  @override
+  String get libraryOrganizeDraft =>
+      'इस फ़ाइल को व्यवस्थित करने में मदद करें। पहले पूछें कि मुझे क्या बदलना है और सहेजने से पहले बदलाव दिखाएँ।';
+
+  @override
+  String libraryDocCount(int count) {
+    return '$count Markdown फ़ाइलें';
+  }
+
+  @override
+  String libraryTaskProgress(int done, int total) {
+    return '$total में से $done पूरे';
+  }
+
+  @override
+  String libraryTopicCount(int count) {
+    return '$count दस्तावेज़';
+  }
+
+  @override
+  String get libraryMove => 'स्थान या नाम बदलें';
 }

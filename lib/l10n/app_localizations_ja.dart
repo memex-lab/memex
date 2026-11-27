@@ -696,10 +696,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-    Object running,
-    Object pending,
-    Object retrying,
-  ) {
+      Object running, Object pending, Object retrying) {
     return '実行中 $running、保留中 $pending、再試行 $retrying';
   }
 
@@ -2537,6 +2534,8 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get localSpeechLanguageUnsupported =>
       'この端末内モデルはその言語に対応していません。多言語モデルはドイツ語と他のヨーロッパ言語を含みます。SenseVoice は中国語、英語、日本語、韓国語、広東語に対応します。';
+
+  @override
   String get analyzeVocalToneTitle => '声の調子を分析';
 
   @override
@@ -3348,4 +3347,56 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get authorizationTimedOut => '認証がタイムアウトしました';
+
+  @override
+  String get libraryImportant => '重要な資料';
+
+  @override
+  String get libraryTopics => 'トピックから探す';
+
+  @override
+  String get libraryOriginals => '元の文書';
+
+  @override
+  String get libraryImport => '読み込む';
+
+  @override
+  String get libraryPin => 'ホームに固定';
+
+  @override
+  String get libraryUnpin => '固定を解除';
+
+  @override
+  String get libraryHide => 'ホームで非表示';
+
+  @override
+  String get libraryShow => 'ホームに再表示';
+
+  @override
+  String get libraryOpen => '文書を開く';
+
+  @override
+  String get libraryOrganize => '資料を整理';
+
+  @override
+  String get libraryOrganizeDraft =>
+      'このファイルを整理してください。希望する変更を聞き、書き込む前に変更案を見せてください。';
+
+  @override
+  String libraryDocCount(int count) {
+    return 'Markdown ファイル $count 件';
+  }
+
+  @override
+  String libraryTaskProgress(int done, int total) {
+    return '$total 件中 $done 件完了';
+  }
+
+  @override
+  String libraryTopicCount(int count) {
+    return '資料 $count 件';
+  }
+
+  @override
+  String get libraryMove => '移動または名前を変更';
 }

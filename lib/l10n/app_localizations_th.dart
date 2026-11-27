@@ -704,10 +704,7 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-    Object running,
-    Object pending,
-    Object retrying,
-  ) {
+      Object running, Object pending, Object retrying) {
     return 'กำลังทำงาน $running, รอดำเนินการ $pending, ลองใหม่ $retrying';
   }
 
@@ -2587,6 +2584,8 @@ class AppLocalizationsTh extends AppLocalizations {
   @override
   String get localSpeechLanguageUnsupported =>
       'โมเดลในเครื่องนี้ไม่ครอบคลุมภาษานั้น หลายภาษารวมเยอรมันและภาษายุโรปอื่น SenseVoice ครอบคลุมจีน อังกฤษ ญี่ปุ่น เกาหลี และกวางตุ้ง';
+
+  @override
   String get analyzeVocalToneTitle => 'วิเคราะห์น้ำเสียง';
 
   @override
@@ -3417,4 +3416,56 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get authorizationTimedOut => 'การอนุญาตหมดเวลา';
+
+  @override
+  String get libraryImportant => 'เอกสารสำคัญ';
+
+  @override
+  String get libraryTopics => 'เรียกดูตามหัวข้อ';
+
+  @override
+  String get libraryOriginals => 'เอกสารต้นฉบับ';
+
+  @override
+  String get libraryImport => 'นำเข้า';
+
+  @override
+  String get libraryPin => 'ปักหมุดที่หน้าแรก';
+
+  @override
+  String get libraryUnpin => 'เลิกปักหมุด';
+
+  @override
+  String get libraryHide => 'ซ่อนจากหน้าแรก';
+
+  @override
+  String get libraryShow => 'แสดงที่หน้าแรก';
+
+  @override
+  String get libraryOpen => 'เปิดเอกสาร';
+
+  @override
+  String get libraryOrganize => 'จัดระเบียบเอกสาร';
+
+  @override
+  String get libraryOrganizeDraft =>
+      'ช่วยจัดระเบียบไฟล์นี้ ถามก่อนว่าต้องการแก้อะไรและแสดงข้อเสนอเพื่อยืนยันก่อนบันทึก';
+
+  @override
+  String libraryDocCount(int count) {
+    return 'ไฟล์ Markdown $count ไฟล์';
+  }
+
+  @override
+  String libraryTaskProgress(int done, int total) {
+    return 'เสร็จแล้ว $done จาก $total';
+  }
+
+  @override
+  String libraryTopicCount(int count) {
+    return 'เอกสาร $count ฉบับ';
+  }
+
+  @override
+  String get libraryMove => 'ย้ายหรือเปลี่ยนชื่อ';
 }

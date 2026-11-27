@@ -78,7 +78,7 @@ import 'app_localizations_zh.dart';
 /// property.
 abstract class AppLocalizations {
   AppLocalizations(String locale)
-    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -101,11 +101,11 @@ abstract class AppLocalizations {
   /// of delegates is preferred or required.
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
       <LocalizationsDelegate<dynamic>>[
-        delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-      ];
+    delegate,
+    GlobalMaterialLocalizations.delegate,
+    GlobalCupertinoLocalizations.delegate,
+    GlobalWidgetsLocalizations.delegate,
+  ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
@@ -126,7 +126,7 @@ abstract class AppLocalizations {
     Locale('tr'),
     Locale('vi'),
     Locale('zh'),
-    Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant'),
+    Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant')
   ];
 
   /// No description provided for @chatThinkingMessage.
@@ -1382,10 +1382,7 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Running {running}, Pending {pending}, Retry {retrying}'**
   String agentBackgroundTaskSummary(
-    Object running,
-    Object pending,
-    Object retrying,
-  );
+      Object running, Object pending, Object retrying);
 
   /// No description provided for @agentBackgroundTaskDetail.
   ///
@@ -4716,6 +4713,7 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This on-device model does not cover that language. Multilingual includes German and other European languages. SenseVoice covers Chinese, English, Japanese, Korean, and Cantonese.'**
   String get localSpeechLanguageUnsupported;
+
   /// No description provided for @analyzeVocalToneTitle.
   ///
   /// In en, this message translates to:
@@ -6173,6 +6171,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Authorization timed out'**
   String get authorizationTimedOut;
+
+  /// No description provided for @libraryImportant.
+  ///
+  /// In en, this message translates to:
+  /// **'Important documents'**
+  String get libraryImportant;
+
+  /// No description provided for @libraryTopics.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse by topic'**
+  String get libraryTopics;
+
+  /// No description provided for @libraryOriginals.
+  ///
+  /// In en, this message translates to:
+  /// **'Original documents'**
+  String get libraryOriginals;
+
+  /// No description provided for @libraryImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Import'**
+  String get libraryImport;
+
+  /// No description provided for @libraryPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Pin to home'**
+  String get libraryPin;
+
+  /// No description provided for @libraryUnpin.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpin'**
+  String get libraryUnpin;
+
+  /// No description provided for @libraryHide.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide from home'**
+  String get libraryHide;
+
+  /// No description provided for @libraryShow.
+  ///
+  /// In en, this message translates to:
+  /// **'Show on home again'**
+  String get libraryShow;
+
+  /// No description provided for @libraryOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open document'**
+  String get libraryOpen;
+
+  /// No description provided for @libraryOrganize.
+  ///
+  /// In en, this message translates to:
+  /// **'Organize this document'**
+  String get libraryOrganize;
+
+  /// No description provided for @libraryOrganizeDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Help me organize the following knowledge file. First ask what I want to change, then show the proposed changes for my confirmation.'**
+  String get libraryOrganizeDraft;
+
+  /// No description provided for @libraryDocCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} Markdown files'**
+  String libraryDocCount(int count);
+
+  /// No description provided for @libraryTaskProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{done}/{total} complete'**
+  String libraryTaskProgress(int done, int total);
+
+  /// No description provided for @libraryTopicCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} documents'**
+  String libraryTopicCount(int count);
+
+  /// No description provided for @libraryMove.
+  ///
+  /// In en, this message translates to:
+  /// **'Move or rename'**
+  String get libraryMove;
 }
 
 class _AppLocalizationsDelegate
@@ -6186,24 +6274,24 @@ class _AppLocalizationsDelegate
 
   @override
   bool isSupported(Locale locale) => <String>[
-    'ar',
-    'de',
-    'en',
-    'es',
-    'fa',
-    'fr',
-    'hi',
-    'id',
-    'it',
-    'ja',
-    'ko',
-    'pt',
-    'ru',
-    'th',
-    'tr',
-    'vi',
-    'zh',
-  ].contains(locale.languageCode);
+        'ar',
+        'de',
+        'en',
+        'es',
+        'fa',
+        'fr',
+        'hi',
+        'id',
+        'it',
+        'ja',
+        'ko',
+        'pt',
+        'ru',
+        'th',
+        'tr',
+        'vi',
+        'zh'
+      ].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -6261,9 +6349,8 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   }
 
   throw FlutterError(
-    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-    'an issue with the localizations generation tool. Please file an issue '
-    'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.',
-  );
+      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+      'an issue with the localizations generation tool. Please file an issue '
+      'on GitHub with a reproducible sample app and the gen-l10n configuration '
+      'that was used.');
 }

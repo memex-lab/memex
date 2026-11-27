@@ -1585,5 +1585,20 @@
   },
   "taskCompletedLabel": "Hoàn thành: {date}",
   "oauthCouldNotLaunchBrowser": "Không thể mở trình duyệt cho OAuth",
-  "authorizationTimedOut": "Ủy quyền đã hết hạn"
+  "authorizationTimedOut": "Ủy quyền đã hết hạn",
+  "libraryImportant": "Tài liệu quan trọng",
+  "libraryTopics": "Duyệt theo chủ đề",
+  "libraryOriginals": "Tài liệu gốc",
+  "libraryImport": "Nhập",
+  "libraryPin": "Ghim vào trang chủ",
+  "libraryUnpin": "Bỏ ghim",
+  "libraryHide": "Ẩn khỏi trang chủ",
+  "libraryShow": "Hiện trên trang chủ",
+  "libraryOpen": "Mở tài liệu",
+  "libraryOrganize": "Sắp xếp tài liệu",
+  "libraryOrganizeDraft": "Giúp tôi sắp xếp tệp này. Hãy hỏi tôi muốn thay đổi gì và cho tôi xem đề xuất để xác nhận trước khi lưu.",
+  "libraryDocCount": "{count} tệp Markdown",
+  "libraryTaskProgress": "Hoàn thành {done}/{total}",
+  "libraryTopicCount": "{count} tài liệu",
+  "libraryMove": "Di chuyển hoặc đổi tên"
 }

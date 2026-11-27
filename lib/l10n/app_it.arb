@@ -1583,5 +1583,20 @@
   },
   "taskCompletedLabel": "Completato: {date}",
   "oauthCouldNotLaunchBrowser": "Impossibile aprire il browser per OAuth",
-  "authorizationTimedOut": "Autorizzazione scaduta"
+  "authorizationTimedOut": "Autorizzazione scaduta",
+  "libraryImportant": "Documenti importanti",
+  "libraryTopics": "Sfoglia per argomento",
+  "libraryOriginals": "Documenti originali",
+  "libraryImport": "Importa",
+  "libraryPin": "Fissa nella home",
+  "libraryUnpin": "Rimuovi dai fissati",
+  "libraryHide": "Nascondi dalla home",
+  "libraryShow": "Mostra nella home",
+  "libraryOpen": "Apri documento",
+  "libraryOrganize": "Organizza documento",
+  "libraryOrganizeDraft": "Aiutami a organizzare questo file. Chiedimi cosa cambiare e mostrami la proposta da confermare.",
+  "libraryDocCount": "{count} file Markdown",
+  "libraryTaskProgress": "{done} di {total} completati",
+  "libraryTopicCount": "{count} documenti",
+  "libraryMove": "Sposta o rinomina"
 }

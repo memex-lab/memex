@@ -711,10 +711,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-    Object running,
-    Object pending,
-    Object retrying,
-  ) {
+      Object running, Object pending, Object retrying) {
     return 'Çalıştırılıyor $running, Beklemede $pending, Yeniden Dene $retrying';
   }
 
@@ -2611,6 +2608,8 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get localSpeechLanguageUnsupported =>
       'Cihazdaki bu model o dili kapsamaz. Çok dilli model Almanca ve diğer Avrupa dillerini içerir. SenseVoice Çince, İngilizce, Japonca, Korece ve Kantonca kapsar.';
+
+  @override
   String get analyzeVocalToneTitle => 'Ses tonunu çözümle';
 
   @override
@@ -3447,4 +3446,56 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get authorizationTimedOut => 'Yetkilendirme zaman aşımına uğradı';
+
+  @override
+  String get libraryImportant => 'Önemli belgeler';
+
+  @override
+  String get libraryTopics => 'Konulara göz at';
+
+  @override
+  String get libraryOriginals => 'Orijinal belgeler';
+
+  @override
+  String get libraryImport => 'İçe aktar';
+
+  @override
+  String get libraryPin => 'Ana sayfaya sabitle';
+
+  @override
+  String get libraryUnpin => 'Sabitlemeyi kaldır';
+
+  @override
+  String get libraryHide => 'Ana sayfada gizle';
+
+  @override
+  String get libraryShow => 'Ana sayfada göster';
+
+  @override
+  String get libraryOpen => 'Belgeyi aç';
+
+  @override
+  String get libraryOrganize => 'Belgeyi düzenle';
+
+  @override
+  String get libraryOrganizeDraft =>
+      'Bu dosyayı düzenlememe yardım et. Önce neyi değiştirmek istediğimi sor ve kaydetmeden önce öneriyi onayıma sun.';
+
+  @override
+  String libraryDocCount(int count) {
+    return '$count Markdown dosyası';
+  }
+
+  @override
+  String libraryTaskProgress(int done, int total) {
+    return '$total öğeden $done tanesi tamamlandı';
+  }
+
+  @override
+  String libraryTopicCount(int count) {
+    return '$count belge';
+  }
+
+  @override
+  String get libraryMove => 'Taşı veya yeniden adlandır';
 }

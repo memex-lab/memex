@@ -710,10 +710,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-    Object running,
-    Object pending,
-    Object retrying,
-  ) {
+      Object running, Object pending, Object retrying) {
     return 'Berjalan $running, Tertunda $pending, Coba ulang $retrying';
   }
 
@@ -2610,6 +2607,8 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get localSpeechLanguageUnsupported =>
       'Model di perangkat ini tidak mencakup bahasa itu. Multibahasa mencakup Jerman dan bahasa Eropa lain. SenseVoice mencakup Tionghoa, Inggris, Jepang, Korea, dan Kanton.';
+
+  @override
   String get analyzeVocalToneTitle => 'Analisis nada suara';
 
   @override
@@ -3445,4 +3444,56 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get authorizationTimedOut => 'Otorisasi habis waktu';
+
+  @override
+  String get libraryImportant => 'Dokumen penting';
+
+  @override
+  String get libraryTopics => 'Jelajahi menurut topik';
+
+  @override
+  String get libraryOriginals => 'Dokumen asli';
+
+  @override
+  String get libraryImport => 'Impor';
+
+  @override
+  String get libraryPin => 'Sematkan ke beranda';
+
+  @override
+  String get libraryUnpin => 'Lepas sematan';
+
+  @override
+  String get libraryHide => 'Sembunyikan dari beranda';
+
+  @override
+  String get libraryShow => 'Tampilkan di beranda';
+
+  @override
+  String get libraryOpen => 'Buka dokumen';
+
+  @override
+  String get libraryOrganize => 'Atur dokumen';
+
+  @override
+  String get libraryOrganizeDraft =>
+      'Bantu saya menata berkas ini. Tanyakan perubahan yang diinginkan dan tampilkan usulan untuk dikonfirmasi.';
+
+  @override
+  String libraryDocCount(int count) {
+    return '$count berkas Markdown';
+  }
+
+  @override
+  String libraryTaskProgress(int done, int total) {
+    return '$done dari $total selesai';
+  }
+
+  @override
+  String libraryTopicCount(int count) {
+    return '$count dokumen';
+  }
+
+  @override
+  String get libraryMove => 'Pindahkan atau ganti nama';
 }

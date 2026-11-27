@@ -7,7 +7,9 @@ import 'package:path/path.dart' as path;
 class KnowledgeFileCard extends StatelessWidget {
   final Map<String, dynamic> item;
 
+  final VoidCallback? onReturn;
   const KnowledgeFileCard({
+    this.onReturn,
     super.key,
     required this.item,
   });
@@ -19,14 +21,15 @@ class KnowledgeFileCard extends StatelessWidget {
     final bool isAiGenerated = item['is_ai_generated'] ?? true;
 
     return GestureDetector(
-      onTap: () {
+      onTap: () async {
         if (isMd) {
-          Navigator.push(
+          await Navigator.push(
             context,
             MaterialPageRoute(
               builder: (_) => KnowledgeFilePage(filePath: item['path']),
             ),
           );
+          onReturn?.call();
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(UserStorage.l10n.onlyMarkdownPreview)),

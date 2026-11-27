@@ -39,8 +39,44 @@ enum StorageLocation {
 
 /// User storage: userId persistence and per-user workspace storage preference.
 class UserStorage {
+  static const _libraryPinsPrefix = 'library.pins.';
+  static const _libraryHiddenPrefix = 'library.hidden.';
+  static const _libraryVisitsPrefix = 'library.visits.';
+
+  static Future<List<String>> libraryChoices(String user,
+          {required bool pins}) async =>
+      (await sharedPrefs())
+          .getStringList(_libraryChoicesKey(user, pins: pins)) ??
+      [];
+
+  static Future<void> saveLibraryChoices(String user, List<String> paths,
+      {required bool pins}) async {
+    if (!await (await sharedPrefs())
+        .setStringList(_libraryChoicesKey(user, pins: pins), paths)) {
+      throw StateError('Unable to save library preference');
+    }
+  }
+
+  static String _libraryChoicesKey(String user, {required bool pins}) =>
+      '${pins ? _libraryPinsPrefix : _libraryHiddenPrefix}$user';
+
+  // Bounded local history for ranking documents the user returns to.
+  static Future<List<String>> libraryVisits(String user) async =>
+      (await sharedPrefs()).getStringList('$_libraryVisitsPrefix$user') ?? [];
+
+  static Future<List<String>> recordLibraryVisit(
+      String user, String path) async {
+    final prefs = await sharedPrefs();
+    final key = '$_libraryVisitsPrefix$user';
+    final next = [path, ...?prefs.getStringList(key)].take(40).toList();
+    if (!await prefs.setStringList(key, next)) {
+      throw StateError('Unable to save library visit');
+    }
+    return next;
+  }
+
   static AppLocalizationsExt? _l10n;
-  static const String _keyUserId = 'user_id';
+  static const String userIdPreferenceKey = 'user_id';
   static const String _keyPhotoSuggestionCache = 'photo_suggestion_cache';
   static const String _keyUserAvatar = 'user_avatar';
   static const String _keyLocationContextConfig = 'location_context_config';
@@ -67,6 +103,31 @@ class UserStorage {
       'memex_android_backup_tree_uri_';
   static const String _keyAndroidBackupTreeNamePrefix =
       'memex_android_backup_tree_name_';
+
+  static const _perUserPreferencePrefixes = [
+    _keyLatestSuperAgentHomeSessionIdPrefix,
+    _keyMemexAgentNotificationPermissionPromptedPrefix,
+    _keyStorageLocationPrefix,
+    _keyCustomDataRootPathPrefix,
+    _keyAutoBackupEnabledPrefix,
+    _keyAutoBackupRetentionDaysPrefix,
+    _keyAutoBackupMaxBytesPrefix,
+    _keyLastAutoBackupAtPrefix,
+    _keyLastAutoBackupFingerprintPrefix,
+    _keyAndroidBackupTreeUriPrefix,
+    _keyAndroidBackupTreeNamePrefix,
+    _libraryPinsPrefix,
+    _libraryHiddenPrefix,
+    _libraryVisitsPrefix,
+  ];
+
+  /// With no account ID, every account-scoped preference is excluded.
+  static bool isPreferenceForAnotherUser(String key, String? userId) =>
+      _perUserPreferencePrefixes.any(
+        (prefix) =>
+            key.startsWith(prefix) &&
+            (userId == null || key != '$prefix$userId'),
+      );
 
   static const int defaultAutoBackupRetentionDays = 30;
   static const int autoBackupRetentionForever = -1;
@@ -236,7 +297,7 @@ class UserStorage {
   static Future<String?> getUserId() async {
     try {
       final prefs = await sharedPrefs();
-      final userId = prefs.getString(_keyUserId);
+      final userId = prefs.getString(userIdPreferenceKey);
       if (userId == null || userId.trim().isEmpty) return null;
       return userId;
     } catch (e) {
@@ -250,7 +311,7 @@ class UserStorage {
   static Future<void> saveUser(String userId) async {
     try {
       final prefs = await sharedPrefs();
-      if (!await prefs.setString(_keyUserId, userId)) {
+      if (!await prefs.setString(userIdPreferenceKey, userId)) {
         throw StateError('Could not save local account');
       }
     } catch (e) {
@@ -261,7 +322,8 @@ class UserStorage {
   /// Clear user info (used on logout)
   static Future<void> clearUser() async {
     final prefs = await sharedPrefs();
-    if (prefs.containsKey(_keyUserId) && !await prefs.remove(_keyUserId)) {
+    if (prefs.containsKey(userIdPreferenceKey) &&
+        !await prefs.remove(userIdPreferenceKey)) {
       throw StateError('Could not clear local account');
     }
   }
@@ -1006,7 +1068,7 @@ class UserStorage {
       final avatar = prefs.getString(_keyUserAvatar);
       if (avatar != null && _isLegacyEmoji(avatar)) {
         // Migrate: replace emoji with user's nickname as seed
-        final userId = prefs.getString(_keyUserId);
+        final userId = prefs.getString(userIdPreferenceKey);
         final seed =
             (userId != null && userId.isNotEmpty) ? userId : defaultAvatarSeed;
         await prefs.setString(_keyUserAvatar, seed);
@@ -1358,30 +1420,16 @@ class UserStorage {
   /// Reset this installation's settings and keep other accounts' workspace preferences.
   static Future<void> clearAllData({required String userId}) async {
     final prefs = await sharedPrefs();
-    const perUserPrefixes = [
-      _keyLatestSuperAgentHomeSessionIdPrefix,
-      _keyMemexAgentNotificationPermissionPromptedPrefix,
-      _keyStorageLocationPrefix,
-      _keyCustomDataRootPathPrefix,
-      _keyAutoBackupEnabledPrefix,
-      _keyAutoBackupRetentionDaysPrefix,
-      _keyAutoBackupMaxBytesPrefix,
-      _keyLastAutoBackupAtPrefix,
-      _keyLastAutoBackupFingerprintPrefix,
-      _keyAndroidBackupTreeUriPrefix,
-      _keyAndroidBackupTreeNamePrefix,
-    ];
     for (final key in prefs.getKeys()) {
-      if (key == _keyUserId) continue;
-      final belongsToAnotherAccount = perUserPrefixes.any(
-        (prefix) => key.startsWith(prefix) && key != '$prefix$userId',
-      );
-      if (belongsToAnotherAccount) continue;
+      if (key == userIdPreferenceKey ||
+          isPreferenceForAnotherUser(key, userId)) {
+        continue;
+      }
       if (!await prefs.remove(key)) {
         throw StateError('Could not reset local settings');
       }
     }
-    if (!await prefs.remove(_keyUserId)) {
+    if (!await prefs.remove(userIdPreferenceKey)) {
       throw StateError('Could not clear local account');
     }
   }

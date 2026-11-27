@@ -1585,5 +1585,20 @@
   },
   "taskCompletedLabel": "تکمیل‌شده: {date}",
   "oauthCouldNotLaunchBrowser": "امکان راه‌اندازی مرورگر برای OAuth وجود ندارد",
-  "authorizationTimedOut": "مهلت مجوز به پایان رسید"
+  "authorizationTimedOut": "مهلت مجوز به پایان رسید",
+  "libraryImportant": "سندهای مهم",
+  "libraryTopics": "مرور بر اساس موضوع",
+  "libraryOriginals": "سندهای اصلی",
+  "libraryImport": "وارد کردن",
+  "libraryPin": "سنجاق به خانه",
+  "libraryUnpin": "برداشتن سنجاق",
+  "libraryHide": "پنهان کردن از خانه",
+  "libraryShow": "نمایش در خانه",
+  "libraryOpen": "باز کردن سند",
+  "libraryOrganize": "مرتب کردن سند",
+  "libraryOrganizeDraft": "در مرتب کردن این پرونده کمک کن. ابتدا بپرس چه تغییری می‌خواهم و پیش از ذخیره پیشنهادت را برای تأیید نشان بده.",
+  "libraryDocCount": "{count} پروندهٔ Markdown",
+  "libraryTaskProgress": "{done} از {total} انجام شده",
+  "libraryTopicCount": "{count} سند",
+  "libraryMove": "جابجایی یا تغییر نام"
 }

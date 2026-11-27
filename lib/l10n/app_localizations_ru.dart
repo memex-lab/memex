@@ -713,10 +713,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String agentBackgroundTaskSummary(
-    Object running,
-    Object pending,
-    Object retrying,
-  ) {
+      Object running, Object pending, Object retrying) {
     return 'Выполняется $running, ожидает $pending, повтор $retrying';
   }
 
@@ -2613,6 +2610,8 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get localSpeechLanguageUnsupported =>
       'Эта модель на устройстве не покрывает этот язык. Многоязычная включает немецкий и другие европейские языки. SenseVoice покрывает китайский, английский, японский, корейский и кантонский.';
+
+  @override
   String get analyzeVocalToneTitle => 'Анализировать тон голоса';
 
   @override
@@ -3453,4 +3452,56 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get authorizationTimedOut => 'Время авторизации истекло';
+
+  @override
+  String get libraryImportant => 'Важные документы';
+
+  @override
+  String get libraryTopics => 'Просмотр по темам';
+
+  @override
+  String get libraryOriginals => 'Исходные документы';
+
+  @override
+  String get libraryImport => 'Импорт';
+
+  @override
+  String get libraryPin => 'Закрепить на главной';
+
+  @override
+  String get libraryUnpin => 'Открепить';
+
+  @override
+  String get libraryHide => 'Скрыть с главной';
+
+  @override
+  String get libraryShow => 'Показать на главной';
+
+  @override
+  String get libraryOpen => 'Открыть документ';
+
+  @override
+  String get libraryOrganize => 'Упорядочить документ';
+
+  @override
+  String get libraryOrganizeDraft =>
+      'Помоги мне упорядочить этот файл. Уточни, что изменить, и покажи изменения для подтверждения.';
+
+  @override
+  String libraryDocCount(int count) {
+    return 'Файлы Markdown: $count';
+  }
+
+  @override
+  String libraryTaskProgress(int done, int total) {
+    return 'Выполнено $done из $total';
+  }
+
+  @override
+  String libraryTopicCount(int count) {
+    return 'Документы: $count';
+  }
+
+  @override
+  String get libraryMove => 'Переместить или переименовать';
 }

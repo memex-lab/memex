@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../view_models/knowledge_base_viewmodel.dart';
 import 'package:memex/utils/result.dart';
 import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/ui/knowledge/widgets/knowledge/knowledge_file_card.dart';
@@ -28,6 +30,9 @@ class _KnowledgeDirectoryPageState extends State<KnowledgeDirectoryPage> {
   void initState() {
     super.initState();
     _fetchResult();
+    if (widget.path.isNotEmpty) {
+      context.read<KnowledgeBaseViewModel?>()?.opened('${widget.path}/');
+    }
   }
 
   Future<void> _fetchResult() async {
@@ -98,7 +103,10 @@ class _KnowledgeDirectoryPageState extends State<KnowledgeDirectoryPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FA),
       appBar: AppBar(
-        title: Text(widget.path,
+        title: Text(
+            widget.path.isEmpty
+                ? UserStorage.l10n.libraryOriginals
+                : widget.path,
             style: const TextStyle(
                 color: Color(0xFF1E293B),
                 fontSize: 20,
@@ -114,6 +122,7 @@ class _KnowledgeDirectoryPageState extends State<KnowledgeDirectoryPage> {
               folders: _folders,
               files: _files,
               folderBuilder: _buildFolderCard,
+              onReturn: _fetchResult,
             ),
     );
   }
@@ -184,10 +193,12 @@ class KnowledgeDirectoryBody extends StatelessWidget {
     required this.folders,
     required this.files,
     required this.folderBuilder,
+    this.onReturn,
   });
 
   final List<Map<String, dynamic>> folders;
   final List<Map<String, dynamic>> files;
+  final VoidCallback? onReturn;
   final Widget Function(Map<String, dynamic> item) folderBuilder;
 
   @override
@@ -212,7 +223,8 @@ class KnowledgeDirectoryBody extends StatelessWidget {
         if (index < folders.length) {
           return folderBuilder(folders[index]);
         }
-        return KnowledgeFileCard(item: files[index - folders.length]);
+        return KnowledgeFileCard(
+            item: files[index - folders.length], onReturn: onReturn);
       },
     );
   }
