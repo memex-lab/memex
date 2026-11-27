@@ -9,6 +9,7 @@ import 'package:memex/ui/settings/widgets/data_import_page.dart';
 import 'package:memex/utils/user_storage.dart';
 import 'knowledge_directory_page.dart';
 import 'knowledge_file_page.dart';
+import 'knowledge_folder_grid.dart';
 import 'knowledge_search_delegate.dart';
 
 class KnowledgeBaseScreen extends StatefulWidget {
@@ -93,6 +94,10 @@ class KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
                           TextButton(
                               onPressed: () => vm.fetchData(forceRefresh: true),
                               child: Text(l.dataLoadFailedRetry)),
+                        const SizedBox(height: 16),
+                        KnowledgeFolderGrid(
+                            folders: vm.frequentFolders,
+                            rootCounts: vm.rootCounts),
                         if (featured.isNotEmpty) ...[
                           _heading(l.libraryImportant),
                           _group([

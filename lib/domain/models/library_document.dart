@@ -132,7 +132,7 @@ class LibraryDocument {
           openTasks: openTasks,
           totalTasks: totalTasks,
           items: items,
-          modified: newest);
+          modified: newest > modified ? newest : modified);
 
   int get usefulness =>
       (totalTasks > 0 || items >= 2 ? 3 : 0) +
@@ -177,5 +177,64 @@ class LibraryDocument {
       if (selected.length == 3) break;
     }
     return selected;
+  }
+}
+
+/// A real directory surfaced on the home grid. Documents in nested folders
+/// roll up to the first personal directory beneath a PARA root.
+class LibraryFolder {
+  LibraryFolder._(this.path, this.latest);
+
+  final String path;
+  String get name => p.posix.basename(path);
+  LibraryDocument latest;
+  int documentCount = 0;
+  int _visits = 0;
+  final _sources = <String>{};
+
+  static String? _personalFolder(String directory) {
+    final parts = p.posix.split(directory);
+    if (parts.isEmpty) return null;
+    final depth = LibraryDocument._roots.contains(parts.first) ? 2 : 1;
+    if (directory == '.' || parts.length < depth) return null;
+    return parts.take(depth).join('/');
+  }
+
+  static List<LibraryFolder> frequent(
+      List<LibraryDocument> documents, List<String> visits) {
+    final folders = <String, LibraryFolder>{};
+    final documentFolders = <String, LibraryFolder>{};
+    for (final doc in documents) {
+      final path = _personalFolder(p.posix.dirname(doc.path));
+      if (path == null) continue;
+      final folder =
+          folders.putIfAbsent(path, () => LibraryFolder._(path, doc));
+      documentFolders[doc.path] = folder;
+      folder.documentCount++;
+      folder._sources.addAll(doc.sources);
+      if (doc.modified > folder.latest.modified ||
+          (doc.modified == folder.latest.modified &&
+              doc.path.compareTo(folder.latest.path) < 0)) {
+        folder.latest = doc;
+      }
+    }
+    for (final visit in visits) {
+      final folder = visit.endsWith('/')
+          ? folders[_personalFolder(visit)]
+          : documentFolders[visit];
+      if (folder != null) folder._visits++;
+    }
+    final ranked = folders.values.toList()
+      ..sort((a, b) {
+        final comparisons = [
+          b._visits.compareTo(a._visits),
+          b._sources.length.compareTo(a._sources.length),
+          b.documentCount.compareTo(a.documentCount),
+          b.latest.modified.compareTo(a.latest.modified),
+          a.path.compareTo(b.path),
+        ];
+        return comparisons.firstWhere((value) => value != 0, orElse: () => 0);
+      });
+    return ranked.take(4).toList();
   }
 }

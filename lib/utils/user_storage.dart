@@ -59,9 +59,12 @@ class UserStorage {
 
   static Future<List<String>> recordLibraryVisit(
       String user, String path) async {
-    final visits = await libraryVisits(user);
-    final next = [path, ...visits].take(40).toList();
-    await (await sharedPrefs()).setStringList('library.visits.$user', next);
+    final prefs = await sharedPrefs();
+    final key = 'library.visits.$user';
+    final next = [path, ...?prefs.getStringList(key)].take(40).toList();
+    if (!await prefs.setStringList(key, next)) {
+      throw StateError('Unable to save library visit');
+    }
     return next;
   }
 

@@ -21,6 +21,17 @@ class KnowledgeBaseViewModel extends ChangeNotifier {
   String get _subscription => 'library_home_${identityHashCode(this)}';
   List<LibraryDocument> get featured =>
       LibraryDocument.highlights(documents, pinned, hidden, visits: _visits);
+  List<LibraryFolder> get frequentFolders =>
+      LibraryFolder.frequent(documents, _visits);
+  Map<String, int> get rootCounts {
+    final counts = <String, int>{};
+    for (final doc in documents) {
+      final root = doc.path.split('/').first;
+      counts.update(root, (count) => count + 1, ifAbsent: () => 1);
+    }
+    return counts;
+  }
+
   Map<String, List<LibraryDocument>> get topics {
     final groups = <String, List<LibraryDocument>>{};
     for (final doc in documents) {

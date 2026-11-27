@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../view_models/knowledge_base_viewmodel.dart';
 import 'package:memex/utils/result.dart';
 import 'package:memex/data/repositories/memex_router.dart';
 import 'package:memex/ui/knowledge/widgets/knowledge/knowledge_file_card.dart';
@@ -28,6 +30,9 @@ class _KnowledgeDirectoryPageState extends State<KnowledgeDirectoryPage> {
   void initState() {
     super.initState();
     _fetchResult();
+    if (widget.path.isNotEmpty) {
+      context.read<KnowledgeBaseViewModel?>()?.opened('${widget.path}/');
+    }
   }
 
   Future<void> _fetchResult() async {

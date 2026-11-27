@@ -301,7 +301,9 @@ void main() {
     await tester.pumpWidget(ChangeNotifierProvider.value(
         value: vm,
         child: MaterialApp(home: KnowledgeBaseScreen(viewModel: vm))));
-    await tester.ensureVisible(find.text(UserStorage.l10n.libraryOriginals));
+    await tester.scrollUntilVisible(
+        find.text(UserStorage.l10n.libraryOriginals), 200,
+        scrollable: find.byType(Scrollable).first);
     await tester.pumpAndSettle();
     await tester.tap(find.text(UserStorage.l10n.libraryOriginals));
     await tester.pump();

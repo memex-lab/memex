@@ -22,4 +22,34 @@ void main() {
     expect(list.last.sources, {'id'});
     expect(list.last.openTasks, 1);
   });
+
+  test(
+      'ranks real folders by visits, distinct source records, file count and recency',
+      () {
+    LibraryDocument doc(String path, {int time = 1, String source = ''}) =>
+        LibraryDocument.fromMarkdown(path, '# Title\n$source', time);
+    final docs = [
+      doc('Areas/Life/Family/a.md', source: '<!-- fact_id: a -->'),
+      doc('Areas/Life/b.md', source: '<!-- fact_id: a -->'),
+      doc('Projects/Trip/main.md',
+          source: '<!-- fact_id: b --><!-- fact_id: c -->'),
+      doc('My notes/one.md'),
+      doc('Archives/Life/x.md', time: 2),
+      doc('Resources/Z/y.md'),
+      doc('Areas/loose.md'),
+      doc('loose.md'),
+    ];
+    final recent = LibraryFolder.frequent(docs, [
+      'My notes/one.md',
+      'My notes/',
+      'Areas/Life/Family/',
+      'Resources/Z/gone.md'
+    ]);
+    expect(recent.map((f) => f.path),
+        ['My notes', 'Areas/Life', 'Projects/Trip', 'Archives/Life']);
+    expect(recent[1].documentCount, 2);
+    expect(
+        LibraryFolder.frequent(docs.reversed.toList(), []).map((f) => f.path),
+        ['Projects/Trip', 'Areas/Life', 'Archives/Life', 'My notes']);
+  });
 }
