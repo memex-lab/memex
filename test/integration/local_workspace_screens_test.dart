@@ -506,12 +506,13 @@ void main() {
   });
 
   testWidgets(
-      'confirm account deletion keeps siblings, backups, and the selected folder',
+      'confirm account deletion keeps sibling files and library preferences',
       (tester) async {
+    const other = 'other';
     final workspace =
         Directory(FileSystemService.instance.getWorkspacePath(user));
     final sibling = File(
-        '${FileSystemService.instance.getWorkspacePath("other")}/journal.md');
+        '${FileSystemService.instance.getWorkspacePath(other)}/journal.md');
     final backup = File('${customRoot.path}/saved-backup.zip');
     final personal = File('${customRoot.path}/personal.txt');
     final otherDb = File('${appDir.path}/memex_local_other.sqlite');
@@ -521,7 +522,14 @@ void main() {
         await file.create(recursive: true);
         await file.writeAsString('keep');
       }
-      await UserStorage.setWorkspaceStorageToCustom('other', customRoot.path);
+      await UserStorage.setWorkspaceStorageToCustom(other, customRoot.path);
+      for (final account in [user, other]) {
+        await UserStorage.saveLibraryChoices(account, ['$account/pinned.md'],
+            pins: true);
+        await UserStorage.saveLibraryChoices(account, ['$account/hidden.md'],
+            pins: false);
+        await UserStorage.recordLibraryVisit(account, '$account/opened.md');
+      }
       expect(await workspace.exists(), isTrue);
       expect(await database.exists(), isTrue);
     });
@@ -548,7 +556,15 @@ void main() {
       for (final file in [sibling, backup, personal, otherDb]) {
         expect(await file.readAsString(), 'keep');
       }
-      expect(await UserStorage.resolveDataRoot('other'), customRoot.path);
+      expect(await UserStorage.resolveDataRoot(other), customRoot.path);
+      expect(await UserStorage.libraryChoices(user, pins: true), isEmpty);
+      expect(await UserStorage.libraryChoices(user, pins: false), isEmpty);
+      expect(await UserStorage.libraryVisits(user), isEmpty);
+      expect(await UserStorage.libraryChoices(other, pins: true),
+          ['$other/pinned.md']);
+      expect(await UserStorage.libraryChoices(other, pins: false),
+          ['$other/hidden.md']);
+      expect(await UserStorage.libraryVisits(other), ['$other/opened.md']);
     });
     await tester.pumpWidget(const MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,

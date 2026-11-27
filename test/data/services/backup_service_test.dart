@@ -151,6 +151,78 @@ void main() {
     );
   });
 
+  test('backup exports and restores library preferences for one account',
+      () async {
+    const owner = 'backup-service-user';
+    const other = 'backup-service-user-other';
+    for (final account in [owner, other]) {
+      await UserStorage.saveLibraryChoices(account, ['$account/pinned.md'],
+          pins: true);
+      await UserStorage.saveLibraryChoices(account, ['$account/hidden.md'],
+          pins: false);
+      await UserStorage.recordLibraryVisit(account, '$account/opened.md');
+      await UserStorage.setAutoBackupEnabled(account, true);
+    }
+    final backupPath = await BackupService.createBackup(
+      outputDirectory: p.join(tempDir.path, 'Backups'),
+    );
+    final backup =
+        ZipDecoder().decodeBytes(await File(backupPath).readAsBytes());
+    final settings = (jsonDecode(
+      utf8.decode(backup.findFile('settings.json')!.content),
+    ) as Map)
+        .cast<String, dynamic>();
+    expect(settings, containsPair('user_id', owner));
+    final ownerPreferences = {
+      'library.pins.$owner': ['$owner/pinned.md'],
+      'library.hidden.$owner': ['$owner/hidden.md'],
+      'library.visits.$owner': ['$owner/opened.md'],
+      'memex_auto_backup_enabled_$owner': true,
+    };
+    final legacyOtherPreferences = {
+      'library.pins.$other': ['stale-pinned.md'],
+      'library.hidden.$other': ['stale-hidden.md'],
+      'library.visits.$other': ['stale-opened.md'],
+      'memex_auto_backup_enabled_$other': false,
+    };
+    for (final entry in ownerPreferences.entries) {
+      expect(settings, containsPair(entry.key, entry.value));
+    }
+    for (final key in legacyOtherPreferences.keys) {
+      expect(settings, isNot(contains(key)));
+    }
+
+    // Older archives included other accounts' preferences.
+    final settingsBytes = utf8.encode(jsonEncode({
+      ...settings,
+      ...legacyOtherPreferences,
+    }));
+    final legacy = Archive()
+      ..addFile(
+          ArchiveFile('settings.json', settingsBytes.length, settingsBytes));
+    final legacyPath = p.join(tempDir.path, 'legacy-multiple-accounts.memex');
+    await File(legacyPath).writeAsBytes(ZipEncoder().encode(legacy));
+
+    final prefs = await UserStorage.sharedPrefs();
+    for (final key in ownerPreferences.keys) {
+      await prefs.remove(key);
+    }
+    await UserStorage.saveUser(other);
+    addTearDown(() async {
+      if (AppDatabase.isInitialized) await AppDatabase.instance.close();
+    });
+    expect(await BackupService.restoreBackup(legacyPath), isTrue);
+    expect(await UserStorage.getUserId(), owner);
+    for (final account in [owner, other]) {
+      expect(await UserStorage.libraryChoices(account, pins: true),
+          ['$account/pinned.md']);
+      expect(await UserStorage.libraryChoices(account, pins: false),
+          ['$account/hidden.md']);
+      expect(await UserStorage.libraryVisits(account), ['$account/opened.md']);
+      expect(await UserStorage.isAutoBackupEnabled(account), isTrue);
+    }
+  });
+
   test('createBackup still compresses small text files', () async {
     final outputDir = Directory(p.join(tempDir.path, 'Backups'));
     final backupPath = await BackupService.createBackup(
@@ -565,12 +637,14 @@ void main() {
     expect(await stalePreview.exists(), isFalse);
   });
 
-  test('restore ignores device-local state contained in an old backup',
+  test('restore without an account ID skips device-local and scoped settings',
       () async {
+    const owner = 'backup-service-user';
+    await UserStorage.recordLibraryVisit(owner, 'current.md');
     final settings = {
-      'user_id': 'backup-service-user',
       'language': 'zh',
-      'memex_agent_notification_permission_prompted_backup-service-user': true,
+      'memex_agent_notification_permission_prompted_$owner': true,
+      'library.visits.$owner': ['old.md'],
     };
     final settingsBytes = utf8.encode(jsonEncode(settings));
     final archive = Archive()
@@ -590,10 +664,43 @@ void main() {
 
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getString('language'), 'zh');
+    expect(await UserStorage.getUserId(), owner);
+    expect(await UserStorage.libraryVisits(owner), ['current.md']);
     expect(
       await UserStorage.hasPromptedMemexAgentNotificationPermission(),
       isFalse,
     );
+  });
+
+  test('restore rejects conflicting backup account IDs before writing settings',
+      () async {
+    final manifest = BackupManifest(
+      format: 'memex.backup',
+      backupSchemaVersion: BackupService.currentBackupSchemaVersion,
+      createdAt: DateTime(2026),
+      userId: 'backup-service-user',
+      appVersion: '1.0.0',
+      buildNumber: '1',
+      flavor: 'global',
+      platform: 'ios',
+    );
+    final archive = Archive();
+    for (final entry in {
+      'manifest.json': manifest.toJson(),
+      'settings.json': {'user_id': 'other', 'language': 'zh'},
+    }.entries) {
+      final bytes = utf8.encode(jsonEncode(entry.value));
+      archive.addFile(ArchiveFile(entry.key, bytes.length, bytes));
+    }
+    final backupPath = p.join(tempDir.path, 'conflicting-accounts.memex');
+    await File(backupPath).writeAsBytes(ZipEncoder().encode(archive));
+
+    await expectLater(
+      BackupService.restoreBackup(backupPath),
+      throwsA(isA<InvalidBackupFileException>()),
+    );
+    expect(await UserStorage.getUserId(), 'backup-service-user');
+    expect((await UserStorage.sharedPrefs()).getString('language'), 'en');
   });
 
   test('restore resumes a task executor that was running beforehand', () async {

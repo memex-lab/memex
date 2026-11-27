@@ -20,7 +20,6 @@ import 'package:memex/utils/user_storage.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:synchronized/synchronized.dart';
 
 /// Keys to exclude from backup (Flutter internals, not user data).
@@ -285,14 +284,12 @@ class BackupService {
       path.join((await getApplicationSupportDirectory()).path, dbName),
     ];
 
-    // 2. Add SharedPreferences settings — backup ALL non-internal keys
+    // 2. Capture shared settings and the backed-up account's preferences.
     onProgress?.call('Packing settings...');
-    final prefs = await SharedPreferences.getInstance();
-    final settings = <String, dynamic>{};
+    final prefs = await UserStorage.sharedPrefs();
+    final settings = <String, dynamic>{UserStorage.userIdPreferenceKey: userId};
     for (final key in prefs.getKeys()) {
-      // Skip Flutter internal keys
-      if (_excludePrefKeys.any((prefix) => key.startsWith(prefix))) continue;
-      if (UserStorage.isDeviceLocalPreferenceKey(key)) continue;
+      if (!_includesBackupPreference(key, userId)) continue;
       final value = prefs.get(key);
       if (value != null) {
         settings[key] = value;
@@ -391,6 +388,8 @@ class BackupService {
         '(${stagedRestore.workspaceFileCount} workspace files, '
         '${stagedRestore.dbFileCount} DB files)',
       );
+      final sourceUserId = _restoreAccountId(stagedRestore);
+      final restoredUserId = sourceUserId ?? currentUserId;
 
       // Establish a real writer barrier before changing settings or the
       // FileSystemService root. Active handlers may resolve those singletons
@@ -405,11 +404,11 @@ class BackupService {
 
       // 1. Restore settings FIRST to get the correct userId and data root.
       onProgress?.call('Restoring settings...');
-      await _restoreSettings(stagedRestore.settings);
-      _logger.info('Restored ${stagedRestore.settings.length} settings');
+      await _restoreSettings(stagedRestore.settings, sourceUserId);
+      if (restoredUserId != currentUserId) {
+        await UserStorage.saveUser(restoredUserId);
+      }
 
-      // Use the restored userId (from backup settings) for workspace and DB paths
-      final restoredUserId = await UserStorage.getUserId() ?? currentUserId;
       resumeUserId = restoredUserId;
       final dataRoot = await UserStorage.resolveDataRoot(restoredUserId);
       await FileSystemService.init(dataRoot);
@@ -923,14 +922,40 @@ class BackupService {
     return dir.create(recursive: true);
   }
 
-  static Future<void> _restoreSettings(Map<String, dynamic> settings) async {
+  static bool _includesBackupPreference(String key, String? userId) =>
+      key != UserStorage.userIdPreferenceKey &&
+      !_excludePrefKeys.any((prefix) => key.startsWith(prefix)) &&
+      !UserStorage.isDeviceLocalPreferenceKey(key) &&
+      !UserStorage.isPreferenceForAnotherUser(key, userId);
+
+  static String? _restoreAccountId(_StagedRestoreResult stagedRestore) {
+    final manifestUserId = stagedRestore.manifestUserId;
+    final manifestId =
+        manifestUserId != null && manifestUserId.trim().isNotEmpty
+            ? manifestUserId
+            : null;
+    final rawSettingsId =
+        stagedRestore.settings[UserStorage.userIdPreferenceKey];
+    final settingsId =
+        rawSettingsId is String && rawSettingsId.trim().isNotEmpty
+            ? rawSettingsId
+            : null;
+    if (manifestId != null && settingsId != null && manifestId != settingsId) {
+      throw const InvalidBackupFileException(
+          'Backup account IDs do not match.');
+    }
+    return manifestId ?? settingsId;
+  }
+
+  static Future<void> _restoreSettings(
+    Map<String, dynamic> settings,
+    String? sourceUserId,
+  ) async {
     if (settings.isEmpty) return;
 
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await UserStorage.sharedPrefs();
     for (final entry in settings.entries) {
-      // Old backups may contain device-local state from before it was
-      // excluded. Preserve the destination device's state instead.
-      if (UserStorage.isDeviceLocalPreferenceKey(entry.key)) continue;
+      if (!_includesBackupPreference(entry.key, sourceUserId)) continue;
       final value = entry.value;
       if (value is String) {
         await prefs.setString(entry.key, value);
@@ -1466,6 +1491,7 @@ Future<_StagedRestoreResult> _stageBackupRestoreArchive({
 
     return _StagedRestoreResult(
       settings: settings,
+      manifestUserId: manifest?.userId,
       workspaceFileCount: workspaceFileCount,
       dbFileCount: dbFileCount,
     );
@@ -1875,11 +1901,13 @@ class _BackupArchiveResult {
 
 class _StagedRestoreResult {
   final Map<String, dynamic> settings;
+  final String? manifestUserId;
   final int workspaceFileCount;
   final int dbFileCount;
 
   const _StagedRestoreResult({
     required this.settings,
+    required this.manifestUserId,
     required this.workspaceFileCount,
     required this.dbFileCount,
   });
